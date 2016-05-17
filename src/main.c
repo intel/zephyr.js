@@ -17,13 +17,13 @@
 #include "jerry.h"
 #include "jerry-api.h"
 
-// ZJS API includes
-#include "util.h"
+// ZJS includes
+#include "zjs_gpio.h"
+#include "zjs_timers.h"
+#include "zjs_util.h"
 
 // local includes
 #include "script.h"
-#include "mod_gpio.h"
-#include "timers.h"
 
 void main(int argc, char *argv[])
 {

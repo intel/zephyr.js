@@ -14,13 +14,10 @@ subdir-ccflags-y += -DJERRY_DISABLE_HEAVY_DEBUG
 subdir-ccflags-y += -DMEM_STATS
 subdir-ccflags-y += -DCONFIG_MEM_HEAP_AREA_SIZE="22768"
 
-obj-y += ../../deps/jerryscript/jerry-core/
-obj-y += ../../zjs_api/src/
+obj-y += ../deps/jerryscript/jerry-core/
 
-ccflags-y += -I$(src)/../../deps/jerryscript/jerry-core
-ccflags-y += -I$(src)/../../zjs_api/src
+ccflags-y += -I$(src)/../deps/jerryscript/jerry-core -I$(src)/../build
 
-obj-y += main.o mod_gpio.o timers.o
+obj-y += main.o zjs_gpio.o zjs_timers.o zjs_util.o
 
-obj-y += ../../deps/jerryscript/jerry-core/lib.a
-obj-y += ../../zjs_api/src/lib.a
+obj-y += ../deps/jerryscript/jerry-core/lib.a

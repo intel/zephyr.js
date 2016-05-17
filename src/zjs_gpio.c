@@ -14,11 +14,9 @@
 #define PRINT           printk
 #endif
 
-// ZJS API includes
-#include "util.h"
-
-// local includes
-#include "mod_gpio.h"
+// ZJS includes
+#include "zjs_gpio.h"
+#include "zjs_util.h"
 
 #if defined(CONFIG_GPIO_DW_0)
 #define GPIO_DRV_NAME CONFIG_GPIO_DW_0_NAME

@@ -15,7 +15,7 @@
 #include "jerry.h"
 #include "jerry-api.h"
 
-#include "util.h"
+#include "zjs_util.h"
 
 #define MAX_NUMBER_TIMERS 10
 
@@ -31,8 +31,8 @@ typedef struct {
 
 static zjs_timer_t zjs_timers[MAX_NUMBER_TIMERS];
 
-static bool 
-add_timer(uint32_t interval, 
+static bool
+add_timer(uint32_t interval,
           jerry_api_object_t* callback)
 {
     for (int i = 0; i < MAX_NUMBER_TIMERS; i++)

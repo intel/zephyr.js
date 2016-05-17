@@ -2,7 +2,7 @@
 
 #include <string.h>
 
-#include "util.h"
+#include "zjs_util.h"
 
 #if defined(CONFIG_STDOUT_CONSOLE)
 #include <stdio.h>
