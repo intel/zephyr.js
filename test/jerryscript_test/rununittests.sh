@@ -11,6 +11,7 @@ do
     # check if it is unit test
     if [[ "$test" =~ ^test-.*\.c$ ]]; then
         echo -e "RUNNING TEST: $test"
+        read -p "Press any key to continue... (ctrl-c to exit)" -n1 -s
 
         # strip off the "test-"
         test=$(echo ${test:5})
