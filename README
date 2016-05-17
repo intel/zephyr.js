@@ -47,6 +47,16 @@ and your Arduino 101.)
 $ cd samples
 $ jsrunner HelloWorld.js
 
+jsrunner creates a fresh build/ directory, copies in some config files from
+scripts/template, generates a script.h include file from the HelloWorld.js
+script, and builds using the src/ files. Then it flashes your Arduino 101.
+
+Build other samples
+-------------------
+The other samples may require some hardware to be set up and connected; read
+the top of each JS file, but then simply pass in the path to the JS file to
+jsrunner as with HelloWorld.js above.
+
 Running Jerryscript Unit Tests
 ------------------------------
 cd apps/jerryscript_test/tests/
