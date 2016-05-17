@@ -13,13 +13,13 @@ zjs-env.sh - Source this file to be able to use tools from scripts/ anywhere.
 
 Subdirectories
 --------------
-apps/ - Zephyr applications that test various components.
 deps/ - Contains dependency repos and scripts for working with them.
 githooks/ - Currently just one script to use when committing to upstream
     Samsung projects.
-js/ - Subdirectory containing sample JavaScript files useful to run for testing.
+samples/ - Sample JavaScript files that can be built and executed with jsrunner.
 scripts/ - Subdirectory containing tools useful during development.
-zjs_api/ - JS API bindings for JerryScript written directly on top of Zephyr.
+src/ - JS API bindings for JerryScript written directly on top of Zephyr.
+test/ - Zephyr applications that test various components.
 
 Setting up your environment
 ---------------------------
