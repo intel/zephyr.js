@@ -10,7 +10,7 @@ subdir-ccflags-y += -DJERRY_DISABLE_HEAVY_DEBUG
 subdir-ccflags-y += -DMEM_STATS
 subdir-ccflags-y += -DCONFIG_MEM_HEAP_AREA_SIZE="22768"
 
-ifeq ($(KBUILD_TEST), date-helpers)
+ifneq ($(KBUILD_TEST), date-helpers)
 	subdir-ccflags-y += -DCONFIG_ECMA_COMPACT_PROFILE
 	subdir-ccflags-y += -DCONFIG_ECMA_COMPACT_PROFILE_DISABLE_ARRAY_BUILTIN
 	subdir-ccflags-y += -DCONFIG_ECMA_COMPACT_PROFILE_DISABLE_BOOLEAN_BUILTIN
