@@ -13,15 +13,18 @@
 
 // Also toggles an onboard LED off and on faster for good measure.
 
+// import gpio module
+var gpio = require("gpio");
+
 // pin 8 corresponds to an onboard LED on the Arduino 101
-var led = GPIO.open({pin: 8, direction: 'out'});
+var led = gpio.open({pin: 8, direction: 'out'});
 
 // pin 18 corresponds to IO2 on the Arduino 101
-var red = GPIO.open({pin: 18, direction: 'out'});
+var red = gpio.open({pin: 18, direction: 'out'});
 // pin 20 corresponds to IO7 on the Arduino 101
-var green = GPIO.open({pin: 20, direction: 'out'});
+var green = gpio.open({pin: 20, direction: 'out'});
 // pin 16 corresponds to IO8 on the Arduino 101
-var blue = GPIO.open({pin: 16, direction: 'out'});
+var blue = gpio.open({pin: 16, direction: 'out'});
 
 var count = 0;
 
