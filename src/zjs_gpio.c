@@ -66,10 +66,9 @@ static void zjs_gpio_callback_wrapper(struct device *port,
     jerry_api_call_function(mycb->js_callback, NULL, &rval, NULL, 0);
 }
 
-void zjs_gpio_init(jerry_api_object_t *global_obj)
+jerry_api_object_t *zjs_gpio_init()
 {
-    // requires: global_obj is a pointer to the global JS object
-    //  effects: finds the GPIO driver and registers the GPIO JS object
+    // effects: finds the GPIO driver and registers the GPIO JS object
     zjs_gpio_dev = device_get_binding(GPIO_DRV_NAME);
     if (!zjs_gpio_dev) {
         PRINT("Cannot find %s!\n", GPIO_DRV_NAME);
@@ -77,10 +76,10 @@ void zjs_gpio_init(jerry_api_object_t *global_obj)
 
     // create global GPIO object
     jerry_api_object_t *gpio_obj = jerry_api_create_object();
-    zjs_obj_add_object(global_obj, gpio_obj, "GPIO");
     zjs_obj_add_function(gpio_obj, zjs_gpio_open, "open");
     zjs_obj_add_function(gpio_obj, zjs_gpio_pin_write, "pin_write");
     zjs_obj_add_function(gpio_obj, zjs_gpio_set_callback, "set_callback");
+    return gpio_obj;
 }
 
 bool zjs_gpio_open(const jerry_api_object_t *function_obj_p,

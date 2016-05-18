@@ -19,6 +19,7 @@
 
 // ZJS includes
 #include "zjs_gpio.h"
+#include "zjs_modules.h"
 #include "zjs_timers.h"
 #include "zjs_util.h"
 
@@ -32,10 +33,11 @@ void main(int argc, char *argv[])
 
     jerry_init(JERRY_FLAG_EMPTY);
 
-    jerry_api_object_t *global_obj = jerry_api_get_global();
-
-    zjs_gpio_init(global_obj);
     zjs_timers_init();
+
+    // Initializes modules stuffs...
+    zjs_modules_init();
+    zjs_modules_add("gpio", zjs_gpio_init);
 
     size_t len = strlen((char *) script);
 

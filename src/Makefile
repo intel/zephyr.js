@@ -18,6 +18,6 @@ obj-y += ../deps/jerryscript/jerry-core/
 
 ccflags-y += -I$(src)/../deps/jerryscript/jerry-core -I$(src)/../build
 
-obj-y += main.o zjs_gpio.o zjs_timers.o zjs_util.o
+obj-y += main.o zjs_gpio.o zjs_modules.o zjs_timers.o zjs_util.o
 
 obj-y += ../deps/jerryscript/jerry-core/lib.a

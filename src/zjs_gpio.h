@@ -2,7 +2,7 @@
 
 #include "jerry-api.h"
 
-void zjs_gpio_init(jerry_api_object_t *global_obj);
+jerry_api_object_t *zjs_gpio_init();
 
 bool zjs_gpio_open(const jerry_api_object_t *function_obj_p,
                    const jerry_api_value_t *this_p,

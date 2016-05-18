@@ -3,9 +3,12 @@
 // Reimplementation of Arduino - Basics - Blink example
 // * Toggles an onboard LED on and off every second
 
+// import gpio module
+var gpio = require("gpio");
+
 // pin 8 is one of the onboard LEDs on the Arduino 101
 // 'out' direction is default, could be left out
-var pin = GPIO.open({pin: 8, direction: 'out'});
+var pin = gpio.open({pin: 8, direction: 'out'});
 
 // remember the current state of the LED
 var toggle = false;
