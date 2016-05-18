@@ -27,18 +27,27 @@
 
 void main(int argc, char *argv[])
 {
+    jerry_api_object_t *err_obj_p = NULL;
+    jerry_api_value_t res;
+
     jerry_init(JERRY_FLAG_EMPTY);
 
     jerry_api_object_t *global_obj = jerry_api_get_global();
-    zjs_gpio_init(global_obj);
 
+    zjs_gpio_init(global_obj);
     zjs_timers_init();
 
-    jerry_api_object_t *err_obj_p = NULL;
-    size_t len = strlen((char *)script);
-    jerry_parse((jerry_api_char_t *)script, len, &err_obj_p);
+    size_t len = strlen((char *) script);
 
-    jerry_run(&err_obj_p);
+    if (!jerry_parse((jerry_api_char_t *) script, len, &err_obj_p)) {
+        PRINT("JerryScript: cannot parse javascript\n");
+        return;
+    }
+
+    if (jerry_run(&res) != JERRY_COMPLETION_CODE_OK) {
+        PRINT("JerrySript: cannot run javascript\n");
+        return;
+    }
 
     while (1) {
         if (zjs_timers_process_events() == false)
