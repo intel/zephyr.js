@@ -1,11 +1,11 @@
 #!/bin/bash
- 
+
 curdir=$(pwd)
- 
-test_dir=${curdir}/../../jerryscript/tests/unit
+
+test_dir=${curdir}/../../../deps/jerryscript/tests/unit
 
 echo "Starting all unit tests"
- 
+
 for test in `ls ${test_dir}`
 do
     # check if it is unit test
@@ -24,5 +24,5 @@ do
         make TEST=$test qemu
     fi
 done
- 
+
 echo "Finished all unit tests"

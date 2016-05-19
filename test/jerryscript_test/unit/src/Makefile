@@ -21,23 +21,23 @@ ifneq ($(KBUILD_TEST), date-helpers)
 	subdir-ccflags-y += -DCONFIG_ECMA_COMPACT_PROFILE_DISABLE_STRING_BUILTIN
 endif
 
-obj-y += ../../../deps/jerryscript/jerry-core/
+obj-y += ../../../../deps/jerryscript/jerry-core/
 
-ccflags-y += -I$(src)/../../../deps/jerryscript/jerry-core
-ccflags-y += -I$(src)/../../../deps/jerryscript/jerry-core/lit
-ccflags-y += -I$(src)/../../../deps/jerryscript/jerry-core/rcs
-ccflags-y += -I$(src)/../../../deps/jerryscript/jerry-core/mem
-ccflags-y += -I$(src)/../../../deps/jerryscript/jerry-core/vm
-ccflags-y += -I$(src)/../../../deps/jerryscript/jerry-core/ecma/builtin-objects
-ccflags-y += -I$(src)/../../../deps/jerryscript/jerry-core/ecma/base
-ccflags-y += -I$(src)/../../../deps/jerryscript/jerry-core/ecma/operations
-ccflags-y += -I$(src)/../../../deps/jerryscript/jerry-core/parser/js
-ccflags-y += -I$(src)/../../../deps/jerryscript/jerry-core/parser/js/collections
-ccflags-y += -I$(src)/../../../deps/jerryscript/jerry-core/parser/regexp
-ccflags-y += -I$(src)/../../../deps/jerryscript/jerry-core/jrt
-ccflags-y += -I$(src)/../../../jerryscript/third-party/fdlibm/include
+ccflags-y += -I$(src)/../../../../deps/jerryscript/jerry-core
+ccflags-y += -I$(src)/../../../../deps/jerryscript/jerry-core/lit
+ccflags-y += -I$(src)/../../../../deps/jerryscript/jerry-core/rcs
+ccflags-y += -I$(src)/../../../../deps/jerryscript/jerry-core/mem
+ccflags-y += -I$(src)/../../../../deps/jerryscript/jerry-core/vm
+ccflags-y += -I$(src)/../../../../deps/jerryscript/jerry-core/ecma/builtin-objects
+ccflags-y += -I$(src)/../../../../deps/jerryscript/jerry-core/ecma/base
+ccflags-y += -I$(src)/../../../../deps/jerryscript/jerry-core/ecma/operations
+ccflags-y += -I$(src)/../../../../deps/jerryscript/jerry-core/parser/js
+ccflags-y += -I$(src)/../../../../deps/jerryscript/jerry-core/parser/js/collections
+ccflags-y += -I$(src)/../../../../deps/jerryscript/jerry-core/parser/regexp
+ccflags-y += -I$(src)/../../../../deps/jerryscript/jerry-core/jrt
+ccflags-y += -I$(src)/../../../../jerryscript/third-party/fdlibm/include
 
-test_dir = ../../../deps/jerryscript/tests/unit
+test_dir = ../../../../deps/jerryscript/tests/unit
 
 ifeq ($(KBUILD_TEST), api)
 	subdir-ccflags-y += -DCONFIG_ECMA_NUMBER_TYPE=CONFIG_ECMA_NUMBER_FLOAT64
@@ -88,4 +88,4 @@ endif #test-libm
 endif #test-date-helpers
 endif #test-api
 
-obj-y += ../../../deps/jerryscript/jerry-core/lib.a
+obj-y += ../../../../deps/jerryscript/jerry-core/lib.a
