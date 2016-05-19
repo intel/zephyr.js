@@ -42,21 +42,52 @@ static const char *ZJS_PULL_DOWN = "down";
 
 static struct device *zjs_gpio_dev;
 
-// extend the gpio_callback struct to store extra data
-struct zjs_gpio_callback {
+struct zjs_cb_list_item {
     struct gpio_callback orig;
+    jerry_api_object_t *pin_obj;
     jerry_api_object_t *js_callback;
+    struct zjs_cb_list_item *next;
 };
 
-static struct zjs_gpio_callback zjs_gpio_cb;
+static struct zjs_cb_list_item *zjs_cb_list = NULL;
+
+static struct zjs_cb_list_item *zjs_gpio_callback_alloc()
+{
+    // effects: allocates a new callback list item and adds it to the list
+    struct zjs_cb_list_item *item;
+    item = task_malloc(sizeof(struct zjs_cb_list_item));
+    if (!item) {
+        PRINT("error: out of memory allocating callback struct\n");
+        return NULL;
+    }
+
+    item->next = zjs_cb_list;
+    zjs_cb_list = item;
+    return item;
+}
+
+static void zjs_gpio_callback_free(uintptr_t handle)
+{
+    // requires: handle is the native pointer we registered with
+    //             jerry_api_set_object_native_handle
+    //  effects: frees the callback list item for the given pin object
+    struct zjs_cb_list_item **pItem = &zjs_cb_list;
+    while (*pItem) {
+        if ((uintptr_t)*pItem == handle) {
+            *pItem = (*pItem)->next;
+            task_free((void *)handle);
+        }
+        pItem = &(*pItem)->next;
+    }
+}
 
 static void zjs_gpio_callback_wrapper(struct device *port,
                                       struct gpio_callback *cb,
                                       uint32_t pins)
 {
     // effects: calls the JS callback registered in the struct
-    struct zjs_gpio_callback *mycb = CONTAINER_OF(cb, struct zjs_gpio_callback,
-                                                  orig);
+    struct zjs_cb_list_item *mycb = CONTAINER_OF(cb, struct zjs_cb_list_item,
+                                                 orig);
     if (!mycb->js_callback) {
         PRINT("zjs_gpio_callback_wrapper: No callback registered!\n");
         return;
@@ -77,7 +108,6 @@ jerry_api_object_t *zjs_gpio_init()
     // create global GPIO object
     jerry_api_object_t *gpio_obj = jerry_api_create_object();
     zjs_obj_add_function(gpio_obj, zjs_gpio_open, "open");
-    zjs_obj_add_function(gpio_obj, zjs_gpio_pin_write, "pin_write");
     zjs_obj_add_function(gpio_obj, zjs_gpio_set_callback, "set_callback");
     return gpio_obj;
 }
@@ -143,7 +173,9 @@ bool zjs_gpio_open(const jerry_api_object_t *function_obj_p,
             edge = ZJS_EDGE_FALLING;
             both = false;
         }
-        // else ZJS_ASSERT(!strcmp(buffer, ZJS_EDGE_BOTH));
+        else if (strcmp(buffer, ZJS_EDGE_BOTH)) {
+            PRINT("warning: invalid edge value provided\n");
+        }
     }
 
     // NOTE: Soletta API doesn't seem to provide a way to use Zephyr's
@@ -175,7 +207,7 @@ bool zjs_gpio_open(const jerry_api_object_t *function_obj_p,
     jerry_api_object_t *pinobj = jerry_api_create_object();
     zjs_obj_add_function(pinobj, zjs_gpio_pin_read, "read");
     zjs_obj_add_function(pinobj, zjs_gpio_pin_write, "write");
-    zjs_obj_add_function(pinobj, zjs_gpio_pin_write, "close");
+    zjs_obj_add_function(pinobj, zjs_gpio_set_callback, "set_callback");
     zjs_obj_add_uint32(pinobj, pin, "pin");
     zjs_obj_add_string(pinobj, dirOut ? ZJS_DIR_OUT : ZJS_DIR_IN, "direction");
     zjs_obj_add_boolean(pinobj, activeLow, "activeLow");
@@ -274,23 +306,31 @@ bool zjs_gpio_set_callback(const jerry_api_object_t *function_obj_p,
         return false;
     }
 
-    if (zjs_gpio_cb.js_callback) {
-        PRINT("error: currently cannot set second GPIO callback!\n");
-        return false;
-    }
+    jerry_api_object_t *pinobj = jerry_api_get_object_value(this_p);
 
     int pin = (int)args_p[0].u.v_float32;
-    zjs_gpio_cb.js_callback = args_p[1].u.v_object;
-    gpio_init_callback(&zjs_gpio_cb.orig, zjs_gpio_callback_wrapper, BIT(pin));
+    struct zjs_cb_list_item *item = zjs_gpio_callback_alloc();
 
-	int rval = gpio_add_callback(zjs_gpio_dev, &zjs_gpio_cb.orig);
+    if (!item)
+        return false;
+    gpio_init_callback(&item->orig, zjs_gpio_callback_wrapper, BIT(pin));
+    item->pin_obj = pinobj;
+    item->js_callback = args_p[1].u.v_object;
+
+    // watch for the object getting garbage collected, and clean up
+    jerry_api_set_object_native_handle(pinobj, (uintptr_t)item,
+                                       zjs_gpio_callback_free);
+
+	int rval = gpio_add_callback(zjs_gpio_dev, &item->orig);
 	if (rval) {
 		PRINT("error: cannot setup callback!\n");
+        return false;
 	}
 
 	rval = gpio_pin_enable_callback(zjs_gpio_dev, pin);
 	if (rval) {
 		PRINT("error: cannot enable callback!\n");
+        return false;
 	}
 
     return true;
