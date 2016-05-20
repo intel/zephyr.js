@@ -17,7 +17,13 @@ subdir-ccflags-y += -DCONFIG_MEM_HEAP_AREA_SIZE="22768"
 obj-y += ../deps/jerryscript/jerry-core/
 
 ccflags-y += -I$(src)/../deps/jerryscript/jerry-core -I$(src)/../build
+ccflags-y += -I$(srctree)/drivers
 
-obj-y += main.o zjs_gpio.o zjs_modules.o zjs_timers.o zjs_util.o
+obj-y += main.o \
+         zjs_aio.o \
+         zjs_gpio.o \
+         zjs_modules.o \
+         zjs_timers.o \
+         zjs_util.o
 
 obj-y += ../deps/jerryscript/jerry-core/lib.a
