@@ -21,6 +21,7 @@
 
 static struct nano_timer timer;
 
+
 typedef struct {
     uint32_t interval;
     uint32_t ticks_remain;
@@ -31,7 +32,7 @@ typedef struct {
 
 static zjs_timer_t zjs_timers[MAX_NUMBER_TIMERS];
 
-static bool
+static jerry_api_object_t *
 add_timer(uint32_t interval,
           jerry_api_object_t* callback)
 {
@@ -41,14 +42,14 @@ add_timer(uint32_t interval,
         if (!t->callback)
         {
             // Found an empty slot.
-            t->callback = callback;
+            t->callback = jerry_api_acquire_object(callback);
             t->interval = interval;
             t->expire = false;
             t->ticks_remain = interval;
-            return true;
+            return t->callback;
         }
     }
-    return false;
+    return NULL;
 }
 
 static bool
@@ -61,6 +62,7 @@ delete_timer(jerry_api_object_t *objPtr)
         if (objPtr == t->callback)
         {
             PRINT ("timer found\n");
+            jerry_api_release_object(t->callback);
             t->callback = NULL;
             t->interval = 0;
             t->expire = false;
@@ -90,14 +92,15 @@ native_setInterval_handler(const jerry_api_object_t * function_obj_p,
                                    CONFIG_SYS_CLOCK_TICKS_PER_SEC);
     jerry_api_object_t *callback = args_p[0].u.v_object;
 
-    if (!add_timer(interval, callback))
+    jerry_api_object_t *tid = add_timer(interval, callback);
+    if (!tid)
     {
         // TODO: should throw an exception
         PRINT ("Error: out of timers\n");
         return false;
     }
 
-    zjs_init_api_value_object(ret_val_p, callback);
+    zjs_init_api_value_object(ret_val_p, tid);
     return true;
 }
 
