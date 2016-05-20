@@ -1,7 +1,9 @@
 // Copyright (c) 2016, Intel Corporation.
 
 // Test code for Arduino 101 that uses the two onboard LEDs for output, and
-// expects a button or similar input connected to digital pin 4.
+// expects a button or similar input connected to IO4. Blinks the LEDs on and
+// off together, but when the button is pressed turns one on and one off until
+// the next timer expires.
 
 print("GPIO test with two LEDs and a button...");
 
@@ -23,7 +25,7 @@ setInterval(function () {
     pinB.write(toggle);
 }, tick);
 
-gpio.set_callback(19, function () {
+pinIn.set_callback(function () {
     pinA.write(true);
     pinB.write(false);
 });

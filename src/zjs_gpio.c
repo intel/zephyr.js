@@ -108,7 +108,6 @@ jerry_api_object_t *zjs_gpio_init()
     // create global GPIO object
     jerry_api_object_t *gpio_obj = jerry_api_create_object();
     zjs_obj_add_function(gpio_obj, zjs_gpio_open, "open");
-    zjs_obj_add_function(gpio_obj, zjs_gpio_set_callback, "set_callback");
     return gpio_obj;
 }
 
@@ -207,7 +206,7 @@ bool zjs_gpio_open(const jerry_api_object_t *function_obj_p,
     jerry_api_object_t *pinobj = jerry_api_create_object();
     zjs_obj_add_function(pinobj, zjs_gpio_pin_read, "read");
     zjs_obj_add_function(pinobj, zjs_gpio_pin_write, "write");
-    zjs_obj_add_function(pinobj, zjs_gpio_set_callback, "set_callback");
+    zjs_obj_add_function(pinobj, zjs_gpio_pin_set_callback, "set_callback");
     zjs_obj_add_uint32(pinobj, pin, "pin");
     zjs_obj_add_string(pinobj, dirOut ? ZJS_DIR_OUT : ZJS_DIR_IN, "direction");
     zjs_obj_add_boolean(pinobj, activeLow, "activeLow");
@@ -290,32 +289,35 @@ bool zjs_gpio_pin_write(const jerry_api_object_t *function_obj_p,
     return true;
 }
 
-bool zjs_gpio_set_callback(const jerry_api_object_t *function_obj_p,
-                           const jerry_api_value_t *this_p,
-                           jerry_api_value_t *ret_val_p,
-                           const jerry_api_value_t args_p[],
-                           const jerry_api_length_t args_cnt)
+bool zjs_gpio_pin_set_callback(const jerry_api_object_t *function_obj_p,
+                               const jerry_api_value_t *this_p,
+                               jerry_api_value_t *ret_val_p,
+                               const jerry_api_value_t args_p[],
+                               const jerry_api_length_t args_cnt)
 {
-    // requires: first arg is pin number, second is a JS callback function
+    // requires: this_p is a GPIOPin object, the one arg is a JS callback
+    //             function
     //  effects: registers this callback to be called when the GPIO changes
-    if (args_cnt < 2 ||
-        args_p[0].type != JERRY_API_DATA_TYPE_FLOAT32 ||
-        args_p[1].type != JERRY_API_DATA_TYPE_OBJECT)
+    if (args_cnt < 1 ||
+        args_p[0].type != JERRY_API_DATA_TYPE_OBJECT)
     {
-        PRINT("zjs_gpio_set_callback: invalid arguments\n");
+        PRINT("zjs_gpio_pin_set_callback: invalid argument\n");
         return false;
     }
 
     jerry_api_object_t *pinobj = jerry_api_get_object_value(this_p);
+    uint32_t pin;
+    zjs_obj_get_uint32(pinobj, "pin", &pin);
 
-    int pin = (int)args_p[0].u.v_float32;
     struct zjs_cb_list_item *item = zjs_gpio_callback_alloc();
 
     if (!item)
         return false;
     gpio_init_callback(&item->orig, zjs_gpio_callback_wrapper, BIT(pin));
     item->pin_obj = pinobj;
-    item->js_callback = args_p[1].u.v_object;
+    item->js_callback = args_p[0].u.v_object;
+
+    jerry_api_acquire_object(item->js_callback);
 
     // watch for the object getting garbage collected, and clean up
     jerry_api_set_object_native_handle(pinobj, (uintptr_t)item,

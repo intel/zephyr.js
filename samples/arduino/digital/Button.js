@@ -11,6 +11,6 @@ var led = gpio.open({pin: 8, direction: 'out'});
 // pin 19 corresponds to IO4 on the Arduino 101
 var button = gpio.open({pin: 19, direction: 'in', edge: 'any'});
 
-gpio.set_callback(19, function () {
+button.set_callback(function () {
     led.write(button.read())
 });

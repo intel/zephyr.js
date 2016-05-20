@@ -21,12 +21,12 @@ var btn2 = gpio.open({ pin: 19, direction: 'in', edge: 'any' });
 // turn off LED #2 initially
 led2.write(false);
 
-gpio.set_callback(15, function () {
-    var val = btn1.read();
-    led1.write(val);
+btn1.set_callback(function () {
+    var value = btn1.read();
+    led1.write(value);
 });
 
-gpio.set_callback(19, function () {
-    var val = btn2.read();
-    led2.write(val);
+btn2.set_callback(function () {
+    var value = btn2.read();
+    led2.write(value);
 });
