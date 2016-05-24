@@ -99,13 +99,13 @@ static void zjs_gpio_callback_wrapper(struct device *port,
 
 jerry_api_object_t *zjs_gpio_init()
 {
-    // effects: finds the GPIO driver and registers the GPIO JS object
+    // effects: finds the GPIO driver and returns the GPIO JS object
     zjs_gpio_dev = device_get_binding(GPIO_DRV_NAME);
     if (!zjs_gpio_dev) {
         PRINT("Cannot find %s!\n", GPIO_DRV_NAME);
     }
 
-    // create global GPIO object
+    // create GPIO object
     jerry_api_object_t *gpio_obj = jerry_api_create_object();
     zjs_obj_add_function(gpio_obj, zjs_gpio_open, "open");
     return gpio_obj;
@@ -119,12 +119,11 @@ bool zjs_gpio_open(const jerry_api_object_t *function_obj_p,
 {
     // requires: arg 0 is an object with these members: pin (int), direction
     //             (defaults to "out"), activeLow (defaults to false),
-    //             edge (defaults to "any"), poll (default to 0, no polling),
-    //             pull (default to undefined), raw (defaults to false)
+    //             edge (defaults to "any"), pull (default to undefined)
     if (args_cnt < 1 ||
         args_p[0].type != JERRY_API_DATA_TYPE_OBJECT)
     {
-        PRINT("zjs_gpio_open: invalid arguments\n");
+        PRINT("zjs_gpio_open: invalid argument\n");
         return false;
     }
 
@@ -212,6 +211,7 @@ bool zjs_gpio_open(const jerry_api_object_t *function_obj_p,
     zjs_obj_add_boolean(pinobj, activeLow, "activeLow");
     zjs_obj_add_string(pinobj, edge, "edge");
     zjs_obj_add_string(pinobj, pull, "pull");
+    // TODO: When we implement close, we should release the reference on this
 
     *ret_val_p = jerry_api_create_object_value(pinobj);
     return true;
@@ -262,7 +262,7 @@ bool zjs_gpio_pin_write(const jerry_api_object_t *function_obj_p,
     if (args_cnt < 1 ||
         args_p[0].type != JERRY_API_DATA_TYPE_BOOLEAN)
     {
-        PRINT("zjs_gpio_pin_write: invalid arguments\n");
+        PRINT("zjs_gpio_pin_write: invalid argument\n");
         return false;
     }
 

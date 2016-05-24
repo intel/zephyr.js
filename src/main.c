@@ -49,7 +49,7 @@ void main(int argc, char *argv[])
     }
 
     if (jerry_run(&res) != JERRY_COMPLETION_CODE_OK) {
-        PRINT("JerrySript: cannot run javascript\n");
+        PRINT("JerryScript: cannot run javascript\n");
         return;
     }
 
