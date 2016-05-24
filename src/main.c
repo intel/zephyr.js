@@ -21,6 +21,7 @@
 #include "zjs_aio.h"
 #include "zjs_gpio.h"
 #include "zjs_modules.h"
+#include "zjs_pwm.h"
 #include "zjs_timers.h"
 #include "zjs_util.h"
 
@@ -40,6 +41,7 @@ void main(int argc, char *argv[])
     zjs_modules_init();
     zjs_modules_add("aio", zjs_aio_init);
     zjs_modules_add("gpio", zjs_gpio_init);
+    zjs_modules_add("pwm", zjs_pwm_init);
 
     size_t len = strlen((char *) script);
 
