@@ -101,7 +101,8 @@ bool zjs_pwm_pin_set_period(const jerry_api_object_t *function_obj_p,
                             const jerry_api_length_t args_cnt)
 {
     // requires: this_p is a PWMPin object from zjs_pwm_open, takes one
-    //             argument, the period in nanoseconds
+    //             argument, the period in hardware cycles, dependent on the
+    //             underlying hardware (31.25ns each for Arduino 101)
     //  effects: updates the period of this PWM pin
     jerry_api_object_t *obj = jerry_api_get_object_value(this_p);
 
@@ -128,6 +129,9 @@ bool zjs_pwm_pin_set_period(const jerry_api_object_t *function_obj_p,
             polarity = ZJS_POLARITY_INVERSE;
     }
 
+    // update the JS object
+    zjs_obj_add_uint32(obj, period, "period");
+
     zjs_pwm_set(channel, period, dutyCycle, polarity);
     return true;
 }
@@ -139,7 +143,7 @@ bool zjs_pwm_pin_set_duty_cycle(const jerry_api_object_t *function_obj_p,
                                 const jerry_api_length_t args_cnt)
 {
     // requires: this_p is a PWMPin object from zjs_pwm_open, takes one
-    //             argument, the duty cycle in nanoseconds
+    //             argument, the duty cycle in microseconds
     //  effects: updates the duty cycle of this PWM pin
     jerry_api_object_t *obj = jerry_api_get_object_value(this_p);
 
@@ -174,22 +178,33 @@ void zjs_pwm_set(uint32_t channel, uint32_t period, uint32_t dutyCycle,
                  const char *polarity)
 {
     // requires: channel is 0-3 on Arduino 101, period is the time in
-    //             nanoseconds for the on/off cycle to complete, duty cycle
-    //             is the time in nanoseconds for the signal to be on,
+    //             microseconds for the on/off cycle to complete, duty cycle
+    //             is the time in microseconds for the signal to be on,
     //             polarity is "normal" if on means high, "inversed" if on
     //             means low
+    //  effects: sets the given period and duty cycle, but the true duty
+    //            cycle will always be on and off for at least one hw cycle
 
     // convert from ns to hw cycles
     uint32_t periodHW = (uint64_t)period * sys_clock_hw_cycles_per_sec /
         (uint32_t)1E9;
     uint32_t dutyHW = (uint64_t)dutyCycle * sys_clock_hw_cycles_per_sec /
         (uint32_t)1E9;
-    if (dutyHW > periodHW) {
-        // maybe shouldn't warn because it might be temporary if they are about
-        //   to update the other one
-        PRINT("warning: limit duty cycle to period\n");
-        dutyHW = periodHW;
+    if (periodHW < 2) {
+        // period must be at least two cycles
+        periodHW = 2;
     }
+
+    // workaround the fact that Zephyr API won't allow fully on or off
+    if (dutyHW == 0) {
+        // must be on for at least one cycle
+        dutyHW = 1;
+    }
+    if (dutyHW >= periodHW) {
+        // must be off for at least one cycle
+        dutyHW = periodHW - 1;
+    }
+
     uint32_t offdutyHW = periodHW - dutyHW;
 
     uint32_t onTime, offTime;
