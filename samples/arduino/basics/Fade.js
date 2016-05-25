@@ -11,18 +11,17 @@ var delay = 30;  // time between adjustments (in ms)
 var pwm = require("pwm");
 
 // pins 3, 5, 6, and 9 are PWMs on Arduino 101, and map to channels 0-3,
-//   so channel 3 here is IO9
-
-// resolution on Arduino 101 is 31.25ns
-var led = pwm.open({channel: 3, period: 255000, dutyCycle: 0});
+//   so channel 3 here is IO9; default period of PWM Is 255
+var led = pwm.open({channel: 3, polarity: "reverse"});
 
 // update the brightness every 30ms
 setInterval(function () {
-    print(brightness);
-    led.setDutyCycle(brightness * 1000);
+    led.setPulseWidth(brightness);
 
+    // adjust the brightness for next time
     brightness += fadeAmount;
 
+    // reverse fade direction
     if (brightness == 0 || brightness == 255)
         fadeAmount = -fadeAmount;
 }, delay);
