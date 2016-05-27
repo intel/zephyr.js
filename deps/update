@@ -18,8 +18,10 @@ with open('repos.txt', 'r') as f:
         repos.append(line.strip())
 
 for repo in repos:
+    print("Updating repo '%s':\n" % repo)
     os.chdir(repo)
     os.system('git checkout master')
     os.system('git pull')
     os.system('git checkout origin/zjs')
     os.chdir('..')
+    print('');
