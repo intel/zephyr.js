@@ -1,0 +1,82 @@
+#!/bin/bash
+
+# blbuild - build the bootloader in deps/a101fw
+
+BLFROM=144
+BLTO=256
+
+if [ ! -z "$1" ]; then
+    BLFROM=$1
+
+    if [ ! -z "$2" ]; then
+        BLTO=$2
+    fi
+fi
+
+NEWFROM=
+NEWTO=
+
+for i in 144 216 256; do
+    if [ "$BLFROM" == "$i" ]; then
+        NEWFROM=bl$i
+    fi
+    if [ "$BLTO" == "$i" ]; then
+        NEWTO=bl$i
+    fi
+done
+
+if [ -z "$NEWFROM" -o -z "$NEWTO" ]; then
+    echo Usage: blbuild [OLDSIZE] [NEWSIZE]
+    echo "      OLDSIZE and NEWSIZE can be 144, 216, or 256"
+    echo Error: Only 144k, 216k, and 256k partitions are supported!
+    exit 1
+fi
+
+echo blbuild: Changing X86 partition size from ${BLFROM}k to ${BLTO}k.
+echo You can use bldetect to confirm the current size.
+echo Press Ctrl-C to quit, or any key to continue...
+read -n 1 -s
+
+# undefine zephyr vars to do contained bootloader build
+ZEPHYR_BASE=
+ZEPHYR_GCC_VARIANT=
+
+FWDIR=$ZJS_BASE/deps/a101fw
+BUILDDIR=$FWDIR/arduino101_firmware/projects/arduino101
+UPDFILE=$FWDIR/out/quark_se_arduino_arduino101_debug/firmware/bootupdater.bin
+SAVEUPD=$FWDIR/.oldupdater.bin
+
+# Build the firmware for the current size so we can save its updater
+cd $FWDIR
+git checkout $NEWFROM
+cd -
+
+# FIXME: Find a make command that can build just the boot updater!
+echo blbuild: Building Arduino 101 firmware for ${BLFROM}k...
+make clean setup image -C $BUILDDIR
+cp $FWDIR/
+
+# Save the updater for the old size since it will look in the right place
+cp $UPDFILE $SAVEUPD
+
+# Build the firmware for the new size to get the new bootloader
+cd $FWDIR
+git checkout $NEWTO
+cd -
+
+echo blbuild: Building Arduino 101 firmware for ${BLTO}k...
+make clean setup image -C $BUILDDIR
+
+echo blbuild: Building Arduino 101 flashpack...
+cd $FWDIR/arduino101_flashpack
+./create_flasher.sh
+
+# Move the original boot updater to the flashpack
+mv $SAVEUPD $FWDIR/arduino101_flashpack/images/firmware/bootupdater.bin
+
+echo blbuild: Ready to flash new bootloader with ${BLTO}k X86 partition...
+echo If you quit, you can run blflash later to do the flashing.
+echo Press Ctrl-C to quit, or any key to continue...
+read -n 1 -s
+
+blflash
