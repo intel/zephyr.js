@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# bldetect - detect current sizes of X86 and ARC partitions on Arduino 101
+
+# requires: dfu-util is installed, e.g. sudo apt-get install dfu-util
+
+function check() {
+    echo -n "Checking $1 ($2) partition size... "
+    rm -f /tmp/bl-image.$2
+    dfu-util -a $2 -U /tmp/bl-image.$2 > /dev/null
+    if [ $? -ne 0 ]; then
+        echo Reset the device and try command again a few seconds later!
+        exit 1
+    fi
+    echo $(ls -lh /tmp/bl-image.$2 | cut -d' ' -f5)
+}
+
+check X86 x86_app
+check ARC sensor_core
+check Boot x86_boot
