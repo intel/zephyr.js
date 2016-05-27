@@ -22,54 +22,74 @@
 static struct nano_timer timer;
 
 
-typedef struct {
+struct zjs_timer_t {
     uint32_t interval;
     uint32_t ticks_remain;
     bool expire;
     jerry_api_object_t *callback;
-} zjs_timer_t;
+    struct zjs_timer_t *next;
+};
 
 
-static zjs_timer_t zjs_timers[MAX_NUMBER_TIMERS];
+static struct zjs_timer_t *zjs_timers;
 
 static jerry_api_object_t *
 add_timer(uint32_t interval,
           jerry_api_object_t* callback)
 {
-    for (int i = 0; i < MAX_NUMBER_TIMERS; i++)
+    // effects:  allocate a new timer item and add to the timers list
+    struct zjs_timer_t *tm;
+    tm = task_malloc(sizeof(struct zjs_timer_t));
+    if (!tm)
     {
-        zjs_timer_t *t = &zjs_timers[i];
-        if (!t->callback)
-        {
-            // Found an empty slot.
-            t->callback = jerry_api_acquire_object(callback);
-            t->interval = interval;
-            t->expire = false;
-            t->ticks_remain = interval;
-            return t->callback;
-        }
+        PRINT("error: out of memory allocating timer struct\n");
+        return NULL;
     }
-    return NULL;
+
+    tm->callback = jerry_api_acquire_object(callback);
+    tm->interval = interval;
+    tm->expire = false;
+    tm->ticks_remain = interval;
+
+    if (!zjs_timers)
+    {
+        tm->next = tm;
+        zjs_timers = tm;
+    }
+    else
+    {
+        tm->next = zjs_timers->next;
+        zjs_timers->next = tm;
+    }
+    return tm->callback;
 }
 
 static bool
 delete_timer(jerry_api_object_t *objPtr)
 {
-    PRINT ("Delete timer is called\n");
-    for (int i = 0; i < MAX_NUMBER_TIMERS; i++)
+    struct zjs_timer_t *tm = zjs_timers;
+    if (!tm)
+        return false;
+    do
     {
-        zjs_timer_t *t = &zjs_timers[i];
-        if (objPtr == t->callback)
+        if (objPtr == tm->callback)
         {
-            PRINT ("timer found\n");
-            jerry_api_release_object(t->callback);
-            t->callback = NULL;
-            t->interval = 0;
-            t->expire = false;
-            t->ticks_remain = 0;
+            jerry_api_release_object(tm->callback);
+            if (tm == zjs_timers)
+            {
+                if (zjs_timers->next == zjs_timers)
+                    zjs_timers = NULL;
+                else
+                    zjs_timers = zjs_timers->next;
+            }
+            else
+                tm->next = tm->next->next;
+
+            task_free(tm);
             return true;
         }
-    }
+        tm = tm->next;
+    } while (tm != zjs_timers);
     return false;
 }
 
@@ -118,7 +138,6 @@ native_clearInterval_handler(const jerry_api_object_t * function_obj_p,
         return false;
     }
 
-    PRINT ("clear interval is called\n");
     jerry_api_object_t *t = args_p[0].u.v_object;
 
     if (!delete_timer(t))
@@ -133,50 +152,49 @@ native_clearInterval_handler(const jerry_api_object_t * function_obj_p,
 
 bool zjs_timers_process_events()
 {
-    int i;
-
-    /* find the least amount of ticks remain in the list */
-    uint32_t ticks = 0xffffffff;
-    zjs_timer_t *t = NULL;
-    for (i = 0; i < MAX_NUMBER_TIMERS; i++)
-    {
-        t = &zjs_timers[i];
-        if (ticks > t->ticks_remain && t->ticks_remain != 0)
-        {
-            ticks = t->ticks_remain;
-        }
-    }
-
-    if (ticks == 0xffffffff)
+    if (!zjs_timers)
         return false;
 
-    for (i = 0; i < MAX_NUMBER_TIMERS; i++)
+    struct zjs_timer_t *tm = zjs_timers;
+
+    uint32_t ticks = tm->ticks_remain;
+    while (tm->next != zjs_timers)
     {
-        t = &zjs_timers[i];
-        t->ticks_remain = t->ticks_remain - ticks;
-        if (t->ticks_remain < 1 && t->callback)
+        tm = tm->next;
+        if (ticks > tm->ticks_remain && tm->ticks_remain != 0)
         {
-            t->ticks_remain = t->interval;
-            t->expire = true;
+            ticks = tm->ticks_remain;
         }
     }
+
+    tm = zjs_timers;
+    do
+    {
+        tm->ticks_remain = tm->ticks_remain - ticks;
+        if (tm->ticks_remain < 1)
+        {
+            tm->ticks_remain = tm->interval;
+            tm->expire = true;
+        }
+        tm = tm->next;
+    } while (tm != zjs_timers);
 
     // setup next timer to be expired
     nano_timer_start(&timer, ticks);
     nano_timer_test(&timer, TICKS_UNLIMITED);
 
     // call callbacks
-    for (i = 0; i < MAX_NUMBER_TIMERS; i++)
+    tm = zjs_timers;
+    do
     {
-        t = &zjs_timers[i];
-        if (t->expire && t->callback)
+        if (tm->expire && tm->callback)
         {
             jerry_api_value_t ret_val;
-            jerry_api_call_function(t->callback, NULL, &ret_val, NULL, 0);
-            t->expire = false;
+            jerry_api_call_function(tm->callback, NULL, &ret_val, NULL, 0);
+            tm->expire = false;
         }
-    }
-
+        tm = tm->next;
+    } while (tm != zjs_timers);
     return true;
 }
 
