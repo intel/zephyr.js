@@ -54,7 +54,6 @@ cd -
 # FIXME: Find a make command that can build just the boot updater!
 echo blbuild: Building Arduino 101 firmware for ${BLFROM}k...
 make clean setup image -C $BUILDDIR
-cp $FWDIR/
 
 # Save the updater for the old size since it will look in the right place
 cp $UPDFILE $SAVEUPD
