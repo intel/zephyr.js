@@ -32,7 +32,16 @@ if [ -z "$NEWFROM" -o -z "$NEWTO" ]; then
     exit 1
 fi
 
+echo blbuild: ZJS Bootloader Builder
+echo -------------------------------
+echo WARNING: If you have used JTAG to flash this device, you may need to
+echo "  restore it to factory condition first!"
+echo Press Ctrl-C to quit, or any key to continue...
+read -n 1 -s
+
+echo
 echo blbuild: Changing X86 partition size from ${BLFROM}k to ${BLTO}k.
+echo WARNING: You must be sure that your current partition size is ${BLFROM}k!
 echo You can use bldetect to confirm the current size.
 echo Press Ctrl-C to quit, or any key to continue...
 read -n 1 -s
@@ -49,29 +58,58 @@ SAVEUPD=$FWDIR/.oldupdater.bin
 # Build the firmware for the current size so we can save its updater
 cd $FWDIR
 git checkout $NEWFROM
+if [ $? -ne 0 ]; then
+    echo blbuild: Error checking out git branch $NEWFROM in a101fw
+    exit 1
+fi
 cd -
 
 # FIXME: Find a make command that can build just the boot updater!
 echo blbuild: Building Arduino 101 firmware for ${BLFROM}k...
 make clean setup image -C $BUILDDIR
+if [ $? -ne 0 ]; then
+    echo blbuild: Error building firmware for old size
+    exit 1
+fi
 
 # Save the updater for the old size since it will look in the right place
+echo blbuild: Saving the bootupdater that expects a ${BLFROM}k partition.
 cp $UPDFILE $SAVEUPD
+if [ $? -ne 0 ]; then
+    echo blbuild: Error copying file
+    exit 1
+fi
 
 # Build the firmware for the new size to get the new bootloader
 cd $FWDIR
 git checkout $NEWTO
+if [ $? -ne 0 ]; then
+    echo blbuild: Error checking out git branch $NEWTO in a101fw
+    exit 1
+fi
 cd -
 
 echo blbuild: Building Arduino 101 firmware for ${BLTO}k...
 make clean setup image -C $BUILDDIR
+if [ $? -ne 0 ]; then
+    echo blbuild: Error building firmware for new size
+    exit 1
+fi
 
 echo blbuild: Building Arduino 101 flashpack...
 cd $FWDIR/arduino101_flashpack
 ./create_flasher.sh
+if [ $? -ne 0 ]; then
+    echo blbuild: Error creating flashpack
+    exit 1
+fi
 
 # Move the original boot updater to the flashpack
 mv $SAVEUPD $FWDIR/arduino101_flashpack/images/firmware/bootupdater.bin
+if [ $? -ne 0 ]; then
+    echo blbuild: Error restoring bootupdater for old size
+    exit 1
+fi
 
 echo blbuild: Ready to flash new bootloader with ${BLTO}k X86 partition...
 echo If you quit, you can run blflash later to do the flashing.
