@@ -39,6 +39,13 @@ $ export ZEPHYR_GCC_VARIANT=zephyr
 $ export ZEPHYR_SDK_INSTALL_DIR=/opt/zephyr-sdk
 (These two can be added to your .bashrc so you don't have to type them again.)
 
+Getting more space on your Arduino 101
+--------------------------------------
+By default, Arduino 101 comes with a 144K X86 partition, but we're able to
+pretty safely increase it to 256K. See README.bl; you should only use dfu-util
+method of flashing though. The instructions below are still refering to the old
+JTAG method.
+
 Build the Hello World sample
 ----------------------------
 (For now, this assumes you have a Flyswatter JTAG device hooked up to your PC
