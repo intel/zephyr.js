@@ -2,16 +2,8 @@
 
 # blbuild - build the bootloader in deps/a101fw
 
-BLFROM=144
-BLTO=256
-
-if [ ! -z "$1" ]; then
-    BLFROM=$1
-
-    if [ ! -z "$2" ]; then
-        BLTO=$2
-    fi
-fi
+BLFROM=$1
+BLTO=$2
 
 NEWFROM=
 NEWTO=
@@ -26,9 +18,11 @@ for i in 144 216 256; do
 done
 
 if [ -z "$NEWFROM" -o -z "$NEWTO" ]; then
-    echo Usage: blbuild [OLDSIZE] [NEWSIZE]
-    echo "      OLDSIZE and NEWSIZE can be 144, 216, or 256"
-    echo Error: Only 144k, 216k, and 256k partitions are supported!
+    echo "Usage: blbuild OLDSIZE NEWSIZE"
+    echo "    OLDSIZE and NEWSIZE can be 144, 216, or 256 (units are KB)"
+    echo "    OLDSIZE is the current size of the X86 partition"
+    echo "      (Use bldetect to determine the current size)"
+    echo "    NEWSIZE is the desired size of the X86 partition"
     exit 1
 fi
 
