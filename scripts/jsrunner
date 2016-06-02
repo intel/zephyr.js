@@ -138,6 +138,10 @@ if __name__ == "__main__":
                 board = 'BOARD=arduino_101'
             else:
                 board = 'BOARD=arduino_101_factory'
+
+            partsize = os.getenv('ZJS_PARTITION')
+            if partsize == '216' or partsize == '256':
+                board += '_' + partsize
         else:
             board = 'BOARD=%s' % args.b
         subprocess.call(['make', board])
