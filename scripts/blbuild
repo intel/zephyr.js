@@ -2,41 +2,61 @@
 
 # blbuild - build the bootloader in deps/a101fw
 
-BLFROM=$1
-BLTO=$2
+BLTO=$1
 
 NEWFROM=
 NEWTO=
 
 for i in 144 216 256; do
-    if [ "$BLFROM" == "$i" ]; then
-        NEWFROM=bl$i
-    fi
     if [ "$BLTO" == "$i" ]; then
         NEWTO=bl$i
     fi
 done
 
-if [ -z "$NEWFROM" -o -z "$NEWTO" ]; then
-    echo "Usage: blbuild OLDSIZE NEWSIZE"
-    echo "    OLDSIZE and NEWSIZE can be 144, 216, or 256 (units are KB)"
-    echo "    OLDSIZE is the current size of the X86 partition"
-    echo "      (Use bldetect to determine the current size)"
-    echo "    NEWSIZE is the desired size of the X86 partition"
+if [ -z "$NEWTO" -o -n "$2" ]; then
+    echo "Usage: blbuild NEWSIZE"
+    echo "    NEWSIZE is the desired size of the X86 partition; it can be"
+    echo "        144, 216, or 256 (units are KB)"
     exit 1
 fi
 
 echo blbuild: ZJS Bootloader Builder
 echo -------------------------------
-echo WARNING: If you have used JTAG to flash this device, you may need to
-echo "  restore it to factory condition first!"
+
+function check() {
+    echo -n "Checking current $1 ($2) partition size... "
+    rm -f /tmp/bl-image.$2
+    dfu-util -a $2 -U /tmp/bl-image.$2 > /dev/null
+    if [ $? -ne 0 ]; then
+        echo Reset the device and try command again a few seconds later!
+        exit 1
+    fi
+    PARTSIZE=$(ls -lh /tmp/bl-image.$2 | cut -d' ' -f5)
+    echo $PARTSIZE
+}
+
+check X86 x86_app
+
+for i in 144 216 256; do
+    if [ "$PARTSIZE" == "${i}K" ]; then
+        BLFROM=$i
+        NEWFROM=bl$i
+    fi
+done
+
+if [ -z "$NEWFROM" ]; then
+    echo "blbuild: Unsupported current X86 partition size of $PARTSIZE"
+    echo "    Expected 144K, 216K, or 256K."
+    exit 1
+fi
+
+echo blbuild: Changing X86 partition size from ${BLFROM}k to ${BLTO}k.
 echo Press Ctrl-C to quit, or any key to continue...
 read -n 1 -s
 
 echo
-echo blbuild: Changing X86 partition size from ${BLFROM}k to ${BLTO}k.
-echo WARNING: You must be sure that your current partition size is ${BLFROM}k!
-echo You can use bldetect to confirm the current size.
+echo WARNING: If you have used JTAG to flash this device before, you may need to
+echo "  restore it to factory condition, or your device may become unbootable!"
 echo Press Ctrl-C to quit, or any key to continue...
 read -n 1 -s
 
