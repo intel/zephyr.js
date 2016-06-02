@@ -3,6 +3,8 @@
 # bldetect - detect current sizes of X86 and ARC partitions on Arduino 101
 
 # requires: dfu-util is installed, e.g. sudo apt-get install dfu-util
+#  effects: reports sizes of x86, arc, and boot partition; or with -l flag
+#             just reads tiny panic partition to leave device in DFU mode
 
 function check() {
     echo -n "Checking $1 ($2) partition size... "
@@ -14,6 +16,16 @@ function check() {
     fi
     echo $(ls -lh /tmp/bl-image.$2 | cut -d' ' -f5)
 }
+
+# only read panic partition in -l listen mode, leave device listening
+if [ "x$1" == "x-l" ]; then
+    check panic panic > /dev/null
+    if [ $? -eq 0 ]; then
+        echo Device is now waiting in DFU mode.
+        exit 0
+    fi
+    exit 1
+fi
 
 check X86 x86_app
 check ARC sensor_core

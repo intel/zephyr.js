@@ -49,10 +49,12 @@ def create_cstring_declaration(varname, rawstring, initialIndent=0, indent=4):
 if __name__ == "__main__":
     # parse command line arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument('-b', metavar='BOARDNAME', default='arduino_101',
-                        help='override board name (default: arduino_101)')
+    parser.add_argument('-b', metavar='BOARDNAME', default='placeholder',
+                        help='override board name (default: arduino_101_factory)')
     parser.add_argument('-c', action='store_true',
                         help='clean build, recreating build dir from scratch')
+    parser.add_argument('-j', action='store_true',
+                        help='flash with JTAG instead of dfu-util')
     parser.add_argument('-n', action='store_true',
                         help='skip flashing, but still build')
     parser.add_argument('-s', action='store_true',
@@ -127,10 +129,27 @@ if __name__ == "__main__":
 
     if not args.s:
         os.chdir(BUILDDIR)
-        print("Building OS image...\n");
-        board = 'BOARD=%s' % args.b
+        print("Building OS image...\n")
+        if args.b == "placeholder":
+            if args.j:
+                board = 'BOARD=arduino_101'
+            else:
+                board = 'BOARD=arduino_101_factory'
+        else:
+            board = 'BOARD=%s' % args.b
         subprocess.call(['make', board])
 
         if not args.n:
+            if args.j:
+                print("\nEnsure the JTAG device is connected.")
+                input("Press Enter to begin flashing OS image with JTAG...")
+            else:
+                print("\nPut the device in DFU mode by resetting, if needed.")
+                input("Press Enter to begin flashing OS image with dfu-util...")
+
             print("Flashing OS image...");
-            subprocess.call(['make', board, 'flash'])
+            if args.j:
+                subprocess.call(['make', board, 'flash'])
+            else:
+                BINFILE = os.path.join(BUILDDIR, 'outdir/zephyr.bin')
+                subprocess.call(['dfu-util', '-a', 'x86_app', '-D', BINFILE])
