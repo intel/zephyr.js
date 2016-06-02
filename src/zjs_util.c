@@ -168,3 +168,16 @@ void zjs_init_api_value_object (jerry_api_value_t *out_value_p, /**< out: API va
     out_value_p->type = JERRY_API_DATA_TYPE_OBJECT;
     out_value_p->u.v_object = v;
 }
+
+/**
+ * Initialize Jerry API value with specified string
+ */
+void zjs_init_api_value_string (jerry_api_value_t *out_value_p, /**< out: API value */
+                                const char *v) /**< string value to initialize with */
+{
+    // requires: out_value_p to recieve the string value v
+    //  effects: put the string into out_value_p with appropriate encoding.
+
+    out_value_p->type = JERRY_API_DATA_TYPE_STRING;
+    out_value_p->u.v_string = jerry_api_create_string ((jerry_api_char_t *) v);
+}

@@ -23,3 +23,5 @@ bool zjs_strequal(const jerry_api_string_t *jstr, const char *str);
 
 void zjs_init_api_value_object (jerry_api_value_t *out_value_p,
                                 jerry_api_object_t *v);
+void zjs_init_api_value_string (jerry_api_value_t *out_value_p,
+                                const char *v);
