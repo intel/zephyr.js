@@ -12,14 +12,13 @@ Bare minimum instructions
 5. Install the packages required by the Intel firmware tools:
    $ sudo apt-get install gawk wget git-core diffstat unzip texinfo gcc-multilib       build-essential chrpath libsdl1.2-dev xterm libqtgui4:i386 libtool              libc6:i386 l ibc6-dev-i386 autoconf libtool pkg-config gperf flex bison
 6. Connect the Arduino 101 using a USB Type-A/Type-B cable (printer-style)
-7. Confirm connectivity and partition size by running bldetect a few seconds
-   after you connect or hit Master Reset on the Arduino 101.
-8. Run blbuild with the old and new partition sizes, e.g.:
-   $ blbuild 144 256
-   WARNING: You will screw up your device if you specify a size for the first
-     argument that doesn't match your actual x86_app partition size.
+7. Hit Master Reset on the Arduino 101 a few seconds before the next step, to
+   get it into DFU mode.
+8. Run blbuild with the new partition size you want, e.g.:
+   $ blbuild 256
    It should break out if errors are detected in building, etc, but as this is
-     a new tool it wouldn't hurt to leaf through the output yourself.
+     a new tool it wouldn't hurt to leaf through the output yourself before
+     flashing at the end.
 9. Enjoy!
 
 And now for those aforementioned gory details...
@@ -107,7 +106,6 @@ seem to do anything but at least prevent running boot updater again and again.
 
 Getting Zephyr to work with the new bootloader
 ----------------------------------------------
-
 Now the device should be ready to receive Zephyr images. An important
 consideration is that Zephyr also needs to know about the partition size you're
 using. For now we have bl216 and bl256 branches in our deps/zephyr repo that
