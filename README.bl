@@ -5,7 +5,7 @@ See below if you want the gory details, or use these...
 Bare minimum instructions
 -------------------------
 1. Only try this with an Arduino 101 in factory condition, or which was last
-   flashed successfully with blbuild/blflash
+   flashed successfully with blresize/blflash
 2. Use Linux (tested on Ubuntu 14.04)
 3. source zjs-env.sh
 4. Check out all the dependencies of this repo with deps/getrepos
@@ -14,8 +14,8 @@ Bare minimum instructions
 6. Connect the Arduino 101 using a USB Type-A/Type-B cable (printer-style)
 7. Hit Master Reset on the Arduino 101 a few seconds before the next step, to
    get it into DFU mode.
-8. Run blbuild with the new partition size you want, e.g.:
-   $ blbuild 256
+8. Run blresize with the new partition size you want, e.g.:
+   $ blresize 256
    It should break out if errors are detected in building, etc, but as this is
      a new tool it wouldn't hurt to leaf through the output yourself before
      flashing at the end.
@@ -73,7 +73,7 @@ Changing sizes is a little tricky. You need to flash the new bootloader to the
 ARC partition, but then you need a boot updater that still remembers where the
 old partition was, because that's where you have just flashed it.
 
-To handle this trickery, we've created the blbuild tool. Before you run it the
+To handle this trickery, we've created the blresize tool. Before you run it the
 first time, the Arduino should be in factory condition. Specifically that means
 the original bootloader at the beginning of the flash, and the X86 partition
 starting after 32 2K pages, and the ARC partition starting after 104 2K pages,
@@ -83,11 +83,11 @@ up this process. Unfortunately by default the X86 partition was still 144K so
 you won't be able to tell the difference by running bldetect. We'll try to come
 up with some way of checking later to make things safer.
 
-As long as you haven't changed your partitions before, blbuild should be able
+As long as you haven't changed your partitions before, blresize should be able
 to safely transition back and forth between 144k, 216k, and 256k sizes. When
 you go back to 144k, it should be in factory condition again.
 
-So blbuild will first build the firmware at your current size, e.g. 144k. This
+So blresize will first build the firmware at your current size, e.g. 144k. This
 is to get the boot updater that expects to find the ARC partition at the default
 104-page offset. Right now it builds everything so it takes a while, but we
 should be able to build just the boot updater at some point. It saves a copy of
@@ -98,7 +98,7 @@ Next, it builds everything at the new desired size. Then it creates a
 flashing. But the boot updater there is looking for a bootloader at the new
 ARC partition offset, so we patch it with the old updater.
 
-Finally, blbuild runs blflash which launches the flash_dfu.sh tool inside the
+Finally, blresize runs blflash which launches the flash_dfu.sh tool inside the
 flashpack. This flashes the (new) bootloader to the ARC partition, the (old)
 updater to the X86 partition, and reboots the device to let the updater do its
 magic, and then flashes some Zephyr images onto the two partitions, which don't
@@ -120,7 +120,7 @@ and build and flash the X86 image, it will work. This is because ARC is unable
 to boot since it's trying to start at a bogus flash offset, and the way it's
 written, X86 can't run either if it fails to initialize the ARC side.
 
-You can fix this by either using blbuild to make your device match what Zephyr
+You can fix this by either using blresize to make your device match what Zephyr
 expects, or check out the branches above to make Zephyr match the device. Again,
 you can use bldetect to see what size your device has and know which branch to
 use.

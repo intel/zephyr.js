@@ -3,7 +3,7 @@
 # Copyright (c) 2016, Intel Corporation.
 # Author: Geoff Gustafson <geoff@linux.intel.com>
 
-# blbuild - build the bootloader in deps/a101fw
+# blflash - flash the bootloader in deps/a101fw
 
 FWDIR=$ZJS_BASE/deps/a101fw
 
