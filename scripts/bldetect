@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Copyright (c) 2016, Intel Corporation.
+# Author: Geoff Gustafson <geoff@linux.intel.com>
+
 # bldetect - detect current sizes of X86 and ARC partitions on Arduino 101
 
 # requires: dfu-util is installed, e.g. sudo apt-get install dfu-util

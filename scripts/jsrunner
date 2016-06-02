@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
+# Copyright (c) 2016, Intel Corporation.
+# Author: Geoff Gustafson <geoff@linux.intel.com>
+
 # jsrunner jsfile [cfile] will create a C file that executes the given
 #   JavaScript file in JerryScript, by converting it to a C string in source.
 
