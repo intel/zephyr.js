@@ -74,7 +74,7 @@ SAVEUPD=$FWDIR/.oldupdater.bin
 
 # Build the firmware for the current size so we can save its updater
 cd $FWDIR
-git checkout $NEWFROM
+git checkout $NEWFROM > /dev/null
 if [ $? -ne 0 ]; then
     echo blbuild: Error checking out git branch $NEWFROM in a101fw
     exit 1
@@ -82,15 +82,15 @@ fi
 cd -
 
 # FIXME: Find a make command that can build just the boot updater!
-echo blbuild: Building Arduino 101 firmware for ${BLFROM}k...
-make clean setup image -C $BUILDDIR
+echo
+echo blbuild: Building Arduino 101 bootupdater that expects ${BLFROM}k...
+make clean setup bootupdater -C $BUILDDIR > /dev/null
 if [ $? -ne 0 ]; then
     echo blbuild: Error building firmware for old size
     exit 1
 fi
 
 # Save the updater for the old size since it will look in the right place
-echo blbuild: Saving the bootupdater that expects a ${BLFROM}k partition.
 cp $UPDFILE $SAVEUPD
 if [ $? -ne 0 ]; then
     echo blbuild: Error copying file
@@ -99,23 +99,25 @@ fi
 
 # Build the firmware for the new size to get the new bootloader
 cd $FWDIR
-git checkout $NEWTO
+git checkout $NEWTO > /dev/null
 if [ $? -ne 0 ]; then
     echo blbuild: Error checking out git branch $NEWTO in a101fw
     exit 1
 fi
 cd -
 
+echo
 echo blbuild: Building Arduino 101 firmware for ${BLTO}k...
-make clean setup image -C $BUILDDIR
+make clean setup image -C $BUILDDIR > /dev/null
 if [ $? -ne 0 ]; then
     echo blbuild: Error building firmware for new size
     exit 1
 fi
 
+echo
 echo blbuild: Building Arduino 101 flashpack...
 cd $FWDIR/arduino101_flashpack
-./create_flasher.sh
+./create_flasher.sh > /dev/null
 if [ $? -ne 0 ]; then
     echo blbuild: Error creating flashpack
     exit 1
