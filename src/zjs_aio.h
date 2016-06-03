@@ -28,8 +28,8 @@ bool zjs_aio_pin_close(const jerry_api_object_t *function_obj_p,
                        const jerry_api_value_t args_p[],
                        const jerry_api_length_t args_cnt);
 
-bool zjs_aio_set_callback(const jerry_api_object_t *function_obj_p,
-                          const jerry_api_value_t *this_p,
-                          jerry_api_value_t *ret_val_p,
-                          const jerry_api_value_t args_p[],
-                          const jerry_api_length_t args_cnt);
+bool zjs_aio_pin_read_async(const jerry_api_object_t *function_obj_p,
+                            const jerry_api_value_t *this_p,
+                            jerry_api_value_t *ret_val_p,
+                            const jerry_api_value_t args_p[],
+                            const jerry_api_length_t args_cnt);
