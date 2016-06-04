@@ -2,6 +2,8 @@
 
 #include <string.h>
 
+#include <zephyr.h>
+
 #include "zjs_util.h"
 
 #if defined(CONFIG_STDOUT_CONSOLE)
@@ -11,6 +13,84 @@
 #include <misc/printk.h>
 #define PRINT           printk
 #endif
+
+#define ZJS_CALLBACK_MAX_ARGS 3
+
+struct zjs_callback_t {
+    jerry_api_object_t *callback;
+    jerry_api_value_t args[ZJS_CALLBACK_MAX_ARGS];
+    jerry_api_length_t argc;
+    struct zjs_callback_t *next;
+};
+
+struct zjs_callback_t *zjs_callbacks = NULL;
+
+void zjs_queue_callback(jerry_api_object_t *callback,
+                        jerry_api_value_t args_p[],
+                        jerry_api_length_t args_cnt)
+{
+    // requires: callback is a JS function, args_p is an array of value args,
+    //             args_cnt is the number of valid arg
+    //  effects: allocates a callback queue item recording this callback
+    //             and appends it to the list
+    struct zjs_callback_t *cb = task_malloc(sizeof(struct zjs_callback_t));
+    if (!cb) {
+        PRINT("error: out of memory allocating callback struct\n");
+        return;
+    }
+
+    if (args_cnt > ZJS_CALLBACK_MAX_ARGS) {
+        PRINT("error: maximum callback args (%d) exceeded",
+              ZJS_CALLBACK_MAX_ARGS);
+        // try to call it anyway since it might handle undefined args
+        args_cnt = ZJS_CALLBACK_MAX_ARGS;
+    }
+
+    cb->callback = jerry_api_acquire_object(callback);
+    for (int i = 0; i < args_cnt; i++) {
+        cb->args[i] = args_p[i];
+        jerry_api_acquire_value(&cb->args[i]);
+    }
+    cb->argc = args_cnt;
+    cb->next = NULL;
+
+    // append callback at end of list
+    struct zjs_callback_t **pcb = &zjs_callbacks;
+    while (*pcb != NULL)
+        pcb = &(*pcb)->next;
+    *pcb = cb;
+}
+
+void zjs_run_pending_callbacks()
+{
+    // requires: running from a task
+    //  effects: calls all the callbacks in the current list; any new callbacks
+    //             added within these callbacks will be in a new queue and
+    //             called later
+    //  returns: true if there were callbacks to run, false otherwise
+    struct zjs_callback_t *cb = zjs_callbacks;
+    zjs_callbacks = NULL;
+
+    if (!cb)
+        return false;
+
+    while (cb != NULL) {
+        jerry_api_value_t rval;
+        if (jerry_api_call_function(cb->callback, NULL, &rval, cb->args,
+                                    cb->argc))
+            jerry_api_release_value(&rval);
+
+        jerry_api_release_object(cb->callback);
+        for (int i = 0; i < cb->argc; i++)
+            jerry_api_release_value(&cb->args[i]);
+
+        struct zjs_callback_t *next = cb->next;
+        task_free(cb);
+        cb = next;
+    }
+
+    return true;
+}
 
 void zjs_obj_add_boolean(jerry_api_object_t *obj, bool bval, const char *name)
 {

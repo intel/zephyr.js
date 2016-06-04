@@ -93,8 +93,9 @@ static void zjs_gpio_callback_wrapper(struct device *port,
         return;
     }
 
-    jerry_api_value_t rval;
-    jerry_api_call_function(mycb->js_callback, NULL, &rval, NULL, 0);
+    // FIXME: this calls task_malloc which we shouldn't really be doing from
+    //   an ISR, so we need more trickery here
+    zjs_queue_callback(mycb->js_callback, NULL, 0);
 }
 
 jerry_api_object_t *zjs_gpio_init()

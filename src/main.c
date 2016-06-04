@@ -56,7 +56,7 @@ void main(int argc, char *argv[])
     }
 
     while (1) {
-        if (zjs_timers_process_events() == false)
-            break;
+        zjs_timers_process_events();
+        zjs_run_pending_callbacks();
     }
 }

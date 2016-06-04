@@ -2,6 +2,12 @@
 
 #include "jerry-api.h"
 
+
+void zjs_queue_callback(jerry_api_object_t *callback,
+                        jerry_api_value_t args_p[],
+                        jerry_api_length_t args_cnt);
+void zjs_run_pending_callbacks();
+
 void zjs_obj_add_boolean(jerry_api_object_t *obj, bool value, const char *name);
 void zjs_obj_add_function(jerry_api_object_t *obj, void *function,
                           const char *name);
