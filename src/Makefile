@@ -20,6 +20,7 @@ ccflags-y += -I$(srctree)/drivers
 
 obj-y += main.o \
          zjs_aio.o \
+         zjs_ble.o \
          zjs_gpio.o \
          zjs_ipm.o \
          zjs_modules.o \
