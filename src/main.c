@@ -59,6 +59,8 @@ void main(int argc, char *argv[])
     while (1) {
         zjs_timers_process_events();
         zjs_run_pending_callbacks();
+        // not sure if this is okay, but it seems better to sleep than
+        //   busy wait
         task_sleep(1);
     }
 }

@@ -1,5 +1,8 @@
 // Copyright (c) 2016, Intel Corporation.
 
+// Zephyr includes
+#include <misc/util.h>
+
 // ZJS includes
 #include "zjs_aio.h"
 #include "zjs_ipm.h"
@@ -34,7 +37,8 @@ static uint32_t pin_values[5] = {};
 
 struct zjs_cb_list_item {
     jerry_api_object_t *pin_obj;
-    jerry_api_object_t *js_callback;
+    struct zjs_callback zjs_cb;
+    double value;
     struct zjs_cb_list_item *next;
 };
 
@@ -89,6 +93,19 @@ struct zjs_cb_list_item *zjs_aio_get_callback_item(uint32_t pin)
     return NULL;
 }
 
+static void zjs_aio_call_function(struct zjs_callback *cb)
+{
+    // requires: called only from task context
+    //  effects: handles execution of the JS callback when ready
+    struct zjs_cb_list_item *mycb = CONTAINER_OF(cb, struct zjs_cb_list_item,
+                                                 zjs_cb);
+    jerry_api_value_t rval, arg;
+    arg.type = JERRY_API_DATA_TYPE_FLOAT64;
+    arg.u.v_float64 = mycb->value;
+    if (jerry_api_call_function(mycb->zjs_cb.js_callback, NULL, &rval, &arg, 1))
+        jerry_api_release_value(&rval);
+}
+
 int zjs_aio_ipm_send(uint32_t type, uint32_t pin, uint32_t value) {
     struct zjs_ipm_message msg;
     msg.block = false;
@@ -129,11 +146,12 @@ void ipm_msg_receive_callback(void *context, uint32_t id, volatile void *data)
         else {
             struct zjs_cb_list_item *mycb = zjs_aio_get_callback_item(msg->pin);
 
-            if (mycb->js_callback) {
-                jerry_api_value_t rval, arg;
-                arg.type = JERRY_API_DATA_TYPE_FLOAT64;
-                arg.u.v_float64 = (double) msg->value;
-                jerry_api_call_function(mycb->js_callback, NULL, &rval, &arg, 1);
+            if (mycb->zjs_cb.js_callback) {
+                // TODO: ensure that there is no outstanding callback of this
+                //   type or else we may be overwriting the value it should have
+                //   reported
+                mycb->value = (double)msg->value;
+                zjs_queue_callback(&mycb->zjs_cb);
             }
         }
     } else {
@@ -299,9 +317,10 @@ bool zjs_aio_pin_read_async(const jerry_api_object_t *function_obj_p,
         return false;
 
     item->pin_obj = obj;
-    item->js_callback = args_p[0].u.v_object;
+    item->zjs_cb.js_callback = args_p[0].u.v_object;
+    item->zjs_cb.call_function = zjs_aio_call_function;
 
-    jerry_api_acquire_object(item->js_callback);
+    jerry_api_acquire_object(item->zjs_cb.js_callback);
 
     // watch for the object getting garbage collected, and clean up
     jerry_api_set_object_native_handle(obj, (uintptr_t)item,
