@@ -24,11 +24,20 @@ struct zjs_timer_t {
     void *timer_data;
     uint32_t interval;
     bool repeat;
-    jerry_api_object_t *callback;
+    struct zjs_callback zjs_cb;
     struct zjs_timer_t *next;
 };
 
 static struct zjs_timer_t *zjs_timers = NULL;
+
+static void zjs_timer_call_function(struct zjs_callback *cb)
+{
+    // requires: called only from task context
+    //  effects: handles execution of the JS callback when ready
+    jerry_api_value_t rval;
+    if (jerry_api_call_function(cb->js_callback, NULL, &rval, NULL, 0))
+        jerry_api_release_value(&rval);
+}
 
 static jerry_api_object_t *
 add_timer(uint32_t interval,
@@ -47,14 +56,15 @@ add_timer(uint32_t interval,
     }
 
     nano_timer_init(&tm->timer, &tm->timer_data);
-    tm->callback = jerry_api_acquire_object(callback);
+    tm->zjs_cb.js_callback = jerry_api_acquire_object(callback);
+    tm->zjs_cb.call_function = zjs_timer_call_function;
     tm->interval = interval;
     tm->repeat = repeat;
     tm->next = zjs_timers;
     zjs_timers = tm;
 
     nano_timer_start(&tm->timer, interval);
-    return tm->callback;
+    return tm->zjs_cb.js_callback;
 }
 
 static bool
@@ -67,8 +77,8 @@ delete_timer(jerry_api_object_t *obj)
     //             removed, false otherwise
     for (struct zjs_timer_t **ptm = &zjs_timers; *ptm; ptm = &(*ptm)->next) {
         struct zjs_timer_t *tm = *ptm;
-        if (obj == tm->callback) {
-            jerry_api_release_object(tm->callback);
+        if (obj == tm->zjs_cb.js_callback) {
+            jerry_api_release_object(tm->zjs_cb.js_callback);
             nano_task_timer_stop(&tm->timer);
             *ptm = tm->next;
             task_free(tm);
@@ -105,6 +115,8 @@ native_setInterval_handler(const jerry_api_object_t *function_obj_p,
         return false;
     }
 
+    // FIXME: see if we can't return a real pointer to our struct here somehow
+    //   because it's unambiguous
     zjs_init_api_value_object(ret_val_p, tid);
     return true;
 }
@@ -140,13 +152,13 @@ void zjs_timers_process_events()
     for (struct zjs_timer_t *tm = zjs_timers; tm; tm = tm->next) {
         if (nano_task_timer_test(&tm->timer, TICKS_NONE)) {
             // timer has expired, queue up callback
-            zjs_queue_callback(tm->callback, NULL, 0);
+            zjs_queue_callback(&tm->zjs_cb);
 
             // reschedule or remove timer
             if (tm->repeat)
                 nano_timer_start(&tm->timer, tm->interval);
             else
-                delete_timer(tm->callback);
+                delete_timer(tm->zjs_cb.js_callback);
         }
     }
 }

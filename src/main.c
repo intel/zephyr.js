@@ -36,6 +36,7 @@ void main(int argc, char *argv[])
     jerry_init(JERRY_FLAG_EMPTY);
 
     zjs_timers_init();
+    zjs_queue_init();
 
     // Initializes modules stuffs...
     zjs_modules_init();
@@ -58,5 +59,6 @@ void main(int argc, char *argv[])
     while (1) {
         zjs_timers_process_events();
         zjs_run_pending_callbacks();
+        task_sleep(1);
     }
 }

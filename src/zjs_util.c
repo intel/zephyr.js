@@ -14,82 +14,49 @@
 #define PRINT           printk
 #endif
 
-#define ZJS_CALLBACK_MAX_ARGS 3
+// fifo of pointers to zjs_callback objects representing JS callbacks
+struct nano_fifo zjs_callbacks_fifo;
 
-struct zjs_callback_t {
-    jerry_api_object_t *callback;
-    jerry_api_value_t args[ZJS_CALLBACK_MAX_ARGS];
-    jerry_api_length_t argc;
-    struct zjs_callback_t *next;
-};
-
-struct zjs_callback_t *zjs_callbacks = NULL;
-
-void zjs_queue_callback(jerry_api_object_t *callback,
-                        jerry_api_value_t args_p[],
-                        jerry_api_length_t args_cnt)
+void zjs_queue_init()
 {
-    // requires: callback is a JS function, args_p is an array of value args,
-    //             args_cnt is the number of valid arg
-    //  effects: allocates a callback queue item recording this callback
-    //             and appends it to the list
-    struct zjs_callback_t *cb = task_malloc(sizeof(struct zjs_callback_t));
-    if (!cb) {
-        PRINT("error: out of memory allocating callback struct\n");
-        return;
-    }
-
-    if (args_cnt > ZJS_CALLBACK_MAX_ARGS) {
-        PRINT("error: maximum callback args (%d) exceeded",
-              ZJS_CALLBACK_MAX_ARGS);
-        // try to call it anyway since it might handle undefined args
-        args_cnt = ZJS_CALLBACK_MAX_ARGS;
-    }
-
-    cb->callback = jerry_api_acquire_object(callback);
-    for (int i = 0; i < args_cnt; i++) {
-        cb->args[i] = args_p[i];
-        jerry_api_acquire_value(&cb->args[i]);
-    }
-    cb->argc = args_cnt;
-    cb->next = NULL;
-
-    // append callback at end of list
-    struct zjs_callback_t **pcb = &zjs_callbacks;
-    while (*pcb != NULL)
-        pcb = &(*pcb)->next;
-    *pcb = cb;
+    nano_fifo_init(&zjs_callbacks_fifo);
 }
+
+void zjs_queue_callback(struct zjs_callback *cb) {
+    // requires: cb is a callback structure containing a pointer to a JS
+    //             callback object and a wrapper function that knows how to
+    //             call the callback; this structure may contain additional
+    //             fields used by that wrapper; JS objects and values within
+    //             the structure should already be ref-counted so they won't
+    //             be lost, and you deref them from call_function
+    //  effects: adds this callback info to a fifo queue and will call the
+    //             wrapper with this structure later, in a safe way, within
+    //             the task context for proper serialization
+    nano_fifo_put(&zjs_callbacks_fifo, cb);
+}
+
+int count = 0;
 
 void zjs_run_pending_callbacks()
 {
-    // requires: running from a task
-    //  effects: calls all the callbacks in the current list; any new callbacks
-    //             added within these callbacks will be in a new queue and
-    //             called later
-    //  returns: true if there were callbacks to run, false otherwise
-    struct zjs_callback_t *cb = zjs_callbacks;
-    zjs_callbacks = NULL;
+    // requires: call only from task context
+    //  effects: calls all the callbacks in the queue
+    struct zjs_callback *cb;
+    while (1) {
+        cb = nano_task_fifo_get(&zjs_callbacks_fifo, TICKS_NONE);
+        if (!cb) {
+            count += 1;
+            break;
+        }
+        count = 0;
 
-    if (!cb)
-        return false;
+        if (unlikely(!cb->call_function)) {
+            PRINT("error: no JS callback found\n");
+            continue;
+        }
 
-    while (cb != NULL) {
-        jerry_api_value_t rval;
-        if (jerry_api_call_function(cb->callback, NULL, &rval, cb->args,
-                                    cb->argc))
-            jerry_api_release_value(&rval);
-
-        jerry_api_release_object(cb->callback);
-        for (int i = 0; i < cb->argc; i++)
-            jerry_api_release_value(&cb->args[i]);
-
-        struct zjs_callback_t *next = cb->next;
-        task_free(cb);
-        cb = next;
+        cb->call_function(cb);
     }
-
-    return true;
 }
 
 void zjs_obj_add_boolean(jerry_api_object_t *obj, bool bval, const char *name)

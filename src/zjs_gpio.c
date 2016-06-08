@@ -43,9 +43,9 @@ static const char *ZJS_PULL_DOWN = "down";
 static struct device *zjs_gpio_dev;
 
 struct zjs_cb_list_item {
-    struct gpio_callback orig;
+    struct gpio_callback gpio_cb;
     jerry_api_object_t *pin_obj;
-    jerry_api_object_t *js_callback;
+    struct zjs_callback zjs_cb;
     struct zjs_cb_list_item *next;
 };
 
@@ -85,17 +85,22 @@ static void zjs_gpio_callback_wrapper(struct device *port,
                                       struct gpio_callback *cb,
                                       uint32_t pins)
 {
-    // effects: calls the JS callback registered in the struct
+    // effects: handles C callback; queues up the JS callback for execution
     struct zjs_cb_list_item *mycb = CONTAINER_OF(cb, struct zjs_cb_list_item,
-                                                 orig);
-    if (!mycb->js_callback) {
-        PRINT("zjs_gpio_callback_wrapper: No callback registered!\n");
-        return;
-    }
+                                                 gpio_cb);
 
     // FIXME: this calls task_malloc which we shouldn't really be doing from
     //   an ISR, so we need more trickery here
-    zjs_queue_callback(mycb->js_callback, NULL, 0);
+    zjs_queue_callback(&mycb->zjs_cb);
+}
+
+static void zjs_gpio_call_function(struct zjs_callback *cb)
+{
+    // requires: called only from task context
+    //  effects: handles execution of the JS callback when ready
+    jerry_api_value_t rval;
+    if (jerry_api_call_function(cb->js_callback, NULL, &rval, NULL, 0))
+        jerry_api_release_value(&rval);
 }
 
 jerry_api_object_t *zjs_gpio_init()
@@ -314,17 +319,18 @@ bool zjs_gpio_pin_set_callback(const jerry_api_object_t *function_obj_p,
 
     if (!item)
         return false;
-    gpio_init_callback(&item->orig, zjs_gpio_callback_wrapper, BIT(pin));
+    gpio_init_callback(&item->gpio_cb, zjs_gpio_callback_wrapper, BIT(pin));
     item->pin_obj = pinobj;
-    item->js_callback = args_p[0].u.v_object;
+    item->zjs_cb.js_callback = args_p[0].u.v_object;
+    item->zjs_cb.call_function = zjs_gpio_call_function;
 
-    jerry_api_acquire_object(item->js_callback);
+    jerry_api_acquire_object(item->zjs_cb.js_callback);
 
     // watch for the object getting garbage collected, and clean up
     jerry_api_set_object_native_handle(pinobj, (uintptr_t)item,
                                        zjs_gpio_callback_free);
 
-	int rval = gpio_add_callback(zjs_gpio_dev, &item->orig);
+	int rval = gpio_add_callback(zjs_gpio_dev, &item->gpio_cb);
 	if (rval) {
 		PRINT("error: cannot setup callback!\n");
         return false;
