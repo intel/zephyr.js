@@ -86,6 +86,20 @@ if __name__ == "__main__":
 
     # create build dir template
     BUILDDIR = os.path.join(BASEDIR, 'build')
+    # create JerryScript dir template
+    JERRYDIR = os.path.join(BASEDIR, 'deps/jerryscript')
+    if args.c and os.path.exists(JERRYDIR):
+        if args.b == "placeholder":
+            if args.j:
+                board = 'BOARD=arduino_101'
+            else:
+                board = 'BOARD=arduino_101_factory'
+        else:
+            board = 'BOARD=%s' % args.b
+        print("Cleaning JerryScript...\n")
+        os.chdir(JERRYDIR)
+        subprocess.call(['make', '-f', './targets/arduino_101/Makefile.arduino_101', board, 'clean'])
+        os.chdir(BASEDIR)
     if args.c and os.path.exists(BUILDDIR):
         print("Removing old build directory...", end='')
         sys.stdout.flush()
@@ -131,8 +145,6 @@ if __name__ == "__main__":
     print(" done.")
 
     if not args.s:
-        os.chdir(BUILDDIR)
-        print("Building OS image...\n")
         if args.b == "placeholder":
             if args.j:
                 board = 'BOARD=arduino_101'
@@ -144,6 +156,11 @@ if __name__ == "__main__":
                 board += '_' + partsize
         else:
             board = 'BOARD=%s' % args.b
+        print("Building JerryScript...\n")
+        os.chdir(JERRYDIR)
+        subprocess.call(['make', '-f', './targets/arduino_101/Makefile.arduino_101', board])
+        os.chdir(BUILDDIR)
+        print("Building OS image...\n")
         # FIXME: check return value here and quit if it failed
         rval = subprocess.call(['make', board])
         if rval:
