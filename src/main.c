@@ -30,8 +30,8 @@
 
 void main(int argc, char *argv[])
 {
-    jerry_api_object_t *err_obj_p = NULL;
-    jerry_api_value_t res;
+    jerry_object_t *err_obj_p = NULL;
+    jerry_value_t res;
 
     jerry_init(JERRY_FLAG_EMPTY);
 
@@ -46,7 +46,7 @@ void main(int argc, char *argv[])
 
     size_t len = strlen((char *) script);
 
-    if (!jerry_parse((jerry_api_char_t *) script, len, &err_obj_p)) {
+    if (!jerry_parse((jerry_char_t *) script, len, &err_obj_p)) {
         PRINT("JerryScript: cannot parse javascript\n");
         return;
     }

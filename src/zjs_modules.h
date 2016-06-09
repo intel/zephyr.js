@@ -4,7 +4,7 @@
 
 #include "jerry-api.h"
 
-typedef jerry_api_object_t *(*InitCB)();
+typedef jerry_object_t *(*InitCB)();
 
 void zjs_modules_init();
-void zjs_modules_add (const char *name, InitCB mod_init);
+void zjs_modules_add(const char *name, InitCB mod_init);
