@@ -79,56 +79,47 @@ static struct bt_conn_auth_cb auth_cb_display = {
         .cancel = auth_cancel,
 };
 
-struct ble_event_list_item {
+struct zjs_ble_list_item {
     char event_type[20];
     struct zjs_callback zjs_cb;
-    struct ble_event_list_item *next;
+    uint32_t intdata;
+    struct zjs_ble_list_item *next;
 };
 
-static struct ble_event_list_item *ble_event_list = NULL;
+static struct zjs_ble_list_item *zjs_ble_list = NULL;
 
-static struct ble_event_list_item *zjs_ble_event_callback_alloc()
+static struct zjs_ble_list_item *zjs_ble_event_callback_alloc()
 {
     // effects: allocates a new callback list item and adds it to the list
-    struct ble_event_list_item *item;
-    PRINT ("Size of ble_event_list_item = %d\n", sizeof(struct ble_event_list_item));
-    item = task_malloc(sizeof(struct ble_event_list_item));
+    struct zjs_ble_list_item *item;
+    PRINT ("Size of zjs_ble_list_item = %d\n", sizeof(struct zjs_ble_list_item));
+    item = task_malloc(sizeof(struct zjs_ble_list_item));
     if (!item) {
         PRINT("error: out of memory allocating callback struct\n");
         return NULL;
     }
 
-    item->next = ble_event_list;
-    ble_event_list = item;
+    item->next = zjs_ble_list;
+    zjs_ble_list = item;
     return item;
 }
 
-static void dispatch(char *type, jerry_value_t args_p[], uint16_t args_cnt)
+static void zjs_queue_dispatch(char *type, zjs_cb_wrapper_t func,
+                               uint32_t intdata)
 {
-    struct ble_event_list_item *ev = ble_event_list;
-    int len = strlen(type);
-    while (ev)
-    {
-        if (!strncmp(ev->event_type, type, len))
-        {
-            jerry_value_t rval;
-            jerry_call_function(ev->zjs_cb.js_callback, NULL, &rval, args_p, args_cnt);
-            return;
-        }
-        ev = ev->next;
-    }
-}
-
-static void queueDispatch(char *type, zjs_cb_wrapper_t func)
-{
-    // requires: called only from task context
+    // requires: called only from task context, type is the string event type,
+    //             func is a function that can handle calling the callback for
+    //             this event type when found, intarg is a uint32 that will be
+    //             stored in the appropriate callback struct for use by func
+    //             (just set it to 0 if not needed)
     //  effects: finds the first callback for the given type and queues it up
     //             to run func to execute it at the next opportunity
-    struct ble_event_list_item *ev = ble_event_list;
+    struct zjs_ble_list_item *ev = zjs_ble_list;
     int len = strlen(type);
     while (ev) {
         if (!strncmp(ev->event_type, type, len)) {
             ev->zjs_cb.call_function = func;
+            ev->intdata = intdata;
             zjs_queue_callback(&ev->zjs_cb);
             return;
         }
@@ -149,14 +140,15 @@ static void zjs_bt_ready_call_function(struct zjs_callback *cb)
 
 static void zjs_bt_ready(int err)
 {
-    if (!ble_event_list)
-    {
+    if (!zjs_ble_list) {
         PRINT("zjs_bt_ready: no event handlers present\n");
         return;
     }
     PRINT("zjs_bt_ready is called [err %d]\n", err);
 
-    queueDispatch("stateChange", zjs_bt_ready_call_function);
+    // FIXME: Probably we should return this err to JS like in adv_start?
+    //   Maybe this wasn't in the bleno API?
+    zjs_queue_dispatch("stateChange", zjs_bt_ready_call_function, 0);
 }
 
 jerry_object_t *zjs_ble_init()
@@ -177,13 +169,12 @@ bool zjs_ble_on(const jerry_object_t *function_obj_p,
                 const jerry_length_t args_cnt)
 {
     if (args_cnt < 2 || args_p[0].type != JERRY_DATA_TYPE_STRING ||
-                        args_p[1].type != JERRY_DATA_TYPE_OBJECT)
-    {
+                        args_p[1].type != JERRY_DATA_TYPE_OBJECT) {
         PRINT("zjs_ble_on: invalid arguments\n");
         return false;
     }
 
-    struct ble_event_list_item *item = zjs_ble_event_callback_alloc();
+    struct zjs_ble_list_item *item = zjs_ble_event_callback_alloc();
     if (!item)
         return false;
 
@@ -203,10 +194,10 @@ bool zjs_ble_on(const jerry_object_t *function_obj_p,
 }
 
 bool zjs_ble_enable(const jerry_object_t *function_obj_p,
-                  const jerry_value_t *this_p,
-                  jerry_value_t *ret_val_p,
-                  const jerry_value_t args_p[],
-                  const jerry_length_t args_cnt)
+                    const jerry_value_t *this_p,
+                    jerry_value_t *ret_val_p,
+                    const jerry_value_t args_p[],
+                    const jerry_length_t args_cnt)
 {
     PRINT ("====>About to enable the bluetooth\n");
     bt_enable(zjs_bt_ready);
@@ -218,20 +209,31 @@ bool zjs_ble_enable(const jerry_object_t *function_obj_p,
     return true;
 }
 
+static void zjs_bt_adv_start_call_function(struct zjs_callback *cb)
+{
+    // requires: called only from task context, expects intdata in cb to have
+    //             been set previously
+    //  effects: handles execution of the adv start JS callback
+    struct zjs_ble_list_item *mycb = CONTAINER_OF(cb, struct zjs_ble_list_item,
+                                                  zjs_cb);
+    jerry_value_t rval, arg;
+    arg.type = JERRY_DATA_TYPE_UINT32;
+    arg.u.v_uint32 = mycb->intdata;
+    if (jerry_call_function(cb->js_callback, NULL, &rval, &arg, 1))
+        jerry_release_value(&rval);
+    // int values don't really need to be released
+}
+
 bool zjs_ble_adv_start(const jerry_object_t *function_obj_p,
-                      const jerry_value_t *this_p,
-                      jerry_value_t *ret_val_p,
-                      const jerry_value_t args_p[],
-                      const jerry_length_t args_cnt)
+                       const jerry_value_t *this_p,
+                       jerry_value_t *ret_val_p,
+                       const jerry_value_t args_p[],
+                       const jerry_length_t args_cnt)
 {
     int err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad),
-                            sd, ARRAY_SIZE(sd));
-
+                              sd, ARRAY_SIZE(sd));
     PRINT("====>AdvertisingStarted..........\n");
-    jerry_value_t args[1];
-    args[0].type = JERRY_DATA_TYPE_UINT32 ;
-    args[0].u.v_uint32  = (uint32_t) err;
-    dispatch("advertisingStart", args, 1);
+    zjs_queue_dispatch("advertisingStart", zjs_bt_adv_start_call_function, err);
     return true;
 }
 
