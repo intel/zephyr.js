@@ -27,3 +27,21 @@ bool zjs_ble_adv_stop(const jerry_object_t *function_obj_p,
                       jerry_value_t *ret_val_p,
                       const jerry_value_t args_p[],
                       const jerry_length_t args_cnt);
+
+bool zjs_ble_set_services(const jerry_object_t *function_obj_p,
+                          const jerry_value_t *this_p,
+                          jerry_value_t *ret_val_p,
+                          const jerry_value_t args_p[],
+                          const jerry_length_t args_cnt);
+
+bool zjs_ble_primary_service(const jerry_object_t *function_obj_p,
+                             const jerry_value_t *this_p,
+                             jerry_value_t *ret_val_p,
+                             const jerry_value_t args_p[],
+                             const jerry_length_t args_cnt);
+
+bool zjs_ble_characteristic(const jerry_object_t *function_obj_p,
+                            const jerry_value_t *this_p,
+                            jerry_value_t *ret_val_p,
+                            const jerry_value_t args_p[],
+                            const jerry_length_t args_cnt);

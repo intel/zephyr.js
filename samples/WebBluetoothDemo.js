@@ -38,6 +38,16 @@ ble.on('advertisingStart', function(error) {
     }
     print ("Advertising start success");
     //ToDO: Define your new service
+
+    ble.setServices([
+        new ble.PrimarySerivce({
+            uuid: serviceUuid,
+            characteristics: [
+                // TODO:
+                // define our own characterstics
+            ]
+        })
+    ]);
 });
 
 // enable ble

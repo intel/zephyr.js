@@ -219,6 +219,11 @@ jerry_object_t *zjs_ble_init()
     zjs_obj_add_function(ble_obj, zjs_ble_on, "on");
     zjs_obj_add_function(ble_obj, zjs_ble_adv_start, "startAdvertising");
     zjs_obj_add_function(ble_obj, zjs_ble_adv_stop, "stopAdvertising");
+    zjs_obj_add_function(ble_obj, zjs_ble_set_services, "setServices");
+
+    // PrimaryService and Characteristic constructors
+    zjs_obj_add_function(ble_obj, zjs_ble_primary_service, "PrimaryService");
+    zjs_obj_add_function(ble_obj, zjs_ble_characteristic, "Characteristic");
     return ble_obj;
 }
 
@@ -357,5 +362,35 @@ bool zjs_ble_adv_stop(const jerry_object_t *function_obj_p,
                       const jerry_length_t args_cnt)
 {
     PRINT ("stopAdvertising has been called\n");
+    return true;
+}
+
+bool zjs_ble_set_services(const jerry_object_t *function_obj_p,
+                          const jerry_value_t *this_p,
+                          jerry_value_t *ret_val_p,
+                          const jerry_value_t args_p[],
+                          const jerry_length_t args_cnt)
+{
+    PRINT ("setServices has been called\n");
+    return true;
+}
+
+bool zjs_ble_primary_service(const jerry_object_t *function_obj_p,
+                             const jerry_value_t *this_p,
+                             jerry_value_t *ret_val_p,
+                             const jerry_value_t args_p[],
+                             const jerry_length_t args_cnt)
+{
+    PRINT ("new PrimaryService has been called\n");
+    return true;
+}
+
+bool zjs_ble_characteristic(const jerry_object_t *function_obj_p,
+                            const jerry_value_t *this_p,
+                            jerry_value_t *ret_val_p,
+                            const jerry_value_t args_p[],
+                            const jerry_length_t args_cnt)
+{
+    PRINT ("new Characterstic has been called\n");
     return true;
 }
