@@ -1,0 +1,60 @@
+#!/usr/bin/env python3
+
+# Copyright (c) 2016, Intel Corporation.
+# Author: Geoff Gustafson <geoff@linux.intel.com>
+
+# zjsmaxheap will find try to find the maximum size that can be used for the
+#   jerryscript heap given the current zjs codebase
+# requires: jsrunner build is working in the current tree
+
+import os
+import subprocess
+import sys
+
+print("zjsmaxheap - finds maximum size available for JerryScript heap")
+
+basedir = os.getenv('ZJS_BASE')
+os.chdir(basedir)
+
+def attempt_build(first=False):
+    cmd = 'jsrunner -c -n samples/HelloWorld.js'
+    p = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE)
+    p.communicate()
+    return p.returncode
+
+def replace_size(size):
+    cmd = 's/.*CONFIG_MEM_HEAP_AREA_SIZE.*/subdir-ccflags-y += -DCONFIG_MEM_HEAP_AREA_SIZE="%s"/' % size
+    return subprocess.call(['sed', '-i', cmd, 'src/Makefile'])
+
+print("Building current configuration...")
+if attempt_build(True):
+    print("zjsmaxheap: error: current jsrunner build fails; fix and try again")
+    sys.exit(1)
+
+minsize = 10000  # JerryScript bulid fails with less
+maxsize = 80000
+
+while True:
+    size = ((minsize + maxsize + 15) // 16) * 8
+
+    # modify the Makefile with the size we're testing
+    if replace_size(size):
+        print("zjsmaxheap: error: attempting to modify Makefile")
+        sys.exit(1)
+
+    print("Building with size %s..." % size, end='')
+    sys.stdout.flush()
+    if attempt_build():
+        print(" failed.")
+        maxsize = size - 8
+    else:
+        print(" succeeded.")
+        minsize = size
+
+    if size == maxsize:
+        print("Max size found:", size)
+        break
+
+# update the Makefile one last time
+replace_size(size)
