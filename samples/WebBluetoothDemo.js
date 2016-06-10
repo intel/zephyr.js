@@ -16,8 +16,8 @@ var serviceUuid = 'fffffffffffffffffffffffffffffff0';
 ble.on('stateChange', function(state) {
     print ('State change: ' + state);
     if (state === 'poweredOn') {
-        ble.startAdvertising();
         //ble.startAdvertising();
+        ble.startAdvertising(serviceName, [serviceUuid]);
     } else {
         ble.stopAdvertising();
     }
