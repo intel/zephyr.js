@@ -4,7 +4,10 @@
 #include <zephyr.h>
 #include <string.h>
 #include <bluetooth/bluetooth.h>
+#include <bluetooth/hci.h>
 #include <bluetooth/conn.h>
+#include <bluetooth/uuid.h>
+#include <bluetooth/gatt.h>
 
 #include <misc/printk.h>
 #define PRINT           printk
@@ -33,12 +36,91 @@ static const struct bt_data ad[] = {
         BT_DATA_BYTES(BT_DATA_UUID16_ALL, 0x00, 0xfc)
 };
 
+// Port this to javascript
+#define BT_UUID_WEBBT BT_UUID_DECLARE_16(0xfc00)
+#define BT_UUID_TEMP BT_UUID_DECLARE_16(0xfc0a)
+#define BT_UUID_RGB BT_UUID_DECLARE_16(0xfc0b)
+#define SENSOR_1_NAME "Temperature"
+#define SENSOR_2_NAME "Led"
 
 static const struct bt_data sd[] = {
         BT_DATA(BT_DATA_NAME_COMPLETE, DEVICE_NAME, DEVICE_NAME_LEN),
 };
 
 struct bt_conn *default_conn;
+
+// Port this to javascript
+static struct bt_gatt_ccc_cfg  blvl_ccc_cfg[CONFIG_BLUETOOTH_MAX_PAIRED] = {};
+static uint8_t simulate_blvl;
+static uint8_t temperature = 20;
+static uint8_t rgb[3] = {0xff, 0x00, 0x00}; // red
+
+// Port this to javascript
+static void blvl_ccc_cfg_changed(uint16_t value)
+{
+    simulate_blvl = (value == BT_GATT_CCC_NOTIFY) ? 1 : 0;
+}
+
+// Port this to javascript
+void pwm_write(void) {
+    PRINT("rgb: %x %x %x\n", rgb[0], rgb[1], rgb[2]);
+}
+
+// Port this to javascript
+static ssize_t read_temperature(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+    void *buf, uint16_t len, uint16_t offset)
+{
+    const char *value = attr->user_data;
+
+    return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
+        sizeof(*value));
+}
+
+// Port this to javascript
+static ssize_t read_rgb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+    void *buf, uint16_t len, uint16_t offset)
+{
+    memcpy(rgb, attr->user_data, sizeof(rgb));
+
+    PRINT("read_rgb: %x %x %x\n", rgb[0], rgb[1], rgb[2]);
+
+    return bt_gatt_attr_read(conn, attr, buf, len, offset, rgb,
+                 sizeof(rgb));
+}
+
+// Port this to javascript
+static ssize_t write_rgb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+    const void *buf, uint16_t len, uint16_t offset)
+{
+    memcpy(rgb, buf, sizeof(rgb));
+
+    PRINT("write_rgb: %x %x %x\n", rgb[0], rgb[1], rgb[2]);
+
+    pwm_write();
+
+    return sizeof(rgb);
+}
+
+// Port this to javascript
+/* WebBT Service Declaration */
+static struct bt_gatt_attr attrs[] = {
+    BT_GATT_PRIMARY_SERVICE(BT_UUID_WEBBT),
+
+    /* Temperature */
+    BT_GATT_CHARACTERISTIC(BT_UUID_TEMP,
+        BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY),
+    BT_GATT_DESCRIPTOR(BT_UUID_TEMP, BT_GATT_PERM_READ,
+        read_temperature, NULL, &temperature),
+    BT_GATT_CUD(SENSOR_1_NAME, BT_GATT_PERM_READ),
+    BT_GATT_CCC(blvl_ccc_cfg, blvl_ccc_cfg_changed),
+
+    /* RGB Led */
+    BT_GATT_CHARACTERISTIC(BT_UUID_RGB,
+        BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE),
+    BT_GATT_DESCRIPTOR(BT_UUID_RGB, BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,
+        read_rgb, write_rgb, rgb),
+    BT_GATT_CUD(SENSOR_2_NAME, BT_GATT_PERM_READ),
+};
 
 static void connected(struct bt_conn *conn, uint8_t err)
 {
@@ -205,6 +287,7 @@ bool zjs_ble_enable(const jerry_object_t *function_obj_p,
     // setup connection callbacks
     bt_conn_cb_register(&conn_callbacks);
     bt_conn_auth_cb_register(&auth_cb_display);
+    bt_gatt_register(attrs, ARRAY_SIZE(attrs));
 
     return true;
 }

@@ -1,17 +1,44 @@
 // Copyright (c) 2016, Intel Corporation.
 
-// Test code for Arduino 101 that uses the two onboard LEDs for output, and
-// expects a button or similar input connected to digital pin 4.
+// Test code for Arduino 101 that replicates the WebBluetooth demo
+// using BLE to advertise temperature changes and allow LED color changes
+
+// import aio and ble module
+var aio = require("aio");
+var ble = require("ble");
 
 print("Webbluetooth Demo with BLE...");
 
-// import aio module
-var aio = require("aio");
+var serviceName = 'Arduino-101';
+var serviceUuid = 'fffffffffffffffffffffffffffffff0';
 
-// pins
-var pinIn = aio.open({ device: 0, pin: 10 });
+// setup callbacks
+ble.on('stateChange', function(state) {
+    print ('State change: ' + state);
+    if (state === 'poweredOn') {
+        ble.startAdvertising();
+        //ble.startAdvertising();
+    } else {
+        ble.stopAdvertising();
+    }
+});
 
-setInterval(function () {
-    var temp = pinIn.read();
-    print("Temperature in Celsius is: " + temp);
-}, 1000);
+ble.on('accept', function(clientAddress) {
+    print ("Accepted connection from address: " + clientAddress);
+});
+
+ble.on('disconnect', function(clientAddress) {
+    print ("Disconnected from address: " + clientAddress);
+});
+
+ble.on('advertisingStart', function(error) {
+    if (error) {
+        print ("Advertising start error: " + error);
+        return;
+    }
+    print ("Advertising start success");
+    //ToDO: Define your new service
+});
+
+// enable ble
+ble.enable();
