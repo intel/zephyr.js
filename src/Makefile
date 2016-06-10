@@ -12,7 +12,7 @@ subdir-ccflags-y += -DJERRY_ENABLE_SNAPSHOT_SAVE
 subdir-ccflags-y += -DJERRY_NDEBUG
 subdir-ccflags-y += -DJERRY_DISABLE_HEAVY_DEBUG
 subdir-ccflags-y += -DMEM_STATS
-subdir-ccflags-y += -DCONFIG_MEM_HEAP_AREA_SIZE="39280"
+subdir-ccflags-y += -DCONFIG_MEM_HEAP_AREA_SIZE="32272"
 
 ccflags-y += -I$(src)/../deps/jerryscript/jerry-core
 ccflags-y += -I$(src)/../build

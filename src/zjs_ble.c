@@ -4,10 +4,7 @@
 #include <zephyr.h>
 #include <string.h>
 #include <bluetooth/bluetooth.h>
-#include <bluetooth/hci.h>
 #include <bluetooth/conn.h>
-#include <bluetooth/uuid.h>
-#include <bluetooth/gatt.h>
 
 #include <misc/printk.h>
 #define PRINT           printk
@@ -84,7 +81,7 @@ static struct bt_conn_auth_cb auth_cb_display = {
 
 struct ble_event_list_item {
     char event_type[20];
-    jerry_object_t *js_callback;
+    struct zjs_callback zjs_cb;
     struct ble_event_list_item *next;
 };
 
@@ -115,11 +112,39 @@ static void dispatch(char *type, jerry_value_t args_p[], uint16_t args_cnt)
         if (!strncmp(ev->event_type, type, len))
         {
             jerry_value_t rval;
-            jerry_call_function(ev->js_callback, NULL, &rval, args_p, args_cnt);
+            jerry_call_function(ev->zjs_cb.js_callback, NULL, &rval, args_p, args_cnt);
             return;
         }
         ev = ev->next;
     }
+}
+
+static void queueDispatch(char *type, zjs_cb_wrapper_t func)
+{
+    // requires: called only from task context
+    //  effects: finds the first callback for the given type and queues it up
+    //             to run func to execute it at the next opportunity
+    struct ble_event_list_item *ev = ble_event_list;
+    int len = strlen(type);
+    while (ev) {
+        if (!strncmp(ev->event_type, type, len)) {
+            ev->zjs_cb.call_function = func;
+            zjs_queue_callback(&ev->zjs_cb);
+            return;
+        }
+        ev = ev->next;
+    }
+}
+
+static void zjs_bt_ready_call_function(struct zjs_callback *cb)
+{
+    // requires: called only from task context
+    //  effects: handles execution of the bt ready JS callback
+    jerry_value_t rval, arg;
+    zjs_init_api_value_string(&arg, "poweredOn");
+    if (jerry_call_function(cb->js_callback, NULL, &rval, &arg, 1))
+        jerry_release_value(&rval);
+    jerry_release_value(&arg);
 }
 
 static void zjs_bt_ready(int err)
@@ -131,10 +156,7 @@ static void zjs_bt_ready(int err)
     }
     PRINT("zjs_bt_ready is called [err %d]\n", err);
 
-    jerry_value_t args_p[1];
-    zjs_init_api_value_string(&args_p[0], "poweredOn");
-
-    dispatch("stateChange", args_p, 1);
+    queueDispatch("stateChange", zjs_bt_ready_call_function);
 }
 
 jerry_object_t *zjs_ble_init()
@@ -149,10 +171,10 @@ jerry_object_t *zjs_ble_init()
 }
 
 bool zjs_ble_on(const jerry_object_t *function_obj_p,
-                  const jerry_value_t *this_p,
-                  jerry_value_t *ret_val_p,
-                  const jerry_value_t args_p[],
-                  const jerry_length_t args_cnt)
+                const jerry_value_t *this_p,
+                jerry_value_t *ret_val_p,
+                const jerry_value_t args_p[],
+                const jerry_length_t args_cnt)
 {
     if (args_cnt < 2 || args_p[0].type != JERRY_DATA_TYPE_STRING ||
                         args_p[1].type != JERRY_DATA_TYPE_OBJECT)
@@ -174,7 +196,7 @@ bool zjs_ble_on(const jerry_object_t *function_obj_p,
     event[len] = '\0';
     PRINT ("\nEVENT TYPE: %s (%d)\n", event, len);
 
-    item->js_callback = jerry_acquire_object(args_p[1].u.v_object);
+    item->zjs_cb.js_callback = jerry_acquire_object(args_p[1].u.v_object);
     memcpy(item->event_type, event, len);
 
     return true;
@@ -186,7 +208,6 @@ bool zjs_ble_enable(const jerry_object_t *function_obj_p,
                   const jerry_value_t args_p[],
                   const jerry_length_t args_cnt)
 {
-
     PRINT ("====>About to enable the bluetooth\n");
     bt_enable(zjs_bt_ready);
 
