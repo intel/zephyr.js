@@ -372,6 +372,14 @@ bool zjs_ble_set_services(const jerry_object_t *function_obj_p,
                           const jerry_length_t args_cnt)
 {
     PRINT ("setServices has been called\n");
+
+    if (args_cnt != 1 ||
+        args_p[0].type != JERRY_DATA_TYPE_OBJECT)
+    {
+        PRINT("zjs_ble_characterstic: invalid arguments\n");
+        return false;
+    }
+
     return true;
 }
 
@@ -382,6 +390,30 @@ bool zjs_ble_primary_service(const jerry_object_t *function_obj_p,
                              const jerry_length_t args_cnt)
 {
     PRINT ("new PrimaryService has been called\n");
+
+    if (args_cnt < 1 ||
+        args_p[0].type != JERRY_DATA_TYPE_OBJECT)
+    {
+        PRINT("zjs_ble_primary_service: invalid arguments\n");
+        return false;
+    }
+
+    const int BUFLEN = 32;
+    char buffer[BUFLEN];
+
+    jerry_value_t v_characteristic;
+    if (!zjs_obj_get_string(args_p[0].u.v_object, "uuid", buffer, BUFLEN)) {
+        PRINT("zjs_ble_primary_service: uuid doesn't exist\n");
+        return false;
+    }
+
+    if (!jerry_get_object_field_value(args_p[0].u.v_object, "characteristics", &v_characteristic)) {
+        PRINT("zjs_ble_primary_service: characteristic doesn't exist\n");
+        return false;
+    }
+
+    *ret_val_p = args_p[0];
+
     return true;
 }
 
@@ -392,5 +424,15 @@ bool zjs_ble_characteristic(const jerry_object_t *function_obj_p,
                             const jerry_length_t args_cnt)
 {
     PRINT ("new Characterstic has been called\n");
+
+    if (args_cnt < 1 ||
+        args_p[0].type != JERRY_DATA_TYPE_OBJECT)
+    {
+        PRINT("zjs_ble_characterstic: invalid arguments\n");
+        return false;
+    }
+
+    *ret_val_p = args_p[0];
+
     return true;
 }
