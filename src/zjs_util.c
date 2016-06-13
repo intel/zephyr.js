@@ -212,10 +212,9 @@ bool zjs_strequal(const jerry_string_t *jstr, const char *str)
 }
 
 /**
- * Initialize Jerry API value with specified object
+ * Initialize Jerry value with specified object
  */
-void zjs_init_api_value_object (jerry_value_t *out_value_p, /**< out: API value */
-                                jerry_object_t *v) /**< object value to initialize with */
+void zjs_init_value_object(jerry_value_t *out_value_p, jerry_object_t *v)
 {
     // requires: out_value_p to recieve the object value v
     //  effects: put the object into out_value_p with appropriate encoding.
@@ -226,14 +225,13 @@ void zjs_init_api_value_object (jerry_value_t *out_value_p, /**< out: API value 
 }
 
 /**
- * Initialize Jerry API value with specified string
+ * Initialize Jerry value with specified string
  */
-void zjs_init_api_value_string (jerry_value_t *out_value_p, /**< out: API value */
-                                const char *v) /**< string value to initialize with */
+void zjs_init_value_string(jerry_value_t *out_value_p, const char *v)
 {
     // requires: out_value_p to recieve the string value v
     //  effects: put the string into out_value_p with appropriate encoding.
 
     out_value_p->type = JERRY_DATA_TYPE_STRING;
-    out_value_p->u.v_string = jerry_create_string ((jerry_char_t *) v);
+    out_value_p->u.v_string = jerry_create_string((jerry_char_t *) v);
 }

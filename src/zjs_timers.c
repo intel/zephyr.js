@@ -117,7 +117,7 @@ native_setInterval_handler(const jerry_object_t *function_obj_p,
 
     // FIXME: see if we can't return a real pointer to our struct here somehow
     //   because it's unambiguous
-    zjs_init_api_value_object(ret_val_p, tid);
+    zjs_init_value_object(ret_val_p, tid);
     return true;
 }
 

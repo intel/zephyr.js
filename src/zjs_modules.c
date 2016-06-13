@@ -56,7 +56,7 @@ native_require_handler(const jerry_object_t * function_obj_p,
             if (!strcmp(t->name, module))
             {
                 jerry_object_t *obj = t->init();
-                zjs_init_api_value_object(ret_val_p, obj);
+                zjs_init_value_object(ret_val_p, obj);
                 return true;
             }
             t = t->next;
@@ -65,7 +65,7 @@ native_require_handler(const jerry_object_t * function_obj_p,
 
     // Module is not in our list if it gets to this point.
     PRINT("Error: module `%s'  not found\n", module);
-    zjs_init_api_value_object(ret_val_p, 0);
+    zjs_init_value_object(ret_val_p, 0);
 
     return false;
 }

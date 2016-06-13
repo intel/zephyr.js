@@ -192,7 +192,7 @@ static void zjs_bt_ready_call_function(struct zjs_callback *cb)
     // requires: called only from task context
     //  effects: handles execution of the bt ready JS callback
     jerry_value_t rval, arg;
-    zjs_init_api_value_string(&arg, "poweredOn");
+    zjs_init_value_string(&arg, "poweredOn");
     if (jerry_call_function(cb->js_callback, NULL, &rval, &arg, 1))
         jerry_release_value(&rval);
     jerry_release_value(&arg);

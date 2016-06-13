@@ -39,7 +39,5 @@ bool zjs_is_number(jerry_value_t value);
 
 bool zjs_strequal(const jerry_string_t *jstr, const char *str);
 
-void zjs_init_api_value_object (jerry_value_t *out_value_p,
-                                jerry_object_t *v);
-void zjs_init_api_value_string (jerry_value_t *out_value_p,
-                                const char *v);
+void zjs_init_value_object(jerry_value_t *out_value_p, jerry_object_t *v);
+void zjs_init_value_string(jerry_value_t *out_value_p, const char *v);
