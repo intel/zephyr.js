@@ -89,9 +89,7 @@ bool zjs_pwm_open(const jerry_object_t *function_obj_p,
     //             hardware cycles (defaults to 255), pulse width in hardware
     //             cycles (defaults to 0), polarity (defaults to "normal")
     //  effects: returns a new PWMPin object representing the given channel
-    if (args_cnt < 1 ||
-        args_p[0].type != JERRY_DATA_TYPE_OBJECT)
-    {
+    if (args_cnt < 1 || args_p[0].type != JERRY_DATA_TYPE_OBJECT) {
         PRINT("zjs_pwm_open: invalid argument\n");
         return false;
     }
@@ -170,11 +168,7 @@ bool zjs_pwm_pin_set_period(const jerry_object_t *function_obj_p,
     //             units provided by the platform, providing the widest range
     jerry_object_t *obj = jerry_get_object_value(this_p);
 
-    if (args_cnt < 1 ||
-        (args_p[0].type != JERRY_DATA_TYPE_UINT32 &&
-         args_p[0].type != JERRY_DATA_TYPE_FLOAT32 &&
-         args_p[0].type != JERRY_DATA_TYPE_FLOAT64))
-    {
+    if (args_cnt < 1 || !zjs_is_number(args_p[0])) {
         PRINT("zjs_pwm_pin_set_period: invalid argument\n");
         return false;
     }
@@ -195,11 +189,7 @@ bool zjs_pwm_pin_set_period_us(const jerry_object_t *function_obj_p,
     //             possible to what is requested given hardware constraints
     jerry_object_t *obj = jerry_get_object_value(this_p);
 
-    if (args_cnt < 1 ||
-        (args_p[0].type != JERRY_DATA_TYPE_UINT32 &&
-         args_p[0].type != JERRY_DATA_TYPE_FLOAT32 &&
-         args_p[0].type != JERRY_DATA_TYPE_FLOAT64))
-    {
+    if (args_cnt < 1 || !zjs_is_number(args_p[0])) {
         PRINT("zjs_pwm_pin_set_period_us: invalid argument\n");
         return false;
     }
@@ -242,11 +232,7 @@ bool zjs_pwm_pin_set_pulse_width(const jerry_object_t *function_obj_p,
     //  effects: updates the pulse width of this PWM pin
     jerry_object_t *obj = jerry_get_object_value(this_p);
 
-    if (args_cnt < 1 ||
-        (args_p[0].type != JERRY_DATA_TYPE_UINT32 &&
-         args_p[0].type != JERRY_DATA_TYPE_FLOAT32 &&
-         args_p[0].type != JERRY_DATA_TYPE_FLOAT64))
-    {
+    if (args_cnt < 1 || !zjs_is_number(args_p[0])) {
         PRINT("zjs_pwm_pin_set_pulse_width: invalid argument\n");
         return false;
     }
@@ -266,11 +252,7 @@ bool zjs_pwm_pin_set_pulse_width_us(const jerry_object_t *function_obj_p,
     //  effects: updates the pulse width of this PWM pin
     jerry_object_t *obj = jerry_get_object_value(this_p);
 
-    if (args_cnt < 1 ||
-        (args_p[0].type != JERRY_DATA_TYPE_UINT32 &&
-         args_p[0].type != JERRY_DATA_TYPE_FLOAT32 &&
-         args_p[0].type != JERRY_DATA_TYPE_FLOAT64))
-    {
+    if (args_cnt < 1 || !zjs_is_number(args_p[0])) {
         PRINT("zjs_pwm_pin_set_pulse_width_us: invalid argument\n");
         return false;
     }

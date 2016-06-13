@@ -177,6 +177,15 @@ bool zjs_obj_get_uint32(jerry_object_t *obj, const char *name,
     return true;
 }
 
+bool zjs_is_number(jerry_value_t value)
+{
+    if (value.type == JERRY_DATA_TYPE_UINT32 ||
+        value.type == JERRY_DATA_TYPE_FLOAT32 ||
+        value.type == JERRY_DATA_TYPE_FLOAT64)
+        return true;
+    return false;
+}
+
 // FIXME: NOT BEING USED CURRENTLY
 // zjs_obj_get_string + strcmp suffices for my current needs, although I had
 // already debugged this function so I want to at least check it in and see if
