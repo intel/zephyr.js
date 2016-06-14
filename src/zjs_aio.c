@@ -181,9 +181,7 @@ bool zjs_aio_open(const jerry_object_t *function_obj_p,
                   const jerry_value_t args_p[],
                   const jerry_length_t args_cnt)
 {
-    if (args_cnt < 1 ||
-        args_p[0].type != JERRY_DATA_TYPE_OBJECT)
-    {
+    if (args_cnt < 1 || !ZJS_IS_OBJ(args_p[0])) {
         PRINT("zjs_aio_open: invalid arguments\n");
         return false;
     }
@@ -296,9 +294,7 @@ bool zjs_aio_pin_read_async(const jerry_object_t *function_obj_p,
                             const jerry_value_t args_p[],
                             const jerry_length_t args_cnt)
 {
-    if (args_cnt < 1 ||
-        args_p[0].type != JERRY_DATA_TYPE_OBJECT)
-    {
+    if (args_cnt < 1 || !ZJS_IS_OBJ(args_p[0])) {
         PRINT("zjs_aio_pin_read_async: invalid argument\n");
         return false;
     }

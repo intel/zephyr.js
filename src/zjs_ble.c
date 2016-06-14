@@ -233,8 +233,7 @@ bool zjs_ble_on(const jerry_object_t *function_obj_p,
                 const jerry_value_t args_p[],
                 const jerry_length_t args_cnt)
 {
-    if (args_cnt < 2 || args_p[0].type != JERRY_DATA_TYPE_STRING ||
-                        args_p[1].type != JERRY_DATA_TYPE_OBJECT) {
+    if (args_cnt < 2 || !ZJS_IS_STRING(args_p[0]) || !ZJS_IS_OBJ(args_p[1])) {
         PRINT("zjs_ble_on: invalid arguments\n");
         return false;
     }

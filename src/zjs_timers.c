@@ -17,8 +17,6 @@
 
 #include "zjs_util.h"
 
-#define MAX_NUMBER_TIMERS 10
-
 struct zjs_timer_t {
     struct nano_timer timer;
     void *timer_data;
@@ -96,9 +94,7 @@ native_setInterval_handler(const jerry_object_t *function_obj_p,
                            const jerry_value_t args_p[],
                            const jerry_length_t args_cnt)
 {
-    if (args_p[0].type != JERRY_DATA_TYPE_OBJECT ||
-        args_p[1].type != JERRY_DATA_TYPE_FLOAT32)
-    {
+    if (!ZJS_IS_OBJ(args_p[0]) || !ZJS_IS_FLOAT32(args_p[1])) {
         PRINT ("native_setInterval_handler: invalid arguments\n");
         return false;
     }
@@ -108,8 +104,7 @@ native_setInterval_handler(const jerry_object_t *function_obj_p,
     jerry_object_t *callback = args_p[0].u.v_object;
 
     jerry_object_t *tid = add_timer(interval, callback, true);
-    if (!tid)
-    {
+    if (!tid) {
         // TODO: should throw an exception
         PRINT ("Error: timer alloc failed\n");
         return false;
@@ -129,16 +124,14 @@ native_clearInterval_handler(const jerry_object_t *function_obj_p,
                              const jerry_value_t args_p[],
                              const jerry_length_t args_cnt)
 {
-    if (args_p[0].type != JERRY_DATA_TYPE_OBJECT)
-    {
+    if (!ZJS_IS_OBJ(args_p[0])) {
         PRINT ("native_setInterval_handler: invalid arguments\n");
         return false;
     }
 
     jerry_object_t *tid = args_p[0].u.v_object;
 
-    if (!delete_timer(tid))
-    {
+    if (!delete_timer(tid)) {
         // TODO: should throw an exception
         PRINT ("Error: timer not found\n");
         return false;

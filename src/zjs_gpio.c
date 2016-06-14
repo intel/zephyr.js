@@ -126,9 +126,7 @@ bool zjs_gpio_open(const jerry_object_t *function_obj_p,
     // requires: arg 0 is an object with these members: pin (int), direction
     //             (defaults to "out"), activeLow (defaults to false),
     //             edge (defaults to "any"), pull (default to undefined)
-    if (args_cnt < 1 ||
-        args_p[0].type != JERRY_DATA_TYPE_OBJECT)
-    {
+    if (args_cnt < 1 || !ZJS_IS_OBJ(args_p[0])) {
         PRINT("zjs_gpio_open: invalid argument\n");
         return false;
     }
@@ -265,9 +263,7 @@ bool zjs_gpio_pin_write(const jerry_object_t *function_obj_p,
     // requires: this_p is a GPIOPin object from zjs_gpio_open, takes one arg,
     //             the logical boolean value to set to the pin (true = active)
     //  effects: writes the logical value to the pin
-    if (args_cnt < 1 ||
-        args_p[0].type != JERRY_DATA_TYPE_BOOLEAN)
-    {
+    if (args_cnt < 1 || !ZJS_IS_BOOL(args_p[0])) {
         PRINT("zjs_gpio_pin_write: invalid argument\n");
         return false;
     }
@@ -304,9 +300,7 @@ bool zjs_gpio_pin_set_callback(const jerry_object_t *function_obj_p,
     // requires: this_p is a GPIOPin object, the one arg is a JS callback
     //             function
     //  effects: registers this callback to be called when the GPIO changes
-    if (args_cnt < 1 ||
-        args_p[0].type != JERRY_DATA_TYPE_OBJECT)
-    {
+    if (args_cnt < 1 || !ZJS_IS_OBJ(args_p[0])) {
         PRINT("zjs_gpio_pin_set_callback: invalid argument\n");
         return false;
     }

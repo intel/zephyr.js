@@ -37,8 +37,7 @@ native_require_handler(const jerry_object_t * function_obj_p,
     jerry_size_t sz;
 
     jerry_value_t arg = args_p[0];
-    if (arg.type != JERRY_DATA_TYPE_STRING)
-    {
+    if (!ZJS_IS_STRING(arg)) {
         PRINT ("native_require_handler: invalid arguments\n");
         return false;
     }
@@ -48,13 +47,10 @@ native_require_handler(const jerry_object_t * function_obj_p,
     module[len] = '\0';
 
 
-    if (modList)
-    {
+    if (modList) {
         struct modItem *t = modList;
-        while (t)
-        {
-            if (!strcmp(t->name, module))
-            {
+        while (t) {
+            if (!strcmp(t->name, module)) {
                 jerry_object_t *obj = t->init();
                 zjs_init_value_object(ret_val_p, obj);
                 return true;
@@ -81,8 +77,7 @@ void zjs_modules_init()
 void zjs_modules_add(const char *name, InitCB cb)
 {
     struct modItem *item = (struct modItem *)task_malloc(sizeof(struct modItem));
-    if (!item)
-    {
+    if (!item) {
         PRINT("Error: out of memory!\n");
         exit(1);
     }
@@ -91,8 +86,7 @@ void zjs_modules_add(const char *name, InitCB cb)
     item->init = cb;
     item->next = NULL;
 
-    if (!modList)
-    {
+    if (!modList) {
         modList = item;
         return;
     }
