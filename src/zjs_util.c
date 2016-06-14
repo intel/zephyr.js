@@ -6,14 +6,6 @@
 
 #include "zjs_util.h"
 
-#if defined(CONFIG_STDOUT_CONSOLE)
-#include <stdio.h>
-#define PRINT           printf
-#else
-#include <misc/printk.h>
-#define PRINT           printk
-#endif
-
 // fifo of pointers to zjs_callback objects representing JS callbacks
 struct nano_fifo zjs_callbacks_fifo;
 

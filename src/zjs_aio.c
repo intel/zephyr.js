@@ -8,14 +8,6 @@
 #include "zjs_ipm.h"
 #include "zjs_util.h"
 
-#if defined(CONFIG_STDOUT_CONSOLE)
-#include <stdio.h>
-#define PRINT           printf
-#else
-#include <misc/printk.h>
-#define PRINT           printk
-#endif
-
 DEFINE_SEMAPHORE(SEM_AIO_BLOCK);
 
 /*

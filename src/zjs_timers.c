@@ -1,20 +1,15 @@
 // Copyright (c) 2016, Intel Corporation.
 
+// Zephyr includes
 #include <zephyr.h>
-
-#if defined(CONFIG_STDOUT_CONSOLE)
-#include <stdio.h>
-#define PRINT           printf
-#else
-#include <misc/printk.h>
-#define PRINT           printk
-#endif
 
 #include <string.h>
 
+// JerryScript includes
 #include "jerry.h"
 #include "jerry-api.h"
 
+// ZJS includes
 #include "zjs_util.h"
 
 struct zjs_timer_t {

@@ -6,27 +6,11 @@
 #include <misc/util.h>
 #include <string.h>
 
-#if defined(CONFIG_STDOUT_CONSOLE)
-#include <stdio.h>
-#define PRINT           printf
-#else
-#include <misc/printk.h>
-#define PRINT           printk
-#endif
-
 // ZJS includes
 #include "zjs_gpio.h"
 #include "zjs_util.h"
 
-#if defined(CONFIG_GPIO_DW_0)
-#define GPIO_DRV_NAME CONFIG_GPIO_DW_0_NAME
-#elif defined(CONFIG_GPIO_QMSI_0)
-#define GPIO_DRV_NAME CONFIG_GPIO_QMSI_0_NAME
-#elif defined(CONFIG_GPIO_ATMEL_SAM3)
-#define GPIO_DRV_NAME CONFIG_GPIO_ATMEL_SAM3_PORTB_DEV_NAME
-#else
-#error "Unsupported GPIO driver"
-#endif
+#define GPIO_DRV_NAME "PWM_0"
 
 static const char *ZJS_DIR_IN = "in";
 static const char *ZJS_DIR_OUT = "out";

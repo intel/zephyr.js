@@ -6,14 +6,6 @@
 #include <misc/util.h>
 #include <string.h>
 
-#if defined(CONFIG_STDOUT_CONSOLE)
-#include <stdio.h>
-#define PRINT           printf
-#else
-#include <misc/printk.h>
-#define PRINT           printk
-#endif
-
 // ZJS includes
 #include "zjs_pwm.h"
 #include "zjs_util.h"

@@ -5,18 +5,9 @@
 #include <string.h>
 #include <stdlib.h>
 
-#if defined(CONFIG_STDOUT_CONSOLE)
-#include <stdio.h>
-#define PRINT           printf
-#else
-#include <misc/printk.h>
-#define PRINT           printk
-#endif
-
-
 // ZJS includes
-#include "zjs_util.h"
 #include "zjs_modules.h"
+#include "zjs_util.h"
 
 struct modItem {
     const char *name;

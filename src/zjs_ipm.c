@@ -2,15 +2,10 @@
 
 // ipm for ARC communication
 #include <ipm/ipm_quark_se.h>
-#include "zjs_ipm.h"
 
-#if defined(CONFIG_STDOUT_CONSOLE)
-#include <stdio.h>
-#define PRINT           printf
-#else
-#include <misc/printk.h>
-#define PRINT           printk
-#endif
+// ZJS includes
+#include "zjs_ipm.h"
+#include "zjs_util.h"
 
 #define IPM_CHANNEL_X86_TO_ARC       1
 #define IPM_CHANNEL_ARC_TO_X86       2

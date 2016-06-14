@@ -9,9 +9,6 @@
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
 
-#include <misc/printk.h>
-#define PRINT           printk
-
 // ZJS includes
 #include "zjs_ble.h"
 #include "zjs_util.h"
@@ -152,7 +149,8 @@ static struct zjs_ble_list_item *zjs_ble_event_callback_alloc()
 {
     // effects: allocates a new callback list item and adds it to the list
     struct zjs_ble_list_item *item;
-    PRINT ("Size of zjs_ble_list_item = %d\n", sizeof(struct zjs_ble_list_item));
+    PRINT("Size of zjs_ble_list_item = %lu\n",
+          sizeof(struct zjs_ble_list_item));
     item = task_malloc(sizeof(struct zjs_ble_list_item));
     if (!item) {
         PRINT("error: out of memory allocating callback struct\n");
