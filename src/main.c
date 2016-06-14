@@ -12,6 +12,7 @@
 // ZJS includes
 #include "zjs_aio.h"
 #include "zjs_ble.h"
+#include "zjs_buffer.h"
 #include "zjs_gpio.h"
 #include "zjs_modules.h"
 #include "zjs_pwm.h"
@@ -30,6 +31,7 @@ void main(int argc, char *argv[])
 
     zjs_timers_init();
     zjs_queue_init();
+    zjs_buffer_init();
 
     // Initializes modules stuffs...
     zjs_modules_init();
