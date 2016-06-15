@@ -48,8 +48,6 @@ bool zjs_obj_get_uint32(jerry_object_t *obj, const char *name,
 #define ZJS_IS_OBJ(jval) (jval.type == JERRY_DATA_TYPE_OBJECT)
 #define ZJS_IS_STRING(jval) (jval.type == JERRY_DATA_TYPE_STRING)
 
-bool zjs_is_number(jerry_value_t value);
-
 bool zjs_strequal(const jerry_string_t *jstr, const char *str);
 
 void zjs_init_value_object(jerry_value_t *out_value_p, jerry_object_t *v);

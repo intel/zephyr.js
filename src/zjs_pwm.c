@@ -160,7 +160,7 @@ bool zjs_pwm_pin_set_period(const jerry_object_t *function_obj_p,
     //             units provided by the platform, providing the widest range
     jerry_object_t *obj = jerry_get_object_value(this_p);
 
-    if (args_cnt < 1 || !zjs_is_number(args_p[0])) {
+    if (args_cnt < 1 || !jerry_value_is_number(&args_p[0])) {
         PRINT("zjs_pwm_pin_set_period: invalid argument\n");
         return false;
     }
@@ -181,7 +181,7 @@ bool zjs_pwm_pin_set_period_us(const jerry_object_t *function_obj_p,
     //             possible to what is requested given hardware constraints
     jerry_object_t *obj = jerry_get_object_value(this_p);
 
-    if (args_cnt < 1 || !zjs_is_number(args_p[0])) {
+    if (args_cnt < 1 || !jerry_value_is_number(&args_p[0])) {
         PRINT("zjs_pwm_pin_set_period_us: invalid argument\n");
         return false;
     }
@@ -224,7 +224,7 @@ bool zjs_pwm_pin_set_pulse_width(const jerry_object_t *function_obj_p,
     //  effects: updates the pulse width of this PWM pin
     jerry_object_t *obj = jerry_get_object_value(this_p);
 
-    if (args_cnt < 1 || !zjs_is_number(args_p[0])) {
+    if (args_cnt < 1 || !jerry_value_is_number(&args_p[0])) {
         PRINT("zjs_pwm_pin_set_pulse_width: invalid argument\n");
         return false;
     }
@@ -244,7 +244,7 @@ bool zjs_pwm_pin_set_pulse_width_us(const jerry_object_t *function_obj_p,
     //  effects: updates the pulse width of this PWM pin
     jerry_object_t *obj = jerry_get_object_value(this_p);
 
-    if (args_cnt < 1 || !zjs_is_number(args_p[0])) {
+    if (args_cnt < 1 || !jerry_value_is_number(&args_p[0])) {
         PRINT("zjs_pwm_pin_set_pulse_width_us: invalid argument\n");
         return false;
     }

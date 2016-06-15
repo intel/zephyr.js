@@ -45,8 +45,8 @@ static bool zjs_buffer_write_uint8(const jerry_object_t *function_obj_p,
     //  effects: writes single byte value into the buffer associated with the
     //             this_p JS object, if found, at the given offset, if within
     //             the bounds of the buffer; otherwise returns an error
-    if (args_cnt < 1 || !zjs_is_number(args_p[0]) ||
-        (args_cnt >= 2 && !zjs_is_number(args_p[1]))) {
+    if (args_cnt < 1 || !jerry_value_is_number(&args_p[0]) ||
+        (args_cnt >= 2 && !jerry_value_is_number(&args_p[1]))) {
         PRINT("Unsupported arguments to writeUInt8\n");
         return false;
     }
@@ -144,7 +144,7 @@ static bool zjs_buffer(const jerry_object_t *function_obj_p,
     //  effects: constructs a new JS Buffer object, and an associated buffer
     //             tied to it through a zjs_buffer_t struct stored in a global
     //             list
-    if (args_cnt != 1 || !zjs_is_number(args_p[0])) {
+    if (args_cnt != 1 || !jerry_value_is_number(&args_p[0])) {
         PRINT("Unsupported arguments to Buffer constructor\n");
         return false;
     }
