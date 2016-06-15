@@ -24,6 +24,7 @@ DEFINE_SEMAPHORE(SEM_AIO_BLOCK);
 #define A2 12
 #define A3 13
 #define A4 14
+// TODO: A5 is missing
 
 static uint32_t pin_values[5] = {};
 
@@ -68,7 +69,6 @@ static void zjs_aio_callback_free(uintptr_t handle)
 
 struct zjs_cb_list_item *zjs_aio_get_callback_item(uint32_t pin)
 {
-
     // calls the JS callback registered in the struct
     struct zjs_cb_list_item **pItem = &zjs_cb_list;
     while (*pItem) {
@@ -96,6 +96,8 @@ static void zjs_aio_call_function(struct zjs_callback *cb)
     arg.u.v_float64 = mycb->value;
     if (jerry_call_function(mycb->zjs_cb.js_callback, NULL, &rval, &arg, 1))
         jerry_release_value(&rval);
+    jerry_release_object(mycb->zjs_cb.js_callback);
+    zjs_aio_callback_free((uintptr_t)mycb);
 }
 
 int zjs_aio_ipm_send(uint32_t type, uint32_t pin, uint32_t value) {
@@ -137,8 +139,7 @@ void ipm_msg_receive_callback(void *context, uint32_t id, volatile void *data)
         }
         else {
             struct zjs_cb_list_item *mycb = zjs_aio_get_callback_item(msg->pin);
-
-            if (mycb->zjs_cb.js_callback) {
+            if (mycb && mycb->zjs_cb.js_callback) {
                 // TODO: ensure that there is no outstanding callback of this
                 //   type or else we may be overwriting the value it should have
                 //   reported
@@ -309,10 +310,6 @@ bool zjs_aio_pin_read_async(const jerry_object_t *function_obj_p,
     item->zjs_cb.call_function = zjs_aio_call_function;
 
     jerry_acquire_object(item->zjs_cb.js_callback);
-
-    // watch for the object getting garbage collected, and clean up
-    jerry_set_object_native_handle(obj, (uintptr_t)item,
-                                       zjs_aio_callback_free);
 
     // send IPM message to the ARC side and wait for reponse
     zjs_aio_ipm_send(TYPE_AIO_PIN_READ, pin, 0);
