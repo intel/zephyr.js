@@ -269,7 +269,7 @@ bool zjs_ble_on(const jerry_object_t *function_obj_p,
     // assert(sz < 20);
     int len = jerry_string_to_char_buffer(arg.u.v_string, (jerry_char_t *)event, sz);
     event[len] = '\0';
-    PRINT ("\nEVENT TYPE: %s (%d)\n", event, len);
+    PRINT("\nEVENT TYPE: %s (%d)\n", event, len);
 
     item->zjs_cb.js_callback = jerry_acquire_object(args_p[1].u.v_object);
     memcpy(item->event_type, event, len);
@@ -283,13 +283,12 @@ bool zjs_ble_enable(const jerry_object_t *function_obj_p,
                     const jerry_value_t args_p[],
                     const jerry_length_t args_cnt)
 {
-    PRINT ("====>About to enable the bluetooth\n");
+    PRINT("====>About to enable the bluetooth\n");
     bt_enable(zjs_bt_ready);
 
     // setup connection callbacks
     bt_conn_cb_register(&conn_callbacks);
     bt_conn_auth_cb_register(&auth_cb_display);
-    bt_gatt_register(attrs, ARRAY_SIZE(attrs));
 
     return true;
 }
@@ -357,7 +356,7 @@ bool zjs_ble_adv_stop(const jerry_object_t *function_obj_p,
                       const jerry_value_t args_p[],
                       const jerry_length_t args_cnt)
 {
-    PRINT ("stopAdvertising has been called\n");
+    PRINT("stopAdvertising has been called\n");
     return true;
 }
 
@@ -367,7 +366,7 @@ bool zjs_ble_set_services(const jerry_object_t *function_obj_p,
                           const jerry_value_t args_p[],
                           const jerry_length_t args_cnt)
 {
-    PRINT ("setServices has been called\n");
+    PRINT("setServices has been called\n");
 
     if (args_cnt != 1 ||
         args_p[0].type != JERRY_DATA_TYPE_OBJECT)
@@ -375,6 +374,8 @@ bool zjs_ble_set_services(const jerry_object_t *function_obj_p,
         PRINT("zjs_ble_characterstic: invalid arguments\n");
         return false;
     }
+
+    bt_gatt_register(attrs, ARRAY_SIZE(attrs));
 
     return true;
 }
@@ -385,7 +386,7 @@ bool zjs_ble_primary_service(const jerry_object_t *function_obj_p,
                              const jerry_value_t args_p[],
                              const jerry_length_t args_cnt)
 {
-    PRINT ("new PrimaryService has been called\n");
+    PRINT("new PrimaryService has been called\n");
 
     if (args_cnt < 1 ||
         args_p[0].type != JERRY_DATA_TYPE_OBJECT)
@@ -419,7 +420,7 @@ bool zjs_ble_characteristic(const jerry_object_t *function_obj_p,
                             const jerry_value_t args_p[],
                             const jerry_length_t args_cnt)
 {
-    PRINT ("new Characterstic has been called\n");
+    PRINT("new Characterstic has been called\n");
 
     if (args_cnt < 1 ||
         args_p[0].type != JERRY_DATA_TYPE_OBJECT)
