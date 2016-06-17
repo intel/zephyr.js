@@ -9,7 +9,7 @@ var ble = require("ble");
 
 print("Webbluetooth Demo with BLE...");
 
-var serviceName = 'Arduino-101';
+var serviceName = 'Arduino101';
 var serviceUuid = 'fc00';
 var tempUuid = 'fc0a';
 var rgbUuid = 'fc0b';

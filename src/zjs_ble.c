@@ -13,25 +13,6 @@
 #include "zjs_ble.h"
 #include "zjs_util.h"
 
-#define DEVICE_NAME             "Arduino101"
-#define DEVICE_NAME_LEN         (sizeof(DEVICE_NAME) - 1)
-
-/*
- * Set Advertisement data. Based on the Eddystone specification:
- * https://github.com/google/eddystone/blob/master/protocol-specification.md
- * https://github.com/google/eddystone/tree/master/eddystone-url
- */
-static const struct bt_data ad[] = {
-        BT_DATA_BYTES(BT_DATA_UUID16_ALL, 0xaa, 0xfe),
-        BT_DATA_BYTES(BT_DATA_SVC_DATA16,
-                      0xaa, 0xfe, /* Eddystone UUID */
-                      0x10, /* Eddystone-URL frame type */
-                      0x00, /* Calibrated Tx power at 0m */
-                      0x03, /* URL Scheme Prefix https://. */
-                                        'g', 'o', 'o', '.', 'g', 'l', '/',
-                                        '9', 'F', 'o', 'm', 'Q', 'C'),
-        BT_DATA_BYTES(BT_DATA_UUID16_ALL, 0x00, 0xfc)
-};
 
 // Port this to javascript
 #define BT_UUID_WEBBT BT_UUID_DECLARE_16(0xfc00)
@@ -40,9 +21,6 @@ static const struct bt_data ad[] = {
 #define SENSOR_1_NAME "Temperature"
 #define SENSOR_2_NAME "Led"
 
-static const struct bt_data sd[] = {
-        BT_DATA(BT_DATA_NAME_COMPLETE, DEVICE_NAME, DEVICE_NAME_LEN),
-};
 
 struct bt_conn *default_conn;
 
@@ -341,6 +319,29 @@ bool zjs_ble_adv_start(const jerry_object_t *function_obj_p,
     sz = jerry_get_string_size(v_uuid.u.v_string);
     int len_uuid = jerry_string_to_char_buffer(v_uuid.u.v_string, (jerry_char_t *) uuid, sz);
     uuid[len_uuid] = '\0';
+
+    struct bt_data sd[] = {
+        BT_DATA(BT_DATA_NAME_COMPLETE, name, len_name),
+    };
+
+    /*
+     * FIXME: fill ad struct with uuid from javascript
+     *
+     * Set Advertisement data. Based on the Eddystone specification:
+     * https://github.com/google/eddystone/blob/master/protocol-specification.md
+     * https://github.com/google/eddystone/tree/master/eddystone-url
+     */
+    struct bt_data ad[] = {
+        BT_DATA_BYTES(BT_DATA_UUID16_ALL, 0xaa, 0xfe),
+        BT_DATA_BYTES(BT_DATA_SVC_DATA16,
+                      0xaa, 0xfe, /* Eddystone UUID */
+                      0x10, /* Eddystone-URL frame type */
+                      0x00, /* Calibrated Tx power at 0m */
+                      0x03, /* URL Scheme Prefix https://. */
+                                        'g', 'o', 'o', '.', 'g', 'l', '/',
+                                        '9', 'F', 'o', 'm', 'Q', 'C'),
+        BT_DATA_BYTES(BT_DATA_UUID16_ALL, 0x00, 0xfc)
+    };
 
     int err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad),
                               sd, ARRAY_SIZE(sd));
