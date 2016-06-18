@@ -11,16 +11,9 @@
 // ZJS includes
 #include "zjs_util.h"
 
-struct zjs_buffer_t {
-    jerry_object_t *obj;
-    char *buffer;
-    uint32_t bufsize;
-    struct zjs_buffer_t *next;
-};
-
 static struct zjs_buffer_t *zjs_buffers = NULL;
 
-static struct zjs_buffer_t *zjs_find_buffer(const jerry_object_t *obj)
+struct zjs_buffer_t *zjs_find_buffer(const jerry_object_t *obj)
 {
     // requires: obj should be the JS object associated with a buffer, created
     //             in zjs_buffer
