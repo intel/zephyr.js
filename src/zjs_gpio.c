@@ -26,6 +26,14 @@ static const char *ZJS_PULL_DOWN = "down";
 
 static struct device *zjs_gpio_dev;
 
+// This is complicated. One thing going on here is that the GPIO functions do
+//   not let you set any "user data" to be returned to you later. So if you need
+//   to associate data, you have to embed the gpio callback within a bigger
+//   struct like this, and use CONTAINER_OF to get back to your struct.
+// The reason for the *list* is just so we're able to find the allocated struct
+//   again if it needs to be freed, which we're not really using yet, unless the
+//   pin object gets GC'd which hasn't been tested.
+// It looks like pin_obj isn't really needed at this time.
 struct zjs_cb_list_item {
     struct gpio_callback gpio_cb;
     jerry_object_t *pin_obj;
@@ -72,9 +80,6 @@ static void zjs_gpio_callback_wrapper(struct device *port,
     // effects: handles C callback; queues up the JS callback for execution
     struct zjs_cb_list_item *mycb = CONTAINER_OF(cb, struct zjs_cb_list_item,
                                                  gpio_cb);
-
-    // FIXME: this calls task_malloc which we shouldn't really be doing from
-    //   an ISR, so we need more trickery here
     zjs_queue_callback(&mycb->zjs_cb);
 }
 
@@ -85,6 +90,9 @@ static void zjs_gpio_call_function(struct zjs_callback *cb)
     jerry_value_t rval;
     if (jerry_call_function(cb->js_callback, NULL, &rval, NULL, 0))
         jerry_release_value(&rval);
+    // NOTE: this function is actually generic and could serve to call any
+    //   JS callback function with no args, so we may move it to a generic
+    //   name as we discover how often this comes up
 }
 
 jerry_object_t *zjs_gpio_init()
@@ -306,7 +314,7 @@ bool zjs_gpio_pin_set_callback(const jerry_object_t *function_obj_p,
 
     // watch for the object getting garbage collected, and clean up
     jerry_set_object_native_handle(pinobj, (uintptr_t)item,
-                                       zjs_gpio_callback_free);
+                                   zjs_gpio_callback_free);
 
 	int rval = gpio_add_callback(zjs_gpio_dev, &item->gpio_cb);
 	if (rval) {
