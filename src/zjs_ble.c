@@ -3,6 +3,7 @@
 // Zephyr includes
 #include <zephyr.h>
 #include <string.h>
+#include <stdlib.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/conn.h>
@@ -13,6 +14,7 @@
 #include "zjs_ble.h"
 #include "zjs_util.h"
 
+#define UUID_LEN                36
 
 // Port this to javascript
 #define BT_UUID_WEBBT BT_UUID_DECLARE_16(0xfc00)
@@ -21,81 +23,120 @@
 #define SENSOR_1_NAME "Temperature"
 #define SENSOR_2_NAME "Led"
 
+static struct bt_gatt_ccc_cfg  blvl_ccc_cfg[CONFIG_BLUETOOTH_MAX_PAIRED] = {};
+static uint8_t simulate_blvl;
+static uint8_t rgb[3] = {0xff, 0x00, 0x00}; // red
 
 struct bt_conn *default_conn;
 
-// Port this to javascript
-static struct bt_gatt_ccc_cfg  blvl_ccc_cfg[CONFIG_BLUETOOTH_MAX_PAIRED] = {};
-static uint8_t simulate_blvl;
-static uint8_t temperature = 20;
-static uint8_t rgb[3] = {0xff, 0x00, 0x00}; // red
+struct ble_characteristic {
+    struct bt_uuid *uuid;
+    int flags;
+    jerry_object_t *read_cb;
+    jerry_object_t *write_cb;
+    jerry_object_t *subscribe_cb;
+    jerry_object_t *unsubscribe_cb;
+    jerry_object_t *notify_cb;
+    struct ble_characteristic *next;
+};
+
+struct ble_service {
+    struct bt_uuid *uuid;
+    struct ble_characteristic *characteristics;
+    struct ble_service *next;
+};
+
+static struct ble_service zjs_primary_service = { NULL, NULL, NULL };
+
+struct bt_uuid* zjs_ble_new_uuid_16(uint16_t value) {
+    struct bt_uuid_16* uuid = task_malloc(sizeof(struct bt_uuid_16));
+    if (!uuid) {
+        PRINT("error: out of memory allocating struct bt_uuid_16\n");
+        return NULL;
+    }
+
+    uuid->uuid.type = BT_UUID_TYPE_16;
+    uuid->val = value;
+    return (struct bt_uuid *) uuid;
+}
+
+static void zjs_ble_free_characteristics(struct ble_characteristic *chrc)
+{
+    struct ble_characteristic *tmp;
+    while (chrc != NULL) {
+        tmp = chrc;
+        chrc = chrc->next;
+
+        if (tmp->read_cb)
+            jerry_release_object(tmp->read_cb);
+        if (tmp->write_cb)
+            jerry_release_object(tmp->write_cb);
+        if (tmp->subscribe_cb)
+            jerry_release_object(tmp->subscribe_cb);
+        if (tmp->unsubscribe_cb)
+            jerry_release_object(tmp->unsubscribe_cb);
+        if (tmp->notify_cb)
+            jerry_release_object(tmp->notify_cb);
+
+        task_free(tmp);
+    }
+}
+
+static ssize_t read_callback(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+    void *buf, uint16_t len, uint16_t offset)
+{
+    PRINT("read_callback called\n");
+    struct ble_characteristic* chrc = attr->user_data;
+
+    if (!chrc) {
+        PRINT("error: characteristic not found\n");
+        return bt_gatt_attr_read(conn, attr, buf, len, offset, rgb,
+               sizeof(rgb));
+    }
+
+    // FIXME
+    // calling JS onReadRequest
+    if (chrc->read_cb) {
+        jerry_value_t rval;
+        if (jerry_call_function(chrc->read_cb, NULL, &rval, NULL, 0))
+            jerry_release_value(&rval);
+    }
+
+    // FIXME
+    // return the value in the Buffer
+    return bt_gatt_attr_read(conn, attr, buf, len, offset, rgb,
+                 sizeof(rgb));
+}
+
+static ssize_t write_callback(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+    const void *buf, uint16_t len, uint16_t offset)
+{
+    // calling onWriteRequest() handler in js
+    PRINT("write_callback called\n");
+    struct ble_characteristic* chrc = attr->user_data;
+
+    if (!chrc) {
+        PRINT("error: characteristic not found\n");
+        return 0;
+    }
+
+    // FIXME
+    // calling JS onWriteRequest
+    if (chrc->write_cb) {
+        jerry_value_t rval;
+        if (jerry_call_function(chrc->write_cb, NULL, &rval, NULL, 0))
+            jerry_release_value(&rval);
+    }
+
+    // FIXME return
+    return sizeof(rgb);
+}
 
 // Port this to javascript
 static void blvl_ccc_cfg_changed(uint16_t value)
 {
     simulate_blvl = (value == BT_GATT_CCC_NOTIFY) ? 1 : 0;
 }
-
-// Port this to javascript
-void pwm_write(void) {
-    PRINT("rgb: %x %x %x\n", rgb[0], rgb[1], rgb[2]);
-}
-
-// Port this to javascript
-static ssize_t read_temperature(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-    void *buf, uint16_t len, uint16_t offset)
-{
-    const char *value = attr->user_data;
-
-    return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
-        sizeof(*value));
-}
-
-// Port this to javascript
-static ssize_t read_rgb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-    void *buf, uint16_t len, uint16_t offset)
-{
-    memcpy(rgb, attr->user_data, sizeof(rgb));
-
-    PRINT("read_rgb: %x %x %x\n", rgb[0], rgb[1], rgb[2]);
-
-    return bt_gatt_attr_read(conn, attr, buf, len, offset, rgb,
-                 sizeof(rgb));
-}
-
-// Port this to javascript
-static ssize_t write_rgb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-    const void *buf, uint16_t len, uint16_t offset)
-{
-    memcpy(rgb, buf, sizeof(rgb));
-
-    PRINT("write_rgb: %x %x %x\n", rgb[0], rgb[1], rgb[2]);
-
-    pwm_write();
-
-    return sizeof(rgb);
-}
-
-// Port this to javascript
-/* WebBT Service Declaration */
-static struct bt_gatt_attr attrs[] = {
-    BT_GATT_PRIMARY_SERVICE(BT_UUID_WEBBT),
-
-    /* Temperature */
-    BT_GATT_CHARACTERISTIC(BT_UUID_TEMP,
-        BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY),
-    BT_GATT_DESCRIPTOR(BT_UUID_TEMP, BT_GATT_PERM_READ,
-        read_temperature, NULL, &temperature),
-    BT_GATT_CUD(SENSOR_1_NAME, BT_GATT_PERM_READ),
-    BT_GATT_CCC(blvl_ccc_cfg, blvl_ccc_cfg_changed),
-
-    /* RGB Led */
-    BT_GATT_CHARACTERISTIC(BT_UUID_RGB,
-        BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE),
-    BT_GATT_DESCRIPTOR(BT_UUID_RGB, BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,
-        read_rgb, write_rgb, rgb),
-    BT_GATT_CUD(SENSOR_2_NAME, BT_GATT_PERM_READ),
-};
 
 static void connected(struct bt_conn *conn, uint8_t err)
 {
@@ -261,7 +302,7 @@ bool zjs_ble_enable(const jerry_object_t *function_obj_p,
                     const jerry_value_t args_p[],
                     const jerry_length_t args_cnt)
 {
-    PRINT("====>About to enable the bluetooth\n");
+    PRINT("About to enable the bluetooth, wait for bt_ready()...\n");
     bt_enable(zjs_bt_ready);
 
     // setup connection callbacks
@@ -361,6 +402,312 @@ bool zjs_ble_adv_stop(const jerry_object_t *function_obj_p,
     return true;
 }
 
+bool zjs_ble_parse_characteristic(const jerry_value_t val,
+                                  struct ble_characteristic *chrc)
+{
+    if (val.type != JERRY_DATA_TYPE_OBJECT)
+    {
+        PRINT("invalid object type\n");
+        return false;
+    }
+
+    char uuid[UUID_LEN];
+    if (!zjs_obj_get_string(val.u.v_object, "uuid", uuid, UUID_LEN)) {
+        PRINT("characteristic uuid doesn't exist\n");
+        return false;
+    }
+
+    chrc->uuid = zjs_ble_new_uuid_16(strtoul(uuid, NULL, 16));
+
+    jerry_value_t v_properties;
+    if (!jerry_get_object_field_value(val.u.v_object, "properties", &v_properties)) {
+        PRINT("properties doesn't exist\n");
+        return false;
+    }
+
+    int p_index = 0;
+    jerry_value_t v_property;
+    if (!jerry_get_array_index_value(v_properties.u.v_object, p_index, &v_property)) {
+        PRINT("failed to access property array\n");
+        return false;
+    }
+
+    chrc->flags = 0;
+    while (v_property.type == JERRY_DATA_TYPE_STRING) {
+        char name[20];
+        jerry_size_t sz;
+        sz = jerry_get_string_size(v_property.u.v_string);
+        int len = jerry_string_to_char_buffer(v_property.u.v_string, (jerry_char_t *)name, sz);
+        name[len] = '\0';
+
+        if (!strcmp(name, "read")) {
+            chrc->flags |= BT_GATT_CHRC_READ;
+        } else if (!strcmp(name, "write")) {
+            chrc->flags |= BT_GATT_CHRC_WRITE;
+        } else if (!strcmp(name, "notify")) {
+            chrc->flags |= BT_GATT_CHRC_NOTIFY;
+        }
+
+        // next property object
+        p_index++;
+        if (!jerry_get_array_index_value(v_properties.u.v_object, p_index, &v_property)) {
+            PRINT("failed to access property array\n");
+            return false;
+        }
+    }
+
+    jerry_value_t v_func;
+    if (jerry_get_object_field_value(val.u.v_object, "onReadRequest", &v_func)) {
+        if (v_func.type != JERRY_DATA_TYPE_NULL) {
+            if (v_func.type != JERRY_DATA_TYPE_OBJECT) {
+                PRINT("callback is not a function\n");
+                return false;
+            }
+            chrc->read_cb = v_func.u.v_object;
+            jerry_acquire_object(v_func.u.v_object);
+        }
+    }
+
+    if (jerry_get_object_field_value(val.u.v_object, "onWriteRequest", &v_func)) {
+        if (v_func.type != JERRY_DATA_TYPE_NULL) {
+            if (v_func.type != JERRY_DATA_TYPE_OBJECT) {
+                PRINT("callback is not a function\n");
+                return false;
+            }
+            chrc->write_cb = v_func.u.v_object;
+            jerry_acquire_object(v_func.u.v_object);
+        }
+    }
+
+    if (jerry_get_object_field_value(val.u.v_object, "onSubscribe", &v_func)) {
+        if (v_func.type != JERRY_DATA_TYPE_NULL) {
+            if (v_func.type != JERRY_DATA_TYPE_OBJECT) {
+                PRINT("callback is not a function\n");
+                return false;
+            }
+            chrc->subscribe_cb = v_func.u.v_object;
+            jerry_acquire_object(v_func.u.v_object);
+        }
+    }
+
+    if (jerry_get_object_field_value(val.u.v_object, "onUnsubscribe", &v_func)) {
+        if (v_func.type != JERRY_DATA_TYPE_NULL) {
+            if (v_func.type != JERRY_DATA_TYPE_OBJECT) {
+                PRINT("callback is not a function\n");
+                return false;
+            }
+            chrc->unsubscribe_cb = v_func.u.v_object;
+            jerry_acquire_object(v_func.u.v_object);
+        }
+    }
+
+    if (jerry_get_object_field_value(val.u.v_object, "onNotify", &v_func)) {
+        if (v_func.type != JERRY_DATA_TYPE_NULL) {
+            if (v_func.type != JERRY_DATA_TYPE_OBJECT) {
+                PRINT("callback is not a function\n");
+                return false;
+            }
+            chrc->notify_cb = v_func.u.v_object;
+            jerry_acquire_object(v_func.u.v_object);
+        }
+    }
+
+    return true;
+}
+
+bool zjs_ble_parse_service(const jerry_value_t val,
+                           struct ble_service *service)
+{
+    if (!service) {
+        return false;
+    }
+
+    if (val.type != JERRY_DATA_TYPE_OBJECT)
+    {
+        PRINT("invalid object type\n");
+        return false;
+    }
+
+    char uuid[UUID_LEN];
+    if (!zjs_obj_get_string(val.u.v_object, "uuid", uuid, UUID_LEN)) {
+        PRINT("service uuid doesn't exist\n");
+        return false;
+    }
+    service->uuid = zjs_ble_new_uuid_16(strtoul(uuid, NULL, 16));
+
+    jerry_value_t v_array;
+    if (!jerry_get_object_field_value(val.u.v_object, "characteristics", &v_array)) {
+        PRINT("characteristics doesn't exist\n");
+        return false;
+    }
+
+    if (v_array.type != JERRY_DATA_TYPE_OBJECT) {
+        PRINT("characteristics array is undefined or null\n");
+        return false;
+    }
+
+    int chrc_index = 0;
+    jerry_value_t v_characteristic;
+    if (!jerry_get_array_index_value(v_array.u.v_object, chrc_index, &v_characteristic)) {
+        PRINT("failed to access characteristic array\n");
+        return false;
+    }
+
+    struct ble_characteristic *previous = NULL;
+    while (v_characteristic.type == JERRY_DATA_TYPE_OBJECT) {
+        struct ble_characteristic *chrc = task_malloc(sizeof(struct ble_characteristic));
+        if (!chrc) {
+            PRINT("error: out of memory allocating struct ble_characteristic\n");
+        } else {
+            memset(chrc, 0, sizeof(struct ble_characteristic));
+        }
+
+        if (!zjs_ble_parse_characteristic(v_characteristic, chrc)) {
+            PRINT("failed to parse temp characteristic\n");
+            return false;
+        }
+
+        // append to the list
+        if (!service->characteristics) {
+            service->characteristics = chrc;
+            previous = chrc;
+        }
+        else {
+           previous->next = chrc;
+        }
+
+        // next characterstic
+        chrc_index++;
+        if (!jerry_get_array_index_value(v_array.u.v_object, chrc_index, &v_characteristic)) {
+            PRINT("failed to access characteristic array\n");
+            return false;
+        }
+    }
+
+    return true;
+}
+
+/*
+ * WebBT Service Declaration
+ *
+static struct bt_gatt_attr attrs[] = {
+    BT_GATT_PRIMARY_SERVICE(BT_UUID_WEBBT),
+
+    BT_GATT_CHARACTERISTIC(BT_UUID_TEMP,
+        BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY),
+    BT_GATT_DESCRIPTOR(BT_UUID_TEMP, BT_GATT_PERM_READ,
+        read_callback, NULL, NULL),
+    BT_GATT_CUD(SENSOR_1_NAME, BT_GATT_PERM_READ),
+    BT_GATT_CCC(blvl_ccc_cfg, blvl_ccc_cfg_changed),
+
+    BT_GATT_CHARACTERISTIC(BT_UUID_RGB,
+        BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE),
+    BT_GATT_DESCRIPTOR(BT_UUID_RGB, BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,
+        read_callback, write_callback, NULL),
+    BT_GATT_CUD(SENSOR_2_NAME, BT_GATT_PERM_READ),
+};
+*/
+
+bool zjs_ble_register_service(struct ble_service *service)
+{
+    if (!service) {
+        PRINT("zjs_ble_create_gatt_attrs: invalid ble_service\n");
+    }
+
+    int num_of_entries = 1; // 1 attribute for service uuid
+    struct ble_characteristic *ch = service->characteristics;
+    while (ch != NULL) {
+        num_of_entries += 4;  // 4 attributes per characteristic
+        ch = ch->next;
+    }
+
+   struct bt_gatt_attr* bt_attrs = task_malloc(sizeof(struct bt_gatt_attr) * num_of_entries);
+    if (!bt_attrs) {
+        PRINT("error: out of memory allocating struct bt_gatt_attr\n");
+        return false;
+    } else {
+        memset(bt_attrs, 0, sizeof(struct bt_gatt_attr) * num_of_entries);
+    }
+
+    // SERVICE
+    int entry_index = 0;
+    bt_attrs[entry_index].uuid = BT_UUID_GATT_PRIMARY;
+    bt_attrs[entry_index].perm = BT_GATT_PERM_READ;
+    bt_attrs[entry_index].read = bt_gatt_attr_read_service;
+    bt_attrs[entry_index].user_data = service->uuid;
+    entry_index++;
+
+    ch = service->characteristics;
+    while (ch != NULL) {
+        // CHARACTERISTIC
+        struct bt_gatt_chrc *user_data = task_malloc(sizeof(struct bt_gatt_chrc));
+        if (!user_data) {
+            PRINT("error: out of memory allocating struct bt_gatt_chrc\n");
+            return false;
+        } else {
+            memset(user_data, 0, sizeof(struct bt_gatt_chrc));
+        }
+
+        user_data->uuid = ch->uuid;
+        user_data->properties = ch->flags;
+        bt_attrs[entry_index].uuid = BT_UUID_GATT_CHRC;
+        bt_attrs[entry_index].perm = BT_GATT_PERM_READ;
+        bt_attrs[entry_index].read = bt_gatt_attr_read_chrc;
+        bt_attrs[entry_index].user_data = user_data;
+
+        // TODO: handle multiple descriptors
+        // DESCRIPTOR
+        entry_index++;
+        bt_attrs[entry_index].uuid = ch->uuid;
+        bt_attrs[entry_index].perm = BT_GATT_PERM_READ;
+        bt_attrs[entry_index].read = read_callback;
+        bt_attrs[entry_index].write = write_callback;
+        bt_attrs[entry_index].user_data = ch;
+
+        if (!bt_uuid_cmp(ch->uuid, BT_UUID_TEMP)) {
+            // CUD
+            // FIXME: only temperature sets it for now
+            entry_index++;
+            bt_attrs[entry_index].uuid = BT_UUID_GATT_CUD;
+            bt_attrs[entry_index].perm = BT_GATT_PERM_READ;
+            bt_attrs[entry_index].read = bt_gatt_attr_read_cud;
+            bt_attrs[entry_index].user_data = SENSOR_1_NAME;
+
+            // BT_GATT_CCC
+            entry_index++;
+            // FIXME: for notification?
+            bt_attrs[entry_index].uuid = BT_UUID_GATT_CCC;
+            bt_attrs[entry_index].perm = BT_GATT_PERM_READ | BT_GATT_PERM_WRITE;
+            bt_attrs[entry_index].read = bt_gatt_attr_read_ccc;
+            bt_attrs[entry_index].write = bt_gatt_attr_write_ccc;
+            bt_attrs[entry_index].user_data = (&(struct _bt_gatt_ccc) {
+                    .cfg = blvl_ccc_cfg,
+                    .cfg_len = ARRAY_SIZE(blvl_ccc_cfg),
+                    .cfg_changed = blvl_ccc_cfg_changed,
+            });
+        } else if (!bt_uuid_cmp(ch->uuid, BT_UUID_RGB)) {
+            entry_index++;
+            bt_attrs[entry_index].uuid = BT_UUID_GATT_CUD;
+            bt_attrs[entry_index].perm = BT_GATT_PERM_READ | BT_GATT_PERM_WRITE;
+            bt_attrs[entry_index].read = bt_gatt_attr_read_cud;
+            bt_attrs[entry_index].user_data = SENSOR_2_NAME;
+
+            entry_index++;    //placeholder
+            bt_attrs[entry_index].uuid = BT_UUID_GATT_CCC;
+            bt_attrs[entry_index].perm = BT_GATT_PERM_READ | BT_GATT_PERM_WRITE;
+            bt_attrs[entry_index].read = bt_gatt_attr_read_ccc;
+            bt_attrs[entry_index].write = bt_gatt_attr_write_ccc;
+        }
+
+        entry_index++;
+        ch = ch->next;
+    }
+
+    PRINT("register service %d entries\n", entry_index);
+    bt_gatt_register(bt_attrs, entry_index);
+    return true;
+}
+
 bool zjs_ble_set_services(const jerry_object_t *function_obj_p,
                           const jerry_value_t *this_p,
                           jerry_value_t *ret_val_p,
@@ -372,13 +719,36 @@ bool zjs_ble_set_services(const jerry_object_t *function_obj_p,
     if (args_cnt != 1 ||
         args_p[0].type != JERRY_DATA_TYPE_OBJECT)
     {
-        PRINT("zjs_ble_characterstic: invalid arguments\n");
+        PRINT("zjs_ble_set_services: invalid arguments\n");
         return false;
     }
 
-    bt_gatt_register(attrs, ARRAY_SIZE(attrs));
+    if (args_cnt == 2 &&
+        args_p[1].type != JERRY_DATA_TYPE_OBJECT)
+    {
+        PRINT("zjs_ble_set_services: invalid arguments\n");
+        return false;
+    }
 
-    return true;
+    // FIXME: currently hard-coded to work with demo
+    // which has only 1 primary service and 2 characterstics
+    // add support for multiple services
+    jerry_value_t v_service;
+    if (!jerry_get_array_index_value(args_p[0].u.v_object, 0, &v_service)) {
+        PRINT("zjs_ble_set_services: services array is empty\n");
+        return false;
+    }
+
+    if (zjs_primary_service.characteristics) {
+        zjs_ble_free_characteristics(zjs_primary_service.characteristics);
+    }
+
+    if (!zjs_ble_parse_service(v_service, &zjs_primary_service)) {
+        PRINT("zjs_ble_set_services: failed to validate service object\n");
+        return false;
+    }
+
+    return zjs_ble_register_service(&zjs_primary_service);
 }
 
 bool zjs_ble_primary_service(const jerry_object_t *function_obj_p,

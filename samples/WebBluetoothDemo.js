@@ -84,6 +84,8 @@ ble.on('advertisingStart', function(error) {
                         print("OnWriteRequest");
                         // TODO: implement
                     },
+                    onSubscribe: null,               // not supported
+                    onUnsubscribe: null,             // not supported
                     onNotify: null                   // not supported
                 })
             ]
