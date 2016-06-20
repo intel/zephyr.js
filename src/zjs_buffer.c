@@ -10,6 +10,7 @@
 
 // ZJS includes
 #include "zjs_util.h"
+#include "zjs_buffer.h"
 
 static struct zjs_buffer_t *zjs_buffers = NULL;
 
