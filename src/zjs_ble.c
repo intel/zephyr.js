@@ -640,26 +640,31 @@ bool zjs_ble_register_service(struct ble_service *service)
     ch = service->characteristics;
     while (ch != NULL) {
         // CHARACTERISTIC
-        struct bt_gatt_chrc *user_data = task_malloc(sizeof(struct bt_gatt_chrc));
-        if (!user_data) {
+        struct bt_gatt_chrc *chrc_user_data = task_malloc(sizeof(struct bt_gatt_chrc));
+        if (!chrc_user_data) {
             PRINT("error: out of memory allocating struct bt_gatt_chrc\n");
             return false;
         } else {
-            memset(user_data, 0, sizeof(struct bt_gatt_chrc));
+            memset(chrc_user_data, 0, sizeof(struct bt_gatt_chrc));
         }
 
-        user_data->uuid = ch->uuid;
-        user_data->properties = ch->flags;
+        chrc_user_data->uuid = ch->uuid;
+        chrc_user_data->properties = ch->flags;
         bt_attrs[entry_index].uuid = BT_UUID_GATT_CHRC;
         bt_attrs[entry_index].perm = BT_GATT_PERM_READ;
         bt_attrs[entry_index].read = bt_gatt_attr_read_chrc;
-        bt_attrs[entry_index].user_data = user_data;
+        bt_attrs[entry_index].user_data = chrc_user_data;
 
         // TODO: handle multiple descriptors
         // DESCRIPTOR
         entry_index++;
         bt_attrs[entry_index].uuid = ch->uuid;
-        bt_attrs[entry_index].perm = BT_GATT_PERM_READ;
+        if (ch->read_cb) {
+            bt_attrs[entry_index].perm |= BT_GATT_PERM_READ;
+        }
+        if (ch->write_cb) {
+            bt_attrs[entry_index].perm |= BT_GATT_PERM_WRITE;
+        }
         bt_attrs[entry_index].read = read_callback;
         bt_attrs[entry_index].write = write_callback;
         bt_attrs[entry_index].user_data = ch;
@@ -676,15 +681,22 @@ bool zjs_ble_register_service(struct ble_service *service)
             // BT_GATT_CCC
             entry_index++;
             // FIXME: for notification?
+            struct _bt_gatt_ccc *ccc_user_data = task_malloc(sizeof(struct _bt_gatt_ccc));
+            if (!ccc_user_data) {
+                PRINT("error: out of memory allocating struct bt_gatt_ccc\n");
+                return false;
+            } else {
+                memset(ccc_user_data, 0, sizeof(struct _bt_gatt_ccc));
+            }
+
+            ccc_user_data->cfg = blvl_ccc_cfg;
+            ccc_user_data->cfg_len = ARRAY_SIZE(blvl_ccc_cfg);
+            ccc_user_data->cfg_changed = blvl_ccc_cfg_changed;
             bt_attrs[entry_index].uuid = BT_UUID_GATT_CCC;
             bt_attrs[entry_index].perm = BT_GATT_PERM_READ | BT_GATT_PERM_WRITE;
             bt_attrs[entry_index].read = bt_gatt_attr_read_ccc;
             bt_attrs[entry_index].write = bt_gatt_attr_write_ccc;
-            bt_attrs[entry_index].user_data = (&(struct _bt_gatt_ccc) {
-                    .cfg = blvl_ccc_cfg,
-                    .cfg_len = ARRAY_SIZE(blvl_ccc_cfg),
-                    .cfg_changed = blvl_ccc_cfg_changed,
-            });
+            bt_attrs[entry_index].user_data = ccc_user_data;
         } else if (!bt_uuid_cmp(ch->uuid, BT_UUID_RGB)) {
             entry_index++;
             bt_attrs[entry_index].uuid = BT_UUID_GATT_CUD;
