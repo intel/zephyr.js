@@ -18,23 +18,25 @@ struct modItem {
 static struct modItem *modList;
 
 static bool
-native_require_handler(const jerry_object_t * function_obj_p,
-         const jerry_value_t * this_p,
-         jerry_value_t * ret_val_p,
-         const jerry_value_t args_p[],
-         const jerry_length_t args_cnt)
+native_require_handler(const jerry_object_t *function_obj_p,
+                       const jerry_value_t this_val,
+                       const jerry_value_t args_p[],
+                       const jerry_length_t args_cnt,
+                       jerry_value_t *ret_val_p)
 {
     char module[80];
     jerry_size_t sz;
 
     jerry_value_t arg = args_p[0];
-    if (!ZJS_IS_STRING(arg)) {
+    if (!jerry_value_is_string(arg)) {
         PRINT ("native_require_handler: invalid arguments\n");
         return false;
     }
 
-    sz = jerry_get_string_size(arg.u.v_string);
-    int len = jerry_string_to_char_buffer(arg.u.v_string, (jerry_char_t *)module, sz);
+    sz = jerry_get_string_size(jerry_get_string_value(arg));
+    int len = jerry_string_to_char_buffer(jerry_get_string_value(arg),
+                                          (jerry_char_t *)module,
+                                          sz);
     module[len] = '\0';
 
 

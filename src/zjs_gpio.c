@@ -87,9 +87,11 @@ static void zjs_gpio_call_function(struct zjs_callback *cb)
 {
     // requires: called only from task context
     //  effects: handles execution of the JS callback when ready
-    jerry_value_t rval;
-    if (jerry_call_function(cb->js_callback, NULL, &rval, NULL, 0))
-        jerry_release_value(&rval);
+    jerry_value_t rval = jerry_call_function(cb->js_callback, NULL, NULL, 0);
+    if (jerry_value_is_error(rval)) {
+        PRINT("error: zjs_gpio_call_function\n");
+    }
+    jerry_release_value(rval);
     // NOTE: this function is actually generic and could serve to call any
     //   JS callback function with no args, so we may move it to a generic
     //   name as we discover how often this comes up
@@ -110,21 +112,21 @@ jerry_object_t *zjs_gpio_init()
 }
 
 bool zjs_gpio_open(const jerry_object_t *function_obj_p,
-                   const jerry_value_t *this_p,
-                   jerry_value_t *ret_val_p,
+                   const jerry_value_t this_val,
                    const jerry_value_t args_p[],
-                   const jerry_length_t args_cnt)
+                   const jerry_length_t args_cnt,
+                   jerry_value_t *ret_val_p)
 {
     // requires: arg 0 is an object with these members: pin (int), direction
     //             (defaults to "out"), activeLow (defaults to false),
     //             edge (defaults to "any"), pull (default to undefined)
-    if (args_cnt < 1 || !ZJS_IS_OBJ(args_p[0])) {
+    if (args_cnt < 1 || !jerry_value_is_object(args_p[0])) {
         PRINT("zjs_gpio_open: invalid argument\n");
         return false;
     }
 
     // data input object
-    jerry_object_t *data = args_p[0].u.v_object;
+    jerry_object_t *data = jerry_get_object_value(args_p[0]);
 
     uint32_t pin;
     if (!zjs_obj_get_uint32(data, "pin", &pin)) {
@@ -214,14 +216,14 @@ bool zjs_gpio_open(const jerry_object_t *function_obj_p,
 }
 
 bool zjs_gpio_pin_read(const jerry_object_t *function_obj_p,
-                       const jerry_value_t *this_p,
-                       jerry_value_t *ret_val_p,
+                       const jerry_value_t this_val,
                        const jerry_value_t args_p[],
-                       const jerry_length_t args_cnt)
+                       const jerry_length_t args_cnt,
+                       jerry_value_t *ret_val_p)
 {
-    // requires: this_p is a GPIOPin object from zjs_gpio_open, takes no args
+    // requires: this_val is a GPIOPin object from zjs_gpio_open, takes no args
     //  effects: reads a logical value from the pin and returns it in ret_val_p
-    jerry_object_t *obj = jerry_get_object_value(this_p);
+    jerry_object_t *obj = jerry_get_object_value(this_val);
 
     uint32_t pin;
     zjs_obj_get_uint32(obj, "pin", &pin);
@@ -238,8 +240,8 @@ bool zjs_gpio_pin_read(const jerry_object_t *function_obj_p,
     bool logical = false;
     if ((value && !activeLow) || (!value && activeLow))
         logical = true;
-    ret_val_p->type = JERRY_DATA_TYPE_BOOLEAN;
-    ret_val_p->u.v_bool = logical;
+
+    *ret_val_p = jerry_create_boolean_value(logical);
     PRINT("DBG: Reading pin #%lu: %s (%lu)\n", pin,
           logical ? "ACTIVE":"INACTIVE", value);
 
@@ -247,22 +249,21 @@ bool zjs_gpio_pin_read(const jerry_object_t *function_obj_p,
 }
 
 bool zjs_gpio_pin_write(const jerry_object_t *function_obj_p,
-                        const jerry_value_t *this_p,
-                        jerry_value_t *ret_val_p,
+                        const jerry_value_t this_val,
                         const jerry_value_t args_p[],
-                        const jerry_length_t args_cnt)
+                        const jerry_length_t args_cnt,
+                        jerry_value_t *ret_val_p)
 {
-    // requires: this_p is a GPIOPin object from zjs_gpio_open, takes one arg,
+    // requires: this_val is a GPIOPin object from zjs_gpio_open, takes one arg,
     //             the logical boolean value to set to the pin (true = active)
     //  effects: writes the logical value to the pin
-    if (args_cnt < 1 || !ZJS_IS_BOOL(args_p[0])) {
+    if (args_cnt < 1 || !jerry_value_is_boolean(args_p[0])) {
         PRINT("zjs_gpio_pin_write: invalid argument\n");
         return false;
     }
 
-    bool logical = args_p[0].u.v_bool;
-
-    jerry_object_t *obj = jerry_get_object_value(this_p);
+    bool logical = jerry_get_boolean_value(args_p[0]);
+    jerry_object_t *obj = jerry_get_object_value(this_val);
 
     uint32_t pin;
     zjs_obj_get_uint32(obj, "pin", &pin);
@@ -284,20 +285,20 @@ bool zjs_gpio_pin_write(const jerry_object_t *function_obj_p,
 }
 
 bool zjs_gpio_pin_set_callback(const jerry_object_t *function_obj_p,
-                               const jerry_value_t *this_p,
-                               jerry_value_t *ret_val_p,
+                               const jerry_value_t this_val,
                                const jerry_value_t args_p[],
-                               const jerry_length_t args_cnt)
+                               const jerry_length_t args_cnt,
+                               jerry_value_t *ret_val_p)
 {
-    // requires: this_p is a GPIOPin object, the one arg is a JS callback
+    // requires: this_val is a GPIOPin object, the one arg is a JS callback
     //             function
     //  effects: registers this callback to be called when the GPIO changes
-    if (args_cnt < 1 || !ZJS_IS_OBJ(args_p[0])) {
+    if (args_cnt < 1 || !jerry_value_is_object(args_p[0])) {
         PRINT("zjs_gpio_pin_set_callback: invalid argument\n");
         return false;
     }
 
-    jerry_object_t *pinobj = jerry_get_object_value(this_p);
+    jerry_object_t *pinobj = jerry_get_object_value(this_val);
     uint32_t pin;
     zjs_obj_get_uint32(pinobj, "pin", &pin);
 
@@ -307,7 +308,7 @@ bool zjs_gpio_pin_set_callback(const jerry_object_t *function_obj_p,
         return false;
     gpio_init_callback(&item->gpio_cb, zjs_gpio_callback_wrapper, BIT(pin));
     item->pin_obj = pinobj;
-    item->zjs_cb.js_callback = args_p[0].u.v_object;
+    item->zjs_cb.js_callback = jerry_get_object_value(args_p[0]);
     item->zjs_cb.call_function = zjs_gpio_call_function;
 
     jerry_acquire_object(item->zjs_cb.js_callback);

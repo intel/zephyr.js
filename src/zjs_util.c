@@ -56,8 +56,7 @@ void zjs_obj_add_boolean(jerry_object_t *obj, bool bval, const char *name)
     // requires: obj is an existing JS object
     //  effects: creates a new field in parent named name, set to value
     jerry_value_t value = jerry_create_boolean_value(bval);
-    jerry_set_object_field_value(obj, (const jerry_char_t *)name,
-                                     &value);
+    jerry_set_object_field_value(obj, (const jerry_char_t *)name, value);
 }
 
 void zjs_obj_add_function(jerry_object_t *obj, void *function,
@@ -67,11 +66,8 @@ void zjs_obj_add_function(jerry_object_t *obj, void *function,
     //  effects: creates a new field in object named name, that will be a JS
     //             JS function that calls the given C function
     jerry_object_t *func = jerry_create_external_function(function);
-    jerry_value_t value;
-    value.type = JERRY_DATA_TYPE_OBJECT;
-    value.u.v_object = func;
-    jerry_set_object_field_value(obj, (const jerry_char_t *)name,
-                                     &value);
+    jerry_value_t value = jerry_create_object_value(func);
+    jerry_set_object_field_value(obj, (const jerry_char_t *)name, value);
 }
 
 void zjs_obj_add_object(jerry_object_t *parent, jerry_object_t *child,
@@ -79,11 +75,8 @@ void zjs_obj_add_object(jerry_object_t *parent, jerry_object_t *child,
 {
     // requires: parent and child are existing JS objects
     //  effects: creates a new field in parent named name, that refers to child
-    jerry_value_t value;
-    value.type = JERRY_DATA_TYPE_OBJECT;
-    value.u.v_object = child;
-    jerry_set_object_field_value(parent, (const jerry_char_t *)name,
-                                     &value);
+    jerry_value_t value = jerry_create_object_value(child);
+    jerry_set_object_field_value(parent, (const jerry_char_t *)name, value);
 }
 
 void zjs_obj_add_string(jerry_object_t *obj, const char *sval,
@@ -93,7 +86,7 @@ void zjs_obj_add_string(jerry_object_t *obj, const char *sval,
     //  effects: creates a new field in parent named name, set to value
     jerry_string_t *str = jerry_create_string(sval);
     jerry_value_t value = jerry_create_string_value(str);
-    jerry_set_object_field_value(obj, name, &value);
+    jerry_set_object_field_value(obj, name, value);
 }
 
 void zjs_obj_add_uint32(jerry_object_t *obj, uint32_t ival,
@@ -101,10 +94,8 @@ void zjs_obj_add_uint32(jerry_object_t *obj, uint32_t ival,
 {
     // requires: obj is an existing JS object
     //  effects: creates a new field in parent named name, set to value
-    jerry_value_t value;
-    value.type = JERRY_DATA_TYPE_UINT32;
-    value.u.v_uint32 = ival;
-    jerry_set_object_field_value(obj, name, &value);
+    jerry_value_t value = jerry_create_number_value(ival);
+    jerry_set_object_field_value(obj, name, value);
 }
 
 bool zjs_obj_get_boolean(jerry_object_t *obj, const char *name,
@@ -113,15 +104,15 @@ bool zjs_obj_get_boolean(jerry_object_t *obj, const char *name,
     // requires: obj is an existing JS object, value name should exist as
     //             boolean
     //  effects: retrieves field specified by name as a boolean
-    jerry_value_t value;
-    if (!jerry_get_object_field_value(obj, name, &value))
+    jerry_value_t value = jerry_get_object_field_value(obj, name);
+    if (jerry_value_is_error(value))
         return false;
 
-    if (value.type != JERRY_DATA_TYPE_BOOLEAN)
+    if (!jerry_value_is_boolean(value))
         return false;
 
-    *flag = jerry_get_boolean_value(&value);
-    jerry_release_value(&value);
+    *flag = jerry_get_boolean_value(value);
+    jerry_release_value(value);
     return true;
 }
 
@@ -133,21 +124,21 @@ bool zjs_obj_get_string(jerry_object_t *obj, const char *name,
     //  effects: retrieves field specified by name; if it exists, and is a
     //             string, copies at most len - 1 bytes plus a null terminator
     //             into buffer and returns true; otherwise, returns false
-    jerry_value_t value;
-    if (!jerry_get_object_field_value(obj, name, &value))
+    jerry_value_t value = jerry_get_object_field_value(obj, name);
+    if (jerry_value_is_error(value))
         return false;
 
-    if (value.type != JERRY_DATA_TYPE_STRING)
+    if (!jerry_value_is_string(value))
         return false;
 
-    jerry_string_t *str = jerry_get_string_value(&value);
+    jerry_string_t *str = jerry_get_string_value(value);
     jerry_size_t jlen = jerry_get_string_size(str);
     if (jlen + 1 < len)
         len = jlen + 1;
 
     int wlen = jerry_string_to_char_buffer(str, buffer, len);
     buffer[wlen] = '\0';
-    jerry_release_value(&value);
+    jerry_release_value(value);
     return true;
 }
 
@@ -156,16 +147,12 @@ bool zjs_obj_get_uint32(jerry_object_t *obj, const char *name,
 {
     // requires: obj is an existing JS object, value name should exist as number
     //  effects: retrieves field specified by name as a uint32
-    jerry_value_t value;
-    if (!jerry_get_object_field_value(obj, name, &value))
+    jerry_value_t value = jerry_get_object_field_value(obj, name);
+    if (jerry_value_is_error(value))
         return false;
 
-    // work around bug in the above API, it never returns false
-    if (value.type == JERRY_DATA_TYPE_UNDEFINED)
-        return false;
-
-    *num = (uint32_t)jerry_get_number_value(&value);
-    jerry_release_value(&value);
+    *num = (uint32_t)jerry_get_number_value(value);
+    jerry_release_value(value);
     return true;
 }
 
@@ -201,10 +188,8 @@ void zjs_init_value_object(jerry_value_t *out_value_p, jerry_object_t *v)
 {
     // requires: out_value_p to recieve the object value v
     //  effects: put the object into out_value_p with appropriate encoding.
-    jerry_acquire_object (v);
-
-    out_value_p->type = JERRY_DATA_TYPE_OBJECT;
-    out_value_p->u.v_object = v;
+    jerry_acquire_object(v);
+    *out_value_p = jerry_create_object_value(v);
 }
 
 /**
@@ -214,7 +199,5 @@ void zjs_init_value_string(jerry_value_t *out_value_p, const char *v)
 {
     // requires: out_value_p to recieve the string value v
     //  effects: put the string into out_value_p with appropriate encoding.
-
-    out_value_p->type = JERRY_DATA_TYPE_STRING;
-    out_value_p->u.v_string = jerry_create_string((jerry_char_t *) v);
+    *out_value_p = jerry_create_string_value(jerry_create_string((jerry_char_t *) v));
 }

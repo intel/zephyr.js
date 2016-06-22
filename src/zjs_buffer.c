@@ -27,31 +27,31 @@ struct zjs_buffer_t *zjs_find_buffer(const jerry_object_t *obj)
 }
 
 static bool zjs_buffer_write_uint8(const jerry_object_t *function_obj_p,
-                                   const jerry_value_t *this_p,
-                                   jerry_value_t *ret_val_p,
+                                   const jerry_value_t this_val,
                                    const jerry_value_t args_p[],
-                                   const jerry_length_t args_cnt)
+                                   const jerry_length_t args_cnt,
+                                   jerry_value_t *ret_val_p)
 {
-    // requires: this_p is a JS buffer object created with zjs_buffer,
+    // requires: this_val is a JS buffer object created with zjs_buffer,
     //             expects arguments of the value to write and an offset
     //             into the buffer, but will treat offset as 0 if not given,
     //             as node.js seems to
     //  effects: writes single byte value into the buffer associated with the
     //             this_p JS object, if found, at the given offset, if within
     //             the bounds of the buffer; otherwise returns an error
-    if (args_cnt < 1 || !jerry_value_is_number(&args_p[0]) ||
-        (args_cnt >= 2 && !jerry_value_is_number(&args_p[1]))) {
+    if (args_cnt < 1 || !jerry_value_is_number(args_p[0]) ||
+        (args_cnt >= 2 && !jerry_value_is_number(args_p[1]))) {
         PRINT("Unsupported arguments to writeUInt8\n");
         return false;
     }
 
-    uint8_t value = (uint8_t)jerry_get_number_value(&args_p[0]);
+    uint8_t value = (uint8_t)jerry_get_number_value(args_p[0]);
 
     uint32_t offset = 0;
     if (args_cnt > 1)
-        offset = (uint32_t)jerry_get_number_value(&args_p[1]);
+        offset = (uint32_t)jerry_get_number_value(args_p[1]);
 
-    jerry_object_t *obj = jerry_get_object_value(this_p);
+    jerry_object_t *obj = jerry_get_object_value(this_val);
     struct zjs_buffer_t *buf = zjs_find_buffer(obj);
     if (buf) {
         if (offset >= buf->bufsize) {
@@ -60,8 +60,7 @@ static bool zjs_buffer_write_uint8(const jerry_object_t *function_obj_p,
         }
         ((char *)buf->buffer)[offset] = value;
 
-        ret_val_p->type = JERRY_DATA_TYPE_UINT32;
-        ret_val_p->u.v_uint32 = offset + 1;
+        *ret_val_p = jerry_create_number_value(offset + 1);
         return true;
     }
     return false;
@@ -76,33 +75,34 @@ char zjs_int_to_hex(int value) {
 }
 
 static bool zjs_buffer_to_string(const jerry_object_t *function_obj_p,
-                                 const jerry_value_t *this_p,
-                                 jerry_value_t *ret_val_p,
+                                 const jerry_value_t this_val,
                                  const jerry_value_t args_p[],
-                                 const jerry_length_t args_cnt)
+                                 const jerry_length_t args_cnt,
+                                 jerry_value_t *ret_val_p)
 {
-    // requires: this_p must be a JS buffer object, if an argument is present it
+    // requires: this_val must be a JS buffer object, if an argument is present it
     //             must be the string 'hex', as that is the only supported
     //             encoding for now
     //  effects: if the buffer object is found, converts its contents to a hex
     //             string and returns it in ret_val_p
-    if (args_cnt > 1 || (args_cnt == 1 && !ZJS_IS_STRING(args_p[0]))) {
+    if (args_cnt > 1 || (args_cnt == 1 && !jerry_value_is_string(args_p[0]))) {
         PRINT("Unsupported arguments to Buffer toString\n");
         return false;
     }
 
-    jerry_object_t *obj = jerry_get_object_value(this_p);
+    jerry_object_t *obj = jerry_get_object_value(this_val);
     struct zjs_buffer_t *buf = zjs_find_buffer(obj);
     if (buf && args_cnt == 0) {
-        zjs_init_value_string(ret_val_p, "[Buffer Object]");
+        *ret_val_p = jerry_create_string_value(jerry_create_string(
+                                               (jerry_char_t *)"[Buffer Object]"));
         return true;
     }
 
     char encoding[16];
-    jerry_size_t sz = jerry_get_string_size(args_p[0].u.v_string);
+    jerry_size_t sz = jerry_get_string_size(jerry_get_string_value(args_p[0]));
     if (sz > 15)
         sz = 15;
-    int len = jerry_string_to_char_buffer(args_p[0].u.v_string,
+    int len = jerry_string_to_char_buffer(jerry_get_string_value(args_p[0]),
                                           (jerry_char_t *)encoding, sz);
     encoding[len] = '\0';
 
@@ -120,7 +120,8 @@ static bool zjs_buffer_to_string(const jerry_object_t *function_obj_p,
             hexbuf[2*i+1] = zjs_int_to_hex(low);
         }
         hexbuf[buf->bufsize * 2] = '\0';
-        zjs_init_value_string(ret_val_p, hexbuf);
+        *ret_val_p = jerry_create_string_value(jerry_create_string(
+                                               (jerry_char_t *)hexbuf));
         return true;
     }
     return false;
@@ -128,22 +129,22 @@ static bool zjs_buffer_to_string(const jerry_object_t *function_obj_p,
 
 // Buffer constructor
 static bool zjs_buffer(const jerry_object_t *function_obj_p,
-                       const jerry_value_t *this_p,
-                       jerry_value_t *ret_val_p,
+                       const jerry_value_t this_val,
                        const jerry_value_t args_p[],
-                       const jerry_length_t args_cnt)
+                       const jerry_length_t args_cnt,
+                       jerry_value_t *ret_val_p)
 {
     // requires: single argument is a numeric size in bytes; soon will also
     //             support an array argument to initialize the buffer
     //  effects: constructs a new JS Buffer object, and an associated buffer
     //             tied to it through a zjs_buffer_t struct stored in a global
     //             list
-    if (args_cnt != 1 || !jerry_value_is_number(&args_p[0])) {
+    if (args_cnt != 1 || !jerry_value_is_number(args_p[0])) {
         PRINT("Unsupported arguments to Buffer constructor\n");
         return false;
     }
 
-    uint32_t size = (uint32_t)jerry_get_number_value(&args_p[0]);
+    uint32_t size = (uint32_t)jerry_get_number_value(args_p[0]);
 
     jerry_object_t *buf_obj = jerry_create_object();
     void *buf = task_malloc(size);

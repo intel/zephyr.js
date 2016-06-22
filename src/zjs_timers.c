@@ -27,9 +27,11 @@ static void zjs_timer_call_function(struct zjs_callback *cb)
 {
     // requires: called only from task context
     //  effects: handles execution of the JS callback when ready
-    jerry_value_t rval;
-    if (jerry_call_function(cb->js_callback, NULL, &rval, NULL, 0))
-        jerry_release_value(&rval);
+    jerry_value_t rval = jerry_call_function(cb->js_callback, NULL, NULL, 0);
+    if (jerry_value_is_error(rval)) {
+        PRINT("error: zjs_timer_call_function\n");
+    }
+    jerry_release_value(rval);
 }
 
 static jerry_object_t *
@@ -83,20 +85,20 @@ delete_timer(jerry_object_t *obj)
 
 // native setInterval handler
 static bool
-native_setInterval_handler(const jerry_object_t *function_obj_p,
-                           const jerry_value_t *this_p,
-                           jerry_value_t *ret_val_p,
-                           const jerry_value_t args_p[],
-                           const jerry_length_t args_cnt)
+native_set_interval_handler(const jerry_object_t *function_obj_p,
+                            const jerry_value_t this_val,
+                            const jerry_value_t args_p[],
+                            const jerry_length_t args_cnt,
+                            jerry_value_t *ret_val_p)
 {
-    if (!ZJS_IS_OBJ(args_p[0]) || !ZJS_IS_FLOAT32(args_p[1])) {
-        PRINT ("native_setInterval_handler: invalid arguments\n");
+    if (!jerry_value_is_object(args_p[0]) || !jerry_value_is_number(args_p[1])) {
+        PRINT ("native_set_interval_handler: invalid arguments\n");
         return false;
     }
 
-    uint32_t interval = (uint32_t)(args_p[1].u.v_float32 / 1000 *
+    uint32_t interval = (uint32_t)(jerry_get_number_value(args_p[1]) / 1000 *
                                    CONFIG_SYS_CLOCK_TICKS_PER_SEC);
-    jerry_object_t *callback = args_p[0].u.v_object;
+    jerry_object_t *callback = jerry_get_object_value(args_p[0]);
 
     jerry_object_t *tid = add_timer(interval, callback, true);
     if (!tid) {
@@ -113,18 +115,18 @@ native_setInterval_handler(const jerry_object_t *function_obj_p,
 
 // native setInterval handler
 static bool
-native_clearInterval_handler(const jerry_object_t *function_obj_p,
-                             const jerry_value_t *this_p,
-                             jerry_value_t *ret_val_p,
-                             const jerry_value_t args_p[],
-                             const jerry_length_t args_cnt)
+native_clear_interval_handler(const jerry_object_t *function_obj_p,
+                              const jerry_value_t this_val,
+                              const jerry_value_t args_p[],
+                              const jerry_length_t args_cnt,
+                              jerry_value_t *ret_val_p)
 {
-    if (!ZJS_IS_OBJ(args_p[0])) {
-        PRINT ("native_setInterval_handler: invalid arguments\n");
+    if (!jerry_value_is_object(args_p[0])) {
+        PRINT ("native_clear_interval_handler: invalid arguments\n");
         return false;
     }
 
-    jerry_object_t *tid = args_p[0].u.v_object;
+    jerry_object_t *tid = jerry_get_object_value(args_p[0]);
 
     if (!delete_timer(tid)) {
         // TODO: should throw an exception
@@ -156,8 +158,8 @@ void zjs_timers_init()
     jerry_object_t *global_obj = jerry_get_global();
 
     // create the C handler for setInterval JS call
-    zjs_obj_add_function(global_obj, native_setInterval_handler, "setInterval");
+    zjs_obj_add_function(global_obj, native_set_interval_handler, "setInterval");
 
     // create the C handler for clearInterval JS call
-    zjs_obj_add_function(global_obj, native_clearInterval_handler, "clearInterval");
+    zjs_obj_add_function(global_obj, native_clear_interval_handler, "clearInterval");
 }
