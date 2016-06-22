@@ -89,8 +89,6 @@ static ssize_t read_callback(struct bt_conn *conn, const struct bt_gatt_attr *at
     void *buf, uint16_t len, uint16_t offset)
 {
     struct ble_characteristic* chrc = attr->user_data;
-    PRINT("read_callback called, context: %s\n",
-          sys_execution_context_type_get()==NANO_CTX_ISR ? "ISR" : "TASK");
 
     if (!chrc) {
         PRINT("error: characteristic not found\n");
@@ -119,8 +117,6 @@ static ssize_t write_callback(struct bt_conn *conn, const struct bt_gatt_attr *a
     const void *buf, uint16_t len, uint16_t offset)
 {
     struct ble_characteristic* chrc = attr->user_data;
-    PRINT("write_callback called, context: %s\n",
-          sys_execution_context_type_get()==NANO_CTX_ISR ? "ISR" : "TASK");
 
     if (!chrc) {
         PRINT("error: characteristic not found\n");
@@ -479,9 +475,10 @@ bool zjs_ble_parse_characteristic(jerry_object_t *chrc_obj,
     jerry_value_t v_func;
     v_func = jerry_get_object_field_value(chrc_obj, "onReadRequest");
     if (!jerry_value_is_error(v_func)) {
-        if (!jerry_value_is_null(v_func)) {
+        if (!jerry_value_is_undefined(v_func) &&
+            !jerry_value_is_null(v_func)) {
             if (!jerry_value_is_object(v_func)) {
-                PRINT("callback is not a function\n");
+                PRINT("onReadRequest callback is not a function\n");
                 return false;
             }
             chrc->read_cb = jerry_acquire_object(jerry_get_object_value(v_func));
@@ -490,9 +487,10 @@ bool zjs_ble_parse_characteristic(jerry_object_t *chrc_obj,
 
     v_func = jerry_get_object_field_value(chrc_obj, "onWriteRequest");
     if (!jerry_value_is_error(v_func)) {
-        if (!jerry_value_is_null(v_func)) {
+        if (!jerry_value_is_undefined(v_func) &&
+            !jerry_value_is_null(v_func)) {
             if (!jerry_value_is_object(v_func)) {
-                PRINT("callback is not a function\n");
+                PRINT("onWriteRequest callback is not a function\n");
                 return false;
             }
             chrc->write_cb = jerry_acquire_object(jerry_get_object_value(v_func));
@@ -501,9 +499,10 @@ bool zjs_ble_parse_characteristic(jerry_object_t *chrc_obj,
 
     v_func = jerry_get_object_field_value(chrc_obj, "onSubscribe");
     if (!jerry_value_is_error(v_func)) {
-        if (!jerry_value_is_null(v_func)) {
+        if (!jerry_value_is_undefined(v_func) &&
+            !jerry_value_is_null(v_func)) {
             if (!jerry_value_is_object(v_func)) {
-                PRINT("callback is not a function\n");
+                PRINT("onSubscribe callback is not a function\n");
                 return false;
             }
             chrc->subscribe_cb = jerry_acquire_object(jerry_get_object_value(v_func));
@@ -512,9 +511,10 @@ bool zjs_ble_parse_characteristic(jerry_object_t *chrc_obj,
 
     v_func = jerry_get_object_field_value(chrc_obj, "onUnsubscribe");
     if (!jerry_value_is_error(v_func)) {
-        if (!jerry_value_is_null(v_func)) {
+        if (!jerry_value_is_undefined(v_func) &&
+            !jerry_value_is_null(v_func)) {
             if (!jerry_value_is_object(v_func)) {
-                PRINT("callback is not a function\n");
+                PRINT("onUnsubscribe callback is not a function\n");
                 return false;
             }
             chrc->unsubscribe_cb = jerry_acquire_object(jerry_get_object_value(v_func));
@@ -523,9 +523,10 @@ bool zjs_ble_parse_characteristic(jerry_object_t *chrc_obj,
 
     v_func = jerry_get_object_field_value(chrc_obj, "onNotify");
     if (!jerry_value_is_error(v_func)) {
-        if (!jerry_value_is_null(v_func)) {
+        if (!jerry_value_is_undefined(v_func) &&
+            !jerry_value_is_null(v_func)) {
             if (!jerry_value_is_object(v_func)) {
-                PRINT("callback is not a function\n");
+                PRINT("onNotify callback is not a function\n");
                 return false;
             }
             chrc->notify_cb = jerry_acquire_object(jerry_get_object_value(v_func));
