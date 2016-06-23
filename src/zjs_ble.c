@@ -14,7 +14,13 @@
 #include "zjs_ble.h"
 #include "zjs_util.h"
 
-#define UUID_LEN                36
+#define UUID_LEN                            36
+
+#define RESULT_SUCCESS                      0x00
+#define RESULT_INVALID_OFFSET               0x07
+#define RESULT_ATTR_NOT_LONG                0x0b
+#define RESULT_INVALID_ATTRIBUTE_LENGTH     0x0d
+#define RESULT_UNLIKELY_ERROR               0x0e
 
 // Port this to javascript
 #define BT_UUID_WEBBT BT_UUID_DECLARE_16(0xfc00)
@@ -826,7 +832,35 @@ bool zjs_ble_characteristic(const jerry_object_t *function_obj_p,
         return false;
     }
 
-    jerry_acquire_object(jerry_get_object_value(args_p[0]));
+    jerry_object_t *obj = jerry_acquire_object(jerry_get_object_value(args_p[0]));
+    jerry_value_t val;
+
+    // error codes
+    val = jerry_create_number_value(RESULT_SUCCESS);
+    jerry_set_object_field_value(obj,
+                                 (jerry_char_t *)"RESULT_SUCCESS",
+                                 val);
+
+    val = jerry_create_number_value(RESULT_INVALID_OFFSET);
+    jerry_set_object_field_value(obj,
+                                 (jerry_char_t *)"RESULT_INVALID_OFFSET",
+                                 val);
+
+    val = jerry_create_number_value(RESULT_ATTR_NOT_LONG);
+    jerry_set_object_field_value(obj,
+                                 (jerry_char_t *)"RESULT_ATTR_NOT_LONG",
+                                 val);
+
+    val = jerry_create_number_value(RESULT_INVALID_ATTRIBUTE_LENGTH);
+    jerry_set_object_field_value(obj,
+                                 (jerry_char_t *)"RESULT_INVALID_ATTRIBUTE_LENGTH",
+                                 val);
+
+    val = jerry_create_number_value(RESULT_UNLIKELY_ERROR);
+    jerry_set_object_field_value(obj,
+                                 (jerry_char_t *)"RESULT_UNLIKELY_ERROR",
+                                 val);
+
     *ret_val_p = args_p[0];
 
     return true;
