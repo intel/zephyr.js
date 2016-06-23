@@ -380,7 +380,6 @@ jerry_object_t *zjs_ble_init()
 {
     // create global BLE object
     jerry_object_t *ble_obj = jerry_create_object();
-    zjs_obj_add_function(ble_obj, zjs_ble_enable, "enable");
     zjs_obj_add_function(ble_obj, zjs_ble_on, "on");
     zjs_obj_add_function(ble_obj, zjs_ble_adv_start, "startAdvertising");
     zjs_obj_add_function(ble_obj, zjs_ble_adv_stop, "stopAdvertising");
@@ -390,6 +389,14 @@ jerry_object_t *zjs_ble_init()
     zjs_obj_add_function(ble_obj, zjs_ble_primary_service, "PrimaryService");
     zjs_obj_add_function(ble_obj, zjs_ble_characteristic, "Characteristic");
     return ble_obj;
+}
+
+void zjs_ble_enable() {
+    PRINT("About to enable the bluetooth, wait for bt_ready()...\n");
+    bt_enable(zjs_bt_ready);
+    // setup connection callbacks
+    bt_conn_cb_register(&conn_callbacks);
+    bt_conn_auth_cb_register(&auth_cb_display);
 }
 
 bool zjs_ble_on(const jerry_object_t *function_obj_p,
@@ -422,22 +429,6 @@ bool zjs_ble_on(const jerry_object_t *function_obj_p,
 
     item->zjs_cb.js_callback = jerry_acquire_object(jerry_get_object_value(args_p[1]));
     memcpy(item->event_type, event, len);
-
-    return true;
-}
-
-bool zjs_ble_enable(const jerry_object_t *function_obj_p,
-                    const jerry_value_t this_val,
-                    const jerry_value_t args_p[],
-                    const jerry_length_t args_cnt,
-                    jerry_value_t *ret_val_p)
-{
-    PRINT("About to enable the bluetooth, wait for bt_ready()...\n");
-    bt_enable(zjs_bt_ready);
-
-    // setup connection callbacks
-    bt_conn_cb_register(&conn_callbacks);
-    bt_conn_auth_cb_register(&auth_cb_display);
 
     return true;
 }

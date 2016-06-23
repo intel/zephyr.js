@@ -126,6 +126,3 @@ ble.on('disconnect', function(clientAddress) {
 });
 
 print("Webbluetooth Demo with BLE...");
-
-// enable ble
-ble.enable();

@@ -52,6 +52,8 @@ void main(int argc, char *argv[])
         return;
     }
 
+    zjs_ble_enable();
+
     while (1) {
         zjs_timers_process_events();
         zjs_run_pending_callbacks();

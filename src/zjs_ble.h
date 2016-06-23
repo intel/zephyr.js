@@ -4,11 +4,7 @@
 
 jerry_object_t *zjs_ble_init();
 
-bool zjs_ble_enable(const jerry_object_t *function_obj_p,
-                    const jerry_value_t this_val,
-                    const jerry_value_t args_p[],
-                    const jerry_length_t args_cnt,
-                    jerry_value_t *ret_val_p);
+void zjs_ble_enable();
 
 bool zjs_ble_on(const jerry_object_t *function_obj_p,
                 const jerry_value_t this_val,
