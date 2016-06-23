@@ -35,15 +35,44 @@ static uint8_t rgb[3] = {0xff, 0x00, 0x00}; // red
 
 struct bt_conn *default_conn;
 
+struct zjs_bt_read_callback {
+    struct zjs_callback zjs_cb;
+    // args
+    uint16_t offset;
+};
+
+struct zjs_bt_write_callback {
+    struct zjs_callback zjs_cb;
+    // args
+    uint16_t offset;
+    const void *buffer;
+};
+
+struct zjs_bt_subscribe_callback {
+    struct zjs_callback zjs_cb;
+    // placeholders args
+};
+
+struct zjs_bt_unsubscribe_callback {
+    struct zjs_callback zjs_cb;
+    // placeholders args
+};
+
+struct zjs_bt_notify_callback {
+    struct zjs_callback zjs_cb;
+    // placeholders args
+};
+
+
 struct ble_characteristic {
     struct bt_uuid *uuid;
     jerry_object_t *chrc_obj;
     int flags;
-    jerry_object_t *read_cb;
-    jerry_object_t *write_cb;
-    jerry_object_t *subscribe_cb;
-    jerry_object_t *unsubscribe_cb;
-    jerry_object_t *notify_cb;
+    struct zjs_bt_read_callback read_cb;
+    struct zjs_bt_write_callback write_cb;
+    struct zjs_bt_subscribe_callback subscribe_cb;
+    struct zjs_bt_unsubscribe_callback unsubscribe_cb;
+    struct zjs_bt_notify_callback notify_cb;
     struct ble_characteristic *next;
 };
 
@@ -74,43 +103,81 @@ static void zjs_ble_free_characteristics(struct ble_characteristic *chrc)
         tmp = chrc;
         chrc = chrc->next;
 
-        jerry_release_object(chrc->chrc_obj);
-
-        if (tmp->read_cb)
-            jerry_release_object(tmp->read_cb);
-        if (tmp->write_cb)
-            jerry_release_object(tmp->write_cb);
-        if (tmp->subscribe_cb)
-            jerry_release_object(tmp->subscribe_cb);
-        if (tmp->unsubscribe_cb)
-            jerry_release_object(tmp->unsubscribe_cb);
-        if (tmp->notify_cb)
-            jerry_release_object(tmp->notify_cb);
+        if (tmp->read_cb.zjs_cb.js_callback)
+            jerry_release_object(tmp->read_cb.zjs_cb.js_callback);
+        if (tmp->write_cb.zjs_cb.js_callback)
+            jerry_release_object(tmp->write_cb.zjs_cb.js_callback);
+        if (tmp->subscribe_cb.zjs_cb.js_callback)
+            jerry_release_object(tmp->subscribe_cb.zjs_cb.js_callback);
+        if (tmp->unsubscribe_cb.zjs_cb.js_callback)
+            jerry_release_object(tmp->unsubscribe_cb.zjs_cb.js_callback);
+        if (tmp->notify_cb.zjs_cb.js_callback)
+            jerry_release_object(tmp->notify_cb.zjs_cb.js_callback);
 
         task_free(tmp);
     }
 }
 
-static ssize_t read_callback(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+static bool read_attr_call_function_return(const jerry_object_t *function_obj_p,
+                                           const jerry_value_t this_val,
+                                           const jerry_value_t args_p[],
+                                           const jerry_length_t args_cnt,
+                                           jerry_value_t *ret_val_p)
+{
+    PRINT("read_attr_call_function_return\n");
+    if (args_cnt != 2 ||
+        !jerry_value_is_number(args_p[0]) ||
+        !jerry_value_is_object(args_p[1])) {
+        PRINT("read_attr_call_function_return: invalid arguments\n");
+        return false;
+    }
+
+    uint32_t error_code = (uint32_t)jerry_get_number_value(args_p[0]);
+    // TODO: store this value
+    if (error_code != RESULT_SUCCESS) {
+        PRINT("Need to return error to bluetooth stack\n");
+    } else {
+        PRINT("Need to return error to bluetooth stack\n");
+    }
+    return true;
+}
+
+static void read_attr_call_function(struct zjs_callback *cb)
+{
+    struct zjs_bt_read_callback *mycb = CONTAINER_OF(cb,
+                                                     struct zjs_bt_read_callback,
+                                                     zjs_cb);
+    jerry_value_t rval;
+    jerry_value_t args[2];
+    args[0] = jerry_create_number_value(mycb->offset);
+    args[1] = jerry_create_object_value(jerry_create_external_function(
+                                        read_attr_call_function_return));
+    rval = jerry_call_function(mycb->zjs_cb.js_callback, NULL, args, 2);
+    if (jerry_value_is_error(rval)) {
+        PRINT("error: failed to call onReadRequest function\n");
+    }
+    jerry_release_value(args[0]);
+    jerry_release_value(args[1]);
+    jerry_release_value(rval);
+}
+
+static ssize_t read_attr_callback(struct bt_conn *conn, const struct bt_gatt_attr *attr,
     void *buf, uint16_t len, uint16_t offset)
 {
     struct ble_characteristic* chrc = attr->user_data;
 
     if (!chrc) {
         PRINT("error: characteristic not found\n");
-        return bt_gatt_attr_read(conn, attr, buf, len, offset, rgb,
-               sizeof(rgb));
+        return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
     }
 
-    // FIXME
-    // calling JS onReadRequest
-    if (chrc->read_cb) {
-        jerry_value_t rval;
-        rval = jerry_call_function(chrc->read_cb, chrc->chrc_obj, NULL, 0);
-        if (jerry_value_is_error(rval)) {
-            PRINT("error: read_callback\n");
-        }
-        jerry_release_value(rval);
+    if (chrc->read_cb.zjs_cb.js_callback) {
+        // TODO: block until result is ready, Semaphore or FIFO?
+        // This is from the FIBER context, so we queue up the function
+        // js call and block until the js function returns or times out
+        chrc->read_cb.offset = offset;
+        chrc->read_cb.zjs_cb.call_function = read_attr_call_function;
+        zjs_queue_callback(&chrc->read_cb.zjs_cb);
     }
 
     // FIXME
@@ -119,28 +186,72 @@ static ssize_t read_callback(struct bt_conn *conn, const struct bt_gatt_attr *at
                  sizeof(rgb));
 }
 
-static ssize_t write_callback(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+static bool write_attr_call_function_return(const jerry_object_t *function_obj_p,
+                                            const jerry_value_t this_val,
+                                            const jerry_value_t args_p[],
+                                            const jerry_length_t args_cnt,
+                                            jerry_value_t *ret_val_p)
+{
+    PRINT("write_attr_call_function_return called\n");
+    if (args_cnt != 1 ||
+        !jerry_value_is_number(args_p[0])) {
+        PRINT("write_attr_call_function_return: invalid arguments\n");
+        return false;
+    }
+
+    uint32_t error_code = (uint32_t)jerry_get_number_value(args_p[0]);
+    // TODO: store this value
+    if (error_code != RESULT_SUCCESS) {
+        PRINT("Need to return error to bluetooth stack\n");
+    } else {
+        PRINT("Need to return error to bluetooth stack\n");
+    }
+    return true;
+}
+
+static void write_attr_call_function(struct zjs_callback *cb)
+{
+    struct zjs_bt_read_callback *mycb = CONTAINER_OF(cb,
+                                                     struct zjs_bt_read_callback,
+                                                     zjs_cb);
+    jerry_value_t rval;
+    jerry_value_t args[4];
+    args[0] = jerry_create_number_value(mycb->offset);
+    // FIXME: create the Buffer object and pass it to js
+    args[1] = jerry_create_null_value();
+    args[2] = jerry_create_boolean_value(false);
+    args[3] = jerry_create_object_value(jerry_create_external_function(
+                                        write_attr_call_function_return));
+    rval = jerry_call_function(mycb->zjs_cb.js_callback, NULL, args, 4);
+    if (jerry_value_is_error(rval)) {
+        PRINT("error: failed to call onWriteRequest function\n");
+    }
+    jerry_release_value(args[0]);
+    jerry_release_value(args[1]);
+    jerry_release_value(args[2]);
+    jerry_release_value(args[3]);
+    jerry_release_value(rval);
+}
+
+static ssize_t write_attr_callback(struct bt_conn *conn, const struct bt_gatt_attr *attr,
     const void *buf, uint16_t len, uint16_t offset)
 {
     struct ble_characteristic* chrc = attr->user_data;
 
     if (!chrc) {
         PRINT("error: characteristic not found\n");
-        return 0;
+        return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
     }
 
-    // FIXME
-    // calling JS onWriteRequest
-    if (chrc->write_cb) {
-        jerry_value_t rval;
-        rval = jerry_call_function(chrc->write_cb, chrc->chrc_obj, NULL, 0);
-        if (jerry_value_is_error(rval)) {
-            PRINT("error: write_callback\n");
-        }
-        jerry_release_value(rval);
+    if (chrc->write_cb.zjs_cb.js_callback) {
+        // TODO: block until result is ready, Semaphore or FIFO?
+        // This is from the FIBER context, so we queue up the function
+        // js call and block until the js function returns or times out
+        chrc->write_cb.offset = offset;
+        chrc->write_cb.zjs_cb.call_function = write_attr_call_function;
+        zjs_queue_callback(&chrc->write_cb.zjs_cb);
     }
 
-    // FIXME return
     return sizeof(rgb);
 }
 
@@ -481,62 +592,47 @@ bool zjs_ble_parse_characteristic(jerry_object_t *chrc_obj,
     jerry_value_t v_func;
     v_func = jerry_get_object_field_value(chrc_obj, "onReadRequest");
     if (!jerry_value_is_error(v_func)) {
-        if (!jerry_value_is_undefined(v_func) &&
-            !jerry_value_is_null(v_func)) {
-            if (!jerry_value_is_object(v_func)) {
-                PRINT("onReadRequest callback is not a function\n");
-                return false;
-            }
-            chrc->read_cb = jerry_acquire_object(jerry_get_object_value(v_func));
+        if (!jerry_value_is_function(v_func)) {
+            PRINT("onReadRequest callback is not a function\n");
+            return false;
         }
+        chrc->read_cb.zjs_cb.js_callback = jerry_acquire_object(jerry_get_object_value(v_func));
     }
 
     v_func = jerry_get_object_field_value(chrc_obj, "onWriteRequest");
     if (!jerry_value_is_error(v_func)) {
-        if (!jerry_value_is_undefined(v_func) &&
-            !jerry_value_is_null(v_func)) {
-            if (!jerry_value_is_object(v_func)) {
-                PRINT("onWriteRequest callback is not a function\n");
-                return false;
-            }
-            chrc->write_cb = jerry_acquire_object(jerry_get_object_value(v_func));
+        if (!jerry_value_is_function(v_func)) {
+            PRINT("onWriteRequest callback is not a function\n");
+            return false;
         }
+        chrc->write_cb.zjs_cb.js_callback = jerry_acquire_object(jerry_get_object_value(v_func));
     }
 
     v_func = jerry_get_object_field_value(chrc_obj, "onSubscribe");
     if (!jerry_value_is_error(v_func)) {
-        if (!jerry_value_is_undefined(v_func) &&
-            !jerry_value_is_null(v_func)) {
-            if (!jerry_value_is_object(v_func)) {
-                PRINT("onSubscribe callback is not a function\n");
-                return false;
-            }
-            chrc->subscribe_cb = jerry_acquire_object(jerry_get_object_value(v_func));
+        if (!jerry_value_is_function(v_func)) {
+            PRINT("onSubscribe callback is not a function\n");
+            return false;
         }
+        chrc->subscribe_cb.zjs_cb.js_callback = jerry_acquire_object(jerry_get_object_value(v_func));
     }
 
     v_func = jerry_get_object_field_value(chrc_obj, "onUnsubscribe");
     if (!jerry_value_is_error(v_func)) {
-        if (!jerry_value_is_undefined(v_func) &&
-            !jerry_value_is_null(v_func)) {
-            if (!jerry_value_is_object(v_func)) {
-                PRINT("onUnsubscribe callback is not a function\n");
-                return false;
-            }
-            chrc->unsubscribe_cb = jerry_acquire_object(jerry_get_object_value(v_func));
+        if (!jerry_value_is_function(v_func)) {
+            PRINT("onUnsubscribe callback is not a function\n");
+            return false;
         }
+        chrc->unsubscribe_cb.zjs_cb.js_callback = jerry_acquire_object(jerry_get_object_value(v_func));
     }
 
     v_func = jerry_get_object_field_value(chrc_obj, "onNotify");
     if (!jerry_value_is_error(v_func)) {
-        if (!jerry_value_is_undefined(v_func) &&
-            !jerry_value_is_null(v_func)) {
-            if (!jerry_value_is_object(v_func)) {
-                PRINT("onNotify callback is not a function\n");
-                return false;
-            }
-            chrc->notify_cb = jerry_acquire_object(jerry_get_object_value(v_func));
+        if (!jerry_value_is_function(v_func)) {
+            PRINT("onNotify callback is not a function\n");
+            return false;
         }
+        chrc->notify_cb.zjs_cb.js_callback = jerry_acquire_object(jerry_get_object_value(v_func));
     }
 
     return true;
@@ -694,14 +790,14 @@ bool zjs_ble_register_service(struct ble_service *service)
         // DESCRIPTOR
         entry_index++;
         bt_attrs[entry_index].uuid = ch->uuid;
-        if (ch->read_cb) {
+        if (ch->read_cb.zjs_cb.js_callback) {
             bt_attrs[entry_index].perm |= BT_GATT_PERM_READ;
         }
-        if (ch->write_cb) {
+        if (ch->write_cb.zjs_cb.js_callback) {
             bt_attrs[entry_index].perm |= BT_GATT_PERM_WRITE;
         }
-        bt_attrs[entry_index].read = read_callback;
-        bt_attrs[entry_index].write = write_callback;
+        bt_attrs[entry_index].read = read_attr_callback;
+        bt_attrs[entry_index].write = write_attr_callback;
         bt_attrs[entry_index].user_data = ch;
 
         if (!bt_uuid_cmp(ch->uuid, BT_UUID_TEMP)) {
