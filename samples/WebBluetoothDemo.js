@@ -7,91 +7,79 @@
 var aio = require("aio");
 var ble = require("ble");
 
-print("Webbluetooth Demo with BLE...");
+DEVICE_NAME = 'Arduino101';
 
-var serviceName = 'Arduino101';
-var serviceUuid = 'fc00';
-var tempUuid = 'fc0a';
-var rgbUuid = 'fc0b';
+var TemperatureCharacteristic = new ble.Characteristic({
+    uuid: 'fc0a',
+    properties: ['read', 'notify'],
+    value: null
+});
 
-// setup callbacks
-ble.on('stateChange', function(state) {
-    print('State change: ' + state);
+TemperatureCharacteristic._lastValue = undefined;
+TemperatureCharacteristic._onChange = null;
+
+TemperatureCharacteristic.onReadRequest = function(offset, callback) {
+    print("Temperature onReadRequest called");
+};
+
+var ColorCharacteristic = new ble.Characteristic({
+    uuid: 'fc0b',
+    properties: ['read', 'write'],
+    value: null
+});
+
+ColorCharacteristic.onReadRequest = function(offset, callback) {
+    print("Color onReadRequest called");
+};
+
+ColorCharacteristic.onWriteRequest = function(data, offset, withoutResponse,
+                                              callback) {
+    print("Color onWriteRequest called");
+};
+
+ble.on('stateChange', function(state, callback) {
+    print(state);
+
     if (state === 'poweredOn') {
-        //ble.startAdvertising();
-        ble.startAdvertising(serviceName, [serviceUuid]);
+        ble.startAdvertising(DEVICE_NAME, ['fc00']);
+
+        // FIXME: for now this will be hard-coded in C as part of above call
+        //beacon.advertiseUrl("https://goo.gl/9FomQC", {name: DEVICE_NAME});
     } else {
+        if (state === 'unsupported'){
+            print("BLE and Bleno configurations not enabled on board");
+        }
         ble.stopAdvertising();
     }
 });
 
-ble.on('accept', function(clientAddress) {
-    print("Accepted connection from address: " + clientAddress);
-});
-
-ble.on('disconnect', function(clientAddress) {
-    print("Disconnected from address: " + clientAddress);
-});
-
 ble.on('advertisingStart', function(error) {
+    print('advertisingStart: ' + (error ? error : 'success'));
+
     if (error) {
-        print("Advertising start error: " + error);
         return;
     }
-    print ("Advertising start");
-    //ToDO: Define your new service
+
     ble.setServices([
         new ble.PrimaryService({
-            uuid: serviceUuid,
+            uuid: 'fc00',
             characteristics: [
-                // TODO:
-                // define our own characterstics
-                new ble.Characteristic({
-                    uuid: tempUuid,
-                    properties: ['read', 'notify'],
-                    secure: [],                      // not supported
-                    value: null,                     // not supported
-                    descriptors: [],                 // not supported
-                    onReadRequest: function(offset, callback) {
-                        print("OnReadRequest");
-                        // TODO: implement
-                        // var data = new Buffer(8);
-                        // data.writeUInt8(this._lastValue);
-                        // callback(this.RESULT_SUCCESS, data);
-                    },
-                    onWriteRequest: null,
-                    onSubscribe: function(maxValueSize, updateValueCallback) {
-                        print("Subscribed to temperature change.");
-                        // TODO: implement
-                    },
-                    onUnsubscribe: function() {
-                        print("Unsubscribed to temperature change.");
-                        // TODO: implement
-                    },
-                    onNotify: null                   // not supported
-                }),
-                new ble.Characteristic({
-                    uuid: rgbUuid,
-                    properties: ['read', 'write'],
-                    secure: [],                      // not supported
-                    value: null,                     // not supported
-                    descriptors: [],                 // not supported
-                    onReadRequest: function(offset, callback) {
-                        print("OnReadRequest");
-                        // TODO: implement
-                    },
-                    onWriteRequest: function(data, offset, withoutResponse, callback) {
-                        print("OnWriteRequest");
-                        // TODO: implement
-                    },
-                    onSubscribe: null,               // not supported
-                    onUnsubscribe: null,             // not supported
-                    onNotify: null                   // not supported
-                })
+                TemperatureCharacteristic,
+                ColorCharacteristic
             ]
         })
     ]);
 });
+
+ble.on('accept', function(clientAddress) {
+    print("Accepted Connection: " + clientAddress);
+});
+
+ble.on('disconnect', function(clientAddress) {
+    print("Disconnected Connection: " + clientAddress);
+});
+
+print("Webbluetooth Demo with BLE...");
 
 // enable ble
 ble.enable();
