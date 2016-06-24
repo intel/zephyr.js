@@ -31,6 +31,7 @@ struct bt_conn *default_conn;
 
 struct ble_characteristic {
     struct bt_uuid *uuid;
+    jerry_object_t *chrc_obj;
     int flags;
     jerry_object_t *read_cb;
     jerry_object_t *write_cb;
@@ -67,6 +68,8 @@ static void zjs_ble_free_characteristics(struct ble_characteristic *chrc)
         tmp = chrc;
         chrc = chrc->next;
 
+        jerry_release_object(chrc->chrc_obj);
+
         if (tmp->read_cb)
             jerry_release_object(tmp->read_cb);
         if (tmp->write_cb)
@@ -99,7 +102,7 @@ static ssize_t read_callback(struct bt_conn *conn, const struct bt_gatt_attr *at
     // calling JS onReadRequest
     if (chrc->read_cb) {
         jerry_value_t rval;
-        rval = jerry_call_function(chrc->read_cb, NULL, NULL, 0);
+        rval = jerry_call_function(chrc->read_cb, chrc->chrc_obj, NULL, 0);
         if (jerry_value_is_error(rval)) {
             PRINT("error: read_callback\n");
         }
@@ -128,7 +131,7 @@ static ssize_t write_callback(struct bt_conn *conn, const struct bt_gatt_attr *a
     // calling JS onWriteRequest
     if (chrc->write_cb) {
         jerry_value_t rval;
-        rval = jerry_call_function(chrc->write_cb, NULL, NULL, 0);
+        rval = jerry_call_function(chrc->write_cb, chrc->chrc_obj, NULL, 0);
         if (jerry_value_is_error(rval)) {
             PRINT("error: write_callback\n");
         }
@@ -418,24 +421,18 @@ bool zjs_ble_adv_stop(const jerry_object_t *function_obj_p,
     return true;
 }
 
-bool zjs_ble_parse_characteristic(const jerry_value_t val,
+bool zjs_ble_parse_characteristic(jerry_object_t *chrc_obj,
                                   struct ble_characteristic *chrc)
 {
-    if (!jerry_value_is_object(val))
-    {
-        PRINT("invalid object type\n");
-        return false;
-    }
-
     char uuid[UUID_LEN];
-    if (!zjs_obj_get_string(jerry_get_object_value(val), "uuid", uuid, UUID_LEN)) {
+    if (!zjs_obj_get_string(chrc_obj, "uuid", uuid, UUID_LEN)) {
         PRINT("characteristic uuid doesn't exist\n");
         return false;
     }
 
     chrc->uuid = zjs_ble_new_uuid_16(strtoul(uuid, NULL, 16));
 
-    jerry_value_t v_properties = jerry_get_object_field_value(jerry_get_object_value(val),
+    jerry_value_t v_properties = jerry_get_object_field_value(chrc_obj,
                                                               "properties");
     if (jerry_value_is_error(v_properties)) {
         PRINT("properties doesn't exist\n");
@@ -480,7 +477,7 @@ bool zjs_ble_parse_characteristic(const jerry_value_t val,
     }
 
     jerry_value_t v_func;
-    v_func = jerry_get_object_field_value(jerry_get_object_value(val), "onReadRequest");
+    v_func = jerry_get_object_field_value(chrc_obj, "onReadRequest");
     if (!jerry_value_is_error(v_func)) {
         if (!jerry_value_is_null(v_func)) {
             if (!jerry_value_is_object(v_func)) {
@@ -491,7 +488,7 @@ bool zjs_ble_parse_characteristic(const jerry_value_t val,
         }
     }
 
-    v_func = jerry_get_object_field_value(jerry_get_object_value(val), "onWriteRequest");
+    v_func = jerry_get_object_field_value(chrc_obj, "onWriteRequest");
     if (!jerry_value_is_error(v_func)) {
         if (!jerry_value_is_null(v_func)) {
             if (!jerry_value_is_object(v_func)) {
@@ -502,7 +499,7 @@ bool zjs_ble_parse_characteristic(const jerry_value_t val,
         }
     }
 
-    v_func = jerry_get_object_field_value(jerry_get_object_value(val), "onSubscribe");
+    v_func = jerry_get_object_field_value(chrc_obj, "onSubscribe");
     if (!jerry_value_is_error(v_func)) {
         if (!jerry_value_is_null(v_func)) {
             if (!jerry_value_is_object(v_func)) {
@@ -513,7 +510,7 @@ bool zjs_ble_parse_characteristic(const jerry_value_t val,
         }
     }
 
-    v_func = jerry_get_object_field_value(jerry_get_object_value(val), "onUnsubscribe");
+    v_func = jerry_get_object_field_value(chrc_obj, "onUnsubscribe");
     if (!jerry_value_is_error(v_func)) {
         if (!jerry_value_is_null(v_func)) {
             if (!jerry_value_is_object(v_func)) {
@@ -524,7 +521,7 @@ bool zjs_ble_parse_characteristic(const jerry_value_t val,
         }
     }
 
-    v_func = jerry_get_object_field_value(jerry_get_object_value(val), "onNotify");
+    v_func = jerry_get_object_field_value(chrc_obj, "onNotify");
     if (!jerry_value_is_error(v_func)) {
         if (!jerry_value_is_null(v_func)) {
             if (!jerry_value_is_object(v_func)) {
@@ -588,7 +585,10 @@ bool zjs_ble_parse_service(const jerry_value_t val,
             memset(chrc, 0, sizeof(struct ble_characteristic));
         }
 
-        if (!zjs_ble_parse_characteristic(v_characteristic, chrc)) {
+        jerry_object_t *chrc_obj = jerry_get_object_value(v_characteristic);
+        jerry_acquire_object(chrc_obj);
+
+        if (!zjs_ble_parse_characteristic(chrc_obj, chrc)) {
             PRINT("failed to parse temp characteristic\n");
             return false;
         }
