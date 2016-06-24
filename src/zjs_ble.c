@@ -586,7 +586,7 @@ bool zjs_ble_parse_service(const jerry_value_t val,
         }
 
         jerry_object_t *chrc_obj = jerry_get_object_value(v_characteristic);
-        jerry_acquire_object(chrc_obj);
+        chrc->chrc_obj = jerry_acquire_object(chrc_obj);
 
         if (!zjs_ble_parse_characteristic(chrc_obj, chrc)) {
             PRINT("failed to parse temp characteristic\n");
