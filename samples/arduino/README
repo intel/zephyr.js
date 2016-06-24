@@ -1,0 +1,3 @@
+This directory contains example code that do the same things as the examples
+that come with the Arduino IDE. The idea is that as we expose new features, we
+can come back and expand this collection to see how well we cover those uses.

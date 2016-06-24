@@ -1,0 +1,25 @@
+#!/usr/bin/env python3
+
+# update: Updates the repos listed in repos.txt
+
+import os
+import re
+import sys
+
+cwd = os.getcwd()
+srcdir = os.path.dirname(os.path.realpath(__file__))
+if cwd != srcdir:
+    print("Error: update is not in the current directory")
+    sys.exit(1)
+
+repos = []
+with open('repos.txt', 'r') as f:
+    for line in f:
+        repos.append(line.strip())
+
+for repo in repos:
+    os.chdir(repo)
+    os.system('git checkout master')
+    os.system('git pull')
+    os.system('git checkout origin/zjs')
+    os.chdir('..')

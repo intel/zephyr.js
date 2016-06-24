@@ -1,0 +1,11 @@
+ZephyrJS Dependencies
+=====================
+
+This directory contains projects that the ZephyrJS work depends on so we can
+maintain our own patches to them when necessary.
+
+File Descriptions
+-----------------
+getrepos - This will check out all the other cloned repos we have.
+repos.txt - A list of all the upstream repos we have cloned locally.
+update - Updates all the cloned repos with the latest code.

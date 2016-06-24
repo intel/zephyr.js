@@ -1,0 +1,42 @@
+#!/usr/bin/env python
+
+# Copyright (c) 2016, Intel Corporation.
+
+SIGNPREFIX = "JerryScript-DCO-1.0"
+
+import subprocess
+import sys
+
+commit_msg_filepath = sys.argv[1]
+
+user = subprocess.check_output(['git', 'config', 'user.name']).strip()
+email = subprocess.check_output(['git', 'config', 'user.email']).strip()
+
+signline = "Signed-off-by: %s %s" % (user, email)
+if SIGNPREFIX:
+    signline = "%s-%s" % (SIGNPREFIX, signline)
+
+with open(commit_msg_filepath, "r") as f:
+    content = f.read()
+
+prefix_r = []
+suffix_r = []
+found = False
+
+for line in reversed(content.split('\n')):
+    if not found:
+        stripped = line.strip()
+        if not stripped or stripped[0] == '#':
+            suffix_r.append(line)
+            continue
+        found = True
+        if line == signline:
+            # signed-off-by already present on last line, abort
+            sys.exit(0)
+            continue
+    prefix_r.append(line)
+
+with open(commit_msg_filepath, "w") as f:
+    f.write('\n'.join(reversed(prefix_r)))
+    f.write('\n\n%s\n' % signline)
+    f.write('\n'.join(reversed(suffix_r)))

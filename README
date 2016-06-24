@@ -1,0 +1,55 @@
+ZephyrJS Project
+================
+
+This project is to evaluate JavaScript engines and select one to port to
+run on low-memory systems with the Zephyr operating system.
+
+This repository contains scripts and work that does not directly correlate
+to one of the cloned upstream trees that we're working with.
+
+File Descriptions
+-----------------
+zjs-env.sh - Source this file to be able to use tools from scripts/ anywhere.
+
+Subdirectories
+--------------
+apps/ - Zephyr applications that test various components.
+deps/ - Contains dependency repos and scripts for working with them.
+githooks/ - Currently just one script to use when committing to upstream
+    Samsung projects.
+js/ - Subdirectory containing sample JavaScript files useful to run for testing.
+scripts/ - Subdirectory containing tools useful during development.
+zjs_api/ - JS API bindings for JerryScript written directly on top of Zephyr.
+
+Setting up your environment
+---------------------------
+To checkout the other repos zjs is dependent on:
+cd deps; ./getrepos; ./update
+
+Download the latest Zephyr SDK at https://nexus.zephyrproject.org/content/repositories/releases/org/zephyrproject/zephyr-sdk/
+$ chmod +x zephyr-sdk-0.*.*-i686-setup.run
+$ sudo ./zephyr-sdk-0.*.*-i686-setup.run
+
+Set up environment variables. From the root directory of the ZephyrJS Project,
+run:
+$ source deps/zephyr/zephyr-env.sh
+$ source zjs-env.sh
+
+$ export ZEPHYR_GCC_VARIANT=zephyr
+$ export ZEPHYR_SDK_INSTALL_DIR=/opt/zephyr-sdk
+(These two can be added to your .bashrc so you don't have to type them again.)
+
+Build the Hello World sample
+----------------------------
+(For now, this assumes you have a Flyswatter JTAG device hooked up to your PC
+and your Arduino 101.)
+
+$ cd samples
+$ jsrunner HelloWorld.js
+
+Running Jerryscript Unit Tests
+------------------------------
+cd apps/jerryscript_test/tests/
+./rununittest.sh
+
+This will iterate through the unit test 1 by 1 and after each test is run, press ctrl-x a to exit QEMU and continue with the next test.

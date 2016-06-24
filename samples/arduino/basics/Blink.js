@@ -1,0 +1,17 @@
+// Copyright (c) 2016, Intel Corporation.
+
+// Reimplementation of Arduino - Basics - Blink example
+// * Toggles an onboard LED on and off every second
+
+// pin 8 is one of the onboard LEDs on the Arduino 101
+// 'out' direction is default, could be left out
+var pin = GPIO.open({pin: 8, direction: 'out'});
+
+// remember the current state of the LED
+var toggle = false;
+
+// schedule a function to run every 1s (1000ms)
+setInterval(function () {
+    toggle = !toggle;
+    pin.write(toggle);
+}, 1000);

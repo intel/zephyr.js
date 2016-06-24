@@ -1,0 +1,15 @@
+Scripts
+-------
+
+genfilesize - A utility to visualize the sizes of files included in a Zephyr
+            build to understand where space is being used
+jsrunner - A utility to handle everything needed to run a JavaScript file in our
+         environment. Eventually this will include everything from minifying
+         source, defining it within C code, choosing the modules needed to
+         support he JS script, building the OS and running the emulator or
+         flashing to a device.
+
+Supporting Directories
+----------------------
+filesizes - Supporting files for the genfilesize utility.
+template - A template application that the JS script will be bulit into.

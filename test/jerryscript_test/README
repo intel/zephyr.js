@@ -1,0 +1,24 @@
+jerryscript_test
+================
+We've foolishly everything but the kitchen sink here, but what this directory
+*should* be is just some code to help run the JerryScript unit tests and
+JavaScript tests. Carl and Jimmy will work to clean that up soon.
+
+How to run JerryScript unit tests
+---------------------------------
+Run this command in the console:
+./rununittests.sh
+
+This will build and run each unit tests on QEMU, at the end of each unit tests,
+you'll need to press ctrl-x,a to exit QEMU so you can proceed to the next one.
+
+If you want to stop mid-way, you can hit ctrl-x,a to exit QEMU followed by
+ctrl-c to return to the console.
+
+WARNING: some of the tests might cause QEMU to crash and you might lose your
+console and not see anything you type, you can fix that by typing the word
+"reset" to restore console terminal.
+
+How to run JerryScript JS tests
+-------------------------------
+TBD: Carl

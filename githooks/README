@@ -1,0 +1,11 @@
+This directory is for .git/hooks files we want to share on the project.
+
+prepare-commit-msg.samsung - Use correct Signed-off-by for Samsung projects
+
+Details
+=======
+This file is to help working with Samsung upstream projects. Copy it to your
+.git/hooks directory for jerryscript and it will automatically add the right
+Signed-off-by string to your commits. If you copy it to iotjs or libtuv
+directories you will need to update the SIGNPREFIX variable at the top
+appropriately.
