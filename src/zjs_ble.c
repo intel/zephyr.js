@@ -63,7 +63,6 @@ struct zjs_bt_notify_callback {
     // placeholders args
 };
 
-
 struct ble_characteristic {
     struct bt_uuid *uuid;
     jerry_object_t *chrc_obj;
@@ -102,6 +101,8 @@ static void zjs_ble_free_characteristics(struct ble_characteristic *chrc)
     while (chrc != NULL) {
         tmp = chrc;
         chrc = chrc->next;
+
+        jerry_release_object(chrc->chrc_obj);
 
         if (tmp->read_cb.zjs_cb.js_callback)
             jerry_release_object(tmp->read_cb.zjs_cb.js_callback);
@@ -147,12 +148,16 @@ static void read_attr_call_function(struct zjs_callback *cb)
     struct zjs_bt_read_callback *mycb = CONTAINER_OF(cb,
                                                      struct zjs_bt_read_callback,
                                                      zjs_cb);
+    struct ble_characteristic *chrc = CONTAINER_OF(mycb,
+                                                   struct ble_characteristic,
+                                                   read_cb);
+
     jerry_value_t rval;
     jerry_value_t args[2];
     args[0] = jerry_create_number_value(mycb->offset);
     args[1] = jerry_create_object_value(jerry_create_external_function(
                                         read_attr_call_function_return));
-    rval = jerry_call_function(mycb->zjs_cb.js_callback, NULL, args, 2);
+    rval = jerry_call_function(mycb->zjs_cb.js_callback, chrc->chrc_obj, args, 2);
     if (jerry_value_is_error(rval)) {
         PRINT("error: failed to call onReadRequest function\n");
     }
@@ -214,6 +219,10 @@ static void write_attr_call_function(struct zjs_callback *cb)
     struct zjs_bt_read_callback *mycb = CONTAINER_OF(cb,
                                                      struct zjs_bt_read_callback,
                                                      zjs_cb);
+    struct ble_characteristic *chrc = CONTAINER_OF(mycb,
+                                                   struct ble_characteristic,
+                                                   write_cb);
+
     jerry_value_t rval;
     jerry_value_t args[4];
     args[0] = jerry_create_number_value(mycb->offset);
@@ -222,7 +231,7 @@ static void write_attr_call_function(struct zjs_callback *cb)
     args[2] = jerry_create_boolean_value(false);
     args[3] = jerry_create_object_value(jerry_create_external_function(
                                         write_attr_call_function_return));
-    rval = jerry_call_function(mycb->zjs_cb.js_callback, NULL, args, 4);
+    rval = jerry_call_function(mycb->zjs_cb.js_callback, chrc->chrc_obj, args, 4);
     if (jerry_value_is_error(rval)) {
         PRINT("error: failed to call onWriteRequest function\n");
     }

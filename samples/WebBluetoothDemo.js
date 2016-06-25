@@ -22,9 +22,7 @@ TemperatureCharacteristic.onReadRequest = function(offset, callback) {
     print("Temperature onReadRequest called");
     var data = new Buffer(8);
     data.writeUInt8(this._lastValue);
-
-    // BUG: this.RESULT_SUCCESS is undefined here
-    callback(TemperatureCharacteristic.RESULT_SUCCESS, data);
+    callback(this.RESULT_SUCCESS, data);
 };
 
 TemperatureCharacteristic.onSubscribe = function(maxValueSize,
@@ -61,9 +59,7 @@ ColorCharacteristic._value = new Buffer(3);
 
 ColorCharacteristic.onReadRequest = function(offset, callback) {
     print("Color onReadRequest called");
-    // BUG: this.RESULT_SUCCESS and this._value is undefined here
-    var data = new Buffer(3);
-    callback(ColorCharacteristic.RESULT_SUCCESS, data);
+    callback(this.RESULT_SUCCESS, this._value);
 };
 
 ColorCharacteristic.onWriteRequest = function(data, offset, withoutResponse,
@@ -71,15 +67,14 @@ ColorCharacteristic.onWriteRequest = function(data, offset, withoutResponse,
     print("Color onWriteRequest called");
     var value = data;
     if (!value) {
-        // BUG: this.RESULT_SUCCESS is undefined here
-        callback(ColorCharacteristic.RESULT_SUCCESS);
+        callback(this.RESULT_SUCCESS);
         return;
     }
 
     this._value = value;
 
     print("Changing led to " + value.toString('hex'));
-    callback(ColorCharacteristic.RESULT_SUCCESS);
+    callback(this.RESULT_SUCCESS);
 };
 
 ble.on('stateChange', function(state) {
