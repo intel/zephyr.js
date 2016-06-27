@@ -3,7 +3,7 @@
 # update: Updates the repos listed in repos.txt
 
 import os
-import re
+import subprocess
 import sys
 
 cwd = os.getcwd()
@@ -14,14 +14,21 @@ if cwd != srcdir:
 
 repos = []
 with open('repos.txt', 'r') as f:
+    count = 0
     for line in f:
-        repos.append(line.strip())
+        count += 1
+        line = line.strip()
+        if not line or  line[0] == '#':
+            continue
+        try:
+            (subdir, repo, commit) = line.split()
+        except ValueError:
+            print("Warning: line %d invalid in repos.txt, skipping..." % count)
+            continue
 
-for repo in repos:
-    print("Updating repo '%s':\n" % repo)
-    os.chdir(repo)
-    os.system('git checkout master')
-    os.system('git pull')
-    os.system('git checkout origin/zjs')
-    os.chdir('..')
-    print('');
+        os.chdir(subdir)
+        subprocess.call(['git', 'checkout', 'master'])
+        subprocess.call(['git', 'pull'])
+        if commit != 'master':
+            subprocess.call(['git', 'checkout', commit])
+        os.chdir('..')

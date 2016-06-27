@@ -3,7 +3,7 @@
 # getrepos: Checks out the repos listed in repos.txt
 
 import os
-import re
+import subprocess
 import sys
 
 cwd = os.getcwd()
@@ -12,29 +12,22 @@ if cwd != srcdir:
     print("Error: getrepos is not in the current directory")
     sys.exit(1)
 
-repos = []
 with open('repos.txt', 'r') as f:
     for line in f:
-        repos.append(line.strip())
-
-with open(os.path.join(srcdir, '../.git/config'), 'r') as conf:
-    match = None
-    for line in conf:
-        match = re.search('url = (.+://.+@.+/otc_zjs-)project', line)
-        if match:
-            break
-
-    if not match:
-        print("Error: unable to find git URL in .git/config")
-        sys.exit(1)
-
-    prefix = match.groups()[0]
-    for repo in repos:
-        if os.path.exists(repo):
-            print("Warning: directory '%s' found, skipping..." % repo)
+        line = line.strip()
+        if not line or  line[0] == '#':
+            continue
+        try:
+            (subdir, repo, commit) = line.split()
+        except ValueError:
+            print("Warning: line %d invalid in repos.txt, skipping..." % count)
             continue
 
-        os.system('git clone %s%s %s' % (prefix, repo, repo))
-        os.chdir(repo)
-        os.system('git checkout origin/zjs')
+        if os.path.exists(subdir):
+            print("Warning: directory '%s' found, skipping..." % subdir)
+            continue
+
+        subprocess.call(['git', 'clone', repo, subdir])
+        os.chdir(subdir)
+        subprocess.call(['git', 'checkout', commit])
         os.chdir('..')
