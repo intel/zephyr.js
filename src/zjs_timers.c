@@ -91,7 +91,8 @@ native_set_interval_handler(const jerry_object_t *function_obj_p,
                             const jerry_length_t args_cnt,
                             jerry_value_t *ret_val_p)
 {
-    if (!jerry_value_is_object(args_p[0]) || !jerry_value_is_number(args_p[1])) {
+    if (args_cnt < 2 || !jerry_value_is_function(args_p[0]) ||
+                        !jerry_value_is_number(args_p[1])) {
         PRINT ("native_set_interval_handler: invalid arguments\n");
         return false;
     }

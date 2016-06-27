@@ -285,7 +285,7 @@ bool zjs_aio_pin_read_async(const jerry_object_t *function_obj_p,
                             const jerry_length_t args_cnt,
                             jerry_value_t *ret_val_p)
 {
-    if (args_cnt < 1 || !jerry_value_is_object(args_p[0])) {
+    if (args_cnt < 1 || !jerry_value_is_function(args_p[0])) {
         PRINT("zjs_aio_pin_read_async: invalid argument\n");
         return false;
     }

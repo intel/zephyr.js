@@ -293,7 +293,7 @@ bool zjs_gpio_pin_set_callback(const jerry_object_t *function_obj_p,
     // requires: this_val is a GPIOPin object, the one arg is a JS callback
     //             function
     //  effects: registers this callback to be called when the GPIO changes
-    if (args_cnt < 1 || !jerry_value_is_object(args_p[0])) {
+    if (args_cnt < 1 || !jerry_value_is_function(args_p[0])) {
         PRINT("zjs_gpio_pin_set_callback: invalid argument\n");
         return false;
     }
