@@ -98,7 +98,7 @@ if __name__ == "__main__":
             board = 'BOARD=%s' % args.b
         print("Cleaning JerryScript...\n")
         os.chdir(JERRYDIR)
-        subprocess.call(['make', '-f', './targets/arduino_101/Makefile.arduino_101', board, 'clean'])
+        subprocess.call(['make', '-f', './targets/zephyr/Makefile.zephyr', board, 'clean'])
         os.chdir(BASEDIR)
     if args.c and os.path.exists(BUILDDIR):
         print("Removing old build directory...", end='')
@@ -158,7 +158,7 @@ if __name__ == "__main__":
             board = 'BOARD=%s' % args.b
         print("Building JerryScript...\n")
         os.chdir(JERRYDIR)
-        subprocess.call(['make', '-f', './targets/arduino_101/Makefile.arduino_101', board])
+        subprocess.call(['make', '-f', './targets/zephyr/Makefile.zephyr', board])
         os.chdir(BUILDDIR)
         print("Building OS image...\n")
         # FIXME: check return value here and quit if it failed
