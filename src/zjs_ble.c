@@ -591,47 +591,27 @@ bool zjs_ble_parse_characteristic(jerry_object_t *chrc_obj,
 
     jerry_value_t v_func;
     v_func = jerry_get_object_field_value(chrc_obj, "onReadRequest");
-    if (!jerry_value_is_error(v_func)) {
-        if (!jerry_value_is_function(v_func)) {
-            PRINT("onReadRequest callback is not a function\n");
-            return false;
-        }
+    if (jerry_value_is_function(v_func)) {
         chrc->read_cb.zjs_cb.js_callback = jerry_acquire_object(jerry_get_object_value(v_func));
     }
 
     v_func = jerry_get_object_field_value(chrc_obj, "onWriteRequest");
-    if (!jerry_value_is_error(v_func)) {
-        if (!jerry_value_is_function(v_func)) {
-            PRINT("onWriteRequest callback is not a function\n");
-            return false;
-        }
+    if (jerry_value_is_function(v_func)) {
         chrc->write_cb.zjs_cb.js_callback = jerry_acquire_object(jerry_get_object_value(v_func));
     }
 
     v_func = jerry_get_object_field_value(chrc_obj, "onSubscribe");
-    if (!jerry_value_is_error(v_func)) {
-        if (!jerry_value_is_function(v_func)) {
-            PRINT("onSubscribe callback is not a function\n");
-            return false;
-        }
+    if (jerry_value_is_function(v_func)) {
         chrc->subscribe_cb.zjs_cb.js_callback = jerry_acquire_object(jerry_get_object_value(v_func));
     }
 
     v_func = jerry_get_object_field_value(chrc_obj, "onUnsubscribe");
-    if (!jerry_value_is_error(v_func)) {
-        if (!jerry_value_is_function(v_func)) {
-            PRINT("onUnsubscribe callback is not a function\n");
-            return false;
-        }
+    if (jerry_value_is_function(v_func)) {
         chrc->unsubscribe_cb.zjs_cb.js_callback = jerry_acquire_object(jerry_get_object_value(v_func));
     }
 
     v_func = jerry_get_object_field_value(chrc_obj, "onNotify");
-    if (!jerry_value_is_error(v_func)) {
-        if (!jerry_value_is_function(v_func)) {
-            PRINT("onNotify callback is not a function\n");
-            return false;
-        }
+    if (jerry_value_is_function(v_func)) {
         chrc->notify_cb.zjs_cb.js_callback = jerry_acquire_object(jerry_get_object_value(v_func));
     }
 
