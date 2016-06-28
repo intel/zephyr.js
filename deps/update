@@ -3,6 +3,7 @@
 # update: Updates the repos listed in repos.txt
 
 import os
+import shutil
 import subprocess
 import sys
 
@@ -32,3 +33,17 @@ with open('repos.txt', 'r') as f:
         if commit != 'master':
             subprocess.call(['git', 'checkout', commit])
         os.chdir('..')
+
+        # copy overlay, if any
+        overlaydir = os.path.join('overlay-%s' % subdir)
+        relpath = os.path.join('..', subdir)
+        if os.path.isdir(overlaydir):
+            print("Copying overlay into %s..." % subdir, end='')
+            sys.stdout.flush()
+            os.chdir(overlaydir)
+            for (dirpath, dirnames, filenames) in os.walk('.'):
+                for filename in filenames:
+                    fullpath = os.path.join(dirpath, filename)
+                    shutil.copy(fullpath, os.path.join(relpath, dirpath))
+            os.chdir('..')
+            print(" done.")
