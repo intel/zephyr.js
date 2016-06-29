@@ -10,8 +10,6 @@
 #include "zjs_gpio.h"
 #include "zjs_util.h"
 
-#define GPIO_DRV_NAME "PWM_0"
-
 static const char *ZJS_DIR_IN = "in";
 static const char *ZJS_DIR_OUT = "out";
 
@@ -100,9 +98,9 @@ static void zjs_gpio_call_function(struct zjs_callback *cb)
 jerry_object_t *zjs_gpio_init()
 {
     // effects: finds the GPIO driver and returns the GPIO JS object
-    zjs_gpio_dev = device_get_binding(GPIO_DRV_NAME);
+    zjs_gpio_dev = device_get_binding("GPIO_0");
     if (!zjs_gpio_dev) {
-        PRINT("Cannot find %s!\n", GPIO_DRV_NAME);
+        PRINT("Cannot find GPIO_0 device\n");
     }
 
     // create GPIO object
