@@ -1,9 +1,9 @@
 // Copyright (c) 2016, Intel Corporation.
 
-// Test code for Arduino 101 that uses the two onboard LEDs for output, and
-// expects a button or similar input connected to digital pin 4.
-
-print("Webbluetooth Demo with BLE...");
+// Sample code for showing how to to read raw input value from the analog
+// pins on the Arduino 101, specifically A0 and A1, which is mapped
+// to pin 10 and pin 11 on Zephyr, where one is doing a synchronous
+// read and the other does it asynchronously
 
 // import aio module
 var aio = require("aio");
