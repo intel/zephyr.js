@@ -1,21 +1,4 @@
-subdir-ccflags-y += -D__ZEPHYR__
-subdir-ccflags-y += -DCONFIG_ECMA_COMPACT_PROFILE
-subdir-ccflags-y += -DCONFIG_ECMA_COMPACT_PROFILE_DISABLE_ARRAY_BUILTIN
-subdir-ccflags-y += -DCONFIG_ECMA_COMPACT_PROFILE_DISABLE_BOOLEAN_BUILTIN
-subdir-ccflags-y += -DCONFIG_ECMA_COMPACT_PROFILE_DISABLE_ERROR_BUILTINS
-subdir-ccflags-y += -DCONFIG_ECMA_COMPACT_PROFILE_DISABLE_JSON_BUILTIN
-subdir-ccflags-y += -DCONFIG_ECMA_COMPACT_PROFILE_DISABLE_MATH_BUILTIN
-subdir-ccflags-y += -DCONFIG_ECMA_COMPACT_PROFILE_DISABLE_NUMBER_BUILTIN
-subdir-ccflags-y += -DCONFIG_ECMA_COMPACT_PROFILE_DISABLE_STRING_BUILTIN
-subdir-ccflags-y += -DJERRY_ENABLE_SNAPSHOT_EXEC
-subdir-ccflags-y += -DJERRY_ENABLE_SNAPSHOT_SAVE
-subdir-ccflags-y += -DJERRY_NDEBUG
-subdir-ccflags-y += -DJERRY_DISABLE_HEAVY_DEBUG
-subdir-ccflags-y += -DMEM_STATS
-subdir-ccflags-y += -DCONFIG_MEM_HEAP_AREA_SIZE="32272"
-
-ccflags-y += -I$(src)/../deps/jerryscript/jerry-core
-ccflags-y += -I$(src)/../build
+ccflags-y += -I$(JERRY_BASE)/jerry-core
 ccflags-y += -I$(ZEPHYR_BASE)/drivers
 
 obj-y += main.o \
@@ -28,5 +11,3 @@ obj-y += main.o \
          zjs_pwm.o \
          zjs_timers.o \
          zjs_util.o
-
-obj-y += ../../../deps/jerryscript/build/${BOARD}/librelease-cp_minimal.jerry-core.a
