@@ -156,37 +156,12 @@ bool zjs_obj_get_uint32(jerry_object_t *obj, const char *name,
     return true;
 }
 
-// FIXME: NOT BEING USED CURRENTLY
-// zjs_obj_get_string + strcmp suffices for my current needs, although I had
-// already debugged this function so I want to at least check it in and see if
-// it becomes useful
-bool zjs_strequal(const jerry_string_t *jstr, const char *str)
-{
-    // requires: str is null-terminated and should be small so we don't use up
-    //             too much stack space
-    //  effects: returns the results of strcmp between the string underlying
-    //             jstr and str
-    int len = strlen(str);
-    jerry_size_t jlen = jerry_get_string_size(jstr);
-    if (len != jlen)
-        return false;
-
-    char buffer[jlen];
-    int wlen = jerry_string_to_char_buffer(jstr, buffer, jlen);
-    buffer[wlen] = '\0';
-    for (int i=0; i<len; i++) {
-        if (buffer[i] != str[i])
-            return false;
-    }
-    return true;
-}
-
 /**
  * Initialize Jerry value with specified object
  */
 void zjs_init_value_object(jerry_value_t *out_value_p, jerry_object_t *v)
 {
-    // requires: out_value_p to recieve the object value v
+    // requires: out_value_p to receive the object value v
     //  effects: put the object into out_value_p with appropriate encoding.
     jerry_acquire_object(v);
     *out_value_p = jerry_create_object_value(v);
@@ -197,7 +172,7 @@ void zjs_init_value_object(jerry_value_t *out_value_p, jerry_object_t *v)
  */
 void zjs_init_value_string(jerry_value_t *out_value_p, const char *v)
 {
-    // requires: out_value_p to recieve the string value v
+    // requires: out_value_p to receive the string value v
     //  effects: put the string into out_value_p with appropriate encoding.
     *out_value_p = jerry_create_string_value(jerry_create_string((jerry_char_t *) v));
 }
