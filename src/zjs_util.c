@@ -176,3 +176,23 @@ void zjs_init_value_string(jerry_value_t *out_value_p, const char *v)
     //  effects: put the string into out_value_p with appropriate encoding.
     *out_value_p = jerry_create_string_value(jerry_create_string((jerry_char_t *) v));
 }
+
+bool zjs_hex_to_byte(char *buf, uint8_t *byte)
+{
+    // requires: buf is a string with at least two hex chars
+    //  effects: converts the first two hex chars in buf to a number and
+    //             returns it in *byte; returns true on success, false otherwise
+    uint8_t num = 0;
+    for (int i=0; i<2; i++) {
+        num <<= 4;
+        if (buf[i] >= 'A' && buf[i] <= 'F')
+            num += buf[i] - 'A' + 10;
+        else if (buf[i] >= 'a' && buf[i] <= 'f')
+            num += buf[i] - 'a' + 10;
+        else if (buf[i] >= '0' && buf[i] <= '9')
+            num += buf[i] - '0';
+        else return false;
+    }
+    *byte = num;
+    return true;
+}
