@@ -145,12 +145,10 @@ static bool zjs_ble_read_attr_call_function_return(const jerry_object_t *functio
 
 static void zjs_ble_read_attr_call_function(struct zjs_callback *cb)
 {
-    struct zjs_ble_read_callback *mycb = CONTAINER_OF(cb,
-                                                      struct zjs_ble_read_callback,
-                                                      zjs_cb);
-    struct zjs_ble_characteristic *chrc = CONTAINER_OF(mycb,
-                                                       struct zjs_ble_characteristic,
-                                                       read_cb);
+    struct zjs_ble_read_callback *mycb;
+    struct zjs_ble_characteristic *chrc;
+    mycb = CONTAINER_OF(cb, struct zjs_ble_read_callback, zjs_cb);
+    chrc = CONTAINER_OF(mycb, struct zjs_ble_characteristic, read_cb);
 
     jerry_value_t rval;
     jerry_value_t args[2];
@@ -166,8 +164,10 @@ static void zjs_ble_read_attr_call_function(struct zjs_callback *cb)
     jerry_release_value(rval);
 }
 
-static ssize_t zjs_ble_read_attr_callback(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-    void *buf, uint16_t len, uint16_t offset)
+static ssize_t zjs_ble_read_attr_callback(struct bt_conn *conn,
+                                          const struct bt_gatt_attr *attr,
+                                          void *buf, uint16_t len,
+                                          uint16_t offset)
 {
     struct zjs_ble_characteristic* chrc = attr->user_data;
 
@@ -216,12 +216,10 @@ static bool zjs_ble_write_attr_call_function_return(const jerry_object_t *functi
 
 static void zjs_ble_write_attr_call_function(struct zjs_callback *cb)
 {
-    struct zjs_ble_write_callback *mycb = CONTAINER_OF(cb,
-                                                       struct zjs_ble_write_callback,
-                                                       zjs_cb);
-    struct zjs_ble_characteristic *chrc = CONTAINER_OF(mycb,
-                                                       struct zjs_ble_characteristic,
-                                                       write_cb);
+    struct zjs_ble_write_callback *mycb;
+    struct zjs_ble_characteristic *chrc;
+    mycb = CONTAINER_OF(cb, struct zjs_ble_write_callback, zjs_cb);
+    chrc = CONTAINER_OF(mycb, struct zjs_ble_characteristic, write_cb);
 
     jerry_value_t rval;
     jerry_value_t args[4];
@@ -243,7 +241,9 @@ static void zjs_ble_write_attr_call_function(struct zjs_callback *cb)
 }
 
 static ssize_t zjs_ble_write_attr_callback(struct bt_conn *conn,
-    const struct bt_gatt_attr *attr, const void *buf, uint16_t len, uint16_t offset)
+                                           const struct bt_gatt_attr *attr,
+                                           const void *buf, uint16_t len,
+                                           uint16_t offset, uint8_t flags)
 {
     struct zjs_ble_characteristic* chrc = attr->user_data;
 
