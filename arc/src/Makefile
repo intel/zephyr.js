@@ -1,6 +1,5 @@
 ccflags-y += ${PROJECTINCLUDE} \
-	-I$(srctree)/include/drivers \
-	-I$(srctree)/drivers \
+	-I$(ZEPHYR_BASE)/drivers \
 	-I$(src)/../../src \
 	-I$(src)/../../deps/jerryscript/jerry-core
 
