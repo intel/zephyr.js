@@ -4,7 +4,7 @@ void zjs_buffer_init();
 
 struct zjs_buffer_t {
     jerry_object_t *obj;
-    char *buffer;
+    uint8_t *buffer;
     uint32_t bufsize;
     struct zjs_buffer_t *next;
 };
