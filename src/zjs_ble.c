@@ -458,7 +458,12 @@ static void zjs_ble_adv_start_call_function(struct zjs_callback *cb)
     jerry_release_value(rval);
 }
 
-bool zjs_encode_url_frame(jerry_string_t *url, uint8_t **frame, int *size)
+const int ZJS_SUCCESS = 0;
+const int ZJS_URL_TOO_LONG = 1;
+const int ZJS_ALLOC_FAILED = 2;
+const int ZJS_URL_SCHEME_ERROR = 3;
+
+int zjs_encode_url_frame(jerry_string_t *url, uint8_t **frame, int *size)
 {
     // requires: url is a URL string, frame points to a uint8_t *, url contains
     //             only UTF-8 characters and hence no nil values
@@ -466,7 +471,9 @@ bool zjs_encode_url_frame(jerry_string_t *url, uint8_t **frame, int *size)
     //             with a compressed version of the given url; returns it in
     //             *frame and returns the size of the frame in bytes in *size,
     //             and frame is then owned by the caller, to be freed later with
-    //             task_free; returns true on success, false on failure
+    //             task_free
+    //  returns: 0 for success, 1 for URL too long, 2 for out of memory, 3 for
+    //             invalid url scheme/syntax (only http:// or https:// allowed)
     jerry_size_t sz = jerry_get_string_size(url);
     char buf[sz + 1];
     int len = jerry_string_to_char_buffer(url, (jerry_char_t *)buf, sz);
@@ -475,7 +482,7 @@ bool zjs_encode_url_frame(jerry_string_t *url, uint8_t **frame, int *size)
     // make sure it starts with http
     int offset = 0;
     if (strncmp(buf, "http", 4))
-        return false;
+        return ZJS_URL_SCHEME_ERROR;
     offset += 4;
 
     int scheme = 0;
@@ -486,7 +493,7 @@ bool zjs_encode_url_frame(jerry_string_t *url, uint8_t **frame, int *size)
 
     // make sure scheme http/https is followed by ://
     if (strncmp(buf + offset, "://", 3))
-        return false;
+        return ZJS_URL_SCHEME_ERROR;
     offset += 3;
 
     if (strncmp(buf + offset, "www.", 4)) {
@@ -500,11 +507,11 @@ bool zjs_encode_url_frame(jerry_string_t *url, uint8_t **frame, int *size)
 
     len -= offset;
     if (len > 17)  // max URL length specified by Eddystone spec
-        return false;
+        return ZJS_URL_TOO_LONG;
 
     uint8_t *ptr = task_malloc(len + 5);
     if (!ptr)
-        return false;
+        return ZJS_ALLOC_FAILED;
 
     ptr[0] = 0xaa;  // Eddystone UUID
     ptr[1] = 0xfe;  // Eddystone UUID
@@ -515,7 +522,7 @@ bool zjs_encode_url_frame(jerry_string_t *url, uint8_t **frame, int *size)
 
     *size = len + 5;
     *frame = ptr;
-    return true;
+    return ZJS_SUCCESS;
 }
 
 bool zjs_ble_adv_start(const jerry_object_t *function_obj_p,
@@ -559,8 +566,10 @@ bool zjs_ble_adv_start(const jerry_object_t *function_obj_p,
     int frame_size;
     if (args_cnt >= 3) {
         jerry_string_t *url = jerry_get_string_value(args_p[2]);
-        if (!zjs_encode_url_frame(url, &url_frame, &frame_size)) {
+        if (zjs_encode_url_frame(url, &url_frame, &frame_size)) {
             PRINT("Error encoding url frame, won't be advertised\n");
+
+            // TODO: Make use of error values and turn them into exceptions
         }
     }
 
