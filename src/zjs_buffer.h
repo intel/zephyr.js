@@ -10,3 +10,4 @@ struct zjs_buffer_t {
 };
 
 struct zjs_buffer_t *zjs_find_buffer(const jerry_object_t *obj);
+jerry_object_t *zjs_create_buffer(uint32_t size);

@@ -127,6 +127,41 @@ static bool zjs_buffer_to_string(const jerry_object_t *function_obj_p,
     return false;
 }
 
+jerry_object_t *zjs_create_buffer(uint32_t size)
+{
+    // requires: size is size of desired buffer, in bytes
+    //  effects: allocates a JS Buffer object, an underlying C buffer, and a
+    //             list item to track it; if any of these fail, free them all
+    //             and return NULL, otherwise return the JS object
+    jerry_object_t *buf_obj = jerry_create_object();
+    void *buf = task_malloc(size);
+    struct zjs_buffer_t *buf_item =
+        (struct zjs_buffer_t *)task_malloc(sizeof(struct zjs_buffer_t));
+
+    if (!buf_obj || !buf || !buf_item) {
+        PRINT("Unable to allocate buffer\n");
+        jerry_release_object(buf_obj);
+        task_free(buf);
+        task_free(buf_item);
+        return NULL;
+    }
+
+    buf_item->obj = buf_obj;
+    buf_item->buffer = buf;
+    buf_item->bufsize = size;
+    buf_item->next = zjs_buffers;
+    zjs_buffers = buf_item;
+
+    zjs_obj_add_uint32(buf_obj, size, "length");
+    zjs_obj_add_function(buf_obj, zjs_buffer_write_uint8, "writeUInt8");
+    zjs_obj_add_function(buf_obj, zjs_buffer_to_string, "toString");
+
+    // TODO: sign up to get callback when the object is freed, then free the
+    //   buffer and remove it from the list
+
+    return buf_obj;
+}
+
 // Buffer constructor
 static bool zjs_buffer(const jerry_object_t *function_obj_p,
                        const jerry_value_t this_val,
@@ -145,33 +180,10 @@ static bool zjs_buffer(const jerry_object_t *function_obj_p,
     }
 
     uint32_t size = (uint32_t)jerry_get_number_value(args_p[0]);
-
-    jerry_object_t *buf_obj = jerry_create_object();
-    void *buf = task_malloc(size);
-    struct zjs_buffer_t *buf_item =
-        (struct zjs_buffer_t *)task_malloc(sizeof(struct zjs_buffer_t));
-
-    if (!buf_obj || !buf || !buf_item) {
-        PRINT("Unable to allocate buffer\n");
-        jerry_release_object(buf_obj);
-        task_free(buf);
-        task_free(buf_item);
-        return false;
-    }
-
-    buf_item->obj = buf_obj;
-    buf_item->buffer = buf;
-    buf_item->bufsize = size;
-    buf_item->next = zjs_buffers;
-    zjs_buffers = buf_item;
-
-    zjs_obj_add_function(buf_obj, zjs_buffer_write_uint8, "writeUInt8");
-    zjs_obj_add_function(buf_obj, zjs_buffer_to_string, "toString");
+    jerry_object_t *buf_obj = zjs_create_buffer(size);
 
     zjs_init_value_object(ret_val_p, buf_obj);
 
-    // TODO: sign up to get callback when the object is freed, then free the
-    //   buffer and remove it from the list
     return true;
 }
 
