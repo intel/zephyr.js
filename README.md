@@ -80,10 +80,6 @@ The easiest way to do this is to use a flashpack.zip file that I can provide
 you (geoff@linux.intel.com). I need to make sure of the license details before
 I add it to the repo.
 
-The  ```README.bl.md``` provides a lot of details on how we did this, but
-expects you to have an a101fw directory under deps that is based on the Intel
-released [Arduino 101 firmware] (https://downloadcenter.intel.com/download/25832).
-
 The instructions below are still refering to the old JTAG method.
 
 ## Build the *Hello World* sample
