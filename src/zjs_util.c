@@ -65,9 +65,14 @@ void zjs_obj_add_function(jerry_object_t *obj, void *function,
     // requires: obj is an existing JS object, function is a native C function
     //  effects: creates a new field in object named name, that will be a JS
     //             JS function that calls the given C function
+
+    // NOTE: The docs on this function make it look like func obj should be
+    //   released before we return, but in a loop of 25k buffer creates there
+    //   seemed to be no memory leak. Reconsider with future intelligence.
     jerry_object_t *func = jerry_create_external_function(function);
     jerry_value_t value = jerry_create_object_value(func);
     jerry_set_object_field_value(obj, (const jerry_char_t *)name, value);
+    jerry_release_value(value);
 }
 
 void zjs_obj_add_object(jerry_object_t *parent, jerry_object_t *child,
@@ -77,6 +82,7 @@ void zjs_obj_add_object(jerry_object_t *parent, jerry_object_t *child,
     //  effects: creates a new field in parent named name, that refers to child
     jerry_value_t value = jerry_create_object_value(child);
     jerry_set_object_field_value(parent, (const jerry_char_t *)name, value);
+    jerry_release_value(value);
 }
 
 void zjs_obj_add_string(jerry_object_t *obj, const char *sval,
@@ -87,6 +93,7 @@ void zjs_obj_add_string(jerry_object_t *obj, const char *sval,
     jerry_string_t *str = jerry_create_string(sval);
     jerry_value_t value = jerry_create_string_value(str);
     jerry_set_object_field_value(obj, name, value);
+    jerry_release_value(value);
 }
 
 void zjs_obj_add_uint32(jerry_object_t *obj, uint32_t ival,
