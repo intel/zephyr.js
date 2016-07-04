@@ -82,10 +82,7 @@ ble.on('stateChange', function(state) {
 
     if (state === 'poweredOn') {
         print("POWERED ON")
-        ble.startAdvertising(DEVICE_NAME, ['fc00']);
-
-        // FIXME: for now this will be hard-coded in C as part of above call
-        //beacon.advertiseUrl("https://goo.gl/9FomQC", {name: DEVICE_NAME});
+        ble.startAdvertising(DEVICE_NAME, ['fc00'], "https://goo.gl/9FomQC");
     } else {
         if (state === 'unsupported'){
             print("BLE and Bleno configurations not enabled on board");
@@ -120,4 +117,4 @@ ble.on('disconnect', function(clientAddress) {
     print("Disconnected Connection: " + clientAddress);
 });
 
-print("Webbluetooth Demo with BLE...");
+print("WebBluetooth Demo with BLE...");

@@ -458,6 +458,73 @@ static void zjs_ble_adv_start_call_function(struct zjs_callback *cb)
     jerry_release_value(rval);
 }
 
+const int ZJS_SUCCESS = 0;
+const int ZJS_URL_TOO_LONG = 1;
+const int ZJS_ALLOC_FAILED = 2;
+const int ZJS_URL_SCHEME_ERROR = 3;
+
+int zjs_encode_url_frame(jerry_string_t *url, uint8_t **frame, int *size)
+{
+    // requires: url is a URL string, frame points to a uint8_t *, url contains
+    //             only UTF-8 characters and hence no nil values
+    //  effects: allocates a new buffer that will fit an Eddystone URL frame
+    //             with a compressed version of the given url; returns it in
+    //             *frame and returns the size of the frame in bytes in *size,
+    //             and frame is then owned by the caller, to be freed later with
+    //             task_free
+    //  returns: 0 for success, 1 for URL too long, 2 for out of memory, 3 for
+    //             invalid url scheme/syntax (only http:// or https:// allowed)
+    jerry_size_t sz = jerry_get_string_size(url);
+    char buf[sz + 1];
+    int len = jerry_string_to_char_buffer(url, (jerry_char_t *)buf, sz);
+    buf[len] = '\0';
+
+    // make sure it starts with http
+    int offset = 0;
+    if (strncmp(buf, "http", 4))
+        return ZJS_URL_SCHEME_ERROR;
+    offset += 4;
+
+    int scheme = 0;
+    if (buf[offset] == 's') {
+        scheme++;
+        offset++;
+    }
+
+    // make sure scheme http/https is followed by ://
+    if (strncmp(buf + offset, "://", 3))
+        return ZJS_URL_SCHEME_ERROR;
+    offset += 3;
+
+    if (strncmp(buf + offset, "www.", 4)) {
+        scheme += 2;
+    }
+    else {
+        offset += 4;
+    }
+
+    // FIXME: skipping the compression of .com, .com/, .org, etc for now
+
+    len -= offset;
+    if (len > 17)  // max URL length specified by Eddystone spec
+        return ZJS_URL_TOO_LONG;
+
+    uint8_t *ptr = task_malloc(len + 5);
+    if (!ptr)
+        return ZJS_ALLOC_FAILED;
+
+    ptr[0] = 0xaa;  // Eddystone UUID
+    ptr[1] = 0xfe;  // Eddystone UUID
+    ptr[2] = 0x10;  // Eddystone-URL frame type
+    ptr[3] = 0x00;  // calibrated Tx power at 0m
+    ptr[4] = scheme; // encoded URL scheme prefix
+    strncpy(ptr + 5, buf + offset, len);
+
+    *size = len + 5;
+    *frame = ptr;
+    return ZJS_SUCCESS;
+}
+
 bool zjs_ble_adv_start(const jerry_object_t *function_obj_p,
                        const jerry_value_t this_val,
                        const jerry_value_t args_p[],
@@ -465,62 +532,109 @@ bool zjs_ble_adv_start(const jerry_object_t *function_obj_p,
                        jerry_value_t *ret_val_p)
 {
     char name[80];
-    char uuid[80];
-    jerry_size_t sz;
-    jerry_value_t v_uuid;
 
     if (args_cnt < 2 ||
         !jerry_value_is_string(args_p[0]) ||
-        !jerry_value_is_object(args_p[1])) {
+        !jerry_value_is_object(args_p[1]) ||
+        (args_cnt >= 3 && !jerry_value_is_string(args_p[2]))) {
         PRINT("zjs_ble_adv_start: invalid arguments\n");
         return false;
     }
 
-    jerry_get_array_index_value(jerry_get_object_value(args_p[1]), 0, &v_uuid);
-
-    if (!jerry_value_is_string(v_uuid)) {
-        PRINT("zjs_ble_adv_start: invalid uuid argument type\n");
+    jerry_object_t *array = jerry_get_object_value(args_p[1]);
+    if (!jerry_is_array(array)) {
+        PRINT("zjs_ble_adv_start: expected array\n");
         return false;
     }
 
-    sz = jerry_get_string_size(jerry_get_string_value(args_p[0]));
+    jerry_size_t sz = jerry_get_string_size(jerry_get_string_value(args_p[0]));
     int len_name = jerry_string_to_char_buffer(jerry_get_string_value(args_p[0]),
                                                (jerry_char_t *) name,
                                                sz);
     name[len_name] = '\0';
-
-    sz = jerry_get_string_size(jerry_get_string_value(v_uuid));
-    int len_uuid = jerry_string_to_char_buffer(jerry_get_string_value(v_uuid), (jerry_char_t *) uuid, sz);
-    uuid[len_uuid] = '\0';
 
     struct bt_data sd[] = {
         BT_DATA(BT_DATA_NAME_COMPLETE, name, len_name),
     };
 
     /*
-     * FIXME: fill ad struct with uuid from javascript
-     *
      * Set Advertisement data. Based on the Eddystone specification:
      * https://github.com/google/eddystone/blob/master/protocol-specification.md
      * https://github.com/google/eddystone/tree/master/eddystone-url
      */
-    struct bt_data ad[] = {
-        BT_DATA_BYTES(BT_DATA_UUID16_ALL, 0xaa, 0xfe),
-        BT_DATA_BYTES(BT_DATA_SVC_DATA16,
-                      0xaa, 0xfe, /* Eddystone UUID */
-                      0x10, /* Eddystone-URL frame type */
-                      0x00, /* Calibrated Tx power at 0m */
-                      0x03, /* URL Scheme Prefix https://. */
-                                        'g', 'o', 'o', '.', 'g', 'l', '/',
-                                        '9', 'F', 'o', 'm', 'Q', 'C'),
-        BT_DATA_BYTES(BT_DATA_UUID16_ALL, 0x00, 0xfc)
-    };
+    uint8_t *url_frame = NULL;
+    int frame_size;
+    if (args_cnt >= 3) {
+        jerry_string_t *url = jerry_get_string_value(args_p[2]);
+        if (zjs_encode_url_frame(url, &url_frame, &frame_size)) {
+            PRINT("Error encoding url frame, won't be advertised\n");
+
+            // TODO: Make use of error values and turn them into exceptions
+        }
+    }
+
+    uint32_t arraylen = jerry_get_array_length(array);
+    int records = arraylen;
+    if (url_frame)
+        records += 2;
+
+    if (index + records == 0) {
+        PRINT("Nothing to advertise\n");
+        return false;
+    }
+
+    const uint8_t url_adv[] = { 0xaa, 0xfe };
+
+    struct bt_data ad[records];
+    int index = 0;
+    if (url_frame) {
+        ad[0].type = BT_DATA_UUID16_ALL;
+        ad[0].data_len = 2;
+        ad[0].data = url_adv;
+
+        ad[1].type = BT_DATA_SVC_DATA16;
+        ad[1].data_len = frame_size;
+        ad[1].data = url_frame;
+
+        index = 2;
+    }
+
+    for (int i=0; i<arraylen; i++) {
+        jerry_value_t uuid;
+        jerry_get_array_index_value(array, i, &uuid);
+        if (!jerry_value_is_string(uuid)) {
+            PRINT("zjs_ble_adv_start: invalid uuid argument type\n");
+            return false;
+        }
+
+        jerry_string_t *jstr = jerry_get_string_value(uuid);
+        jerry_size_t size = jerry_get_string_size(jstr);
+        if (size != 4) {
+            PRINT("unexpected uuid string length\n");
+            return false;
+        }
+
+        char ubuf[4];
+        uint8_t bytes[2];
+        jerry_string_to_char_buffer(jstr, (jerry_char_t *)ubuf, 4);
+        if (!zjs_hex_to_byte(ubuf + 2, &bytes[0]) ||
+            !zjs_hex_to_byte(ubuf, &bytes[1])) {
+            PRINT("invalid character in uuid string\n");
+            return false;
+        }
+
+        ad[index].type = BT_DATA_UUID16_ALL;
+        ad[index].data_len = 2;
+        ad[index].data = bytes;
+        index++;
+    }
 
     int err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad),
                               sd, ARRAY_SIZE(sd));
     PRINT("====>AdvertisingStarted..........\n");
-    PRINT("name: %s uuid: %s\n", name, uuid);
     zjs_ble_queue_dispatch("advertisingStart", zjs_ble_adv_start_call_function, err);
+
+    task_free(url_frame);
     return true;
 }
 
