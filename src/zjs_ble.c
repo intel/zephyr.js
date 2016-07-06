@@ -12,6 +12,7 @@
 
 // ZJS includes
 #include "zjs_ble.h"
+#include "zjs_buffer.h"
 #include "zjs_util.h"
 
 #define ZJS_BLE_UUID_LEN                            36
@@ -37,20 +38,18 @@ struct bt_conn *zjs_ble_default_conn;
 
 struct zjs_ble_read_callback {
     struct zjs_callback zjs_cb;
-    // args
     uint16_t offset;
 };
 
 struct zjs_ble_write_callback {
     struct zjs_callback zjs_cb;
-    // args
     uint16_t offset;
     const void *buffer;
 };
 
 struct zjs_ble_subscribe_callback {
     struct zjs_callback zjs_cb;
-    // placeholders args
+    uint16_t max_value_size;
 };
 
 struct zjs_ble_unsubscribe_callback {
@@ -64,9 +63,10 @@ struct zjs_ble_notify_callback {
 };
 
 struct zjs_ble_characteristic {
-    struct bt_uuid *uuid;
-    jerry_object_t *chrc_obj;
     int flags;
+    jerry_object_t *chrc_obj;
+    struct bt_uuid *uuid;
+    struct bt_gatt_attr *chrc_attr;
     struct zjs_ble_read_callback read_cb;
     struct zjs_ble_write_callback write_cb;
     struct zjs_ble_subscribe_callback subscribe_cb;
@@ -76,6 +76,7 @@ struct zjs_ble_characteristic {
 };
 
 struct zjs_ble_service {
+    jerry_object_t *service_obj;
     struct bt_uuid *uuid;
     struct zjs_ble_characteristic *characteristics;
     struct zjs_ble_service *next;
@@ -88,6 +89,8 @@ struct bt_uuid* zjs_ble_new_uuid_16(uint16_t value) {
     if (!uuid) {
         PRINT("error: out of memory allocating struct bt_uuid_16\n");
         return NULL;
+    } else {
+        memset(uuid, 0, sizeof(struct bt_uuid_16));
     }
 
     uuid->uuid.type = BT_UUID_TYPE_16;
@@ -264,6 +267,69 @@ static ssize_t zjs_ble_write_attr_callback(struct bt_conn *conn,
     return sizeof(rgb);
 }
 
+static bool zjs_ble_update_value_call_function(const jerry_object_t *function_obj_p,
+                                               const jerry_value_t this_val,
+                                               const jerry_value_t args_p[],
+                                               const jerry_length_t args_cnt,
+                                               jerry_value_t *ret_val_p)
+{
+    if (args_cnt != 1 ||
+        !jerry_value_is_object(args_p[0])) {
+        PRINT("zjs_ble_update_value_call_function: invalid arguments\n");
+        return false;
+    }
+
+    // expects a Buffer object
+    jerry_object_t *obj = jerry_get_object_value(args_p[0]);
+    struct zjs_buffer_t *buf = zjs_find_buffer(obj);
+
+    if (buf) {
+        if (zjs_ble_default_conn) {
+            uintptr_t ptr;
+            if (jerry_get_object_native_handle(jerry_get_object_value(this_val), &ptr)) {
+               struct zjs_ble_characteristic *chrc = (struct zjs_ble_characteristic*)ptr;
+               if (chrc->chrc_attr) {
+                   bt_gatt_notify(zjs_ble_default_conn, chrc->chrc_attr, buf->buffer, buf->bufsize);
+               }
+            }
+        }
+
+        jerry_release_object(obj);
+        task_free(buf->buffer);
+        task_free(buf);
+        return true;
+    }
+
+    PRINT("updateValueCallback: Buffer not found or empty\n");
+    jerry_release_object(obj);
+    return false;
+}
+
+static void zjs_ble_subscribe_call_function(struct zjs_callback *cb)
+{
+    struct zjs_ble_subscribe_callback *mycb = CONTAINER_OF(cb,
+                                                           struct zjs_ble_subscribe_callback,
+                                                           zjs_cb);
+    struct zjs_ble_characteristic *chrc = CONTAINER_OF(mycb,
+                                                       struct zjs_ble_characteristic,
+                                                       subscribe_cb);
+
+    jerry_value_t rval;
+    jerry_value_t args[2];
+
+    args[0] = jerry_create_number_value(20); // max payload size
+    args[1] = jerry_create_object_value(jerry_create_external_function(
+                                        zjs_ble_update_value_call_function));
+    rval = jerry_call_function(mycb->zjs_cb.js_callback, chrc->chrc_obj, args, 2);
+    if (jerry_value_is_error(rval)) {
+        PRINT("error: failed to call onSubscribe function\n");
+    }
+
+    jerry_release_value(args[0]);
+    jerry_release_value(args[1]);
+    jerry_release_value(rval);
+}
+
 // Port this to javascript
 static void zjs_ble_blvl_ccc_cfg_changed(uint16_t value)
 {
@@ -366,7 +432,7 @@ static void zjs_ble_bt_ready_call_function(struct zjs_callback *cb)
                                                   (jerry_char_t *) "poweredOn"));
     jerry_value_t rval = jerry_call_function(cb->js_callback, NULL, &arg, 1);
     if (jerry_value_is_error(rval)) {
-        PRINT("error: zjs_bt_ready_call_function\n");
+        PRINT("error: zjs_ble_bt_ready_call_function\n");
     }
     jerry_release_value(rval);
     jerry_release_value(arg);
@@ -375,10 +441,10 @@ static void zjs_ble_bt_ready_call_function(struct zjs_callback *cb)
 static void zjs_ble_bt_ready(int err)
 {
     if (!zjs_ble_list) {
-        PRINT("zjs_bt_ready: no event handlers present\n");
+        PRINT("zjs_ble_bt_ready: no event handlers present\n");
         return;
     }
-    PRINT("zjs_bt_ready is called [err %d]\n", err);
+    PRINT("zjs_ble_bt_ready is called [err %d]\n", err);
 
     // FIXME: Probably we should return this err to JS like in adv_start?
     //   Maybe this wasn't in the bleno API?
@@ -717,6 +783,8 @@ bool zjs_ble_parse_characteristic(jerry_object_t *chrc_obj,
     v_func = jerry_get_object_field_value(chrc_obj, "onSubscribe");
     if (jerry_value_is_function(v_func)) {
         chrc->subscribe_cb.zjs_cb.js_callback = jerry_acquire_object(jerry_get_object_value(v_func));
+        // TODO: we need to monitor onSubscribe events from BLE driver eventually
+        zjs_ble_subscribe_call_function(&chrc->subscribe_cb.zjs_cb);
     }
 
     v_func = jerry_get_object_field_value(chrc_obj, "onUnsubscribe");
@@ -732,27 +800,17 @@ bool zjs_ble_parse_characteristic(jerry_object_t *chrc_obj,
     return true;
 }
 
-bool zjs_ble_parse_service(const jerry_value_t val,
+bool zjs_ble_parse_service(jerry_object_t *service_obj,
                            struct zjs_ble_service *service)
 {
-    if (!service) {
-        return false;
-    }
-
-    if (!jerry_value_is_object(val))
-    {
-        PRINT("invalid object type\n");
-        return false;
-    }
-
     char uuid[ZJS_BLE_UUID_LEN];
-    if (!zjs_obj_get_string(jerry_get_object_value(val), "uuid", uuid, ZJS_BLE_UUID_LEN)) {
+    if (!zjs_obj_get_string(service_obj, "uuid", uuid, ZJS_BLE_UUID_LEN)) {
         PRINT("service uuid doesn't exist\n");
         return false;
     }
     service->uuid = zjs_ble_new_uuid_16(strtoul(uuid, NULL, 16));
 
-    jerry_value_t v_array = jerry_get_object_field_value(jerry_get_object_value(val),
+    jerry_value_t v_array = jerry_get_object_field_value(service_obj,
                                                          "characteristics");
     if (jerry_value_is_error(v_array)) {
         PRINT("characteristics doesn't exist\n");
@@ -784,6 +842,7 @@ bool zjs_ble_parse_service(const jerry_value_t val,
 
         jerry_object_t *chrc_obj = jerry_get_object_value(v_characteristic);
         chrc->chrc_obj = jerry_acquire_object(chrc_obj);
+        jerry_set_object_native_handle(chrc_obj, (uintptr_t)chrc, NULL);
 
         if (!zjs_ble_parse_characteristic(chrc_obj, chrc)) {
             PRINT("failed to parse temp characteristic\n");
@@ -894,6 +953,9 @@ bool zjs_ble_register_service(struct zjs_ble_service *service)
         bt_attrs[entry_index].write = zjs_ble_write_attr_callback;
         bt_attrs[entry_index].user_data = ch;
 
+        // hold references to the GATT attr for sending notification
+        ch->chrc_attr = &bt_attrs[entry_index];
+
         if (!bt_uuid_cmp(ch->uuid, BT_UUID_TEMP)) {
             // CUD
             // FIXME: only temperature sets it for now
@@ -980,7 +1042,11 @@ bool zjs_ble_set_services(const jerry_object_t *function_obj_p,
         zjs_ble_free_characteristics(zjs_ble_service.characteristics);
     }
 
-    if (!zjs_ble_parse_service(v_service, &zjs_ble_service)) {
+    jerry_object_t *service_obj = jerry_get_object_value(v_service);
+    zjs_ble_service.service_obj = jerry_acquire_object(service_obj);
+    jerry_set_object_native_handle(service_obj, (uintptr_t)&zjs_ble_service, NULL);
+
+    if (!zjs_ble_parse_service(service_obj, &zjs_ble_service)) {
         PRINT("zjs_ble_set_services: failed to validate service object\n");
         return false;
     }
