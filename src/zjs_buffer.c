@@ -14,9 +14,9 @@
 
 static struct zjs_buffer_t *zjs_buffers = NULL;
 
-// TODO: this probably be replaced more efficiently now that there is a
+// TODO: this could probably be replaced more efficiently now that there is a
 //   get_native_handle API
-struct zjs_buffer_t *zjs_find_buffer(const jerry_object_t *obj)
+struct zjs_buffer_t *zjs_buffer_find(const jerry_object_t *obj)
 {
     // requires: obj should be the JS object associated with a buffer, created
     //             in zjs_buffer
@@ -50,7 +50,7 @@ static bool zjs_buffer_read_uint8(const jerry_object_t *function_obj_p,
         offset = (uint32_t)jerry_get_number_value(args_p[0]);
 
     jerry_object_t *obj = jerry_get_object_value(this_val);
-    struct zjs_buffer_t *buf = zjs_find_buffer(obj);
+    struct zjs_buffer_t *buf = zjs_buffer_find(obj);
     if (buf) {
         if (offset >= buf->bufsize) {
             PRINT("Tried to read beyond end of buffer\n");
@@ -92,7 +92,7 @@ static bool zjs_buffer_write_uint8(const jerry_object_t *function_obj_p,
         offset = (uint32_t)jerry_get_number_value(args_p[1]);
 
     jerry_object_t *obj = jerry_get_object_value(this_val);
-    struct zjs_buffer_t *buf = zjs_find_buffer(obj);
+    struct zjs_buffer_t *buf = zjs_buffer_find(obj);
     if (buf) {
         if (offset >= buf->bufsize) {
             PRINT("Tried to write beyond end of buffer\n");
@@ -133,7 +133,7 @@ static bool zjs_buffer_to_string(const jerry_object_t *function_obj_p,
     }
 
     jerry_object_t *obj = jerry_get_object_value(this_val);
-    struct zjs_buffer_t *buf = zjs_find_buffer(obj);
+    struct zjs_buffer_t *buf = zjs_buffer_find(obj);
     if (buf && args_cnt == 0) {
         *ret_val_p = jerry_create_string_value(jerry_create_string(
                                                (jerry_char_t *)"[Buffer Object]"));
