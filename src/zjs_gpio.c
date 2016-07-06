@@ -202,7 +202,7 @@ bool zjs_gpio_open(const jerry_object_t *function_obj_p,
     zjs_obj_add_function(pinobj, zjs_gpio_pin_read, "read");
     zjs_obj_add_function(pinobj, zjs_gpio_pin_write, "write");
     zjs_obj_add_function(pinobj, zjs_gpio_pin_set_callback, "set_callback");
-    zjs_obj_add_uint32(pinobj, pin, "pin");
+    zjs_obj_add_number(pinobj, pin, "pin");
     zjs_obj_add_string(pinobj, dirOut ? ZJS_DIR_OUT : ZJS_DIR_IN, "direction");
     zjs_obj_add_boolean(pinobj, activeLow, "activeLow");
     zjs_obj_add_string(pinobj, edge, "edge");

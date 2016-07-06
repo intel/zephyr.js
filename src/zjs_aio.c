@@ -218,8 +218,8 @@ bool zjs_aio_open(const jerry_object_t *function_obj_p,
     zjs_obj_add_function(pinobj, zjs_aio_pin_abort, "abort");
     zjs_obj_add_function(pinobj, zjs_aio_pin_close, "close");
     zjs_obj_add_string(pinobj, name, "name");
-    zjs_obj_add_uint32(pinobj, device, "device");
-    zjs_obj_add_uint32(pinobj, pin, "pin");
+    zjs_obj_add_number(pinobj, device, "device");
+    zjs_obj_add_number(pinobj, pin, "pin");
     zjs_obj_add_boolean(pinobj, raw, "raw");
 
     *ret_val_p = jerry_create_object_value(pinobj);
