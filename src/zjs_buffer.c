@@ -210,7 +210,7 @@ jerry_object_t *zjs_buffer_create(uint32_t size)
     buf_item->next = zjs_buffers;
     zjs_buffers = buf_item;
 
-    zjs_obj_add_uint32(buf_obj, size, "length");
+    zjs_obj_add_number(buf_obj, size, "length");
     zjs_obj_add_function(buf_obj, zjs_buffer_read_uint8, "readUInt8");
     zjs_obj_add_function(buf_obj, zjs_buffer_write_uint8, "writeUInt8");
     zjs_obj_add_function(buf_obj, zjs_buffer_to_string, "toString");
