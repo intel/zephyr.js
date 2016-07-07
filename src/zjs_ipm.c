@@ -7,8 +7,6 @@
 #include "zjs_ipm.h"
 #include "zjs_util.h"
 
-#define IPM_CHANNEL_X86_TO_ARC       1
-#define IPM_CHANNEL_ARC_TO_X86       2
 
 #ifdef CONFIG_X86
 QUARK_SE_IPM_DEFINE(ipm_msg_send, IPM_CHANNEL_X86_TO_ARC, QUARK_SE_IPM_OUTBOUND);
