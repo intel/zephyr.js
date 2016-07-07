@@ -6,6 +6,7 @@
 // import aio and ble module
 var aio = require("aio");
 var ble = require("ble");
+var pwm = require('pwm');
 
 DEVICE_NAME = 'Arduino101';
 
@@ -19,8 +20,7 @@ TemperatureCharacteristic._lastValue = undefined;
 TemperatureCharacteristic._onChange = null;
 
 TemperatureCharacteristic.onReadRequest = function(offset, callback) {
-    print("Temperature onReadRequest called");
-    var data = new Buffer(8);
+    var data = new Buffer(1);
     data.writeUInt8(this._lastValue);
     callback(this.RESULT_SUCCESS, data);
 };
@@ -39,10 +39,9 @@ TemperatureCharacteristic.onUnsubscribe = function() {
 
 TemperatureCharacteristic.valueChange = function(value) {
     this._lastValue = value;
-    print("Temperature change " + value);
 
-    var data = new Buffer(8);
-    data.writeUInt8(newValue);
+    var data = new Buffer(1);
+    data.writeUInt8(value);
 
     if (this._onChange) {
         this._onChange(data);
@@ -55,25 +54,38 @@ var ColorCharacteristic = new ble.Characteristic({
     value: null
 });
 
+// default color
 ColorCharacteristic._value = new Buffer(3);
+ColorCharacteristic._value.writeUInt8(255, 0);
+ColorCharacteristic._value.writeUInt8(0, 1);
+ColorCharacteristic._value.writeUInt8(0, 2);
+ColorCharacteristic.ledR = pwm.open({channel: 0, period: 256, pulseWidth: 255});  // pin IO3
+ColorCharacteristic.ledG = pwm.open({channel: 1, period: 256, pulseWidth: 0});  // pin IO5
+ColorCharacteristic.ledB = pwm.open({channel: 2, period: 256, pulseWidth: 0});  // pin IO6
 
 ColorCharacteristic.onReadRequest = function(offset, callback) {
-    print("Color onReadRequest called");
+    print("led value: " + this._value.toString('hex'));
     callback(this.RESULT_SUCCESS, this._value);
 };
 
 ColorCharacteristic.onWriteRequest = function(data, offset, withoutResponse,
                                               callback) {
-    print("Color onWriteRequest called");
     var value = data;
     if (!value) {
-        callback(this.RESULT_SUCCESS);
+        print("Error - color onWriteRequest: buffer not available");
+        callback(this.RESULT_UNLIKELY_ERROR);
         return;
     }
 
     this._value = value;
+    if (this._value.length !== 3) {
+        callback(this.RESULT_INVALID_ATTRIBUTE_LENGTH);
+        return;
+    }
 
-    print("Changing led to " + value.toString('hex'));
+    this.ledR.setPulseWidth(this._value.readUInt8(0));
+    this.ledG.setPulseWidth(this._value.readUInt8(1));
+    this.ledB.setPulseWidth(this._value.readUInt8(2));
     callback(this.RESULT_SUCCESS);
 };
 
