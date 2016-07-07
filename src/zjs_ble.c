@@ -30,6 +30,8 @@
 #define SENSOR_1_NAME "Temperature"
 #define SENSOR_2_NAME "Led"
 
+struct nano_sem zjs_ble_nano_sem;
+
 static struct bt_gatt_ccc_cfg zjs_ble_blvl_ccc_cfg[CONFIG_BLUETOOTH_MAX_PAIRED] = {};
 static uint8_t zjs_ble_simulate_blvl;
 static uint8_t rgb[3] = {0xff, 0x00, 0x00}; // red
@@ -43,8 +45,10 @@ struct zjs_ble_read_callback {
 
 struct zjs_ble_write_callback {
     struct zjs_callback zjs_cb;
-    uint16_t offset;
-    const void *buffer;
+    const void *buffer;                     // arg
+    uint16_t buffer_size;                   // arg
+    uint16_t offset;                        // arg
+    uint32_t error_code;                    // return value
 };
 
 struct zjs_ble_subscribe_callback {
@@ -200,20 +204,22 @@ static bool zjs_ble_write_attr_call_function_return(const jerry_object_t *functi
                                                     const jerry_length_t args_cnt,
                                                     jerry_value_t *ret_val_p)
 {
-    PRINT("zjs_ble_write_attr_call_function_return called\n");
     if (args_cnt != 1 ||
         !jerry_value_is_number(args_p[0])) {
         PRINT("zjs_ble_write_attr_call_function_return: invalid arguments\n");
-        return false;
+        nano_task_sem_give(&zjs_ble_nano_sem);
+        return true;
     }
 
-    uint32_t error_code = (uint32_t)jerry_get_number_value(args_p[0]);
-    // TODO: store this value
-    if (error_code != ZJS_BLE_RESULT_SUCCESS) {
-        PRINT("Need to return error to bluetooth stack\n");
-    } else {
-        PRINT("Need to return result to bluetooth stack\n");
+    uintptr_t ptr;
+    if (jerry_get_object_native_handle((jerry_object_t *)function_obj_p, &ptr)) {
+        // store the return value in the write_cb struct
+        struct zjs_ble_characteristic *chrc = (struct zjs_ble_characteristic*)ptr;
+        chrc->write_cb.error_code = (uint32_t)jerry_get_number_value(args_p[0]);
     }
+
+    // unblock fiber
+    nano_task_sem_give(&zjs_ble_nano_sem);
     return true;
 }
 
@@ -226,16 +232,40 @@ static void zjs_ble_write_attr_call_function(struct zjs_callback *cb)
 
     jerry_value_t rval;
     jerry_value_t args[4];
-    args[0] = jerry_create_number_value(mycb->offset);
-    // FIXME: create the Buffer object and pass it to js
-    args[1] = jerry_create_null_value();
+    jerry_object_t *func_obj;
+
+    if (mycb->buffer && mycb->buffer_size > 0) {
+        jerry_object_t *buf_obj = zjs_buffer_create(mycb->buffer_size);
+
+        if (buf_obj) {
+           struct zjs_buffer_t *buf = zjs_buffer_find(buf_obj);
+
+           if (buf &&
+               buf->buffer &&
+               buf->bufsize == mycb->buffer_size) {
+               memcpy(buf->buffer, mycb->buffer, mycb->buffer_size);
+               args[0]= jerry_create_object_value(buf_obj);
+           } else {
+               args[0] = jerry_create_null_value();
+           }
+        } else {
+            args[0] = jerry_create_null_value();
+        }
+    } else {
+        args[0] = jerry_create_null_value();
+    }
+
+    args[1] = jerry_create_number_value(mycb->offset);
     args[2] = jerry_create_boolean_value(false);
-    args[3] = jerry_create_object_value(jerry_create_external_function(
-                                        zjs_ble_write_attr_call_function_return));
+    func_obj = jerry_create_external_function(zjs_ble_write_attr_call_function_return);
+    jerry_set_object_native_handle(func_obj, (uintptr_t)chrc, NULL);
+    args[3] = jerry_create_object_value(func_obj);
+
     rval = jerry_call_function(mycb->zjs_cb.js_callback, chrc->chrc_obj, args, 4);
     if (jerry_value_is_error(rval)) {
         PRINT("error: failed to call onWriteRequest function\n");
     }
+
     jerry_release_value(args[0]);
     jerry_release_value(args[1]);
     jerry_release_value(args[2]);
@@ -252,19 +282,31 @@ static ssize_t zjs_ble_write_attr_callback(struct bt_conn *conn,
 
     if (!chrc) {
         PRINT("error: characteristic not found\n");
-        return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
+        return BT_GATT_ERR(BT_ATT_ERR_INVALID_HANDLE);
     }
 
     if (chrc->write_cb.zjs_cb.js_callback) {
-        // TODO: block until result is ready, Semaphore or FIFO?
-        // This is from the FIBER context, so we queue up the function
-        // js call and block until the js function returns or times out
+        // This is from the FIBER context, so we queue up the callback
+        // to invoke js from task context
         chrc->write_cb.offset = offset;
+        chrc->write_cb.buffer = (len > 0) ? buf : NULL;
+        chrc->write_cb.buffer_size = len;
+        chrc->write_cb.error_code = BT_ATT_ERR_NOT_SUPPORTED;
         chrc->write_cb.zjs_cb.call_function = zjs_ble_write_attr_call_function;
         zjs_queue_callback(&chrc->write_cb.zjs_cb);
+
+        // block until result is ready
+        nano_fiber_sem_take(&zjs_ble_nano_sem, TICKS_UNLIMITED);
+
+        if (chrc->write_cb.error_code == ZJS_BLE_RESULT_SUCCESS) {
+            return len;
+        } else {
+            return BT_GATT_ERR(chrc->write_cb.error_code);
+        }
     }
 
-    return sizeof(rgb);
+    PRINT("Error: zjs_ble_write_attr_callback\n");
+    return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
 }
 
 static bool zjs_ble_update_value_call_function(const jerry_object_t *function_obj_p,
@@ -453,6 +495,8 @@ static void zjs_ble_bt_ready(int err)
 
 jerry_object_t *zjs_ble_init()
 {
+     nano_sem_init(&zjs_ble_nano_sem);
+
     // create global BLE object
     jerry_object_t *ble_obj = jerry_create_object();
     zjs_obj_add_function(ble_obj, zjs_ble_on, "on");
