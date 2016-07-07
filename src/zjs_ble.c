@@ -281,7 +281,7 @@ static bool zjs_ble_update_value_call_function(const jerry_object_t *function_ob
 
     // expects a Buffer object
     jerry_object_t *obj = jerry_get_object_value(args_p[0]);
-    struct zjs_buffer_t *buf = zjs_find_buffer(obj);
+    struct zjs_buffer_t *buf = zjs_buffer_find(obj);
 
     if (buf) {
         if (zjs_ble_default_conn) {
