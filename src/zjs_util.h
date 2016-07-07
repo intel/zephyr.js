@@ -33,15 +33,13 @@ void zjs_obj_add_object(jerry_object_t *parent, jerry_object_t *child,
                         const char *name);
 void zjs_obj_add_string(jerry_object_t *obj, const char *value,
                         const char *name);
-void zjs_obj_add_uint32(jerry_object_t *obj, uint32_t value,
-                        const char *name);
+void zjs_obj_add_number(jerry_object_t *obj, double value, const char *name);
 
-bool zjs_obj_get_boolean(jerry_object_t *obj, const char *name,
-                         bool *bval);
-bool zjs_obj_get_string(jerry_object_t *obj, const char *name,
-                        char *buffer, int len);
-bool zjs_obj_get_uint32(jerry_object_t *obj, const char *name,
-                        uint32_t *num);
+bool zjs_obj_get_boolean(jerry_object_t *obj, const char *name, bool *bval);
+bool zjs_obj_get_string(jerry_object_t *obj, const char *name, char *buffer,
+                        int len);
+bool zjs_obj_get_double(jerry_object_t *obj, const char *name, double *num);
+bool zjs_obj_get_uint32(jerry_object_t *obj, const char *name, uint32_t *num);
 
 #define ZJS_IS_BOOL(jval) (jval.type == JERRY_DATA_TYPE_BOOLEAN)
 #define ZJS_IS_FLOAT32(jval) (jval.type == JERRY_DATA_TYPE_FLOAT32)

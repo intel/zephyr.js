@@ -89,19 +89,18 @@ void zjs_obj_add_string(jerry_object_t *obj, const char *sval,
                         const char *name)
 {
     // requires: obj is an existing JS object
-    //  effects: creates a new field in parent named name, set to value
+    //  effects: creates a new field in parent named name, set to sval
     jerry_string_t *str = jerry_create_string(sval);
     jerry_value_t value = jerry_create_string_value(str);
     jerry_set_object_field_value(obj, name, value);
     jerry_release_value(value);
 }
 
-void zjs_obj_add_uint32(jerry_object_t *obj, uint32_t ival,
-                        const char *name)
+void zjs_obj_add_number(jerry_object_t *obj, double nval, const char *name)
 {
     // requires: obj is an existing JS object
-    //  effects: creates a new field in parent named name, set to value
-    jerry_value_t value = jerry_create_number_value(ival);
+    //  effects: creates a new field in parent named name, set to nval
+    jerry_value_t value = jerry_create_number_value(nval);
     jerry_set_object_field_value(obj, name, value);
 }
 
@@ -145,6 +144,20 @@ bool zjs_obj_get_string(jerry_object_t *obj, const char *name,
 
     int wlen = jerry_string_to_char_buffer(str, buffer, len);
     buffer[wlen] = '\0';
+    jerry_release_value(value);
+    return true;
+}
+
+bool zjs_obj_get_double(jerry_object_t *obj, const char *name,
+                        double *num)
+{
+    // requires: obj is an existing JS object, value name should exist as number
+    //  effects: retrieves field specified by name as a uint32
+    jerry_value_t value = jerry_get_object_field_value(obj, name);
+    if (jerry_value_is_error(value))
+        return false;
+
+    *num = jerry_get_number_value(value);
     jerry_release_value(value);
     return true;
 }

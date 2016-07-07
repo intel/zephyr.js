@@ -12,8 +12,8 @@ var pwm = require("pwm");
 var led0 = pwm.open({channel: 0});  // pin IO3
 
 // set timings in microseconds with *US functions
-led0.setPeriodUS(1500000);
-led0.setPulseWidthUS(1000000);
+led0.setPeriod(1500);
+led0.setPulseWidth(1000);
 
 // set brightness to 33% using hw cycle-based values
 var led1 = pwm.open({channel: 1, period: 3, pulseWidth: 1});  // pin IO5
@@ -21,14 +21,14 @@ var led1 = pwm.open({channel: 1, period: 3, pulseWidth: 1});  // pin IO5
 // reproduce the Zephyr PWM sample in JS, changing blink timings every 4s
 var led2 = pwm.open({channel: 2});  // pin IO6
 
-var minPeriod = 1000;  // 1ms
-var maxPeriod = 1000000;  // 1s
+var minPeriod = 1;  // 1ms
+var maxPeriod = 1000;  // 1s
 var period = maxPeriod;
 var dir = 0;
 
 // set initial state
-led2.setPeriodUS(period);
-led2.setPulseWidthUS(period / 2);
+led2.setPeriod(period);
+led2.setPulseWidth(period / 2);
 
 setInterval(function () {
     if (dir) {
@@ -48,6 +48,7 @@ setInterval(function () {
         }
     }
 
-    led2.setPeriodUS(period);
-    led2.setPulseWidthUS(period / 2);
+    led2.setPeriod(period);
+    led2.setPulseWidth(period / 2);
+
 }, 4000);
