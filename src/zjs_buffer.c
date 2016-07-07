@@ -46,7 +46,7 @@ static bool zjs_buffer_read_uint8(const jerry_object_t *function_obj_p,
     }
 
     uint32_t offset = 0;
-    if (args_cnt > 1)
+    if (args_cnt >= 1)
         offset = (uint32_t)jerry_get_number_value(args_p[0]);
 
     jerry_object_t *obj = jerry_get_object_value(this_val);
