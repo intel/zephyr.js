@@ -1,5 +1,6 @@
 ccflags-y += -I$(JERRY_BASE)/jerry-core
 ccflags-y += -I$(ZEPHYR_BASE)/drivers
+ccflags-y += -I$(ZJS_BASE)/outdir/include
 
 obj-y += main.o \
          zjs_aio.o \
