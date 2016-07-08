@@ -38,7 +38,6 @@ static void zjs_pwm_set(uint32_t channel, uint32_t period, uint32_t pulseWidth,
     //             on means high, "reversed" if on means low
     //  effects: sets the given period and pulse width, but the true pulse
     //             must always be off for at least one hw cycle
-
     if (period < 1) {
         // period must be at least one cycle
         period = 1;
@@ -88,14 +87,15 @@ bool zjs_pwm_open(const jerry_object_t *function_obj_p,
     // data input object
     jerry_object_t *data = jerry_get_object_value(args_p[0]);
 
-    uint32_t channel, period = 255, pulseWidth = 0;
+    uint32_t channel;
     if (!zjs_obj_get_uint32(data, "channel", &channel)) {
         PRINT("zjs_pwm_open: missing required field\n");
         return false;
     }
 
-    zjs_obj_get_uint32(data, "period", &period);
-    zjs_obj_get_uint32(data, "pulseWidth", &pulseWidth);
+    double period, pulseWidth;
+    zjs_obj_get_double(data, "period", &period);
+    zjs_obj_get_double(data, "pulseWidth", &pulseWidth);
 
     const int BUFLEN = 10;
     char buffer[BUFLEN];
@@ -106,7 +106,10 @@ bool zjs_pwm_open(const jerry_object_t *function_obj_p,
     }
 
     // set the inital timing
-    zjs_pwm_set(channel, period, pulseWidth, polarity);
+    uint32_t pulseWidthHW = pulseWidth * sys_clock_hw_cycles_per_sec / 1000;
+    uint32_t periodHW = period * sys_clock_hw_cycles_per_sec / 1000;
+
+    zjs_pwm_set(channel, periodHW, pulseWidthHW, polarity);
 
     // create the PWMPin object
     jerry_object_t *pinobj = jerry_create_object();
