@@ -32,16 +32,18 @@
  * A2 Channel 12
  * A3 Channel 13
  * A4 Channel 14
+ * A5 Channel 15
  */
 #define A0 10
 #define A1 11
 #define A2 12
 #define A3 13
 #define A4 14
+#define A5 15
 #define BUFFER_SIZE 4
 
 static struct device* adc_dev;
-static uint32_t pin_values[5] = {};
+static uint32_t pin_values[6] = {};
 
 static uint8_t seq_buffer[BUFFER_SIZE];
 
@@ -95,14 +97,14 @@ void ipm_msg_receive_callback(void *context, uint32_t id, volatile void *data)
         return;
 
     if (msg->type == TYPE_AIO_OPEN) {
-        if (pin < A0 || pin > A4) {
+        if (pin < A0 || pin > A5) {
             PRINT("ARC - pin #%d out of range\n", pin);
             reply_type = TYPE_AIO_OPEN_FAIL;
         } else {
             reply_type = TYPE_AIO_OPEN_SUCCESS;
         }
     } else if (msg->type == TYPE_AIO_PIN_READ) {
-        if (pin < A0 || pin > A4) {
+        if (pin < A0 || pin > A5) {
             PRINT("ARC - pin #%d out of range\n", pin);
             reply_type = TYPE_AIO_PIN_READ_FAIL;
         }
@@ -119,7 +121,7 @@ void ipm_msg_receive_callback(void *context, uint32_t id, volatile void *data)
         PRINT("ARC - AIO abort() not supported\n");
         reply_type = TYPE_AIO_PIN_ABORT_SUCCESS;
     } else if (msg->type == TYPE_AIO_PIN_CLOSE) {
-        if (pin < A0 || pin > A4) {
+        if (pin < A0 || pin > A5) {
             PRINT("ARC - pin #%d out of range\n", pin);
             reply_type = TYPE_AIO_PIN_CLOSE_FAIL;
         }
@@ -152,7 +154,7 @@ void main(void)
          * mainloop just reads all the values from all ADC pins
          * and stores them in the array
          */
-        for (int i=0; i<=4; i++) {
+        for (int i=0; i<=5; i++) {
             pin_values[i] = pin_read(i+A0);
             /* FIX BUG
              * read value will read the old value

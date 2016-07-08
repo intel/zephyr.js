@@ -18,15 +18,16 @@ DEFINE_SEMAPHORE(SEM_AIO_BLOCK);
  * A2 Channel 12
  * A3 Channel 13
  * A4 Channel 14
+ * A5 Channel 15
  */
 #define A0 10
 #define A1 11
 #define A2 12
 #define A3 13
 #define A4 14
-// TODO: A5 is missing
+#define A5 15
 
-static uint32_t pin_values[5] = {};
+static uint32_t pin_values[6] = {};
 
 struct zjs_cb_list_item {
     jerry_object_t *pin_obj;
@@ -128,7 +129,7 @@ void ipm_msg_receive_callback(void *context, uint32_t id, volatile void *data)
     if (msg->type == TYPE_AIO_OPEN_SUCCESS) {
         PRINT("pin %lu is opened\n", msg->pin);
     } else if (msg->type == TYPE_AIO_PIN_READ_SUCCESS) {
-        if (msg->pin < A0 || msg->pin > A4) {
+        if (msg->pin < A0 || msg->pin > A5) {
             PRINT("X86 - pin #%lu out of range\n", msg->pin);
             return;
         }
@@ -238,7 +239,7 @@ bool zjs_aio_pin_read(const jerry_object_t *function_obj_p,
     zjs_obj_get_uint32(obj, "device", &device);
     zjs_obj_get_uint32(obj, "pin", &pin);
 
-    if (pin < A0 || pin > A4) {
+    if (pin < A0 || pin > A5) {
         PRINT("pin #%lu out of range\n", pin);
         return false;
     }
