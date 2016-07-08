@@ -21,9 +21,11 @@ echo ZJS_PARTITION: $ZJS_PARTITION
 export ZJS_BASE=$( builtin cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 echo ZJS_BASE: $ZJS_BASE
 
-# identify Soletta source tree root directory
-export SOLETTA_BASE_DIR=$ZJS_BASE/deps/soletta
-echo SOLETTA_BASE_DIR: $SOLETTA_BASE_DIR
+# identify JerryScript source tree root directory
+if [ "X$JERRY_BASE" == "X" ]; then
+    export JERRY_BASE=$ZJS_BASE/deps/jerryscript
+fi
+echo JERRY_BASE: $JERRY_BASE
 
 # add scripts/ subdirectory to PATH
 scripts_path=${ZJS_BASE}/scripts
