@@ -140,8 +140,6 @@ static struct zjs_ble_list_item *zjs_ble_event_callback_alloc()
 {
     // effects: allocates a new callback list item and adds it to the list
     struct zjs_ble_list_item *item;
-    PRINT("Size of zjs_ble_list_item = %lu\n",
-          sizeof(struct zjs_ble_list_item));
     item = task_malloc(sizeof(struct zjs_ble_list_item));
     if (!item) {
         PRINT("error: out of memory allocating callback struct\n");
@@ -424,14 +422,10 @@ static bool zjs_ble_update_value_call_function(const jerry_object_t *function_ob
             }
         }
 
-        jerry_release_object(obj);
-        task_free(buf->buffer);
-        task_free(buf);
         return true;
     }
 
     PRINT("updateValueCallback: Buffer not found or empty\n");
-    jerry_release_object(obj);
     return false;
 }
 

@@ -22,6 +22,16 @@
 #define TYPE_AIO_PIN_CLOSE_SUCCESS                         0x000A
 #define TYPE_AIO_PIN_CLOSE_FAIL                            0x000B
 
+#define TYPE_AIO_PIN_SUBSCRIBE                             0x000C
+#define TYPE_AIO_PIN_SUBSCRIBE_SUCCESS                     0x000D
+#define TYPE_AIO_PIN_SUBSCRIBE_FAIL                        0x000E
+
+#define TYPE_AIO_PIN_UNSUBSCRIBE                           0x000F
+#define TYPE_AIO_PIN_UNSUBSCRIBE_SUCCESS                   0x0010
+#define TYPE_AIO_PIN_UNSUBSCRIBE_FAIL                      0x0011
+
+#define TYPE_AIO_PIN_EVENT_VALUE_CHANGE                    0x0012
+
 struct zjs_ipm_message {
     bool block;
     uint32_t type;

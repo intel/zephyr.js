@@ -44,6 +44,7 @@
 
 static struct device* adc_dev;
 static uint32_t pin_values[6] = {};
+static uint32_t pin_send_updates[6] = {};
 
 static uint8_t seq_buffer[BUFFER_SIZE];
 
@@ -124,9 +125,26 @@ void ipm_msg_receive_callback(void *context, uint32_t id, volatile void *data)
         if (pin < A0 || pin > A5) {
             PRINT("ARC - pin #%d out of range\n", pin);
             reply_type = TYPE_AIO_PIN_CLOSE_FAIL;
+        } else {
+            PRINT("ARC - AIO pin #%d is closed\n", pin);
+            reply_type = TYPE_AIO_PIN_CLOSE_SUCCESS;
         }
-        PRINT("ARC - AIO pin #%d is closed\n", pin);
-        reply_type = TYPE_AIO_PIN_CLOSE_SUCCESS;
+    } else if (msg->type == TYPE_AIO_PIN_SUBSCRIBE) {
+        if (pin < A0 || pin > A5) {
+            PRINT("ARC - pin #%d out of range\n", pin);
+            reply_type = TYPE_AIO_PIN_SUBSCRIBE_FAIL;
+        } else {
+            pin_send_updates[pin-A0] = 1;
+            reply_type = TYPE_AIO_PIN_SUBSCRIBE_SUCCESS;
+        }
+    } else if (msg->type == TYPE_AIO_PIN_UNSUBSCRIBE) {
+        if (pin < A0 || pin > A5) {
+            PRINT("ARC - pin #%d out of range\n", pin);
+            reply_type = TYPE_AIO_PIN_UNSUBSCRIBE_FAIL;
+        } else {
+            pin_send_updates[pin-A0] = 0;
+            reply_type = TYPE_AIO_PIN_UNSUBSCRIBE_SUCCESS;
+        }
     } else {
         PRINT("ARC - Unsupported message id %d\n", id);
     }
@@ -156,6 +174,12 @@ void main(void)
          */
         for (int i=0; i<=5; i++) {
             pin_values[i] = pin_read(i+A0);
+            if (pin_send_updates[i]) {
+                ipm_send_msg(MSG_ID_AIO, 0, TYPE_AIO_PIN_EVENT_VALUE_CHANGE,
+                              i+A0, pin_values[i]);
+                task_sleep(10);
+            }
+
             /* FIX BUG
              * read value will read the old value
              * from the previous pin when switching pins
