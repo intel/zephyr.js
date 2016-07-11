@@ -59,9 +59,12 @@ ColorCharacteristic._value = new Buffer(3);
 ColorCharacteristic._value.writeUInt8(255, 0);
 ColorCharacteristic._value.writeUInt8(0, 1);
 ColorCharacteristic._value.writeUInt8(0, 2);
-ColorCharacteristic.ledR = pwm.open({channel: 0, period: 256, pulseWidth: 255});  // pin IO3
-ColorCharacteristic.ledG = pwm.open({channel: 1, period: 256, pulseWidth: 0});  // pin IO5
-ColorCharacteristic.ledB = pwm.open({channel: 2, period: 256, pulseWidth: 0});  // pin IO6
+ColorCharacteristic.ledR = pwm.open({channel: 0, period: 0.256,
+                                     pulseWidth: 0.128});  // pin IO3
+ColorCharacteristic.ledG = pwm.open({channel: 1, period: 0.256,
+                                     pulseWidth: 0});  // pin IO5
+ColorCharacteristic.ledB = pwm.open({channel: 2, period: 0.256,
+                                     pulseWidth: 0});  // pin IO6
 
 ColorCharacteristic.onReadRequest = function(offset, callback) {
     print("led value: " + this._value.toString('hex'));
@@ -83,9 +86,9 @@ ColorCharacteristic.onWriteRequest = function(data, offset, withoutResponse,
         return;
     }
 
-    this.ledR.setPulseWidth(this._value.readUInt8(0));
-    this.ledG.setPulseWidth(this._value.readUInt8(1));
-    this.ledB.setPulseWidth(this._value.readUInt8(2));
+    this.ledR.setPulseWidth(this._value.readUInt8(0) / 1000);
+    this.ledG.setPulseWidth(this._value.readUInt8(1) / 1000);
+    this.ledB.setPulseWidth(this._value.readUInt8(2) / 1000);
     callback(this.RESULT_SUCCESS);
 };
 
