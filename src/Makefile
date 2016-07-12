@@ -10,12 +10,15 @@ obj-y += main.o \
          zjs_aio.o \
          zjs_ble.o \
          zjs_buffer.o \
+         zjs_callbacks.o \
          zjs_gpio.o \
          zjs_ipm.o \
          zjs_modules.o \
          zjs_pwm.o \
          zjs_script_gen.o \
          zjs_timers.o \
+         zjs_uart.o \
          zjs_util.o
 
 obj-$(CONFIG_BOARD_ARDUINO_101) += zjs_a101_pins.o
+
