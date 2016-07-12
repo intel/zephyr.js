@@ -1,14 +1,9 @@
 // Copyright (c) 2016, Intel Corporation.
 
-#include "jerry-api.h"
+// The util code is only for the X86 side
 
-#if defined(CONFIG_STDOUT_CONSOLE)
-#include <stdio.h>
-#define PRINT           printf
-#else
-#include <misc/printk.h>
-#define PRINT           printk
-#endif
+#include "jerry-api.h"
+#include "zjs_util.h"
 
 struct zjs_callback;
 
@@ -22,6 +17,8 @@ struct zjs_callback {
     // embed this within your own struct to add data fields you need
 };
 
+// TODO: We may want to reuse the queue code on ARC side at some point, and move
+//   this to zjs_common
 void zjs_queue_init();
 void zjs_queue_callback(struct zjs_callback *cb);
 void zjs_run_pending_callbacks();

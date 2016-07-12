@@ -5,7 +5,8 @@
 
 // ZJS includes
 #include "zjs_ipm.h"
-#include "zjs_util.h"
+
+#include "zjs_common.h"
 
 #define IPM_CHANNEL_X86_TO_ARC       1
 #define IPM_CHANNEL_ARC_TO_X86       2
