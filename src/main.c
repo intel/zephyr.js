@@ -34,6 +34,7 @@ void main(int argc, char *argv[])
     zjs_timers_init();
     zjs_queue_init();
     zjs_buffer_init();
+    zjs_init_callbacks();
 
     // initialize modules
     zjs_modules_init();
@@ -78,6 +79,7 @@ void main(int argc, char *argv[])
 #ifndef QEMU_BUILD
     zjs_ble_enable();
 #endif
+
     while (1) {
         zjs_timers_process_events();
         if (isleep) {
@@ -85,6 +87,7 @@ void main(int argc, char *argv[])
             task_sleep(isleep);
         }
         zjs_run_pending_callbacks();
+        zjs_service_callbacks();
         // not sure if this is okay, but it seems better to sleep than
         //   busy wait
         task_sleep(1);

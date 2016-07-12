@@ -373,4 +373,5 @@ jerry_value_t zjs_aio_init()
     zjs_obj_add_function(aio_obj, zjs_aio_open, "open");
     return aio_obj;
 }
+
 #endif

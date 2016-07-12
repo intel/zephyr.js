@@ -10,6 +10,12 @@
 
 #define ZJS_UNDEFINED jerry_create_undefined()
 
+#ifdef DEBUG_BUILD
+#define DBG_PRINT PRINT
+#else
+#define DBG_PRINT do {} while(0);
+#endif
+
 struct zjs_callback;
 
 typedef void (*zjs_cb_wrapper_t)(struct zjs_callback *);
