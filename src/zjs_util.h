@@ -41,11 +41,6 @@ bool zjs_obj_get_string(jerry_object_t *obj, const char *name, char *buffer,
 bool zjs_obj_get_double(jerry_object_t *obj, const char *name, double *num);
 bool zjs_obj_get_uint32(jerry_object_t *obj, const char *name, uint32_t *num);
 
-#define ZJS_IS_BOOL(jval) (jval.type == JERRY_DATA_TYPE_BOOLEAN)
-#define ZJS_IS_FLOAT32(jval) (jval.type == JERRY_DATA_TYPE_FLOAT32)
-#define ZJS_IS_OBJ(jval) (jval.type == JERRY_DATA_TYPE_OBJECT)
-#define ZJS_IS_STRING(jval) (jval.type == JERRY_DATA_TYPE_STRING)
-
 bool zjs_strequal(const jerry_string_t *jstr, const char *str);
 
 void zjs_init_value_object(jerry_value_t *out_value_p, jerry_object_t *v);
