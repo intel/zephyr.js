@@ -5,7 +5,8 @@
 
 // ZJS includes
 #include "zjs_ipm.h"
-#include "zjs_util.h"
+
+#include "zjs_common.h"
 
 
 #ifdef CONFIG_X86
