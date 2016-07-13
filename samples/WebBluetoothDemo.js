@@ -19,6 +19,8 @@ var TemperatureCharacteristic = new ble.Characteristic({
 TemperatureCharacteristic._lastValue = undefined;
 TemperatureCharacteristic._onChange = null;
 
+var pinA0 = aio.open({ device: 0, pin: 10 });
+
 TemperatureCharacteristic.onReadRequest = function(offset, callback) {
     var data = new Buffer(1);
     data.writeUInt8(this._lastValue);
@@ -126,10 +128,20 @@ ble.on('advertisingStart', function(error) {
 
 ble.on('accept', function(clientAddress) {
     print("Accepted Connection: " + clientAddress);
+
+    pinA0.on("change", function(data) {
+        var voltage = (data / 4096.0) * 3.3;
+        var celsius = (voltage - 0.5) * 100 + 0.5;
+
+        print("Temperature change " + celsius);
+        TemperatureCharacteristic.valueChange(celsius);
+    });
 });
 
 ble.on('disconnect', function(clientAddress) {
     print("Disconnected Connection: " + clientAddress);
+
+    pinA0.on("change", null);
 });
 
 print("WebBluetooth Demo with BLE...");

@@ -2,6 +2,7 @@
 
 // Zephyr includes
 #include <misc/util.h>
+#include <string.h>
 
 // ZJS includes
 #include "zjs_aio.h"
@@ -18,17 +19,19 @@ DEFINE_SEMAPHORE(SEM_AIO_BLOCK);
  * A2 Channel 12
  * A3 Channel 13
  * A4 Channel 14
+ * A5 Channel 15
  */
 #define A0 10
 #define A1 11
 #define A2 12
 #define A3 13
 #define A4 14
-// TODO: A5 is missing
+#define A5 15
 
-static uint32_t pin_values[5] = {};
+static uint32_t pin_values[6] = {};
 
 struct zjs_cb_list_item {
+    char event_type[20];
     jerry_object_t *pin_obj;
     struct zjs_callback zjs_cb;
     double value;
@@ -45,6 +48,8 @@ static struct zjs_cb_list_item *zjs_aio_callback_alloc()
     if (!item) {
         PRINT("error: out of memory allocating callback struct\n");
         return NULL;
+    } else {
+        memset(item, 0, sizeof(struct zjs_cb_list_item));
     }
 
     item->next = zjs_cb_list;
@@ -67,7 +72,7 @@ static void zjs_aio_callback_free(uintptr_t handle)
     }
 }
 
-struct zjs_cb_list_item *zjs_aio_get_callback_item(uint32_t pin)
+struct zjs_cb_list_item *zjs_aio_get_callback_item(uint32_t pin, const char *event_type)
 {
     // calls the JS callback registered in the struct
     struct zjs_cb_list_item **pItem = &zjs_cb_list;
@@ -77,7 +82,10 @@ struct zjs_cb_list_item *zjs_aio_get_callback_item(uint32_t pin)
         zjs_obj_get_uint32(obj, "pin", &pin_val);
 
         if (pin == pin_val) {
-            return (*pItem);
+            if (event_type == NULL ||
+                !strcmp((*pItem)->event_type, event_type)) {
+                return (*pItem);
+            }
         }
         pItem = &(*pItem)->next;
     }
@@ -97,6 +105,16 @@ static void zjs_aio_call_function(struct zjs_callback *cb)
         jerry_release_value(rval);
     jerry_release_object(mycb->zjs_cb.js_callback);
     zjs_aio_callback_free((uintptr_t)mycb);
+}
+
+static void zjs_aio_emit_event(struct zjs_callback *cb)
+{
+    struct zjs_cb_list_item *mycb = CONTAINER_OF(cb, struct zjs_cb_list_item,
+                                                 zjs_cb);
+    jerry_value_t arg = jerry_create_number_value(mycb->value);
+    jerry_value_t rval = jerry_call_function(mycb->zjs_cb.js_callback, NULL, &arg, 1);
+    if (!jerry_value_is_error(rval))
+        jerry_release_value(rval);
 }
 
 int zjs_aio_ipm_send(uint32_t type, uint32_t pin, uint32_t value) {
@@ -128,7 +146,7 @@ void ipm_msg_receive_callback(void *context, uint32_t id, volatile void *data)
     if (msg->type == TYPE_AIO_OPEN_SUCCESS) {
         PRINT("pin %lu is opened\n", msg->pin);
     } else if (msg->type == TYPE_AIO_PIN_READ_SUCCESS) {
-        if (msg->pin < A0 || msg->pin > A4) {
+        if (msg->pin < A0 || msg->pin > A5) {
             PRINT("X86 - pin #%lu out of range\n", msg->pin);
             return;
         }
@@ -137,7 +155,7 @@ void ipm_msg_receive_callback(void *context, uint32_t id, volatile void *data)
             pin_values[msg->pin-A0] = msg->value;
         }
         else {
-            struct zjs_cb_list_item *mycb = zjs_aio_get_callback_item(msg->pin);
+            struct zjs_cb_list_item *mycb = zjs_aio_get_callback_item(msg->pin, NULL);
             if (mycb && mycb->zjs_cb.js_callback) {
                 // TODO: ensure that there is no outstanding callback of this
                 //   type or else we may be overwriting the value it should have
@@ -146,6 +164,22 @@ void ipm_msg_receive_callback(void *context, uint32_t id, volatile void *data)
                 zjs_queue_callback(&mycb->zjs_cb);
             }
         }
+    } else if (msg->type == TYPE_AIO_PIN_SUBSCRIBE_SUCCESS) {
+        PRINT("subscribed to events on pin %lu\n", msg->pin);
+    } else if (msg->type == TYPE_AIO_PIN_UNSUBSCRIBE_SUCCESS) {
+        PRINT("unsubscribed to events on pin %lu\n", msg->pin);
+    } else if (msg->type == TYPE_AIO_PIN_EVENT_VALUE_CHANGE) {
+        struct zjs_cb_list_item *mycb = zjs_aio_get_callback_item(msg->pin, "change");
+        if (mycb && mycb->zjs_cb.js_callback) {
+            mycb->value = (double)msg->value;
+            zjs_queue_callback(&mycb->zjs_cb);
+        } else {
+            PRINT("onChange event callback not found\n");
+        }
+    } else if (msg->type == TYPE_AIO_OPEN_FAIL ||
+               msg->type == TYPE_AIO_PIN_READ_FAIL ||
+               msg->type == TYPE_AIO_PIN_SUBSCRIBE_FAIL) {
+        PRINT("Error - failed to perform operation %lu\n", msg->type);
     } else {
         PRINT("IPM message not handled %lu\n", msg->type);
     }
@@ -217,6 +251,7 @@ bool zjs_aio_open(const jerry_object_t *function_obj_p,
     zjs_obj_add_function(pinobj, zjs_aio_pin_read_async, "read_async");
     zjs_obj_add_function(pinobj, zjs_aio_pin_abort, "abort");
     zjs_obj_add_function(pinobj, zjs_aio_pin_close, "close");
+    zjs_obj_add_function(pinobj, zjs_aio_pin_on, "on");
     zjs_obj_add_string(pinobj, name, "name");
     zjs_obj_add_number(pinobj, device, "device");
     zjs_obj_add_number(pinobj, pin, "pin");
@@ -238,7 +273,7 @@ bool zjs_aio_pin_read(const jerry_object_t *function_obj_p,
     zjs_obj_get_uint32(obj, "device", &device);
     zjs_obj_get_uint32(obj, "pin", &pin);
 
-    if (pin < A0 || pin > A4) {
+    if (pin < A0 || pin > A5) {
         PRINT("pin #%lu out of range\n", pin);
         return false;
     }
@@ -278,6 +313,57 @@ bool zjs_aio_pin_close(const jerry_object_t *function_obj_p,
     return true;
 }
 
+bool zjs_aio_pin_on(const jerry_object_t *function_obj_p,
+                    const jerry_value_t this_val,
+                    const jerry_value_t args_p[],
+                    const jerry_length_t args_cnt,
+                    jerry_value_t *ret_val_p)
+{
+    if (args_cnt < 2 ||
+        !jerry_value_is_string(args_p[0]) ||
+        (!jerry_value_is_object(args_p[1]) &&
+         !jerry_value_is_null(args_p[1]))) {
+        PRINT("zjs_aio_pin_on: invalid arguments\n");
+        return true;
+    }
+
+    jerry_object_t *obj = jerry_get_object_value(this_val);
+
+    uint32_t pin;
+    zjs_obj_get_uint32(obj, "pin", &pin);
+
+    char event[20];
+    jerry_value_t arg = args_p[0];
+    jerry_size_t sz = jerry_get_string_size(jerry_get_string_value(arg));
+    int len = jerry_string_to_char_buffer(jerry_get_string_value(arg),
+                                          (jerry_char_t *)event,
+                                          sz);
+    event[len] = '\0';
+
+    struct zjs_cb_list_item *item = zjs_aio_get_callback_item(pin, event);
+    if (!item) {
+        item = zjs_aio_callback_alloc();
+    }
+
+    if (!item)
+        return false;
+
+    item->pin_obj = obj;
+    item->zjs_cb.js_callback = jerry_acquire_object(jerry_get_object_value(args_p[1]));
+    item->zjs_cb.call_function = zjs_aio_emit_event;
+    memcpy(item->event_type, event, len);
+
+    if (!strcmp(event, "change")) {
+        if (jerry_value_is_object(args_p[1])) {
+            zjs_aio_ipm_send(TYPE_AIO_PIN_SUBSCRIBE, pin, 0);
+        } else {
+            zjs_aio_ipm_send(TYPE_AIO_PIN_UNSUBSCRIBE, pin, 0);
+        }
+    }
+
+    return true;
+}
+
 // Asynchrounous Operations
 bool zjs_aio_pin_read_async(const jerry_object_t *function_obj_p,
                             const jerry_value_t this_val,
@@ -295,7 +381,7 @@ bool zjs_aio_pin_read_async(const jerry_object_t *function_obj_p,
     zjs_obj_get_uint32(obj, "device", &device);
     zjs_obj_get_uint32(obj, "pin", &pin);
 
-    struct zjs_cb_list_item *item = zjs_aio_get_callback_item(pin);
+    struct zjs_cb_list_item *item = zjs_aio_get_callback_item(pin, NULL);
     if (!item) {
         item = zjs_aio_callback_alloc();
     }

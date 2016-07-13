@@ -88,7 +88,15 @@ struct zjs_ble_service {
     struct zjs_ble_service *next;
 };
 
+struct zjs_ble_list_item {
+    char event_type[20];
+    struct zjs_callback zjs_cb;
+    uint32_t intdata;
+    struct zjs_ble_list_item *next;
+};
+
 static struct zjs_ble_service zjs_ble_service = { NULL, NULL, NULL };
+static struct zjs_ble_list_item *zjs_ble_list = NULL;
 
 struct bt_uuid* zjs_ble_new_uuid_16(uint16_t value) {
     struct bt_uuid_16* uuid = task_malloc(sizeof(struct bt_uuid_16));
@@ -125,6 +133,44 @@ static void zjs_ble_free_characteristics(struct zjs_ble_characteristic *chrc)
             jerry_release_object(tmp->notify_cb.zjs_cb.js_callback);
 
         task_free(tmp);
+    }
+}
+
+static struct zjs_ble_list_item *zjs_ble_event_callback_alloc()
+{
+    // effects: allocates a new callback list item and adds it to the list
+    struct zjs_ble_list_item *item;
+    item = task_malloc(sizeof(struct zjs_ble_list_item));
+    if (!item) {
+        PRINT("error: out of memory allocating callback struct\n");
+        return NULL;
+    }
+
+    item->next = zjs_ble_list;
+    zjs_ble_list = item;
+    return item;
+}
+
+static void zjs_ble_queue_dispatch(char *type, zjs_cb_wrapper_t func,
+                                   uint32_t intdata)
+{
+    // requires: called only from task context, type is the string event type,
+    //             func is a function that can handle calling the callback for
+    //             this event type when found, intarg is a uint32 that will be
+    //             stored in the appropriate callback struct for use by func
+    //             (just set it to 0 if not needed)
+    //  effects: finds the first callback for the given type and queues it up
+    //             to run func to execute it at the next opportunity
+    struct zjs_ble_list_item *ev = zjs_ble_list;
+    int len = strlen(type);
+    while (ev) {
+        if (!strncmp(ev->event_type, type, len)) {
+            ev->zjs_cb.call_function = func;
+            ev->intdata = intdata;
+            zjs_queue_callback(&ev->zjs_cb);
+            return;
+        }
+        ev = ev->next;
     }
 }
 
@@ -376,14 +422,10 @@ static bool zjs_ble_update_value_call_function(const jerry_object_t *function_ob
             }
         }
 
-        jerry_release_object(obj);
-        task_free(buf->buffer);
-        task_free(buf);
         return true;
     }
 
     PRINT("updateValueCallback: Buffer not found or empty\n");
-    jerry_release_object(obj);
     return false;
 }
 
@@ -418,6 +460,32 @@ static void zjs_ble_blvl_ccc_cfg_changed(uint16_t value)
     zjs_ble_simulate_blvl = (value == BT_GATT_CCC_NOTIFY) ? 1 : 0;
 }
 
+static void zjs_ble_accept_call_function(struct zjs_callback *cb)
+{
+    // FIXME: get real bluetooth address
+    jerry_value_t arg = jerry_create_string_value(jerry_create_string(
+                                                  (jerry_char_t *) "AB:CD:DF:AB:CD:EF"));
+    jerry_value_t rval = jerry_call_function(cb->js_callback, NULL, &arg, 1);
+    if (jerry_value_is_error(rval)) {
+        PRINT("error: zjs_ble_accept_call_function\n");
+    }
+    jerry_release_value(rval);
+    jerry_release_value(arg);
+}
+
+static void zjs_ble_disconnect_call_function(struct zjs_callback *cb)
+{
+    // FIXME: get real bluetooth address
+    jerry_value_t arg = jerry_create_string_value(jerry_create_string(
+                                                  (jerry_char_t *) "AB:CD:DF:AB:CD:EF"));
+    jerry_value_t rval = jerry_call_function(cb->js_callback, NULL, &arg, 1);
+    if (jerry_value_is_error(rval)) {
+        PRINT("error: zjs_ble_disconnect_call_function\n");
+    }
+    jerry_release_value(rval);
+    jerry_release_value(arg);
+}
+
 static void zjs_ble_connected(struct bt_conn *conn, uint8_t err)
 {
     PRINT("========= connected ========\n");
@@ -426,6 +494,9 @@ static void zjs_ble_connected(struct bt_conn *conn, uint8_t err)
     } else {
         zjs_ble_default_conn = bt_conn_ref(conn);
         PRINT("Connected\n");
+        // FIXME: temporary fix for BLE bug
+        fiber_sleep(100);
+        zjs_ble_queue_dispatch("accept", zjs_ble_accept_call_function, 0);
     }
 }
 
@@ -436,6 +507,7 @@ static void zjs_ble_disconnected(struct bt_conn *conn, uint8_t reason)
     if (zjs_ble_default_conn) {
         bt_conn_unref(zjs_ble_default_conn);
         zjs_ble_default_conn = NULL;
+        zjs_ble_queue_dispatch("disconnect", zjs_ble_disconnect_call_function, 0);
     }
 }
 
@@ -456,55 +528,6 @@ static void zjs_ble_auth_cancel(struct bt_conn *conn)
 static struct bt_conn_auth_cb zjs_ble_auth_cb_display = {
         .cancel = zjs_ble_auth_cancel,
 };
-
-struct zjs_ble_list_item {
-    char event_type[20];
-    struct zjs_callback zjs_cb;
-    uint32_t intdata;
-    struct zjs_ble_list_item *next;
-};
-
-static struct zjs_ble_list_item *zjs_ble_list = NULL;
-
-static struct zjs_ble_list_item *zjs_ble_event_callback_alloc()
-{
-    // effects: allocates a new callback list item and adds it to the list
-    struct zjs_ble_list_item *item;
-    PRINT("Size of zjs_ble_list_item = %lu\n",
-          sizeof(struct zjs_ble_list_item));
-    item = task_malloc(sizeof(struct zjs_ble_list_item));
-    if (!item) {
-        PRINT("error: out of memory allocating callback struct\n");
-        return NULL;
-    }
-
-    item->next = zjs_ble_list;
-    zjs_ble_list = item;
-    return item;
-}
-
-static void zjs_ble_queue_dispatch(char *type, zjs_cb_wrapper_t func,
-                                   uint32_t intdata)
-{
-    // requires: called only from task context, type is the string event type,
-    //             func is a function that can handle calling the callback for
-    //             this event type when found, intarg is a uint32 that will be
-    //             stored in the appropriate callback struct for use by func
-    //             (just set it to 0 if not needed)
-    //  effects: finds the first callback for the given type and queues it up
-    //             to run func to execute it at the next opportunity
-    struct zjs_ble_list_item *ev = zjs_ble_list;
-    int len = strlen(type);
-    while (ev) {
-        if (!strncmp(ev->event_type, type, len)) {
-            ev->zjs_cb.call_function = func;
-            ev->intdata = intdata;
-            zjs_queue_callback(&ev->zjs_cb);
-            return;
-        }
-        ev = ev->next;
-    }
-}
 
 static void zjs_ble_bt_ready_call_function(struct zjs_callback *cb)
 {
