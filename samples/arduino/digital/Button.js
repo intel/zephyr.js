@@ -5,12 +5,11 @@
 
 // import gpio module
 var gpio = require("gpio");
+var pins = require("arduino101_pins");
 
-// pin 8 corresponds to an onboard LED on the Arduino 101
-var led = gpio.open({pin: 8, direction: 'out'});
-// pin 19 corresponds to IO4 on the Arduino 101
-var button = gpio.open({pin: 19, direction: 'in', edge: 'any'});
+var led = gpio.open({pin: pins.LED0, direction: 'out'});
+var button = gpio.open({pin: pins.IO4, direction: 'in', edge: 'any'});
 
-button.set_callback(function () {
+button.on('change', function () {
     led.write(button.read())
 });

@@ -5,9 +5,9 @@
 
 // import gpio module
 var gpio = require("gpio");
+var pins = require("arduino101_pins");
 
-// pin 19 corresponds to IO4 on the Arduino 101
-var pin = gpio.open({pin: 19, direction: 'in'});
+var pin = gpio.open({pin: pins.IO4, direction: 'in'});
 
 // schedule a function to run every 1s (1000)
 setInterval(function () {
