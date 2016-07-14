@@ -1,4 +1,8 @@
 // Copyright (c) 2016, Intel Corporation.
+
+#ifndef __zjs_ipm_h__
+#define __zjs_ipm_h__
+
 #include <ipm.h>
 
 #define IPM_CHANNEL_X86_TO_ARC                             0x01
@@ -44,3 +48,5 @@ void zjs_ipm_init();
 int zjs_ipm_send(uint32_t id, const void *data, int data_size);
 
 void zjs_ipm_register_callback(uint32_t id, ipm_callback_t cb);
+
+#endif  // __zjs_ipm_h__
