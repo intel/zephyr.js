@@ -3,7 +3,7 @@
 // The util code is only for the X86 side
 
 #include "jerry-api.h"
-#include "zjs_util.h"
+#include "zjs_common.h"
 
 struct zjs_callback;
 
