@@ -26,6 +26,8 @@ static const char *ZJS_CHANGE = "change";
 
 static struct device *zjs_gpio_dev;
 
+int (*zjs_gpio_convert_pin)(int num) = zjs_identity;
+
 // This is complicated. One thing going on here is that the GPIO functions do
 //   not let you set any "user data" to be returned to you later. So if you need
 //   to associate data, you have to embed the gpio callback within a bigger
@@ -153,6 +155,12 @@ bool zjs_gpio_open(const jerry_object_t *function_obj_p,
         return false;
     }
 
+    int newpin = zjs_gpio_convert_pin(pin);
+    if (newpin == -1) {
+        PRINT("invalid pin\n");
+        return false;
+    }
+
     int flags = 0;
     bool dirOut = true;
 
@@ -211,10 +219,9 @@ bool zjs_gpio_open(const jerry_object_t *function_obj_p,
     if (pull == ZJS_PULL_NONE)
         flags |= GPIO_PUD_NORMAL;
 
-    PRINT("DBG: Configuring pin #%lu with flags %x\n", pin, flags);
-    int rval = gpio_pin_configure(zjs_gpio_dev, pin, flags);
+    int rval = gpio_pin_configure(zjs_gpio_dev, newpin, flags);
     if (rval) {
-        PRINT("error: opening GPIO pin #%lu! (%d)\n", pin, rval);
+        PRINT("error: opening GPIO pin #%d! (%d)\n", newpin, rval);
         //        return false;
     }
 
@@ -246,13 +253,15 @@ bool zjs_gpio_pin_read(const jerry_object_t *function_obj_p,
 
     uint32_t pin;
     zjs_obj_get_uint32(obj, "pin", &pin);
+    int newpin = zjs_gpio_convert_pin(pin);
+
     bool activeLow = false;
     zjs_obj_get_boolean(obj, "activeLow", &activeLow);
 
     uint32_t value;
-    int rval = gpio_pin_read(zjs_gpio_dev, pin, &value);
+    int rval = gpio_pin_read(zjs_gpio_dev, newpin, &value);
     if (rval) {
-        PRINT("error: reading from GPIO pin #%lu!\n", pin);
+        PRINT("error: reading from GPIO pin #%d!\n", newpin);
         return false;
     }
 
@@ -261,8 +270,6 @@ bool zjs_gpio_pin_read(const jerry_object_t *function_obj_p,
         logical = true;
 
     *ret_val_p = jerry_create_boolean_value(logical);
-    PRINT("DBG: Reading pin #%lu: %s (%lu)\n", pin,
-          logical ? "ACTIVE":"INACTIVE", value);
 
     return true;
 }
@@ -286,17 +293,17 @@ bool zjs_gpio_pin_write(const jerry_object_t *function_obj_p,
 
     uint32_t pin;
     zjs_obj_get_uint32(obj, "pin", &pin);
+    int newpin = zjs_gpio_convert_pin(pin);
+
     bool activeLow = false;
     zjs_obj_get_boolean(obj, "activeLow", &activeLow);
 
     uint32_t value = 0;
     if ((logical && !activeLow) || (!logical && activeLow))
         value = 1;
-    PRINT("DBG: Setting pin #%lu to %s (%lu)\n", pin,
-          logical ? "ACTIVE":"INACTIVE", value);
-    int rval = gpio_pin_write(zjs_gpio_dev, pin, value);
+    int rval = gpio_pin_write(zjs_gpio_dev, newpin, value);
     if (rval) {
-        PRINT("error: writing to GPIO #%lu!\n", pin);
+        PRINT("error: writing to GPIO #%d!\n", newpin);
         return false;
     }
 

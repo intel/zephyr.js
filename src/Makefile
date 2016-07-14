@@ -3,6 +3,7 @@ ccflags-y += -I$(ZEPHYR_BASE)/drivers
 ccflags-y += -I$(ZJS_BASE)/outdir/include
 
 obj-y += main.o \
+         zjs_a101_pins.o \
          zjs_aio.o \
          zjs_ble.o \
          zjs_buffer.o \

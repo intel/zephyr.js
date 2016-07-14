@@ -2,6 +2,8 @@
 
 #include "jerry-api.h"
 
+extern int (*zjs_pwm_convert_pin)(int num);
+
 jerry_object_t *zjs_pwm_init();
 
 bool zjs_pwm_open(const jerry_object_t *function_obj_p,

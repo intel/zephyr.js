@@ -6,7 +6,8 @@
 // import aio and ble module
 var aio = require("aio");
 var ble = require("ble");
-var pwm = require('pwm');
+var pwm = require("pwm");
+var pins = require("arduino101_pins");
 
 DEVICE_NAME = 'Arduino101';
 
@@ -61,12 +62,12 @@ ColorCharacteristic._value = new Buffer(3);
 ColorCharacteristic._value.writeUInt8(255, 0);
 ColorCharacteristic._value.writeUInt8(0, 1);
 ColorCharacteristic._value.writeUInt8(0, 2);
-ColorCharacteristic.ledR = pwm.open({channel: 0, period: 0.256,
-                                     pulseWidth: 0.128});  // pin IO3
-ColorCharacteristic.ledG = pwm.open({channel: 1, period: 0.256,
-                                     pulseWidth: 0});  // pin IO5
-ColorCharacteristic.ledB = pwm.open({channel: 2, period: 0.256,
-                                     pulseWidth: 0});  // pin IO6
+ColorCharacteristic.ledR = pwm.open({channel: pins.IO3, period: 0.256,
+                                     pulseWidth: 0.128});
+ColorCharacteristic.ledG = pwm.open({channel: pins.IO5, period: 0.256,
+                                     pulseWidth: 0});
+ColorCharacteristic.ledB = pwm.open({channel: pins.IO6, period: 0.256,
+                                     pulseWidth: 0});
 
 ColorCharacteristic.onReadRequest = function(offset, callback) {
     print("led value: " + this._value.toString('hex'));
