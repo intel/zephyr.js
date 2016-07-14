@@ -64,6 +64,8 @@ if __name__ == "__main__":
                         help='skip building and flashing')
     parser.add_argument('-v', metavar='VARNAME', default='script',
                         help='override string variable name (default: script)')
+    parser.add_argument('-r', action='store_true',
+                        help='run after build (qemu build only)')
     parser.add_argument('jsfile', help='JavaScript input file')
     parser.add_argument('outfile', help='override output filename '
                         '(default: script.h)', nargs='?')
@@ -142,7 +144,10 @@ if __name__ == "__main__":
 
         os.chdir(BASEDIR)
         print("Building OS image...\n")
-        rval = subprocess.call(['make', board])
+        if args.r and board == "BOARD=qemu_x86":
+            rval = subprocess.call(['make', board, "qemu"])
+        else:
+            rval = subprocess.call(['make', board])
         if rval:
             sys.exit(rval)
 
