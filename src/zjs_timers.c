@@ -34,10 +34,9 @@ static void zjs_timer_call_function(struct zjs_callback *cb)
     jerry_release_value(rval);
 }
 
-static jerry_object_t *
-add_timer(uint32_t interval,
-          jerry_object_t *callback,
-          bool repeat)
+static jerry_object_t* add_timer(uint32_t interval,
+                                 jerry_object_t *callback,
+                                 bool repeat)
 {
     // requires: interval is the time in ticks until expiration; callback is
     //             a JS callback function; repeat is true if the timer
@@ -62,8 +61,7 @@ add_timer(uint32_t interval,
     return tm->zjs_cb.js_callback;
 }
 
-static bool
-delete_timer(jerry_object_t *obj)
+static bool delete_timer(jerry_object_t *obj)
 {
     // requires: obj is a pointer to a callback object reference acquired in
     //             add_timer earlier
@@ -84,12 +82,11 @@ delete_timer(jerry_object_t *obj)
 }
 
 // native setInterval handler
-static bool
-native_set_interval_handler(const jerry_object_t *function_obj_p,
-                            const jerry_value_t this_val,
-                            const jerry_value_t args_p[],
-                            const jerry_length_t args_cnt,
-                            jerry_value_t *ret_val_p)
+static bool native_set_interval_handler(const jerry_object_t *function_obj_p,
+                                        const jerry_value_t this_val,
+                                        const jerry_value_t args_p[],
+                                        const jerry_length_t args_cnt,
+                                        jerry_value_t *ret_val_p)
 {
     if (args_cnt < 2 || !jerry_value_is_function(args_p[0]) ||
                         !jerry_value_is_number(args_p[1])) {
@@ -115,12 +112,11 @@ native_set_interval_handler(const jerry_object_t *function_obj_p,
 }
 
 // native setInterval handler
-static bool
-native_clear_interval_handler(const jerry_object_t *function_obj_p,
-                              const jerry_value_t this_val,
-                              const jerry_value_t args_p[],
-                              const jerry_length_t args_cnt,
-                              jerry_value_t *ret_val_p)
+static bool native_clear_interval_handler(const jerry_object_t *function_obj_p,
+                                          const jerry_value_t this_val,
+                                          const jerry_value_t args_p[],
+                                          const jerry_length_t args_cnt,
+                                          jerry_value_t *ret_val_p)
 {
     if (!jerry_value_is_object(args_p[0])) {
         PRINT ("native_clear_interval_handler: invalid arguments\n");
