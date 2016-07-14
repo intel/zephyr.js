@@ -2,6 +2,8 @@
 
 #include "jerry-api.h"
 
+extern int (*zjs_gpio_convert_pin)(int num);
+
 jerry_object_t *zjs_gpio_init();
 
 bool zjs_gpio_open(const jerry_object_t *function_obj_p,

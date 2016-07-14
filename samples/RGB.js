@@ -15,16 +15,14 @@
 
 // import gpio module
 var gpio = require("gpio");
+var pins = require("arduino101_pins");
 
-// pin 8 corresponds to an onboard LED on the Arduino 101
-var led = gpio.open({pin: 8, direction: 'out'});
+// LED0 is an onboard LED on the Arduino101
+var led = gpio.open({pin: pins.LED0, direction: 'out'});
 
-// pin 18 corresponds to IO2 on the Arduino 101
-var red = gpio.open({pin: 18, direction: 'out'});
-// pin 20 corresponds to IO7 on the Arduino 101
-var green = gpio.open({pin: 20, direction: 'out'});
-// pin 16 corresponds to IO8 on the Arduino 101
-var blue = gpio.open({pin: 16, direction: 'out'});
+var red = gpio.open({pin: pins.IO2, direction: 'out'});
+var green = gpio.open({pin: pins.IO7, direction: 'out'});
+var blue = gpio.open({pin: pins.IO8, direction: 'out'});
 
 var count = 0;
 

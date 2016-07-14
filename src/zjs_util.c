@@ -234,3 +234,9 @@ bool zjs_hex_to_byte(char *buf, uint8_t *byte)
     *byte = num;
     return true;
 }
+
+int zjs_identity(int num) {
+    // effects: just returns the number passed to it; used as a default
+    //            implementation for pin number conversions
+    return num;
+}

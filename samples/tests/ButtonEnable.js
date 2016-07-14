@@ -15,12 +15,12 @@ print("Button enable test...");
 
 // import gpio module
 var gpio = require("gpio");
+var pins = require("arduino101_pins");
 
-// pins 8 and 12 are onboard LEDs on Arduino 101, pin 15 is IO5, pin 19 is IO4
-var led1 = gpio.open({ pin: 8, activeLow: false });
-var led2 = gpio.open({ pin: 12, activeLow: true });
-var btn1 = gpio.open({ pin: 15, direction: 'in', edge: 'any' });
-var btn2 = gpio.open({ pin: 19, direction: 'in', edge: 'any' });
+var led1 = gpio.open({ pin: pins.LED0, activeLow: false });
+var led2 = gpio.open({ pin: pins.LED1, activeLow: true });
+var btn1 = gpio.open({ pin: pins.IO2, direction: 'in', edge: 'any' });
+var btn2 = gpio.open({ pin: pins.IO4, direction: 'in', edge: 'any' });
 
 // turn off LED #2 initially
 led2.write(false);

@@ -1,25 +1,27 @@
 // Copyright (c) 2016, Intel Corporation.
 
-// Test code for Arduino 101 that uses the PWM on pin IO3 to set an LED's
-// brightness, and the PWM on pin IO9 to set an LED's blink pattern to on for
-// 1s, then off 1/2s, indefinitely.
-print("PWM test for brightness and blink pattern...");
+// Test code for Arduino 101 that uses the PWM on IO3 to set an LED's blink
+// pattern to on for 1s, then off 1/2s, indefinitely. Another PWM on IO5 sets
+// an LED's brightness to 33%. Another PWM on IO6 oscillates an LED through a
+// series of blink periods.
+print("PWM test for brightness and blink patterns...");
 
 // import pwm module
 var pwm = require("pwm");
+var pins = require("arduino101_pins");
 
 // pins 3, 5, 6, and 9 are PWMs on Arduino 101, and map to channels 0-3
-var led0 = pwm.open({channel: 0});  // pin IO3
+var led0 = pwm.open({channel: pins.IO3});
 
 // set timings in microseconds with *US functions
 led0.setPeriod(1500);
 led0.setPulseWidth(1000);
 
 // set brightness to 33% using hw cycle-based values
-var led1 = pwm.open({channel: 1, period: 3, pulseWidth: 1});  // pin IO5
+var led1 = pwm.open({channel: pins.IO5, period: 3, pulseWidth: 1});
 
 // reproduce the Zephyr PWM sample in JS, changing blink timings every 4s
-var led2 = pwm.open({channel: 2});  // pin IO6
+var led2 = pwm.open({channel: pins.IO6});
 
 var minPeriod = 1;  // 1ms
 var maxPeriod = 1000;  // 1s

@@ -9,11 +9,12 @@ print("GPIO test with two LEDs and a button...");
 
 // import gpio module
 var gpio = require("gpio");
+var pins = require("arduino101_pins");
 
-// pins 8 and 12 are onboard LEDs on Arduino 101, pin 19 is IO4
-var pinA = gpio.open({ pin: 8, activeLow: false });
-var pinB = gpio.open({ pin: 12, activeLow: true });
-var pinIn = gpio.open({ pin: 19, direction: 'in', edge: 'rising' });
+// pins 8 (LED0) and 12 (LED1) are onboard LEDs on Arduino 101
+var pinA = gpio.open({ pin: pins.LED0, activeLow: false });
+var pinB = gpio.open({ pin: pins.LED1, activeLow: true });
+var pinIn = gpio.open({ pin: pins.IO4, direction: 'in', edge: 'rising' });
 
 // tick is the delay between blinks
 var tick = 1000, toggle = false;

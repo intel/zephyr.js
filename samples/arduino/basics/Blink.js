@@ -5,10 +5,11 @@
 
 // import gpio module
 var gpio = require("gpio");
+var pins = require("arduino101_pins");
 
 // pin 8 is one of the onboard LEDs on the Arduino 101
 // 'out' direction is default, could be left out
-var pin = gpio.open({pin: 8, direction: 'out'});
+var pin = gpio.open({pin: pins.LED0, direction: 'out'});
 
 // remember the current state of the LED
 var toggle = false;

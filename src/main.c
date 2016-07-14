@@ -18,6 +18,7 @@
 #include "zjs_pwm.h"
 #include "zjs_timers.h"
 #include "zjs_util.h"
+#include "zjs_a101_pins.h"
 
 // local includes
 #include "script.h"
@@ -33,12 +34,13 @@ void main(int argc, char *argv[])
     zjs_queue_init();
     zjs_buffer_init();
 
-    // Initializes modules stuffs...
+    // initialize modules
     zjs_modules_init();
     zjs_modules_add("aio", zjs_aio_init);
     zjs_modules_add("ble", zjs_ble_init);
     zjs_modules_add("gpio", zjs_gpio_init);
     zjs_modules_add("pwm", zjs_pwm_init);
+    zjs_modules_add("arduino101_pins", zjs_a101_init);
 
     size_t len = strlen((char *) script);
 

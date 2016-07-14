@@ -15,6 +15,8 @@ static const char *ZJS_POLARITY_REVERSE = "reverse";
 
 static struct device *zjs_pwm_dev;
 
+int (*zjs_pwm_convert_pin)(int num) = zjs_identity;
+
 jerry_object_t *zjs_pwm_init()
 {
     // effects: finds the PWM driver and registers the PWM JS object
@@ -93,6 +95,12 @@ bool zjs_pwm_open(const jerry_object_t *function_obj_p,
         return false;
     }
 
+    int newchannel = zjs_pwm_convert_pin(channel);
+    if (newchannel == -1) {
+        PRINT("invalid channel\n");
+        return false;
+    }
+
     double period, pulseWidth;
     zjs_obj_get_double(data, "period", &period);
     zjs_obj_get_double(data, "pulseWidth", &pulseWidth);
@@ -109,7 +117,7 @@ bool zjs_pwm_open(const jerry_object_t *function_obj_p,
     uint32_t pulseWidthHW = pulseWidth * sys_clock_hw_cycles_per_sec / 1000;
     uint32_t periodHW = period * sys_clock_hw_cycles_per_sec / 1000;
 
-    zjs_pwm_set(channel, periodHW, pulseWidthHW, polarity);
+    zjs_pwm_set(newchannel, periodHW, pulseWidthHW, polarity);
 
     // create the PWMPin object
     jerry_object_t *pinobj = jerry_create_object();
@@ -139,6 +147,8 @@ static bool zjs_set_period(jerry_object_t *obj, double period)
     zjs_obj_get_uint32(obj, "channel", &channel);
     zjs_obj_get_double(obj, "pulseWidth", &pulseWidth);
 
+    int newchannel = zjs_pwm_convert_pin(channel);
+
     const int BUFLEN = 10;
     char buffer[BUFLEN];
     const char *polarity = ZJS_POLARITY_NORMAL;
@@ -153,7 +163,7 @@ static bool zjs_set_period(jerry_object_t *obj, double period)
     uint32_t pulseWidthHW = pulseWidth * sys_clock_hw_cycles_per_sec / 1000;
     uint32_t periodHW = period * sys_clock_hw_cycles_per_sec / 1000;
 
-    zjs_pwm_set(channel, periodHW, pulseWidthHW, polarity);
+    zjs_pwm_set(newchannel, periodHW, pulseWidthHW, polarity);
     return true;
 }
 
@@ -212,6 +222,8 @@ static bool zjs_set_pulse_width(jerry_object_t *obj, double pulseWidth)
     zjs_obj_get_uint32(obj, "channel", &channel);
     zjs_obj_get_double(obj, "period", &period);
 
+    int newchannel = zjs_pwm_convert_pin(channel);
+
     const int BUFLEN = 10;
     char buffer[BUFLEN];
     const char *polarity = ZJS_POLARITY_NORMAL;
@@ -227,7 +239,7 @@ static bool zjs_set_pulse_width(jerry_object_t *obj, double pulseWidth)
     uint32_t pulseWidthHW = pulseWidth * sys_clock_hw_cycles_per_sec / 1000;
     uint32_t periodHW = period * sys_clock_hw_cycles_per_sec / 1000;
 
-    zjs_pwm_set(channel, periodHW, pulseWidthHW, polarity);
+    zjs_pwm_set(newchannel, periodHW, pulseWidthHW, polarity);
     return true;
 }
 
