@@ -51,3 +51,4 @@ bool zjs_hex_to_byte(char *buf, uint8_t *byte);
 int zjs_identity(int num);
 
 #endif  // __zjs_util_h__
+

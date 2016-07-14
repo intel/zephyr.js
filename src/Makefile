@@ -14,6 +14,7 @@ obj-y += main.o \
          zjs_ipm.o \
          zjs_modules.o \
          zjs_pwm.o \
+         zjs_script_gen.o \
          zjs_timers.o \
          zjs_util.o
 

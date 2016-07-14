@@ -13,6 +13,7 @@
 #include "zjs_aio.h"
 #include "zjs_ble.h"
 #include "zjs_buffer.h"
+#include "zjs_common.h"
 #include "zjs_gpio.h"
 #include "zjs_modules.h"
 #include "zjs_pwm.h"
@@ -22,8 +23,7 @@
 #include "zjs_a101_pins.h"
 #endif
 
-// local includes
-#include "script.h"
+extern const char script[];
 
 void main(int argc, char *argv[])
 {
