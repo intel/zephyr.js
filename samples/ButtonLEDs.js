@@ -25,7 +25,7 @@ setInterval(function () {
     pinB.write(toggle);
 }, tick);
 
-pinIn.set_callback(function () {
+pinIn.on('change', function () {
     pinA.write(true);
     pinB.write(false);
 });

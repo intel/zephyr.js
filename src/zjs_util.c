@@ -176,6 +176,24 @@ bool zjs_obj_get_uint32(jerry_object_t *obj, const char *name,
     return true;
 }
 
+bool zjs_strequal(const jerry_string_t *jstr, const char *str) {
+    // requires: jstr is a valid jerry string, str is a UTF-8 string
+    //  effects: returns True if the strings are identical, false otherwise
+    int len = strlen(str);
+
+    jerry_size_t sz = jerry_get_string_size(jstr);
+    if (len != sz)
+        return false;
+
+    jerry_char_t buf[len + 1];
+    jerry_string_to_char_buffer(jstr, buf, sz);
+    buf[len] = '\0';
+
+    if (!strcmp(buf, str))
+        return true;
+    return false;
+}
+
 /**
  * Initialize Jerry value with specified object
  */
