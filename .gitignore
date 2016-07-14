@@ -1,1 +1,4 @@
 build/
+outdir/
+*.cmd
+*.o
