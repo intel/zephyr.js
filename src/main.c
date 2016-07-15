@@ -18,7 +18,9 @@
 #include "zjs_pwm.h"
 #include "zjs_timers.h"
 #include "zjs_util.h"
+#ifdef CONFIG_BOARD_ARDUINO_101
 #include "zjs_a101_pins.h"
+#endif
 
 // local includes
 #include "script.h"

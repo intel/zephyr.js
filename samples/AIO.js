@@ -7,10 +7,11 @@
 
 // import aio module
 var aio = require("aio");
+var pins = require("arduino101_pins");
 
 // pins
-var pinA = aio.open({ device: 0, pin: 10 });
-var pinB = aio.open({ device: 0, pin: 11 });
+var pinA = aio.open({ device: 0, pin: pins.A0 });
+var pinB = aio.open({ device: 0, pin: pins.A1 });
 
 setInterval(function () {
     var rawValue = pinA.read();
