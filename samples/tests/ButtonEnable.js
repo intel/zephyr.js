@@ -1,6 +1,6 @@
 // Copyright (c) 2016, Intel Corporation.
 
-// Test code for Arduino 101 that uses two buttons on IO4 and IO5 to control
+// Test code for Arduino 101 that uses two buttons on IO2 and IO4 to control
 // the two onboard LEDs.
 //
 // This version tests freeing a callback by changing the callback of btn2
