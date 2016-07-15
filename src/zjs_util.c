@@ -167,10 +167,10 @@ bool zjs_obj_get_string(jerry_value_t obj_val, const char *name,
         return false;
 
     jerry_size_t jlen = jerry_get_string_size(value);
-    if (jlen + 1 < len)
-        len = jlen + 1;
+    if (jlen >= len)
+        jlen = len - 1;
 
-    int wlen = jerry_string_to_char_buffer(value, buffer, len);
+    int wlen = jerry_string_to_char_buffer(value, buffer, jlen);
 
     buffer[wlen] = '\0';
     jerry_release_value(value);
