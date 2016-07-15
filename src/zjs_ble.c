@@ -556,23 +556,6 @@ static void zjs_ble_bt_ready(int err)
     zjs_ble_queue_dispatch("stateChange", zjs_ble_bt_ready_call_function, 0);
 }
 
-jerry_object_t *zjs_ble_init()
-{
-     nano_sem_init(&zjs_ble_nano_sem);
-
-    // create global BLE object
-    jerry_object_t *ble_obj = jerry_create_object();
-    zjs_obj_add_function(ble_obj, zjs_ble_on, "on");
-    zjs_obj_add_function(ble_obj, zjs_ble_adv_start, "startAdvertising");
-    zjs_obj_add_function(ble_obj, zjs_ble_adv_stop, "stopAdvertising");
-    zjs_obj_add_function(ble_obj, zjs_ble_set_services, "setServices");
-
-    // PrimaryService and Characteristic constructors
-    zjs_obj_add_function(ble_obj, zjs_ble_primary_service, "PrimaryService");
-    zjs_obj_add_function(ble_obj, zjs_ble_characteristic, "Characteristic");
-    return ble_obj;
-}
-
 void zjs_ble_enable() {
     PRINT("About to enable the bluetooth, wait for bt_ready()...\n");
     bt_enable(zjs_ble_bt_ready);
@@ -581,11 +564,11 @@ void zjs_ble_enable() {
     bt_conn_auth_cb_register(&zjs_ble_auth_cb_display);
 }
 
-bool zjs_ble_on(const jerry_object_t *function_obj_p,
-                const jerry_value_t this_val,
-                const jerry_value_t args_p[],
-                const jerry_length_t args_cnt,
-                jerry_value_t *ret_val_p)
+static bool zjs_ble_on(const jerry_object_t *function_obj_p,
+                       const jerry_value_t this_val,
+                       const jerry_value_t args_p[],
+                       const jerry_length_t args_cnt,
+                       jerry_value_t *ret_val_p)
 {
     if (args_cnt < 2 ||
         !jerry_value_is_string(args_p[0]) ||
@@ -636,7 +619,7 @@ const int ZJS_URL_TOO_LONG = 1;
 const int ZJS_ALLOC_FAILED = 2;
 const int ZJS_URL_SCHEME_ERROR = 3;
 
-int zjs_encode_url_frame(jerry_string_t *url, uint8_t **frame, int *size)
+static int zjs_encode_url_frame(jerry_string_t *url, uint8_t **frame, int *size)
 {
     // requires: url is a URL string, frame points to a uint8_t *, url contains
     //             only UTF-8 characters and hence no nil values
@@ -698,11 +681,11 @@ int zjs_encode_url_frame(jerry_string_t *url, uint8_t **frame, int *size)
     return ZJS_SUCCESS;
 }
 
-bool zjs_ble_adv_start(const jerry_object_t *function_obj_p,
-                       const jerry_value_t this_val,
-                       const jerry_value_t args_p[],
-                       const jerry_length_t args_cnt,
-                       jerry_value_t *ret_val_p)
+static bool zjs_ble_adv_start(const jerry_object_t *function_obj_p,
+                              const jerry_value_t this_val,
+                              const jerry_value_t args_p[],
+                              const jerry_length_t args_cnt,
+                              jerry_value_t *ret_val_p)
 {
     char name[80];
 
@@ -811,18 +794,18 @@ bool zjs_ble_adv_start(const jerry_object_t *function_obj_p,
     return true;
 }
 
-bool zjs_ble_adv_stop(const jerry_object_t *function_obj_p,
-                      const jerry_value_t this_val,
-                      const jerry_value_t args_p[],
-                      const jerry_length_t args_cnt,
-                      jerry_value_t *ret_val_p)
+static bool zjs_ble_adv_stop(const jerry_object_t *function_obj_p,
+                             const jerry_value_t this_val,
+                             const jerry_value_t args_p[],
+                             const jerry_length_t args_cnt,
+                             jerry_value_t *ret_val_p)
 {
     PRINT("stopAdvertising has been called\n");
     return true;
 }
 
-bool zjs_ble_parse_characteristic(jerry_object_t *chrc_obj,
-                                  struct zjs_ble_characteristic *chrc)
+static bool zjs_ble_parse_characteristic(jerry_object_t *chrc_obj,
+                                         struct zjs_ble_characteristic *chrc)
 {
     char uuid[ZJS_BLE_UUID_LEN];
     if (!zjs_obj_get_string(chrc_obj, "uuid", uuid, ZJS_BLE_UUID_LEN)) {
@@ -907,8 +890,8 @@ bool zjs_ble_parse_characteristic(jerry_object_t *chrc_obj,
     return true;
 }
 
-bool zjs_ble_parse_service(jerry_object_t *service_obj,
-                           struct zjs_ble_service *service)
+static bool zjs_ble_parse_service(jerry_object_t *service_obj,
+                                  struct zjs_ble_service *service)
 {
     char uuid[ZJS_BLE_UUID_LEN];
     if (!zjs_obj_get_string(service_obj, "uuid", uuid, ZJS_BLE_UUID_LEN)) {
@@ -999,7 +982,7 @@ static struct bt_gatt_attr attrs[] = {
 };
 */
 
-bool zjs_ble_register_service(struct zjs_ble_service *service)
+static bool zjs_ble_register_service(struct zjs_ble_service *service)
 {
     if (!service) {
         PRINT("zjs_ble_create_gatt_attrs: invalid ble_service\n");
@@ -1114,11 +1097,11 @@ bool zjs_ble_register_service(struct zjs_ble_service *service)
     return true;
 }
 
-bool zjs_ble_set_services(const jerry_object_t *function_obj_p,
-                          const jerry_value_t this_val,
-                          const jerry_value_t args_p[],
-                          const jerry_length_t args_cnt,
-                          jerry_value_t *ret_val_p)
+static bool zjs_ble_set_services(const jerry_object_t *function_obj_p,
+                                 const jerry_value_t this_val,
+                                 const jerry_value_t args_p[],
+                                 const jerry_length_t args_cnt,
+                                 jerry_value_t *ret_val_p)
 {
     PRINT("setServices has been called\n");
 
@@ -1161,11 +1144,11 @@ bool zjs_ble_set_services(const jerry_object_t *function_obj_p,
     return zjs_ble_register_service(&zjs_ble_service);
 }
 
-bool zjs_ble_primary_service(const jerry_object_t *function_obj_p,
-                             const jerry_value_t this_val,
-                             const jerry_value_t args_p[],
-                             const jerry_length_t args_cnt,
-                             jerry_value_t *ret_val_p)
+static bool zjs_ble_primary_service(const jerry_object_t *function_obj_p,
+                                    const jerry_value_t this_val,
+                                    const jerry_value_t args_p[],
+                                    const jerry_length_t args_cnt,
+                                    jerry_value_t *ret_val_p)
 {
     PRINT("new PrimaryService has been called\n");
 
@@ -1181,11 +1164,11 @@ bool zjs_ble_primary_service(const jerry_object_t *function_obj_p,
     return true;
 }
 
-bool zjs_ble_characteristic(const jerry_object_t *function_obj_p,
-                            const jerry_value_t this_val,
-                            const jerry_value_t args_p[],
-                            const jerry_length_t args_cnt,
-                            jerry_value_t *ret_val_p)
+static bool zjs_ble_characteristic(const jerry_object_t *function_obj_p,
+                                   const jerry_value_t this_val,
+                                   const jerry_value_t args_p[],
+                                   const jerry_length_t args_cnt,
+                                   jerry_value_t *ret_val_p)
 {
     PRINT("new Characterstic has been called\n");
 
@@ -1229,4 +1212,20 @@ bool zjs_ble_characteristic(const jerry_object_t *function_obj_p,
     return true;
 }
 
+jerry_object_t *zjs_ble_init()
+{
+     nano_sem_init(&zjs_ble_nano_sem);
+
+    // create global BLE object
+    jerry_object_t *ble_obj = jerry_create_object();
+    zjs_obj_add_function(ble_obj, zjs_ble_on, "on");
+    zjs_obj_add_function(ble_obj, zjs_ble_adv_start, "startAdvertising");
+    zjs_obj_add_function(ble_obj, zjs_ble_adv_stop, "stopAdvertising");
+    zjs_obj_add_function(ble_obj, zjs_ble_set_services, "setServices");
+
+    // PrimaryService and Characteristic constructors
+    zjs_obj_add_function(ble_obj, zjs_ble_primary_service, "PrimaryService");
+    zjs_obj_add_function(ble_obj, zjs_ble_characteristic, "Characteristic");
+    return ble_obj;
+}
 #endif

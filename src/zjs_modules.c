@@ -17,12 +17,11 @@ struct modItem {
 
 static struct modItem *modList;
 
-static bool
-native_require_handler(const jerry_object_t *function_obj_p,
-                       const jerry_value_t this_val,
-                       const jerry_value_t args_p[],
-                       const jerry_length_t args_cnt,
-                       jerry_value_t *ret_val_p)
+static bool native_require_handler(const jerry_object_t *function_obj_p,
+                                   const jerry_value_t this_val,
+                                   const jerry_value_t args_p[],
+                                   const jerry_length_t args_cnt,
+                                   jerry_value_t *ret_val_p)
 {
     char module[80];
     jerry_size_t sz;
