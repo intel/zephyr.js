@@ -43,13 +43,13 @@ static int zjs_a101_num_to_pwm(int num)
     }
 }
 
-jerry_object_t *zjs_a101_init()
+jerry_value_t zjs_a101_init()
 {
     // effects: returns an object with Arduino 101 pin mappings
     zjs_gpio_convert_pin = zjs_a101_num_to_gpio;
     zjs_pwm_convert_pin = zjs_a101_num_to_pwm;
 
-    jerry_object_t *obj = jerry_create_object();
+    jerry_value_t obj = jerry_create_object();
 
     // These are all the GPIOs that can be accessed as GPIOs by the X86 side.
     zjs_obj_add_number(obj, 18, "IO2");

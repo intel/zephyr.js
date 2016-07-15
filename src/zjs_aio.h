@@ -5,6 +5,6 @@
 
 #include "jerry-api.h"
 
-jerry_object_t *zjs_aio_init();
+jerry_value_t zjs_aio_init();
 
 #endif  // __zjs_aio_h__

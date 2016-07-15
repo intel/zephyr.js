@@ -5,7 +5,7 @@
 
 #include "jerry-api.h"
 
-jerry_object_t *zjs_ble_init();
+jerry_value_t zjs_ble_init();
 
 void zjs_ble_enable();
 
