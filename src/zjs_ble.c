@@ -1,5 +1,5 @@
 // Copyright (c) 2016, Intel Corporation.
-
+#ifndef QEMU_BUILD
 // Zephyr includes
 #include <zephyr.h>
 #include <string.h>
@@ -1228,3 +1228,5 @@ bool zjs_ble_characteristic(const jerry_object_t *function_obj_p,
 
     return true;
 }
+
+#endif

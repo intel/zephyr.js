@@ -1,5 +1,5 @@
 // Copyright (c) 2016, Intel Corporation.
-
+#ifndef QEMU_BUILD
 // Zephyr includes
 #include <misc/util.h>
 #include <string.h>
@@ -399,3 +399,5 @@ bool zjs_aio_pin_read_async(const jerry_object_t *function_obj_p,
     zjs_aio_ipm_send(TYPE_AIO_PIN_READ, pin, 0);
     return true;
 }
+
+#endif

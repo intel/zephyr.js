@@ -2,6 +2,10 @@ ccflags-y += -I$(JERRY_BASE)/jerry-core
 ccflags-y += -I$(ZEPHYR_BASE)/drivers
 ccflags-y += -I$(ZJS_BASE)/outdir/include
 
+ifeq ($(BOARD), qemu_x86)
+ccflags-y += -DQEMU_BUILD
+endif
+
 obj-y += main.o \
          zjs_a101_pins.o \
          zjs_aio.o \

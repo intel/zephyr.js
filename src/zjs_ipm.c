@@ -1,5 +1,5 @@
 // Copyright (c) 2016, Intel Corporation.
-
+#ifndef QEMU_BUILD
 // ipm for ARC communication
 #include <ipm/ipm_quark_se.h>
 
@@ -52,3 +52,5 @@ void zjs_ipm_register_callback(uint32_t msg_id, ipm_callback_t cb) {
     ipm_register_callback(ipm_receive_dev, cb, NULL);
     ipm_set_enabled(ipm_receive_dev, 1);
 }
+
+#endif
