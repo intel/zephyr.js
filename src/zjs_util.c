@@ -223,26 +223,6 @@ bool zjs_strequal(jerry_value_t str_val, const char *str) {
     return false;
 }
 
-/**
- * Initialize Jerry value with specified object
- */
-void zjs_init_value_object(jerry_value_t *out_value_p, jerry_value_t v)
-{
-    // requires: out_value_p to receive the object value v
-    //  effects: put the object into out_value_p with appropriate encoding.
-    *out_value_p = jerry_acquire_value(v);
-}
-
-/**
- * Initialize Jerry value with specified string
- */
-void zjs_init_value_string(jerry_value_t *out_value_p, const char *v)
-{
-    // requires: out_value_p to receive the string value v
-    //  effects: put the string into out_value_p with appropriate encoding.
-    *out_value_p = jerry_create_string((jerry_char_t *) v);
-}
-
 bool zjs_hex_to_byte(char *buf, uint8_t *byte)
 {
     // requires: buf is a string with at least two hex chars

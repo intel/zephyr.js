@@ -51,9 +51,6 @@ bool zjs_obj_get_uint32(jerry_value_t obj_val, const char *name, uint32_t *num);
 
 bool zjs_strequal(const jerry_value_t str_val, const char *str);
 
-void zjs_init_value_object(jerry_value_t *out_value_p, jerry_value_t v);
-void zjs_init_value_string(jerry_value_t *out_value_p, const char *v);
-
 bool zjs_hex_to_byte(char *buf, uint8_t *byte);
 
 int zjs_identity(int num);
