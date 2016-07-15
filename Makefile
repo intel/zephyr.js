@@ -1,30 +1,45 @@
 BOARD ?= arduino_101_factory
 KERNEL ?= micro
 
-all: zephyr
-
-setup:
-	mkdir -p outdir/include
-ifeq ($(BOARD), qemu_x86)
-	cp prj.conf.x86 prj.conf
-else
-	cp prj.conf.arduino101 prj.conf
+ifndef JERRY_BASE
+$(error JERRY_BASE not defined)
 endif
 
+all: zephyr
+
+# Find and set the last build target, so we know if a clean is needed
+ifeq ($(shell grep arduino_101 outdir/include/generated/autoconf.h),)
+LAST_BUILD=qemu_x86
+else
+LAST_BUILD=arduino_101_factory
+endif
+
+# Setup: Check the clean status, copy correct prj.conf.* file
+ifneq ($(BOARD), $(LAST_BUILD))
+setup: clean
+else
+setup:
+endif
+	cp prj.conf.$(BOARD) prj.conf
+
+# Explicit clean
 clean:
 	make -f Makefile.zephyr clean
 	make -C $(JERRY_BASE) -f targets/zephyr/Makefile.zephyr clean
 	make -C $(JERRY_BASE) -f targets/zephyr/Makefile clean
-	rm -rf deps/jerryscript/build/qemu_x86/
+	rm -rf deps/jerryscript/build/$(BOARD)/
 
+# Arduino 101 flash target
 flash:
 	dfu-util -a x86_app -D outdir/zephyr.bin
 
+# Generate the script file from the JS variable
 ifdef JS
 generate: setup
 	./scripts/convert.sh $(JS) src/zjs_script_gen.c
 endif
 
+# Run QEMU target
 ifdef JS
 qemu: generate
 else
@@ -32,6 +47,7 @@ qemu: setup
 endif
 	make -f Makefile.zephyr BOARD=qemu_x86 KERNEL=$(KERNEL) qemu
 
+# Build for zephyr, default target
 ifdef JS
 zephyr: generate
 else

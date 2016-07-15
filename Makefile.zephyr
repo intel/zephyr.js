@@ -1,7 +1,3 @@
-ifndef JERRY_BASE
-$(error JERRY_BASE not defined)
-endif
-
 MDEF_FILE = prj.mdef
 KERNEL_TYPE = $(KERNEL)
 BOARD ?= arduino_101_factory

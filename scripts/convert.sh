@@ -24,7 +24,13 @@ percent()
 INPUT=$1
 OUTPUT=$2
 
-yui-compressor $INPUT > gen.tmp
+# Check that yui-compressor exists
+which yui-compressor &> /dev/null
+if [ $? == 1 ]; then
+    cat $INPUT > /tmp/gen.tmp
+else 
+    yui-compressor $INPUT > /tmp/gen.tmp
+fi
 
 COUNT=0
 
@@ -49,11 +55,11 @@ do
 	fi
 	COUNT=$((COUNT+1))
 	percent $COUNT $SIZE "'$char"
-done < gen.tmp
+done < /tmp/gen.tmp
 
 printf "\n"
 
 # Terminate the string
 printf "\";" >> $OUTPUT
 
-rm gen.tmp
+rm -f /tmp/gen.tmp
