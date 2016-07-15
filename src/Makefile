@@ -7,7 +7,6 @@ ccflags-y += -DQEMU_BUILD
 endif
 
 obj-y += main.o \
-         zjs_a101_pins.o \
          zjs_aio.o \
          zjs_ble.o \
          zjs_buffer.o \
@@ -17,3 +16,5 @@ obj-y += main.o \
          zjs_pwm.o \
          zjs_timers.o \
          zjs_util.o
+
+obj-$(CONFIG_BOARD_ARDUINO_101) += zjs_a101_pins.o

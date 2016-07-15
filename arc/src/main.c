@@ -7,15 +7,8 @@
 #include <init.h>
 #include <adc.h>
 
+#include "zjs_common.h"
 #include "zjs_ipm.h"
-
-#if defined(CONFIG_STDOUT_CONSOLE)
-#include <stdio.h>
-#define PRINT           printf
-#else
-#include <misc/printk.h>
-#define PRINT           printk
-#endif
 
 /* specify delay between greetings (in ms); compute equivalent in ticks */
 
@@ -24,27 +17,11 @@
 
 #define ADC_DEVICE_NAME "ADC_0"
 
-/*
- * The analog input pin and channel number mapping
- * for Arduino 101 board.
- * A0 Channel 10
- * A1 Channel 11
- * A2 Channel 12
- * A3 Channel 13
- * A4 Channel 14
- * A5 Channel 15
- */
-#define A0 10
-#define A1 11
-#define A2 12
-#define A3 13
-#define A4 14
-#define A5 15
 #define BUFFER_SIZE 4
 
 static struct device* adc_dev;
-static uint32_t pin_values[6] = {};
-static uint32_t pin_send_updates[6] = {};
+static uint32_t pin_values[ARC_AIO_LEN] = {};
+static uint32_t pin_send_updates[ARC_AIO_LEN] = {};
 
 static uint8_t seq_buffer[BUFFER_SIZE];
 
@@ -97,32 +74,30 @@ void ipm_msg_receive_callback(void *context, uint32_t id, volatile void *data)
     if (id != MSG_ID_AIO)
         return;
 
+    bool invalid = pin < ARC_AIO_MIN || pin > ARC_AIO_MAX;
+
     if (msg->type == TYPE_AIO_OPEN) {
-        if (pin < A0 || pin > A5) {
+        if (invalid) {
             PRINT("ARC - pin #%d out of range\n", pin);
             reply_type = TYPE_AIO_OPEN_FAIL;
         } else {
             reply_type = TYPE_AIO_OPEN_SUCCESS;
         }
     } else if (msg->type == TYPE_AIO_PIN_READ) {
-        if (pin < A0 || pin > A5) {
+        if (invalid) {
             PRINT("ARC - pin #%d out of range\n", pin);
             reply_type = TYPE_AIO_PIN_READ_FAIL;
         }
 
         reply_type = TYPE_AIO_PIN_READ_SUCCESS;
-        /*
-         * FIX ME!
-         * inside the interrupt, cannot read from the ADC pins
-         * only from the main loop thread
-         */
-        //reply_value = pin_read(A0);
-        reply_value = pin_values[pin-A0];
+        // FIXME: inside the interrupt, cannot read from the ADC pins, only
+        //   from the main loop thread
+        reply_value = pin_values[pin - ARC_AIO_MIN];
     } else if (msg->type == TYPE_AIO_PIN_ABORT) {
         PRINT("ARC - AIO abort() not supported\n");
         reply_type = TYPE_AIO_PIN_ABORT_SUCCESS;
     } else if (msg->type == TYPE_AIO_PIN_CLOSE) {
-        if (pin < A0 || pin > A5) {
+        if (invalid) {
             PRINT("ARC - pin #%d out of range\n", pin);
             reply_type = TYPE_AIO_PIN_CLOSE_FAIL;
         } else {
@@ -130,19 +105,19 @@ void ipm_msg_receive_callback(void *context, uint32_t id, volatile void *data)
             reply_type = TYPE_AIO_PIN_CLOSE_SUCCESS;
         }
     } else if (msg->type == TYPE_AIO_PIN_SUBSCRIBE) {
-        if (pin < A0 || pin > A5) {
+        if (invalid) {
             PRINT("ARC - pin #%d out of range\n", pin);
             reply_type = TYPE_AIO_PIN_SUBSCRIBE_FAIL;
         } else {
-            pin_send_updates[pin-A0] = 1;
+            pin_send_updates[pin - ARC_AIO_MIN] = 1;
             reply_type = TYPE_AIO_PIN_SUBSCRIBE_SUCCESS;
         }
     } else if (msg->type == TYPE_AIO_PIN_UNSUBSCRIBE) {
-        if (pin < A0 || pin > A5) {
+        if (invalid) {
             PRINT("ARC - pin #%d out of range\n", pin);
             reply_type = TYPE_AIO_PIN_UNSUBSCRIBE_FAIL;
         } else {
-            pin_send_updates[pin-A0] = 0;
+            pin_send_updates[pin - ARC_AIO_MIN] = 0;
             reply_type = TYPE_AIO_PIN_UNSUBSCRIBE_SUCCESS;
         }
     } else {
@@ -173,10 +148,10 @@ void main(void)
          * and stores them in the array
          */
         for (int i=0; i<=5; i++) {
-            pin_values[i] = pin_read(i+A0);
+            pin_values[i] = pin_read(ARC_AIO_MIN + i);
             if (pin_send_updates[i]) {
                 ipm_send_msg(MSG_ID_AIO, 0, TYPE_AIO_PIN_EVENT_VALUE_CHANGE,
-                              i+A0, pin_values[i]);
+                             ARC_AIO_MIN + i, pin_values[i]);
                 task_sleep(10);
             }
 

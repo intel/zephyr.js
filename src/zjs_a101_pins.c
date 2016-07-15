@@ -78,5 +78,14 @@ jerry_object_t *zjs_a101_init()
     zjs_obj_add_number(obj, 0x22,  "PWM2");
     zjs_obj_add_number(obj, 0x23,  "PWM3");
 
+    // TODO: It appears that some other GPIO pins can be used as analog inputs
+    //   too, from the X86 side. We haven't tried that.
+    zjs_obj_add_number(obj, 10, "A0");
+    zjs_obj_add_number(obj, 11, "A1");
+    zjs_obj_add_number(obj, 12, "A2");
+    zjs_obj_add_number(obj, 13, "A3");
+    zjs_obj_add_number(obj, 14, "A4");
+    zjs_obj_add_number(obj, 9,  "A5");
+
     return obj;
 }

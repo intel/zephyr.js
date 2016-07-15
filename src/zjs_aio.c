@@ -11,24 +11,7 @@
 
 DEFINE_SEMAPHORE(SEM_AIO_BLOCK);
 
-/*
- * The analog input pin and channel number mapping
- * for Arduino 101 board.
- * A0 Channel 10
- * A1 Channel 11
- * A2 Channel 12
- * A3 Channel 13
- * A4 Channel 14
- * A5 Channel 15
- */
-#define A0 10
-#define A1 11
-#define A2 12
-#define A3 13
-#define A4 14
-#define A5 15
-
-static uint32_t pin_values[6] = {};
+static uint32_t pin_values[ARC_AIO_LEN] = {};
 
 struct zjs_cb_list_item {
     char event_type[20];
@@ -146,13 +129,13 @@ void ipm_msg_receive_callback(void *context, uint32_t id, volatile void *data)
     if (msg->type == TYPE_AIO_OPEN_SUCCESS) {
         PRINT("pin %lu is opened\n", msg->pin);
     } else if (msg->type == TYPE_AIO_PIN_READ_SUCCESS) {
-        if (msg->pin < A0 || msg->pin > A5) {
+        if (msg->pin < ARC_AIO_MIN || msg->pin > ARC_AIO_MAX) {
             PRINT("X86 - pin #%lu out of range\n", msg->pin);
             return;
         }
 
         if (msg->block) {
-            pin_values[msg->pin-A0] = msg->value;
+            pin_values[msg->pin - ARC_AIO_MIN] = msg->value;
         }
         else {
             struct zjs_cb_list_item *mycb = zjs_aio_get_callback_item(msg->pin, NULL);
@@ -273,7 +256,7 @@ bool zjs_aio_pin_read(const jerry_object_t *function_obj_p,
     zjs_obj_get_uint32(obj, "device", &device);
     zjs_obj_get_uint32(obj, "pin", &pin);
 
-    if (pin < A0 || pin > A5) {
+    if (pin < ARC_AIO_MIN || pin > ARC_AIO_MAX) {
         PRINT("pin #%lu out of range\n", pin);
         return false;
     }
@@ -287,7 +270,7 @@ bool zjs_aio_pin_read(const jerry_object_t *function_obj_p,
     }
 
     double value;
-    value = (double) pin_values[pin-A0];
+    value = (double) pin_values[pin - ARC_AIO_MIN];
 
     *ret_val_p = jerry_create_number_value(value);
     return true;

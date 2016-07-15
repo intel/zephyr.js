@@ -1,5 +1,8 @@
 // Copyright (c) 2016, Intel Corporation.
 
+#ifndef __zjs_util_h__
+#define __zjs_util_h__
+
 // The util code is only for the X86 side
 
 #include "jerry-api.h"
@@ -46,3 +49,5 @@ void zjs_init_value_string(jerry_value_t *out_value_p, const char *v);
 bool zjs_hex_to_byte(char *buf, uint8_t *byte);
 
 int zjs_identity(int num);
+
+#endif  // __zjs_util_h__

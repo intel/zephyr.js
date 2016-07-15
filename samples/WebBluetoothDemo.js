@@ -20,7 +20,7 @@ var TemperatureCharacteristic = new ble.Characteristic({
 TemperatureCharacteristic._lastValue = undefined;
 TemperatureCharacteristic._onChange = null;
 
-var pinA0 = aio.open({ device: 0, pin: 10 });
+var pinA0 = aio.open({ device: 0, pin: pins.A0 });
 
 TemperatureCharacteristic.onReadRequest = function(offset, callback) {
     var data = new Buffer(1);
