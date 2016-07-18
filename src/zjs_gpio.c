@@ -296,6 +296,7 @@ static jerry_value_t zjs_gpio_open(const jerry_value_t function_obj_val,
         jerry_set_object_native_handle(pinobj, (uintptr_t)handle, NULL);
     }
 
+
     // TODO: When we implement close, we should release the reference on this
     return pinobj;
 }
