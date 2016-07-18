@@ -28,94 +28,68 @@ static struct device *zjs_gpio_dev;
 
 int (*zjs_gpio_convert_pin)(int num) = zjs_identity;
 
-// This is complicated. One thing going on here is that the GPIO functions do
-//   not let you set any "user data" to be returned to you later. So if you need
-//   to associate data, you have to embed the gpio callback within a bigger
-//   struct like this, and use CONTAINER_OF to get back to your struct.
-// The reason for the *list* is just so we're able to find the allocated struct
-//   again if it needs to be freed, which we're not really using yet, unless the
-//   pin object gets GC'd which hasn't been tested.
-// It looks like pin_obj isn't really needed at this time.
-struct zjs_cb_list_item {
-    struct gpio_callback gpio_cb;
-    jerry_value_t pin_obj;
-    struct zjs_callback zjs_cb;
-    struct zjs_cb_list_item *next;
+// Handle for GPIO input pins, passed around between ISR/C callbacks
+struct gpio_handle {
+    struct gpio_callback callback;  // Callback structure for zephyr
+    uint32_t pin;                   // Pin associated with this handle
+    uint32_t value;                 // Value of the pin
+    int32_t callbackId;             // ID for the C callback
+    jerry_value_t pin_obj;        // Pin object returned from open()
+    jerry_value_t onchange_func;  // Function registered to onChange
 };
 
-static struct zjs_cb_list_item *zjs_cb_list = NULL;
-
-static struct zjs_cb_list_item *zjs_gpio_callback_alloc()
+// C callback to be called after a GPIO input ISR fires
+static void gpio_c_callback(void* h)
 {
-    // effects: allocates a new callback list item and adds it to the list
-    struct zjs_cb_list_item *item;
-    item = task_malloc(sizeof(struct zjs_cb_list_item));
-    if (!item) {
-        PRINT("error: out of memory allocating callback struct\n");
-        return NULL;
-    }
+    struct gpio_handle *handle = (struct gpio_handle*)h;
+    jerry_value_t onchange_func = zjs_get_property(handle->pin_obj, "onChange");
 
-    item->next = zjs_cb_list;
-    zjs_cb_list = item;
-    return item;
-}
 
-static struct zjs_cb_list_item *zjs_gpio_find(jerry_value_t pin_obj_val)
-{
-    // effects: finds an existing list item for this pin
-    struct zjs_cb_list_item *pItem = zjs_cb_list;
-    while (pItem) {
-        if (pItem->pin_obj == pin_obj_val)
-            return pItem;
-        pItem = pItem->next;
-    }
-    return NULL;
-}
+    // If pin.onChange exists, call it
+    if (jerry_value_is_function(onchange_func)) {
+        jerry_value_t args[1];
+        jerry_value_t event = jerry_create_object();
+        // Put the boolean GPIO trigger value in the object
+        zjs_obj_add_boolean(event, handle->value, "value");
 
-static void zjs_gpio_callback_free(uintptr_t handle)
-{
-    // requires: handle is the native pointer we registered with
-    //             jerry_set_object_native_handle
-    //  effects: frees the callback list item for the given pin object
-    struct zjs_cb_list_item **pItem = &zjs_cb_list;
-    while (*pItem) {
-        struct zjs_cb_list_item *item = *pItem;
-        if ((uintptr_t)item == handle) {
-            uint32_t pin;
-            zjs_obj_get_uint32(item->pin_obj, "pin", &pin);
-            gpio_pin_disable_callback(zjs_gpio_dev, pin);
-            gpio_remove_callback(zjs_gpio_dev, &item->gpio_cb);
-            jerry_release_value(item->zjs_cb.js_callback);
+        jerry_value_t event_val = jerry_acquire_value(event);
+        // Set the args
+        // TODO: can we just use event_val directly when calling the JS function?
+        args[0] = event_val;
 
-            *pItem = item->next;
-            task_free((void *)handle);
+        // Only aquire once, once we have it just keep using it.
+        // It will be released in close()
+        if (!handle->onchange_func) {
+            handle->onchange_func = jerry_acquire_value(onchange_func);
         }
-        pItem = &(*pItem)->next;
+        jerry_value_t this_val = jerry_create_undefined();
+        // Call the JS callback
+        jerry_call_function(handle->onchange_func, this_val, args, 1);
+    } else {
+        DBG_PRINT("onChange has not been registered\n");
     }
+    return;
 }
 
-static void zjs_gpio_callback_wrapper(struct device *port,
-                                      struct gpio_callback *cb,
-                                      uint32_t pins)
+// Callback when a GPIO input fires
+static void gpio_zephyr_callback(struct device *port,
+                                 struct gpio_callback *cb,
+                                 uint32_t pins)
 {
-    // effects: handles C callback; queues up the JS callback for execution
-    struct zjs_cb_list_item *mycb = CONTAINER_OF(cb, struct zjs_cb_list_item,
-                                                 gpio_cb);
-    zjs_queue_callback(&mycb->zjs_cb);
+    // Get our handle for this pin
+    struct gpio_handle *handle = CONTAINER_OF(cb, struct gpio_handle, callback);
+    // Read the value and save it in the handle
+    gpio_pin_read(port, handle->pin, &handle->value);
+    // Signal the C callback, where we call the JS callback
+    zjs_signal_callback(handle->callbackId);
 }
 
-static void zjs_gpio_call_function(struct zjs_callback *cb)
+static struct gpio_handle* new_gpio_handle(void)
 {
-    // requires: called only from task context
-    //  effects: handles execution of the JS callback when ready
-    jerry_value_t rval = jerry_call_function(cb->js_callback, ZJS_UNDEFINED, NULL, 0);
-    if (jerry_value_has_error_flag(rval)) {
-        PRINT("error: calling gpio callback\n");
-    }
-    jerry_release_value(rval);
-    // NOTE: this function is actually generic and could serve to call any
-    //   JS callback function with no args, so we may move it to a generic
-    //   name as we discover how often this comes up
+
+    struct gpio_handle* handle = task_malloc(sizeof(struct gpio_handle));
+    memset(handle, 0, sizeof(struct gpio_handle));
+    return handle;
 }
 
 static jerry_value_t zjs_gpio_pin_read(const jerry_value_t function_obj_val,
@@ -180,66 +154,22 @@ static jerry_value_t zjs_gpio_pin_write(const jerry_value_t function_obj_val,
     return ZJS_UNDEFINED;
 }
 
-static jerry_value_t zjs_gpio_pin_on(const jerry_value_t function_obj_val,
-                                     const jerry_value_t this_val,
-                                     const jerry_value_t args_p[],
-                                     const jerry_length_t args_cnt)
+static bool zjs_gpio_pin_close(const jerry_value_t function_obj_p,
+                               const jerry_value_t this_val,
+                               const jerry_value_t args_p[],
+                               const jerry_length_t args_cnt)
 {
-    // requires: this_val is a GPIOPin object, the one arg is a JS callback
-    //             function
-    //  effects: registers this callback to be called when the GPIO changes
-    if (args_cnt < 2 || !jerry_value_is_string(args_p[0])) {
-        PRINT("zjs_gpio_pin_on: invalid arguments\n");
-        return zjs_error("zjs_gpio_pin_on: invalid argument");
-    }
-
-    if (!zjs_strequal(args_p[0], ZJS_CHANGE)) {
-        PRINT("zjs_gpio_pin_on: unknown event\n");
-        return zjs_error("zjs_gpio_pin_on: unknown event");
-    }
-
-    uint32_t pin;
-    zjs_obj_get_uint32(this_val, "pin", &pin);
-
-    // first free existing callback: updating more efficient but more code
-    struct zjs_cb_list_item *item = zjs_gpio_find(this_val);
-    if (!jerry_value_is_function(args_p[1])) {
-        // no callback now, so return
-        if (item)
-            // first, free item if present
-            zjs_gpio_callback_free((uintptr_t)item);
-        return true;
-    }
-
-    if (!item) {
-        item = zjs_gpio_callback_alloc();
-        gpio_init_callback(&item->gpio_cb, zjs_gpio_callback_wrapper, BIT(pin));
-        item->pin_obj = this_val;
-        item->zjs_cb.call_function = zjs_gpio_call_function;
-
-        // watch for the object getting garbage collected, and clean up
-        jerry_set_object_native_handle(this_val, (uintptr_t)item,
-                                       zjs_gpio_callback_free);
-
-        int rval = gpio_add_callback(zjs_gpio_dev, &item->gpio_cb);
-        if (rval) {
-            PRINT("zjs_gpio_pin_on: cannot setup callback!\n");
-            return zjs_error("zjs_gpio_pin_on: cannot setup callback");
-        }
-
-        rval = gpio_pin_enable_callback(zjs_gpio_dev, pin);
-        if (rval) {
-            PRINT("zjs_gpio_pin_on: cannot enable callback!\n");
-            return zjs_error("zjs_gpio_pin_on: cannot enable callback");
+    uintptr_t ptr;
+    if (jerry_get_object_native_handle((jerry_value_t)this_val, &ptr)) {
+        struct gpio_handle* handle = (struct gpio_handle*)ptr;
+        if (handle) {
+            zjs_remove_callback(handle->callbackId);
+            if (handle->onchange_func) {
+                jerry_release_value(handle->onchange_func);
+            }
+            task_free(handle);
         }
     }
-
-    if (!item) {
-        PRINT("zjs_gpio_pin_on: callback item not available\n");
-        return zjs_error("zjs_gpio_pin_on: callback item not available");
-    }
-
-    item->zjs_cb.js_callback = jerry_acquire_value(args_p[1]);
 
     return ZJS_UNDEFINED;
 }
@@ -307,7 +237,7 @@ static jerry_value_t zjs_gpio_open(const jerry_value_t function_obj_val,
             edge = ZJS_EDGE_FALLING;
             both = false;
         }
-        else if (strcmp(buffer, ZJS_EDGE_BOTH)) {
+        else if (!strcmp(buffer, ZJS_EDGE_NONE)) {
             PRINT("warning: invalid edge value provided\n");
         }
     }
@@ -337,18 +267,37 @@ static jerry_value_t zjs_gpio_open(const jerry_value_t function_obj_val,
     }
 
     // create the GPIOPin object
-    jerry_value_t pin_obj = jerry_create_object();
-    zjs_obj_add_function(pin_obj, zjs_gpio_pin_read, "read");
-    zjs_obj_add_function(pin_obj, zjs_gpio_pin_write, "write");
-    zjs_obj_add_function(pin_obj, zjs_gpio_pin_on, "on");
-    zjs_obj_add_number(pin_obj, pin, "pin");
-    zjs_obj_add_string(pin_obj, dirOut ? ZJS_DIR_OUT : ZJS_DIR_IN, "direction");
-    zjs_obj_add_boolean(pin_obj, activeLow, "activeLow");
-    zjs_obj_add_string(pin_obj, edge, "edge");
-    zjs_obj_add_string(pin_obj, pull, "pull");
+    jerry_value_t pinobj = jerry_create_object();
+    zjs_obj_add_function(pinobj, zjs_gpio_pin_read, "read");
+    zjs_obj_add_function(pinobj, zjs_gpio_pin_write, "write");
+    zjs_obj_add_function(pinobj, zjs_gpio_pin_close, "close");
+    zjs_obj_add_number(pinobj, pin, "pin");
+    zjs_obj_add_string(pinobj, dirOut ? ZJS_DIR_OUT : ZJS_DIR_IN, "direction");
+    zjs_obj_add_boolean(pinobj, activeLow, "activeLow");
+    zjs_obj_add_string(pinobj, edge, "edge");
+    zjs_obj_add_string(pinobj, pull, "pull");
+    // TODO: When we implement close, we should release the reference on this
+
+    struct gpio_handle* handle = NULL;
+    // Only need the handle if this pin is an input
+    if (!dirOut) {
+        handle = new_gpio_handle();
+
+        // Zephyr ISR callback init
+        gpio_init_callback(&handle->callback, gpio_zephyr_callback, BIT(pin));
+        gpio_add_callback(zjs_gpio_dev, &handle->callback);
+        gpio_pin_enable_callback(zjs_gpio_dev, pin);
+
+        handle->pin = pin;
+        handle->pin_obj = pinobj;
+        // Register a C callback (will be called after the ISR is called)
+        handle->callbackId = zjs_add_c_callback(handle, gpio_c_callback);
+        // Set the native handle so we can free it when close() is called
+        jerry_set_object_native_handle(pinobj, (uintptr_t)handle, NULL);
+    }
 
     // TODO: When we implement close, we should release the reference on this
-    return pin_obj;
+    return pinobj;
 }
 
 jerry_value_t zjs_gpio_init()

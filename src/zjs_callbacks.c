@@ -38,7 +38,6 @@ static int32_t cb_limit = INITIAL_CALLBACK_SIZE;
 static int32_t cb_size = 0;
 static struct zjs_callback_map** cb_map = NULL;
 
-
 static int32_t new_id(void)
 {
     int32_t id = 0;
@@ -149,7 +148,7 @@ int32_t zjs_add_c_callback(void* handle, zjs_c_callback_func callback)
     new_cb->c->handle = handle;
 
     // Add callback to list
-    memcpy(cb_map + new_cb->js->id, &new_cb, sizeof(struct zjs_callback_map*));
+    memcpy(cb_map + new_cb->c->id, &new_cb, sizeof(struct zjs_callback_map*));
     cb_size++;
 
     DBG_PRINT("[callbacks] zjs_add_callback(): Adding new C callback id %u\n", new_cb->c->id);
@@ -173,16 +172,16 @@ void zjs_service_callbacks(void)
                     args = cb_map[i]->js->pre(cb_map[i]->js->handle, &args_cnt);
                 }
 
-                DBG_PRINT("[callbacks] zjs_service_callbacks(): Calling callback id %u with %u args\n", i, args_cnt);
+                DBG_PRINT("[callbacks] zjs_service_callbacks(): Calling callback id %u with %u args\n", cb_map[i]->js->id, args_cnt);
                 // TODO: Use 'this' in callback module
                 jerry_call_function(cb_map[i]->js->js_func, NULL, args, args_cnt);
                 if (cb_map[i]->js->post) {
                     cb_map[i]->js->post(cb_map[i]->js->handle, &ret_val);
                 }
             } else if (cb_map[i]->type == CALLBACK_TYPE_C && cb_map[i]->c->function) {
+                DBG_PRINT("[callbacks] zjs_service_callbacks(): Calling callback id %u\n", cb_map[i]->c->id);
                 cb_map[i]->c->function(cb_map[i]->c->handle);
             }
         }
     }
-    return;
 }
