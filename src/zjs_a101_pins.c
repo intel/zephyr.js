@@ -1,5 +1,5 @@
 // Copyright (c) 2016, Intel Corporation.
-
+#ifndef QEMU_BUILD
 // Zephyr includes
 #include <zephyr.h>
 
@@ -89,3 +89,5 @@ jerry_object_t *zjs_a101_init()
 
     return obj;
 }
+
+#endif
