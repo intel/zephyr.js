@@ -146,3 +146,6 @@ ble.on('disconnect', function(clientAddress) {
 });
 
 print("WebBluetooth Demo with BLE...");
+
+// Set magic value for now to get the main loop to sleep between callbacks
+zjs_sleep = 100;

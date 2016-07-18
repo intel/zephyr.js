@@ -58,13 +58,29 @@ void main(int argc, char *argv[])
         return;
     }
 
+    // Magic value set in JS to enable sleep during the loop
+    // This is needed to make WebBluetooth demo work for now, but breaks all
+    //   our other samples if we just do it all the time.
+    jerry_object_t *global_obj = jerry_get_global();
+    double dsleep;
+    int32_t isleep = 0;
+    if (zjs_obj_get_double(global_obj, "zjs_sleep", &dsleep)) {
+        isleep = (int32_t)dsleep;
+        if (isleep) {
+            PRINT("Found magic sleep value: %ld!\n", isleep);
+        }
+    }
+    jerry_release_object(global_obj);
+
 #ifndef QEMU_BUILD
     zjs_ble_enable();
 #endif
     while (1) {
         zjs_timers_process_events();
-        // sleep here temporary fixes the BLE bug
-        task_sleep(100);
+        if (isleep) {
+            // sleep here temporary fixes the BLE bug
+            task_sleep(isleep);
+        }
         zjs_run_pending_callbacks();
         // not sure if this is okay, but it seems better to sleep than
         //   busy wait
