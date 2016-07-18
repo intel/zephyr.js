@@ -7,6 +7,6 @@
 
 extern int (*zjs_gpio_convert_pin)(int num);
 
-jerry_object_t *zjs_gpio_init();
+jerry_value_t zjs_gpio_init();
 
 #endif  // __zjs_gpio_h__

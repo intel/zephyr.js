@@ -6,7 +6,6 @@
 #include <string.h>
 
 // JerryScript includes
-#include "jerry.h"
 #include "jerry-api.h"
 
 // ZJS includes
@@ -27,10 +26,10 @@ extern const char script[];
 
 void main(int argc, char *argv[])
 {
-    jerry_object_t *err_obj_p = NULL;
-    jerry_value_t res;
+    jerry_value_t code_eval;
+    jerry_value_t result;
 
-    jerry_init(JERRY_FLAG_EMPTY);
+    jerry_init(JERRY_INIT_EMPTY);
 
     zjs_timers_init();
     zjs_queue_init();
@@ -48,12 +47,14 @@ void main(int argc, char *argv[])
 
     size_t len = strlen((char *) script);
 
-    if (!jerry_parse((jerry_char_t *) script, len, &err_obj_p)) {
+    code_eval = jerry_parse((jerry_char_t *)script, len, false);
+    if (jerry_value_has_error_flag(code_eval)) {
         PRINT("JerryScript: cannot parse javascript\n");
         return;
     }
 
-    if (jerry_run(&res) != JERRY_COMPLETION_CODE_OK) {
+    result = jerry_run(code_eval);
+    if (jerry_value_has_error_flag(result)) {
         PRINT("JerryScript: cannot run javascript\n");
         return;
     }
@@ -61,7 +62,7 @@ void main(int argc, char *argv[])
     // Magic value set in JS to enable sleep during the loop
     // This is needed to make WebBluetooth demo work for now, but breaks all
     //   our other samples if we just do it all the time.
-    jerry_object_t *global_obj = jerry_get_global();
+    jerry_value_t global_obj = jerry_get_global_object();
     double dsleep;
     int32_t isleep = 0;
     if (zjs_obj_get_double(global_obj, "zjs_sleep", &dsleep)) {
@@ -70,7 +71,9 @@ void main(int argc, char *argv[])
             PRINT("Found magic sleep value: %ld!\n", isleep);
         }
     }
-    jerry_release_object(global_obj);
+    jerry_release_value(global_obj);
+    jerry_release_value(code_eval);
+    jerry_release_value(result);
 
 #ifndef QEMU_BUILD
     zjs_ble_enable();

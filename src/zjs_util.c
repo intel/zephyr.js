@@ -1,9 +1,10 @@
 // Copyright (c) 2016, Intel Corporation.
 
+// Zephyr includes
+#include <zephyr.h>
 #include <string.h>
 
-#include <zephyr.h>
-
+// ZJS includes
 #include "zjs_util.h"
 
 // fifo of pointers to zjs_callback objects representing JS callbacks
@@ -51,15 +52,36 @@ void zjs_run_pending_callbacks()
     }
 }
 
-void zjs_obj_add_boolean(jerry_object_t *obj, bool bval, const char *name)
+void zjs_set_property(const jerry_value_t obj_val, const char *str_p,
+                      const jerry_value_t prop_val)
+{
+    jerry_value_t name_val = jerry_create_string((jerry_char_t *)str_p);
+    jerry_set_property(obj_val, name_val, prop_val);
+    jerry_release_value(name_val);
+}
+
+
+jerry_value_t zjs_get_property (const jerry_value_t obj_val, const char *str_p)
+{
+    jerry_value_t prop_name_val = jerry_create_string ((const jerry_char_t *) str_p);
+    jerry_value_t ret_val = jerry_get_property(obj_val, prop_name_val);
+    jerry_release_value(prop_name_val);
+    return ret_val;
+}
+
+void zjs_obj_add_boolean(jerry_value_t obj_val, bool bval,
+                         const char *name)
 {
     // requires: obj is an existing JS object
     //  effects: creates a new field in parent named name, set to value
-    jerry_value_t value = jerry_create_boolean_value(bval);
-    jerry_set_object_field_value(obj, (const jerry_char_t *)name, value);
+    jerry_value_t name_val = jerry_create_string(name);
+    jerry_value_t bool_val = jerry_create_boolean(bval);
+    jerry_set_property(obj_val, name_val, bool_val);
+    jerry_release_value(name_val);
+    jerry_release_value(bool_val);
 }
 
-void zjs_obj_add_function(jerry_object_t *obj, void *function,
+void zjs_obj_add_function(jerry_value_t obj_val, void *function,
                           const char *name)
 {
     // requires: obj is an existing JS object, function is a native C function
@@ -69,49 +91,56 @@ void zjs_obj_add_function(jerry_object_t *obj, void *function,
     // NOTE: The docs on this function make it look like func obj should be
     //   released before we return, but in a loop of 25k buffer creates there
     //   seemed to be no memory leak. Reconsider with future intelligence.
-    jerry_object_t *func = jerry_create_external_function(function);
-    jerry_value_t value = jerry_create_object_value(func);
-    jerry_set_object_field_value(obj, (const jerry_char_t *)name, value);
-    jerry_release_value(value);
+    jerry_value_t name_val = jerry_create_string(name);
+    jerry_value_t func_val = jerry_create_external_function(function);
+    if (jerry_value_is_function(func_val)) {
+        jerry_set_property(obj_val, name_val, func_val);
+    }
+    jerry_release_value(name_val);
+    jerry_release_value(func_val);
 }
 
-void zjs_obj_add_object(jerry_object_t *parent, jerry_object_t *child,
+void zjs_obj_add_object(jerry_value_t parent_val, jerry_value_t child_val,
                         const char *name)
 {
     // requires: parent and child are existing JS objects
     //  effects: creates a new field in parent named name, that refers to child
-    jerry_value_t value = jerry_create_object_value(child);
-    jerry_set_object_field_value(parent, (const jerry_char_t *)name, value);
-    jerry_release_value(value);
+    jerry_value_t name_val = jerry_create_string(name);
+    jerry_set_property(parent_val, name_val, child_val);
+    jerry_release_value(name_val);
 }
 
-void zjs_obj_add_string(jerry_object_t *obj, const char *sval,
+void zjs_obj_add_string(jerry_value_t obj_val, const char *sval,
                         const char *name)
 {
     // requires: obj is an existing JS object
     //  effects: creates a new field in parent named name, set to sval
-    jerry_string_t *str = jerry_create_string(sval);
-    jerry_value_t value = jerry_create_string_value(str);
-    jerry_set_object_field_value(obj, name, value);
-    jerry_release_value(value);
+    jerry_value_t name_val = jerry_create_string(name);
+    jerry_value_t str_val = jerry_create_string(sval);
+    jerry_set_property(obj_val, name_val, str_val);
+    jerry_release_value(name_val);
+    jerry_release_value(str_val);
 }
 
-void zjs_obj_add_number(jerry_object_t *obj, double nval, const char *name)
+void zjs_obj_add_number(jerry_value_t obj_val, double nval, const char *name)
 {
     // requires: obj is an existing JS object
     //  effects: creates a new field in parent named name, set to nval
-    jerry_value_t value = jerry_create_number_value(nval);
-    jerry_set_object_field_value(obj, name, value);
+    jerry_value_t name_val = jerry_create_string(name);
+    jerry_value_t num_val = jerry_create_number(nval);
+    jerry_set_property(obj_val, name_val, num_val);
+    jerry_release_value(name_val);
+    jerry_release_value(num_val);
 }
 
-bool zjs_obj_get_boolean(jerry_object_t *obj, const char *name,
+bool zjs_obj_get_boolean(jerry_value_t obj_val, const char *name,
                          bool *flag)
 {
     // requires: obj is an existing JS object, value name should exist as
     //             boolean
     //  effects: retrieves field specified by name as a boolean
-    jerry_value_t value = jerry_get_object_field_value(obj, name);
-    if (jerry_value_is_error(value))
+    jerry_value_t value = zjs_get_property(obj_val, name);
+    if (jerry_value_has_error_flag(value))
         return false;
 
     if (!jerry_value_is_boolean(value))
@@ -122,7 +151,7 @@ bool zjs_obj_get_boolean(jerry_object_t *obj, const char *name,
     return true;
 }
 
-bool zjs_obj_get_string(jerry_object_t *obj, const char *name,
+bool zjs_obj_get_string(jerry_value_t obj_val, const char *name,
                         char *buffer, int len)
 {
     // requires: obj is an existing JS object, value name should exist as
@@ -130,31 +159,31 @@ bool zjs_obj_get_string(jerry_object_t *obj, const char *name,
     //  effects: retrieves field specified by name; if it exists, and is a
     //             string, copies at most len - 1 bytes plus a null terminator
     //             into buffer and returns true; otherwise, returns false
-    jerry_value_t value = jerry_get_object_field_value(obj, name);
-    if (jerry_value_is_error(value))
+    jerry_value_t value = zjs_get_property(obj_val, name);
+    if (jerry_value_has_error_flag(value))
         return false;
 
     if (!jerry_value_is_string(value))
         return false;
 
-    jerry_string_t *str = jerry_get_string_value(value);
-    jerry_size_t jlen = jerry_get_string_size(str);
-    if (jlen + 1 < len)
-        len = jlen + 1;
+    jerry_size_t jlen = jerry_get_string_size(value);
+    if (jlen >= len)
+        jlen = len - 1;
 
-    int wlen = jerry_string_to_char_buffer(str, buffer, len);
+    int wlen = jerry_string_to_char_buffer(value, buffer, jlen);
+
     buffer[wlen] = '\0';
     jerry_release_value(value);
     return true;
 }
 
-bool zjs_obj_get_double(jerry_object_t *obj, const char *name,
+bool zjs_obj_get_double(jerry_value_t obj_val, const char *name,
                         double *num)
 {
     // requires: obj is an existing JS object, value name should exist as number
     //  effects: retrieves field specified by name as a uint32
-    jerry_value_t value = jerry_get_object_field_value(obj, name);
-    if (jerry_value_is_error(value))
+    jerry_value_t value = zjs_get_property(obj_val, name);
+    if (jerry_value_has_error_flag(value))
         return false;
 
     *num = jerry_get_number_value(value);
@@ -162,13 +191,13 @@ bool zjs_obj_get_double(jerry_object_t *obj, const char *name,
     return true;
 }
 
-bool zjs_obj_get_uint32(jerry_object_t *obj, const char *name,
+bool zjs_obj_get_uint32(jerry_value_t obj_val, const char *name,
                         uint32_t *num)
 {
     // requires: obj is an existing JS object, value name should exist as number
     //  effects: retrieves field specified by name as a uint32
-    jerry_value_t value = jerry_get_object_field_value(obj, name);
-    if (jerry_value_is_error(value))
+    jerry_value_t value = zjs_get_property(obj_val, name);
+    if (jerry_value_has_error_flag(value))
         return false;
 
     *num = (uint32_t)jerry_get_number_value(value);
@@ -176,43 +205,22 @@ bool zjs_obj_get_uint32(jerry_object_t *obj, const char *name,
     return true;
 }
 
-bool zjs_strequal(const jerry_string_t *jstr, const char *str) {
+bool zjs_strequal(jerry_value_t str_val, const char *str) {
     // requires: jstr is a valid jerry string, str is a UTF-8 string
     //  effects: returns True if the strings are identical, false otherwise
     int len = strlen(str);
 
-    jerry_size_t sz = jerry_get_string_size(jstr);
+    jerry_size_t sz = jerry_get_string_size(str_val);
     if (len != sz)
         return false;
 
     jerry_char_t buf[len + 1];
-    jerry_string_to_char_buffer(jstr, buf, sz);
+    jerry_string_to_char_buffer(str_val, buf, sz);
     buf[len] = '\0';
 
     if (!strcmp(buf, str))
         return true;
     return false;
-}
-
-/**
- * Initialize Jerry value with specified object
- */
-void zjs_init_value_object(jerry_value_t *out_value_p, jerry_object_t *v)
-{
-    // requires: out_value_p to receive the object value v
-    //  effects: put the object into out_value_p with appropriate encoding.
-    jerry_acquire_object(v);
-    *out_value_p = jerry_create_object_value(v);
-}
-
-/**
- * Initialize Jerry value with specified string
- */
-void zjs_init_value_string(jerry_value_t *out_value_p, const char *v)
-{
-    // requires: out_value_p to receive the string value v
-    //  effects: put the string into out_value_p with appropriate encoding.
-    *out_value_p = jerry_create_string_value(jerry_create_string((jerry_char_t *) v));
 }
 
 bool zjs_hex_to_byte(char *buf, uint8_t *byte)
@@ -239,4 +247,9 @@ int zjs_identity(int num) {
     // effects: just returns the number passed to it; used as a default
     //            implementation for pin number conversions
     return num;
+}
+
+jerry_value_t zjs_error(const char *error)
+{
+    return jerry_create_error(JERRY_ERROR_TYPE, (jerry_char_t *)error);
 }

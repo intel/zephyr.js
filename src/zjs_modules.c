@@ -17,11 +17,10 @@ struct modItem {
 
 static struct modItem *modList;
 
-static bool native_require_handler(const jerry_object_t *function_obj_p,
-                                   const jerry_value_t this_val,
-                                   const jerry_value_t args_p[],
-                                   const jerry_length_t args_cnt,
-                                   jerry_value_t *ret_val_p)
+static jerry_value_t native_require_handler(const jerry_value_t function_obj_val,
+                                            const jerry_value_t this_val,
+                                            const jerry_value_t args_p[],
+                                            const jerry_length_t args_cnt)
 {
     char module[80];
     jerry_size_t sz;
@@ -29,11 +28,11 @@ static bool native_require_handler(const jerry_object_t *function_obj_p,
     jerry_value_t arg = args_p[0];
     if (!jerry_value_is_string(arg)) {
         PRINT ("native_require_handler: invalid arguments\n");
-        return false;
+        return zjs_error("native_require_handler: invalid argument");
     }
 
-    sz = jerry_get_string_size(jerry_get_string_value(arg));
-    int len = jerry_string_to_char_buffer(jerry_get_string_value(arg),
+    sz = jerry_get_string_size(arg);
+    int len = jerry_string_to_char_buffer(arg,
                                           (jerry_char_t *)module,
                                           sz);
     module[len] = '\0';
@@ -43,24 +42,21 @@ static bool native_require_handler(const jerry_object_t *function_obj_p,
         struct modItem *t = modList;
         while (t) {
             if (!strcmp(t->name, module)) {
-                jerry_object_t *obj = t->init();
-                zjs_init_value_object(ret_val_p, obj);
-                return true;
+                jerry_value_t obj_val = jerry_acquire_value(t->init());
+                return obj_val;
             }
             t = t->next;
         }
     }
 
     // Module is not in our list if it gets to this point.
-    PRINT("Error: module `%s'  not found\n", module);
-    zjs_init_value_object(ret_val_p, 0);
-
-    return false;
+    PRINT("native_require_handler: module `%s'  not found\n", module);
+    return zjs_error("native_require_handler: module not found");
 }
 
 void zjs_modules_init()
 {
-    jerry_object_t *global_obj = jerry_get_global();
+    jerry_value_t global_obj = jerry_get_global_object();
 
     // create the C handler for require JS call
     zjs_obj_add_function(global_obj, native_require_handler, "require");
