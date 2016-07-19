@@ -16,7 +16,7 @@ struct zjs_callback_t {
     void* handle;
     zjs_pre_callback_func pre;
     zjs_post_callback_func post;
-    jerry_object_t *js_func;
+    jerry_value_t js_func;
 };
 
 struct zjs_c_callback_t {
@@ -74,7 +74,7 @@ void zjs_init_callbacks(void)
     return;
 }
 
-int32_t zjs_add_callback(jerry_object_t *js_func,
+int32_t zjs_add_callback(jerry_value_t js_func,
                          void* handle,
                          zjs_pre_callback_func pre,
                          zjs_post_callback_func post)
