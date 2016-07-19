@@ -21,7 +21,6 @@
 #ifdef CONFIG_BOARD_ARDUINO_101
 #include "zjs_a101_pins.h"
 #endif
-#include "zjs_uart.h"
 
 extern const char script[];
 
