@@ -15,27 +15,9 @@ else
 PRE_ACTION=clean
 endif
 
-# Update target, reads repos.txt and updated exising entries
+# Update dependency repos using deps/repos.txt
 .PHONY: update
-update: setup
-	@cd deps/; \
-	while read line; do \
-		case \
-			"$$line" in \#*) \
-				continue ;; \
-			*) \
-				name=$$(echo $$line | cut -d ' ' -f 1); \
-				commit=$$(echo $$line | cut -d ' ' -f 3); \
-				cd $$name; \
-				git checkout $$commit; \
-				cd ..; \
-				continue ;; \
-		esac \
-	done < repos.txt
-
-# Sets up dependencies using deps/repos.txt
-.PHONY: setup
-setup:
+update:
 	@cd deps/; \
 	while read line; do \
 		case \
@@ -46,15 +28,18 @@ setup:
 				repo=$$(echo $$line | cut -d ' ' -f 2); \
 				commit=$$(echo $$line | cut -d ' ' -f 3); \
 				if [ ! -d $$name ]; then \
-					echo $$commit; \
 					git clone $$repo $$name; \
-					cd $$name; \
-					git checkout $$commit; \
-					cd ..; \
 				fi; \
+				cd $$name; \
+				git checkout $$commit; \
+				cd ..; \
 				continue ;; \
 		esac \
 	done < repos.txt
+
+# Sets up prj/last_build files
+.PHONY: setup
+setup: update
 	# Copy 256/216k board files to zephyr tree
 	rsync -a deps/overlay-zephyr/ deps/zephyr/
 	@if [ $(BOARD) != qemu_x86 ]; then \
@@ -126,7 +111,7 @@ help:
 	@echo "    clean:     Clean stale build objects"
 	@echo "    arc:       Build the ARC core target"
 	@echo "    all:       Build the zephyr and arc targets"
-	@echo "    setup:     Sets up dependencies (ran by default)"
+	@echo "    setup:     Sets up dependencies"
 	@echo "    update:    Updates dependencies"
 	@echo
 	@echo "Build options:"
