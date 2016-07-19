@@ -48,7 +48,7 @@ void zjs_init_callbacks(void);
  *
  * @return              ID associated with this callback, use this ID to reference this CB
  */
-int32_t zjs_add_callback(jerry_object_t *js_func, void* handle, zjs_pre_callback_func pre, zjs_post_callback_func post);
+int32_t zjs_add_callback(jerry_value_t js_func, void* handle, zjs_pre_callback_func pre, zjs_post_callback_func post);
 
 /*
  * Remove a function that was registered by zjs_add_callback(). If you remove a
