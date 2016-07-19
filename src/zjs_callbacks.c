@@ -77,6 +77,14 @@ void zjs_init_callbacks(void)
     return;
 }
 
+void zjs_edit_js_func(int32_t id, jerry_value_t func)
+{
+    if (id != -1) {
+        jerry_release_value(cb_map[id]->js->js_func);
+        cb_map[id]->js->js_func = jerry_acquire_value(func);
+    }
+}
+
 int32_t zjs_add_callback(jerry_value_t js_func,
                          void* handle,
                          zjs_pre_callback_func pre,
@@ -95,7 +103,7 @@ int32_t zjs_add_callback(jerry_value_t js_func,
     new_cb->type = CALLBACK_TYPE_JS;
     new_cb->signal = 0;
     new_cb->js->id = new_id();
-    new_cb->js->js_func = js_func;
+    new_cb->js->js_func = jerry_acquire_value(js_func);
     new_cb->js->pre = pre;
     new_cb->js->post = post;
     new_cb->js->handle = handle;
@@ -111,14 +119,15 @@ int32_t zjs_add_callback(jerry_value_t js_func,
 
 void zjs_remove_callback(int32_t id)
 {
-    if (id != -1) {
-        if (cb_map[id]->type == CALLBACK_TYPE_JS) {
+    if (id != -1 && cb_map[id]) {
+        if (cb_map[id]->type == CALLBACK_TYPE_JS && cb_map[id]->js) {
+            jerry_release_value(cb_map[id]->js->js_func);
             task_free(cb_map[id]->js);
-        } else {
+        } else if (cb_map[id]->c) {
             task_free(cb_map[id]->c);
         }
         task_free(cb_map[id]);
-        memset(cb_map + id, 0, sizeof(struct zjs_callback_map*));
+        cb_map[id] = NULL;
         cb_size--;
         DBG_PRINT("[callbacks] zjs_remove_callback(): Removing callback id %u\n", id);
     }
@@ -172,7 +181,7 @@ void zjs_service_callbacks(void)
     for (i = 0; i < cb_size; i++) {
         if (cb_map[i]->signal) {
             cb_map[i]->signal = 0;
-            if (cb_map[i]->type == CALLBACK_TYPE_JS && cb_map[i]->js->js_func) {
+            if (cb_map[i]->type == CALLBACK_TYPE_JS && jerry_value_is_function(cb_map[i]->js->js_func)) {
                 uint32_t args_cnt = 0;
                 jerry_value_t ret_val;
                 jerry_value_t* args = NULL;
