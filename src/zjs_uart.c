@@ -64,8 +64,7 @@ static void uart_irq_handler(struct device *dev)
 static void uart_c_callback(void* handle)
 {
     struct uart_cb_data* data = (struct uart_cb_data*)handle;
-    jerry_value_t onread_func_val = jerry_get_object_field_value(uart_pin,
-            (const jerry_char_t *)"onread");
+    jerry_value_t onread_func_val = zjs_get_property(uart_pin, "onread");
     /*
      * TODO: Adding the callback here is not the best way to do it.
      * Unfortunately jerryscript has no way of setting a "setter" to an
@@ -86,15 +85,13 @@ static void uart_c_callback(void* handle)
         // Alloc for the saved char's
         jerry_value_t data_val[1];
         // Create a jerry string
-        jerry_string_t *string  = jerry_create_string_sz(uartBuf, position);
-        jerry_value_t string_value = jerry_create_string_value(string);
-        // Aquire the string
-        jerry_value_t string_ret = jerry_acquire_value(string_value);
-        //data->data_val[0] = string_ret;
+
+        jerry_value_t string_ret = jerry_create_string ((const jerry_char_t *) uartBuf);
+
         data_val[0] = string_ret;
 
         // Get and aquire the function set to "uart.onread"
-        data->onread_func = jerry_acquire_object(jerry_get_object_value(onread_func_val));
+        data->onread_func = onread_func_val;
         /*
          * Since we are in a task context and in the main task loop, we can make
          * the JS call here without the worry of a recursion loop. Normally you
@@ -103,7 +100,7 @@ static void uart_c_callback(void* handle)
          */
         jerry_call_function(data->onread_func, NULL, data_val, 1);
 
-        jerry_release_object(data->onread_func);
+        jerry_release_value(data->onread_func);
         /*
          * TODO: jerryscript does have a feature that allows you to cleanup
          * an object when garbage collection destroys it (i.e. finalizer). This
@@ -127,11 +124,13 @@ static bool uart_write(const jerry_object_t *function_obj_p,
 {
     char* input_string;
     int i;
-    jerry_string_t* data = jerry_get_string_value(args_p[0]);
-    jerry_size_t len = jerry_get_string_size(data);
+
+    jerry_size_t len = jerry_get_string_size(args_p[0]);
 
     input_string = task_malloc(sizeof(char*) * len + 1);
-    int wlen = jerry_string_to_char_buffer(data, input_string, len);
+
+    int wlen = jerry_string_to_char_buffer(args_p[0], input_string, len);
+
     input_string[wlen] = '\0';
 
     DBG_PRINT("[uart] uart_write(): '%s'\n", input_string);
@@ -171,13 +170,10 @@ bool zjs_uart_open(const jerry_object_t *function_obj_p,
     // object data (string) for servicing the JS callback.
 
     uart_pin = jerry_create_object();
-    jerry_value_t uart_pin_val = jerry_create_object_value(uart_pin);
 
     zjs_obj_add_function(uart_pin, uart_write, "write");
 
-    *ret_val_p = uart_pin_val;
-
-    return true;
+    return uart_pin;
 }
 
 // Initialize UART, returns the UART object from require('uart')
