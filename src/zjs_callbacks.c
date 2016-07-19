@@ -95,7 +95,7 @@ int32_t zjs_add_callback(jerry_value_t js_func,
     new_cb->js->handle = handle;
 
     // Add callback to list
-    memcpy(cb_map + new_cb->js->id, &new_cb, sizeof(struct zjs_callback_map*));
+    cb_map[new_cb->js->id] = new_cb;
     cb_size++;
 
     DBG_PRINT("[callbacks] zjs_add_callback(): Adding new callback id %u\n", new_cb->js->id);
@@ -148,7 +148,7 @@ int32_t zjs_add_c_callback(void* handle, zjs_c_callback_func callback)
     new_cb->c->handle = handle;
 
     // Add callback to list
-    memcpy(cb_map + new_cb->c->id, &new_cb, sizeof(struct zjs_callback_map*));
+    cb_map[new_cb->c->id] = new_cb;
     cb_size++;
 
     DBG_PRINT("[callbacks] zjs_add_callback(): Adding new C callback id %u\n", new_cb->c->id);
