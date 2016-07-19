@@ -46,7 +46,6 @@ void main(int argc, char *argv[])
     zjs_modules_add("pwm", zjs_pwm_init);
     zjs_modules_add("arduino101_pins", zjs_a101_init);
 #endif
-    zjs_modules_add("uart", zjs_uart_init);
 
     size_t len = strlen((char *) script);
 
