@@ -16,19 +16,13 @@
 #include "zjs_util.h"
 
 #define ZJS_BLE_UUID_LEN                            36
+#define ZJS_BLE_CUD_UUID                            "2901"
 
 #define ZJS_BLE_RESULT_SUCCESS                      0x00
 #define ZJS_BLE_RESULT_INVALID_OFFSET               BT_ATT_ERR_INVALID_OFFSET
 #define ZJS_BLE_RESULT_ATTR_NOT_LONG                BT_ATT_ERR_ATTRIBUTE_NOT_LONG
 #define ZJS_BLE_RESULT_INVALID_ATTRIBUTE_LENGTH     BT_ATT_ERR_INVALID_ATTRIBUTE_LEN
 #define ZJS_BLE_RESULT_UNLIKELY_ERROR               BT_ATT_ERR_UNLIKELY
-
-// Port this to javascript
-#define BT_UUID_WEBBT BT_UUID_DECLARE_16(0xfc00)
-#define BT_UUID_TEMP BT_UUID_DECLARE_16(0xfc0a)
-#define BT_UUID_RGB BT_UUID_DECLARE_16(0xfc0b)
-#define SENSOR_1_NAME "Temperature"
-#define SENSOR_2_NAME "Led"
 
 struct nano_sem zjs_ble_nano_sem;
 
@@ -73,6 +67,7 @@ struct zjs_ble_characteristic {
     jerry_value_t chrc_obj;
     struct bt_uuid *uuid;
     struct bt_gatt_attr *chrc_attr;
+    jerry_value_t cud_value;
     struct zjs_ble_read_callback read_cb;
     struct zjs_ble_write_callback write_cb;
     struct zjs_ble_subscribe_callback subscribe_cb;
@@ -103,9 +98,9 @@ struct bt_uuid* zjs_ble_new_uuid_16(uint16_t value) {
     if (!uuid) {
         PRINT("zjs_ble_new_uuid_16: out of memory allocating struct bt_uuid_16\n");
         return NULL;
-    } else {
-        memset(uuid, 0, sizeof(struct bt_uuid_16));
     }
+
+    memset(uuid, 0, sizeof(struct bt_uuid_16));
 
     uuid->uuid.type = BT_UUID_TYPE_16;
     uuid->val = value;
@@ -842,6 +837,39 @@ static bool zjs_ble_parse_characteristic(jerry_value_t chrc_obj,
         }
     }
 
+    jerry_release_value(v_array);
+    v_array = zjs_get_property(chrc_obj, "descriptors");
+    if (!jerry_value_is_undefined(v_array) &&
+        !jerry_value_is_null(v_array) &&
+        !jerry_value_is_array(v_array)) {
+        PRINT("zjs_ble_parse_characteristic: descriptors is not array\n");
+        return false;
+    }
+
+    for (int i=0; i<jerry_get_array_length(v_array); i++) {
+        jerry_value_t v_desc = jerry_get_property_by_index(v_array, i);
+
+        if (!jerry_value_is_object(v_desc)) {
+            PRINT("zjs_ble_parse_characteristic: not valid descriptor object\n");
+            return false;
+        }
+
+        char desc_uuid[ZJS_BLE_UUID_LEN];
+        if (!zjs_obj_get_string(v_desc, "uuid", desc_uuid, ZJS_BLE_UUID_LEN)) {
+            PRINT("zjs_ble_parse_service: descriptor uuid doesn't exist\n");
+            return false;
+        }
+
+        if (!strcmp(desc_uuid, ZJS_BLE_CUD_UUID)) {
+            // Support CUD only, ignore all other type of descriptors
+            jerry_value_t v_value = zjs_get_property(v_desc, "value");
+            if (jerry_value_is_string(v_value)) {
+                chrc->cud_value = jerry_acquire_value(v_value);
+            }
+        }
+    }
+    jerry_release_value(v_array);
+
     jerry_value_t v_func;
     v_func = zjs_get_property(chrc_obj, "onReadRequest");
     if (jerry_value_is_function(v_func)) {
@@ -908,9 +936,9 @@ static bool zjs_ble_parse_service(jerry_value_t service_obj,
         if (!chrc) {
             PRINT("zjs_ble_parse_service: out of memory allocating struct zjs_ble_characteristic\n");
             return false;
-        } else {
-            memset(chrc, 0, sizeof(struct zjs_ble_characteristic));
         }
+
+        memset(chrc, 0, sizeof(struct zjs_ble_characteristic));
 
         chrc->chrc_obj = jerry_acquire_value(v_characteristic);
         jerry_set_object_native_handle(chrc->chrc_obj, (uintptr_t)chrc, NULL);
@@ -972,7 +1000,14 @@ static bool zjs_ble_register_service(struct zjs_ble_service *service)
     int num_of_entries = 1; // 1 attribute for service uuid
     struct zjs_ble_characteristic *ch = service->characteristics;
     while (ch != NULL) {
-        num_of_entries += 4;  // 4 attributes per characteristic
+        num_of_entries += 2; // 2 attributes for uuid and descriptor
+
+        if (ch->cud_value)
+            num_of_entries++; // 1 attribute for cud
+
+        if ((ch->flags & BT_GATT_CHRC_NOTIFY) == BT_GATT_CHRC_NOTIFY)
+            num_of_entries++; // 1 attribute for ccc
+
         ch = ch->next;
     }
 
@@ -980,9 +1015,9 @@ static bool zjs_ble_register_service(struct zjs_ble_service *service)
     if (!bt_attrs) {
         PRINT("zjs_ble_register_service: out of memory allocating struct bt_gatt_attr\n");
         return false;
-    } else {
-        memset(bt_attrs, 0, sizeof(struct bt_gatt_attr) * num_of_entries);
     }
+
+    memset(bt_attrs, 0, sizeof(struct bt_gatt_attr) * num_of_entries);
 
     // SERVICE
     int entry_index = 0;
@@ -997,11 +1032,11 @@ static bool zjs_ble_register_service(struct zjs_ble_service *service)
         // CHARACTERISTIC
         struct bt_gatt_chrc *chrc_user_data = task_malloc(sizeof(struct bt_gatt_chrc));
         if (!chrc_user_data) {
-            PRINT("error: out of memory allocating struct bt_gatt_chrc\n");
+            PRINT("zjs_ble_register_service: out of memory allocating struct bt_gatt_chrc\n");
             return false;
-        } else {
-            memset(chrc_user_data, 0, sizeof(struct bt_gatt_chrc));
         }
+
+        memset(chrc_user_data, 0, sizeof(struct bt_gatt_chrc));
 
         chrc_user_data->uuid = ch->uuid;
         chrc_user_data->properties = ch->flags;
@@ -1026,26 +1061,37 @@ static bool zjs_ble_register_service(struct zjs_ble_service *service)
 
         // hold references to the GATT attr for sending notification
         ch->chrc_attr = &bt_attrs[entry_index];
+        entry_index++;
 
-        if (!bt_uuid_cmp(ch->uuid, BT_UUID_TEMP)) {
-            // CUD
-            // FIXME: only temperature sets it for now
-            entry_index++;
+        // CUD
+        if (ch->cud_value) {
+            jerry_size_t sz = jerry_get_string_size(ch->cud_value);
+            char *cud_buffer = task_malloc(sz+1);
+            if (!cud_buffer) {
+                PRINT("zjs_ble_register_service: out of memory allocating cud buffer\n");
+                return false;
+            }
+
+            memset(cud_buffer, 0, sz+1);
+
+            jerry_string_to_char_buffer(ch->cud_value, (jerry_char_t *)cud_buffer, sz);
             bt_attrs[entry_index].uuid = BT_UUID_GATT_CUD;
             bt_attrs[entry_index].perm = BT_GATT_PERM_READ;
             bt_attrs[entry_index].read = bt_gatt_attr_read_cud;
-            bt_attrs[entry_index].user_data = SENSOR_1_NAME;
-
-            // BT_GATT_CCC
+            bt_attrs[entry_index].user_data = cud_buffer;
             entry_index++;
-            // FIXME: for notification?
+        }
+
+        // CCC
+        if ((ch->flags & BT_GATT_CHRC_NOTIFY) == BT_GATT_CHRC_NOTIFY) {
+            // add CCC only if notify flag is set
             struct _bt_gatt_ccc *ccc_user_data = task_malloc(sizeof(struct _bt_gatt_ccc));
             if (!ccc_user_data) {
-                PRINT("error: out of memory allocating struct bt_gatt_ccc\n");
+                PRINT("zjs_ble_register_service: out of memory allocating struct bt_gatt_ccc\n");
                 return false;
-            } else {
-                memset(ccc_user_data, 0, sizeof(struct _bt_gatt_ccc));
             }
+
+            memset(ccc_user_data, 0, sizeof(struct _bt_gatt_ccc));
 
             ccc_user_data->cfg = zjs_ble_blvl_ccc_cfg;
             ccc_user_data->cfg_len = ARRAY_SIZE(zjs_ble_blvl_ccc_cfg);
@@ -1055,22 +1101,15 @@ static bool zjs_ble_register_service(struct zjs_ble_service *service)
             bt_attrs[entry_index].read = bt_gatt_attr_read_ccc;
             bt_attrs[entry_index].write = bt_gatt_attr_write_ccc;
             bt_attrs[entry_index].user_data = ccc_user_data;
-        } else if (!bt_uuid_cmp(ch->uuid, BT_UUID_RGB)) {
             entry_index++;
-            bt_attrs[entry_index].uuid = BT_UUID_GATT_CUD;
-            bt_attrs[entry_index].perm = BT_GATT_PERM_READ | BT_GATT_PERM_WRITE;
-            bt_attrs[entry_index].read = bt_gatt_attr_read_cud;
-            bt_attrs[entry_index].user_data = SENSOR_2_NAME;
-
-            entry_index++;    //placeholder
-            bt_attrs[entry_index].uuid = BT_UUID_GATT_CCC;
-            bt_attrs[entry_index].perm = BT_GATT_PERM_READ | BT_GATT_PERM_WRITE;
-            bt_attrs[entry_index].read = bt_gatt_attr_read_ccc;
-            bt_attrs[entry_index].write = bt_gatt_attr_write_ccc;
         }
 
-        entry_index++;
         ch = ch->next;
+    }
+
+    if (entry_index != num_of_entries) {
+        PRINT("zjs_ble_register_service: number of entries didn't match\n");
+        return false;
     }
 
     PRINT("register service %d entries\n", entry_index);
@@ -1134,8 +1173,6 @@ static jerry_value_t zjs_ble_primary_service(const jerry_value_t function_obj_va
                                              const jerry_value_t args_p[],
                                              const jerry_length_t args_cnt)
 {
-    PRINT("new PrimaryService has been called\n");
-
     if (args_cnt < 1 || !jerry_value_is_object(args_p[0]))
     {
         PRINT("zjs_ble_primary_service: invalid arguments\n");
@@ -1151,8 +1188,6 @@ static jerry_value_t zjs_ble_characteristic(const jerry_value_t function_obj_val
                                             const jerry_value_t args_p[],
                                             const jerry_length_t args_cnt)
 {
-    PRINT("new Characterstic has been called\n");
-
     if (args_cnt < 1 || !jerry_value_is_object(args_p[0]))
     {
         PRINT("zjs_ble_characterstic: invalid arguments\n");
@@ -1186,6 +1221,21 @@ static jerry_value_t zjs_ble_characteristic(const jerry_value_t function_obj_val
     return args_p[0];
 }
 
+// Constructor
+static jerry_value_t zjs_ble_descriptor(const jerry_value_t function_obj_val,
+                                        const jerry_value_t this_val,
+                                        const jerry_value_t args_p[],
+                                        const jerry_length_t args_cnt)
+{
+    if (args_cnt < 1 || !jerry_value_is_object(args_p[0]))
+    {
+        PRINT("zjs_ble_descriptor: invalid arguments\n");
+        return zjs_error("invalid arguments");
+    }
+
+    return jerry_acquire_value(args_p[0]);
+}
+
 jerry_value_t zjs_ble_init()
 {
      nano_sem_init(&zjs_ble_nano_sem);
@@ -1197,9 +1247,10 @@ jerry_value_t zjs_ble_init()
     zjs_obj_add_function(ble_obj, zjs_ble_stop_advertising, "stopAdvertising");
     zjs_obj_add_function(ble_obj, zjs_ble_set_services, "setServices");
 
-    // PrimaryService and Characteristic constructors
+    // register constructors
     zjs_obj_add_function(ble_obj, zjs_ble_primary_service, "PrimaryService");
     zjs_obj_add_function(ble_obj, zjs_ble_characteristic, "Characteristic");
+    zjs_obj_add_function(ble_obj, zjs_ble_descriptor, "Descriptor");
     return ble_obj;
 }
 #endif

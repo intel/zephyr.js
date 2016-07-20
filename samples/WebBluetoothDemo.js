@@ -14,7 +14,12 @@ DEVICE_NAME = 'Arduino101';
 var TemperatureCharacteristic = new ble.Characteristic({
     uuid: 'fc0a',
     properties: ['read', 'notify'],
-    value: null
+    descriptors: [
+        new ble.Descriptor({
+            uuid: '2901',
+            value: 'Temperature'
+        })
+    ]
 });
 
 TemperatureCharacteristic._lastValue = undefined;
@@ -54,7 +59,12 @@ TemperatureCharacteristic.valueChange = function(value) {
 var ColorCharacteristic = new ble.Characteristic({
     uuid: 'fc0b',
     properties: ['read', 'write'],
-    value: null
+    descriptors: [
+        new ble.Descriptor({
+            uuid: '2901',
+            value: 'LED'
+        })
+    ]
 });
 
 // default color
