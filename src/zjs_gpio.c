@@ -166,6 +166,7 @@ static bool zjs_gpio_pin_close(const jerry_value_t function_obj_p,
             if (handle->onchange_func) {
                 jerry_release_value(handle->onchange_func);
             }
+            gpio_remove_callback(zjs_gpio_dev, &handle->callback);
             task_free(handle);
         }
     }
