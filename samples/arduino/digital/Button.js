@@ -10,6 +10,6 @@ var pins = require("arduino101_pins");
 var led = gpio.open({pin: pins.LED0, direction: 'out'});
 var button = gpio.open({pin: pins.IO4, direction: 'in', edge: 'any'});
 
-button.onChange = function(event) {
-    print("Button changed");
+button.onchange = function(event) {
+    led.write(event.value);
 }

@@ -9,6 +9,7 @@
 // ZJS includes
 #include "zjs_gpio.h"
 #include "zjs_util.h"
+#include "zjs_callbacks.h"
 
 static const char *ZJS_DIR_IN = "in";
 static const char *ZJS_DIR_OUT = "out";
@@ -21,8 +22,6 @@ static const char *ZJS_EDGE_BOTH = "any";
 static const char *ZJS_PULL_NONE = "none";
 static const char *ZJS_PULL_UP = "up";
 static const char *ZJS_PULL_DOWN = "down";
-
-static const char *ZJS_CHANGE = "change";
 
 static struct device *zjs_gpio_dev;
 
@@ -42,7 +41,7 @@ struct gpio_handle {
 static void gpio_c_callback(void* h)
 {
     struct gpio_handle *handle = (struct gpio_handle*)h;
-    jerry_value_t onchange_func = zjs_get_property(handle->pin_obj, "onChange");
+    jerry_value_t onchange_func = zjs_get_property(handle->pin_obj, "onchange");
 
 
     // If pin.onChange exists, call it

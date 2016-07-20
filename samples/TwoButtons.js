@@ -22,12 +22,10 @@ var btn2 = gpio.open({ pin: pins.IO4, direction: 'in', edge: 'any' });
 // turn off LED #2 initially
 led2.write(false);
 
-btn1.on('change', function () {
-    var value = btn1.read();
-    led1.write(value);
+btn1.onchange = function (event) {
+    led1.write(event.value);
 });
 
-btn2.on('change', function () {
-    var value = btn2.read();
-    led2.write(value);
-});
+btn2.onchange = function (event) {
+    led2.write(event.value);
+};

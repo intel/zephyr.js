@@ -13,7 +13,7 @@
 #ifdef DEBUG_BUILD
 #define DBG_PRINT PRINT
 #else
-#define DBG_PRINT do {} while(0);
+#define DBG_PRINT(fmat ...) do {} while(0);
 #endif
 
 struct zjs_callback;

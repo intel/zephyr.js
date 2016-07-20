@@ -12,6 +12,7 @@
 #include "zjs_aio.h"
 #include "zjs_ble.h"
 #include "zjs_buffer.h"
+#include "zjs_callbacks.h"
 #include "zjs_common.h"
 #include "zjs_gpio.h"
 #include "zjs_modules.h"
