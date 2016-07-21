@@ -12,21 +12,34 @@ var gpio = require("gpio");
 var pins = require("arduino101_pins");
 
 // pins 8 (LED0) and 12 (LED1) are onboard LEDs on Arduino 101
-var pinA = gpio.open({ pin: pins.LED0, activeLow: false });
-var pinB = gpio.open({ pin: pins.LED1, activeLow: true });
-var pinIn = gpio.open({ pin: pins.IO4, direction: 'in', edge: 'rising' });
+var pinA = null;
+var pinB = null;
 
-// tick is the delay between blinks
-var tick = 1000, toggle = false;
+gpio.open({ pin: pins.LED0, activeLow: false }).then(function(pin) {
+	pinA = pin;
+});
 
-setInterval(function () {
-    toggle = !toggle;
-    pinIn.read();
-    pinA.write(toggle);
-    pinB.write(toggle);
-}, tick);
+gpio.open({ pin: pins.LED1, activeLow: true }).then(function(pin) {
+	pinB = pin;
+});
 
-pinIn.onchange = function(event) {
-    pinA.write(true);
-    pinB.write(false);
-};
+gpio.open({ pin: pins.IO4, direction: 'in', edge: 'rising' }).then(function(pin) {
+	// tick is the delay between blinks
+	var tick = 1000, toggle = false;
+
+	setInterval(function () {
+		toggle = !toggle;
+		pin.read();
+		pinA.write(toggle);
+		pinB.write(toggle);
+	}, tick);
+
+	pin.onchange = function(event) {
+		pinA.write(true);
+		pinB.write(false);
+	};
+}).docatch(function(error) {
+	print("Error opening GPIO pin");
+});
+
+
