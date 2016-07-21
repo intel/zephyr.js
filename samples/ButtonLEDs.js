@@ -16,28 +16,28 @@ var pinA = null;
 var pinB = null;
 
 gpio.open({ pin: pins.LED0, activeLow: false }).then(function(pin) {
-	pinA = pin;
+    pinA = pin;
 });
 
 gpio.open({ pin: pins.LED1, activeLow: true }).then(function(pin) {
-	pinB = pin;
+    pinB = pin;
 });
 
 gpio.open({ pin: pins.IO4, direction: 'in', edge: 'rising' }).then(function(pin) {
-	// tick is the delay between blinks
-	var tick = 1000, toggle = false;
+    // tick is the delay between blinks
+    var tick = 1000, toggle = false;
 
-	setInterval(function () {
-		toggle = !toggle;
-		pin.read();
-		pinA.write(toggle);
-		pinB.write(toggle);
-	}, tick);
+    setInterval(function () {
+        toggle = !toggle;
+        pin.read();
+        pinA.write(toggle);
+        pinB.write(toggle);
+    }, tick);
 
-	pin.onchange = function(event) {
-		pinA.write(true);
-		pinB.write(false);
-	};
+    pin.onchange = function(event) {
+        pinA.write(true);
+        pinB.write(false);
+    };
 }).docatch(function(error) {
-	print("Error opening GPIO pin");
+    print("Error opening GPIO pin");
 });

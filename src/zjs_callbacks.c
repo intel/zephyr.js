@@ -6,8 +6,8 @@
 
 #include "jerry-api.h"
 
-#define INITIAL_CALLBACK_SIZE	16
-#define CB_CHUNK_SIZE			16
+#define INITIAL_CALLBACK_SIZE  16
+#define CB_CHUNK_SIZE          16
 
 #define CALLBACK_TYPE_JS    0
 #define CALLBACK_TYPE_C     1

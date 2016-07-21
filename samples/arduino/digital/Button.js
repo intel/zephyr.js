@@ -10,15 +10,15 @@ var pins = require("arduino101_pins");
 var led = null;
 
 gpio.open({pin: pins.LED0, direction: 'out'}).then(function(pin) {
-	led = pin;
+    led = pin;
 }).docatch(function(error) {
-	print("Error opening LED GPIO pin");
+    print("Error opening LED GPIO pin");
 });
 
 gpio.open({pin: pins.IO4, direction: 'in', edge: 'any'}).then(function(pin) {
-	pin.onchange = function(event) {
-		led.write(event.value);
-	};
+    pin.onchange = function(event) {
+        led.write(event.value);
+    };
 }).docatch(function(error) {
-	print("Error opening GPIO pin");
+    print("Error opening GPIO pin");
 });
