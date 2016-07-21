@@ -21,5 +21,3 @@ gpio.open({pin: pins.LED0, direction: 'out'}).then(function(pin) {
 }).docatch(function(error) {
 	print("Error opening GPIO pin");
 });
-
-

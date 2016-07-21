@@ -22,4 +22,3 @@ gpio.open({pin: pins.IO4, direction: 'in', edge: 'any'}).then(function(pin) {
 }).docatch(function(error) {
 	print("Error opening GPIO pin");
 });
-

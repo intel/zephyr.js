@@ -23,9 +23,12 @@ gpio.open({ pin: pins.LED0, activeLow: false }).then(function(pin) {
 
 gpio.open({ pin: pins.LED1, activeLow: true }).then(function(pin) {
 	led2 = pin;
+
+    // turn off LED #2 initially
+    led2.write(false);
 });
 
-gpio.open({ pin: pins.IO3, direction: 'in', edge: 'any' }).then(function(pin) {
+gpio.open({ pin: pins.IO3, direction: 'in', edge: 'any' }).then(function(btn1) {
 	btn1.onchange = function (event) {
 		led1.write(event.value);
 	};
@@ -33,13 +36,10 @@ gpio.open({ pin: pins.IO3, direction: 'in', edge: 'any' }).then(function(pin) {
 	print("Error opening GPIO pin");
 });
 
-gpio.open({ pin: pins.IO4, direction: 'in', edge: 'any' }).then(function(pin) {
-	pin.onchange = function (event) {
+gpio.open({ pin: pins.IO4, direction: 'in', edge: 'any' }).then(function(btn2) {
+	btn2.onchange = function (event) {
 		led2.write(event.value);
 	};
 }).docatch(function(error) {
 	print("Error opening GPIO pin");
 });
-
-// turn off LED #2 initially
-led2.write(false);
