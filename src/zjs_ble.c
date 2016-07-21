@@ -797,21 +797,19 @@ static bool zjs_ble_parse_characteristic(jerry_value_t chrc_obj,
     chrc->uuid = zjs_ble_new_uuid_16(strtoul(uuid, NULL, 16));
 
     jerry_value_t v_array = zjs_get_property(chrc_obj, "properties");
-    if (jerry_value_has_error_flag(v_array)) {
-        PRINT("zjs_ble_parse_characteristic: properties doesn't exist\n");
+    if (!jerry_value_is_array(v_array)) {
+        PRINT("zjs_ble_parse_characteristic: properties is empty or not array\n");
         return false;
     }
 
-    int p_index = 0;
-    jerry_value_t v_property;
-    v_property = jerry_get_property_by_index(v_array, p_index);
-    if (jerry_value_has_error_flag(v_property)) {
-        PRINT("zjs_ble_parse_characteristic: failed to access property array\n");
-        return false;
-    }
+    for (int i=0; i<jerry_get_array_length(v_array); i++) {
+        jerry_value_t v_property = jerry_get_property_by_index(v_array, i);
 
-    chrc->flags = 0;
-    while (jerry_value_is_string(v_property)) {
+        if (!jerry_value_is_string(v_property)) {
+            PRINT("zjs_ble_parse_characteristic: property is not string\n");
+            return false;
+        }
+
         char name[20];
         jerry_size_t sz;
         sz = jerry_get_string_size(v_property);
@@ -827,17 +825,9 @@ static bool zjs_ble_parse_characteristic(jerry_value_t chrc_obj,
         } else if (!strcmp(name, "notify")) {
             chrc->flags |= BT_GATT_CHRC_NOTIFY;
         }
-
-        // next property object
-        p_index++;
-        v_property = jerry_get_property_by_index(v_array, p_index);
-        if (jerry_value_has_error_flag(v_property)) {
-            PRINT("zjs_ble_parse_characteristic: failed to access property array\n");
-            return false;
-        }
     }
-
     jerry_release_value(v_array);
+
     v_array = zjs_get_property(chrc_obj, "descriptors");
     if (!jerry_value_is_undefined(v_array) &&
         !jerry_value_is_null(v_array) &&
@@ -912,26 +902,20 @@ static bool zjs_ble_parse_service(jerry_value_t service_obj,
     service->uuid = zjs_ble_new_uuid_16(strtoul(uuid, NULL, 16));
 
     jerry_value_t v_array = zjs_get_property(service_obj, "characteristics");
-    if (jerry_value_has_error_flag(v_array)) {
-        PRINT("zjs_ble_parse_service: characteristics doesn't exist\n");
-        return false;
-    }
-
-    if (!jerry_value_is_object(v_array)) {
-        PRINT("zjs_ble_parse_service: characteristics array is undefined or null\n");
-        return false;
-    }
-
-    int chrc_index = 0;
-    jerry_value_t v_characteristic;
-    v_characteristic = jerry_get_property_by_index(v_array, chrc_index);
-    if (jerry_value_has_error_flag(v_characteristic)) {
-        PRINT("zjs_ble_parse_service: failed to access characteristic array\n");
+    if (!jerry_value_is_array(v_array)) {
+        PRINT("zjs_ble_parse_service: characteristics is empty or not array\n");
         return false;
     }
 
     struct zjs_ble_characteristic *previous = NULL;
-    while (jerry_value_is_object(v_characteristic)) {
+    for (int i=0; i<jerry_get_array_length(v_array); i++) {
+        jerry_value_t v_chrc = jerry_get_property_by_index(v_array, i);
+
+        if (!jerry_value_is_object(v_chrc)) {
+            PRINT("zjs_ble_parse_characteristic: characteristic is not object\n");
+            return false;
+        }
+
         struct zjs_ble_characteristic *chrc = task_malloc(sizeof(struct zjs_ble_characteristic));
         if (!chrc) {
             PRINT("zjs_ble_parse_service: out of memory allocating struct zjs_ble_characteristic\n");
@@ -940,7 +924,7 @@ static bool zjs_ble_parse_service(jerry_value_t service_obj,
 
         memset(chrc, 0, sizeof(struct zjs_ble_characteristic));
 
-        chrc->chrc_obj = jerry_acquire_value(v_characteristic);
+        chrc->chrc_obj = jerry_acquire_value(v_chrc);
         jerry_set_object_native_handle(chrc->chrc_obj, (uintptr_t)chrc, NULL);
 
         if (!zjs_ble_parse_characteristic(chrc->chrc_obj, chrc)) {
@@ -955,14 +939,6 @@ static bool zjs_ble_parse_service(jerry_value_t service_obj,
         }
         else {
            previous->next = chrc;
-        }
-
-        // next characterstic
-        chrc_index++;
-        v_characteristic = jerry_get_property_by_index(v_array, chrc_index);
-        if (jerry_value_has_error_flag(v_characteristic)) {
-            PRINT("zjs_ble_parse_service: failed to access characteristic array\n");
-            return false;
         }
     }
 
