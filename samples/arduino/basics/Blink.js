@@ -18,6 +18,6 @@ gpio.open({pin: pins.LED0, direction: 'out'}).then(function(pin) {
         toggle = !toggle;
         pin.write(toggle);
     }, 1000);
-}).docatch(function(error) {
+}).catch(function(error) {
     print("Error opening GPIO pin");
 });

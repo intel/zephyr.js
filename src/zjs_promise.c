@@ -146,8 +146,7 @@ int32_t zjs_make_promise(jerry_value_t obj, zjs_post_promise_func post, void* ha
     jerry_value_t global_obj = jerry_get_global_object();
 
     zjs_obj_add_function(obj, promise_then, "then");
-    // TODO: Jerryscript does not like a function to be called "catch"
-    zjs_obj_add_function(obj, promise_catch, "docatch");
+    zjs_obj_add_function(obj, promise_catch, "catch");
     jerry_set_object_native_handle(promise_obj, (uintptr_t)new, promise_free);
 
     new->id = find_id(&use);

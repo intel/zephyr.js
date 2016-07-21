@@ -24,12 +24,12 @@ percent()
 INPUT=$1
 OUTPUT=$2
 
-# Check that yui-compressor exists
-which yui-compressor &> /dev/null
+# Check that uglifyjs exists
+which uglifyjs &> /dev/null
 if [ $? == 1 ]; then
     cat $INPUT > /tmp/gen.tmp
 else
-    yui-compressor $INPUT > /tmp/gen.tmp
+    uglifyjs $INPUT > /tmp/gen.tmp
 fi
 
 COUNT=0
@@ -46,10 +46,12 @@ printf "const char script[] = \"" >> $OUTPUT
 # No field separator, read whole file (IFS=),
 # no backslash escape (-r),
 # read 1 character at a time (-n1)
-while IFS= read -r -n1 char
+while IFS= read -r -N 1 char
 do
 	if [ "$char" = "\"" ]; then
 		printf "\\\\$char" >> $OUTPUT
+	elif [ "$char" = $'\n' ]; then
+	   printf "\\\n\"$char\"" >> $OUTPUT
 	else
 		printf "$char" >> $OUTPUT
 	fi
