@@ -19,6 +19,6 @@ gpio.open({pin: pins.IO4, direction: 'in', edge: 'any'}).then(function(pin) {
     pin.onchange = function(event) {
         led.write(event.value);
     };
-}).docatch(function(error) {
+}).catch(function(error) {
     print("Error opening GPIO pin");
 });

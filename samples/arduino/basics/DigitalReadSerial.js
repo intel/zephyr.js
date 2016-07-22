@@ -12,6 +12,6 @@ gpio.open({pin: pins.IO4, direction: 'in'}).then(function(pin) {
     setInterval(function () {
         print(pin.read());
     }, 1000);
-}).docatch(function(error) {
+}).catch(function(error) {
     print("Error opening GPIO pin");
 });

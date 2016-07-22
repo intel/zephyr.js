@@ -38,6 +38,6 @@ gpio.open({ pin: pins.IO4, direction: 'in', edge: 'rising' }).then(function(pin)
         pinA.write(true);
         pinB.write(false);
     };
-}).docatch(function(error) {
+}).catch(function(error) {
     print("Error opening GPIO pin");
 });

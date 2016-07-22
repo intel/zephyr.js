@@ -31,15 +31,15 @@ gpio.open({ pin: pins.LED1, activeLow: true }).then(function(pin) {
 gpio.open({ pin: pins.IO3, direction: 'in', edge: 'any' }).then(function(btn1) {
     btn1.onchange = function (event) {
         led1.write(event.value);
-};
-}).docatch(function(error) {
+    };
+}).catch(function(error) {
     print("Error opening GPIO pin");
 });
 
 gpio.open({ pin: pins.IO4, direction: 'in', edge: 'any' }).then(function(btn2) {
     btn2.onchange = function (event) {
         led2.write(event.value);
-};
-}).docatch(function(error) {
+    };
+}).catch(function(error) {
     print("Error opening GPIO pin");
 });

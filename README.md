@@ -71,6 +71,15 @@ $ source zjs-env.sh 256
 The command will display the current expected partition size to remind you of
 the expected target.
 
+### JS Minifier
+
+To save space it is recommended to use a minifier. In convert.sh, the script used
+to encode your JS into a source file, we use uglifyjs. This can be downloaded by
+doing:
+```
+sudo apt-get install node-uglify
+```
+
 ## Getting more space on your Arduino 101
 By default, Arduino 101 comes with a **144K** X86 partition, but we're able to
 pretty safely increase it to **256K**. You should only use the ```dfu-util```
