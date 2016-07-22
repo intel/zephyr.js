@@ -9,7 +9,7 @@
 #include "zjs_ipm.h"
 #include "zjs_util.h"
 
-DEFINE_SEMAPHORE(SEM_AIO_BLOCK);
+static struct nano_sem aio_sem;
 
 static uint32_t pin_values[ARC_AIO_LEN] = {};
 
@@ -171,7 +171,7 @@ static void ipm_msg_receive_callback(void *context, uint32_t id, volatile void *
 
     if (msg->block) {
         // un-block sync api
-        isr_sem_give(SEM_AIO_BLOCK);
+        nano_isr_sem_give(&aio_sem);
     }
 }
 
@@ -192,7 +192,7 @@ static jerry_value_t zjs_aio_pin_read(const jerry_value_t function_obj_val,
     // send IPM message to the ARC side
     zjs_aio_ipm_send_blocking(TYPE_AIO_PIN_READ, pin, 0);
     // block until reply or timeout
-    if (task_sem_take(SEM_AIO_BLOCK, 500) == RC_TIME) {
+    if (nano_sem_take(&aio_sem, TICKS_NONE) == 0) {
         PRINT("zjs_aio_pin_read: reply from ARC timed out!");
         return zjs_error("zjs_aio_pin_read: reply from ARC timed out!");
     }
@@ -343,7 +343,7 @@ static jerry_value_t zjs_aio_open(const jerry_value_t function_obj_val,
     // send IPM message to the ARC side
     zjs_aio_ipm_send_blocking(TYPE_AIO_OPEN, pin, 0);
     // block until reply or timeout
-    if (task_sem_take(SEM_AIO_BLOCK, 500) == RC_TIME) {
+    if (nano_sem_take(&aio_sem, TICKS_NONE) == 0) {
         PRINT("zjs_aio_open: reply from ARC timed out!");
         return zjs_error("zjs_aio_open: reply from ARC timed out!");
     }
@@ -367,6 +367,9 @@ jerry_value_t zjs_aio_init()
 {
     zjs_ipm_init();
     zjs_ipm_register_callback(MSG_ID_AIO, ipm_msg_receive_callback);
+
+    nano_sem_init(&aio_sem);
+    nano_sem_give(&aio_sem);
 
     // create global AIO object
     jerry_value_t aio_obj = jerry_create_object();
