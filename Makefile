@@ -71,6 +71,7 @@ clean:
 		make -C $(JERRY_BASE) -f targets/zephyr/Makefile clean; \
 		rm -rf deps/jerryscript/build/$(BOARD)/; \
 	fi
+	cd arc; make clean
 
 # Flash Arduino 101 x86 image
 .PHONY: dfu
