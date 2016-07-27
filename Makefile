@@ -55,11 +55,11 @@ setup: update
 .PHONY: clean
 clean:
 	@if [ -d deps/zephyr ]; then \
-		make -f Makefile.zephyr clean; \
-		make -C $(JERRY_BASE) -f targets/zephyr/Makefile.zephyr clean; \
-		make -C $(JERRY_BASE) -f targets/zephyr/Makefile clean; \
+		make -f Makefile.x86 clean; \
 	fi
 	@if [ -d deps/jerryscript ]; then \
+		make -C $(JERRY_BASE) -f targets/zephyr/Makefile.zephyr clean; \
+		make -C $(JERRY_BASE) -f targets/zephyr/Makefile clean; \
 		rm -rf deps/jerryscript/build/$(BOARD)/; \
 	fi
 
@@ -91,7 +91,7 @@ qemu: generate
 else
 qemu: setup $(PRE_ACTION)
 endif
-	make -f Makefile.zephyr BOARD=qemu_x86 KERNEL=$(KERNEL) qemu
+	make -f Makefile.x86 BOARD=qemu_x86 KERNEL=$(KERNEL) qemu
 
 # Build for zephyr, default target
 .PHONY: zephyr
@@ -100,7 +100,7 @@ zephyr: generate
 else
 zephyr: setup $(PRE_ACTION)
 endif
-	make -f Makefile.zephyr BOARD=$(BOARD) KERNEL=$(KERNEL)
+	make -f Makefile.x86 BOARD=$(BOARD) KERNEL=$(KERNEL)
 
 # Builds ARC binary
 .PHONY: arc
