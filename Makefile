@@ -5,8 +5,17 @@ ifndef JERRY_BASE
 $(error JERRY_BASE not defined)
 endif
 
+# Build for x86, default target
+.PHONY: x86
+ifdef JS
+x86: generate
+else
+x86: setup $(PRE_ACTION)
+endif
+	make -f Makefile.x86 BOARD=$(BOARD) KERNEL=$(KERNEL)
+
 .PHONY: all
-all: zephyr arc
+all: x86 arc
 
 # Check if a clean is needed before building
 ifneq ("$(wildcard .$(BOARD).last_build)", "")
@@ -93,15 +102,6 @@ qemu: setup $(PRE_ACTION)
 endif
 	make -f Makefile.x86 BOARD=qemu_x86 KERNEL=$(KERNEL) qemu
 
-# Build for zephyr, default target
-.PHONY: zephyr
-ifdef JS
-zephyr: generate
-else
-zephyr: setup $(PRE_ACTION)
-endif
-	make -f Makefile.x86 BOARD=$(BOARD) KERNEL=$(KERNEL)
-
 # Builds ARC binary
 .PHONY: arc
 arc:
@@ -114,14 +114,14 @@ endif
 .PHONY: help
 help:
 	@echo "Build targets:"
-	@echo "    zephyr:    Build for zephyr (x86)"
-	@echo "    dfu:       Flash the x86 core binary with dfu-util"
-	@echo "    qemu:      Run QEMU after building"
-	@echo "    clean:     Clean stale build objects"
+	@echo "    x86:       Build the main x86 core target (default)"
 	@echo "    arc:       Build the ARC core target"
-	@echo "    all:       Build the zephyr and arc targets"
+	@echo "    all:       Build the x86 and arc targets"
+	@echo "    dfu:       Flash the x86 core binary with dfu-util"
 	@echo "    dfu-arc:   Flash the ARC binary with dfu-util"
 	@echo "    dfu-all:   Flash both binaries with dfu-util"
+	@echo "    qemu:      Run QEMU after building"
+	@echo "    clean:     Clean stale build objects"
 	@echo "    setup:     Sets up dependencies"
 	@echo "    update:    Updates dependencies"
 	@echo
