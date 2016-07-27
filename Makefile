@@ -63,10 +63,19 @@ clean:
 		rm -rf deps/jerryscript/build/$(BOARD)/; \
 	fi
 
-# Arduino 101 flash target
-.PHONY: flash
-flash:
+# Flash Arduino 101 x86 image
+.PHONY: dfu
+dfu:
 	dfu-util -a x86_app -D outdir/zephyr.bin
+
+# Flash Arduino 101 ARC image
+.PHONY: dfu-arc
+dfu-arc:
+	dfu-util -a sensor_core -D arc/outdir/zephyr.bin
+
+# Flash both
+.PHONE: dfu-all
+dfu-all: dfu dfu-arc
 
 # Generate the script file from the JS variable
 ifdef JS
@@ -106,11 +115,13 @@ endif
 help:
 	@echo "Build targets:"
 	@echo "    zephyr:    Build for zephyr (x86)"
-	@echo "    flash:     Flash a zephyr binary"
+	@echo "    dfu:       Flash the x86 core binary with dfu-util"
 	@echo "    qemu:      Run QEMU after building"
 	@echo "    clean:     Clean stale build objects"
 	@echo "    arc:       Build the ARC core target"
 	@echo "    all:       Build the zephyr and arc targets"
+	@echo "    dfu-arc:   Flash the ARC binary with dfu-util"
+	@echo "    dfu-all:   Flash both binaries with dfu-util"
 	@echo "    setup:     Sets up dependencies"
 	@echo "    update:    Updates dependencies"
 	@echo
