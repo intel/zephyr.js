@@ -717,7 +717,7 @@ static jerry_value_t zjs_ble_start_advertising(const jerry_value_t function_obj_
     if (url_frame)
         records += 2;
 
-    if (index + records == 0) {
+    if (records == 0) {
         PRINT("zjs_ble_adv_start: nothing to advertise\n");
         return zjs_error("zjs_ble_adv_start: nothing to advertise");
     }
