@@ -59,7 +59,7 @@ bool zjs_strequal(const jerry_value_t str_val, const char *str);
 
 bool zjs_hex_to_byte(char *buf, uint8_t *byte);
 
-int zjs_identity(int num);
+void zjs_default_convert_pin(uint32_t orig, int *dev, int *pin);
 
 jerry_value_t zjs_error(const char *error);
 

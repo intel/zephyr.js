@@ -118,5 +118,57 @@ $ cd apps/jerryscript_test/tests/
 $ ./rununittest.sh
 ```
 
-This will iterate through the unit test one by one. After each test completes,
+This will iterate through the unit tests one by one. After each test completes,
 press Ctrl-x to exit QEMU and continue with the next test.
+
+## FRDM-K64F Platform
+
+See the [Zephyr Wiki] (https://wiki.zephyrproject.org/view/NXP_FRDM-K64F) for general information about Zephyr on the FRDM-K64F.
+
+The instructions below are assuming Ubuntu 14.04 on the host PC.
+
+Connect a micro-USB cable from the device to your PC.
+
+If you hit the Reset switch and wait about five seconds, you should be able to
+start up a serial console. Either:
+
+...
+$ screen /dev/ttyACM0 115200
+...
+or
+...
+$ minicom -D /dev/ttyACM0
+...
+
+worked for me, but I typically had to try either command several times before it
+would work. The benefit of minicom is it will keep running even if you unplug
+the cable and then plug it back in later.
+
+(Check your dmesg output or watch your /dev directory to know what device it
+shows up as.)
+
+Then, follow [these instructions] (https://developer.mbed.org/handbook/Firmware-FRDM-K64F) to update your firmware.
+
+Next, you can try to build Zephyr.js for the platform:
+...
+$ make BOARD=frdm_k64f JS=samples/HelloWorld.js
+$ cp outdir/zephyr.bin /media/<USERNAME>/MBED/
+
+After you copy the new .bin file to that directory, the device will reboot,
+blink an LED quickly as it writes the image somewhere, and then you should see
+the device reconnect as a USB storage device to your PC. Then you can press the
+Reset button to run the Zephyr image. You should see "Hello, Zephyr.js world!"
+output on the serial console in less than a second.
+
+If something doesn't work, you may want to establish that you're able to
+upload the K64F [hello world application] (https://developer.mbed.org/platforms/FRDM-K64F/#flash-a-project-binary).
+
+Then, you could try the Zephyr hello_world sample to narrow down the problem:
+...
+$ cd deps/zephyr/samples/hello_world/nanokernel
+$ make pristine && make BOARD=frdm_k64f
+$ cp outdir/zephyr.bin /media/<USERNAME>/MBED/
+...
+
+Using the same procedure as above, once you hit Reset you should see
+"Hello World!" within a second on your serial console.

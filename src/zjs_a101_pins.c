@@ -1,5 +1,5 @@
 // Copyright (c) 2016, Intel Corporation.
-#ifndef QEMU_BUILD
+
 // Zephyr includes
 #include <zephyr.h>
 
@@ -8,38 +8,48 @@
 #include <zjs_pwm.h>
 #include <zjs_util.h>
 
-static int zjs_a101_num_to_gpio(int num)
+static void zjs_a101_num_to_gpio(uint32_t num, int *dev, int *pin)
 {
+    *dev = 0;
     if ((num >= 0 && num <= 3) || (num >= 15 && num <= 20) ||
-        num == 8 || num == 12 || num == 26)
-        return num;
+        num == 8 || num == 12 || num == 26) {
+        *pin = num;
+        return;
+    }
     // not supported, at least currently
-    return -1;
+    *pin = -1;
 }
 
-static int zjs_a101_num_to_pwm(int num)
+static void zjs_a101_num_to_pwm(uint32_t num, int *dev, int *pin)
 {
-    if (num < 0)
-        return -1;
-    if (num < 4)
+    *dev = 0;
+    if (num < 0) {
+        *pin = -1;
+        return;
+    }
+    if (num < 4) {
         // support directly giving channel number 0-3
-        return num;
-    if (num >= 0x20 && num <= 0x23)
+        *pin = num;
+        return;
+    }
+    if (num >= 0x20 && num <= 0x23) {
         // support PWM0 through PWM3
-        return num - 0x20;
+        *pin = num - 0x20;
+        return;
+    }
     
     switch (num) {
     case 17:  // IO3
-        return 0;
+        *pin = 0;
     case 15:  // IO5
-        return 1;
+        *pin = 0;
     case 12:  // IO6
-        return 2;
+        *pin = 2;
     case 13:  // IO9
-        return 3;
+        *pin = 3;
 
     default:
-        return -1;
+        *pin = -1;
     }
 }
 
@@ -90,5 +100,3 @@ jerry_value_t zjs_a101_init()
 
     return obj;
 }
-
-#endif

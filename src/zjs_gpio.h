@@ -5,7 +5,7 @@
 
 #include "jerry-api.h"
 
-extern int (*zjs_gpio_convert_pin)(int num);
+extern void (*zjs_gpio_convert_pin)(uint32_t orig, int *dev, int *pin);
 
 jerry_value_t zjs_gpio_init();
 
