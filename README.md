@@ -101,7 +101,7 @@ output. To flash this to your device with dfu-util, first press the Master Reset
 button on your Arduino 101, and about three seconds later type:
 
 ```
-$ make flash
+$ make dfu
 ```
 
 There is a window of about five seconds where the DFU server is available,
