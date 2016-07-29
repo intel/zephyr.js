@@ -24,6 +24,8 @@
 #define ZJS_BLE_RESULT_INVALID_ATTRIBUTE_LENGTH     BT_ATT_ERR_INVALID_ATTRIBUTE_LEN
 #define ZJS_BLE_RESULT_UNLIKELY_ERROR               BT_ATT_ERR_UNLIKELY
 
+#define ZJS_BLE_TIMEOUT_TICKS                       500
+
 struct nano_sem zjs_ble_nano_sem;
 
 static struct bt_gatt_ccc_cfg zjs_ble_blvl_ccc_cfg[CONFIG_BLUETOOTH_MAX_PAIRED] = {};
@@ -256,7 +258,10 @@ static ssize_t zjs_ble_read_attr_callback(struct bt_conn *conn,
         zjs_queue_callback(&chrc->read_cb.zjs_cb);
 
         // block until result is ready
-        nano_fiber_sem_take(&zjs_ble_nano_sem, TICKS_UNLIMITED);
+        if (!nano_fiber_sem_take(&zjs_ble_nano_sem, ZJS_BLE_TIMEOUT_TICKS)) {
+            PRINT("zjs_ble_read_attr_callback: JS callback timed out\n");
+            return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
+        }
 
         if (chrc->read_cb.error_code == ZJS_BLE_RESULT_SUCCESS) {
             if (chrc->read_cb.buffer && chrc->read_cb.buffer_size > 0) {
@@ -375,7 +380,10 @@ static ssize_t zjs_ble_write_attr_callback(struct bt_conn *conn,
         zjs_queue_callback(&chrc->write_cb.zjs_cb);
 
         // block until result is ready
-        nano_fiber_sem_take(&zjs_ble_nano_sem, TICKS_UNLIMITED);
+        if (!nano_fiber_sem_take(&zjs_ble_nano_sem, ZJS_BLE_TIMEOUT_TICKS)) {
+            PRINT("zjs_ble_write_attr_callback: JS callback timed out\n");
+            return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
+        }
 
         if (chrc->write_cb.error_code == ZJS_BLE_RESULT_SUCCESS) {
             return len;
