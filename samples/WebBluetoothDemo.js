@@ -28,6 +28,20 @@ TemperatureCharacteristic._onChange = null;
 var pinA0 = aio.open({ device: 0, pin: pins.A0 });
 
 TemperatureCharacteristic.onReadRequest = function(offset, callback) {
+    if (!this._lastValue) {
+        var rawValue = pinA0.read();
+        if (rawValue == 0) {
+            print("PinA: invalid temperature value");
+            callback(this.RESULT_UNLIKELY_ERROR, null);
+            return;
+        }
+
+        var voltage = (rawValue / 4096.0) * 3.3;
+        var celsius = (voltage - 0.5) * 100 + 0.5;
+        this._lastValue = celsius;
+    }
+
+    print("Temperature read: " + this._lastValue);
     var data = new Buffer(1);
     data.writeUInt8(this._lastValue);
     callback(this.RESULT_SUCCESS, data);
@@ -80,7 +94,7 @@ ColorCharacteristic.ledB = pwm.open({channel: pins.IO6, period: 0.256,
                                      pulseWidth: 0});
 
 ColorCharacteristic.onReadRequest = function(offset, callback) {
-    print("led value: " + this._value.toString('hex'));
+    print("LED read: " + this._value.toString('hex'));
     callback(this.RESULT_SUCCESS, this._value);
 };
 
@@ -144,7 +158,7 @@ ble.on('accept', function(clientAddress) {
         var voltage = (data / 4096.0) * 3.3;
         var celsius = (voltage - 0.5) * 100 + 0.5;
 
-        print("Temperature change " + celsius);
+        print("Temperature change: " + celsius);
         TemperatureCharacteristic.valueChange(celsius);
     });
 });
