@@ -27,6 +27,20 @@ TemperatureCharacteristic._onChange = null;
 var tmp36 = aio.open({ device: 0, pin: pins.A0 });
 
 TemperatureCharacteristic.onReadRequest = function(offset, callback) {
+    if (!this._lastValue) {
+        var rawValue = pinA0.read();
+        if (rawValue == 0) {
+            print("PinA: invalid temperature value");
+            callback(this.RESULT_UNLIKELY_ERROR, null);
+            return;
+        }
+
+        var voltage = (rawValue / 4096.0) * 3.3;
+        var celsius = (voltage - 0.5) * 100 + 0.5;
+        this._lastValue = celsius;
+    }
+
+    print("Temperature: " + this._lastValue);
     var data = new Buffer(1);
     data.writeUInt8(this._lastValue);
     callback(this.RESULT_SUCCESS, data);
