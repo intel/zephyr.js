@@ -99,12 +99,6 @@ static bool delete_timer(int32_t id)
     return false;
 }
 
-static void timer_free(const uintptr_t native_p)
-{
-    struct zjs_timer_t* handle = (struct zjs_timer_t*)native_p;
-    delete_timer(handle->callback_id);
-}
-
 static jerry_value_t add_timer_helper(const jerry_value_t function_obj_val,
                                       const jerry_value_t this_val,
                                       const jerry_value_t args_p[],
@@ -127,7 +121,7 @@ static jerry_value_t add_timer_helper(const jerry_value_t function_obj_val,
         PRINT ("native_set_interval_handler: timer alloc failed\n");
         return zjs_error("native_set_interval_handler: timer alloc failed");
     }
-    jerry_set_object_native_handle(timer_obj, (uintptr_t)handle, timer_free);
+    jerry_set_object_native_handle(timer_obj, (uintptr_t)handle, NULL);
 
     return timer_obj;
 }
