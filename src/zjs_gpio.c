@@ -53,7 +53,6 @@ static void gpio_c_callback(void* h)
     struct gpio_handle *handle = (struct gpio_handle*)h;
     jerry_value_t onchange_func = zjs_get_property(handle->pin_obj, "onchange");
 
-
     // If pin.onChange exists, call it
     if (jerry_value_is_function(onchange_func)) {
         jerry_value_t args[1];
@@ -314,11 +313,11 @@ static jerry_value_t zjs_gpio_open(const jerry_value_t function_obj_val,
 
     if (!dirOut) {
         // Zephyr ISR callback init
-        gpio_init_callback(&handle->callback, gpio_zephyr_callback, BIT(pin));
+        gpio_init_callback(&handle->callback, gpio_zephyr_callback, BIT(newpin));
         gpio_add_callback(zjs_gpio_dev[devnum], &handle->callback);
-        gpio_pin_enable_callback(zjs_gpio_dev[devnum], pin);
+        gpio_pin_enable_callback(zjs_gpio_dev[devnum], newpin);
 
-        handle->pin = pin;
+        handle->pin = newpin;
         handle->pin_obj = jerry_acquire_value(pinobj);
         // Register a C callback (will be called after the ISR is called)
         handle->callbackId = zjs_add_c_callback(handle, gpio_c_callback);
