@@ -84,7 +84,7 @@ dfu-arc:
 	dfu-util -a sensor_core -D arc/outdir/zephyr.bin
 
 # Flash both
-.PHONE: dfu-all
+.PHONY: dfu-all
 dfu-all: dfu dfu-arc
 
 # Generate the script file from the JS variable
@@ -112,6 +112,21 @@ else
 	cd arc/; make BOARD=arduino_101_sss_factory
 endif
 
+# Run debug server over JTAG
+.PHONY: debug
+debug:
+	make -f Makefile.x86 BOARD=arduino_101 debugserver
+
+# Run gdb to connect to debug server for x86
+.PHONY: gdb
+gdb:
+	gdb outdir/zephyr.elf -ex "target remote :3333"
+
+# Run gdb to connect to debug server for ARC
+.PHONY: arcgdb
+arcgdb:
+	$$ZEPHYR_SDK_INSTALL_DIR/sysroots/i686-pokysdk-linux/usr/bin/arc-poky-elf/arc-poky-elf-gdb arc/outdir/zephyr.elf -ex "target remote :3334"
+
 .PHONY: help
 help:
 	@echo "Build targets:"
@@ -121,6 +136,9 @@ help:
 	@echo "    dfu:       Flash the x86 core binary with dfu-util"
 	@echo "    dfu-arc:   Flash the ARC binary with dfu-util"
 	@echo "    dfu-all:   Flash both binaries with dfu-util"
+	@echo "    debug:     Run debug server using JTAG"
+	@echo "    gdb:       Run gdb to connect to debug server for x86"
+	@echo "    arcgdb:    Run gdb to connect to debug server for ARC"
 	@echo "    qemu:      Run QEMU after building"
 	@echo "    clean:     Clean stale build objects"
 	@echo "    setup:     Sets up dependencies"
