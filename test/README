@@ -1,8 +1,0 @@
-Overview of apps here
-======================
-
-iotjs_test - builds our latest jerryscript, iotjs, and libtuv together,
-    so this approximates what we're aiming for
-jerryscript_test - app built with just jerryscript to do basic JS eval
-    with no extra APIs
-memscan - My first Zephyr app - not smarter than a fifth grader
