@@ -11,7 +11,7 @@
 static int zjs_a101_num_to_gpio(int num)
 {
     if ((num >= 0 && num <= 3) || (num >= 15 && num <= 20) ||
-        num == 8 || num == 12)
+        num == 8 || num == 12 || num == 26)
         return num;
     // not supported, at least currently
     return -1;
@@ -66,6 +66,7 @@ jerry_value_t zjs_a101_init()
     // These are two onboard LEDs
     zjs_obj_add_number(obj, 8,  "LED0");
     zjs_obj_add_number(obj, 12, "LED1");  // active low
+    zjs_obj_add_number(obj, 26, "LED2");  // active low, red fault LED
 
     // These cannot currently be used as GPIOs because they are controlled by
     // the ARC side and we don't have support for that. But they can be used as
