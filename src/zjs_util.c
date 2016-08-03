@@ -243,10 +243,19 @@ bool zjs_hex_to_byte(char *buf, uint8_t *byte)
     return true;
 }
 
-int zjs_identity(int num) {
-    // effects: just returns the number passed to it; used as a default
-    //            implementation for pin number conversions
-    return num;
+void zjs_default_convert_pin(uint32_t orig, int *dev, int *pin) {
+    // effects: reads top three bits of orig and writes them to dev and the
+    //            bottom five bits and writes them to pin; thus up to eight
+    //            devices are supported and up to 32 pins each; but if orig is
+    //            0xff, returns 0 for dev and -1 for pin
+    if (orig == 0xff) {
+        *dev = 0;
+        *pin = -1;
+    }
+    else {
+        *dev = (orig & 0xe0) >> 5;
+        *pin = orig & 0x1f;
+    }
 }
 
 jerry_value_t zjs_error(const char *error)

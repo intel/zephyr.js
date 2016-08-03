@@ -22,6 +22,9 @@
 #ifdef CONFIG_BOARD_ARDUINO_101
 #include "zjs_a101_pins.h"
 #endif
+#ifdef CONFIG_BOARD_FRDM_K64F
+#include "zjs_k64f_pins.h"
+#endif
 
 extern const char script[];
 
@@ -40,11 +43,18 @@ void main(int argc, char *argv[])
     // initialize modules
     zjs_modules_init();
 #ifndef QEMU_BUILD
+#ifndef CONFIG_BOARD_FRDM_K64F
     zjs_modules_add("aio", zjs_aio_init);
+#endif
     zjs_modules_add("ble", zjs_ble_init);
     zjs_modules_add("gpio", zjs_gpio_init);
     zjs_modules_add("pwm", zjs_pwm_init);
+#ifdef CONFIG_BOARD_ARDUINO_101
     zjs_modules_add("arduino101_pins", zjs_a101_init);
+#endif
+#ifdef CONFIG_BOARD_FRDM_K64F
+    zjs_modules_add("k64f_pins", zjs_k64f_init);
+#endif
 #endif
 
     size_t len = strlen((char *) script);

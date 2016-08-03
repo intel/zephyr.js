@@ -1,1 +1,1 @@
-print('Hello, world!')
+print('Hello, Zephyr.js world!')

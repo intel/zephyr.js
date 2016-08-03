@@ -1,3 +1,5 @@
+src/zjs_script_gen.c
+.*last_build
 build/
 outdir/
 *.cmd

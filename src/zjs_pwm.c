@@ -13,12 +13,19 @@
 static const char *ZJS_POLARITY_NORMAL = "normal";
 static const char *ZJS_POLARITY_REVERSE = "reverse";
 
-static struct device *zjs_pwm_dev;
+#ifdef CONFIG_BOARD_FRDM_K64F
+#define PWM_DEV_COUNT 4
+#else
+#define PWM_DEV_COUNT 1
+#endif
 
-int (*zjs_pwm_convert_pin)(int num) = zjs_identity;
+static struct device *zjs_pwm_dev[PWM_DEV_COUNT];
 
-static void zjs_pwm_set(uint32_t channel, uint32_t period, uint32_t pulseWidth,
-                        const char *polarity)
+void (*zjs_pwm_convert_pin)(uint32_t orig, int *dev, int *pin) =
+    zjs_default_convert_pin;
+
+static void zjs_pwm_set(int devnum, uint32_t channel, uint32_t period,
+                        uint32_t pulseWidth, const char *polarity)
 {
     // requires: channel is 0-3 on Arduino 101, period is the time in hw cycles
     //             for the on/off cycle to complete, pulse width is the time in
@@ -54,7 +61,7 @@ static void zjs_pwm_set(uint32_t channel, uint32_t period, uint32_t pulseWidth,
         onTime -= 1;
     }
 
-    pwm_pin_set_values(zjs_pwm_dev, channel, onTime, offTime);
+    pwm_pin_set_values(zjs_pwm_dev[devnum], channel, onTime, offTime);
 }
 
 static bool zjs_set_period(jerry_value_t obj_val, double period)
@@ -67,7 +74,8 @@ static bool zjs_set_period(jerry_value_t obj_val, double period)
     zjs_obj_get_uint32(obj_val, "channel", &channel);
     zjs_obj_get_double(obj_val, "pulseWidth", &pulseWidth);
 
-    int newchannel = zjs_pwm_convert_pin(channel);
+    int devnum, newchannel;
+    zjs_pwm_convert_pin(channel, &devnum, &newchannel);
 
     const int BUFLEN = 10;
     char buffer[BUFLEN];
@@ -83,7 +91,7 @@ static bool zjs_set_period(jerry_value_t obj_val, double period)
     uint32_t pulseWidthHW = pulseWidth * sys_clock_hw_cycles_per_sec / 1000;
     uint32_t periodHW = period * sys_clock_hw_cycles_per_sec / 1000;
 
-    zjs_pwm_set(newchannel, periodHW, pulseWidthHW, polarity);
+    zjs_pwm_set(devnum, newchannel, periodHW, pulseWidthHW, polarity);
     return true;
 }
 
@@ -136,7 +144,8 @@ static bool zjs_set_pulse_width(jerry_value_t obj_val, double pulseWidth)
     zjs_obj_get_uint32(obj_val, "channel", &channel);
     zjs_obj_get_double(obj_val, "period", &period);
 
-    int newchannel = zjs_pwm_convert_pin(channel);
+    int devnum, newchannel;
+    zjs_pwm_convert_pin(channel, &devnum, &newchannel);
 
     const int BUFLEN = 10;
     char buffer[BUFLEN];
@@ -153,7 +162,7 @@ static bool zjs_set_pulse_width(jerry_value_t obj_val, double pulseWidth)
     uint32_t pulseWidthHW = pulseWidth * sys_clock_hw_cycles_per_sec / 1000;
     uint32_t periodHW = period * sys_clock_hw_cycles_per_sec / 1000;
 
-    zjs_pwm_set(newchannel, periodHW, pulseWidthHW, polarity);
+    zjs_pwm_set(devnum, newchannel, periodHW, pulseWidthHW, polarity);
     return true;
 }
 
@@ -217,7 +226,8 @@ static jerry_value_t zjs_pwm_open(const jerry_value_t function_obj_val,
         return zjs_error("zjs_pwm_open: missing required field");
     }
 
-    int newchannel = zjs_pwm_convert_pin(channel);
+    int devnum, newchannel;
+    zjs_pwm_convert_pin(channel, &devnum, &newchannel);
     if (newchannel == -1) {
         PRINT("zjs_pwm_open: invalid channel\n");
         return zjs_error("zjs_pwm_open: invalid channel");
@@ -239,7 +249,7 @@ static jerry_value_t zjs_pwm_open(const jerry_value_t function_obj_val,
     uint32_t pulseWidthHW = pulseWidth * sys_clock_hw_cycles_per_sec / 1000;
     uint32_t periodHW = period * sys_clock_hw_cycles_per_sec / 1000;
 
-    zjs_pwm_set(newchannel, periodHW, pulseWidthHW, polarity);
+    zjs_pwm_set(devnum, newchannel, periodHW, pulseWidthHW, polarity);
 
     // create the PWMPin object
     jerry_value_t pin_obj = jerry_create_object();
@@ -261,10 +271,15 @@ static jerry_value_t zjs_pwm_open(const jerry_value_t function_obj_val,
 jerry_value_t zjs_pwm_init()
 {
     // effects: finds the PWM driver and registers the PWM JS object
-    zjs_pwm_dev = device_get_binding("PWM_0");
-    if (!zjs_pwm_dev) {
-        PRINT("zjs_pwm_init: cannot find PWM_0 device\n");
-        return zjs_error("zjs_pwm_init: cannot find PWM_0 device");
+    char devname[10];
+
+    for (int i = 0; i < PWM_DEV_COUNT; i++) {
+        sprintf(devname, "PWM_%d", i);
+        zjs_pwm_dev[i] = device_get_binding(devname);
+        if (!zjs_pwm_dev[i]) {
+            PRINT("zjs_pwm_init: cannot find %s device\n", devname);
+            return zjs_error("zjs_pwm_init: cannot find PWM device");
+        }
     }
 
     // create PWM object

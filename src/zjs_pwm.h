@@ -5,7 +5,7 @@
 
 #include "jerry-api.h"
 
-extern int (*zjs_pwm_convert_pin)(int num);
+extern void (*zjs_pwm_convert_pin)(uint32_t num, int *dev, int *pin);
 
 jerry_value_t zjs_pwm_init();
 
