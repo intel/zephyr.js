@@ -485,8 +485,6 @@ static void zjs_ble_connected(struct bt_conn *conn, uint8_t err)
     } else {
         zjs_ble_default_conn = bt_conn_ref(conn);
         PRINT("Connected\n");
-        // FIXME: temporary fix for BLE bug
-        fiber_sleep(100);
         zjs_ble_queue_dispatch("accept", zjs_ble_accept_call_function, 0);
     }
 }

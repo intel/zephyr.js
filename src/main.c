@@ -65,14 +65,6 @@ void main(int argc, char *argv[])
     // This is needed to make WebBluetooth demo work for now, but breaks all
     //   our other samples if we just do it all the time.
     jerry_value_t global_obj = jerry_get_global_object();
-    double dsleep;
-    int32_t isleep = 0;
-    if (zjs_obj_get_double(global_obj, "zjs_sleep", &dsleep)) {
-        isleep = (int32_t)dsleep;
-        if (isleep) {
-            PRINT("Found magic sleep value: %ld!\n", isleep);
-        }
-    }
     jerry_release_value(global_obj);
     jerry_release_value(code_eval);
     jerry_release_value(result);
@@ -83,10 +75,6 @@ void main(int argc, char *argv[])
 
     while (1) {
         zjs_timers_process_events();
-        if (isleep) {
-            // sleep here temporary fixes the BLE bug
-            task_sleep(isleep);
-        }
         zjs_run_pending_callbacks();
         zjs_service_callbacks();
         // not sure if this is okay, but it seems better to sleep than
