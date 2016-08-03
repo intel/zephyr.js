@@ -44,13 +44,23 @@ void main(int argc, char *argv[])
     zjs_modules_init();
 #ifndef QEMU_BUILD
 #ifndef CONFIG_BOARD_FRDM_K64F
+#ifdef BUILD_MODULE_AIO
     zjs_modules_add("aio", zjs_aio_init);
 #endif
+#endif
+#ifdef BUILD_MODULE_BLE
     zjs_modules_add("ble", zjs_ble_init);
+#endif
+#ifdef BUILD_MODULE_GPIO
     zjs_modules_add("gpio", zjs_gpio_init);
+#endif
+#ifdef BUILD_MODULE_PWM
     zjs_modules_add("pwm", zjs_pwm_init);
+#endif
 #ifdef CONFIG_BOARD_ARDUINO_101
+#ifdef BUILD_MODULE_A101
     zjs_modules_add("arduino101_pins", zjs_a101_init);
+#endif
 #endif
 #ifdef CONFIG_BOARD_FRDM_K64F
     zjs_modules_add("k64f_pins", zjs_k64f_init);
@@ -88,7 +98,9 @@ void main(int argc, char *argv[])
     jerry_release_value(result);
 
 #ifndef QEMU_BUILD
+#ifdef BUILD_MODULE_BLE
     zjs_ble_enable();
+#endif
 #endif
 
     while (1) {

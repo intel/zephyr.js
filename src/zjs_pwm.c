@@ -1,5 +1,5 @@
 // Copyright (c) 2016, Intel Corporation.
-
+#ifdef BUILD_MODULE_PWM
 // Zephyr includes
 #include <zephyr.h>
 #include <pwm.h>
@@ -287,3 +287,4 @@ jerry_value_t zjs_pwm_init()
     zjs_obj_add_function(pwm_obj, zjs_pwm_open, "open");
     return pwm_obj;
 }
+#endif

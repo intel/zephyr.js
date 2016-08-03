@@ -8,11 +8,18 @@ endif
 # Build for x86, default target
 .PHONY: x86
 ifdef JS
-x86: generate
+x86: generate analyze
 else
 x86: setup $(PRE_ACTION)
 endif
 	make -f Makefile.x86 BOARD=$(BOARD) KERNEL=$(KERNEL)
+
+ifdef JS
+.PHONY: analyze
+analyze:
+	@cat src/Makefile.base > src/Makefile
+	@echo "ccflags-y += $(shell ./scripts/analyze.sh $(JS))" >> src/Makefile
+endif
 
 .PHONY: all
 all: x86 arc
@@ -97,7 +104,7 @@ endif
 # Run QEMU target
 .PHONY: qemu
 ifdef JS
-qemu: generate
+qemu: generate analyze
 else
 qemu: setup $(PRE_ACTION)
 endif
