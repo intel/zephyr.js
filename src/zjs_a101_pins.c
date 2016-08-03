@@ -11,8 +11,8 @@
 static void zjs_a101_num_to_gpio(uint32_t num, int *dev, int *pin)
 {
     *dev = 0;
-    if ((num >= 0 && num <= 3) || (num >= 15 && num <= 20) ||
-        num == 8 || num == 12 || num == 26) {
+    // pass through GPIO pin ranges (IO and LED pins, see zjs_aio_init)
+    if ((num >= 8 && num <= 12) || (num >= 15 && num <= 20) || num == 26) {
         *pin = num;
         return;
     }
@@ -72,12 +72,12 @@ jerry_value_t zjs_a101_init()
     zjs_obj_add_number(obj, 15, "IO5");  // doesn't seem to work as output
     zjs_obj_add_number(obj, 20, "IO7");
     zjs_obj_add_number(obj, 16, "IO8");
-    zjs_obj_add_number(obj, 0,  "IO10");
-    zjs_obj_add_number(obj, 3,  "IO11");
-    zjs_obj_add_number(obj, 1,  "IO12");
-    zjs_obj_add_number(obj, 2,  "IO13");
+    zjs_obj_add_number(obj, 11, "IO10");
+    zjs_obj_add_number(obj, 10, "IO11");
+    zjs_obj_add_number(obj, 9,  "IO12");
+    zjs_obj_add_number(obj, 8,  "IO13");  // output also displayed on LED0
 
-    // These are two onboard LEDs
+    // These are onboard LEDs
     zjs_obj_add_number(obj, 8,  "LED0");
     zjs_obj_add_number(obj, 12, "LED1");  // active low
     zjs_obj_add_number(obj, 26, "LED2");  // active low, red fault LED
