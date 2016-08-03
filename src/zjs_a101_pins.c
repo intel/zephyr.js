@@ -37,16 +37,20 @@ static void zjs_a101_num_to_pwm(uint32_t num, int *dev, int *pin)
         *pin = num - 0x20;
         return;
     }
-    
+
     switch (num) {
     case 17:  // IO3
         *pin = 0;
+        break;
     case 15:  // IO5
-        *pin = 0;
+        *pin = 1;
+        break;
     case 12:  // IO6
         *pin = 2;
+        break;
     case 13:  // IO9
         *pin = 3;
+        break;
 
     default:
         *pin = -1;

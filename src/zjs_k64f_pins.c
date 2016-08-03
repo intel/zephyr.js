@@ -32,7 +32,7 @@ jerry_value_t zjs_k64f_init()
 
     zjs_gpio_convert_pin = zjs_k64f_num_to_gpio;
     zjs_pwm_convert_pin = zjs_k64f_num_to_pwm;
-     
+
     jerry_value_t obj = jerry_create_object();
 
     const int PTA = 0x00;
@@ -67,7 +67,7 @@ jerry_value_t zjs_k64f_init()
     // These are onboard switches SW2 and SW3
     zjs_obj_add_number(obj, PTC +  6, "SW2");  // verified (press: falling edge)
     zjs_obj_add_number(obj, PTC + 13, "SW3");  // doesn't work (elsewhere PTA4)
-    
+
     // TODO: More pins at https://developer.mbed.org/platforms/FRDM-K64F/
 
     // PWM pins
