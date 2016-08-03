@@ -19,7 +19,6 @@ able to use tools from ```scripts/``` anywhere.
 - ```samples/``` - Sample JavaScript files that can be built with make JS=<path>.
 - ```scripts/``` - Subdirectory containing tools useful during development.
 - ```src/``` - JS API bindings for JerryScript written directly on top of Zephyr.
-- ```test/``` - Zephyr applications that test various components.
 
 ## Setting up your environment
 Download the [latest Zephyr SDK] (https://nexus.zephyrproject.org/content/repositories/releases/org/zephyrproject/zephyr-sdk/), then:
