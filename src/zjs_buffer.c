@@ -143,7 +143,7 @@ static jerry_value_t zjs_buffer_to_string(const jerry_value_t function_obj_val,
         return zjs_error("zjs_buffer_to_string: unsupported encoding type");
     }
 
-    if (buf && buf->bufsize > 1) {
+    if (buf && buf->bufsize > 0) {
         char hexbuf[buf->bufsize * 2 + 1];
         for (int i=0; i<buf->bufsize; i++) {
             int high = (0xf0 & buf->buffer[i]) >> 4;
