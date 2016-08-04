@@ -1,4 +1,5 @@
 // Copyright (c) 2016, Intel Corporation.
+#ifdef BUILD_MODULE_BLE
 #ifndef QEMU_BUILD
 // Zephyr includes
 #include <zephyr.h>
@@ -1230,4 +1231,5 @@ jerry_value_t zjs_ble_init()
     zjs_obj_add_function(ble_obj, zjs_ble_descriptor, "Descriptor");
     return ble_obj;
 }
+#endif
 #endif

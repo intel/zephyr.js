@@ -1,4 +1,5 @@
 // Copyright (c) 2016, Intel Corporation.
+#ifdef BUILD_MODULE_AIO
 #ifndef QEMU_BUILD
 // Zephyr includes
 #include <misc/util.h>
@@ -377,4 +378,5 @@ jerry_value_t zjs_aio_init()
     return aio_obj;
 }
 
+#endif
 #endif

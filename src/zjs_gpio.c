@@ -1,5 +1,5 @@
 // Copyright (c) 2016, Intel Corporation.
-
+#ifdef BUILD_MODULE_GPIO
 // Zephyr includes
 #include <zephyr.h>
 #include <gpio.h>
@@ -366,3 +366,4 @@ jerry_value_t zjs_gpio_init()
     zjs_obj_add_function(gpio_obj, zjs_gpio_open, "open");
     return gpio_obj;
 }
+#endif
