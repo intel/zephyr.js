@@ -21,26 +21,32 @@ SCRIPT=$1
 
 gpio=$(grep require\([\"\']gpio[\"\']\) $SCRIPT)
 if [ $? -eq 0 ]; then
+    >&2 echo Using module: GPIO
     MODULES+=" -DBUILD_MODULE_GPIO"
 fi
 pwm=$(grep require\([\"\']pwm[\"\']\) $SCRIPT)
 if [ $? -eq 0 ]; then
+    >&2 echo Using module: PWM
     MODULES+=" -DBUILD_MODULE_PWM"
 fi
 uart=$(grep require\([\"\']uart[\"\']\) $SCRIPT)
 if [ $? -eq 0 ]; then
+    >&2 echo Using module: UART
     MODULES+=" -DBUILD_MODULE_UART"
 fi
 ble=$(grep require\([\"\']ble[\"\']\) $SCRIPT)
 if [ $? -eq 0 ]; then
+    >&2 echo Using module: BLE
     MODULES+=" -DBUILD_MODULE_BLE"
 fi
 aio=$(grep require\([\"\']aio[\"\']\) $SCRIPT)
 if [ $? -eq 0 ]; then
+    >&2 echo Using module: AIO
     MODULES+=" -DBUILD_MODULE_AIO"
 fi
 a101=$(grep require\([\"\']arduino101_pins[\"\']\) $SCRIPT)
 if [ $? -eq 0 ]; then
+    >&2 echo Using module: A101 Pins
     MODULES+=" -DBUILD_MODULE_GPIO"
     MODULES+=" -DBUILD_MODULE_PWM"
     MODULES+=" -DBUILD_MODULE_A101"
