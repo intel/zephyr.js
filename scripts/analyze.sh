@@ -47,8 +47,6 @@ fi
 a101=$(grep require\([\"\']arduino101_pins[\"\']\) $SCRIPT)
 if [ $? -eq 0 ]; then
     >&2 echo Using module: A101 Pins
-    MODULES+=" -DBUILD_MODULE_GPIO"
-    MODULES+=" -DBUILD_MODULE_PWM"
     MODULES+=" -DBUILD_MODULE_A101"
 fi
 interval=$(grep setInterval $SCRIPT)
