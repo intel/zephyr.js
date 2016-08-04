@@ -16,7 +16,10 @@
 #include "zjs_util.h"
 
 #define ZJS_BLE_UUID_LEN                            36
-#define ZJS_BLE_CUD_UUID                            "2901"
+#define ZJS_BLE_GATT_PRIMARY_SERVICE_UUID           0x2800
+#define ZJS_BLE_GATT_CHARACTERISTIC_UUID            0x2803
+#define ZJS_BLE_GATT_CUD_UUID                       0x2901
+#define ZJS_BLE_GATT_CCC_UUID                       0x2902
 
 #define ZJS_BLE_RESULT_SUCCESS                      0x00
 #define ZJS_BLE_RESULT_INVALID_OFFSET               BT_ATT_ERR_INVALID_OFFSET
@@ -482,8 +485,6 @@ static void zjs_ble_connected(struct bt_conn *conn, uint8_t err)
     } else {
         zjs_ble_default_conn = bt_conn_ref(conn);
         PRINT("Connected\n");
-        // FIXME: temporary fix for BLE bug
-        fiber_sleep(100);
         zjs_ble_queue_dispatch("accept", zjs_ble_accept_call_function, 0);
     }
 }
@@ -850,7 +851,7 @@ static bool zjs_ble_parse_characteristic(jerry_value_t chrc_obj,
             return false;
         }
 
-        if (!strcmp(desc_uuid, ZJS_BLE_CUD_UUID)) {
+        if (strtoul(desc_uuid, NULL, 16) == ZJS_BLE_GATT_CUD_UUID) {
             // Support CUD only, ignore all other type of descriptors
             jerry_value_t v_value = zjs_get_property(v_desc, "value");
             if (jerry_value_is_string(v_value)) {
@@ -997,7 +998,7 @@ static bool zjs_ble_register_service(struct zjs_ble_service *service)
 
     // SERVICE
     int entry_index = 0;
-    bt_attrs[entry_index].uuid = BT_UUID_GATT_PRIMARY;
+    bt_attrs[entry_index].uuid = zjs_ble_new_uuid_16(ZJS_BLE_GATT_PRIMARY_SERVICE_UUID);
     bt_attrs[entry_index].perm = BT_GATT_PERM_READ;
     bt_attrs[entry_index].read = bt_gatt_attr_read_service;
     bt_attrs[entry_index].user_data = service->uuid;
@@ -1016,7 +1017,7 @@ static bool zjs_ble_register_service(struct zjs_ble_service *service)
 
         chrc_user_data->uuid = ch->uuid;
         chrc_user_data->properties = ch->flags;
-        bt_attrs[entry_index].uuid = BT_UUID_GATT_CHRC;
+        bt_attrs[entry_index].uuid = zjs_ble_new_uuid_16(ZJS_BLE_GATT_CHARACTERISTIC_UUID);
         bt_attrs[entry_index].perm = BT_GATT_PERM_READ;
         bt_attrs[entry_index].read = bt_gatt_attr_read_chrc;
         bt_attrs[entry_index].user_data = chrc_user_data;
@@ -1051,7 +1052,7 @@ static bool zjs_ble_register_service(struct zjs_ble_service *service)
             memset(cud_buffer, 0, sz+1);
 
             jerry_string_to_char_buffer(ch->cud_value, (jerry_char_t *)cud_buffer, sz);
-            bt_attrs[entry_index].uuid = BT_UUID_GATT_CUD;
+            bt_attrs[entry_index].uuid = zjs_ble_new_uuid_16(ZJS_BLE_GATT_CUD_UUID);
             bt_attrs[entry_index].perm = BT_GATT_PERM_READ;
             bt_attrs[entry_index].read = bt_gatt_attr_read_cud;
             bt_attrs[entry_index].user_data = cud_buffer;
@@ -1072,7 +1073,7 @@ static bool zjs_ble_register_service(struct zjs_ble_service *service)
             ccc_user_data->cfg = zjs_ble_blvl_ccc_cfg;
             ccc_user_data->cfg_len = ARRAY_SIZE(zjs_ble_blvl_ccc_cfg);
             ccc_user_data->cfg_changed = zjs_ble_blvl_ccc_cfg_changed;
-            bt_attrs[entry_index].uuid = BT_UUID_GATT_CCC;
+            bt_attrs[entry_index].uuid = zjs_ble_new_uuid_16(ZJS_BLE_GATT_CCC_UUID);
             bt_attrs[entry_index].perm = BT_GATT_PERM_READ | BT_GATT_PERM_WRITE;
             bt_attrs[entry_index].read = bt_gatt_attr_read_ccc;
             bt_attrs[entry_index].write = bt_gatt_attr_write_ccc;
