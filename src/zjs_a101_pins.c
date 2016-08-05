@@ -8,6 +8,7 @@
 #include <zjs_pwm.h>
 #include <zjs_util.h>
 
+#ifdef BUILD_MODULE_GPIO
 static void zjs_a101_num_to_gpio(uint32_t num, int *dev, int *pin)
 {
     *dev = 0;
@@ -19,7 +20,9 @@ static void zjs_a101_num_to_gpio(uint32_t num, int *dev, int *pin)
     // not supported, at least currently
     *pin = -1;
 }
+#endif
 
+#ifdef BUILD_MODULE_PWM
 static void zjs_a101_num_to_pwm(uint32_t num, int *dev, int *pin)
 {
     *dev = 0;
@@ -56,12 +59,17 @@ static void zjs_a101_num_to_pwm(uint32_t num, int *dev, int *pin)
         *pin = -1;
     }
 }
+#endif
 
 jerry_value_t zjs_a101_init()
 {
     // effects: returns an object with Arduino 101 pin mappings
+#ifdef BUILD_MODULE_GPIO
     zjs_gpio_convert_pin = zjs_a101_num_to_gpio;
+#endif
+#ifdef BUILD_MODULE_PWM
     zjs_pwm_convert_pin = zjs_a101_num_to_pwm;
+#endif
 
     jerry_value_t obj = jerry_create_object();
 

@@ -8,12 +8,15 @@
 #include <zjs_pwm.h>
 #include <zjs_util.h>
 
+#ifdef BUILD_MODULE_GPIO
 static void zjs_k64f_num_to_gpio(uint32_t num, int *dev, int *pin)
 {
     // TODO: IMPLEMENT ME!
     zjs_default_convert_pin(num, dev, pin);
 }
+#endif
 
+#ifdef BUILD_MODULE_PWM
 static void zjs_k64f_num_to_pwm(uint32_t num, int *dev, int *pin)
 {
     int devnum = (num & 0xe0) >> 5;
@@ -25,13 +28,17 @@ static void zjs_k64f_num_to_pwm(uint32_t num, int *dev, int *pin)
     // TODO: IMPLEMENT ME!
     zjs_default_convert_pin(num, dev, pin);
 }
+#endif
 
 jerry_value_t zjs_k64f_init()
 {
     // effects: returns an object with FRDM-K64F pin mappings
-
+#ifdef BUILD_MODULE_GPIO
     zjs_gpio_convert_pin = zjs_k64f_num_to_gpio;
+#endif
+#ifdef BUILD_MODULE_PWM
     zjs_pwm_convert_pin = zjs_k64f_num_to_pwm;
+#endif
 
     jerry_value_t obj = jerry_create_object();
 
