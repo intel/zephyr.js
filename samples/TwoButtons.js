@@ -14,32 +14,18 @@ var gpio = require("gpio");
 var pins = require("arduino101_pins");
 
 // pins 8 (LED0) and 12 (LED1) are onboard LEDs on Arduino 101
-var led1 = null;
-var led2 = null;
+var led1 = gpio.open({ pin: pins.LED0, activeLow: false });
+var led2 = gpio.open({ pin: pins.LED1, activeLow: true });
+var btn1 = gpio.open({ pin: pins.IO3, direction: 'in', edge: 'any' });
+var btn2 = gpio.open({ pin: pins.IO4, direction: 'in', edge: 'any' });
 
-gpio.open({ pin: pins.LED0, activeLow: false }).then(function(pin) {
-    led1 = pin;
-});
+// turn off LED #2 initially
+led2.write(false);
 
-gpio.open({ pin: pins.LED1, activeLow: true }).then(function(pin) {
-    led2 = pin;
+btn1.onchange = function (event) {
+    led1.write(event.value);
+};
 
-    // turn off LED #2 initially
-    led2.write(false);
-});
-
-gpio.open({ pin: pins.IO3, direction: 'in', edge: 'any' }).then(function(btn1) {
-    btn1.onchange = function (event) {
-        led1.write(event.value);
-    };
-}).catch(function(error) {
-    print("Error opening GPIO pin");
-});
-
-gpio.open({ pin: pins.IO4, direction: 'in', edge: 'any' }).then(function(btn2) {
-    btn2.onchange = function (event) {
-        led2.write(event.value);
-    };
-}).catch(function(error) {
-    print("Error opening GPIO pin");
-});
+btn2.onchange = function (event) {
+    led2.write(event.value);
+};

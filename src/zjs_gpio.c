@@ -205,7 +205,8 @@ static void post_open_promise(void* h)
 static jerry_value_t zjs_gpio_open(const jerry_value_t function_obj_val,
                                    const jerry_value_t this_val,
                                    const jerry_value_t args_p[],
-                                   const jerry_length_t args_cnt)
+                                   const jerry_length_t args_cnt,
+                                   bool async)
 {
     // requires: arg 0 is an object with these members: pin (int), direction
     //             (defaults to "out"), activeLow (defaults to false),
@@ -289,8 +290,6 @@ static jerry_value_t zjs_gpio_open(const jerry_value_t function_obj_val,
     if (pull == ZJS_PULL_NONE)
         flags |= GPIO_PUD_NORMAL;
 
-    flags |= GPIO_INT_DEBOUNCE;
-
     int rval = gpio_pin_configure(zjs_gpio_dev[devnum], newpin, flags);
     if (rval) {
         PRINT("zjs_gpio_open: error opening GPIO pin #%d! (%d)\n", newpin, rval);
@@ -307,44 +306,68 @@ static jerry_value_t zjs_gpio_open(const jerry_value_t function_obj_val,
     zjs_obj_add_boolean(pinobj, activeLow, "activeLow");
     zjs_obj_add_string(pinobj, edge, "edge");
     zjs_obj_add_string(pinobj, pull, "pull");
+    // TODO: When we implement close, we should release the reference on this
 
-    struct gpio_handle* handle = new_gpio_handle();
+    struct gpio_handle* handle = NULL;
+    if (async || !dirOut)
+        handle = new_gpio_handle();
+
     // Only need the handle if this pin is an input
-
     if (!dirOut) {
         // Zephyr ISR callback init
-        gpio_init_callback(&handle->callback, gpio_zephyr_callback, BIT(newpin));
+        gpio_init_callback(&handle->callback, gpio_zephyr_callback,
+                           BIT(newpin));
         gpio_add_callback(zjs_gpio_dev[devnum], &handle->callback);
         gpio_pin_enable_callback(zjs_gpio_dev[devnum], newpin);
 
         handle->pin = newpin;
-        handle->pin_obj = jerry_acquire_value(pinobj);
+        handle->pin_obj = async ? jerry_acquire_value(pinobj) : pinobj;
         // Register a C callback (will be called after the ISR is called)
         handle->callbackId = zjs_add_c_callback(handle, gpio_c_callback);
         // Set the native handle so we can free it when close() is called
         jerry_set_object_native_handle(pinobj, (uintptr_t)handle, NULL);
     }
 
-    // Promise object to be returned by open(), will have then() and catch() func's
-    jerry_value_t promise_ret = jerry_create_object();
-    handle->open_ret_args = task_malloc(sizeof(jerry_value_t) * 1);
+    if (async) {
+        // Promise obj returned by open(), will have then() and catch() funcs
+        jerry_value_t promise_ret = jerry_create_object();
+        handle->open_ret_args = task_malloc(sizeof(jerry_value_t) * 1);
 
-    // Turn object into a promise
-    handle->promise_id = zjs_make_promise(promise_ret, post_open_promise, (void*)handle);
+        // Turn object into a promise
+        handle->promise_id = zjs_make_promise(promise_ret, post_open_promise,
+                                              (void*)handle);
 
-    // TODO: Can open promise be rejected? For now, rejection is based on if
-    // zjs_gpio_dev is not NULL
-    if (zjs_gpio_dev[devnum]) {
-        handle->open_ret_args[0] = jerry_acquire_value(pinobj);
-        // Fulfill the promise
-        zjs_fulfill_promise(handle->promise_id, handle->open_ret_args, 1);
-    } else {
-        handle->open_ret_args[0] = jerry_acquire_value(zjs_error("GPIO could not be opened"));
-        zjs_reject_promise(handle->promise_id, handle->open_ret_args, 1);
+        // TODO: Can open promise be rejected? For now, rejection is based on if
+        // zjs_gpio_dev is not NULL
+        if (zjs_gpio_dev[devnum]) {
+            handle->open_ret_args[0] = jerry_acquire_value(pinobj);
+            // Fulfill the promise
+            zjs_fulfill_promise(handle->promise_id, handle->open_ret_args, 1);
+        } else {
+            handle->open_ret_args[0] = jerry_acquire_value(zjs_error("GPIO could not be opened"));
+            zjs_reject_promise(handle->promise_id, handle->open_ret_args, 1);
+        }
+
+        return promise_ret;
     }
 
-    // TODO: When we implement close, we should release the reference on this
-    return promise_ret;
+    return pinobj;
+}
+
+static jerry_value_t zjs_gpio_open_sync(const jerry_value_t function_obj_val,
+                                        const jerry_value_t this_val,
+                                        const jerry_value_t args_p[],
+                                        const jerry_length_t args_cnt)
+{
+    return zjs_gpio_open(function_obj_val, this_val, args_p, args_cnt, false);
+}
+
+static jerry_value_t zjs_gpio_open_async(const jerry_value_t function_obj_val,
+                                         const jerry_value_t this_val,
+                                         const jerry_value_t args_p[],
+                                         const jerry_length_t args_cnt)
+{
+    return zjs_gpio_open(function_obj_val, this_val, args_p, args_cnt, true);
 }
 
 jerry_value_t zjs_gpio_init()
@@ -363,7 +386,8 @@ jerry_value_t zjs_gpio_init()
 
     // create GPIO object
     jerry_value_t gpio_obj = jerry_create_object();
-    zjs_obj_add_function(gpio_obj, zjs_gpio_open, "open");
+    zjs_obj_add_function(gpio_obj, zjs_gpio_open_sync, "open");
+    zjs_obj_add_function(gpio_obj, zjs_gpio_open_async, "openAsync");
     return gpio_obj;
 }
 #endif

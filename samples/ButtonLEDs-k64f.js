@@ -11,35 +11,24 @@ print("GPIO test with two LEDs and a button...");
 var gpio = require("gpio");
 var pins = require("k64f_pins");
 
-var pinA = null;
-var pinB = null;
-
 // D0 - D13 will also work as these output pins, if you hook up an LED
-gpio.open({ pin: pins.LEDR }).then(function(pin) {
-    pinA = pin;
-});
-
-gpio.open({ pin: pins.LEDB }).then(function(pin) {
-    pinB = pin;
-});
+var pinA = gpio.open({ pin: pins.LEDR });
+var pinB = gpio.open({ pin: pins.LEDB });
 
 // D0 - D15 will also work as this input pin, if you hook up a button
-gpio.open({ pin: pins.SW2, direction: 'in',
-            edge: 'falling' }).then(function(pin) {
-    // tick is the delay between blinks
-    var tick = 1000, toggle = false;
+var pinIn = gpio.open({ pin: pins.SW2, direction: 'in', edge: 'falling' });
 
-    setInterval(function () {
-        toggle = !toggle;
-        pin.read();
-        pinA.write(toggle);
-        pinB.write(toggle);
-    }, tick);
+// tick is the delay between blinks
+var tick = 1000, toggle = false;
 
-    pin.onchange = function(event) {
-        pinA.write(true);
-        pinB.write(false);
-    };
-}).catch(function(error) {
-    print("Error opening GPIO pin");
-});
+setInterval(function () {
+    toggle = !toggle;
+    pinIn.read();
+    pinA.write(toggle);
+    pinB.write(toggle);
+}, tick);
+
+pinIn.onchange = function(event) {
+    pinA.write(true);
+    pinB.write(false);
+};
