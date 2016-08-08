@@ -19,32 +19,41 @@ MODULES=''
 
 SCRIPT=$1
 
-gpio=$(grep require\([\"\']gpio[\"\']\) $SCRIPT)
+function check_for_require()
+{
+    # effects: checks for a line with requires("gpio"), with single or double
+    #            quotes, and optional whitespace before or after parentheses
+    #          returns success (0) if found
+    rval=$(grep "require *( *['\"]$1['\"] *)" $SCRIPT)
+    return $?
+}
+
+check_for_require gpio
 if [ $? -eq 0 ]; then
     >&2 echo Using module: GPIO
     MODULES+=" -DBUILD_MODULE_GPIO"
 fi
-pwm=$(grep require\([\"\']pwm[\"\']\) $SCRIPT)
+check_for_require pwm
 if [ $? -eq 0 ]; then
     >&2 echo Using module: PWM
     MODULES+=" -DBUILD_MODULE_PWM"
 fi
-uart=$(grep require\([\"\']uart[\"\']\) $SCRIPT)
+check_for_require uart
 if [ $? -eq 0 ]; then
     >&2 echo Using module: UART
     MODULES+=" -DBUILD_MODULE_UART"
 fi
-ble=$(grep require\([\"\']ble[\"\']\) $SCRIPT)
+check_for_require ble
 if [ $? -eq 0 ]; then
     >&2 echo Using module: BLE
     MODULES+=" -DBUILD_MODULE_BLE"
 fi
-aio=$(grep require\([\"\']aio[\"\']\) $SCRIPT)
+check_for_require aio
 if [ $? -eq 0 ]; then
     >&2 echo Using module: AIO
     MODULES+=" -DBUILD_MODULE_AIO"
 fi
-a101=$(grep require\([\"\']arduino101_pins[\"\']\) $SCRIPT)
+check_for_require arduino101_pins
 if [ $? -eq 0 ]; then
     >&2 echo Using module: A101 Pins
     MODULES+=" -DBUILD_MODULE_A101"
