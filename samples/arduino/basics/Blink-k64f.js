@@ -9,15 +9,13 @@ var pins = require("k64f_pins");
 
 // LEDG is the green LED within the RGB LED on the FRDM-K64F
 // 'out' direction is default, could be left out
-gpio.open({pin: pins.D5, direction: 'out'}).then(function(pin) {
-    // remember the current state of the LED
-    var toggle = false;
+var pin = gpio.open({pin: pins.D5, direction: 'out'})
 
-    // schedule a function to run every 1s (1000ms)
-    setInterval(function () {
-        toggle = !toggle;
-        pin.write(toggle);
-    }, 1000);
-}).catch(function(error) {
-    print("Error opening GPIO pin");
-});
+// remember the current state of the LED
+var toggle = false;
+
+// schedule a function to run every 1s (1000ms)
+setInterval(function () {
+    toggle = !toggle;
+    pin.write(toggle);
+}, 1000);

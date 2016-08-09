@@ -9,15 +9,13 @@ var pins = require("arduino101_pins");
 
 // pin 8 is one of the onboard LEDs on the Arduino 101
 // 'out' direction is default, could be left out
-gpio.open({pin: pins.LED0, direction: 'out'}).then(function(pin) {
-    // remember the current state of the LED
-    var toggle = false;
+var pin = gpio.open({pin: pins.LED0, direction: 'out'});
 
-    // schedule a function to run every 1s (1000ms)
-    setInterval(function () {
-        toggle = !toggle;
-        pin.write(toggle);
-    }, 1000);
-}).catch(function(error) {
-    print("Error opening GPIO pin");
-});
+// remember the current state of the LED
+var toggle = false;
+
+// schedule a function to run every 1s (1000ms)
+setInterval(function () {
+    toggle = !toggle;
+    pin.write(toggle);
+}, 1000);
