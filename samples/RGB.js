@@ -13,6 +13,8 @@
 
 // Also toggles an onboard LED off and on faster for good measure.
 
+print("RGB LED sample...");
+
 // import gpio module
 var gpio = require("gpio");
 var pins = require("arduino101_pins");
