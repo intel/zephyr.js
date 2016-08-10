@@ -1,12 +1,13 @@
 // Copyright (c) 2016, Intel Corporation.
 
-// Zephyr includes
-#include <zephyr.h>
 #include <string.h>
 
 // ZJS includes
 #include "zjs_util.h"
 
+#ifndef ZJS_LINUX_BUILD
+// Zephyr includes
+#include <zephyr.h>
 // fifo of pointers to zjs_callback objects representing JS callbacks
 struct nano_fifo zjs_callbacks_fifo;
 
@@ -51,6 +52,7 @@ void zjs_run_pending_callbacks()
         cb->call_function(cb);
     }
 }
+#endif
 
 void zjs_set_property(const jerry_value_t obj_val, const char *str_p,
                       const jerry_value_t prop_val)

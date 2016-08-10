@@ -1,7 +1,11 @@
 // Copyright (c) 2016, Intel Corporation.
 
+#ifndef ZJS_LINUX_BUILD
 // Zephyr includes
-#include <zephyr.h>
+#include "zjs_zephyr_time.h"
+#else
+#include "zjs_linux_time.h"
+#endif
 
 #include <string.h>
 
@@ -13,7 +17,7 @@
 #include "zjs_callbacks.h"
 
 struct zjs_timer_t {
-    struct nano_timer timer;
+    struct zjs_port_timer timer;
     void *timer_data;
     uint32_t interval;
     bool repeat;
@@ -50,26 +54,26 @@ static struct zjs_timer_t* add_timer(uint32_t interval,
     int i;
     struct zjs_timer_t *tm;
 
-    tm = task_malloc(sizeof(struct zjs_timer_t));
+    tm = zjs_malloc(sizeof(struct zjs_timer_t));
     if (!tm) {
         PRINT("add_timer: out of memory allocating timer struct\n");
         return NULL;
     }
 
-    nano_timer_init(&tm->timer, &tm->timer_data);
+    zjs_port_timer_init(&tm->timer, &tm->timer_data);
     tm->interval = interval;
     tm->repeat = repeat;
     tm->next = zjs_timers;
     tm->callback_id = zjs_add_callback(callback, tm, pre_timer, NULL);
     tm->args_cnt = cnt;
-    tm->args = task_malloc(sizeof(jerry_value_t) * cnt);
+    tm->args = zjs_malloc(sizeof(jerry_value_t) * cnt);
     for (i = 0; i < cnt; ++i) {
         tm->args[i] = jerry_acquire_value(args[i + 2]);
     }
 
     zjs_timers = tm;
 
-    nano_timer_start(&tm->timer, interval);
+    zjs_port_timer_start(&tm->timer, interval);
     return tm;
 }
 
@@ -86,13 +90,13 @@ static bool delete_timer(int32_t id)
         struct zjs_timer_t *tm = *ptm;
         if (id == tm->callback_id) {
             int i;
-            nano_task_timer_stop(&tm->timer);
+            zjs_port_timer_stop(&tm->timer);
             *ptm = tm->next;
             for (i = 0; i < tm->args_cnt; ++i) {
                 jerry_release_value(tm->args[i]);
             }
-            task_free(tm->args);
-            task_free(tm);
+            zjs_free(tm->args);
+            zjs_free(tm);
             return true;
         }
     }
@@ -179,13 +183,13 @@ static jerry_value_t native_clear_interval_handler(const jerry_value_t function_
 void zjs_timers_process_events()
 {
     for (struct zjs_timer_t *tm = zjs_timers; tm; tm = tm->next) {
-        if (nano_task_timer_test(&tm->timer, TICKS_NONE)) {
+        if (zjs_port_timer_test(&tm->timer, ZJS_TICKS_NONE)) {
             // timer has expired, signal the callback
             zjs_signal_callback(tm->callback_id);
 
             // reschedule or remove timer
             if (tm->repeat) {
-                nano_timer_start(&tm->timer, tm->interval);
+                zjs_port_timer_start(&tm->timer, tm->interval);
             } else {
                 delete_timer(tm->callback_id);
             }

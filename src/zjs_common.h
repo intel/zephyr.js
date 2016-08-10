@@ -4,13 +4,17 @@
 #define __zjs_common_h__
 
 // This file includes code common to both X86 and ARC
-
+#ifndef ZJS_LINUX_BUILD
 #if defined(CONFIG_STDOUT_CONSOLE)
 #include <stdio.h>
 #define PRINT           printf
 #else
 #include <misc/printk.h>
 #define PRINT           printk
+#endif
+#else
+#include <stdio.h>
+#define PRINT           printf
 #endif
 
 // TODO: We should instead have a macro that changes in debug vs. release build,

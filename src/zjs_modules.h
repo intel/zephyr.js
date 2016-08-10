@@ -3,7 +3,9 @@
 #ifndef __zjs_modules_h__
 #define __zjs_modules_h__
 
+#ifndef ZJS_LINUX_BUILD
 #include <zephyr.h>
+#endif
 
 #include "jerry-api.h"
 

@@ -1,7 +1,9 @@
 // Copyright (c) 2016, Intel Corporation.
 
+#ifndef ZJS_LINUX_BUILD
 // Zephyr includes
 #include <zephyr.h>
+#endif
 #include <string.h>
 #include <stdlib.h>
 
@@ -64,7 +66,7 @@ void zjs_modules_init()
 
 void zjs_modules_add(const char *name, InitCB cb)
 {
-    struct modItem *item = (struct modItem *)task_malloc(sizeof(struct modItem));
+    struct modItem *item = (struct modItem *)zjs_malloc(sizeof(struct modItem));
     if (!item) {
         PRINT("Error: out of memory!\n");
         exit(1);

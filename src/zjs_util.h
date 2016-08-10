@@ -16,6 +16,14 @@
 #define DBG_PRINT(fmat ...) do {} while(0);
 #endif
 
+#ifdef ZJS_LINUX_BUILD
+#define zjs_malloc(sz) malloc(sz)
+#define zjs_free(ptr) free(ptr)
+#else
+#define zjs_malloc(sz) task_malloc(sz)
+#define zjs_free(ptr) task_free(ptr)
+#endif
+
 struct zjs_callback;
 
 typedef void (*zjs_cb_wrapper_t)(struct zjs_callback *);

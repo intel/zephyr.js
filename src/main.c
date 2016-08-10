@@ -1,13 +1,17 @@
 // Copyright (c) 2016, Intel Corporation.
-
+#ifndef ZJS_LINUX_BUILD
 // Zephyr includes
 #include <zephyr.h>
-
+#include "zjs_zephyr_time.h"
+#else
+#include "zjs_linux_time.h"
+#endif
 #include <string.h>
 
 // JerryScript includes
 #include "jerry-api.h"
 
+#ifndef ZJS_LINUX_BUILD
 // ZJS includes
 #include "zjs_aio.h"
 #include "zjs_ble.h"
@@ -25,6 +29,7 @@
 #ifdef CONFIG_BOARD_FRDM_K64F
 #include "zjs_k64f_pins.h"
 #endif
+#endif
 
 extern const char script[];
 
@@ -36,12 +41,16 @@ void main(int argc, char *argv[])
     jerry_init(JERRY_INIT_EMPTY);
 
     zjs_timers_init();
+#ifndef ZJS_LINUX_BUILD
     zjs_queue_init();
+#endif
     zjs_buffer_init();
     zjs_init_callbacks();
 
     // initialize modules
     zjs_modules_init();
+
+#ifndef ZJS_LINUX_BUILD
 #ifndef QEMU_BUILD
 #ifndef CONFIG_BOARD_FRDM_K64F
 #ifdef BUILD_MODULE_AIO
@@ -65,7 +74,8 @@ void main(int argc, char *argv[])
 #ifdef CONFIG_BOARD_FRDM_K64F
     zjs_modules_add("k64f_pins", zjs_k64f_init);
 #endif
-#endif
+#endif // QEMU_BUILD
+#endif // ZJS_LINUX_BUILD
 
     size_t len = strlen((char *) script);
 
@@ -89,18 +99,22 @@ void main(int argc, char *argv[])
     jerry_release_value(code_eval);
     jerry_release_value(result);
 
+#ifndef ZJS_LINUX_BUILD
 #ifndef QEMU_BUILD
 #ifdef BUILD_MODULE_BLE
     zjs_ble_enable();
 #endif
 #endif
+#endif // ZJS_LINUX_BUILD
 
     while (1) {
         zjs_timers_process_events();
+#ifndef ZJS_LINUX_BUILD
         zjs_run_pending_callbacks();
+#endif
         zjs_service_callbacks();
         // not sure if this is okay, but it seems better to sleep than
         //   busy wait
-        task_sleep(1);
+        zjs_sleep(1);
     }
 }

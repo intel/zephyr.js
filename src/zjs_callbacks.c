@@ -1,4 +1,6 @@
+#ifndef ZJS_LINUX_BUILD
 #include <zephyr.h>
+#endif
 #include <string.h>
 
 #include "zjs_util.h"
@@ -44,7 +46,7 @@ static int32_t new_id(void)
     int32_t id = 0;
     if (cb_size >= cb_limit) {
         cb_limit += CB_CHUNK_SIZE;
-        struct zjs_callback_map** new_map = task_malloc(sizeof(struct zjs_callback_map**) *
+        struct zjs_callback_map** new_map = zjs_malloc(sizeof(struct zjs_callback_map**) *
                                                         cb_limit);
         if (!new_map) {
             DBG_PRINT("[callbacks] new_id(): Error allocating space for new callback map\n");
@@ -54,7 +56,7 @@ static int32_t new_id(void)
                 CB_CHUNK_SIZE);
         memset(new_map, 0, sizeof(struct zjs_callback_map*) * cb_limit);
         memcpy(new_map, cb_map, sizeof(struct zjs_callback_map*) * cb_size);
-        task_free(cb_map);
+        zjs_free(cb_map);
         cb_map = new_map;
     }
     while (cb_map[id] != NULL) {
@@ -66,7 +68,7 @@ static int32_t new_id(void)
 void zjs_init_callbacks(void)
 {
     if (!cb_map) {
-        cb_map = (struct zjs_callback_map**)task_malloc(sizeof(struct zjs_callback_map*) *
+        cb_map = (struct zjs_callback_map**)zjs_malloc(sizeof(struct zjs_callback_map*) *
                 INITIAL_CALLBACK_SIZE);
         if (!cb_map) {
             DBG_PRINT("[callbacks] zjs_init_callbacks(): Error allocating space for CB map\n");
@@ -90,12 +92,12 @@ int32_t zjs_add_callback(jerry_value_t js_func,
                          zjs_pre_callback_func pre,
                          zjs_post_callback_func post)
 {
-    struct zjs_callback_map* new_cb = task_malloc(sizeof(struct zjs_callback_map));
+    struct zjs_callback_map* new_cb = zjs_malloc(sizeof(struct zjs_callback_map));
     if (!new_cb) {
         DBG_PRINT("[callbacks] zjs_add_callback(): Error allocating space for new callback\n");
         return -1;
     }
-    new_cb->js = task_malloc(sizeof(struct zjs_callback_t));
+    new_cb->js = zjs_malloc(sizeof(struct zjs_callback_t));
     if (!new_cb->js) {
         DBG_PRINT("[callbacks] zjs_add_callback(): Error allocating space for new callback\n");
         return -1;
@@ -122,11 +124,11 @@ void zjs_remove_callback(int32_t id)
     if (id != -1 && cb_map[id]) {
         if (cb_map[id]->type == CALLBACK_TYPE_JS && cb_map[id]->js) {
             jerry_release_value(cb_map[id]->js->js_func);
-            task_free(cb_map[id]->js);
+            zjs_free(cb_map[id]->js);
         } else if (cb_map[id]->c) {
-            task_free(cb_map[id]->c);
+            zjs_free(cb_map[id]->c);
         }
-        task_free(cb_map[id]);
+        zjs_free(cb_map[id]);
         cb_map[id] = NULL;
         cb_size--;
         DBG_PRINT("[callbacks] zjs_remove_callback(): Removing callback id %u\n", id);
@@ -149,12 +151,12 @@ void zjs_signal_callback(int32_t id)
 
 int32_t zjs_add_c_callback(void* handle, zjs_c_callback_func callback)
 {
-    struct zjs_callback_map* new_cb = task_malloc(sizeof(struct zjs_callback_map));
+    struct zjs_callback_map* new_cb = zjs_malloc(sizeof(struct zjs_callback_map));
     if (!new_cb) {
         DBG_PRINT("[callbacks] zjs_add_c_callback(): Error allocating space for new callback\n");
         return -1;
     }
-    new_cb->c = task_malloc(sizeof(struct zjs_c_callback_t));
+    new_cb->c = zjs_malloc(sizeof(struct zjs_c_callback_t));
     if (!new_cb->c) {
         DBG_PRINT("[callbacks] zjs_add_c_callback(): Error allocating space for new callback\n");
         return -1;
