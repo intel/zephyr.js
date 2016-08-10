@@ -1,24 +1,24 @@
 BOARD ?= arduino_101_factory
 KERNEL ?= micro
 
+JS_DEFAULT = samples/HelloWorld.js
+
 ifndef JERRY_BASE
 $(error JERRY_BASE not defined)
 endif
 
 # Build for x86, default target
 .PHONY: x86
-ifdef JS
-x86: generate analyze
-else
-x86: setup $(PRE_ACTION)
-endif
+x86: analyze generate
 	make -f Makefile.x86 BOARD=$(BOARD) KERNEL=$(KERNEL)
 
-ifdef JS
 .PHONY: analyze
 analyze:
 	@cat src/Makefile.base > src/Makefile
+ifdef JS
 	@echo "ccflags-y += $(shell ./scripts/analyze.sh $(JS))" >> src/Makefile
+else
+	@echo "ccflags-y += $(shell ./scripts/analyze.sh $(JS_DEFAULT))" >> src/Makefile
 endif
 
 .PHONY: all
@@ -95,16 +95,18 @@ dfu-arc:
 dfu-all: dfu dfu-arc
 
 # Generate the script file from the JS variable
-ifdef JS
 .PHONY: generate
 generate: setup $(PRE_ACTION)
+ifdef JS
 	./scripts/convert.sh $(JS) src/zjs_script_gen.c
+else
+	./scripts/convert.sh $(JS_DEFAULT) src/zjs_script_gen.c
 endif
 
 # Run QEMU target
 .PHONY: qemu
 ifdef JS
-qemu: generate analyze
+qemu: analyze generate
 else
 qemu: setup $(PRE_ACTION)
 endif
