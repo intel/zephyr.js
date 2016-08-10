@@ -76,7 +76,6 @@ static void gpio_c_callback(void* h)
     } else {
         DBG_PRINT("onChange has not been registered\n");
     }
-    return;
 }
 
 // Callback when a GPIO input fires
@@ -119,7 +118,7 @@ static jerry_value_t zjs_gpio_pin_read(const jerry_value_t function_obj_val,
     int rval = gpio_pin_read(zjs_gpio_dev[devnum], newpin, &value);
     if (rval) {
         PRINT("error: reading from GPIO pin #%d!\n", newpin);
-        return false;
+        return zjs_error("zjs_gpio_pin_read: reading from GPIO");
     }
 
     bool logical = false;

@@ -64,7 +64,7 @@ static void zjs_pwm_set(int devnum, uint32_t channel, uint32_t period,
     pwm_pin_set_values(zjs_pwm_dev[devnum], channel, onTime, offTime);
 }
 
-static bool zjs_set_period(jerry_value_t obj_val, double period)
+static void zjs_set_period(jerry_value_t obj_val, double period)
 {
     // requires: obj is a PWM pin object, period is in milliseconds
     //  effects: sets the PWM pin to the given period, records the period
@@ -92,7 +92,6 @@ static bool zjs_set_period(jerry_value_t obj_val, double period)
     uint32_t periodHW = period * sys_clock_hw_cycles_per_sec / 1000;
 
     zjs_pwm_set(devnum, newchannel, periodHW, pulseWidthHW, polarity);
-    return true;
 }
 
 static jerry_value_t zjs_pwm_pin_set_period_cycles(const jerry_value_t function_obj_val,
@@ -114,7 +113,8 @@ static jerry_value_t zjs_pwm_pin_set_period_cycles(const jerry_value_t function_
     double periodHW = jerry_get_number_value(args_p[0]);
     double period = periodHW / sys_clock_hw_cycles_per_sec * 1000;
 
-    return zjs_set_period(this_val, period);
+    zjs_set_period(this_val, period);
+    return ZJS_UNDEFINED;
 }
 
 static jerry_value_t zjs_pwm_pin_set_period(const jerry_value_t function_obj_val,
@@ -131,10 +131,11 @@ static jerry_value_t zjs_pwm_pin_set_period(const jerry_value_t function_obj_val
         return zjs_error("zjs_pwm_pin_set_period: invalid argument");
     }
 
-    return zjs_set_period(this_val, jerry_get_number_value(args_p[0]));
+    zjs_set_period(this_val, jerry_get_number_value(args_p[0]));
+    return ZJS_UNDEFINED;
 }
 
-static bool zjs_set_pulse_width(jerry_value_t obj_val, double pulseWidth)
+static void zjs_set_pulse_width(jerry_value_t obj_val, double pulseWidth)
 {
     // requires: obj is a PWM pin object, pulseWidth is in milliseconds
     //  effects: sets the PWM pin to the given pulse width, records the pulse
@@ -163,7 +164,6 @@ static bool zjs_set_pulse_width(jerry_value_t obj_val, double pulseWidth)
     uint32_t periodHW = period * sys_clock_hw_cycles_per_sec / 1000;
 
     zjs_pwm_set(devnum, newchannel, periodHW, pulseWidthHW, polarity);
-    return true;
 }
 
 static jerry_value_t zjs_pwm_pin_set_pulse_width_cycles(const jerry_value_t function_obj_val,
@@ -184,7 +184,8 @@ static jerry_value_t zjs_pwm_pin_set_pulse_width_cycles(const jerry_value_t func
     double pulseWidthHW = jerry_get_number_value(args_p[0]);
     double pulseWidth = pulseWidthHW / sys_clock_hw_cycles_per_sec * 1000;
 
-    return zjs_set_pulse_width(this_val, pulseWidth);
+    zjs_set_pulse_width(this_val, pulseWidth);
+    return ZJS_UNDEFINED;
 }
 
 static jerry_value_t zjs_pwm_pin_set_pulse_width(const jerry_value_t function_obj_val,
@@ -200,7 +201,8 @@ static jerry_value_t zjs_pwm_pin_set_pulse_width(const jerry_value_t function_ob
         return zjs_error("zjs_pwm_pin_set_pulse_width: invalid argument");
     }
 
-    return zjs_set_pulse_width(this_val, jerry_get_number_value(args_p[0]));
+    zjs_set_pulse_width(this_val, jerry_get_number_value(args_p[0]));
+    return ZJS_UNDEFINED;
 }
 
 static jerry_value_t zjs_pwm_open(const jerry_value_t function_obj_val,
