@@ -20,12 +20,15 @@ able to use tools from ```scripts/``` anywhere.
 - ```scripts/``` - Subdirectory containing tools useful during development.
 - ```src/``` - JS API bindings for JerryScript written directly on top of Zephyr.
 
-## Setting up your environment
+## One-Time Environment Setup
 Download the [latest Zephyr SDK] (https://nexus.zephyrproject.org/content/repositories/releases/org/zephyrproject/zephyr-sdk/), then:
 ```
 $ chmod +x zephyr-sdk-0.*.*-i686-setup.run
 $ sudo ./zephyr-sdk-0.*.*-i686-setup.run
 ```
+
+From now on, we assume you have cloned this git repo and are working from its
+root directory.
 
 Next, set up the Zephyr SDK environment variables. It is recommended that you
 add the following two lines to your ```.bashrc``` so that you don't have to type
@@ -35,20 +38,26 @@ $ export ZEPHYR_GCC_VARIANT=zephyr
 $ export ZEPHYR_SDK_INSTALL_DIR=/opt/zephyr-sdk
 ```
 
-To check out the other repos Zephyr.js is dependent on:
+This should be done for you automatically by the Makefile now, but to manually
+check out the other repos Zephyr.js depends on:
 
 ```
 $ cd deps
 $ ./getrepos
 ```
 
-Later, to update them to the latest compatible code:
+Later, to manually update them to the latest compatible code:
 ```
 $ cd deps
 $ ./update
 ```
 
-Next, set up the Zephyr OS environment variables:
+## Set Up a New Shell
+
+Whenever you open a new terminal to work with this repo, you need to set up
+environment variables.
+
+First, set up the Zephyr OS variables:
 ```
 $ source deps/zephyr/zephyr-env.sh
 ```
@@ -72,9 +81,9 @@ the expected target.
 
 ### JS Minifier
 
-To save space it is recommended to use a minifier. In convert.sh, the script used
-to encode your JS into a source file, we use uglifyjs. This can be downloaded by
-doing:
+To save space it is recommended to use a minifier. In convert.sh, the script
+used to encode your JS into a source file, we use uglifyjs. This can be
+downloaded by doing:
 ```
 sudo apt-get install node-uglify
 ```
@@ -89,6 +98,39 @@ you (geoff@linux.intel.com). I need to make sure of the license details before
 I add it to the repo.
 
 The default build settings currently expect you to be using the 256KB partition.
+
+## Building system images
+The Zephyr.js project uses a top-level Makefile to control the building of
+code from the project itself as well as the JerryScript and Zephyr projects it
+depends on.
+
+To see the available make commands, type:
+
+```
+$ make help
+```
+
+## Build the ARC image
+On Arduino 101, there are two embedded microcontrollers, an X86 and an ARC one.
+If you only need the x86 side, you can disable ARC with CONFIG_ARC_INIT=n in
+the Zephyr prj.conf. Otherwise, you need a working image running on it.
+
+For the best flexibility in using Zephyr.js, you should build and install our
+project's ARC image. Some of the APIs you can call from JavaScript won't work
+until you have this server image running there (for now this is just AIO API).
+This is because only the ARC MCU can perform certain functions, like converting
+analog inputs to digital values.
+
+We don't change the ARC engine code very often, so you only need to update this
+occasionally. To build and install the ARC image, do this:
+
+```
+$ make arc
+$ make dfu-arc
+```
+
+(As always with DFU, you will need to reset the device a few seconds before you
+attempt the DFU command, or it will fail.)
 
 ## Build the *Hello World* sample
 ```
@@ -105,6 +147,9 @@ $ make dfu
 
 There is a window of about five seconds where the DFU server is available,
 starting a second or two after the device resets.
+
+Now the x86 image on your device has been updated. Press the Master Reset button
+one more time to boot your new image.
 
 ## Build other samples
 The other samples may require some hardware to be set up and connected; read
