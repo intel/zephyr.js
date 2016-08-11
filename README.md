@@ -156,15 +156,6 @@ The other samples may require some hardware to be set up and connected; read
 the top of each JS file, but then simply pass in the path to the JS file to make
 as with ```HelloWorld.js``` above.
 
-## Running JerryScript Unit Tests
-```
-$ cd apps/jerryscript_test/tests/
-$ ./rununittest.sh
-```
-
-This will iterate through the unit tests one by one. After each test completes,
-press Ctrl-x to exit QEMU and continue with the next test.
-
 ## FRDM-K64F Platform
 
 See the [Zephyr Wiki] (https://wiki.zephyrproject.org/view/NXP_FRDM-K64F) for general information about Zephyr on the FRDM-K64F.
