@@ -3,11 +3,19 @@
 // Reimplementation of Arduino - Basics - DigitalReadSerial example
 // * Reads a button state every second and prints it to the serial console
 
-// import gpio module
+// Hardware Requirements
+//   - A button, such as the Grove Kit's Button or Touch module
+// Wiring:
+//   - Wire the device's power to Arduino 3.3V and ground to GND
+//   - Wire the signal pin to IO4
+
 var gpio = require("gpio");
 var pins = require("arduino101_pins");
 
-var pin = gpio.open({pin: pins.IO4, direction: 'in'});
+var pin = gpio.open({
+    pin: pins.IO4,
+    direction: 'in'
+});
 
 // schedule a function to run every 1s (1000)
 setInterval(function () {
