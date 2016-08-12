@@ -55,27 +55,25 @@ static void gpio_c_callback(void* h)
 
     // If pin.onChange exists, call it
     if (jerry_value_is_function(onchange_func)) {
-        jerry_value_t args[1];
         jerry_value_t event = jerry_create_object();
         // Put the boolean GPIO trigger value in the object
         zjs_obj_add_boolean(event, handle->value, "value");
-
-        jerry_value_t event_val = jerry_acquire_value(event);
-        // Set the args
-        // TODO: can we just use event_val directly when calling the JS function?
-        args[0] = event_val;
 
         // Only aquire once, once we have it just keep using it.
         // It will be released in close()
         if (!handle->onchange_func) {
             handle->onchange_func = jerry_acquire_value(onchange_func);
         }
-        jerry_value_t this_val = jerry_create_undefined();
+
         // Call the JS callback
-        jerry_call_function(handle->onchange_func, this_val, args, 1);
+        jerry_call_function(handle->onchange_func, ZJS_UNDEFINED, &event, 1);
+
+        jerry_release_value(event);
     } else {
         DBG_PRINT("onChange has not been registered\n");
     }
+
+    jerry_release_value(onchange_func);
 }
 
 // Callback when a GPIO input fires
