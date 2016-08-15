@@ -46,7 +46,7 @@ printf "const char script[] = \"" >> $OUTPUT
 # No field separator, read whole file (IFS=),
 # no backslash escape (-r),
 # read 1 character at a time (-n1)
-while IFS= read -r -N 1 char
+while IFS= read -r -n 1 char
 do
 	if [ "$char" = "\"" ]; then
 		printf "\\\\$char" >> $OUTPUT
