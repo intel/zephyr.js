@@ -28,8 +28,6 @@ void zjs_queue_callback(struct zjs_callback *cb) {
     nano_fifo_put(&zjs_callbacks_fifo, cb);
 }
 
-int count = 0;
-
 void zjs_run_pending_callbacks()
 {
     // requires: call only from task context
@@ -38,10 +36,8 @@ void zjs_run_pending_callbacks()
     while (1) {
         cb = nano_task_fifo_get(&zjs_callbacks_fifo, TICKS_NONE);
         if (!cb) {
-            count += 1;
             break;
         }
-        count = 0;
 
         if (unlikely(!cb->call_function)) {
             PRINT("error: no JS callback found\n");
@@ -61,11 +57,14 @@ void zjs_set_property(const jerry_value_t obj_val, const char *str_p,
 }
 
 
-jerry_value_t zjs_get_property (const jerry_value_t obj_val, const char *str_p)
+jerry_value_t zjs_get_property(const jerry_value_t obj, const char *name)
 {
-    jerry_value_t prop_name_val = jerry_create_string ((const jerry_char_t *) str_p);
-    jerry_value_t ret_val = jerry_get_property(obj_val, prop_name_val);
-    jerry_release_value(prop_name_val);
+    // requires: obj is an object, name is a property name string
+    //  effects: looks up the property name in obj, and returns it; the value
+    //             will be owned by the caller and must be released
+    jerry_value_t jname = jerry_create_string((const jerry_char_t *)name);
+    jerry_value_t ret_val = jerry_get_property(obj, jname);
+    jerry_release_value(jname);
     return ret_val;
 }
 
