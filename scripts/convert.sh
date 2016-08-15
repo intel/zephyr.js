@@ -47,7 +47,7 @@ else
 fi
 
 printf "/* This file was auto-generated */\n\n" > $OUTPUT
-printf "const char script[] = \"" >> $OUTPUT
+printf "const char script_gen[] = \"" >> $OUTPUT
 
 # No field separator, read whole file (IFS=),
 # no backslash escape (-r),

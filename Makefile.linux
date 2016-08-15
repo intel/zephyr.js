@@ -1,0 +1,41 @@
+ifndef ZJS_BASE
+$(error ZJS_BASE not defined)
+endif
+
+JERRY_BASE ?= $(ZJS_BASE)/deps/jerryscript
+
+.PHONY: all
+all: linux
+
+CORE_SRC = 	src/main.c \
+			src/zjs_buffer.c \
+			src/zjs_callbacks.c \
+			src/zjs_linux_time.c \
+			src/zjs_modules.c \
+			src/zjs_script.c \
+			src/zjs_script_gen.c \
+			src/zjs_timers.c \
+			src/zjs_util.c
+
+CORE_OBJ =	$(CORE_SRC:%.c=%.o)
+
+LINUX_INCLUDES = 	-Isrc/ \
+					-I$(JERRY_BASE)/jerry-core
+
+JERRY_LIBS = 		-ljerry-core -lm
+
+JERRY_LIB_PATH = 	-L$(JERRY_BASE)/build/lib/
+
+LINUX_FLAGS = -std=gnu99
+
+LINUX_DEFINES = -DZJS_LINUX_BUILD
+
+%.o:%.c
+	@echo "Building $@"
+	gcc -c -o $@ $< $(LINUX_INCLUDES) $(LINUX_DEFINES) $(LINUX_FLAGS)
+
+.PHONY: linux
+linux: $(CORE_OBJ)
+	@echo "Building for Linux $(CORE_OBJ)"
+	cd deps/jerryscript; python ./tools/build.py;
+	gcc -o main $(CORE_OBJ) $(JERRY_LIB_PATH) $(JERRY_LIBS) $(LINUX_INCLUDES) $(LINUX_DEFINES) $(LINUX_FLAGS)

@@ -7,22 +7,25 @@
 #include "zjs_linux_time.h"
 #endif
 #include <string.h>
+#include "zjs_script.h"
 
 // JerryScript includes
 #include "jerry-api.h"
+
+// Platform agnostic modules/headers
+#include "zjs_buffer.h"
+#include "zjs_callbacks.h"
+#include "zjs_common.h"
+#include "zjs_modules.h"
+#include "zjs_timers.h"
+#include "zjs_util.h"
 
 #ifndef ZJS_LINUX_BUILD
 // ZJS includes
 #include "zjs_aio.h"
 #include "zjs_ble.h"
-#include "zjs_buffer.h"
-#include "zjs_callbacks.h"
-#include "zjs_common.h"
 #include "zjs_gpio.h"
-#include "zjs_modules.h"
 #include "zjs_pwm.h"
-#include "zjs_timers.h"
-#include "zjs_util.h"
 #ifdef CONFIG_BOARD_ARDUINO_101
 #include "zjs_a101_pins.h"
 #endif
@@ -31,12 +34,16 @@
 #endif
 #endif
 
-extern const char script[];
-
+#ifndef ZJS_LINUX_BUILD
+void main(void)
+#else
 void main(int argc, char *argv[])
+#endif
 {
+    char* script = NULL;
     jerry_value_t code_eval;
     jerry_value_t result;
+    uint32_t len;
 
     jerry_init(JERRY_INIT_EMPTY);
 
@@ -77,13 +84,23 @@ void main(int argc, char *argv[])
 #endif // QEMU_BUILD
 #endif // ZJS_LINUX_BUILD
 
-    size_t len = strlen((char *) script);
+#ifdef ZJS_LINUX_BUILD
+    if (argc > 1) {
+        zjs_read_script(argv[1], &script, &len);
+    } else {
+        zjs_read_script(NULL, &script, &len);
+    }
+#else
+    zjs_read_script(NULL, &script, &len);
+#endif
 
     code_eval = jerry_parse((jerry_char_t *)script, len, false);
     if (jerry_value_has_error_flag(code_eval)) {
         PRINT("JerryScript: cannot parse javascript\n");
         return;
     }
+
+    zjs_free_script(script);
 
     result = jerry_run(code_eval);
     if (jerry_value_has_error_flag(result)) {

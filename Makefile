@@ -21,11 +21,11 @@ analyze:
 .PHONY: all
 all: x86 arc
 
+ifneq ($(MAKECMDGOALS), linux)
 # Check if a clean is needed before building
-ifneq ("$(wildcard .$(BOARD).last_build)", "")
-PRE_ACTION=
-else
+ifeq ("$(wildcard .$(BOARD).last_build)", "")
 PRE_ACTION=clean
+endif
 endif
 
 # Update dependency repos using deps/repos.txt
@@ -126,38 +126,16 @@ gdb:
 arcgdb:
 	$$ZEPHYR_SDK_INSTALL_DIR/sysroots/i686-pokysdk-linux/usr/bin/arc-poky-elf/arc-poky-elf-gdb arc/outdir/zephyr.elf -ex "target remote :3334"
 
-CORE_SRC = 	src/main.c \
-			src/zjs_buffer.c \
-			src/zjs_callbacks.c \
-			src/zjs_linux_time.c \
-			src/zjs_modules.c \
-			src/zjs_script_gen.c \
-			src/zjs_timers.c \
-			src/zjs_util.c
-
-CORE_OBJ =	$(CORE_SRC:%.c=%.o)
-
-LINUX_INCLUDES = 	-Isrc/ \
-					-Ideps/jerryscript/jerry-core
-
-JERRY_LIBS = 		-lrelease.jerry-core -lm
-
-JERRY_LIB_PATH = 	-Ldeps/jerryscript/build/obj/linux/jerry-core/
-
+# Linux target
 .PHONY: linux
-ifneq ($(JS), "")
-linux: generate $(CORE_OBJ)
-else
-linux: $(CORE_OBJ)
+ifeq ("$(wildcard .linux.last_build)", "")
+PRE_ACTION=clean
 endif
-	@echo "Building for Linux $(CORE_OBJ)"
-	cd deps/jerryscript; python ./tools/build.py;
-	gcc -o main $(CORE_OBJ) $(JERRY_LIB_PATH) $(JERRY_LIBS) $(LINUX_INCLUDES) $(LINUX_DEFINES)
-
-LINUX_DEFINES = -DZJS_LINUX_BUILD
-
-%.o:%.c
-	gcc -c -o $@ $< $(LINUX_INCLUDES) $(LINUX_DEFINES) --verbose
+# Linux command line target, script can be specified on the command line
+linux: $(PRE_ACTION) generate
+	rm -f .*.last_build
+	echo "" > .linux.last_build
+	make -f Makefile.linux JS=$(JS)
 
 
 .PHONY: help
@@ -166,6 +144,7 @@ help:
 	@echo "    x86:       Build the main x86 core target (default)"
 	@echo "    arc:       Build the ARC core target"
 	@echo "    all:       Build the x86 and arc targets"
+	@echo "    linux:     Build the Linux target"
 	@echo "    dfu:       Flash the x86 core binary with dfu-util"
 	@echo "    dfu-arc:   Flash the ARC binary with dfu-util"
 	@echo "    dfu-all:   Flash both binaries with dfu-util"
@@ -181,3 +160,11 @@ help:
 	@echo "    BOARD=     Specify a Zephyr board to build for"
 	@echo "    JS=        Specify a JS script to compile into the binary"
 	@echo "    KERNEL=    Specify the kernel to use (micro or nano)"
+	@echo
+	@echo "Notes:"
+	@echo "    - The linux target can be build with or without specifying"
+	@echo "      JS=<script>. If a script is not provided, any script may be"
+	@echo "      passed in on the command line at runtime. If one is provided,"
+	@echo "      it will behave the same as any other target where the script"
+	@echo "      is built into the final image. The linux binary will be built"
+	@echo "      at the root directory and called \"main\""

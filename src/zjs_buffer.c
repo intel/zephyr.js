@@ -179,7 +179,7 @@ jerry_value_t zjs_buffer_create(uint32_t size)
         jerry_release_value(buf_obj);
         zjs_free(buf);
         zjs_free(buf_item);
-        return NULL;
+        return ZJS_UNDEFINED;
     }
 
     buf_item->obj = buf_obj;
