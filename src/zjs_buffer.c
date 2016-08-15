@@ -1,7 +1,9 @@
 // Copyright (c) 2016, Intel Corporation.
 
+#ifndef ZJS_LINUX_BUILD
 // Zephyr includes
 #include <zephyr.h>
+#endif
 
 #include <string.h>
 
@@ -166,9 +168,9 @@ static void zjs_buffer_callback_free(uintptr_t handle)
     struct zjs_buffer_t **pItem = &zjs_buffers;
     while (*pItem) {
         if ((uintptr_t)*pItem == handle) {
-            task_free((*pItem)->buffer);
+            zjs_free((*pItem)->buffer);
             *pItem = (*pItem)->next;
-            task_free((void *)handle);
+            zjs_free((void *)handle);
         }
         pItem = &(*pItem)->next;
     }
@@ -181,15 +183,15 @@ jerry_value_t zjs_buffer_create(uint32_t size)
     //             list item to track it; if any of these fail, free them all
     //             and return NULL, otherwise return the JS object
     jerry_value_t buf_obj = jerry_create_object();
-    void *buf = task_malloc(size);
+    void *buf = zjs_malloc(size);
     struct zjs_buffer_t *buf_item =
-        (struct zjs_buffer_t *)task_malloc(sizeof(struct zjs_buffer_t));
+        (struct zjs_buffer_t *)zjs_malloc(sizeof(struct zjs_buffer_t));
 
     if (!buf_obj || !buf || !buf_item) {
         PRINT("zjs_buffer_create: unable to allocate buffer\n");
         jerry_release_value(buf_obj);
-        task_free(buf);
-        task_free(buf_item);
+        zjs_free(buf);
+        zjs_free(buf_item);
         return NULL;
     }
 

@@ -125,6 +125,40 @@ gdb:
 arcgdb:
 	$$ZEPHYR_SDK_INSTALL_DIR/sysroots/i686-pokysdk-linux/usr/bin/arc-poky-elf/arc-poky-elf-gdb arc/outdir/zephyr.elf -ex "target remote :3334"
 
+CORE_SRC = 	src/main.c \
+			src/zjs_buffer.c \
+			src/zjs_callbacks.c \
+			src/zjs_linux_time.c \
+			src/zjs_modules.c \
+			src/zjs_script_gen.c \
+			src/zjs_timers.c \
+			src/zjs_util.c
+
+CORE_OBJ =	$(CORE_SRC:%.c=%.o)
+
+LINUX_INCLUDES = 	-Isrc/ \
+					-Ideps/jerryscript/jerry-core
+
+JERRY_LIBS = 		-lrelease.jerry-core -lm
+
+JERRY_LIB_PATH = 	-Ldeps/jerryscript/build/obj/linux/jerry-core/
+
+.PHONY: linux
+ifdef JS
+linux: $(CORE_OBJ) generate
+else
+linux: $(CORE_OBJ)
+endif
+	@echo "Building for Linux $(CORE_OBJ)"
+	cd deps/jerryscript; make release.linux -j;
+	gcc -o main $(CORE_OBJ) $(JERRY_LIB_PATH) $(JERRY_LIBS) $(LINUX_INCLUDES) $(LINUX_DEFINES)
+
+LINUX_DEFINES = -DZJS_LINUX_BUILD
+
+%.o:%.c
+	gcc -c -o $@ $< $(LINUX_INCLUDES) $(LINUX_DEFINES) --verbose
+
+
 .PHONY: help
 help:
 	@echo "Build targets:"
