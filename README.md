@@ -8,6 +8,10 @@ This code requires a local copy of JerryScript and Zephyr source, and we
 will upstream code to those projects as appropriate, but this repo is for
 everything else.
 
+## Contributing
+
+If you want to contribute code to the Zephyr.js project, first you need to fork the project. The next step is to send a pull request (PR) for review to the Zephyr.js repository. The PR will be reviewed by the project team members. You need at least two plus-ones (+1) , "Look Good To Me (LGTM)" or other positive signals for the project members. Once you have gained the required signals the project maintainers will merge the PR.
+
 ## File Descriptions
 ```zjs-env.sh``` - Source this file to set environment variables and path to be
 able to use tools from ```scripts/``` anywhere.
