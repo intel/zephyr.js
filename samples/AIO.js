@@ -25,7 +25,7 @@ setInterval(function () {
 }, 1000);
 
 setInterval(function () {
-    pinB.read_async(function(rawValue) {
+    pinB.readAsync(function(rawValue) {
         print("PinB - raw value is: " + rawValue);
     });
 }, 1000);

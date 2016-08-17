@@ -352,7 +352,7 @@ static jerry_value_t zjs_aio_open(const jerry_value_t function_obj_val,
     // create the AIOPin object
     jerry_value_t pinobj = jerry_create_object();
     zjs_obj_add_function(pinobj, zjs_aio_pin_read, "read");
-    zjs_obj_add_function(pinobj, zjs_aio_pin_read_async, "read_async");
+    zjs_obj_add_function(pinobj, zjs_aio_pin_read_async, "readAsync");
     zjs_obj_add_function(pinobj, zjs_aio_pin_abort, "abort");
     zjs_obj_add_function(pinobj, zjs_aio_pin_close, "close");
     zjs_obj_add_function(pinobj, zjs_aio_pin_on, "on");
