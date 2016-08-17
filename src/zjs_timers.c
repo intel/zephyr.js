@@ -110,10 +110,8 @@ static jerry_value_t add_timer_helper(const jerry_value_t function_obj_val,
                                       bool repeat)
 {
     if (args_cnt < 2 || !jerry_value_is_function(args_p[0]) ||
-            !jerry_value_is_number(args_p[1])) {
-        PRINT ("native_set_interval_handler: invalid arguments\n");
+            !jerry_value_is_number(args_p[1]))
         return zjs_error("native_set_interval_handler: invalid arguments");
-    }
 
     uint32_t interval = (uint32_t)(jerry_get_number_value(args_p[1]) / 1000 *
             CONFIG_SYS_CLOCK_TICKS_PER_SEC);
@@ -121,10 +119,8 @@ static jerry_value_t add_timer_helper(const jerry_value_t function_obj_val,
     jerry_value_t timer_obj = jerry_create_object();
 
     struct zjs_timer_t* handle = add_timer(interval, callback, repeat, args_p, args_cnt - 2);
-    if (handle->callback_id == -1) {
-        PRINT ("native_set_interval_handler: timer alloc failed\n");
+    if (handle->callback_id == -1)
         return zjs_error("native_set_interval_handler: timer alloc failed");
-    }
     jerry_set_object_native_handle(timer_obj, (uintptr_t)handle, NULL);
 
     return timer_obj;
@@ -172,10 +168,8 @@ static jerry_value_t native_clear_interval_handler(const jerry_value_t function_
 
     jerry_get_object_native_handle(timer_obj, (uintptr_t*)&handle);
 
-    if (!delete_timer(handle->callback_id)) {
-        PRINT ("native_clear_interval_handler: timer not found\n");
+    if (!delete_timer(handle->callback_id))
         return zjs_error("native_clear_interval_handler: timer not found");
-    }
 
     return jerry_create_undefined();
 }

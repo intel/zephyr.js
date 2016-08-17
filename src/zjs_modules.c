@@ -29,7 +29,6 @@ static jerry_value_t native_require_handler(const jerry_value_t function_obj_val
 
     jerry_value_t arg = args_p[0];
     if (!jerry_value_is_string(arg)) {
-        PRINT ("native_require_handler: invalid arguments\n");
         return zjs_error("native_require_handler: invalid argument");
     }
 
@@ -52,7 +51,7 @@ static jerry_value_t native_require_handler(const jerry_value_t function_obj_val
     }
 
     // Module is not in our list if it gets to this point.
-    PRINT("native_require_handler: module `%s'  not found\n", module);
+    PRINT("MODULE: `%s'\n", module);
     return zjs_error("native_require_handler: module not found");
 }
 
