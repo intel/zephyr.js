@@ -11,7 +11,7 @@
 // Hardware Requirements:
 //   - Arduino 101
 // Wiring:
-//   - Wire IO12 to IO13
+//   - Wire IO11 to IO12
 
 print("Starting AutoButton example...");
 
