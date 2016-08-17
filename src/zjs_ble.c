@@ -293,9 +293,8 @@ static jerry_value_t zjs_ble_write_attr_call_function_return(const jerry_value_t
 {
     if (args_cnt != 1 ||
         !jerry_value_is_number(args_p[0])) {
-        PRINT("zjs_ble_write_attr_call_function_return: invalid arguments\n");
         nano_task_sem_give(&zjs_ble_nano_sem);
-        return true;
+        return zjs_error("zjs_ble_write_attr_call_function_return: invalid arguments");
     }
 
     uintptr_t ptr;
@@ -307,7 +306,7 @@ static jerry_value_t zjs_ble_write_attr_call_function_return(const jerry_value_t
 
     // unblock fiber
     nano_task_sem_give(&zjs_ble_nano_sem);
-    return true;
+    return ZJS_UNDEFINED;
 }
 
 static void zjs_ble_write_attr_call_function(struct zjs_callback *cb)
@@ -406,8 +405,7 @@ static jerry_value_t zjs_ble_update_value_call_function(const jerry_value_t func
 {
     if (args_cnt != 1 ||
         !jerry_value_is_object(args_p[0])) {
-        PRINT("zjs_ble_update_value_call_function: invalid arguments\n");
-        return false;
+        return zjs_error("zjs_ble_update_value_call_function: invalid arguments");
     }
 
     // expects a Buffer object
@@ -424,11 +422,10 @@ static jerry_value_t zjs_ble_update_value_call_function(const jerry_value_t func
             }
         }
 
-        return true;
+        return ZJS_UNDEFINED;
     }
 
-    PRINT("updateValueCallback: buffer not found or empty\n");
-    return false;
+    return zjs_error("updateValueCallback: buffer not found or empty");
 }
 
 static void zjs_ble_subscribe_call_function(struct zjs_callback *cb)
@@ -568,13 +565,12 @@ static jerry_value_t zjs_ble_on(const jerry_value_t function_obj_val,
     if (args_cnt < 2 ||
         !jerry_value_is_string(args_p[0]) ||
         !jerry_value_is_object(args_p[1])) {
-        PRINT("zjs_ble_on: invalid arguments\n");
-        return false;
+        return zjs_error("zjs_ble_on: invalid arguments");
     }
 
     struct zjs_ble_list_item *item = zjs_ble_event_callback_alloc();
     if (!item)
-        return false;
+        return zjs_error("zjs_ble_on: error allocating callback");
 
     char event[20];
     jerry_size_t sz = jerry_get_string_size(args_p[0]);
@@ -589,7 +585,7 @@ static jerry_value_t zjs_ble_on(const jerry_value_t function_obj_val,
     item->zjs_cb.js_callback = jerry_acquire_value(args_p[1]);
     memcpy(item->event_type, event, len);
 
-    return true;
+    return ZJS_UNDEFINED;
 }
 
 static void zjs_ble_adv_start_call_function(struct zjs_callback *cb)
@@ -1103,16 +1099,9 @@ static jerry_value_t zjs_ble_set_services(const jerry_value_t function_obj_val,
 {
     PRINT("setServices has been called\n");
 
-    if (args_cnt < 1 || !jerry_value_is_object(args_p[0]))
-    {
-        PRINT("zjs_ble_set_services: invalid arguments\n");
-        return false;
-    }
-
-    if (args_cnt == 2 && !jerry_value_is_object(args_p[1]))
-    {
-        PRINT("zjs_ble_set_services: invalid arguments\n");
-        return false;
+    if (args_cnt < 1 || !jerry_value_is_object(args_p[0]) ||
+        (args_cnt >= 2 && !jerry_value_is_object(args_p[1]))) {
+        return zjs_error("zjs_ble_set_services: invalid arguments");
     }
 
     // FIXME: currently hard-coded to work with demo
@@ -1223,5 +1212,5 @@ jerry_value_t zjs_ble_init()
     zjs_obj_add_function(ble_obj, zjs_ble_descriptor, "Descriptor");
     return ble_obj;
 }
-#endif
-#endif
+#endif  // QEMU_BUILD
+#endif  // BUILD_MODULE_BLE
