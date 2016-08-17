@@ -161,10 +161,10 @@ static jerry_value_t zjs_gpio_pin_write(const jerry_value_t function_obj_val,
     return ZJS_UNDEFINED;
 }
 
-static bool zjs_gpio_pin_close(const jerry_value_t function_obj_p,
-                               const jerry_value_t this_val,
-                               const jerry_value_t args_p[],
-                               const jerry_length_t args_cnt)
+static jerry_value_t zjs_gpio_pin_close(const jerry_value_t function_obj_p,
+                                        const jerry_value_t this_val,
+                                        const jerry_value_t args_p[],
+                                        const jerry_length_t args_cnt)
 {
     uintptr_t ptr;
     if (jerry_get_object_native_handle(this_val, &ptr)) {
