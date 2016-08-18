@@ -24,12 +24,16 @@ percent()
 INPUT=$1
 OUTPUT=$2
 
-# Check that uglifyjs exists
-which uglifyjs &> /dev/null
-if [ $? == 1 ]; then
-    cat $INPUT > /tmp/gen.tmp
+# uglifyjs seems to have vastly different options between versions,
+# this should work with both
+if which uglifyjs &> /dev/null; then
+    if uglifyjs --version &> /dev/null; then
+        uglifyjs $INPUT -nc -mt > /tmp/gen.tmp
+    else
+        uglifyjs -nc -mt $INPUT > /tmp/gen.tmp
+    fi
 else
-    uglifyjs $INPUT > /tmp/gen.tmp
+    cat $INPUT > /tmp/gen.tmp
 fi
 
 COUNT=0
@@ -51,11 +55,11 @@ printf "const char script[] = \"" >> $OUTPUT
 while IFS= read $FLAGS char
 do
 	if [ "$char" = "\"" ]; then
-		printf "\\\\$char" >> $OUTPUT
+	    printf "\\\\$char" >> $OUTPUT
 	elif [ "$char" = $'\n' ]; then
-	   printf "\\\n\"$char\"" >> $OUTPUT
+	    printf "\\\n\"$char\"" >> $OUTPUT
 	else
-		printf "$char" >> $OUTPUT
+	    printf "$char" >> $OUTPUT
 	fi
 	COUNT=$((COUNT+1))
 	percent $COUNT $SIZE "'$char"
