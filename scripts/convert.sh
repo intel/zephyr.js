@@ -36,8 +36,10 @@ COUNT=0
 
 if [ "$(uname)" == "Darwin" ]; then
     SIZE=$(stat -f%z "$INPUT")
-elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
+    FLAGS="-r -n -1"
+else
     SIZE=$(stat -c%s "$INPUT")
+    FLAGS="-r -N 1"
 fi
 
 printf "/* This file was auto-generated */\n\n" > $OUTPUT
@@ -46,7 +48,7 @@ printf "const char script[] = \"" >> $OUTPUT
 # No field separator, read whole file (IFS=),
 # no backslash escape (-r),
 # read 1 character at a time (-n1)
-while IFS= read -r -n 1 char
+while IFS= read $FLAGS char
 do
 	if [ "$char" = "\"" ]; then
 		printf "\\\\$char" >> $OUTPUT
