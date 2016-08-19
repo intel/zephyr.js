@@ -45,7 +45,7 @@ interface GPIOPin {
 callback ChangeCallback = void (GPIOEvent);
 
 dictionary GPIOEvent {
-    // TODO: probably should add type here, or else return value directly
+    // TODO: probably should add event type here, or else return value directly
     boolean value;
 }
 ```
@@ -74,9 +74,9 @@ The `pull` value is to enable an internal pullup or pulldown resistor. This
 would be used for inputs to provide a default (high or low) when the input is
 floating (not being intentionally driven to a particular value).
 
-Note: Zephyr does not currently use this pull setting, at least for Arduino 101.
-Perhaps there is no hardware support, but in any case it doesn't work. You can
-always provide an external resistor for this purpose instead.
+*NOTE: Zephyr does not currently use this pull setting, at least for Arduino
+101. Perhaps there is no hardware support, but in any case it doesn't work. You
+can always provide an external resistor for this purpose instead.*
 
 The function returns a GPIOPin object that can be used to read or write the pin.
 

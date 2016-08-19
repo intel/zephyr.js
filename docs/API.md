@@ -17,6 +17,10 @@ Communications
 
 Board Support
 -------------
-[Arduino 101](../a101_pins.md)
+[Arduino 101](./a101_pins.md)
 
-[FRDM-K64F](../k64f_pins.md)
+[FRDM-K64F](./k64f_pins.md)
+
+General
+-------
+[Buffer](./buffer.md)

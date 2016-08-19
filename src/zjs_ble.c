@@ -562,6 +562,8 @@ static jerry_value_t zjs_ble_on(const jerry_value_t function_obj_val,
                                 const jerry_value_t args_p[],
                                 const jerry_length_t args_cnt)
 {
+    // arg 0 should be a string event type
+    // arg 1 should be a callback function
     if (args_cnt < 2 ||
         !jerry_value_is_string(args_p[0]) ||
         !jerry_value_is_object(args_p[1])) {
@@ -582,6 +584,8 @@ static jerry_value_t zjs_ble_on(const jerry_value_t function_obj_val,
     event[len] = '\0';
     PRINT("\nEVENT TYPE: %s (%d)\n", event, len);
 
+    // TODO: we should only do this for valid event types; right now we'll
+    //   store anything
     item->zjs_cb.js_callback = jerry_acquire_value(args_p[1]);
     memcpy(item->event_type, event, len);
 
@@ -676,6 +680,9 @@ static jerry_value_t zjs_ble_start_advertising(const jerry_value_t function_obj_
                                                const jerry_value_t args_p[],
                                                const jerry_length_t args_cnt)
 {
+    // arg 0 should be the device name to advertise, e.g. "Arduino101"
+    // arg 1 should be an array of UUIDs (short, 4 hex chars)
+    // arg 2 should be a short URL (typically registered with Google, I think)
     char name[80];
 
     if (args_cnt < 2 ||
@@ -1097,6 +1104,8 @@ static jerry_value_t zjs_ble_set_services(const jerry_value_t function_obj_val,
                                           const jerry_value_t args_p[],
                                           const jerry_length_t args_cnt)
 {
+    // arg 0 should be an array of services
+    // arg 1 is optionally an object, but unused currently (FIXME)
     PRINT("setServices has been called\n");
 
     if (args_cnt < 1 || !jerry_value_is_object(args_p[0]) ||
@@ -1105,7 +1114,7 @@ static jerry_value_t zjs_ble_set_services(const jerry_value_t function_obj_val,
     }
 
     // FIXME: currently hard-coded to work with demo
-    // which has only 1 primary service and 2 characterstics
+    // which has only 1 primary service and 2 characteristics
     // add support for multiple services
     jerry_value_t v_service;
     v_service = jerry_get_property_by_index(args_p[0], 0);

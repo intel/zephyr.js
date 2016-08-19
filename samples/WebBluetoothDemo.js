@@ -119,6 +119,7 @@ ColorCharacteristic.onWriteRequest = function(data, offset, withoutResponse,
     this.ledR.setPulseWidth(this._value.readUInt8(0) / 1000);
     this.ledG.setPulseWidth(this._value.readUInt8(1) / 1000);
     this.ledB.setPulseWidth(this._value.readUInt8(2) / 1000);
+    // TODO: probably only supposed to call this if withoutResponse is false?
     callback(this.RESULT_SUCCESS);
 };
 
@@ -172,4 +173,3 @@ ble.on('disconnect', function(clientAddress) {
 });
 
 print("WebBluetooth Demo with BLE...");
-

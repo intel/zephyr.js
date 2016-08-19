@@ -79,8 +79,8 @@ Returns the latest reading from the pin. Blocks until it gets the result.
 Pass a function for `callback` that will be called later when the result is
 obtained.
 
-Note: This function will probably be replaced with a version that instead
-returns a promise.
+*NOTE: This function will probably be replaced with a version that instead
+returns a promise.*
 
 ### AIOPin.on
 
@@ -97,13 +97,13 @@ discarded and no longer called.
 
 `void abort();`
 
-Note: Does nothing, should be removed for now.
+*NOTE: Does nothing, should be removed for now.*
 
 ### AIOPin.close
 
 `void close();`
 
-Note: Does nothing, should be removed for now.
+*NOTE: Does nothing, should be removed for now.*
 
 Sample Apps
 -----------
