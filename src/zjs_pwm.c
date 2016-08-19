@@ -104,10 +104,8 @@ static jerry_value_t zjs_pwm_pin_set_period_cycles(const jerry_value_t function_
     //             underlying hardware (31.25ns each for Arduino 101)
     //  effects: updates the period of this PWM pin, using the finest grain
     //             units provided by the platform, providing the widest range
-    if (args_cnt < 1 || !jerry_value_is_number(args_p[0])) {
-        PRINT("zjs_pwm_pin_set_period_cycles: invalid argument\n");
+    if (args_cnt < 1 || !jerry_value_is_number(args_p[0]))
         return zjs_error("zjs_pwm_pin_set_period_cycles: invalid argument");
-    }
 
     // convert to milliseconds
     double periodHW = jerry_get_number_value(args_p[0]);
@@ -126,10 +124,8 @@ static jerry_value_t zjs_pwm_pin_set_period(const jerry_value_t function_obj_val
     //             argument, the period in milliseconds (float)
     //  effects: updates the period of this PWM pin, getting as close as
     //             possible to what is requested given hardware constraints
-    if (args_cnt < 1 || !jerry_value_is_number(args_p[0])) {
-        PRINT("zjs_pwm_pin_set_period: invalid argument\n");
+    if (args_cnt < 1 || !jerry_value_is_number(args_p[0]))
         return zjs_error("zjs_pwm_pin_set_period: invalid argument");
-    }
 
     zjs_set_period(this_val, jerry_get_number_value(args_p[0]));
     return ZJS_UNDEFINED;
@@ -175,10 +171,8 @@ static jerry_value_t zjs_pwm_pin_set_pulse_width_cycles(const jerry_value_t func
     //             argument, the pulse width in hardware cycles, dependent on
     //             the underlying hardware (31.25ns each for Arduino 101)
     //  effects: updates the pulse width of this PWM pin
-    if (args_cnt < 1 || !jerry_value_is_number(args_p[0])) {
-        PRINT("zjs_pwm_pin_set_pulse_width_cycles: invalid argument\n");
+    if (args_cnt < 1 || !jerry_value_is_number(args_p[0]))
         return zjs_error("zjs_pwm_pin_set_pulse_width_cycles: invalid argument");
-    }
 
     // convert to milliseconds
     double pulseWidthHW = jerry_get_number_value(args_p[0]);
@@ -196,10 +190,8 @@ static jerry_value_t zjs_pwm_pin_set_pulse_width(const jerry_value_t function_ob
     // requires: this_val is a PWMPin object from zjs_pwm_open, takes one
     //             argument, the pulse width in milliseconds (float)
     //  effects: updates the pulse width of this PWM pin
-    if (args_cnt < 1 || !jerry_value_is_number(args_p[0])) {
-        PRINT("zjs_pwm_pin_set_pulse_width: invalid argument\n");
+    if (args_cnt < 1 || !jerry_value_is_number(args_p[0]))
         return zjs_error("zjs_pwm_pin_set_pulse_width: invalid argument");
-    }
 
     zjs_set_pulse_width(this_val, jerry_get_number_value(args_p[0]));
     return ZJS_UNDEFINED;
@@ -214,26 +206,20 @@ static jerry_value_t zjs_pwm_open(const jerry_value_t function_obj_val,
     //             hardware cycles (defaults to 255), pulse width in hardware
     //             cycles (defaults to 0), polarity (defaults to "normal")
     //  effects: returns a new PWMPin object representing the given channel
-    if (args_cnt < 1 || !jerry_value_is_object(args_p[0])) {
-        PRINT("zjs_pwm_open: invalid argument\n");
+    if (args_cnt < 1 || !jerry_value_is_object(args_p[0]))
         return zjs_error("zjs_pwm_open: invalid argument");
-    }
 
     // data input object
     jerry_value_t data = args_p[0];
 
     uint32_t channel;
-    if (!zjs_obj_get_uint32(data, "channel", &channel)) {
-        PRINT("zjs_pwm_open: missing required field\n");
+    if (!zjs_obj_get_uint32(data, "channel", &channel))
         return zjs_error("zjs_pwm_open: missing required field");
-    }
 
     int devnum, newchannel;
     zjs_pwm_convert_pin(channel, &devnum, &newchannel);
-    if (newchannel == -1) {
-        PRINT("zjs_pwm_open: invalid channel\n");
+    if (newchannel == -1)
         return zjs_error("zjs_pwm_open: invalid channel");
-    }
 
     double period, pulseWidth;
     zjs_obj_get_double(data, "period", &period);
@@ -279,7 +265,7 @@ jerry_value_t zjs_pwm_init()
         sprintf(devname, "PWM_%d", i);
         zjs_pwm_dev[i] = device_get_binding(devname);
         if (!zjs_pwm_dev[i]) {
-            PRINT("zjs_pwm_init: cannot find %s device\n", devname);
+            PRINT("DEVICE: '%s'\n", devname);
             return zjs_error("zjs_pwm_init: cannot find PWM device");
         }
     }

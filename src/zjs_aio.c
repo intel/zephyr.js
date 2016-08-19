@@ -186,17 +186,15 @@ static jerry_value_t zjs_aio_pin_read(const jerry_value_t function_obj_val,
     zjs_obj_get_uint32(this_val, "pin", &pin);
 
     if (pin < ARC_AIO_MIN || pin > ARC_AIO_MAX) {
-        PRINT("zjs_aio_pin_read: pin #%lu out of range\n", pin);
+        PRINT("PIN: #%lu\n", pin);
         return zjs_error("zjs_aio_pin_read: pin out of range");
     }
 
     // send IPM message to the ARC side
     zjs_aio_ipm_send_blocking(TYPE_AIO_PIN_READ, pin, 0);
     // block until reply or timeout
-    if (nano_sem_take(&aio_sem, TICKS_NONE) == 0) {
-        PRINT("zjs_aio_pin_read: reply from ARC timed out!");
+    if (nano_sem_take(&aio_sem, TICKS_NONE) == 0)
         return zjs_error("zjs_aio_pin_read: reply from ARC timed out!");
-    }
 
     double value;
     value = (double) pin_values[pin - ARC_AIO_MIN];
@@ -231,7 +229,6 @@ static jerry_value_t zjs_aio_pin_on(const jerry_value_t function_obj_val,
         !jerry_value_is_string(args_p[0]) ||
         (!jerry_value_is_object(args_p[1]) &&
          !jerry_value_is_null(args_p[1]))) {
-        PRINT("zjs_aio_pin_on: invalid arguments\n");
         return zjs_error("zjs_aio_pin_on: invalid argument");
     }
 
@@ -251,10 +248,8 @@ static jerry_value_t zjs_aio_pin_on(const jerry_value_t function_obj_val,
         item = zjs_aio_callback_alloc();
     }
 
-    if (!item) {
-        PRINT("zjs_aio_pin_on: callback item not available\n");
+    if (!item)
         return zjs_error("zjs_aio_pin_on: callback item not available");
-    }
 
     item->pin_obj = this_val;
     item->zjs_cb.js_callback = jerry_acquire_value(args_p[1]);
@@ -278,10 +273,8 @@ static jerry_value_t zjs_aio_pin_read_async(const jerry_value_t function_obj_val
                                             const jerry_value_t args_p[],
                                             const jerry_length_t args_cnt)
 {
-    if (args_cnt < 1 || !jerry_value_is_function(args_p[0])) {
-        PRINT("zjs_aio_pin_read_async: invalid argument\n");
+    if (args_cnt < 1 || !jerry_value_is_function(args_p[0]))
         return zjs_error("zjs_aio_pin_read_async: invalid argument");
-    }
 
     uint32_t device, pin;
     zjs_obj_get_uint32(this_val, "device", &device);
@@ -292,10 +285,8 @@ static jerry_value_t zjs_aio_pin_read_async(const jerry_value_t function_obj_val
         item = zjs_aio_callback_alloc();
     }
 
-    if (!item) {
-        PRINT("zjs_aio_pin_read_async: callback item not available\n");
+    if (!item)
         return zjs_error("zjs_aio_pin_read_async: callback item not available");
-    }
 
     item->pin_obj = this_val;
     item->zjs_cb.js_callback = jerry_acquire_value(args_p[0]);
@@ -311,24 +302,18 @@ static jerry_value_t zjs_aio_open(const jerry_value_t function_obj_val,
                                   const jerry_value_t args_p[],
                                   const jerry_length_t args_cnt)
 {
-    if (args_cnt < 1 || !jerry_value_is_object(args_p[0])) {
-        PRINT("zjs_aio_open: invalid arguments\n");
+    if (args_cnt < 1 || !jerry_value_is_object(args_p[0]))
         return zjs_error("zjs_aio_open: invalid argument");
-    }
 
     jerry_value_t data = args_p[0];
 
     uint32_t device;
-    if (!zjs_obj_get_uint32(data, "device", &device)) {
-        PRINT("zjs_aio_open: missing required field (device)\n");
+    if (!zjs_obj_get_uint32(data, "device", &device))
         return zjs_error("zjs_aio_open: missing required field (device)");
-    }
 
     uint32_t pin;
-    if (!zjs_obj_get_uint32(data, "pin", &pin)) {
-        PRINT("zjs_aio_open: missing required field (pin)\n");
+    if (!zjs_obj_get_uint32(data, "pin", &pin))
         return zjs_error("zjs_aio_open: missing required field (pin)");
-    }
 
     const int BUFLEN = 32;
     char buffer[BUFLEN];
@@ -344,10 +329,8 @@ static jerry_value_t zjs_aio_open(const jerry_value_t function_obj_val,
     // send IPM message to the ARC side
     zjs_aio_ipm_send_blocking(TYPE_AIO_OPEN, pin, 0);
     // block until reply or timeout
-    if (nano_sem_take(&aio_sem, TICKS_NONE) == 0) {
-        PRINT("zjs_aio_open: reply from ARC timed out!");
+    if (nano_sem_take(&aio_sem, TICKS_NONE) == 0)
         return zjs_error("zjs_aio_open: reply from ARC timed out!");
-    }
 
     // create the AIOPin object
     jerry_value_t pinobj = jerry_create_object();

@@ -58,7 +58,6 @@ void zjs_set_property(const jerry_value_t obj_val, const char *str_p,
     jerry_release_value(name_val);
 }
 
-
 jerry_value_t zjs_get_property(const jerry_value_t obj, const char *name)
 {
     // requires: obj is an object, name is a property name string
@@ -261,5 +260,6 @@ void zjs_default_convert_pin(uint32_t orig, int *dev, int *pin) {
 
 jerry_value_t zjs_error(const char *error)
 {
+    PRINT("%s\n", error);
     return jerry_create_error(JERRY_ERROR_TYPE, (jerry_char_t *)error);
 }
