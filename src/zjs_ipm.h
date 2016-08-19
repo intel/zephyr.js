@@ -12,6 +12,7 @@
 #define MSG_ID_DONE                                        0x00
 #define MSG_ID_AIO                                         0x01
 #define MSG_ID_I2C                                         0x02
+#define MSG_ID_GLCD                                        0x03
 
 // Message flags
 enum {
@@ -44,6 +45,20 @@ enum {
 #define TYPE_I2C_READ                                      0x0013
 #define TYPE_I2C_TRANSFER                                  0x0014
 
+// GROVE_LCD
+#define TYPE_GLCD_INIT                                     0x0020
+#define TYPE_GLCD_PRINT                                    0x0021
+#define TYPE_GLCD_CLEAR                                    0x0022
+#define TYPE_GLCD_SET_CURSOR_POS                           0X0023
+#define TYPE_GLCD_SET_COLOR                                0X0024
+#define TYPE_GLCD_SELECT_COLOR                             0X0025
+#define TYPE_GLCD_SET_FUNCTION                             0X0026
+#define TYPE_GLCD_GET_FUNCTION                             0X0027
+#define TYPE_GLCD_GET_DISPLAY_STATE                        0x0028
+#define TYPE_GLCD_SET_DISPLAY_STATE                        0x0029
+#define TYPE_GLCD_SET_INPUT_STATE                          0x002A
+#define TYPE_GLCD_GET_INPUT_STATE                          0x002B
+
 
 struct zjs_ipm_message {
     uint32_t id;                                           // message id
@@ -67,6 +82,17 @@ struct zjs_ipm_message {
             uint8_t *data;
             uint32_t length;
         } i2c;
+
+        // GROVE_LCD
+        struct glcd_data {
+            uint8_t value;
+            uint8_t col;
+            uint8_t row;
+            uint8_t color_r;
+            uint8_t color_g;
+            uint8_t color_b;
+            void* buffer;
+        } glcd;
     } data;                                                // message data
 };
 

@@ -58,6 +58,11 @@ if [ $? -eq 0 ]; then
     >&2 echo Using module: I2C
     MODULES+=" -DBUILD_MODULE_I2C"
 fi
+check_for_require grove_lcd
+if [ $? -eq 0 ]; then
+    >&2 echo Using module: GROVE_LCD
+    MODULES+=" -DBUILD_MODULE_GROVE_LCD"
+fi
 check_for_require arduino101_pins
 if [ $? -eq 0 ]; then
     >&2 echo Using module: A101 Pins
