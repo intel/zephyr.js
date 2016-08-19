@@ -67,7 +67,7 @@ setup: update
 # Explicit clean
 .PHONY: clean
 clean:
-	@if [ -d deps/zephyr ]; then \
+	@if [ -d deps/zephyr ] && [ -e src/Makefile ]; then \
 		make -f Makefile.x86 clean; \
 	fi
 	@if [ -d deps/jerryscript ]; then \
@@ -75,6 +75,7 @@ clean:
 		make -C $(JERRY_BASE) -f targets/zephyr/Makefile clean; \
 		rm -rf deps/jerryscript/build/$(BOARD)/; \
 	fi
+	rm -f src/*.o
 	cd arc; make clean
 
 # Flash Arduino 101 x86 image
@@ -144,13 +145,13 @@ JERRY_LIBS = 		-lrelease.jerry-core -lm
 JERRY_LIB_PATH = 	-Ldeps/jerryscript/build/obj/linux/jerry-core/
 
 .PHONY: linux
-ifdef JS
-linux: $(CORE_OBJ) generate
+ifneq ($(JS), "")
+linux: generate $(CORE_OBJ)
 else
 linux: $(CORE_OBJ)
 endif
 	@echo "Building for Linux $(CORE_OBJ)"
-	cd deps/jerryscript; make release.linux -j;
+	cd deps/jerryscript; python ./tools/build.py;
 	gcc -o main $(CORE_OBJ) $(JERRY_LIB_PATH) $(JERRY_LIBS) $(LINUX_INCLUDES) $(LINUX_DEFINES)
 
 LINUX_DEFINES = -DZJS_LINUX_BUILD
