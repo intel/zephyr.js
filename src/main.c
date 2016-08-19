@@ -44,7 +44,9 @@ void main(int argc, char *argv[])
 #ifndef ZJS_LINUX_BUILD
     zjs_queue_init();
 #endif
+#ifdef BUILD_MODULE_BUFFER
     zjs_buffer_init();
+#endif
     zjs_init_callbacks();
 
     // initialize modules

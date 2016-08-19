@@ -1,5 +1,5 @@
 // Copyright (c) 2016, Intel Corporation.
-
+#ifdef BUILD_MODULE_BUFFER
 #ifndef ZJS_LINUX_BUILD
 // Zephyr includes
 #include <zephyr.h>
@@ -226,3 +226,4 @@ void zjs_buffer_init()
     jerry_value_t global_obj_val = jerry_get_global_object();
     zjs_obj_add_function(global_obj_val, zjs_buffer, "Buffer");
 }
+#endif // BUILD_MODULE_BUFFER

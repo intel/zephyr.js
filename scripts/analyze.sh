@@ -72,5 +72,10 @@ else
         fi
     fi
 fi
+buffer=$(grep Buffer\([0-9]*\) $SCRIPT)
+if [ $? -eq 0 ]; then
+    >&2 echo Using module: Buffer
+    MODULES+=" -DBUILD_MODULE_BUFFER"
+fi
 
 echo $MODULES
