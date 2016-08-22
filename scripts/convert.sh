@@ -40,7 +40,7 @@ COUNT=0
 
 if [ "$(uname)" == "Darwin" ]; then
     SIZE=$(stat -f%z "$INPUT")
-    FLAGS="-r -n -1"
+    FLAGS="-r -n 1"
 else
     SIZE=$(stat -c%s "$INPUT")
     FLAGS="-r -N 1"
