@@ -54,7 +54,7 @@ void zjs_set_property(const jerry_value_t obj, const char *str,
                       const jerry_value_t prop)
 {
     jerry_value_t name = jerry_create_string((const jerry_char_t *)str);
-    jerry_set_property(obj, name, prop);
+    jerry_release_value(jerry_set_property(obj, name, prop));
     jerry_release_value(name);
 }
 
@@ -75,7 +75,7 @@ void zjs_obj_add_boolean(jerry_value_t obj, bool flag, const char *name)
     //  effects: creates a new field in parent named name, set to value
     jerry_value_t jname = jerry_create_string((const jerry_char_t *)name);
     jerry_value_t jbool = jerry_create_boolean(flag);
-    jerry_set_property(obj, jname, jbool);
+    jerry_release_value(jerry_set_property(obj, jname, jbool));
     jerry_release_value(jname);
     jerry_release_value(jbool);
 }
@@ -92,7 +92,7 @@ void zjs_obj_add_function(jerry_value_t obj, void *func, const char *name)
     jerry_value_t jname = jerry_create_string((const jerry_char_t *)name);
     jerry_value_t jfunc = jerry_create_external_function(func);
     if (jerry_value_is_function(jfunc)) {
-        jerry_set_property(obj, jname, jfunc);
+        jerry_release_value(jerry_set_property(obj, jname, jfunc));
     }
     jerry_release_value(jname);
     jerry_release_value(jfunc);
@@ -104,7 +104,7 @@ void zjs_obj_add_object(jerry_value_t parent, jerry_value_t child,
     // requires: parent and child are existing JS objects
     //  effects: creates a new field in parent named name, that refers to child
     jerry_value_t jname = jerry_create_string((const jerry_char_t *)name);
-    jerry_set_property(parent, jname, child);
+    jerry_release_value(jerry_set_property(parent, jname, child));
     jerry_release_value(jname);
 }
 
@@ -114,7 +114,7 @@ void zjs_obj_add_string(jerry_value_t obj, const char *str, const char *name)
     //  effects: creates a new field in parent named name, set to sval
     jerry_value_t jname = jerry_create_string((const jerry_char_t *)name);
     jerry_value_t jstr = jerry_create_string((const jerry_char_t *)str);
-    jerry_set_property(obj, jname, jstr);
+    jerry_release_value(jerry_set_property(obj, jname, jstr));
     jerry_release_value(jname);
     jerry_release_value(jstr);
 }
@@ -125,7 +125,7 @@ void zjs_obj_add_number(jerry_value_t obj, double num, const char *name)
     //  effects: creates a new field in parent named name, set to nval
     jerry_value_t jname = jerry_create_string((const jerry_char_t *)name);
     jerry_value_t jnum = jerry_create_number(num);
-    jerry_set_property(obj, jname, jnum);
+    jerry_release_value(jerry_set_property(obj, jname, jnum));
     jerry_release_value(jname);
     jerry_release_value(jnum);
 }
@@ -254,3 +254,83 @@ jerry_value_t zjs_error(const char *error)
     PRINT("%s\n", error);
     return jerry_create_error(JERRY_ERROR_TYPE, (jerry_char_t *)error);
 }
+
+#ifdef DEBUG_BUILD
+
+static uint8_t init = 0;
+static int seconds = 0;
+
+#ifdef ZJS_LINUX_BUILD
+#include <time.h>
+
+int zjs_get_sec(void)
+{
+    struct timespec now;
+    clock_gettime(CLOCK_MONOTONIC, &now);
+    if (!init) {
+        seconds = now.tv_sec;
+        init = 1;
+    }
+    return now.tv_sec - seconds;
+}
+
+int zjs_get_ms(void)
+{
+    struct timespec now;
+    clock_gettime(CLOCK_MONOTONIC, &now);
+    if (!init) {
+        seconds = now.tv_sec;
+        init = 1;
+    }
+    return (now.tv_nsec / 1000000);
+}
+
+#else
+
+// Timer granularity
+#define MS_PER_TICK    1000 / CONFIG_SYS_CLOCK_TICKS_PER_SEC
+static struct nano_timer print_timer;
+// Millisecond counter to increment
+static uint32_t milli = 0;
+// Dummy user handle so nano_task_timer_test() works
+static void* dummy = (void*)0xFFFFFFFF;
+
+void update_print_timer(void)
+{
+    if (!init) {
+        nano_timer_init(&print_timer, dummy);
+        nano_timer_start(&print_timer, MS_PER_TICK);
+        init = 1;
+    }
+    if (nano_task_timer_test(&print_timer, TICKS_NONE)) {
+        if (milli >= 100) {
+            milli = 0;
+            seconds++;
+        } else {
+            milli += MS_PER_TICK;
+        }
+        nano_timer_start(&print_timer, MS_PER_TICK);
+    }
+}
+
+int zjs_get_sec(void)
+{
+    if (!init) {
+        nano_timer_init(&print_timer, dummy);
+        nano_timer_start(&print_timer, MS_PER_TICK);
+        init = 1;
+    }
+    return seconds;
+}
+
+int zjs_get_ms(void)
+{
+    if (!init) {
+        nano_timer_init(&print_timer, dummy);
+        nano_timer_start(&print_timer, MS_PER_TICK);
+        init = 1;
+    }
+    return milli;
+}
+#endif // ZJS_LINUX_BUILD
+#endif // DEBUG_BUILD

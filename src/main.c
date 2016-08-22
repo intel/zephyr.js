@@ -24,8 +24,9 @@
 #include "zjs_modules.h"
 #include "zjs_timers.h"
 #include "zjs_util.h"
-
-#include "zjs_ble.h"
+#ifdef BUILD_MODULE_OCF
+#include "zjs_ocf_common.h"
+#endif
 
 extern const char *script_gen;
 
@@ -73,6 +74,10 @@ int main(int argc, char *argv[])
 
     // initialize modules
     zjs_modules_init();
+
+#ifdef BUILD_MODULE_OCF
+    zjs_register_service_routine(NULL, main_poll_routine);
+#endif
 
 #ifdef ZJS_LINUX_BUILD
     if (argc > 1) {
@@ -131,6 +136,7 @@ int main(int argc, char *argv[])
         zjs_run_pending_callbacks();
 #endif
         zjs_service_callbacks();
+        zjs_service_routines();
         // not sure if this is okay, but it seems better to sleep than
         //   busy wait
         zjs_sleep(1);
