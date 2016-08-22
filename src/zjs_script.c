@@ -36,12 +36,6 @@ void zjs_read_script(char* name, char** script, uint32_t* length)
             PRINT("ZJS_ReadScript(): Error seeking to beginning of file\n");
             return;
         }
-        /*
-         * TODO: Do we really want to allocate here? This will require the pool config
-         * to have a size that is big enough to hold the script. Though this may not
-         * matter on embedded targets where the script is embedded in the final binary
-         * as a const char* variable.
-         */
         s = (char*)zjs_malloc(size);
         if (!s) {
             PRINT("ZJS_ReadScript(): Error allocating %u bytes, fatal\n", size);

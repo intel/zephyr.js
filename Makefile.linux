@@ -38,4 +38,4 @@ LINUX_DEFINES = -DZJS_LINUX_BUILD
 linux: $(CORE_OBJ)
 	@echo "Building for Linux $(CORE_OBJ)"
 	cd deps/jerryscript; python ./tools/build.py;
-	gcc -o main $(CORE_OBJ) $(JERRY_LIB_PATH) $(JERRY_LIBS) $(LINUX_INCLUDES) $(LINUX_DEFINES) $(LINUX_FLAGS)
+	gcc -o jslinux -flto $(CORE_OBJ) $(JERRY_LIB_PATH) $(JERRY_LIBS) $(LINUX_INCLUDES) $(LINUX_DEFINES) $(LINUX_FLAGS)

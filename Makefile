@@ -21,9 +21,18 @@ analyze:
 .PHONY: all
 all: x86 arc
 
+# MAKECMDGOALS is a Make variable that is set to the target your building for.
+# This is how we can check if we are building for linux and if a clean is needed.
+# The linux target does not use the BOARD variable, so without this special
+# case, the linux target would clean every time.
 ifneq ($(MAKECMDGOALS), linux)
-# Check if a clean is needed before building
+# Building for Zephyr, check for .$(BOARD).last_build to see if a clean is needed
 ifeq ("$(wildcard .$(BOARD).last_build)", "")
+PRE_ACTION=clean
+endif
+else
+# Building for Linux, check for .linux.last_build to see if a clean is needed
+ifeq ("$(wildcard .linux.last_build)", "")
 PRE_ACTION=clean
 endif
 endif
@@ -49,6 +58,13 @@ update:
 				continue ;; \
 		esac \
 	done < repos.txt
+	@if ! env | grep -q ^ZEPHYR_BASE=; then \
+		echo; \
+		echo "ZEPHYR_BASE has not been set! It must be set to build"; \
+		echo "e.g. export ZEPHYR_BASE=$(ZJS_BASE)/deps/zephyr"; \
+		echo; \
+		exit 1; \
+	fi
 
 # Sets up prj/last_build files
 .PHONY: setup
@@ -128,11 +144,8 @@ arcgdb:
 
 # Linux target
 .PHONY: linux
-ifeq ("$(wildcard .linux.last_build)", "")
-PRE_ACTION=clean
-endif
 # Linux command line target, script can be specified on the command line
-linux: $(PRE_ACTION) generate
+linux: generate
 	rm -f .*.last_build
 	echo "" > .linux.last_build
 	make -f Makefile.linux JS=$(JS)
@@ -161,10 +174,3 @@ help:
 	@echo "    JS=        Specify a JS script to compile into the binary"
 	@echo "    KERNEL=    Specify the kernel to use (micro or nano)"
 	@echo
-	@echo "Notes:"
-	@echo "    - The linux target can be build with or without specifying"
-	@echo "      JS=<script>. If a script is not provided, any script may be"
-	@echo "      passed in on the command line at runtime. If one is provided,"
-	@echo "      it will behave the same as any other target where the script"
-	@echo "      is built into the final image. The linux binary will be built"
-	@echo "      at the root directory and called \"main\""
