@@ -48,7 +48,7 @@ void zjs_run_pending_callbacks()
         cb->call_function(cb);
     }
 }
-#endif
+#endif // ZJS_LINUX_BUILD
 
 void zjs_set_property(const jerry_value_t obj_val, const char *str_p,
                       const jerry_value_t prop_val)

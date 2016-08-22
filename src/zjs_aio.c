@@ -361,5 +361,5 @@ jerry_value_t zjs_aio_init()
     return aio_obj;
 }
 
-#endif
-#endif
+#endif // QEMU_BUILD
+#endif // BUILD_MODULE_AIO

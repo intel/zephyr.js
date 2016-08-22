@@ -379,4 +379,4 @@ jerry_value_t zjs_gpio_init()
     zjs_obj_add_function(gpio_obj, zjs_gpio_open_async, "openAsync");
     return gpio_obj;
 }
-#endif
+#endif // BUILD_MODULE_GPIO

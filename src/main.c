@@ -5,7 +5,7 @@
 #include "zjs_zephyr_time.h"
 #else
 #include "zjs_linux_time.h"
-#endif
+#endif // ZJS_LINUX_BUILD
 #include <string.h>
 
 // JerryScript includes
@@ -25,7 +25,7 @@
 #include "zjs_util.h"
 #ifdef CONFIG_BOARD_ARDUINO_101
 #include "zjs_a101_pins.h"
-#endif
+#endif // ZJS_LINUX_BUILD
 #ifdef CONFIG_BOARD_FRDM_K64F
 #include "zjs_k64f_pins.h"
 #endif
