@@ -84,7 +84,7 @@ open.
 
 The `polarity` value should flip the signal if set to 'reverse', meaning the
 signal will be off (low) for the pulseWidth, and back on (high) for the rest of
-the period. Note: This doesn't seem to work currently on Arduino 101.
+the period. *NOTE: This doesn't seem to work currently on Arduino 101.*
 
 The function returns a PWMPin object that can be used to change the period and
 pulse width later.
@@ -96,8 +96,9 @@ pulse width later.
 Sets the repeat period for the pulse signal. It is given in milliseconds, so
 these can be fractional to provide microsecond timings, etc. The actual
 resolution available will depend on the hardware, so the value you provide may
-get rounded. TODO: We could probably have the period attribute show the actual
-setting for the device when it is read back.
+get rounded.
+*TODO: We could probably have the period attribute show the actual setting for
+the device when it is read back.*
 
 This version of the API is useful when the timing of the pulse matters (e.g.
 the 'servo' model of PWM control described in the
@@ -124,8 +125,8 @@ far faster than visible to the human eye.
 Sets the pulse width for the signal. It is given in milliseconds, so these can
 be fractional to provide microsecond timings, etc. The actual resolution
 available will depend on the hardware, so the value you provide may get rounded.
-TODO: We could probably have the pulseWidth attribute show the actual
-setting for the device when it is read back.
+*TODO: We could probably have the pulseWidth attribute show the actual
+setting for the device when it is read back.*
 
 This version of the API is useful when the timing of the pulse matters (e.g.
 the 'servo' model of PWM control described in the
