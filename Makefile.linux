@@ -3,16 +3,20 @@ $(error ZJS_BASE not defined)
 endif
 
 JERRY_BASE ?= $(ZJS_BASE)/deps/jerryscript
+OCF_ROOT ?= deps/iotivity-constrained
 
 .PHONY: all
 all: linux
 
-CORE_SRC = 	src/main.c \
-			src/zjs_buffer.c \
+CORE_SRC = 	src/zjs_buffer.c \
 			src/zjs_callbacks.c \
 			src/zjs_event.c \
 			src/zjs_linux_time.c \
 			src/zjs_modules.c \
+			src/zjs_ocf_common.c \
+			src/zjs_ocf_client.c \
+			src/zjs_ocf_server.c \
+			src/zjs_promise.c \
 			src/zjs_script.c \
 			src/zjs_script_gen.c \
 			src/zjs_timers.c \
@@ -21,7 +25,12 @@ CORE_SRC = 	src/main.c \
 CORE_OBJ =	$(CORE_SRC:%.c=%.o)
 
 LINUX_INCLUDES = 	-Isrc/ \
-					-I$(JERRY_BASE)/jerry-core
+				-I$(JERRY_BASE)/jerry-core \
+				-I$(OCF_ROOT)/deps/tinydtls \
+				-I$(OCF_ROOT) \
+				-I$(OCF_ROOT)/port/linux \
+				-I$(OCF_ROOT)/include \
+				-include $(OCF_ROOT)/port/linux/config.h
 
 JERRY_LIBS = 		-ljerry-core -lm
 
@@ -29,18 +38,37 @@ JERRY_LIB_PATH = 	-L$(JERRY_BASE)/build/lib/
 
 LINUX_FLAGS = -std=gnu99 -Wpointer-sign
 
-LINUX_DEFINES = -DZJS_LINUX_BUILD -DBUILD_MODULE_EVENTS
+LINUX_LIB_PATH = -L.
+
+LINUX_LIBS = -locf -lm -pthread
+
+LINUX_DEFINES = -DZJS_LINUX_BUILD -DOC_CLIENT -DOC_SERVER -DBUILD_MODULE_OCF -DBUILD_MODULE_EVENTS
+
+CFLAGS=-fno-asynchronous-unwind-tables -fno-omit-frame-pointer -Wall -Wno-format-zero-length -Wno-main -ffreestanding -Os -fno-stack-protector -ffunction-sections -fdata-sections -Wno-unused-but-set-variable -fno-reorder-functions -fno-defer-pop -Wno-pointer-sign -fno-strict-overflow -Werror=implicit-int -Wall -std=gnu99 #-Wl,-Map,client.map
 
 ifeq ($(VARIANT), debug)
 LINUX_DEFINES += -DDEBUG_BUILD
+LINUX_FLAGS += -g
+CFLAGS += -g
+DEBUG=1
+else
+DEBUG=0
 endif
+
+.PHONY: ocf-setup
+ocf-setup:
+	make -f Makefile.ocf ocf-lib DEBUG=$(DEBUG) SECURE=0
 
 %.o:%.c
 	@echo "Building $@"
 	gcc -c -o $@ $< $(LINUX_INCLUDES) $(LINUX_DEFINES) $(LINUX_FLAGS)
 
 .PHONY: linux
-linux: $(CORE_OBJ)
+linux: ocf-setup $(CORE_OBJ)
 	@echo "Building for Linux $(CORE_OBJ)"
 	cd deps/jerryscript; python ./tools/build.py;
-	gcc -o jslinux -flto $(CORE_OBJ) $(JERRY_LIB_PATH) $(JERRY_LIBS) $(LINUX_INCLUDES) $(LINUX_DEFINES) $(LINUX_FLAGS)
+	gcc -static src/main.c $(CORE_OBJ) $(LINUX_INCLUDES) $(CFLAGS) $(LINUX_DEFINES) $(JERRY_LIB_PATH) $(JERRY_LIBS) $(LINUX_LIBS) $(LINUX_LIB_PATH) -o jslinux
+
+.PHONY: clean
+clean:
+	make -f Makefile.ocf clean

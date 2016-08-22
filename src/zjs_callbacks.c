@@ -61,8 +61,8 @@ static int32_t new_id(void)
             DBG_PRINT("error allocating space for new callback map\n");
             return -1;
         }
-        DBG_PRINT("callback list size too small, increasing by %d\n",
-                  CB_CHUNK_SIZE);
+        DBG_PRINT("callback list size %ld too small, increasing by %d\n",
+                  cb_size, CB_CHUNK_SIZE);
         memset(new_map, 0, size);
         memcpy(new_map, cb_map, sizeof(struct zjs_callback_map *) * cb_size);
         zjs_free(cb_map);
@@ -216,6 +216,7 @@ int32_t zjs_add_callback_list(jerry_value_t js_func,
         new_cb->js->handle = handle;
         new_cb->js->max_funcs = CB_LIST_MULTIPLIER;
         new_cb->js->num_funcs = 1;
+        new_cb->js->this = this;
         new_cb->js->func_list = zjs_malloc(sizeof(jerry_value_t) * CB_LIST_MULTIPLIER);
         if (!new_cb->js->func_list) {
             DBG_PRINT("could not allocate function list\n");
@@ -223,7 +224,12 @@ int32_t zjs_add_callback_list(jerry_value_t js_func,
         }
         new_cb->js->func_list[0] = jerry_acquire_value(js_func);
         cb_map[new_cb->js->id] = new_cb;
-        cb_size++;
+        if (new_cb->js->id >= cb_size - 1) {
+            cb_size++;
+        }
+
+        DBG_PRINT("adding callback to list %ld, cb_size=%ld\n", new_cb->js->id, cb_size);
+
         return new_cb->js->id;
     }
 }
@@ -261,10 +267,12 @@ int32_t add_callback(jerry_value_t js_func,
 
     // Add callback to list
     cb_map[new_cb->js->id] = new_cb;
-    cb_size++;
+    if (new_cb->js->id >= cb_size - 1) {
+        cb_size++;
+    }
 
-    DBG_PRINT("adding new callback id %ld, js_func=%lu, once=%u\n",
-              new_cb->js->id, new_cb->js->js_func, once);
+    DBG_PRINT("adding new callback id %ld, js_func=%lu, once=%u, cb_size=%ld\n",
+              new_cb->js->id, new_cb->js->js_func, once, cb_size);
 
     return new_cb->js->id;
 }
@@ -345,7 +353,9 @@ int32_t zjs_add_c_callback(void* handle, zjs_c_callback_func callback)
 
     // Add callback to list
     cb_map[new_cb->c->id] = new_cb;
-    cb_size++;
+    if (new_cb->c->id >= cb_size - 1) {
+        cb_size++;
+    }
 
     DBG_PRINT("adding new C callback id %ld\n", new_cb->c->id);
 
