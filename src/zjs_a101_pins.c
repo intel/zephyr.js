@@ -112,4 +112,4 @@ jerry_value_t zjs_a101_init()
 
     return obj;
 }
-#endif
+#endif // BUILD_MODULE_A101

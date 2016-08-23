@@ -275,4 +275,4 @@ jerry_value_t zjs_pwm_init()
     zjs_obj_add_function(pwm_obj, zjs_pwm_open, "open");
     return pwm_obj;
 }
-#endif
+#endif // BUILD_MODULE_PWM
