@@ -17,9 +17,11 @@
 #endif
 
 #ifdef ZJS_LINUX_BUILD
+#include <stdlib.h>
 #define zjs_malloc(sz) malloc(sz)
 #define zjs_free(ptr) free(ptr)
 #else
+#include <zephyr.h>
 #define zjs_malloc(sz) task_malloc(sz)
 #define zjs_free(ptr) task_free(ptr)
 #endif

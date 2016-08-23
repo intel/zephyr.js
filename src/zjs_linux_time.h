@@ -2,6 +2,7 @@
 #define ZJS_LINUX_TIME_H_
 
 #include "zjs_util.h"
+#include <unistd.h>
 
 struct zjs_port_timer {
     uint32_t sec;

@@ -1,6 +1,5 @@
 #include "zjs_linux_time.h"
 #include <time.h>
-#include <unistd.h>
 
 #define ZEPHYR_TICKS_PER_SEC
 
