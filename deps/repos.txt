@@ -3,3 +3,4 @@
 # third field: branch or commit to check out
 jerryscript https://github.com/Samsung/jerryscript.git d5eb2f0be
 zephyr https://gerrit.zephyrproject.org/r/zephyr 29fc59e53
+ihex https://github.com/arkku/ihex.git 0ebfce8

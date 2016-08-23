@@ -3,6 +3,11 @@ KERNEL_TYPE = $(KERNEL)
 BOARD ?= arduino_101_factory
 CONF_FILE ?= prj.conf
 
+ifdef DEV
+CONF_FILE += prj.conf.arduino_101_dev
+MDEF_FILE = prj.mdef.dev
+endif
+
 KBUILD_ZEPHYR_APP = libjerry-core.a
 
 obj-y += src/

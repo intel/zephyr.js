@@ -32,3 +32,12 @@ obj-$(CONFIG_BOARD_ARDUINO_101) += \
 
 obj-$(CONFIG_BOARD_FRDM_K64F) += \
 	zjs_k64f_pins.o
+
+ifeq ($(DEV), ashell)
+$(info Insecure Mode (development))
+ccflags-y += -DBUILD_MODULE_GPIO -DBUILD_MODULE_PWM -DBUILD_MODULE_UART
+ccflags-y += -DBUILD_MODULE_BLE -DBUILD_MODULE_AIO -DBUILD_MODULE_A101
+ccflags-y += -DBUILD_MODULE_TIMER -DBUILD_MODULE_BUFFER
+export JERRY_INCLUDE = $(JERRY_BASE)/jerry-core/
+obj-y += ashell/
+endif

@@ -1,0 +1,12 @@
+% Application       : JerryScript Sample
+
+% TASK NAME  PRIO ENTRY STACK GROUPS
+% ==================================
+  TASK TASKA    7 main  2048 [EXE]
+  TASK TASKB    7 acm   2048 [EXE]
+
+% SEMA NAME
+% =============  
+  SEMA TASKBSEM
+
+  HEAP_SIZE 4096
