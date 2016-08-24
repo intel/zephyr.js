@@ -1,5 +1,6 @@
 BOARD ?= arduino_101_factory
 KERNEL ?= micro
+UPDATE ?= exit
 
 ifndef ZJS_BASE
 $(error ZJS_BASE not defined)
@@ -53,7 +54,15 @@ update:
 					git clone $$repo $$name; \
 				fi; \
 				cd $$name; \
-				git checkout $$commit; \
+				if ! git checkout $$commit; then \
+					message="Error checking out commit '$$commit' from $$name,"; \
+					if [ $(UPDATE) = "force" ]; then \
+						echo "$$message continuing anyways (UPDATE=force)"; \
+					else \
+						echo "$$message exiting"; \
+						exit 1; \
+					fi; \
+				fi; \
 				cd ..; \
 				continue ;; \
 		esac \
