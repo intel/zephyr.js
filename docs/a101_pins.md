@@ -71,6 +71,9 @@ inputs or outputs.
 
 ### LEDs
 
+The Arduino 101 has three onboard LEDs that you can access as additional GPIO
+outputs.
+
 LED0 controls an onboard green LED. It is active high, and it is an alias for
 IO13, so in other words, LED0 displays the current state of IO13. So don't try
 to use both names.
