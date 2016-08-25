@@ -7,6 +7,7 @@
 //       being a little more complex. See Spaceship.js for a simpler version.
 
 // Hardware Requirements:
+//   - Arduino 101
 //   - Three LEDs and three 220-ohm resistors
 //   - One pushbutton and one 10K-ohm pulldown resistor
 // Wiring:
