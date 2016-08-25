@@ -58,10 +58,13 @@ update:
 					message="Error checking out commit '$$commit' from $$name,"; \
 					if [ $(UPDATE) = "force" ]; then \
 						echo "$$message continuing anyways (UPDATE=force)"; \
+						git pull; \
 					else \
 						echo "$$message exiting"; \
 						exit 1; \
 					fi; \
+				else \
+					git pull; \
 				fi; \
 				cd ..; \
 				continue ;; \
