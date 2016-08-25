@@ -95,6 +95,7 @@ static bool delete_timer(int32_t id)
             for (i = 0; i < tm->args_cnt; ++i) {
                 jerry_release_value(tm->args[i]);
             }
+            zjs_remove_callback(tm->callback_id);
             zjs_free(tm->args);
             zjs_free(tm);
             return true;
