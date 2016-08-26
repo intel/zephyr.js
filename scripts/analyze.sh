@@ -53,6 +53,11 @@ if [ $? -eq 0 ]; then
     >&2 echo Using module: AIO
     MODULES+=" -DBUILD_MODULE_AIO"
 fi
+check_for_require i2c
+if [ $? -eq 0 ]; then
+    >&2 echo Using module: I2C
+    MODULES+=" -DBUILD_MODULE_I2C"
+fi
 check_for_require arduino101_pins
 if [ $? -eq 0 ]; then
     >&2 echo Using module: A101 Pins

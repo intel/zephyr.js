@@ -23,7 +23,8 @@ obj-y += main.o \
 
 # skip for now for frdm_k64f
 ifneq ($(BOARD), frdm_k64f)
-obj-y += zjs_aio.o
+obj-y += zjs_aio.o \
+         zjs_i2c.o
 endif
 
 obj-$(CONFIG_BOARD_ARDUINO_101) += \

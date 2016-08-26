@@ -26,6 +26,7 @@
 #include "zjs_ble.h"
 #include "zjs_gpio.h"
 #include "zjs_pwm.h"
+#include "zjs_i2c.h"
 #ifdef CONFIG_BOARD_ARDUINO_101
 #include "zjs_a101_pins.h"
 #endif // ZJS_LINUX_BUILD
@@ -74,6 +75,9 @@ void main(int argc, char *argv[])
 #endif
 #ifdef BUILD_MODULE_PWM
     zjs_modules_add("pwm", zjs_pwm_init);
+#endif
+#ifdef BUILD_MODULE_I2C
+    zjs_modules_add("i2c", zjs_i2c_init);
 #endif
 #ifdef CONFIG_BOARD_ARDUINO_101
 #ifdef BUILD_MODULE_A101
