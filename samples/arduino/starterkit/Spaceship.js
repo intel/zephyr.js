@@ -8,6 +8,7 @@
 //       death. See Spaceship2.js for a more accurate version.
 
 // Hardware Requirements:
+//   - Arduino 101
 //   - Three LEDs and three 220-ohm resistors
 //   - One pushbutton and one 10K-ohm pulldown resistor
 // Wiring:
