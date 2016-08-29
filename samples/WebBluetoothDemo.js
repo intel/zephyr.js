@@ -127,7 +127,7 @@ ble.on('stateChange', function(state) {
     print("BLE state: " + state);
 
     if (state === 'poweredOn') {
-        ble.startAdvertising(DEVICE_NAME, ['fc00'], "https://goo.gl/9FomQC");
+        ble.startAdvertising(DEVICE_NAME, ['fc00'], "https://goo.gl/QEvyDZ");
     } else {
         if (state === 'unsupported') {
             print("BLE not enabled on board");
