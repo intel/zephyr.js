@@ -14,8 +14,10 @@ static struct nano_sem aio_sem;
 
 static uint32_t pin_values[ARC_AIO_LEN] = {};
 
+#define MAX_TYPE_LEN 20
+
 struct zjs_cb_list_item {
-    char event_type[20];
+    char event_type[MAX_TYPE_LEN];  // null-terminated
     jerry_value_t pin_obj;
     struct zjs_callback zjs_cb;
     double value;
@@ -56,7 +58,8 @@ static void zjs_aio_callback_free(uintptr_t handle)
     }
 }
 
-struct zjs_cb_list_item *zjs_aio_get_callback_item(uint32_t pin, const char *event_type)
+struct zjs_cb_list_item *zjs_aio_get_callback_item(uint32_t pin,
+                                                   const char *event_type)
 {
     // calls the JS callback registered in the struct
     struct zjs_cb_list_item **pItem = &zjs_cb_list;
@@ -235,12 +238,12 @@ static jerry_value_t zjs_aio_pin_on(const jerry_value_t function_obj_val,
     uint32_t pin;
     zjs_obj_get_uint32(this_val, "pin", &pin);
 
-    char event[20];
+    char event[MAX_TYPE_LEN];
     jerry_value_t arg = args_p[0];
     jerry_size_t sz = jerry_get_string_size(arg);
-    int len = jerry_string_to_char_buffer(arg,
-                                          (jerry_char_t *)event,
-                                          sz);
+    if (sz >= MAX_TYPE_LEN)
+        return zjs_error("zjs_aio_pin_on: event string too long");
+    int len = jerry_string_to_char_buffer(arg, (jerry_char_t *)event, sz);
     event[len] = '\0';
 
     struct zjs_cb_list_item *item = zjs_aio_get_callback_item(pin, event);
@@ -254,7 +257,7 @@ static jerry_value_t zjs_aio_pin_on(const jerry_value_t function_obj_val,
     item->pin_obj = this_val;
     item->zjs_cb.js_callback = jerry_acquire_value(args_p[1]);
     item->zjs_cb.call_function = zjs_aio_emit_event;
-    memcpy(item->event_type, event, len);
+    memcpy(item->event_type, event, len + 1);
 
     if (!strcmp(event, "change")) {
         if (jerry_value_is_object(args_p[1])) {

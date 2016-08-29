@@ -46,16 +46,16 @@ static int32_t new_id(void)
     int32_t id = 0;
     if (cb_size >= cb_limit) {
         cb_limit += CB_CHUNK_SIZE;
-        struct zjs_callback_map** new_map = zjs_malloc(sizeof(struct zjs_callback_map**) *
-                                                        cb_limit);
+        size_t size = sizeof(struct zjs_callback_map *) * cb_limit;
+        struct zjs_callback_map** new_map = zjs_malloc(size);
         if (!new_map) {
             DBG_PRINT("[callbacks] new_id(): Error allocating space for new callback map\n");
             return -1;
         }
         DBG_PRINT("[callbacks] new_id(): Callback list size too small, increasing by %d\n",
                 CB_CHUNK_SIZE);
-        memset(new_map, 0, sizeof(struct zjs_callback_map*) * cb_limit);
-        memcpy(new_map, cb_map, sizeof(struct zjs_callback_map*) * cb_size);
+        memset(new_map, 0, size);
+        memcpy(new_map, cb_map, sizeof(struct zjs_callback_map *) * cb_size);
         zjs_free(cb_map);
         cb_map = new_map;
     }
@@ -68,13 +68,14 @@ static int32_t new_id(void)
 void zjs_init_callbacks(void)
 {
     if (!cb_map) {
-        cb_map = (struct zjs_callback_map**)zjs_malloc(sizeof(struct zjs_callback_map*) *
-                INITIAL_CALLBACK_SIZE);
+        size_t size = sizeof(struct zjs_callback_map *) *
+            INITIAL_CALLBACK_SIZE;
+        cb_map = (struct zjs_callback_map**)zjs_malloc(size);
         if (!cb_map) {
             DBG_PRINT("[callbacks] zjs_init_callbacks(): Error allocating space for CB map\n");
             return;
         }
-        memset(cb_map, 0, sizeof(struct zjs_callback_map*) * INITIAL_CALLBACK_SIZE);
+        memset(cb_map, 0, size);
     }
     return;
 }

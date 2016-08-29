@@ -34,13 +34,15 @@
 
 static jerry_value_t parsed_code = 0;
 
+#define MAX_BUFFER_SIZE 4096
+
 void javascript_eval_code(const char *source_buffer)
 {
     jerry_value_t ret_val;
 
     ret_val = jerry_eval((jerry_char_t *)source_buffer,
-        strlen(source_buffer),
-        false);
+                         strnlen(source_buffer, MAX_BUFFER_SIZE),
+                         false);
 
     if (jerry_value_has_error_flag(ret_val)) {
         printf("Failed to run JS\n");

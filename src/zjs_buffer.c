@@ -121,12 +121,10 @@ static jerry_value_t zjs_buffer_to_string(const jerry_value_t function_obj_val,
         return jerry_create_string((jerry_char_t *)"[Buffer Object]");
     }
 
-    char encoding[16];
     jerry_size_t sz = jerry_get_string_size(args_p[0]);
-    if (sz > 15)
-        sz = 15;
-    int len = jerry_string_to_char_buffer(args_p[0],
-                                          (jerry_char_t *)encoding, sz);
+    char encoding[sz + 1];
+    int len = jerry_string_to_char_buffer(args_p[0], (jerry_char_t *)encoding,
+                                          sz);
     encoding[len] = '\0';
 
     if (strcmp(encoding, "hex"))

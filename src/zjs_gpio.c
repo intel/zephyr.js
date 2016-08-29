@@ -365,7 +365,7 @@ jerry_value_t zjs_gpio_init()
     char devname[10];
 
     for (int i = 0; i < GPIO_DEV_COUNT; i++) {
-        sprintf(devname, "GPIO_%d", i);
+        snprintf(devname, 8, "GPIO_%d", i);
         zjs_gpio_dev[i] = device_get_binding(devname);
         if (!zjs_gpio_dev[i]) {
             PRINT("DEVICE: %s\n", devname);

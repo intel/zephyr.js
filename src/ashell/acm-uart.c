@@ -335,12 +335,12 @@ void acm_writec(char byte)
 
 void acm_print(const char *buf)
 {
-    acm_write(buf, strlen(buf));
+    acm_write(buf, strnlen(buf, MAX_LINE_LEN * 4));
 }
 
 void acm_println(const char *buf)
 {
-    acm_write(buf, strlen(buf));
+    acm_write(buf, strnlen(buf, MAX_LINE_LEN));
     acm_write("\r\n", 3);
 }
 
@@ -414,7 +414,7 @@ void acm_runner()
                 DBG("[Wait]\n");
                 data = nano_task_fifo_get(&data_queue, TICKS_UNLIMITED);
                 buf = data->line;
-                len = strlen(buf);
+                len = strnlen(buf, MAX_LINE_LEN);
 
                 DBG("[Data]\n");
                 DBG("%s\n", buf);
@@ -426,7 +426,8 @@ void acm_runner()
 
             if (acm_config.interface.is_done()) {
                 len -= processed;
-                memcpy(buf, buf + processed, len);
+                // appears these regions could overlap, so use memmove
+                memmove(buf, buf + processed, len);
                 buf[len] = '\0';
                 DBG("New buf [%s]\n", buf);
             } else {

@@ -262,7 +262,7 @@ jerry_value_t zjs_pwm_init()
     char devname[10];
 
     for (int i = 0; i < PWM_DEV_COUNT; i++) {
-        sprintf(devname, "PWM_%d", i);
+        snprintf(devname, 7, "PWM_%d", i);
         zjs_pwm_dev[i] = device_get_binding(devname);
         if (!zjs_pwm_dev[i]) {
             PRINT("DEVICE: '%s'\n", devname);

@@ -89,8 +89,10 @@ struct zjs_ble_service {
     struct zjs_ble_service *next;
 };
 
+#define MAX_TYPE_LEN 20
+
 struct zjs_ble_list_item {
-    char event_type[20];
+    char event_type[MAX_TYPE_LEN];
     struct zjs_callback zjs_cb;
     uint32_t intdata;
     struct zjs_ble_list_item *next;
@@ -155,15 +157,16 @@ static struct zjs_ble_list_item *zjs_ble_event_callback_alloc()
 static void zjs_ble_queue_dispatch(char *type, zjs_cb_wrapper_t func,
                                    uint32_t intdata)
 {
-    // requires: called only from task context, type is the string event type,
-    //             func is a function that can handle calling the callback for
-    //             this event type when found, intarg is a uint32 that will be
-    //             stored in the appropriate callback struct for use by func
-    //             (just set it to 0 if not needed)
+    // requires: called only from task context, type is the string event type
+    //             and at most MAX_TYPE_LEN (20) chars,  func is a function
+    //             that can handle calling the callback for this event type
+    //             when found, intdata is a uint32 that will be stored in the
+    //             appropriate callback struct for use by func (just set it to
+    //             0 if not needed)
     //  effects: finds the first callback for the given type and queues it up
     //             to run func to execute it at the next opportunity
     struct zjs_ble_list_item *ev = zjs_ble_list;
-    int len = strlen(type);
+    int len = strnlen(type, MAX_TYPE_LEN);
     while (ev) {
         if (!strncmp(ev->event_type, type, len)) {
             ev->zjs_cb.call_function = func;
@@ -574,7 +577,7 @@ static jerry_value_t zjs_ble_on(const jerry_value_t function_obj_val,
     if (!item)
         return zjs_error("zjs_ble_on: error allocating callback");
 
-    char event[20];
+    char event[MAX_TYPE_LEN];
     jerry_size_t sz = jerry_get_string_size(args_p[0]);
     // FIXME: need to make sure event name is less than 20 characters.
     // assert(sz < 20);
