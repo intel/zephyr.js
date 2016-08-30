@@ -95,6 +95,40 @@ static jerry_value_t zjs_buffer_write_uint8(const jerry_value_t function_obj_val
     return zjs_error("zjs_buffer_write_uint8: read called on a buffer not in list");
 }
 
+static jerry_value_t zjs_buffer_write_uint8_array(const jerry_value_t function_obj_val,
+                                                  const jerry_value_t this_val,
+                                                  const jerry_value_t args_p[],
+                                                  const jerry_length_t args_cnt)
+{
+    // requires: this_val is a JS buffer object created with zjs_buffer_create,
+    //           expects an argument of a uint8_t array
+    //  effects: writes the entire array to the JS object and zeros out any remaining bytes.
+    //           Returns an error if array size is larger than the buffer
+    if (!args_cnt > 1 || !jerry_value_is_array(args_p[0]) ) {
+        return zjs_error("zjs_buffer_write_uint8: invalid argument");
+    }
+
+    jerry_value_t array = args_p[0];
+    uint32_t arrSize = jerry_get_array_length(array);
+
+    struct zjs_buffer_t *buf = zjs_buffer_find(this_val);
+
+    if (buf) {
+        if (arrSize > buf->bufsize)
+            return zjs_error("zjs_buffer_write_uint8: write beyond end of buffer");
+
+        for (int i = 0; i < buf->bufsize; i++) {
+            if (i < arrSize)
+                buf->buffer[i] = (uint8_t)jerry_get_number_value(jerry_get_property_by_index(array, i));
+            else
+                buf->buffer[i] = 0;
+        }
+        return 0;
+    }
+
+    return zjs_error("zjs_buffer_write_uint8: read called on a buffer not in list");
+}
+
 char zjs_int_to_hex(int value) {
     // requires: value is between 0 and 15
     //  effects: returns value as a lowercase hex digit 0-9a-f
@@ -191,6 +225,7 @@ jerry_value_t zjs_buffer_create(uint32_t size)
     zjs_obj_add_number(buf_obj, size, "length");
     zjs_obj_add_function(buf_obj, zjs_buffer_read_uint8, "readUInt8");
     zjs_obj_add_function(buf_obj, zjs_buffer_write_uint8, "writeUInt8");
+    zjs_obj_add_function(buf_obj, zjs_buffer_write_uint8_array, "writeUInt8Array");
     zjs_obj_add_function(buf_obj, zjs_buffer_to_string, "toString");
 
     // TODO: sign up to get callback when the object is freed, then free the
