@@ -19,11 +19,12 @@
 struct zjs_timer_t {
     struct zjs_port_timer timer;
     void *timer_data;
-    uint32_t interval;
-    bool repeat;
-    int32_t callback_id;
     jerry_value_t* args;
+    uint32_t interval;
     uint32_t args_cnt;
+    int32_t callback_id;
+    bool repeat;
+    bool completed;
     struct zjs_timer_t *next;
 };
 
@@ -63,6 +64,7 @@ static struct zjs_timer_t* add_timer(uint32_t interval,
     zjs_port_timer_init(&tm->timer, &tm->timer_data);
     tm->interval = interval;
     tm->repeat = repeat;
+    tm->completed = false;
     tm->next = zjs_timers;
     tm->callback_id = zjs_add_callback(callback, tm, pre_timer, NULL);
     tm->args_cnt = cnt;
@@ -178,7 +180,10 @@ static jerry_value_t native_clear_interval_handler(const jerry_value_t function_
 void zjs_timers_process_events()
 {
     for (struct zjs_timer_t *tm = zjs_timers; tm; tm = tm->next) {
-        if (zjs_port_timer_test(&tm->timer, ZJS_TICKS_NONE)) {
+        if (tm->completed) {
+            delete_timer(tm->callback_id);
+        }
+        else if (zjs_port_timer_test(&tm->timer, ZJS_TICKS_NONE)) {
             // timer has expired, signal the callback
             zjs_signal_callback(tm->callback_id);
 
@@ -186,7 +191,8 @@ void zjs_timers_process_events()
             if (tm->repeat) {
                 zjs_port_timer_start(&tm->timer, tm->interval);
             } else {
-                delete_timer(tm->callback_id);
+                // delete this timer next time around
+                tm->completed = true;
             }
         }
     }
