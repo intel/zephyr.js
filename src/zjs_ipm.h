@@ -9,6 +9,7 @@
 #define IPM_CHANNEL_ARC_TO_X86                             0x02
 
 #define MSG_ID_AIO                                         0x01
+#define MSG_ID_I2C                                         0x02
 
 #define TYPE_AIO_OPEN                                      0x0000
 #define TYPE_AIO_OPEN_SUCCESS                              0x0001
@@ -36,11 +37,49 @@
 
 #define TYPE_AIO_PIN_EVENT_VALUE_CHANGE                    0x0012
 
+/***************************** I2C *****************************/
+
+#define TYPE_I2C_OPEN                                      0x0013
+#define TYPE_I2C_OPEN_SUCCESS                              0x0014
+#define TYPE_I2C_OPEN_FAIL                                 0x0015
+
+#define TYPE_I2C_WRITE                                     0x0016
+#define TYPE_I2C_WRITE_SUCCESS                             0x0017
+#define TYPE_I2C_WRITE_FAIL                                0x0018
+
+#define TYPE_I2C_WRITE_BIT                                 0x0019
+#define TYPE_I2C_WRITE_BIT_SUCCESS                         0x0020
+#define TYPE_I2C_WRITE_BIT_FAIL                            0x0021
+
+#define TYPE_I2C_READ                                      0x0022
+#define TYPE_I2C_READ_SUCCESS                              0x0023
+#define TYPE_I2C_READ_FAIL                                 0x0024
+
+#define TYPE_I2C_TRANSFER                                  0x0025
+#define TYPE_I2C_TRANSFER_SUCCESS                          0x0026
+#define TYPE_I2C_TRANSFER_FAIL                             0x0027
+
+
 struct zjs_ipm_message {
     bool block;
     uint32_t type;
     uint32_t pin;
     uint32_t value;
+};
+
+struct zjs_i2c_ipm_message {
+    bool block;
+    uint8_t type;
+    uint8_t bus;
+    uint8_t speed;
+    uint16_t address;
+    uint8_t *data;
+    uint32_t length;
+};
+
+struct zjs_i2c_ipm_message_reply {
+    bool block;
+    uint8_t type;
 };
 
 void zjs_ipm_init();
