@@ -469,7 +469,7 @@ uint32_t ashell_process_data(const char *buf, uint32_t len)
             shell_line[cur + end] = '\0';
             acm_write("\r\n", 3);
 
-            uint32_t length = strnlen(shell_line, 256);
+            uint32_t length = strnlen(shell_line, MAX_LINE);
             int32_t ret = 0;
             if (app_line_cb != NULL)
                 ret = app_line_cb(shell_line, length);

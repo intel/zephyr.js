@@ -153,8 +153,9 @@ bool zjs_obj_get_string(jerry_value_t obj, const char *name, char *buffer,
     // requires: obj is an existing JS object, value name should exist as
     //             string, buffer can receive the string, len is its size
     //  effects: retrieves field specified by name; if it exists, and is a
-    //             string, copies at most len - 1 bytes plus a null terminator
-    //             into buffer and returns true; otherwise, returns false
+    //             string, and can fit into the given buffer, copies it plus
+    //             a null terminator into buffer and returns true; otherwise,
+    //             returns false
     jerry_value_t value = zjs_get_property(obj, name);
     if (jerry_value_has_error_flag(value))
         return false;
@@ -163,15 +164,13 @@ bool zjs_obj_get_string(jerry_value_t obj, const char *name, char *buffer,
         return false;
 
     jerry_size_t jlen = jerry_get_string_size(value);
-    jerry_char_t tmp_buf[jlen];
-    jerry_string_to_char_buffer(value, buffer, jlen);
-    jerry_release_value(value);
-
     if (jlen >= len)
-        jlen = len - 1;
+        return false;
 
-    memcpy(buffer, tmp_buf, jlen);
-    buffer[jlen] = '\0';
+    int wlen = jerry_string_to_char_buffer(value, buffer, jlen);
+    buffer[wlen] = '\0';
+
+    jerry_release_value(value);
 
     return true;
 }
@@ -200,24 +199,6 @@ bool zjs_obj_get_uint32(jerry_value_t obj, const char *name, uint32_t *num)
     *num = (uint32_t)jerry_get_number_value(value);
     jerry_release_value(value);
     return true;
-}
-
-bool zjs_strequal(const jerry_value_t jstr, const char *str) {
-    // requires: jstr is a valid jerry string, str is a UTF-8 string, maxlen is
-    //             the maximum expected length
-    //  effects: returns True if the strings are identical, false otherwise
-    jerry_size_t sz = jerry_get_string_size(jstr);
-    size_t len = strnlen(str, sz);
-    if (len != sz)
-        return false;
-
-    jerry_char_t buf[sz + 1];
-    jerry_string_to_char_buffer(jstr, buf, sz);
-    buf[len] = '\0';
-
-    if (!strcmp(buf, str))
-        return true;
-    return false;
 }
 
 bool zjs_hex_to_byte(char *buf, uint8_t *byte)

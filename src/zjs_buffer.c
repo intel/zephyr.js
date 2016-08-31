@@ -121,8 +121,12 @@ static jerry_value_t zjs_buffer_to_string(const jerry_value_t function_obj_val,
         return jerry_create_string((jerry_char_t *)"[Buffer Object]");
     }
 
+    const int maxlen = 16;
+    char encoding[maxlen];
     jerry_size_t sz = jerry_get_string_size(args_p[0]);
-    char encoding[sz + 1];
+    if (sz >= maxlen) {
+        return zjs_error("zjs_buffer_to_string: encoding argument too long");
+    }
     int len = jerry_string_to_char_buffer(args_p[0], (jerry_char_t *)encoding,
                                           sz);
     encoding[len] = '\0';

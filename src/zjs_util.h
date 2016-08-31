@@ -61,8 +61,6 @@ bool zjs_obj_get_string(jerry_value_t obj, const char *name, char *buffer,
 bool zjs_obj_get_double(jerry_value_t obj, const char *name, double *num);
 bool zjs_obj_get_uint32(jerry_value_t obj, const char *name, uint32_t *num);
 
-bool zjs_strequal(const jerry_value_t jstr, const char *str);
-
 bool zjs_hex_to_byte(char *buf, uint8_t *byte);
 
 void zjs_default_convert_pin(uint32_t orig, int *dev, int *pin);
