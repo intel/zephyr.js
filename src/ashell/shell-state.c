@@ -91,7 +91,7 @@ const char eval_prompt[] = ANSI_FG_GREEN "js> " ANSI_FG_RESTORE;
 int32_t ashell_get_filename_buffer(const char *buf, char *destination)
 {
     uint32_t arg_len = 0;
-    uint32_t len = strlen(buf);
+    uint32_t len = strnlen(buf, MAX_FILENAME_SIZE);
     if (len == 0)
         return RET_ERROR;
 

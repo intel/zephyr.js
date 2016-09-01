@@ -36,16 +36,14 @@ static int find_id(uint64_t* use)
     return id;
 }
 
-char* make_name(int32_t id, char* module)
+char* make_name(uint32_t id, char* module)
 {
-    // It is assumed that the string being created will be less than 20 characters
-    // e.g. promise-1, promise-10, promise-300, not promise-1234567891011121314
-    //      Regardless, there is only the possibility of having 64 promises due
-    //      to them being tracked with bits in a uint64_t.
+    // id can take up at most 10 bytes; with null terminator and dash this
+    //   leaves 8 bytes for module name
     static char name[20];
-    memcpy(name, module, strlen(module));
-    name[strlen(module)] = '-';
-    sprintf(name + strlen(module) + 1, "%ld", id);
+    size_t len = strnlen(module, 8);
+    strncpy(name, module, len);
+    snprintf(name + len, 12, "-%ld", id);
     return name;
 }
 

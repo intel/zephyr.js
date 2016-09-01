@@ -44,28 +44,22 @@ void zjs_queue_init();
 void zjs_queue_callback(struct zjs_callback *cb);
 void zjs_run_pending_callbacks();
 
-void zjs_set_property(const jerry_value_t obj_val, const char *str_p,
+void zjs_set_property(const jerry_value_t obj, const char *str_p,
                       const jerry_value_t prop_val);
-jerry_value_t zjs_get_property (const jerry_value_t obj_val, const char *str_p);
+jerry_value_t zjs_get_property (const jerry_value_t obj, const char *str_p);
 
-void zjs_obj_add_boolean(jerry_value_t obj_val, bool value,
-                         const char *name);
-void zjs_obj_add_function(jerry_value_t obj_val, void *function,
-                          const char *name);
-void zjs_obj_add_object(jerry_value_t parent_val, jerry_value_t child_val,
+void zjs_obj_add_boolean(jerry_value_t obj, bool flag, const char *name);
+void zjs_obj_add_function(jerry_value_t obj, void *function, const char *name);
+void zjs_obj_add_object(jerry_value_t parent, jerry_value_t child,
                         const char *name);
-void zjs_obj_add_string(jerry_value_t obj_val, const char *value,
-                        const char *name);
-void zjs_obj_add_number(jerry_value_t obj_val, double value,
-                        const char *name);
+void zjs_obj_add_string(jerry_value_t obj, const char *str, const char *name);
+void zjs_obj_add_number(jerry_value_t obj, double num, const char *name);
 
-bool zjs_obj_get_boolean(jerry_value_t obj_val, const char *name, bool *bval);
-bool zjs_obj_get_string(jerry_value_t obj_val, const char *name, char *buffer,
+bool zjs_obj_get_boolean(jerry_value_t obj, const char *name, bool *flag);
+bool zjs_obj_get_string(jerry_value_t obj, const char *name, char *buffer,
                         int len);
-bool zjs_obj_get_double(jerry_value_t obj_val, const char *name, double *num);
-bool zjs_obj_get_uint32(jerry_value_t obj_val, const char *name, uint32_t *num);
-
-bool zjs_strequal(const jerry_value_t str_val, const char *str);
+bool zjs_obj_get_double(jerry_value_t obj, const char *name, double *num);
+bool zjs_obj_get_uint32(jerry_value_t obj, const char *name, uint32_t *num);
 
 bool zjs_hex_to_byte(char *buf, uint8_t *byte);
 

@@ -398,7 +398,7 @@ uint32_t ashell_process_data(const char *buf, uint32_t len)
     bool flush_line = false;
 
     if (shell_line == NULL) {
-        DBG("[Proccess]%d\n", (int)len);
+        DBG("[Process]%d\n", (int)len);
         DBG("[%s]\n", buf);
         shell_line = (char *)malloc(MAX_LINE);
         memset(shell_line, 0, MAX_LINE);
@@ -469,7 +469,7 @@ uint32_t ashell_process_data(const char *buf, uint32_t len)
             shell_line[cur + end] = '\0';
             acm_write("\r\n", 3);
 
-            uint32_t length = strlen(shell_line);
+            uint32_t length = strnlen(shell_line, MAX_LINE);
             int32_t ret = 0;
             if (app_line_cb != NULL)
                 ret = app_line_cb(shell_line, length);
@@ -617,9 +617,9 @@ void shell_unit_test()
         argc = ashell_get_argc(line, test[t].size);
         printf("Test [%s] %d\n", line, argc);
         while (argc > 0) {
-            line = ashell_get_next_arg(line, strlen(line), arg, &len);
-            if (len != strlen(arg)) {
-                printf("Failed [%s] %d!=%d ", arg, len, strlen(arg));
+            line = ashell_get_next_arg(line, strnlen(line, 128), arg, &len);
+            if (len != strnlen(arg, 32)) {
+                printf("Failed [%s] %d!=%d ", arg, len, strnlen(arg, 32));
             }
             printf(" %d [%s]\n", test[t].result - argc, arg);
             argc--;
