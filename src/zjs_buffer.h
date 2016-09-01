@@ -3,6 +3,8 @@
 #ifndef __zjs_buffer_h__
 #define __zjs_buffer_h__
 
+#include "jerry-api.h"
+
 void zjs_buffer_init();
 
 struct zjs_buffer_t {

@@ -1,3 +1,5 @@
+// Copyright (c) 2016, Intel Corporation.
+
 #ifndef SRC_ZJS_CALLBACKS_H_
 #define SRC_ZJS_CALLBACKS_H_
 

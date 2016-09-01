@@ -1,3 +1,5 @@
+// Copyright (c) 2016, Intel Corporation.
+
 #ifndef ZJS_ZEPHYR_TIME_H_
 #define ZJS_ZEPHYR_TIME_H_
 
