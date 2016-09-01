@@ -1,3 +1,5 @@
+// Copyright (c) 2016, Intel Corporation.
+
 #include "zjs_linux_time.h"
 #include <time.h>
 

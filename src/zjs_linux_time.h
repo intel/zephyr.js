@@ -1,3 +1,5 @@
+// Copyright (c) 2016, Intel Corporation.
+
 #ifndef ZJS_LINUX_TIME_H_
 #define ZJS_LINUX_TIME_H_
 

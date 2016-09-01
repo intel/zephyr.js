@@ -1,3 +1,5 @@
+// Copyright (c) 2016, Intel Corporation.
+
 #include <zephyr.h>
 
 #include <string.h>

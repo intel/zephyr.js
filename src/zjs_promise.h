@@ -1,3 +1,5 @@
+// Copyright (c) 2016, Intel Corporation.
+
 #ifndef __zjs_promises_h__
 #define __zjs_promises_h__
 
