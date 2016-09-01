@@ -1,0 +1,33 @@
+#!/bin/bash
+
+# Copyright (c) 2016, Intel Corporation.
+
+# This script makes sure that all the header files in src/ can be included
+# without any missing dependencies.
+
+cd $ZJS_BASE/src
+
+TEMPLATE=/tmp/zjs_template.c
+
+echo                 > $TEMPLATE
+echo "int main() {" >> $TEMPLATE
+echo "return 0;"    >> $TEMPLATE
+echo "}"            >> $TEMPLATE
+
+SOURCE=/tmp/zjs_source.c
+
+ERRCOUNT=0
+
+for i in *.h; do
+    echo Checking $i...
+    echo "#include \"$i\"" > $SOURCE
+    cat $TEMPLATE >> $SOURCE
+    gcc -o /tmp/zjs_source -m32 -DCONFIG_X86 -I. -I../deps/jerryscript/jerry-core -I../deps/zephyr/include $SOURCE
+    ERRCOUNT=$(($ERRCOUNT + $?))
+done
+
+if [ $ERRCOUNT -eq "0" ]; then
+   echo Passed!
+else
+   echo Failed!
+fi
