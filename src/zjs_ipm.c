@@ -34,16 +34,17 @@ void zjs_ipm_init() {
     }
 }
 
-int zjs_ipm_send(uint32_t id, const void* data, int data_size) {
+int zjs_ipm_send(uint32_t id, struct zjs_ipm_message *data) {
     if (!ipm_send_dev) {
         PRINT("Cannot find outbound ipm device!\n" );
         return -1;
     }
 
-    return ipm_send(ipm_send_dev, 1, id, data, data_size);
+    // sending pointer to the address of ipm message
+    return ipm_send(ipm_send_dev, 1, id, &data, sizeof(void *));
 }
 
-void zjs_ipm_register_callback(uint32_t msg_id, ipm_callback_t cb) {
+void zjs_ipm_register_callback(ipm_callback_t cb) {
     if (!ipm_receive_dev) {
         PRINT("Cannot find inbound ipm device!\n" );
         return;

@@ -25,6 +25,7 @@
 #include "zjs_aio.h"
 #include "zjs_ble.h"
 #include "zjs_gpio.h"
+#include "zjs_grove_lcd.h"
 #include "zjs_pwm.h"
 #include "zjs_i2c.h"
 #ifdef CONFIG_BOARD_ARDUINO_101
@@ -72,6 +73,9 @@ void main(int argc, char *argv[])
 #endif
 #ifdef BUILD_MODULE_GPIO
     zjs_modules_add("gpio", zjs_gpio_init);
+#endif
+#ifdef BUILD_MODULE_GROVE_LCD
+    zjs_modules_add("grove_lcd", zjs_grove_lcd_init);
 #endif
 #ifdef BUILD_MODULE_PWM
     zjs_modules_add("pwm", zjs_pwm_init);
