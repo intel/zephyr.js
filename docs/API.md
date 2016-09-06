@@ -24,3 +24,5 @@ Board Support
 General
 -------
 [Buffer](./buffer.md)
+
+[Timers](./timers.md)
