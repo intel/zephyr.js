@@ -111,17 +111,17 @@ static void ipm_msg_receive_callback(void *context, uint32_t id, volatile void *
     }
 }
 
-static jerry_value_t zjs_glcd_print(const jerry_value_t function_obj_val,
-                                    const jerry_value_t this_val,
-                                    const jerry_value_t args_p[],
-                                    const jerry_length_t args_cnt)
+static jerry_value_t zjs_glcd_print(const jerry_value_t function_obj,
+                                    const jerry_value_t this,
+                                    const jerry_value_t argv[],
+                                    const jerry_length_t argc)
 {
-    if (args_cnt < 1 || !jerry_value_is_string(args_p[0])) {
+    if (argc < 1 || !jerry_value_is_string(argv[0])) {
         PRINT("zjs_glcd_print: invalid argument\n");
         return zjs_error("zjs_glcd_print: invalid argument");
     }
 
-    jerry_size_t sz = jerry_get_string_size(args_p[0]);
+    jerry_size_t sz = jerry_get_string_size(argv[0]);
 
     char *buffer = task_malloc(sz+1);
     if (!buffer) {
@@ -129,7 +129,7 @@ static jerry_value_t zjs_glcd_print(const jerry_value_t function_obj_val,
         return zjs_error("cannot allocate buffer");
     }
 
-    int len = jerry_string_to_char_buffer(args_p[0],
+    int len = jerry_string_to_char_buffer(argv[0],
                                           (jerry_char_t *)buffer,
                                           sz);
     buffer[len] = '\0';
@@ -145,10 +145,10 @@ static jerry_value_t zjs_glcd_print(const jerry_value_t function_obj_val,
     return jerry_value_has_error_flag(result) ? result : ZJS_UNDEFINED;
 }
 
-static jerry_value_t zjs_glcd_clear(const jerry_value_t function_obj_val,
-                                    const jerry_value_t this_val,
-                                    const jerry_value_t args_p[],
-                                    const jerry_length_t args_cnt)
+static jerry_value_t zjs_glcd_clear(const jerry_value_t function_obj,
+                                    const jerry_value_t this,
+                                    const jerry_value_t argv[],
+                                    const jerry_length_t argc)
 {
     // send IPM message to the ARC side
     struct zjs_ipm_message* send = zjs_glcd_alloc_msg();
@@ -160,94 +160,94 @@ static jerry_value_t zjs_glcd_clear(const jerry_value_t function_obj_val,
     return jerry_value_has_error_flag(result) ? result : ZJS_UNDEFINED;
 }
 
-static jerry_value_t zjs_glcd_set_cursor_pos(const jerry_value_t function_obj_val,
-                                             const jerry_value_t this_val,
-                                             const jerry_value_t args_p[],
-                                             const jerry_length_t args_cnt)
+static jerry_value_t zjs_glcd_set_cursor_pos(const jerry_value_t function_obj,
+                                             const jerry_value_t this,
+                                             const jerry_value_t argv[],
+                                             const jerry_length_t argc)
 {
-    if (args_cnt != 2 ||
-        !jerry_value_is_number(args_p[0]) ||
-        !jerry_value_is_number(args_p[1])) {
+    if (argc != 2 ||
+        !jerry_value_is_number(argv[0]) ||
+        !jerry_value_is_number(argv[1])) {
         return zjs_error("zjs_glcd_set_cursor_pos: invalid argument");
     }
 
     // send IPM message to the ARC side
     struct zjs_ipm_message* send = zjs_glcd_alloc_msg();
     send->type = TYPE_GLCD_SET_CURSOR_POS;
-    send->data.glcd.col = (uint8_t)jerry_get_number_value(args_p[0]);
-    send->data.glcd.row = (uint8_t)jerry_get_number_value(args_p[1]);
+    send->data.glcd.col = (uint8_t)jerry_get_number_value(argv[0]);
+    send->data.glcd.row = (uint8_t)jerry_get_number_value(argv[1]);
 
     jerry_value_t result = zjs_glcd_call_remote_function(send);
 
     return jerry_value_has_error_flag(result) ? result : ZJS_UNDEFINED;
 }
 
-static jerry_value_t zjs_glcd_select_color(const jerry_value_t function_obj_val,
-                                           const jerry_value_t this_val,
-                                           const jerry_value_t args_p[],
-                                           const jerry_length_t args_cnt)
+static jerry_value_t zjs_glcd_select_color(const jerry_value_t function_obj,
+                                           const jerry_value_t this,
+                                           const jerry_value_t argv[],
+                                           const jerry_length_t argc)
 {
-    if (args_cnt != 1 || !jerry_value_is_number(args_p[0])) {
+    if (argc != 1 || !jerry_value_is_number(argv[0])) {
         return zjs_error("zjs_glcd_select_color: invalid argument");
     }
 
     // send IPM message to the ARC side
     struct zjs_ipm_message* send = zjs_glcd_alloc_msg();
     send->type = TYPE_GLCD_SELECT_COLOR;
-    send->data.glcd.value = (uint8_t)jerry_get_number_value(args_p[0]);
+    send->data.glcd.value = (uint8_t)jerry_get_number_value(argv[0]);
 
     jerry_value_t result = zjs_glcd_call_remote_function(send);
 
     return jerry_value_has_error_flag(result) ? result : ZJS_UNDEFINED;
 }
 
-static jerry_value_t zjs_glcd_set_color(const jerry_value_t function_obj_val,
-                                        const jerry_value_t this_val,
-                                        const jerry_value_t args_p[],
-                                        const jerry_length_t args_cnt)
+static jerry_value_t zjs_glcd_set_color(const jerry_value_t function_obj,
+                                        const jerry_value_t this,
+                                        const jerry_value_t argv[],
+                                        const jerry_length_t argc)
 {
-    if (args_cnt != 3 ||
-        !jerry_value_is_number(args_p[0]) ||
-        !jerry_value_is_number(args_p[1]) ||
-        !jerry_value_is_number(args_p[2])) {
+    if (argc != 3 ||
+        !jerry_value_is_number(argv[0]) ||
+        !jerry_value_is_number(argv[1]) ||
+        !jerry_value_is_number(argv[2])) {
         return zjs_error("zjs_glcd_set_color: invalid argument");
     }
 
     // send IPM message to the ARC side
     struct zjs_ipm_message* send = zjs_glcd_alloc_msg();
     send->type = TYPE_GLCD_SET_COLOR;
-    send->data.glcd.color_r = (uint8_t)jerry_get_number_value(args_p[0]);
-    send->data.glcd.color_g = (uint8_t)jerry_get_number_value(args_p[1]);
-    send->data.glcd.color_b = (uint8_t)jerry_get_number_value(args_p[2]);
+    send->data.glcd.color_r = (uint8_t)jerry_get_number_value(argv[0]);
+    send->data.glcd.color_g = (uint8_t)jerry_get_number_value(argv[1]);
+    send->data.glcd.color_b = (uint8_t)jerry_get_number_value(argv[2]);
 
     jerry_value_t result = zjs_glcd_call_remote_function(send);
 
     return jerry_value_has_error_flag(result) ? result : ZJS_UNDEFINED;
 }
 
-static jerry_value_t zjs_glcd_set_function(const jerry_value_t function_obj_val,
-                                           const jerry_value_t this_val,
-                                           const jerry_value_t args_p[],
-                                           const jerry_length_t args_cnt)
+static jerry_value_t zjs_glcd_set_function(const jerry_value_t function_obj,
+                                           const jerry_value_t this,
+                                           const jerry_value_t argv[],
+                                           const jerry_length_t argc)
 {
-    if (args_cnt != 1 || !jerry_value_is_number(args_p[0])) {
+    if (argc != 1 || !jerry_value_is_number(argv[0])) {
         return zjs_error("zjs_glcd_set_function: invalid argument");
     }
 
     // send IPM message to the ARC side
     struct zjs_ipm_message* send = zjs_glcd_alloc_msg();
     send->type = TYPE_GLCD_SET_FUNCTION;
-    send->data.glcd.value = (uint8_t)jerry_get_number_value(args_p[0]);
+    send->data.glcd.value = (uint8_t)jerry_get_number_value(argv[0]);
 
     jerry_value_t result = zjs_glcd_call_remote_function(send);
 
     return jerry_value_has_error_flag(result) ? result : ZJS_UNDEFINED;
 }
 
-static jerry_value_t zjs_glcd_get_function(const jerry_value_t function_obj_val,
-                                           const jerry_value_t this_val,
-                                           const jerry_value_t args_p[],
-                                           const jerry_length_t args_cnt)
+static jerry_value_t zjs_glcd_get_function(const jerry_value_t function_obj,
+                                           const jerry_value_t this,
+                                           const jerry_value_t argv[],
+                                           const jerry_length_t argc)
 {
     // send IPM message to the ARC side
     struct zjs_ipm_message* send = zjs_glcd_alloc_msg();
@@ -257,29 +257,29 @@ static jerry_value_t zjs_glcd_get_function(const jerry_value_t function_obj_val,
     return zjs_glcd_call_remote_function(send);
 }
 
-static jerry_value_t zjs_glcd_set_display_state(const jerry_value_t function_obj_val,
-                                                const jerry_value_t this_val,
-                                                const jerry_value_t args_p[],
-                                                const jerry_length_t args_cnt)
+static jerry_value_t zjs_glcd_set_display_state(const jerry_value_t function_obj,
+                                                const jerry_value_t this,
+                                                const jerry_value_t argv[],
+                                                const jerry_length_t argc)
 {
-    if (args_cnt != 1 || !jerry_value_is_number(args_p[0])) {
+    if (argc != 1 || !jerry_value_is_number(argv[0])) {
         return zjs_error("zjs_glcd_set_display_state: invalid argument");
     }
 
     // send IPM message to the ARC side
     struct zjs_ipm_message* send = zjs_glcd_alloc_msg();
     send->type = TYPE_GLCD_SET_DISPLAY_STATE;
-    send->data.glcd.value = (uint8_t)jerry_get_number_value(args_p[0]);
+    send->data.glcd.value = (uint8_t)jerry_get_number_value(argv[0]);
 
     jerry_value_t result = zjs_glcd_call_remote_function(send);
 
     return jerry_value_has_error_flag(result) ? result : ZJS_UNDEFINED;
 }
 
-static jerry_value_t zjs_glcd_get_display_state(const jerry_value_t function_obj_val,
-                                                const jerry_value_t this_val,
-                                                const jerry_value_t args_p[],
-                                                const jerry_length_t args_cnt)
+static jerry_value_t zjs_glcd_get_display_state(const jerry_value_t function_obj,
+                                                const jerry_value_t this,
+                                                const jerry_value_t argv[],
+                                                const jerry_length_t argc)
 {
     // send IPM message to the ARC side
     struct zjs_ipm_message* send = zjs_glcd_alloc_msg();
@@ -289,29 +289,29 @@ static jerry_value_t zjs_glcd_get_display_state(const jerry_value_t function_obj
     return zjs_glcd_call_remote_function(send);
 }
 
-static jerry_value_t zjs_glcd_set_input_state(const jerry_value_t function_obj_val,
-                                              const jerry_value_t this_val,
-                                              const jerry_value_t args_p[],
-                                              const jerry_length_t args_cnt)
+static jerry_value_t zjs_glcd_set_input_state(const jerry_value_t function_obj,
+                                              const jerry_value_t this,
+                                              const jerry_value_t argv[],
+                                              const jerry_length_t argc)
 {
-    if (args_cnt != 1 || !jerry_value_is_number(args_p[0])) {
+    if (argc != 1 || !jerry_value_is_number(argv[0])) {
         return zjs_error("zjs_glcd_set_input_state: invalid argument");
     }
 
     // send IPM message to the ARC side
     struct zjs_ipm_message* send = zjs_glcd_alloc_msg();
     send->type = TYPE_GLCD_SET_INPUT_STATE;
-    send->data.glcd.value = (uint8_t)jerry_get_number_value(args_p[0]);
+    send->data.glcd.value = (uint8_t)jerry_get_number_value(argv[0]);
 
     jerry_value_t result = zjs_glcd_call_remote_function(send);
 
     return jerry_value_has_error_flag(result) ? result : ZJS_UNDEFINED;
 }
 
-static jerry_value_t zjs_glcd_get_input_state(const jerry_value_t function_obj_val,
-                                              const jerry_value_t this_val,
-                                              const jerry_value_t args_p[],
-                                              const jerry_length_t args_cnt)
+static jerry_value_t zjs_glcd_get_input_state(const jerry_value_t function_obj,
+                                              const jerry_value_t this,
+                                              const jerry_value_t argv[],
+                                              const jerry_length_t argc)
 {
     // send IPM message to the ARC side
     struct zjs_ipm_message* send = zjs_glcd_alloc_msg();
@@ -321,10 +321,10 @@ static jerry_value_t zjs_glcd_get_input_state(const jerry_value_t function_obj_v
     return zjs_glcd_call_remote_function(send);
 }
 
-static jerry_value_t zjs_glcd_init(const jerry_value_t function_obj_val,
-                                   const jerry_value_t this_val,
-                                   const jerry_value_t args_p[],
-                                   const jerry_length_t args_cnt)
+static jerry_value_t zjs_glcd_init(const jerry_value_t function_obj,
+                                   const jerry_value_t this,
+                                   const jerry_value_t argv[],
+                                   const jerry_length_t argc)
 {
     // send IPM message to the ARC side
     struct zjs_ipm_message* send = zjs_glcd_alloc_msg();

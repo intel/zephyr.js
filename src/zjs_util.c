@@ -50,10 +50,10 @@ void zjs_run_pending_callbacks()
 }
 #endif // ZJS_LINUX_BUILD
 
-void zjs_set_property(const jerry_value_t obj, const char *str_p,
+void zjs_set_property(const jerry_value_t obj, const char *str,
                       const jerry_value_t prop)
 {
-    jerry_value_t name = jerry_create_string((jerry_char_t *)str_p);
+    jerry_value_t name = jerry_create_string((jerry_char_t *)str);
     jerry_set_property(obj, name, prop);
     jerry_release_value(name);
 }

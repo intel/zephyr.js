@@ -44,9 +44,9 @@ void zjs_queue_init();
 void zjs_queue_callback(struct zjs_callback *cb);
 void zjs_run_pending_callbacks();
 
-void zjs_set_property(const jerry_value_t obj, const char *str_p,
-                      const jerry_value_t prop_val);
-jerry_value_t zjs_get_property (const jerry_value_t obj, const char *str_p);
+void zjs_set_property(const jerry_value_t obj, const char *str,
+                      const jerry_value_t prop);
+jerry_value_t zjs_get_property (const jerry_value_t obj, const char *str);
 
 void zjs_obj_add_boolean(jerry_value_t obj, bool flag, const char *name);
 void zjs_obj_add_function(jerry_value_t obj, void *function, const char *name);

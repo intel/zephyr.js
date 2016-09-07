@@ -97,20 +97,20 @@ static struct gpio_handle* new_gpio_handle(void)
     return handle;
 }
 
-static jerry_value_t zjs_gpio_pin_read(const jerry_value_t function_obj_val,
-                                       const jerry_value_t this_val,
-                                       const jerry_value_t args_p[],
-                                       const jerry_length_t args_cnt)
+static jerry_value_t zjs_gpio_pin_read(const jerry_value_t function_obj,
+                                       const jerry_value_t this,
+                                       const jerry_value_t argv[],
+                                       const jerry_length_t argc)
 {
-    // requires: this_val is a GPIOPin object from zjs_gpio_open, takes no args
+    // requires: this is a GPIOPin object from zjs_gpio_open, takes no args
     //  effects: reads a logical value from the pin and returns it in ret_val_p
     uint32_t pin;
-    zjs_obj_get_uint32(this_val, "pin", &pin);
+    zjs_obj_get_uint32(this, "pin", &pin);
     int devnum, newpin;
     zjs_gpio_convert_pin(pin, &devnum, &newpin);
 
     bool activeLow = false;
-    zjs_obj_get_boolean(this_val, "activeLow", &activeLow);
+    zjs_obj_get_boolean(this, "activeLow", &activeLow);
 
     uint32_t value;
     int rval = gpio_pin_read(zjs_gpio_dev[devnum], newpin, &value);
@@ -126,26 +126,26 @@ static jerry_value_t zjs_gpio_pin_read(const jerry_value_t function_obj_val,
     return jerry_create_boolean(logical);
 }
 
-static jerry_value_t zjs_gpio_pin_write(const jerry_value_t function_obj_val,
-                                        const jerry_value_t this_val,
-                                        const jerry_value_t args_p[],
-                                        const jerry_length_t args_cnt)
+static jerry_value_t zjs_gpio_pin_write(const jerry_value_t function_obj,
+                                        const jerry_value_t this,
+                                        const jerry_value_t argv[],
+                                        const jerry_length_t argc)
 {
-    // requires: this_val is a GPIOPin object from zjs_gpio_open, takes one arg,
+    // requires: this is a GPIOPin object from zjs_gpio_open, takes one arg,
     //             the logical boolean value to set to the pin (true = active)
     //  effects: writes the logical value to the pin
-    if (args_cnt < 1 || !jerry_value_is_boolean(args_p[0]))
+    if (argc < 1 || !jerry_value_is_boolean(argv[0]))
         return zjs_error("zjs_gpio_pin_write: invalid argument");
 
-    bool logical = jerry_get_boolean_value(args_p[0]);
+    bool logical = jerry_get_boolean_value(argv[0]);
 
     uint32_t pin;
-    zjs_obj_get_uint32(this_val, "pin", &pin);
+    zjs_obj_get_uint32(this, "pin", &pin);
     int devnum, newpin;
     zjs_gpio_convert_pin(pin, &devnum, &newpin);
 
     bool activeLow = false;
-    zjs_obj_get_boolean(this_val, "activeLow", &activeLow);
+    zjs_obj_get_boolean(this, "activeLow", &activeLow);
 
     uint32_t value = 0;
     if ((logical && !activeLow) || (!logical && activeLow))
@@ -159,13 +159,13 @@ static jerry_value_t zjs_gpio_pin_write(const jerry_value_t function_obj_val,
     return ZJS_UNDEFINED;
 }
 
-static jerry_value_t zjs_gpio_pin_close(const jerry_value_t function_obj_p,
-                                        const jerry_value_t this_val,
-                                        const jerry_value_t args_p[],
-                                        const jerry_length_t args_cnt)
+static jerry_value_t zjs_gpio_pin_close(const jerry_value_t function_obj,
+                                        const jerry_value_t this,
+                                        const jerry_value_t argv[],
+                                        const jerry_length_t argc)
 {
     uintptr_t ptr;
-    if (jerry_get_object_native_handle(this_val, &ptr)) {
+    if (jerry_get_object_native_handle(this, &ptr)) {
         struct gpio_handle* handle = (struct gpio_handle*)ptr;
         if (handle) {
             zjs_remove_callback(handle->callbackId);
@@ -174,7 +174,7 @@ static jerry_value_t zjs_gpio_pin_close(const jerry_value_t function_obj_p,
             }
 
             uint32_t pin;
-            zjs_obj_get_uint32(this_val, "pin", &pin);
+            zjs_obj_get_uint32(this, "pin", &pin);
             int devnum, newpin;
             zjs_gpio_convert_pin(pin, &devnum, &newpin);
 
@@ -197,20 +197,20 @@ static void post_open_promise(void* h)
     }
 }
 
-static jerry_value_t zjs_gpio_open(const jerry_value_t function_obj_val,
-                                   const jerry_value_t this_val,
-                                   const jerry_value_t args_p[],
-                                   const jerry_length_t args_cnt,
+static jerry_value_t zjs_gpio_open(const jerry_value_t function_obj,
+                                   const jerry_value_t this,
+                                   const jerry_value_t argv[],
+                                   const jerry_length_t argc,
                                    bool async)
 {
     // requires: arg 0 is an object with these members: pin (int), direction
     //             (defaults to "out"), activeLow (defaults to false),
     //             edge (defaults to "any"), pull (default to undefined)
-    if (args_cnt < 1 || !jerry_value_is_object(args_p[0]))
+    if (argc < 1 || !jerry_value_is_object(argv[0]))
         return zjs_error("zjs_gpio_open: invalid argument");
 
     // data input object
-    jerry_value_t data = args_p[0];
+    jerry_value_t data = argv[0];
 
     uint32_t pin;
     if (!zjs_obj_get_uint32(data, "pin", &pin))
@@ -343,20 +343,20 @@ static jerry_value_t zjs_gpio_open(const jerry_value_t function_obj_val,
     return pinobj;
 }
 
-static jerry_value_t zjs_gpio_open_sync(const jerry_value_t function_obj_val,
-                                        const jerry_value_t this_val,
-                                        const jerry_value_t args_p[],
-                                        const jerry_length_t args_cnt)
+static jerry_value_t zjs_gpio_open_sync(const jerry_value_t function_obj,
+                                        const jerry_value_t this,
+                                        const jerry_value_t argv[],
+                                        const jerry_length_t argc)
 {
-    return zjs_gpio_open(function_obj_val, this_val, args_p, args_cnt, false);
+    return zjs_gpio_open(function_obj, this, argv, argc, false);
 }
 
-static jerry_value_t zjs_gpio_open_async(const jerry_value_t function_obj_val,
-                                         const jerry_value_t this_val,
-                                         const jerry_value_t args_p[],
-                                         const jerry_length_t args_cnt)
+static jerry_value_t zjs_gpio_open_async(const jerry_value_t function_obj,
+                                         const jerry_value_t this,
+                                         const jerry_value_t argv[],
+                                         const jerry_length_t argc)
 {
-    return zjs_gpio_open(function_obj_val, this_val, args_p, args_cnt, true);
+    return zjs_gpio_open(function_obj, this, argv, argc, true);
 }
 
 jerry_value_t zjs_gpio_init()

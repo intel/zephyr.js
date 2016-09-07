@@ -189,17 +189,17 @@ void zjs_service_callbacks(void)
         if (cb_map[i]->signal) {
             cb_map[i]->signal = 0;
             if (cb_map[i]->type == CALLBACK_TYPE_JS && jerry_value_is_function(cb_map[i]->js->js_func)) {
-                uint32_t args_cnt = 0;
+                uint32_t argc = 0;
                 jerry_value_t ret_val;
                 jerry_value_t* args = NULL;
 
                 if (cb_map[i]->js->pre) {
-                    args = cb_map[i]->js->pre(cb_map[i]->js->handle, &args_cnt);
+                    args = cb_map[i]->js->pre(cb_map[i]->js->handle, &argc);
                 }
 
-                DBG_PRINT("[callbacks] zjs_service_callbacks(): Calling callback id %u with %u args\n", cb_map[i]->js->id, args_cnt);
+                DBG_PRINT("[callbacks] zjs_service_callbacks(): Calling callback id %u with %u args\n", cb_map[i]->js->id, argc);
                 // TODO: Use 'this' in callback module
-                jerry_call_function(cb_map[i]->js->js_func, ZJS_UNDEFINED, args, args_cnt);
+                jerry_call_function(cb_map[i]->js->js_func, ZJS_UNDEFINED, args, argc);
                 if (cb_map[i]->js->post) {
                     cb_map[i]->js->post(cb_map[i]->js->handle, &ret_val);
                 }

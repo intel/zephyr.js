@@ -177,26 +177,26 @@ static void zjs_ble_queue_dispatch(char *type, zjs_cb_wrapper_t func,
     }
 }
 
-static jerry_value_t zjs_ble_read_attr_call_function_return(const jerry_value_t function_obj_val,
-                                                            const jerry_value_t this_val,
-                                                            const jerry_value_t args_p[],
-                                                            const jerry_length_t args_cnt)
+static jerry_value_t zjs_ble_read_attr_call_function_return(const jerry_value_t function_obj,
+                                                            const jerry_value_t this,
+                                                            const jerry_value_t argv[],
+                                                            const jerry_length_t argc)
 {
-    if (args_cnt != 2 ||
-        !jerry_value_is_number(args_p[0]) ||
-        !jerry_value_is_object(args_p[1])) {
+    if (argc != 2 ||
+        !jerry_value_is_number(argv[0]) ||
+        !jerry_value_is_object(argv[1])) {
         nano_task_sem_give(&zjs_ble_nano_sem);
         return zjs_error("zjs_ble_read_attr_call_function_return: invalid arguments");
     }
 
     uintptr_t ptr;
-    if (jerry_get_object_native_handle(function_obj_val, &ptr)) {
+    if (jerry_get_object_native_handle(function_obj, &ptr)) {
         // store the return value in the read_cb struct
         struct zjs_ble_characteristic *chrc = (struct zjs_ble_characteristic*)ptr;
-        chrc->read_cb.error_code = (uint32_t)jerry_get_number_value(args_p[0]);
+        chrc->read_cb.error_code = (uint32_t)jerry_get_number_value(argv[0]);
 
 
-        struct zjs_buffer_t *buf = zjs_buffer_find(args_p[1]);
+        struct zjs_buffer_t *buf = zjs_buffer_find(argv[1]);
         if (buf) {
             chrc->read_cb.buffer = buf->buffer;
             chrc->read_cb.buffer_size = buf->bufsize;
@@ -288,22 +288,22 @@ static ssize_t zjs_ble_read_attr_callback(struct bt_conn *conn,
     return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
 }
 
-static jerry_value_t zjs_ble_write_attr_call_function_return(const jerry_value_t function_obj_val,
-                                                             const jerry_value_t this_val,
-                                                             const jerry_value_t args_p[],
-                                                             const jerry_length_t args_cnt)
+static jerry_value_t zjs_ble_write_attr_call_function_return(const jerry_value_t function_obj,
+                                                             const jerry_value_t this,
+                                                             const jerry_value_t argv[],
+                                                             const jerry_length_t argc)
 {
-    if (args_cnt != 1 ||
-        !jerry_value_is_number(args_p[0])) {
+    if (argc != 1 ||
+        !jerry_value_is_number(argv[0])) {
         nano_task_sem_give(&zjs_ble_nano_sem);
         return zjs_error("zjs_ble_write_attr_call_function_return: invalid arguments");
     }
 
     uintptr_t ptr;
-    if (jerry_get_object_native_handle(function_obj_val, &ptr)) {
+    if (jerry_get_object_native_handle(function_obj, &ptr)) {
         // store the return value in the write_cb struct
         struct zjs_ble_characteristic *chrc = (struct zjs_ble_characteristic*)ptr;
-        chrc->write_cb.error_code = (uint32_t)jerry_get_number_value(args_p[0]);
+        chrc->write_cb.error_code = (uint32_t)jerry_get_number_value(argv[0]);
     }
 
     // unblock fiber
@@ -400,23 +400,23 @@ static ssize_t zjs_ble_write_attr_callback(struct bt_conn *conn,
     return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
 }
 
-static jerry_value_t zjs_ble_update_value_call_function(const jerry_value_t function_obj_val,
-                                                        const jerry_value_t this_val,
-                                                        const jerry_value_t args_p[],
-                                                        const jerry_length_t args_cnt)
+static jerry_value_t zjs_ble_update_value_call_function(const jerry_value_t function_obj,
+                                                        const jerry_value_t this,
+                                                        const jerry_value_t argv[],
+                                                        const jerry_length_t argc)
 {
-    if (args_cnt != 1 ||
-        !jerry_value_is_object(args_p[0])) {
+    if (argc != 1 ||
+        !jerry_value_is_object(argv[0])) {
         return zjs_error("zjs_ble_update_value_call_function: invalid arguments");
     }
 
     // expects a Buffer object
-    struct zjs_buffer_t *buf = zjs_buffer_find(args_p[0]);
+    struct zjs_buffer_t *buf = zjs_buffer_find(argv[0]);
 
     if (buf) {
         if (zjs_ble_default_conn) {
             uintptr_t ptr;
-            if (jerry_get_object_native_handle(this_val, &ptr)) {
+            if (jerry_get_object_native_handle(this, &ptr)) {
                struct zjs_ble_characteristic *chrc = (struct zjs_ble_characteristic*)ptr;
                if (chrc->chrc_attr) {
                    bt_gatt_notify(zjs_ble_default_conn, chrc->chrc_attr, buf->buffer, buf->bufsize);
@@ -559,25 +559,25 @@ void zjs_ble_enable() {
     bt_conn_auth_cb_register(&zjs_ble_auth_cb_display);
 }
 
-static jerry_value_t zjs_ble_on(const jerry_value_t function_obj_val,
-                                const jerry_value_t this_val,
-                                const jerry_value_t args_p[],
-                                const jerry_length_t args_cnt)
+static jerry_value_t zjs_ble_on(const jerry_value_t function_obj,
+                                const jerry_value_t this,
+                                const jerry_value_t argv[],
+                                const jerry_length_t argc)
 {
     // arg 0 should be a string event type
     // arg 1 should be a callback function
-    if (args_cnt < 2 ||
-        !jerry_value_is_string(args_p[0]) ||
-        !jerry_value_is_object(args_p[1])) {
+    if (argc < 2 ||
+        !jerry_value_is_string(argv[0]) ||
+        !jerry_value_is_object(argv[1])) {
         return zjs_error("zjs_ble_on: invalid arguments");
     }
 
     char event[MAX_TYPE_LEN];
-    jerry_size_t sz = jerry_get_string_size(args_p[0]);
+    jerry_size_t sz = jerry_get_string_size(argv[0]);
     if (sz >= MAX_TYPE_LEN) {
         return zjs_error("zjs_ble_on: event type string too long");
     }
-    jerry_string_to_char_buffer(args_p[0], (jerry_char_t *)event, sz);
+    jerry_string_to_char_buffer(argv[0], (jerry_char_t *)event, sz);
     event[sz] = '\0';
 
     struct zjs_ble_list_item *item = zjs_ble_event_callback_alloc();
@@ -586,7 +586,7 @@ static jerry_value_t zjs_ble_on(const jerry_value_t function_obj_val,
 
     // TODO: we should only do this for valid event types; right now we'll
     //   store anything
-    item->zjs_cb.js_callback = jerry_acquire_value(args_p[1]);
+    item->zjs_cb.js_callback = jerry_acquire_value(argv[1]);
     memcpy(item->event_type, event, sz + 1);
 
     return ZJS_UNDEFINED;
@@ -675,30 +675,30 @@ static int zjs_encode_url_frame(jerry_value_t url, uint8_t **frame, int *size)
     return ZJS_SUCCESS;
 }
 
-static jerry_value_t zjs_ble_start_advertising(const jerry_value_t function_obj_val,
-                                               const jerry_value_t this_val,
-                                               const jerry_value_t args_p[],
-                                               const jerry_length_t args_cnt)
+static jerry_value_t zjs_ble_start_advertising(const jerry_value_t function_obj,
+                                               const jerry_value_t this,
+                                               const jerry_value_t argv[],
+                                               const jerry_length_t argc)
 {
     // arg 0 should be the device name to advertise, e.g. "Arduino101"
     // arg 1 should be an array of UUIDs (short, 4 hex chars)
     // arg 2 should be a short URL (typically registered with Google, I think)
     char name[80];
 
-    if (args_cnt < 2 ||
-        !jerry_value_is_string(args_p[0]) ||
-        !jerry_value_is_object(args_p[1]) ||
-        (args_cnt >= 3 && !jerry_value_is_string(args_p[2]))) {
+    if (argc < 2 ||
+        !jerry_value_is_string(argv[0]) ||
+        !jerry_value_is_object(argv[1]) ||
+        (argc >= 3 && !jerry_value_is_string(argv[2]))) {
         return zjs_error("zjs_ble_adv_start: invalid arguments");
     }
 
-    jerry_value_t array = args_p[1];
+    jerry_value_t array = argv[1];
     if (!jerry_value_is_array(array)) {
         return zjs_error("zjs_ble_adv_start: expected array");
     }
 
-    jerry_size_t sz = jerry_get_string_size(args_p[0]);
-    int len_name = jerry_string_to_char_buffer(args_p[0],
+    jerry_size_t sz = jerry_get_string_size(argv[0]);
+    int len_name = jerry_string_to_char_buffer(argv[0],
                                                (jerry_char_t *) name,
                                                sz);
     name[len_name] = '\0';
@@ -714,8 +714,8 @@ static jerry_value_t zjs_ble_start_advertising(const jerry_value_t function_obj_
      */
     uint8_t *url_frame = NULL;
     int frame_size;
-    if (args_cnt >= 3) {
-        if (zjs_encode_url_frame(args_p[2], &url_frame, &frame_size)) {
+    if (argc >= 3) {
+        if (zjs_encode_url_frame(argv[2], &url_frame, &frame_size)) {
             PRINT("zjs_ble_start_advertising: error encoding url frame, won't be advertised\n");
 
             // TODO: Make use of error values and turn them into exceptions
@@ -782,10 +782,10 @@ static jerry_value_t zjs_ble_start_advertising(const jerry_value_t function_obj_
     return ZJS_UNDEFINED;
 }
 
-static jerry_value_t zjs_ble_stop_advertising(const jerry_value_t function_obj_val,
-                                              const jerry_value_t this_val,
-                                              const jerry_value_t args_p[],
-                                              const jerry_length_t args_cnt)
+static jerry_value_t zjs_ble_stop_advertising(const jerry_value_t function_obj,
+                                              const jerry_value_t this,
+                                              const jerry_value_t argv[],
+                                              const jerry_length_t argc)
 {
     PRINT("zjs_ble_stop_advertising: stopAdvertising has been called\n");
     return ZJS_UNDEFINED;
@@ -1099,17 +1099,17 @@ static bool zjs_ble_register_service(struct zjs_ble_service *service)
     return true;
 }
 
-static jerry_value_t zjs_ble_set_services(const jerry_value_t function_obj_val,
-                                          const jerry_value_t this_val,
-                                          const jerry_value_t args_p[],
-                                          const jerry_length_t args_cnt)
+static jerry_value_t zjs_ble_set_services(const jerry_value_t function_obj,
+                                          const jerry_value_t this,
+                                          const jerry_value_t argv[],
+                                          const jerry_length_t argc)
 {
     // arg 0 should be an array of services
     // arg 1 is optionally an object, but unused currently (FIXME)
     PRINT("setServices has been called\n");
 
-    if (args_cnt < 1 || !jerry_value_is_object(args_p[0]) ||
-        (args_cnt >= 2 && !jerry_value_is_object(args_p[1]))) {
+    if (argc < 1 || !jerry_value_is_object(argv[0]) ||
+        (argc >= 2 && !jerry_value_is_object(argv[1]))) {
         return zjs_error("zjs_ble_set_services: invalid arguments");
     }
 
@@ -1117,7 +1117,7 @@ static jerry_value_t zjs_ble_set_services(const jerry_value_t function_obj_val,
     // which has only 1 primary service and 2 characteristics
     // add support for multiple services
     jerry_value_t v_service;
-    v_service = jerry_get_property_by_index(args_p[0], 0);
+    v_service = jerry_get_property_by_index(argv[0], 0);
     if (jerry_value_has_error_flag(v_service)) {
         return zjs_error("zjs_ble_set_services: services array is empty");
     }
@@ -1142,29 +1142,29 @@ static jerry_value_t zjs_ble_set_services(const jerry_value_t function_obj_val,
 }
 
 // Constructor
-static jerry_value_t zjs_ble_primary_service(const jerry_value_t function_obj_val,
-                                             const jerry_value_t this_val,
-                                             const jerry_value_t args_p[],
-                                             const jerry_length_t args_cnt)
+static jerry_value_t zjs_ble_primary_service(const jerry_value_t function_obj,
+                                             const jerry_value_t this,
+                                             const jerry_value_t argv[],
+                                             const jerry_length_t argc)
 {
-    if (args_cnt < 1 || !jerry_value_is_object(args_p[0])) {
+    if (argc < 1 || !jerry_value_is_object(argv[0])) {
         return zjs_error("zjs_ble_primary_service: invalid arguments");
     }
 
-    return jerry_acquire_value(args_p[0]);
+    return jerry_acquire_value(argv[0]);
 }
 
 // Constructor
-static jerry_value_t zjs_ble_characteristic(const jerry_value_t function_obj_val,
-                                            const jerry_value_t this_val,
-                                            const jerry_value_t args_p[],
-                                            const jerry_length_t args_cnt)
+static jerry_value_t zjs_ble_characteristic(const jerry_value_t function_obj,
+                                            const jerry_value_t this,
+                                            const jerry_value_t argv[],
+                                            const jerry_length_t argc)
 {
-    if (args_cnt < 1 || !jerry_value_is_object(args_p[0])) {
+    if (argc < 1 || !jerry_value_is_object(argv[0])) {
         return zjs_error("zjs_ble_characterstic: invalid arguments");
     }
 
-    jerry_value_t obj = jerry_acquire_value(args_p[0]);
+    jerry_value_t obj = jerry_acquire_value(argv[0]);
     jerry_value_t val;
 
     // error codes
@@ -1188,20 +1188,20 @@ static jerry_value_t zjs_ble_characteristic(const jerry_value_t function_obj_val
     zjs_set_property(obj, "RESULT_UNLIKELY_ERROR", val);
     jerry_release_value(val);
 
-    return args_p[0];
+    return argv[0];
 }
 
 // Constructor
-static jerry_value_t zjs_ble_descriptor(const jerry_value_t function_obj_val,
-                                        const jerry_value_t this_val,
-                                        const jerry_value_t args_p[],
-                                        const jerry_length_t args_cnt)
+static jerry_value_t zjs_ble_descriptor(const jerry_value_t function_obj,
+                                        const jerry_value_t this,
+                                        const jerry_value_t argv[],
+                                        const jerry_length_t argc)
 {
-    if (args_cnt < 1 || !jerry_value_is_object(args_p[0])) {
+    if (argc < 1 || !jerry_value_is_object(argv[0])) {
         return zjs_error("zjs_ble_descriptor: invalid arguments");
     }
 
-    return jerry_acquire_value(args_p[0]);
+    return jerry_acquire_value(argv[0]);
 }
 
 jerry_value_t zjs_ble_init()
