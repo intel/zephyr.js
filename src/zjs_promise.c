@@ -178,7 +178,7 @@ void zjs_fulfill_promise(int32_t id, jerry_value_t args[], uint32_t args_cnt)
     handle->then_args = args;
     handle->then_args_cnt = args_cnt;
 
-    zjs_signal_callback(handle->then_id);
+    zjs_signal_callback(handle->then_id, NULL);
 
     jerry_release_value(global_obj);
 }
@@ -198,7 +198,7 @@ void zjs_reject_promise(int32_t id, jerry_value_t args[], uint32_t args_cnt)
     handle->catch_args = args;
     handle->catch_args_cnt = args_cnt;
 
-    zjs_signal_callback(handle->catch_id);
+    zjs_signal_callback(handle->catch_id, NULL);
 
     jerry_release_value(global_obj);
 }

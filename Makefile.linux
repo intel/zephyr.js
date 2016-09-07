@@ -10,6 +10,7 @@ all: linux
 CORE_SRC = 	src/main.c \
 			src/zjs_buffer.c \
 			src/zjs_callbacks.c \
+			src/zjs_linux_queue.c \
 			src/zjs_linux_time.c \
 			src/zjs_modules.c \
 			src/zjs_script.c \
