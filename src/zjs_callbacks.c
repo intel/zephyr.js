@@ -103,6 +103,7 @@ int32_t zjs_add_callback(jerry_value_t js_func,
     new_cb->js = zjs_malloc(sizeof(struct zjs_callback_t));
     if (!new_cb->js) {
         DBG_PRINT("[callbacks] zjs_add_callback(): Error allocating space for new callback\n");
+        zjs_free(new_cb);
         return -1;
     }
     new_cb->type = CALLBACK_TYPE_JS;
@@ -162,6 +163,7 @@ int32_t zjs_add_c_callback(void* handle, zjs_c_callback_func callback)
     new_cb->c = zjs_malloc(sizeof(struct zjs_c_callback_t));
     if (!new_cb->c) {
         DBG_PRINT("[callbacks] zjs_add_c_callback(): Error allocating space for new callback\n");
+        zjs_free(new_cb);
         return -1;
     }
     new_cb->type = CALLBACK_TYPE_C;

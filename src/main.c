@@ -36,6 +36,8 @@
 #endif
 #endif
 
+extern const char script_gen[];
+
 #ifndef ZJS_LINUX_BUILD
 void main(void)
 #else
@@ -98,10 +100,12 @@ void main(int argc, char *argv[])
     if (argc > 1) {
         zjs_read_script(argv[1], &script, &len);
     } else {
-        zjs_read_script(NULL, &script, &len);
+        script = script_gen;
+        len = strlen(script_gen);
     }
 #else
-    zjs_read_script(NULL, &script, &len);
+    script = script_gen;
+    len = strlen(script_gen);
 #endif
 
     code_eval = jerry_parse((jerry_char_t *)script, len, false);
@@ -110,7 +114,11 @@ void main(int argc, char *argv[])
         return;
     }
 
-    zjs_free_script(script);
+#ifdef ZJS_LINUX_BUILD
+    if (argc > 1) {
+        zjs_free_script(script);
+    }
+#endif
 
     result = jerry_run(code_eval);
     if (jerry_value_has_error_flag(result)) {
