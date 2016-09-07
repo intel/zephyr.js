@@ -7,9 +7,6 @@
 
 #include "zjs_script.h"
 
-// this is arbitrary but okay for now; added to avoid plain strlen below
-#define MAX_SCRIPT_SIZE 4096
-
 void zjs_read_script(char* name, char** script, uint32_t* length)
 {
     if (name) {

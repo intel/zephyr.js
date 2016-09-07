@@ -44,7 +44,7 @@ void main(void)
 void main(int argc, char *argv[])
 #endif
 {
-    char* script = NULL;
+    const char *script = NULL;
     jerry_value_t code_eval;
     jerry_value_t result;
     uint32_t len;
@@ -99,14 +99,17 @@ void main(int argc, char *argv[])
 #ifdef ZJS_LINUX_BUILD
     if (argc > 1) {
         zjs_read_script(argv[1], &script, &len);
-    } else {
-        script = script_gen;
-        len = strlen(script_gen);
-    }
-#else
-    script = script_gen;
-    len = strlen(script_gen);
+    } else
+    // slightly tricky: reuse next section as else clause
 #endif
+    {
+        script = script_gen;
+        len = strnlen(script_gen, MAX_SCRIPT_SIZE);
+        if (len == MAX_SCRIPT_SIZE) {
+            PRINT("Error: Script size too large! Increase MAX_SCRIPT_SIZE.\n");
+            return;
+        }
+    }
 
     code_eval = jerry_parse((jerry_char_t *)script, len, false);
     if (jerry_value_has_error_flag(code_eval)) {
