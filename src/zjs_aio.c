@@ -433,7 +433,7 @@ static jerry_value_t zjs_aio_open(const jerry_value_t function_obj_val,
 jerry_value_t zjs_aio_init()
 {
     zjs_ipm_init();
-    zjs_ipm_register_callback(ipm_msg_receive_callback);
+    zjs_ipm_register_callback(MSG_ID_AIO, ipm_msg_receive_callback);
 
     nano_sem_init(&aio_sem);
 

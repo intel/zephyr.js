@@ -400,7 +400,7 @@ void main(void)
     memset(msg_queue, 0, sizeof(struct zjs_ipm_message) * QUEUE_SIZE);
 
     zjs_ipm_init();
-    zjs_ipm_register_callback(ipm_msg_receive_callback);
+    zjs_ipm_register_callback(-1, ipm_msg_receive_callback); // MSG_ID ignored
 
     adc_dev = device_get_binding(ADC_DEVICE_NAME);
     adc_enable(adc_dev);

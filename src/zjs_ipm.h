@@ -100,6 +100,6 @@ void zjs_ipm_init();
 
 int zjs_ipm_send(uint32_t id, struct zjs_ipm_message *data);
 
-void zjs_ipm_register_callback(ipm_callback_t cb);
+void zjs_ipm_register_callback(uint32_t msg_id, ipm_callback_t cb);
 
 #endif  // __zjs_ipm_h__
