@@ -14,7 +14,7 @@
 #include "zjs_ipm.h"
 
 #define QUEUE_SIZE                   10          // max incoming message can handle
-#define SLEEP_TICKS                  10          // sleep time in cpu ticks
+#define SLEEP_TICKS                   1          // sleep time in cpu ticks
 #define UPDATE_INTERVAL              50          // interval in between notifications
 
 // AIO
