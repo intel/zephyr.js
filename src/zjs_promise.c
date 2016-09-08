@@ -40,8 +40,11 @@ static int find_id(uint64_t* use)
 
 char* make_name(uint32_t id, char* module)
 {
+    // requires: module should be null-terminated (up to first 8 bytes used)
     // id can take up at most 10 bytes; with null terminator and dash this
     //   leaves 8 bytes for module name
+    // Note: Returns a static name buffer, so it must be copied out before you
+    //   call make_name again.
     static char name[20];
     size_t len = strnlen(module, 8);
     strncpy(name, module, len);

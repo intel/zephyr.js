@@ -92,7 +92,7 @@ struct zjs_ble_service {
 #define MAX_TYPE_LEN 20
 
 struct zjs_ble_list_item {
-    char event_type[MAX_TYPE_LEN];
+    char event_type[MAX_TYPE_LEN];  // null-terminated
     struct zjs_callback zjs_cb;
     uint32_t intdata;
     struct zjs_ble_list_item *next;
@@ -166,9 +166,8 @@ static void zjs_ble_queue_dispatch(char *type, zjs_cb_wrapper_t func,
     //  effects: finds the first callback for the given type and queues it up
     //             to run func to execute it at the next opportunity
     struct zjs_ble_list_item *ev = zjs_ble_list;
-    int len = strnlen(type, MAX_TYPE_LEN);
     while (ev) {
-        if (!strncmp(ev->event_type, type, len)) {
+        if (!strncmp(ev->event_type, type, MAX_TYPE_LEN)) {
             ev->zjs_cb.call_function = func;
             ev->intdata = intdata;
             zjs_queue_callback(&ev->zjs_cb);
@@ -573,24 +572,22 @@ static jerry_value_t zjs_ble_on(const jerry_value_t function_obj_val,
         return zjs_error("zjs_ble_on: invalid arguments");
     }
 
+    char event[MAX_TYPE_LEN];
+    jerry_size_t sz = jerry_get_string_size(args_p[0]);
+    if (sz >= MAX_TYPE_LEN) {
+        return zjs_error("zjs_ble_on: event type string too long");
+    }
+    jerry_string_to_char_buffer(args_p[0], (jerry_char_t *)event, sz);
+    event[sz] = '\0';
+
     struct zjs_ble_list_item *item = zjs_ble_event_callback_alloc();
     if (!item)
         return zjs_error("zjs_ble_on: error allocating callback");
 
-    char event[MAX_TYPE_LEN];
-    jerry_size_t sz = jerry_get_string_size(args_p[0]);
-    // FIXME: need to make sure event name is less than 20 characters.
-    // assert(sz < 20);
-    int len = jerry_string_to_char_buffer(args_p[0],
-                                          (jerry_char_t *)event,
-                                          sz);
-    event[len] = '\0';
-    PRINT("\nEVENT TYPE: %s (%d)\n", event, len);
-
     // TODO: we should only do this for valid event types; right now we'll
     //   store anything
     item->zjs_cb.js_callback = jerry_acquire_value(args_p[1]);
-    memcpy(item->event_type, event, len);
+    memcpy(item->event_type, event, sz + 1);
 
     return ZJS_UNDEFINED;
 }
