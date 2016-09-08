@@ -32,6 +32,11 @@ if which uglifyjs &> /dev/null; then
     else
         uglifyjs -nc -mt $INPUT > /tmp/gen.tmp
     fi
+    ERR=$?
+    if (($ERR > 0)); then
+        echo Error: Minification failed!
+        exit $ERR
+    fi
 else
     cat $INPUT > /tmp/gen.tmp
 fi
