@@ -11,12 +11,12 @@ struct promise {
     int32_t id;
     jerry_value_t then;         // Function registered from then()
     int32_t then_id;            // Callback ID for then JS callback
-    jerry_value_t* then_args;   // Arguments for fulfilling promise
-    uint32_t then_args_cnt;     // Number of arguments for then callback
+    jerry_value_t* then_argv;   // Arguments for fulfilling promise
+    uint32_t then_argc;     // Number of arguments for then callback
     jerry_value_t catch;        // Function registered from catch()
     int32_t catch_id;           // Callback ID for catch JS callback
-    jerry_value_t* catch_args;  // Arguments for rejecting promise
-    uint32_t catch_args_cnt;    // Number of arguments for catch callback
+    jerry_value_t* catch_argv;  // Arguments for rejecting promise
+    uint32_t catch_argc;    // Number of arguments for catch callback
     void* user_handle;
     zjs_post_promise_func post;
 };
@@ -63,10 +63,10 @@ struct promise* new_promise(void)
 }
 
 // Dummy function for then/catch
-static jerry_value_t null_function(const jerry_value_t function_obj_val,
-                                   const jerry_value_t this_val,
-                                   const jerry_value_t args_p[],
-                                   const jerry_length_t args_cnt)
+static jerry_value_t null_function(const jerry_value_t function_obj,
+                                   const jerry_value_t this,
+                                   const jerry_value_t argv[],
+                                   const jerry_length_t argc)
 {
     return ZJS_UNDEFINED;
 }
@@ -79,64 +79,64 @@ static void post_promise(void* h, jerry_value_t* ret_val)
     jerry_release_value(handle->catch);
 }
 
-static void promise_free(const uintptr_t native_p)
+static void promise_free(const uintptr_t native)
 {
-    struct promise* handle = (struct promise*)native_p;
+    struct promise* handle = (struct promise*)native;
     if (handle) {
         task_free(handle);
     }
 }
 
-static jerry_value_t* pre_then(void* h, uint32_t* args_cnt)
+static jerry_value_t* pre_then(void* h, uint32_t* argc)
 {
     struct promise* handle = (struct promise*)h;
 
-    *args_cnt = handle->then_args_cnt;
-    return handle->then_args;
+    *argc = handle->then_argc;
+    return handle->then_argv;
 }
 
-static jerry_value_t promise_then(const jerry_value_t function_obj_val,
-                                   const jerry_value_t this_val,
-                                   const jerry_value_t args_p[],
-                                   const jerry_length_t args_cnt)
+static jerry_value_t promise_then(const jerry_value_t function_obj,
+                                   const jerry_value_t this,
+                                   const jerry_value_t argv[],
+                                   const jerry_length_t argc)
 {
     struct promise* handle;
 
-    jerry_value_t promise_obj = zjs_get_property(this_val, "promise");
+    jerry_value_t promise_obj = zjs_get_property(this, "promise");
     jerry_get_object_native_handle(promise_obj, (uintptr_t*)&handle);
 
-    if (jerry_value_is_function(args_p[0])) {
+    if (jerry_value_is_function(argv[0])) {
         jerry_release_value(handle->then);
-        handle->then = jerry_acquire_value(args_p[0]);
+        handle->then = jerry_acquire_value(argv[0]);
         zjs_edit_js_func(handle->then_id, handle->then);
         // Return the promise so it can be used by catch()
-        return this_val;
+        return this;
     } else {
         return ZJS_UNDEFINED;
     }
 }
 
-static jerry_value_t* pre_catch(void* h, uint32_t* args_cnt)
+static jerry_value_t* pre_catch(void* h, uint32_t* argc)
 {
     struct promise* handle = (struct promise*)h;
 
-    *args_cnt = handle->catch_args_cnt;
-    return handle->catch_args;
+    *argc = handle->catch_argc;
+    return handle->catch_argv;
 }
 
-static jerry_value_t promise_catch(const jerry_value_t function_obj_val,
-                                   const jerry_value_t this_val,
-                                   const jerry_value_t args_p[],
-                                   const jerry_length_t args_cnt)
+static jerry_value_t promise_catch(const jerry_value_t function_obj,
+                                   const jerry_value_t this,
+                                   const jerry_value_t argv[],
+                                   const jerry_length_t argc)
 {
     struct promise* handle;
 
-    jerry_value_t promise_obj = zjs_get_property(this_val, "promise");
+    jerry_value_t promise_obj = zjs_get_property(this, "promise");
     jerry_get_object_native_handle(promise_obj, (uintptr_t*)&handle);
 
-    if (jerry_value_is_function(args_p[0])) {
+    if (jerry_value_is_function(argv[0])) {
         jerry_release_value(handle->catch);
-        handle->catch = jerry_acquire_value(args_p[0]);
+        handle->catch = jerry_acquire_value(argv[0]);
         zjs_edit_js_func(handle->catch_id, handle->catch);
     }
     return ZJS_UNDEFINED;
@@ -166,7 +166,7 @@ int32_t zjs_make_promise(jerry_value_t obj, zjs_post_promise_func post, void* ha
     return new->id;
 }
 
-void zjs_fulfill_promise(int32_t id, jerry_value_t args[], uint32_t args_cnt)
+void zjs_fulfill_promise(int32_t id, jerry_value_t argv[], uint32_t argc)
 {
     struct promise* handle;
     jerry_value_t global_obj = jerry_get_global_object();
@@ -178,15 +178,15 @@ void zjs_fulfill_promise(int32_t id, jerry_value_t args[], uint32_t args_cnt)
     // Put *something* here in case it never gets registered
     handle->then = jerry_create_external_function(null_function);
     handle->then_id = zjs_add_callback(handle->then, handle, pre_then, post_promise);
-    handle->then_args = args;
-    handle->then_args_cnt = args_cnt;
+    handle->then_argv = argv;
+    handle->then_argc = argc;
 
     zjs_signal_callback(handle->then_id);
 
     jerry_release_value(global_obj);
 }
 
-void zjs_reject_promise(int32_t id, jerry_value_t args[], uint32_t args_cnt)
+void zjs_reject_promise(int32_t id, jerry_value_t argv[], uint32_t argc)
 {
     struct promise* handle;
     jerry_value_t global_obj = jerry_get_global_object();
@@ -198,8 +198,8 @@ void zjs_reject_promise(int32_t id, jerry_value_t args[], uint32_t args_cnt)
     // Put *something* here in case it never gets registered
     handle->catch = jerry_create_external_function(null_function);
     handle->catch_id = zjs_add_callback(handle->catch, handle, pre_catch, post_promise);
-    handle->catch_args = args;
-    handle->catch_args_cnt = args_cnt;
+    handle->catch_argv = argv;
+    handle->catch_argc = argc;
 
     zjs_signal_callback(handle->catch_id);
 

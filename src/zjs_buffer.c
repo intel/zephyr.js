@@ -18,37 +18,37 @@ static struct zjs_buffer_t *zjs_buffers = NULL;
 
 // TODO: this could probably be replaced more efficiently now that there is a
 //   get_native_handle API
-struct zjs_buffer_t *zjs_buffer_find(const jerry_value_t obj_val)
+struct zjs_buffer_t *zjs_buffer_find(const jerry_value_t obj)
 {
     // requires: obj should be the JS object associated with a buffer, created
     //             in zjs_buffer
     //  effects: looks up obj in our list of known buffer objects and returns
     //             the associated list item struct
     for (struct zjs_buffer_t *buf = zjs_buffers; buf; buf = buf->next)
-        if (buf->obj == obj_val)
+        if (buf->obj == obj)
             return buf;
     return NULL;
 }
 
-static jerry_value_t zjs_buffer_read_uint8(const jerry_value_t function_obj_val,
-                                           const jerry_value_t this_val,
-                                           const jerry_value_t args_p[],
-                                           const jerry_length_t args_cnt)
+static jerry_value_t zjs_buffer_read_uint8(const jerry_value_t function_obj,
+                                           const jerry_value_t this,
+                                           const jerry_value_t argv[],
+                                           const jerry_length_t argc)
 {
-    // requires: this_val is a JS buffer object created with zjs_buffer_create,
+    // requires: this is a JS buffer object created with zjs_buffer_create,
     //             expects argument of an offset into the buffer, but will
     //             treat offset as 0 if not given, as node.js seems to
-    //  effects: reads single byte value from  the buffer associated with the
-    //             this_p JS object, if found, at the given offset, if within
+    //  effects: reads single byte value from the buffer associated with the
+    //             this JS object, if found, at the given offset, if within
     //             the bounds of the buffer; otherwise returns an error
-    if (args_cnt >= 1 && !jerry_value_is_number(args_p[0]))
+    if (argc >= 1 && !jerry_value_is_number(argv[0]))
         return zjs_error("zjs_buffer_read_uint8: invalid argument");
 
     uint32_t offset = 0;
-    if (args_cnt >= 1)
-        offset = (uint32_t)jerry_get_number_value(args_p[0]);
+    if (argc >= 1)
+        offset = (uint32_t)jerry_get_number_value(argv[0]);
 
-    struct zjs_buffer_t *buf = zjs_buffer_find(this_val);
+    struct zjs_buffer_t *buf = zjs_buffer_find(this);
     if (buf) {
         if (offset >= buf->bufsize)
             return zjs_error("zjs_buffer_read_uint8: read beyond end of buffer");
@@ -60,30 +60,30 @@ static jerry_value_t zjs_buffer_read_uint8(const jerry_value_t function_obj_val,
     return zjs_error("zjs_buffer_read_uint8: read called on a buffer not in list");
 }
 
-static jerry_value_t zjs_buffer_write_uint8(const jerry_value_t function_obj_val,
-                                            const jerry_value_t this_val,
-                                            const jerry_value_t args_p[],
-                                            const jerry_length_t args_cnt)
+static jerry_value_t zjs_buffer_write_uint8(const jerry_value_t function_obj,
+                                            const jerry_value_t this,
+                                            const jerry_value_t argv[],
+                                            const jerry_length_t argc)
 {
-    // requires: this_val is a JS buffer object created with zjs_buffer_create,
+    // requires: this is a JS buffer object created with zjs_buffer_create,
     //             expects arguments of the value to write and an offset
     //             into the buffer, but will treat offset as 0 if not given,
     //             as node.js seems to
     //  effects: writes single byte value into the buffer associated with the
-    //             this_p JS object, if found, at the given offset, if within
+    //             this JS object, if found, at the given offset, if within
     //             the bounds of the buffer; otherwise returns an error
-    if (args_cnt < 1 || !jerry_value_is_number(args_p[0]) ||
-        (args_cnt >= 2 && !jerry_value_is_number(args_p[1]))) {
+    if (argc < 1 || !jerry_value_is_number(argv[0]) ||
+        (argc >= 2 && !jerry_value_is_number(argv[1]))) {
         return zjs_error("zjs_buffer_write_uint8: invalid argument");
     }
 
-    uint8_t value = (uint8_t)jerry_get_number_value(args_p[0]);
+    uint8_t value = (uint8_t)jerry_get_number_value(argv[0]);
 
     uint32_t offset = 0;
-    if (args_cnt > 1)
-        offset = (uint32_t)jerry_get_number_value(args_p[1]);
+    if (argc > 1)
+        offset = (uint32_t)jerry_get_number_value(argv[1]);
 
-    struct zjs_buffer_t *buf = zjs_buffer_find(this_val);
+    struct zjs_buffer_t *buf = zjs_buffer_find(this);
     if (buf) {
         if (offset >= buf->bufsize)
             return zjs_error("zjs_buffer_write_uint8: write beyond end of buffer");
@@ -103,31 +103,31 @@ char zjs_int_to_hex(int value) {
     return 'a' + value - 10;
 }
 
-static jerry_value_t zjs_buffer_to_string(const jerry_value_t function_obj_val,
-                                          const jerry_value_t this_val,
-                                          const jerry_value_t args_p[],
-                                          const jerry_length_t args_cnt)
+static jerry_value_t zjs_buffer_to_string(const jerry_value_t function_obj,
+                                          const jerry_value_t this,
+                                          const jerry_value_t argv[],
+                                          const jerry_length_t argc)
 {
-    // requires: this_val must be a JS buffer object, if an argument is present it
+    // requires: this must be a JS buffer object, if an argument is present it
     //             must be the string 'hex', as that is the only supported
     //             encoding for now
     //  effects: if the buffer object is found, converts its contents to a hex
     //             string and returns it in ret_val_p
-    if (args_cnt > 1 || (args_cnt == 1 && !jerry_value_is_string(args_p[0])))
+    if (argc > 1 || (argc == 1 && !jerry_value_is_string(argv[0])))
         return zjs_error("zjs_buffer_to_string: invalid argument");
 
-    struct zjs_buffer_t *buf = zjs_buffer_find(this_val);
-    if (buf && args_cnt == 0) {
+    struct zjs_buffer_t *buf = zjs_buffer_find(this);
+    if (buf && argc == 0) {
         return jerry_create_string((jerry_char_t *)"[Buffer Object]");
     }
 
     const int maxlen = 16;
     char encoding[maxlen];
-    jerry_size_t sz = jerry_get_string_size(args_p[0]);
+    jerry_size_t sz = jerry_get_string_size(argv[0]);
     if (sz >= maxlen) {
         return zjs_error("zjs_buffer_to_string: encoding argument too long");
     }
-    int len = jerry_string_to_char_buffer(args_p[0], (jerry_char_t *)encoding,
+    int len = jerry_string_to_char_buffer(argv[0], (jerry_char_t *)encoding,
                                           sz);
     encoding[len] = '\0';
 
@@ -206,26 +206,26 @@ jerry_value_t zjs_buffer_create(uint32_t size)
 }
 
 // Buffer constructor
-static jerry_value_t zjs_buffer(const jerry_value_t function_obj_val,
-                                const jerry_value_t this_val,
-                                const jerry_value_t args_p[],
-                                const jerry_length_t args_cnt)
+static jerry_value_t zjs_buffer(const jerry_value_t function_obj,
+                                const jerry_value_t this,
+                                const jerry_value_t argv[],
+                                const jerry_length_t argc)
 {
     // requires: single argument is a numeric size in bytes; soon will also
     //             support an array argument to initialize the buffer
     //  effects: constructs a new JS Buffer object, and an associated buffer
     //             tied to it through a zjs_buffer_t struct stored in a global
     //             list
-    if (args_cnt != 1 || !jerry_value_is_number(args_p[0]))
+    if (argc != 1 || !jerry_value_is_number(argv[0]))
         return zjs_error("zjs_buffer: invalid argument");
 
-    uint32_t size = (uint32_t)jerry_get_number_value(args_p[0]);
+    uint32_t size = (uint32_t)jerry_get_number_value(argv[0]);
     return zjs_buffer_create(size);
 }
 
 void zjs_buffer_init()
 {
-    jerry_value_t global_obj_val = jerry_get_global_object();
-    zjs_obj_add_function(global_obj_val, zjs_buffer, "Buffer");
+    jerry_value_t global_obj = jerry_get_global_object();
+    zjs_obj_add_function(global_obj, zjs_buffer, "Buffer");
 }
 #endif // BUILD_MODULE_BUFFER

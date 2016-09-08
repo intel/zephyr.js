@@ -11,11 +11,11 @@
  * the function arguments for the JS function.
  *
  * @param handle        Module specific handle
- * @param args_cnt      Number of arguments in the returned array
+ * @param argc          Number of arguments in the returned array
  *
  * @return              Pointer to array of jerry_value_t's
  */
-typedef jerry_value_t* (*zjs_pre_callback_func)(void* handle, uint32_t* args_cnt);
+typedef jerry_value_t* (*zjs_pre_callback_func)(void* handle, uint32_t* argc);
 
 /*
  * Function that will be called AFTER the JS function is called.
@@ -50,7 +50,9 @@ void zjs_init_callbacks(void);
  *
  * @return              ID associated with this callback, use this ID to reference this CB
  */
-int32_t zjs_add_callback(jerry_value_t js_func, void* handle, zjs_pre_callback_func pre, zjs_post_callback_func post);
+int32_t zjs_add_callback(jerry_value_t js_func, void* handle,
+                         zjs_pre_callback_func pre,
+                         zjs_post_callback_func post);
 
 /*
  * Change a callbacks JS function
