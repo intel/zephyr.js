@@ -53,18 +53,21 @@ update:
 				if [ ! -d $$name ]; then \
 					git clone $$repo $$name; \
 				fi; \
+				echo Found dependency: $$name; \
 				cd $$name; \
 				if ! git checkout $$commit; then \
-					message="Error checking out commit '$$commit' from $$name,"; \
-					if [ $(UPDATE) = "force" ]; then \
-						echo "$$message continuing anyways (UPDATE=force)"; \
-						git pull; \
-					else \
-						echo "$$message exiting"; \
-						exit 1; \
+					if ! git pull; then \
+						echo "Error attempting git pull on $$name"; \
 					fi; \
-				else \
-					git pull; \
+					if ! git checkout $$commit; then \
+						echo "Error checking out commit '$$commit' on $$name"; \
+						if [ $(UPDATE) = "force" ]; then \
+							echo "Continuing anyway (UPDATE=force)"; \
+						else \
+							echo "Exiting"; \
+							exit 1; \
+						fi; \
+					fi; \
 				fi; \
 				cd ..; \
 				continue ;; \
