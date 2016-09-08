@@ -57,6 +57,8 @@ check_for_require i2c
 if [ $? -eq 0 ]; then
     >&2 echo Using module: I2C
     MODULES+=" -DBUILD_MODULE_I2C"
+    >&2 echo Using module: Buffer
+    MODULES+=" -DBUILD_MODULE_BUFFER"
 fi
 check_for_require grove_lcd
 if [ $? -eq 0 ]; then
@@ -83,7 +85,7 @@ else
     fi
 fi
 buffer=$(grep Buffer\([0-9]*\) $SCRIPT)
-if [ $? -eq 0 ]; then
+if [ $? -eq 0 ] && [[ $MODULE != *"BUILD_MODULE_BUFFER"* ]]; then
     >&2 echo Using module: Buffer
     MODULES+=" -DBUILD_MODULE_BUFFER"
 fi
