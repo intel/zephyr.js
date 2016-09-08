@@ -20,6 +20,9 @@
 // TODO: We should instead have a macro that changes in debug vs. release build,
 // to save string space and instead print error codes or something for release.
 
+// this is arbitrary but okay for now; added to avoid plain strlen below
+#define MAX_SCRIPT_SIZE 4096
+
 #if defined(CONFIG_BOARD_ARDUINO_101) || defined(CONFIG_BOARD_ARDUINO_101_SSS)
 #define ARC_AIO_MIN 9
 #define ARC_AIO_MAX 14

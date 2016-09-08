@@ -1,5 +1,7 @@
 JERRY_BASE ?= $(ZJS_BASE)/deps/jerryscript
 
+ccflags-y += -Wall -Werror
+
 ccflags-y += -I$(JERRY_BASE)/jerry-core
 ccflags-y += -I$(ZEPHYR_BASE)/drivers
 ccflags-y += -I$(ZJS_BASE)/outdir/include
