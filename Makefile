@@ -57,15 +57,15 @@ update:
 				repo=$$(echo $$line | cut -d ' ' -f 2); \
 				commit=$$(echo $$line | cut -d ' ' -f 3); \
 				if [ ! -d $$name ]; then \
-					git clone $$repo $$name; \
+					git clone -q $$repo $$name; \
 				fi; \
 				echo Found dependency: $$name; \
 				cd $$name; \
-				if ! git checkout $$commit; then \
-					if ! git pull; then \
+				if ! git checkout -q $$commit; then \
+					if ! git pull -q; then \
 						echo "Error attempting git pull on $$name"; \
 					fi; \
-					if ! git checkout $$commit; then \
+					if ! git checkout -q $$commit; then \
 						echo "Error checking out commit '$$commit' on $$name"; \
 						if [ $(UPDATE) = "force" ]; then \
 							echo "Continuing anyway (UPDATE=force)"; \
@@ -90,15 +90,15 @@ update:
 # Sets up prj/last_build files
 .PHONY: setup
 setup: update
-	# Copy 256/216k board files to zephyr tree
-	rsync -a deps/overlay-zephyr/ deps/zephyr/
+# Copy 256/216k board files to zephyr tree
+	@rsync -a deps/overlay-zephyr/ deps/zephyr/
 	@if [ $(BOARD) != qemu_x86 ]; then \
 		cp prj.conf.arduino_101_factory prj.conf; \
 	else \
 		cp prj.conf.qemu_x86 prj.conf; \
 	fi
-	# Remove .last_build file
-	rm -f .*.last_build
+# Remove .last_build file
+	@rm -f .*.last_build
 	@echo "" > .$(BOARD).last_build
 
 # Explicit clean
@@ -112,7 +112,7 @@ clean:
 		make -C $(JERRY_BASE) -f targets/zephyr/Makefile clean; \
 		rm -rf deps/jerryscript/build/$(BOARD)/; \
 	fi
-	rm -f src/*.o
+	@rm -f src/*.o
 	cd arc; make clean
 
 # Flash Arduino 101 x86 image
@@ -132,7 +132,8 @@ dfu-all: dfu dfu-arc
 # Generate the script file from the JS variable
 .PHONY: generate
 generate: setup $(PRE_ACTION)
-	./scripts/convert.sh $(JS) src/zjs_script_gen.c
+	@echo Creating C string from JS application...
+	@./scripts/convert.sh $(JS) src/zjs_script_gen.c
 
 # Run QEMU target
 .PHONY: qemu
