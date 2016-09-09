@@ -2,6 +2,9 @@ BOARD ?= arduino_101_factory
 KERNEL ?= micro
 UPDATE ?= exit
 
+# pass TRACE=y to trace malloc/free in the ZJS API
+TRACE ?= n
+
 ifndef ZJS_BASE
 $(error ZJS_BASE not defined)
 endif
@@ -12,12 +15,15 @@ JS ?= samples/HelloWorld.js
 # Build for zephyr, default target
 .PHONY: zephyr
 zephyr: analyze generate
-	make -f Makefile.zephyr BOARD=$(BOARD) KERNEL=$(KERNEL)
+	@make -f Makefile.zephyr BOARD=$(BOARD) KERNEL=$(KERNEL)
 
 .PHONY: analyze
 analyze:
 	@cat src/Makefile.base > src/Makefile
 	@echo "ccflags-y += $(shell ./scripts/analyze.sh $(JS))" >> src/Makefile
+	@if [ "$(TRACE)" = "y" ]; then \
+		echo "ccflags-y += -DZJS_TRACE_MALLOC" >> src/Makefile; \
+	fi
 
 .PHONY: all
 all: zephyr arc
