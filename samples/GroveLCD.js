@@ -19,43 +19,12 @@
 // import grove_lcd module
 var grove_lcd = require("grove_lcd");
 
-var funcFlags = {
-    GLCD_FS_8BIT_MODE : 1 << 4,
-    GLCD_FS_ROWS_2 : 1 << 3,
-    GLCD_FS_ROWS_1 : 0 << 3,
-    GLCD_FS_DOT_SIZE_BIG : 1 << 2,
-    GLCD_FS_DOT_SIZE_LITTLE : 0 << 2
-};
-
-var displayStateFlags = {
-    GLCD_DS_DISPLAY_ON : 1 << 2,
-    GLCD_DS_DISPLAY_OFF : 0 << 2,
-    GLCD_DS_CURSOR_ON : 1 << 1,
-    GLCD_DS_CURSOR_OFF : 0 << 1,
-    GLCD_DS_BLINK_ON : 1 << 0,
-    GLCD_DS_BLINK_OFF : 0 << 0
-};
-
-var inputStateFlags = {
-    GLCD_IS_SHIFT_INCREMENT : 1 << 1,
-    GLCD_IS_SHIFT_DECREMENT : 0 << 1,
-    GLCD_IS_ENTRY_LEFT : 1 << 0,
-    GLCD_IS_ENTRY_RIGHT : 0 << 0
-};
-
-var colors = {
-    GROVE_RGB_WHITE : 0,
-    GROVE_RGB_RED : 1,
-    GROVE_RGB_GREEN : 2,
-    GROVE_RGB_BLUE : 3
-};
-
 // set initial state
-var funcConfig = funcFlags.GLCD_FS_ROWS_2
-               | funcFlags.GLCD_FS_DOT_SIZE_LITTLE
-               | funcFlags.GLCD_FS_8BIT_MODE;
+var funcConfig = grove_lcd.GLCD_FS_ROWS_2
+               | grove_lcd.GLCD_FS_DOT_SIZE_LITTLE
+               | grove_lcd.GLCD_FS_8BIT_MODE;
 
-var displayStateConfig = displayStateFlags.GLCD_DS_DISPLAY_ON;
+var displayStateConfig = grove_lcd.GLCD_DS_DISPLAY_ON;
 
 var glcd = grove_lcd.init();
 
@@ -72,7 +41,7 @@ glcd.setColor(0, 0, 0);
 glcd.setColor(255, 255, 255);
 
 var counter = 0;
-var color = colors.GROVE_RGB_WHITE;
+var color = grove_lcd.GROVE_RGB_WHITE;
 
 setInterval(function () {
     var str = "Counter: " + counter;
@@ -82,13 +51,13 @@ setInterval(function () {
     glcd.print(str);
     glcd.setCursorPos(0, 1);
 
-    if (color == colors.GROVE_RGB_WHITE)
+    if (color == grove_lcd.GROVE_RGB_WHITE)
         glcd.print("WHITE");
-    else if (color == colors.GROVE_RGB_RED)
+    else if (color == grove_lcd.GROVE_RGB_RED)
         glcd.print("RED");
-    else if (color == colors.GROVE_RGB_GREEN)
+    else if (color == grove_lcd.GROVE_RGB_GREEN)
         glcd.print("GREEN");
-    else if (color == colors.GROVE_RGB_BLUE)
+    else if (color == grove_lcd.GROVE_RGB_BLUE)
         glcd.print("BLUE");
     glcd.selectColor(color);
 

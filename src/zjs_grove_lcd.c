@@ -1,9 +1,14 @@
 // Copyright (c) 2016, Intel Corporation.
 #ifdef BUILD_MODULE_GROVE_LCD
 #ifndef QEMU_BUILD
+#ifndef ZJS_LINUX_BUILD
 // Zephyr includes
-#include <misc/util.h>
+#include <zephyr.h>
+#endif
+#include <device.h>
 #include <string.h>
+#include <display/grove_lcd.h>
+#include <misc/util.h>
 
 // ZJS includes
 #include "zjs_grove_lcd.h"
@@ -364,6 +369,90 @@ jerry_value_t zjs_grove_lcd_init()
     // create global grove_lcd object
     jerry_value_t glcd_obj = jerry_create_object();
     zjs_obj_add_function(glcd_obj, zjs_glcd_init, "init");
+
+    // create object properties
+    jerry_value_t val;
+
+    // function flags
+    val = jerry_create_number(GLCD_FS_8BIT_MODE);
+    zjs_set_property(glcd_obj, "GLCD_FS_8BIT_MODE", val);
+    jerry_release_value(val);
+
+    val = jerry_create_number(GLCD_FS_ROWS_2);
+    zjs_set_property(glcd_obj, "GLCD_FS_ROWS_2", val);
+    jerry_release_value(val);
+
+    val = jerry_create_number(GLCD_FS_ROWS_1);
+    zjs_set_property(glcd_obj, "GLCD_FS_ROWS_1", val);
+    jerry_release_value(val);
+
+    val = jerry_create_number(GLCD_FS_DOT_SIZE_BIG);
+    zjs_set_property(glcd_obj, "GLCD_FS_DOT_SIZE_BIG", val);
+    jerry_release_value(val);
+
+    val = jerry_create_number(GLCD_FS_DOT_SIZE_LITTLE);
+    zjs_set_property(glcd_obj, "GLCD_FS_DOT_SIZE_LITTLE", val);
+    jerry_release_value(val);
+
+    // display state flags
+    val = jerry_create_number(GLCD_DS_DISPLAY_ON);
+    zjs_set_property(glcd_obj, "GLCD_DS_DISPLAY_ON", val);
+    jerry_release_value(val);
+
+    val = jerry_create_number(GLCD_DS_DISPLAY_OFF);
+    zjs_set_property(glcd_obj, "GLCD_DS_DISPLAY_OFF", val);
+    jerry_release_value(val);
+
+    val = jerry_create_number(GLCD_DS_CURSOR_ON);
+    zjs_set_property(glcd_obj, "GLCD_DS_CURSOR_ON", val);
+    jerry_release_value(val);
+
+    val = jerry_create_number(GLCD_DS_CURSOR_OFF);
+    zjs_set_property(glcd_obj, "GLCD_DS_CURSOR_OFF", val);
+    jerry_release_value(val);
+
+    val = jerry_create_number(GLCD_DS_BLINK_ON);
+    zjs_set_property(glcd_obj, "GLCD_DS_BLINK_ON", val);
+    jerry_release_value(val);
+
+    val = jerry_create_number(GLCD_DS_BLINK_OFF);
+    zjs_set_property(glcd_obj, "GLCD_DS_BLINK_OFF", val);
+    jerry_release_value(val);
+
+    // input state flags
+    val = jerry_create_number(GLCD_IS_SHIFT_INCREMENT);
+    zjs_set_property(glcd_obj, "GLCD_IS_SHIFT_INCREMENT", val);
+    jerry_release_value(val);
+
+    val = jerry_create_number(GLCD_IS_SHIFT_DECREMENT);
+    zjs_set_property(glcd_obj, "GLCD_IS_SHIFT_DECREMENT", val);
+    jerry_release_value(val);
+
+    val = jerry_create_number(GLCD_IS_ENTRY_LEFT);
+    zjs_set_property(glcd_obj, "GLCD_IS_ENTRY_LEFT", val);
+    jerry_release_value(val);
+
+    val = jerry_create_number(GLCD_IS_ENTRY_RIGHT);
+    zjs_set_property(glcd_obj, "GLCD_IS_ENTRY_RIGHT", val);
+    jerry_release_value(val);
+
+    // colors
+    val = jerry_create_number(GROVE_RGB_WHITE);
+    zjs_set_property(glcd_obj, "GROVE_RGB_WHITE", val);
+    jerry_release_value(val);
+
+    val = jerry_create_number(GROVE_RGB_RED);
+    zjs_set_property(glcd_obj, "GROVE_RGB_RED", val);
+    jerry_release_value(val);
+
+    val = jerry_create_number(GROVE_RGB_GREEN);
+    zjs_set_property(glcd_obj, "GROVE_RGB_GREEN", val);
+    jerry_release_value(val);
+
+    val = jerry_create_number(GROVE_RGB_BLUE);
+    zjs_set_property(glcd_obj, "GROVE_RGB_BLUE", val);
+    jerry_release_value(val);
+
     return glcd_obj;
 }
 

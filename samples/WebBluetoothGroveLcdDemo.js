@@ -28,13 +28,13 @@ var DEVICE_NAME = 'Arduino101';
 
 var glcd = grove_lcd.init();
 
-var funcConfig = 1 << 3              // GLCD_FS_ROWS_2
-               | 0 << 2              // GLCD_FS_DOT_SIZE_LITTLE
-               | 1 << 4;             // GLCD_FS_8BIT_MODE
+var funcConfig = grove_lcd.GLCD_FS_ROWS_2
+               | grove_lcd.GLCD_FS_DOT_SIZE_LITTLE
+               | grove_lcd.GLCD_FS_8BIT_MODE;
 glcd.setFunction(funcConfig);
 
-var displayConfig = 1 << 2;          // LCD_DS_DISPLAY_ON
-glcd.setDisplayState(displayConfig);
+var displayStateConfig = grove_lcd.GLCD_DS_DISPLAY_ON;
+glcd.setDisplayState(displayStateConfig);
 
 glcd.clear();
 glcd.print("Web BLE Demo");
