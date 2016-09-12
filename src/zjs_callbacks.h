@@ -41,6 +41,25 @@ typedef void (*zjs_c_callback_func)(void* handle);
 void zjs_init_callbacks(void);
 
 /*
+ * Create/add a function to a callback list. If the 'id' parameter is -1, a new
+ * callback list will be created. If the 'id' parameter matches an existing
+ * callback list, the JS callback function will be added to the list.
+ *
+ * @param js_func       JS function to be added to the callback list
+ * @param handle        Module specific handle, given to pre/post
+ * @param pre           Function called before the JS function (explained above)
+ * @param post          Function called after the JS function (explained above)
+ * @param id            ID for this callback list (-1 if its a new list)
+ *
+ * @return              New callback ID for this list (or existing ID)
+ */
+int32_t zjs_add_callback_list(jerry_value_t js_func,
+                              void* handle,
+                              zjs_pre_callback_func pre,
+                              zjs_post_callback_func post,
+                              int32_t id);
+
+/*
  * Add/register a callback function
  *
  * @param js_func       JS function to be called (this could be native too)

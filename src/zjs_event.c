@@ -77,7 +77,15 @@ static jerry_value_t add_listener(const jerry_value_t function_obj,
         event_obj = jerry_create_object();
     }
 
-    int32_t callback_id = zjs_add_callback(argv[1], ev, pre_event, post_event);
+    int32_t callback_id = -1;
+    jerry_value_t id_prop = zjs_get_property(event_obj, "callback_id");
+    if (jerry_value_is_number(id_prop)) {
+        // If there already is an event object, get the callback ID
+        zjs_obj_get_uint32(event_obj, "callback_id", &callback_id);
+    }
+
+    callback_id = zjs_add_callback_list(argv[1], ev, pre_event, post_event, callback_id);
+    //int32_t callback_id = zjs_add_callback(argv[1], ev, pre_event, post_event);
 
     // Add callback ID to event object
     zjs_obj_add_number(event_obj, callback_id, "callback_id");
@@ -206,7 +214,14 @@ void zjs_add_event_listener(jerry_value_t obj, const char* event, jerry_value_t 
         event_obj = jerry_create_object();
     }
 
-    int32_t callback_id = zjs_add_callback(listener, ev, pre_event, post_event);
+    int32_t callback_id = -1;
+    jerry_value_t id_prop = zjs_get_property(event_obj, "callback_id");
+    if (jerry_value_is_number(id_prop)) {
+        // If there already is an event object, get the callback ID
+        zjs_obj_get_uint32(event_obj, "callback_id", &callback_id);
+    }
+    callback_id = zjs_add_callback_list(listener, ev, pre_event, post_event, callback_id);
+    //int32_t callback_id = zjs_add_callback(listener, ev, pre_event, post_event);
 
     // Add callback ID to event object
     zjs_obj_add_number(event_obj, callback_id, "callback_id");

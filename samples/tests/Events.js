@@ -7,7 +7,10 @@ var EventEmitter = require('events');
 var myEmitter = new EventEmitter();
 
 myEmitter.on('test_event', function(arg1, arg2) {
-    print('test_event: arg1=' + arg1 + ' arg2=' + arg2);
+    print('test_event: handler 1: arg1=' + arg1 + ' arg2=' + arg2);
+});
+myEmitter.on('test_event', function(arg1, arg2) {
+    print('test_event: handler 2: arg1=' + arg1 + ' arg2=' + arg2);
 });
 
 myEmitter.on('test_event1', function(arg1, arg2) {
