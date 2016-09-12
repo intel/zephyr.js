@@ -63,6 +63,14 @@ int32_t zjs_add_callback(jerry_value_t js_func, void* handle,
 void zjs_edit_js_func(int32_t id, jerry_value_t func);
 
 /*
+ * Change a callback ID's native handle
+ *
+ * @param id            ID of callback
+ * @param handle        New callback handle
+ */
+void zjs_edit_callback_handle(int32_t id, void* handle);
+
+/*
  * Remove a function that was registered by zjs_add_callback(). If you remove a
  * callback that has been signaled, but before it has been serviced it will
  * never get called.
