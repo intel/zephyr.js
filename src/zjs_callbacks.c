@@ -16,12 +16,17 @@
 #define CALLBACK_TYPE_JS    0
 #define CALLBACK_TYPE_C     1
 
+#define CB_LIST_MULTIPLIER  4
+
 struct zjs_callback_t {
     int32_t id;
     void* handle;
     zjs_pre_callback_func pre;
     zjs_post_callback_func post;
     jerry_value_t js_func;
+    int max_funcs;
+    int num_funcs;
+    jerry_value_t* func_list;
 };
 
 struct zjs_c_callback_t {
@@ -94,10 +99,86 @@ void zjs_edit_callback_handle(int32_t id, void* handle)
 {
     if (id != -1) {
         if (cb_map[id]->type == CALLBACK_TYPE_JS) {
-            cb_map[id]->js->handle = handle;
+            if (cb_map[id]->js) {
+                cb_map[id]->js->handle = handle;
+            }
         } else {
             cb_map[id]->c->handle = handle;
         }
+    }
+}
+
+int32_t zjs_add_callback_list(jerry_value_t js_func,
+                              void* handle,
+                              zjs_pre_callback_func pre,
+                              zjs_post_callback_func post,
+                              int32_t id)
+{
+    if (id != -1) {
+        if (cb_map[id] && cb_map[id]->js && cb_map[id]->js->func_list) {
+            // The function list is full, allocate more space, copy the existing
+            // list, and add the new function
+            if (cb_map[id]->js->num_funcs == cb_map[id]->js->max_funcs - 1) {
+                int i;
+                jerry_value_t* new_list = zjs_malloc((sizeof(jerry_value_t) * (cb_map[id]->js->max_funcs + CB_LIST_MULTIPLIER)));
+                for (i = 0; i < cb_map[id]->js->num_funcs; ++i) {
+                    new_list[i] = cb_map[id]->js->func_list[i];
+                }
+                new_list[cb_map[id]->js->num_funcs] = jerry_acquire_value(js_func);
+
+                cb_map[id]->js->max_funcs += CB_LIST_MULTIPLIER;
+                zjs_free(cb_map[id]->js->func_list);
+                cb_map[id]->js->func_list = new_list;
+            } else {
+                // Add function to list
+                cb_map[id]->js->func_list[cb_map[id]->js->num_funcs] = jerry_acquire_value(js_func);
+            }
+            // If not already set, set the handle/pre/post provided. These will
+            // only be set once, when the list is created.
+            if (!cb_map[id]->js->handle) {
+                cb_map[id]->js->handle = handle;
+            }
+            if (!cb_map[id]->js->pre) {
+                cb_map[id]->js->pre = pre;
+            }
+            if (!cb_map[id]->js->post) {
+                cb_map[id]->js->post = post;
+            }
+            cb_map[id]->js->num_funcs++;
+            return cb_map[id]->js->id;
+        } else {
+            DBG_PRINT("[callbacks] zjs_add_callback_list(): Error, list handle was NULL\n");
+            return -1;
+        }
+    } else {
+        struct zjs_callback_map* new_cb = zjs_malloc(sizeof(struct zjs_callback_map));
+        if (!new_cb) {
+            DBG_PRINT("[callbacks] zjs_add_callback(): Error allocating space for new callback\n");
+            return -1;
+        }
+        new_cb->js = zjs_malloc(sizeof(struct zjs_callback_t));
+        if (!new_cb->js) {
+            DBG_PRINT("[callbacks] zjs_add_callback(): Error allocating space for new callback\n");
+            zjs_free(new_cb);
+            return -1;
+        }
+        new_cb->type = CALLBACK_TYPE_JS;
+        new_cb->signal = 0;
+        new_cb->js->id = new_id();
+        new_cb->js->pre = pre;
+        new_cb->js->post = post;
+        new_cb->js->handle = handle;
+        new_cb->js->max_funcs = CB_LIST_MULTIPLIER;
+        new_cb->js->num_funcs = 1;
+        new_cb->js->func_list = zjs_malloc(sizeof(jerry_value_t) * CB_LIST_MULTIPLIER);
+        if (!new_cb->js->func_list) {
+            DBG_PRINT("[callbacks] zjs_add_callback_list(): Could not allocate function list\n");
+            return -1;
+        }
+        new_cb->js->func_list[0] = jerry_acquire_value(js_func);
+        cb_map[new_cb->js->id] = new_cb;
+        cb_size++;
+        return new_cb->js->id;
     }
 }
 
@@ -124,6 +205,9 @@ int32_t zjs_add_callback(jerry_value_t js_func,
     new_cb->js->pre = pre;
     new_cb->js->post = post;
     new_cb->js->handle = handle;
+    new_cb->js->func_list = NULL;
+    new_cb->js->max_funcs = 0;
+    new_cb->js->num_funcs = 0;
 
     // Add callback to list
     cb_map[new_cb->js->id] = new_cb;
@@ -199,20 +283,40 @@ void zjs_service_callbacks(void)
     for (i = 0; i < cb_size; i++) {
         if (cb_map[i]->signal) {
             cb_map[i]->signal = 0;
-            if (cb_map[i]->type == CALLBACK_TYPE_JS && jerry_value_is_function(cb_map[i]->js->js_func)) {
-                uint32_t argc = 0;
-                jerry_value_t ret_val;
-                jerry_value_t* args = NULL;
+            if (cb_map[i]->type == CALLBACK_TYPE_JS) {
+                if (cb_map[i]->js->func_list == NULL && jerry_value_is_function(cb_map[i]->js->js_func)) {
+                    uint32_t argc = 0;
+                    jerry_value_t ret_val;
+                    jerry_value_t* args = NULL;
 
-                if (cb_map[i]->js->pre) {
-                    args = cb_map[i]->js->pre(cb_map[i]->js->handle, &argc);
-                }
+                    if (cb_map[i]->js->pre) {
+                        args = cb_map[i]->js->pre(cb_map[i]->js->handle, &argc);
+                    }
 
-                DBG_PRINT("[callbacks] zjs_service_callbacks(): Calling callback id %u with %u args\n", cb_map[i]->js->id, argc);
-                // TODO: Use 'this' in callback module
-                jerry_call_function(cb_map[i]->js->js_func, ZJS_UNDEFINED, args, argc);
-                if (cb_map[i]->js->post) {
-                    cb_map[i]->js->post(cb_map[i]->js->handle, &ret_val);
+                    DBG_PRINT("[callbacks] zjs_service_callbacks(): Calling callback id %u with %u args\n", cb_map[i]->js->id, argc);
+                    // TODO: Use 'this' in callback module
+                    jerry_call_function(cb_map[i]->js->js_func, ZJS_UNDEFINED, args, argc);
+                    if (cb_map[i]->js->post) {
+                        cb_map[i]->js->post(cb_map[i]->js->handle, &ret_val);
+                    }
+                } else {
+                    int j;
+                    uint32_t argc = 0;
+                    jerry_value_t ret_val;
+                    jerry_value_t* args = NULL;
+
+                    if (cb_map[i]->js->pre) {
+                        args = cb_map[i]->js->pre(cb_map[i]->js->handle, &argc);
+                    }
+
+                    DBG_PRINT("[callbacks] zjs_service_callbacks(): Calling callback list id %u with %u args\n", cb_map[i]->js->id, argc);
+
+                    for (j = 0; j < cb_map[i]->js->num_funcs; ++j) {
+                        jerry_call_function(cb_map[i]->js->func_list[j], ZJS_UNDEFINED, args, argc);
+                    }
+                    if (cb_map[i]->js->post) {
+                        cb_map[i]->js->post(cb_map[i]->js->handle, &ret_val);
+                    }
                 }
             } else if (cb_map[i]->type == CALLBACK_TYPE_C && cb_map[i]->c->function) {
                 DBG_PRINT("[callbacks] zjs_service_callbacks(): Calling callback id %u\n", cb_map[i]->c->id);
