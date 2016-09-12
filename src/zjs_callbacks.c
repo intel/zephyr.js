@@ -90,6 +90,17 @@ void zjs_edit_js_func(int32_t id, jerry_value_t func)
     }
 }
 
+void zjs_edit_callback_handle(int32_t id, void* handle)
+{
+    if (id != -1) {
+        if (cb_map[id]->type == CALLBACK_TYPE_JS) {
+            cb_map[id]->js->handle = handle;
+        } else {
+            cb_map[id]->c->handle = handle;
+        }
+    }
+}
+
 int32_t zjs_add_callback(jerry_value_t js_func,
                          void* handle,
                          zjs_pre_callback_func pre,

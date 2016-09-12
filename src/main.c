@@ -16,6 +16,7 @@
 #include "zjs_buffer.h"
 #include "zjs_callbacks.h"
 #include "zjs_common.h"
+#include "zjs_event.h"
 #include "zjs_modules.h"
 #include "zjs_timers.h"
 #include "zjs_util.h"
@@ -95,6 +96,10 @@ void main(int argc, char *argv[])
 #endif
 #endif // QEMU_BUILD
 #endif // ZJS_LINUX_BUILD
+
+#ifdef BUILD_MODULE_EVENTS
+    zjs_modules_add("events", zjs_event_init);
+#endif
 
 #ifdef ZJS_LINUX_BUILD
     if (argc > 1) {

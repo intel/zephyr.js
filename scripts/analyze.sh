@@ -28,6 +28,11 @@ function check_for_require()
     return $?
 }
 
+check_for_require events
+if [ $? -eq 0 ]; then
+    >&2 echo Using module: GPIO
+    MODULES+=" -DBUILD_MODULE_EVENTS"
+fi
 check_for_require gpio
 if [ $? -eq 0 ]; then
     >&2 echo Using module: GPIO
