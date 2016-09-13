@@ -2,10 +2,12 @@
 #include "zjs_callbacks.h"
 
 #define ZJS_MAX_EVENT_NAME_SIZE     24
+#define DEFAULT_MAX_LISTENERS       10
 
 struct event {
-    int32_t event_id;
+    int num_events;
     jerry_value_t map;
+    int max_listeners;
 };
 
 struct event_trigger {
@@ -13,6 +15,11 @@ struct event_trigger {
     uint32_t argc;
     void* handle;
     zjs_post_event post;
+};
+
+struct event_names {
+    jerry_value_t name_array;
+    int idx;
 };
 
 jerry_value_t* pre_event(void* h, uint32_t* args_cnt)
@@ -35,7 +42,46 @@ void post_event(void* h, jerry_value_t* ret_val)
         if (trigger->argv) {
             zjs_free(trigger->argv);
         }
+        zjs_free(trigger);
     }
+}
+
+void zjs_add_event_listener(jerry_value_t obj, const char* event, jerry_value_t listener)
+{
+    struct event* ev;
+
+    if (!jerry_get_object_native_handle(obj, (uintptr_t*)&ev)) {
+        DBG_PRINT("[event] zjs_add_event_listener(): Error, native handle not found\n");
+        return;
+    }
+    if (ev->num_events >= ev->max_listeners) {
+        DBG_PRINT("[event] zjs_add_event_listener(): Error, max listeners reached\n");
+        return;
+    }
+
+    // Event object to hold callback ID and eventually listener arguments
+    jerry_value_t event_obj = zjs_get_property(ev->map, event);
+    if (!jerry_value_is_object(event_obj)) {
+        event_obj = jerry_create_object();
+    }
+
+    int32_t callback_id = -1;
+    jerry_value_t id_prop = zjs_get_property(event_obj, "callback_id");
+    if (jerry_value_is_number(id_prop)) {
+        // If there already is an event object, get the callback ID
+        zjs_obj_get_uint32(event_obj, "callback_id", &callback_id);
+    }
+    callback_id = zjs_add_callback_list(listener, ev, pre_event, post_event, callback_id);
+
+    // Add callback ID to event object
+    zjs_obj_add_number(event_obj, callback_id, "callback_id");
+    // Add event object to master event listener
+    zjs_set_property(ev->map, event, event_obj);
+
+    DBG_PRINT("[event] zjs_add_event_listener(): Added listener, callback id = %u\n",
+            callback_id);
+
+    ev->num_events++;
 }
 
 static jerry_value_t add_listener(const jerry_value_t function_obj,
@@ -43,12 +89,6 @@ static jerry_value_t add_listener(const jerry_value_t function_obj,
                                   const jerry_value_t argv[],
                                   const jerry_length_t argc)
 {
-    struct event* ev;
-
-    if (!jerry_get_object_native_handle(this, (uintptr_t*)&ev)) {
-        DBG_PRINT("[event] add_listener(): Error, native handle not found\n");
-        return ZJS_UNDEFINED;
-    }
     if (!jerry_value_is_string(argv[0])) {
         DBG_PRINT("[event] add_listener(): Error, first parameter must be event string\n");
         return ZJS_UNDEFINED;
@@ -57,7 +97,6 @@ static jerry_value_t add_listener(const jerry_value_t function_obj,
         DBG_PRINT("[event] add_listener(): Error, second parameter must be a listener function\n");
         return ZJS_UNDEFINED;
     }
-
     int sz = jerry_get_string_size(argv[0]);
     if (sz > ZJS_MAX_EVENT_NAME_SIZE) {
         PRINT("[event] add_listener(): Error, event name is too long\n");
@@ -71,30 +110,7 @@ static jerry_value_t add_listener(const jerry_value_t function_obj,
     }
     name[len] = '\0';
 
-    // Event object to hold callback ID and eventually listener arguments
-    jerry_value_t event_obj = zjs_get_property(ev->map, name);
-    if (!jerry_value_is_object(event_obj)) {
-        event_obj = jerry_create_object();
-    }
-
-    int32_t callback_id = -1;
-    jerry_value_t id_prop = zjs_get_property(event_obj, "callback_id");
-    if (jerry_value_is_number(id_prop)) {
-        // If there already is an event object, get the callback ID
-        zjs_obj_get_uint32(event_obj, "callback_id", &callback_id);
-    }
-
-    callback_id = zjs_add_callback_list(argv[1], ev, pre_event, post_event, callback_id);
-    //int32_t callback_id = zjs_add_callback(argv[1], ev, pre_event, post_event);
-
-    // Add callback ID to event object
-    zjs_obj_add_number(event_obj, callback_id, "callback_id");
-
-    // Add event object to master event listener
-    zjs_set_property(ev->map, name, event_obj);
-
-    DBG_PRINT("[event] add_listener(): Added event listener: %s, callback ID = %u\n",
-            name, callback_id);
+    zjs_add_event_listener(this, name, argv[1]);
 
     return ZJS_UNDEFINED;
 }
@@ -125,6 +141,276 @@ static jerry_value_t emit_event(const jerry_value_t function_obj,
                                                   NULL));
 }
 
+static jerry_value_t remove_listener(const jerry_value_t function_obj,
+                                     const jerry_value_t this,
+                                     const jerry_value_t argv[],
+                                     const jerry_length_t argc)
+{
+    struct event* ev;
+
+    if (!jerry_get_object_native_handle(this, (uintptr_t*)&ev)) {
+        DBG_PRINT("[event] remove_listener(): Error, native handle not found\n");
+        return ZJS_UNDEFINED;
+    }
+    if (!jerry_value_is_string(argv[0])) {
+        DBG_PRINT("[event] remove_listener(): Error, event name must be first parameter\n");
+        return ZJS_UNDEFINED;
+    }
+    if (!jerry_value_is_function(argv[1])) {
+        DBG_PRINT("[event] remove_listener(): Error, event listener must be second parameter\n");
+        return ZJS_UNDEFINED;
+    }
+    int sz = jerry_get_string_size(argv[0]);
+    char event[sz];
+    int len = jerry_string_to_char_buffer(argv[0], (jerry_char_t *)event, sz);
+    if (len != sz) {
+        DBG_PRINT("[event] remove_listener(): Error, size mismatch\n");
+        return ZJS_UNDEFINED;
+    }
+    event[len] = '\0';
+
+    // Event object to hold callback ID and eventually listener arguments
+    jerry_value_t event_obj = zjs_get_property(ev->map, event);
+    if (!jerry_value_is_object(event_obj)) {
+        DBG_PRINT("[event] remove_listener(): Error, event object not found for '%s'\n", event);
+        return ZJS_UNDEFINED;
+    }
+
+    int32_t callback_id = -1;
+    jerry_value_t id_prop = zjs_get_property(event_obj, "callback_id");
+    if (jerry_value_is_number(id_prop)) {
+        // If there already is an event object, get the callback ID
+        zjs_obj_get_uint32(event_obj, "callback_id", &callback_id);
+    } else {
+        DBG_PRINT("[event] remove_listener(): Error, callback_id not found for '%s'\n", event);
+        return ZJS_UNDEFINED;
+    }
+
+    bool removed = zjs_remove_callback_list_func(callback_id, argv[1]);
+
+    return jerry_create_boolean(removed);
+}
+
+static jerry_value_t remove_all_listeners(const jerry_value_t function_obj,
+                                          const jerry_value_t this,
+                                          const jerry_value_t argv[],
+                                          const jerry_length_t argc)
+{
+    struct event* ev;
+
+    if (!jerry_get_object_native_handle(this, (uintptr_t*)&ev)) {
+        DBG_PRINT("[event] remove_all_listeners(): Error, native handle not found\n");
+        return ZJS_UNDEFINED;
+    }
+    if (!jerry_value_is_string(argv[0])) {
+        DBG_PRINT("[event] remove_all_listeners(): Error, event name must be first parameter\n");
+        return ZJS_UNDEFINED;
+    }
+    int sz = jerry_get_string_size(argv[0]);
+    char event[sz];
+    int len = jerry_string_to_char_buffer(argv[0], (jerry_char_t *)event, sz);
+    if (len != sz) {
+        DBG_PRINT("[event] remove_all_listeners(): Error, size mismatch\n");
+        return ZJS_UNDEFINED;
+    }
+    event[len] = '\0';
+
+    // Event object to hold callback ID and eventually listener arguments
+    jerry_value_t event_obj = zjs_get_property(ev->map, event);
+    if (!jerry_value_is_object(event_obj)) {
+        DBG_PRINT("[event] remove_all_listeners(): Error, event object not found for '%s'\n", event);
+        return ZJS_UNDEFINED;
+    }
+
+    int32_t callback_id = -1;
+    jerry_value_t id_prop = zjs_get_property(event_obj, "callback_id");
+    if (jerry_value_is_number(id_prop)) {
+        // If there already is an event object, get the callback ID
+        zjs_obj_get_uint32(event_obj, "callback_id", &callback_id);
+    } else {
+        DBG_PRINT("[event] remove_all_listeners(): Error, callback_id not found for '%s'\n", event);
+        return ZJS_UNDEFINED;
+    }
+
+    zjs_remove_callback(callback_id);
+
+    jerry_delete_property(ev->map, (const jerry_value_t)event);
+
+    return ZJS_UNDEFINED;
+}
+
+bool foreach_event_name(const jerry_value_t prop_name,
+                        const jerry_value_t prop_value,
+                        void *data)
+{
+    struct event_names* names = (struct event_names*)data;
+
+    jerry_set_property_by_index(names->name_array,
+                                names->idx++,
+                                prop_name);
+    return true;
+}
+
+static jerry_value_t get_event_names(const jerry_value_t function_obj,
+                                     const jerry_value_t this,
+                                     const jerry_value_t argv[],
+                                     const jerry_length_t argc)
+{
+    struct event* ev;
+    struct event_names names;
+
+    if (!jerry_get_object_native_handle(this, (uintptr_t*)&ev)) {
+        DBG_PRINT("[event] get_event_names(): Error, native handle not found\n");
+        return ZJS_UNDEFINED;
+    }
+    names.idx = 0;
+    names.name_array = jerry_create_array(ev->num_events);
+
+    jerry_foreach_object_property(ev->map, foreach_event_name, &names);
+
+    return names.name_array;
+}
+
+static jerry_value_t get_max_listeners(const jerry_value_t function_obj,
+                                       const jerry_value_t this,
+                                       const jerry_value_t argv[],
+                                       const jerry_length_t argc)
+{
+    struct event* ev;
+
+    if (!jerry_get_object_native_handle(this, (uintptr_t*)&ev)) {
+        DBG_PRINT("[event] get_max_listeners(): Error, native handle not found\n");
+        return ZJS_UNDEFINED;
+    }
+    return jerry_create_number(ev->max_listeners);
+}
+
+static jerry_value_t set_max_listeners(const jerry_value_t function_obj,
+                                       const jerry_value_t this,
+                                       const jerry_value_t argv[],
+                                       const jerry_length_t argc)
+{
+    struct event* ev;
+
+    if (!jerry_get_object_native_handle(this, (uintptr_t*)&ev)) {
+        DBG_PRINT("[event] set_max_listeners(): Error, native handle not found\n");
+        return ZJS_UNDEFINED;
+    }
+    if (!jerry_value_is_number(argv[0])) {
+        DBG_PRINT("[event] set_max_listeners(): Error, max listeners count must be first parameter\n");
+        return ZJS_UNDEFINED;
+    }
+    ev->max_listeners = (uint32_t)jerry_get_number_value(argv[0]);
+
+    return ZJS_UNDEFINED;
+}
+
+bool foreach_listener(const jerry_value_t prop_name,
+                      const jerry_value_t prop_value,
+                      void *data)
+{
+    struct event_names* names = (struct event_names*)data;
+
+    jerry_set_property_by_index(names->name_array,
+                                names->idx++,
+                                prop_name);
+    return true;
+}
+
+static jerry_value_t get_listener_count(const jerry_value_t function_obj,
+                                        const jerry_value_t this,
+                                        const jerry_value_t argv[],
+                                        const jerry_length_t argc)
+{
+    struct event* ev;
+
+    if (!jerry_get_object_native_handle(this, (uintptr_t*)&ev)) {
+        DBG_PRINT("[event] get_listener_count(): Error, native handle not found\n");
+        return ZJS_UNDEFINED;
+    }
+    if (!jerry_value_is_string(argv[0])) {
+        DBG_PRINT("[event] get_listener_count(): Error, event name must be first parameter\n");
+        return ZJS_UNDEFINED;
+    }
+    int sz = jerry_get_string_size(argv[0]);
+    char event[sz];
+    int len = jerry_string_to_char_buffer(argv[0], (jerry_char_t *)event, sz);
+    if (len != sz) {
+        DBG_PRINT("[event] get_listener_count(): Error, size mismatch\n");
+        return ZJS_UNDEFINED;
+    }
+    event[len] = '\0';
+
+    // Event object to hold callback ID and eventually listener arguments
+    jerry_value_t event_obj = zjs_get_property(ev->map, event);
+    if (!jerry_value_is_object(event_obj)) {
+        DBG_PRINT("[event] get_listener_count(): Error, event object not found for '%s'\n", event);
+        return ZJS_UNDEFINED;
+    }
+
+    int32_t callback_id = -1;
+    jerry_value_t id_prop = zjs_get_property(event_obj, "callback_id");
+    if (jerry_value_is_number(id_prop)) {
+        // If there already is an event object, get the callback ID
+        zjs_obj_get_uint32(event_obj, "callback_id", &callback_id);
+    } else {
+        DBG_PRINT("[event] get_listener_count(): Error, callback_id not found for '%s'\n", event);
+        return ZJS_UNDEFINED;
+    }
+
+    return jerry_create_number(zjs_get_num_callbacks(callback_id));
+}
+
+static jerry_value_t get_listeners(const jerry_value_t function_obj,
+                                   const jerry_value_t this,
+                                   const jerry_value_t argv[],
+                                   const jerry_length_t argc)
+{
+    struct event* ev;
+
+    if (!jerry_get_object_native_handle(this, (uintptr_t*)&ev)) {
+        DBG_PRINT("[event] get_listeners(): Error, native handle not found\n");
+        return ZJS_UNDEFINED;
+    }
+    if (!jerry_value_is_string(argv[0])) {
+        DBG_PRINT("[event] get_listeners(): Error, event name must be first parameter\n");
+        return ZJS_UNDEFINED;
+    }
+    int sz = jerry_get_string_size(argv[0]);
+    char event[sz];
+    int len = jerry_string_to_char_buffer(argv[0], (jerry_char_t *)event, sz);
+    if (len != sz) {
+        DBG_PRINT("[event] get_listeners(): Error, size mismatch\n");
+        return ZJS_UNDEFINED;
+    }
+    event[len] = '\0';
+
+    // Event object to hold callback ID and eventually listener arguments
+    jerry_value_t event_obj = zjs_get_property(ev->map, event);
+    if (!jerry_value_is_object(event_obj)) {
+        DBG_PRINT("[event] get_listeners(): Error, event object not found for '%s'\n", event);
+        return ZJS_UNDEFINED;
+    }
+
+    int32_t callback_id = -1;
+    jerry_value_t id_prop = zjs_get_property(event_obj, "callback_id");
+    if (jerry_value_is_number(id_prop)) {
+        // If there already is an event object, get the callback ID
+        zjs_obj_get_uint32(event_obj, "callback_id", &callback_id);
+    } else {
+        DBG_PRINT("[event] get_listeners(): Error, callback_id not found for '%s'\n", event);
+        return ZJS_UNDEFINED;
+    }
+    int count;
+    int i;
+    jerry_value_t* func_array = zjs_get_callback_func_list(callback_id, &count);
+    jerry_value_t ret_array = jerry_create_array(count);
+    for (i = 0; i < count; ++i) {
+        jerry_set_property_by_index(ret_array, i, func_array[i]);
+    }
+    return ret_array;
+}
+
 bool zjs_trigger_event(jerry_value_t obj,
                        const char* event,
                        jerry_value_t argv[],
@@ -138,6 +424,7 @@ bool zjs_trigger_event(jerry_value_t obj,
         DBG_PRINT("[event] zjs_trigger_event(): Could not allocate trigger, out of memory\n");
         return false;
     }
+
     int32_t callback_id = -1;
     jerry_value_t event_obj;
 
@@ -190,48 +477,24 @@ void zjs_make_event(jerry_value_t obj)
         return;
     }
 
+    ev->max_listeners = DEFAULT_MAX_LISTENERS;
+    ev->num_events = 0;
+
     zjs_obj_add_function(obj, add_listener, "on");
     zjs_obj_add_function(obj, add_listener, "addListener");
     zjs_obj_add_function(obj, emit_event, "emit");
+    zjs_obj_add_function(obj, remove_listener, "removeListener");
+    zjs_obj_add_function(obj, remove_all_listeners, "removeAllListeners");
+    zjs_obj_add_function(obj, get_event_names, "eventNames");
+    zjs_obj_add_function(obj, get_max_listeners, "getMaxListeners");
+    zjs_obj_add_function(obj, get_listener_count, "listenerCount");
+    zjs_obj_add_function(obj, get_listeners, "listeners");
+    zjs_obj_add_function(obj, set_max_listeners, "setMaxListeners");
 
     jerry_set_object_native_handle(obj, (uintptr_t)ev, NULL);
 
     ev->map = jerry_create_object();
 }
-
-void zjs_add_event_listener(jerry_value_t obj, const char* event, jerry_value_t listener)
-{
-    struct event* ev;
-
-    if (!jerry_get_object_native_handle(obj, (uintptr_t*)&ev)) {
-        DBG_PRINT("[event] zjs_add_event_listener(): Error, native handle not found\n");
-        return;
-    }
-
-    // Event object to hold callback ID and eventually listener arguments
-    jerry_value_t event_obj = zjs_get_property(ev->map, event);
-    if (!jerry_value_is_object(event_obj)) {
-        event_obj = jerry_create_object();
-    }
-
-    int32_t callback_id = -1;
-    jerry_value_t id_prop = zjs_get_property(event_obj, "callback_id");
-    if (jerry_value_is_number(id_prop)) {
-        // If there already is an event object, get the callback ID
-        zjs_obj_get_uint32(event_obj, "callback_id", &callback_id);
-    }
-    callback_id = zjs_add_callback_list(listener, ev, pre_event, post_event, callback_id);
-    //int32_t callback_id = zjs_add_callback(listener, ev, pre_event, post_event);
-
-    // Add callback ID to event object
-    zjs_obj_add_number(event_obj, callback_id, "callback_id");
-    // Add event object to master event listener
-    zjs_set_property(ev->map, event, event_obj);
-
-    DBG_PRINT("[event] zjs_add_event_listener(): Added listener, callback id = %u\n",
-            callback_id);
-}
-
 
 static jerry_value_t event_constructor(const jerry_value_t function_obj,
                                        const jerry_value_t this,
