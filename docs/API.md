@@ -15,6 +15,10 @@ Communications
 --------------
 [BLE](./ble.md)
 
+Display
+-------
+[Grove LCD](./grove_lcd.md)
+
 Board Support
 -------------
 [Arduino 101](./a101_pins.md)
