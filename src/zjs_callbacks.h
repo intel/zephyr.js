@@ -41,6 +41,35 @@ typedef void (*zjs_c_callback_func)(void* handle);
 void zjs_init_callbacks(void);
 
 /*
+ * Get the number of callback functions registered to this ID
+ *
+ * @param id            ID of callback list
+ *
+ * @return              Number of functions in the callback list
+ */
+int zjs_get_num_callbacks(int32_t id);
+
+/*
+ * Get the list of callback functions in a callback list
+ *
+ * @param id            ID of callback list
+ * @param count         Number of functions
+ *
+ * @return              Array of functions
+ */
+jerry_value_t* zjs_get_callback_func_list(int32_t id, int* count);
+
+/*
+ * Remove a function from a list of callbacks
+ *
+ * @param id            Callback ID for the list
+ * @param js_func       JS function to remove from list
+ *
+ * @return              True if function was removed, false if it did not exist
+ */
+bool zjs_remove_callback_list_func(int32_t id, jerry_value_t js_func);
+
+/*
  * Create/add a function to a callback list. If the 'id' parameter is -1, a new
  * callback list will be created. If the 'id' parameter matches an existing
  * callback list, the JS callback function will be added to the list.

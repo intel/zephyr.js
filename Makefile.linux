@@ -31,6 +31,10 @@ LINUX_FLAGS = -std=gnu99
 
 LINUX_DEFINES = -DZJS_LINUX_BUILD -DBUILD_MODULE_EVENTS
 
+ifeq ($(VARIANT), debug)
+LINUX_DEFINES += -DDEBUG_BUILD
+endif
+
 %.o:%.c
 	@echo "Building $@"
 	gcc -c -o $@ $< $(LINUX_INCLUDES) $(LINUX_DEFINES) $(LINUX_FLAGS)

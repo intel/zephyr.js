@@ -8,6 +8,7 @@ endif
 
 JERRY_BASE ?= $(ZJS_BASE)/deps/jerryscript
 JS ?= samples/HelloWorld.js
+VARIANT ?= release
 
 # Build for zephyr, default target
 .PHONY: zephyr
@@ -163,7 +164,7 @@ arcgdb:
 linux: generate
 	rm -f .*.last_build
 	echo "" > .linux.last_build
-	make -f Makefile.linux JS=$(JS)
+	make -f Makefile.linux JS=$(JS) VARIANT=$(VARIANT)
 
 
 .PHONY: help

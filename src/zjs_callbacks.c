@@ -108,6 +108,47 @@ void zjs_edit_callback_handle(int32_t id, void* handle)
     }
 }
 
+bool zjs_remove_callback_list_func(int32_t id, jerry_value_t js_func)
+{
+    if (id != -1 && cb_map[id] && cb_map[id]->js) {
+        int i;
+        for (i = 0; i < cb_map[id]->js->num_funcs; ++i) {
+            if (js_func == cb_map[id]->js->func_list[i]) {
+                int j;
+                jerry_release_value(cb_map[id]->js->func_list[i]);
+                for (j = i; j < cb_map[id]->js->num_funcs - 1; ++j) {
+                    cb_map[id]->js->func_list[j] = cb_map[id]->js->func_list[j + 1];
+                }
+                cb_map[id]->js->num_funcs--;
+                cb_map[id]->js->func_list[cb_map[id]->js->num_funcs] = 0;
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+int zjs_get_num_callbacks(int32_t id)
+{
+    if (id != -1) {
+        if (cb_map[id] && cb_map[id]->js) {
+            return cb_map[id]->js->num_funcs;
+        }
+    }
+    return 0;
+}
+
+jerry_value_t* zjs_get_callback_func_list(int32_t id, int* count)
+{
+    if (id != -1) {
+        if (cb_map[id] && cb_map[id]->js) {
+            *count = cb_map[id]->js->num_funcs;
+            return cb_map[id]->js->func_list;
+        }
+    }
+    return NULL;
+}
+
 int32_t zjs_add_callback_list(jerry_value_t js_func,
                               void* handle,
                               zjs_pre_callback_func pre,
@@ -222,7 +263,15 @@ void zjs_remove_callback(int32_t id)
 {
     if (id != -1 && cb_map[id]) {
         if (cb_map[id]->type == CALLBACK_TYPE_JS && cb_map[id]->js) {
-            jerry_release_value(cb_map[id]->js->js_func);
+            if (cb_map[id]->js->func_list) {
+                int i;
+                for (i = 0; i < cb_map[id]->js->num_funcs; ++i) {
+                    jerry_release_value(cb_map[id]->js->func_list[i]);
+                }
+                zjs_free(cb_map[id]->js->func_list);
+            } else {
+                jerry_release_value(cb_map[id]->js->js_func);
+            }
             zjs_free(cb_map[id]->js);
         } else if (cb_map[id]->c) {
             zjs_free(cb_map[id]->c);
@@ -281,7 +330,7 @@ void zjs_service_callbacks(void)
 {
     int i;
     for (i = 0; i < cb_size; i++) {
-        if (cb_map[i]->signal) {
+        if (cb_map[i] && cb_map[i]->signal) {
             cb_map[i]->signal = 0;
             if (cb_map[i]->type == CALLBACK_TYPE_JS) {
                 if (cb_map[i]->js->func_list == NULL && jerry_value_is_function(cb_map[i]->js->js_func)) {
