@@ -19,6 +19,7 @@
 // import i2c module
 var i2c = require("i2c");
 
+// Define various Grove LCD addresses
 var GROVE_LCD_DISPLAY_ADDR = 0x3E
 var GROVE_RGB_BACKLIGHT_ADDR = 0x62
 
@@ -62,58 +63,69 @@ var REGISTER_B      = 0x02
 
 print("I2C sample...");
 
-var msgData = new Buffer(2);
-var hello = true;
-var lcdDispAddr = {address: GROVE_LCD_DISPLAY_ADDR, length: 2};
-var helloStr = [72,69,76,76,79,161,161,161,161];    // HELLO in ascii
-var worldStr = [87,79,82,76,68,33,33,33,33];        // WORLD in ascii
+var setupData = new Buffer(2);
+var msgData = new Buffer(7);
+
+// GLCD_CMD_SET_CGRAM_ADDR is equal to 64, which is @ in ascii code.
+// GLCD_CMD_SET_CGRAM_ADDR is only needed if you are starting at the first
+// position of the line.  If you have an offset it isn't necessary.
+// TODO: Configure jerryscript to build with support for String.fromCharCode()
+// This will allow this to be written like this instead
+// var msgData = new Buffer(String.fromCharCode(GLCD_CMD_SET_CGRAM_ADDR) + "HELLO!");
+
+msgData.write("@HELLO!");
+
+var hello = false;
+var lcdDispAddr = { address: GROVE_LCD_DISPLAY_ADDR, length: 2 };
+
+// Open the connection to the I2C bus
 var i2cDevice = i2c.open({ bus: 0, speed: 100 });
 
-var setup = GLCD_FS_ROWS_2 | GLCD_FS_DOT_SIZE_LITTLE | GLCD_FS_8BIT_MODE | GLCD_CMD_FUNCTION_SET;
-msgData.writeUInt8(0,0);
-msgData.writeUInt8(setup,1);
-i2cDevice.write(lcdDispAddr,msgData);
+function init()
+{
+    // Set our preferences for the Grove LCD
+    var setup = GLCD_CMD_FUNCTION_SET | (GLCD_FS_ROWS_2 | GLCD_FS_DOT_SIZE_LITTLE | GLCD_FS_8BIT_MODE);
+    setupData.writeUInt8(0, 0);
+    setupData.writeUInt8(setup, 1);
+    i2cDevice.write(lcdDispAddr, setupData);
 
-setup = GLCD_DS_DISPLAY_ON | GLCD_DS_CURSOR_ON | GLCD_DS_BLINK_ON | GLCD_CMD_DISPLAY_SWITCH;
-msgData.writeUInt8(0,0);
-msgData.writeUInt8(setup,1);
-i2cDevice.write(lcdDispAddr,msgData);
+    setup = GLCD_CMD_DISPLAY_SWITCH | (GLCD_DS_DISPLAY_ON | GLCD_DS_CURSOR_ON | GLCD_DS_BLINK_ON);
+    setupData.writeUInt8(0, 0);
+    setupData.writeUInt8(setup, 1);
+    i2cDevice.write(lcdDispAddr, setupData);
+}
 
-while (true) {
+function resetCursor()
+{
     // Reset the cursor position
-    var col = 0;
-    col |= 0x80;
+    var col = 0x80;
 
-    msgData.writeUInt8(GLCD_CMD_SET_DDRAM_ADDR,0);
-    msgData.writeUInt8(col,1);
-    i2cDevice.write({address: GROVE_LCD_DISPLAY_ADDR, length: 2},msgData);
+    setupData.writeUInt8(GLCD_CMD_SET_DDRAM_ADDR, 0);
+    setupData.writeUInt8(col, 1);
+    i2cDevice.write({ address: GROVE_LCD_DISPLAY_ADDR, length: 2 }, setupData);
+}
+
+function writeWord()
+{
+    resetCursor();
 
     if (hello) {
-        msgData.writeUInt8(GLCD_CMD_SET_CGRAM_ADDR,0);
-        msgData.writeUInt8(helloStr[0],1);
-        i2cDevice.write(lcdDispAddr,msgData);
-        msgData.writeUInt8(helloStr[1],1);
-        i2cDevice.write(lcdDispAddr,msgData);
-        msgData.writeUInt8(helloStr[2],1);
-        i2cDevice.write(lcdDispAddr,msgData);
-        msgData.writeUInt8(helloStr[3],1);
-        i2cDevice.write(lcdDispAddr,msgData);
-        msgData.writeUInt8(helloStr[4],1);
-        i2cDevice.write(lcdDispAddr,msgData);
-        hello = false;
-   }
-   else {
-        msgData.writeUInt8(GLCD_CMD_SET_CGRAM_ADDR,0);
-        msgData.writeUInt8(worldStr[0],1);
-        i2cDevice.write(lcdDispAddr,msgData);
-        msgData.writeUInt8(worldStr[1],1);
-        i2cDevice.write(lcdDispAddr,msgData);
-        msgData.writeUInt8(worldStr[2],1);
-        i2cDevice.write(lcdDispAddr,msgData);
-        msgData.writeUInt8(worldStr[3],1);
-        i2cDevice.write(lcdDispAddr,msgData);
-        msgData.writeUInt8(worldStr[4],1);
-        i2cDevice.write(lcdDispAddr,msgData);
-        hello = true;
-   }
+        msgData.write("@HELLO!");
+    }
+    else {
+        msgData.write("@WORLD!");
+    }
+
+    hello = !hello;
+    i2cDevice.write(lcdDispAddr, msgData);
 }
+
+// Main function
+
+init();
+
+// Write HELLO! immediately
+i2cDevice.write(lcdDispAddr, msgData);
+
+// Alternate writing HELLO! and WORLD! forever
+setInterval(writeWord, 2000);
