@@ -111,7 +111,7 @@ void main(int argc, char *argv[])
         }
     }
 
-    code_eval = jerry_parse((jerry_char_t *)script, len, false);
+    code_eval = jerry_parse((jerry_char_t *)script, len, true);
     if (jerry_value_has_error_flag(code_eval)) {
         PRINT("JerryScript: cannot parse javascript\n");
         return;
