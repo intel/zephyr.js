@@ -79,6 +79,12 @@ Returns the latest reading from the pin. Blocks until it gets the result.
 Pass a function for `callback` that will be called later when the result is
 obtained.
 
+*WARNING: Making an async call like this allocates some memory while the call
+is pending, so if you issue them faster than they are fulfilled, you will
+eventually run out of memory - pretty soon on these small devices. So the best
+practice would be to make sure you only have a small, fixed number pending at
+any given time.*
+
 *NOTE: This function will probably be replaced with a version that instead
 returns a promise.*
 

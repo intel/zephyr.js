@@ -60,11 +60,11 @@ enum {
 #define TYPE_GLCD_GET_INPUT_STATE                          0x002B
 
 
-struct zjs_ipm_message {
-    uint32_t id;                                           // message id
-    uint32_t type;                                         // message type
-    uint32_t flags;                                        // flags
-    void* user_data;                                       // user data
+typedef struct zjs_ipm_message {
+    uint32_t id;
+    uint32_t type;
+    uint32_t flags;
+    void* user_data;
     uint32_t error_code;
 
     union {
@@ -93,8 +93,8 @@ struct zjs_ipm_message {
             uint8_t color_b;
             void* buffer;
         } glcd;
-    } data;                                                // message data
-};
+    } data;
+} zjs_ipm_message_t;
 
 void zjs_ipm_init();
 

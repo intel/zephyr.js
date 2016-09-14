@@ -13,9 +13,9 @@
 #include "zjs_common.h"
 #include "zjs_ipm.h"
 
-#define QUEUE_SIZE                   10          // max incoming message can handle
-#define SLEEP_TICKS                   1          // sleep time in cpu ticks
-#define UPDATE_INTERVAL              50          // interval in between notifications
+#define QUEUE_SIZE      10  // max incoming message can handle
+#define SLEEP_TICKS      1  // sleep time in cpu ticks
+#define UPDATE_INTERVAL 50  // interval in between notifications
 
 // AIO
 #define ADC_DEVICE_NAME "ADC_0"
@@ -36,6 +36,7 @@ static struct zjs_ipm_message* end_of_queue_ptr = msg_queue + QUEUE_SIZE;
 static struct device* adc_dev;
 static uint32_t pin_values[ARC_AIO_LEN] = {};
 static uint32_t pin_last_values[ARC_AIO_LEN] = {};
+static void *pin_user_data[ARC_AIO_LEN] = {};
 static uint8_t pin_send_updates[ARC_AIO_LEN] = {};
 static uint8_t seq_buffer[ADC_BUFFER_SIZE];
 
@@ -160,9 +161,12 @@ static void handle_aio(struct zjs_ipm_message* msg)
         break;
     case TYPE_AIO_PIN_SUBSCRIBE:
         pin_send_updates[pin - ARC_AIO_MIN] = 1;
+        // save user data from subscribe request and return it in change msgs
+        pin_user_data[pin - ARC_AIO_MIN] = msg->user_data;
         break;
     case TYPE_AIO_PIN_UNSUBSCRIBE:
         pin_send_updates[pin - ARC_AIO_MIN] = 0;
+        pin_user_data[pin - ARC_AIO_MIN] = NULL;
         break;
 
     default:
@@ -380,6 +384,7 @@ static void process_aio_updates()
                 msg.id = MSG_ID_AIO;
                 msg.type = TYPE_AIO_PIN_EVENT_VALUE_CHANGE;
                 msg.flags = 0;
+                msg.user_data = pin_user_data[i];
                 msg.data.aio.pin = ARC_AIO_MIN+i;
                 msg.data.aio.value = pin_values[i];
                 ipm_send_updates(&msg);
