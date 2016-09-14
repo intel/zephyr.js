@@ -54,6 +54,10 @@ if (testListenerCount != 2) {
 myEmitter.emit('test_event', 1234, 4567);
 myEmitter.emit('test_event1', 1000, 1111);
 
+/*
+ * TODO: This can be removed when the callback ring buffer is implemented
+ *       Without this, the event will get removed before its emitted.
+ */
 setTimeout(function() {
     myEmitter.removeListener('test_event', test_event_listener1);
     myEmitter.emit('test_event', 1234, 4567);
