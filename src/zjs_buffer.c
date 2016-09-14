@@ -225,7 +225,7 @@ static jerry_value_t zjs_buffer_write_string(const jerry_value_t function_obj_va
     if (argc > 2)
         length = (uint32_t)jerry_get_number_value(argv[2]);
 
-    if (offset + length > buf->bufsize) {        
+    if (offset + length > buf->bufsize) {
         return zjs_error("zjs_buffer_write_string: string + offset is larger than the buffer");
     }
 
