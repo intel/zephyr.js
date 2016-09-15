@@ -64,7 +64,6 @@ var REGISTER_B      = 0x02
 print("I2C sample...");
 
 var setupData = new Buffer(2);
-var msgData = new Buffer(7);
 
 // GLCD_CMD_SET_CGRAM_ADDR is equal to 64, which is @ in ascii code.
 // GLCD_CMD_SET_CGRAM_ADDR is only needed if you are starting at the first
@@ -73,51 +72,68 @@ var msgData = new Buffer(7);
 // This will allow this to be written like this instead
 // var msgData = new Buffer(String.fromCharCode(GLCD_CMD_SET_CGRAM_ADDR) + "HELLO!");
 
-msgData.write("@HELLO!");
+var msgData = new Buffer("@HELLO!");
 
 var hello = false;
-var lcdDispAddr = { address: GROVE_LCD_DISPLAY_ADDR, length: 2 };
 
 // Open the connection to the I2C bus
 var i2cDevice = i2c.open({ bus: 0, speed: 100 });
 
-function init()
-{
+function clear() {
+    var clearData = new Buffer([0, GLCD_CMD_SCREEN_CLEAR]);
+    i2cDevice.write(GROVE_LCD_DISPLAY_ADDR, clearData);
+}
+
+function init() {
+    clear();
+
     // Set our preferences for the Grove LCD
     var setup = GLCD_CMD_FUNCTION_SET | (GLCD_FS_ROWS_2 | GLCD_FS_DOT_SIZE_LITTLE | GLCD_FS_8BIT_MODE);
     setupData.writeUInt8(0, 0);
     setupData.writeUInt8(setup, 1);
-    i2cDevice.write(lcdDispAddr, setupData);
+    i2cDevice.write(GROVE_LCD_DISPLAY_ADDR, setupData);
 
     setup = GLCD_CMD_DISPLAY_SWITCH | (GLCD_DS_DISPLAY_ON | GLCD_DS_CURSOR_ON | GLCD_DS_BLINK_ON);
-    setupData.writeUInt8(0, 0);
     setupData.writeUInt8(setup, 1);
-    i2cDevice.write(lcdDispAddr, setupData);
+    i2cDevice.write(GROVE_LCD_DISPLAY_ADDR, setupData);
 }
 
-function resetCursor()
-{
+function resetCursor() {
     // Reset the cursor position
     var col = 0x80;
 
     setupData.writeUInt8(GLCD_CMD_SET_DDRAM_ADDR, 0);
     setupData.writeUInt8(col, 1);
-    i2cDevice.write({ address: GROVE_LCD_DISPLAY_ADDR, length: 2 }, setupData);
+    i2cDevice.write(GROVE_LCD_DISPLAY_ADDR, setupData);
 }
 
-function writeWord()
-{
+function changeRGB(red, green, blue) {
+    // Valid range for color is 0 - 255
+    print("RGB = " + red + " : " + green + " : " + blue);
+    var redData = new Buffer([REGISTER_R, red]);
+    var greenData = new Buffer([REGISTER_G, green]);
+    var blueData = new Buffer([REGISTER_B, blue]);
+
+    // Send messages as close together as possible so that the color change is smoother
+    i2cDevice.write(GROVE_RGB_BACKLIGHT_ADDR, blueData);
+    i2cDevice.write(GROVE_RGB_BACKLIGHT_ADDR, redData);
+    i2cDevice.write(GROVE_RGB_BACKLIGHT_ADDR, greenData);
+}
+
+function writeWord() {
     resetCursor();
 
     if (hello) {
         msgData.write("@HELLO!");
+        changeRGB(207, 83, 0);
     }
     else {
         msgData.write("@WORLD!");
+        changeRGB(64, 224, 228);
     }
 
     hello = !hello;
-    i2cDevice.write(lcdDispAddr, msgData);
+    i2cDevice.write(GROVE_LCD_DISPLAY_ADDR, msgData);
 }
 
 // Main function
@@ -125,7 +141,7 @@ function writeWord()
 init();
 
 // Write HELLO! immediately
-i2cDevice.write(lcdDispAddr, msgData);
+i2cDevice.write(GROVE_LCD_DISPLAY_ADDR, msgData);
 
 // Alternate writing HELLO! and WORLD! forever
 setInterval(writeWord, 2000);

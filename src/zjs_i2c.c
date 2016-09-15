@@ -99,7 +99,7 @@ static jerry_value_t zjs_i2c_write(const jerry_value_t function_obj,
                                    const jerry_value_t argv[],
                                    const jerry_length_t argc)
 {
-    if (argc < 2 || !jerry_value_is_object(argv[0])) {
+    if (argc < 2 || !jerry_value_is_number(argv[0])) {
         return zjs_error("zjs_i2c_write: missing arguments");
     }
 
@@ -110,23 +110,13 @@ static jerry_value_t zjs_i2c_write(const jerry_value_t function_obj,
     uint32_t bus;
     zjs_obj_get_uint32(this, "bus", &bus);
 
-    jerry_value_t jerryData = argv[0];
-
-    uint32_t length;
-    if (!zjs_obj_get_uint32(jerryData, "length", &length)) {
-        return zjs_error("zjs_i2c_write: missing required field (length)");
-    }
-
     struct zjs_buffer_t *dataBuf = zjs_buffer_find(argv[1]);
 
     if (!dataBuf) {
         return zjs_error("zjs_i2c_write:  missing data buffer");
     }
 
-    uint32_t address;
-    if (!zjs_obj_get_uint32(jerryData, "address", &address)) {
-        return zjs_error("zjs_i2c_write: missing required field (address)");
-    }
+    uint32_t address = (uint32_t)jerry_get_number_value(argv[0]);
 
     // send IPM message to the ARC side
     struct zjs_ipm_message* send = zjs_i2c_alloc_msg();
