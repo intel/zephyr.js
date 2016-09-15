@@ -25,6 +25,14 @@ specific API functions.
 interface Buffer {
     unsigned char readUInt8(unsigned long offset);
     void writeUInt8(unsigned char value, unsigned long offset);
+    unsigned short readUInt16BE(unsigned long offset);
+    void writeUInt16BE(unsigned short value, unsigned long offset);
+    unsigned short readUInt16LE(unsigned long offset);
+    void writeUInt16LE(unsigned short value, unsigned long offset);
+    unsigned long readUInt32BE(unsigned long offset);
+    void writeUInt32BE(unsigned long value, unsigned long offset);
+    unsigned long readUInt32LE(unsigned long offset);
+    void writeUInt32LE(unsigned long value, unsigned long offset);
     string toString(string encoding);
     readonly attribute unsigned long length;
 };
@@ -38,21 +46,39 @@ API Documentation
 
 The `length` argument specifies the length in bytes of the Buffer object.
 
-### Buffer.readUInt8
+### Buffer.readUInt family
 
-`unsigned char readUInt8(unsigned long offset);`
+```javascript
+unsigned char readUInt8(unsigned long offset);
+unsigned short readUInt16BE(unsigned long offset);
+unsigned short readUInt16LE(unsigned long offset);
+unsigned long readUInt32BE(unsigned long offset);
+unsigned long readUInt32LE(unsigned long offset);
+```
 
 The `offset` should be provided but will be treated as 0 if not given. Returns
-the value of the byte located at the given offset. If the offset is outside the
-bounds of the Buffer, returns an error.
+the value of the short or long located at the given offset. If the offset is
+outside the bounds of the Buffer, returns an error.
 
-### Buffer.writeUInt8
+The `BE` or `LE` refers to whether the bytes will be read in big-endian
+(highest byte first) or little-endian (lowest byte first) order.
 
-`void writeUInt8(unsigned char value, unsigned long offset);`
+### Buffer.writeUInt family
+
+```javascript
+void writeUInt8(unsigned char value, unsigned long offset);
+void writeUInt16BE(unsigned short value, unsigned long offset);
+void writeUInt16LE(unsigned short value, unsigned long offset);
+void writeUInt32BE(unsigned long value, unsigned long offset);
+void writeUInt32LE(unsigned long value, unsigned long offset);
+```
 
 The `offset` should be provided but will be treated as 0 if not given. Writes
-`value` to the byte located at the given offset. If the offset is outside the
-bounds of the Buffer, returns an error.
+`value` to the buffer starting at the given offset. If the target area goes
+outside the bounds of the Buffer, returns an error.
+
+The `BE` or `LE` refers to whether the value will be written in big-endian
+(highest byte first) or little-endian (lowest byte first) order.
 
 ### Buffer.toString
 

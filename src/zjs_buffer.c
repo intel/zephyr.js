@@ -30,69 +30,172 @@ struct zjs_buffer_t *zjs_buffer_find(const jerry_value_t obj)
     return NULL;
 }
 
-static jerry_value_t zjs_buffer_read_uint8(const jerry_value_t function_obj,
-                                           const jerry_value_t this,
+static jerry_value_t zjs_buffer_read_bytes(const jerry_value_t this,
                                            const jerry_value_t argv[],
-                                           const jerry_length_t argc)
+                                           const jerry_length_t argc,
+                                           int bytes, bool big_endian)
 {
     // requires: this is a JS buffer object created with zjs_buffer_create,
-    //             expects argument of an offset into the buffer, but will
-    //             treat offset as 0 if not given, as node.js seems to
-    //  effects: reads single byte value from the buffer associated with the
-    //             this JS object, if found, at the given offset, if within
-    //             the bounds of the buffer; otherwise returns an error
+    //             argv[0] should be an offset into the buffer, but will treat
+    //             offset as 0 if not given, as node.js seems to
+    //           bytes is the number of bytes to read (expects 1, 2, or 4)
+    //           big_endian true reads the bytes in big endian order, false in
+    //             little endian order
+    //  effects: reads bytes from the buffer associated with this JS object, if
+    //             found, at the given offset, if within the bounds of the
+    //             buffer; otherwise returns an error
     if (argc >= 1 && !jerry_value_is_number(argv[0]))
-        return zjs_error("zjs_buffer_read_uint8: invalid argument");
+        return zjs_error("zjs_buffer_read_bytes: invalid argument");
 
     uint32_t offset = 0;
     if (argc >= 1)
         offset = (uint32_t)jerry_get_number_value(argv[0]);
 
     struct zjs_buffer_t *buf = zjs_buffer_find(this);
-    if (buf) {
-        if (offset >= buf->bufsize)
-            return zjs_error("zjs_buffer_read_uint8: read beyond end of buffer");
-        uint8_t value = buf->buffer[offset];
+    if (!buf)
+        return zjs_error("zjs_buffer_read_bytes: buffer not found on read");
 
-        return jerry_create_number(value);
+    if (offset + bytes > buf->bufsize)
+        return zjs_error("zjs_buffer_read_bytes: read attempted beyond buffer");
+
+    int dir = big_endian ? 1 : -1;
+    if (!big_endian)
+        offset += bytes - 1;  // start on the big end
+
+    uint32_t value = 0;
+    for (int i = 0; i < bytes; i++) {
+        value <<= 8;
+        value |= buf->buffer[offset];
+        offset += dir;
     }
 
-    return zjs_error("zjs_buffer_read_uint8: read called on a buffer not in list");
+    return jerry_create_number(value);
 }
 
-static jerry_value_t zjs_buffer_write_uint8(const jerry_value_t function_obj,
-                                            const jerry_value_t this,
+static jerry_value_t zjs_buffer_write_bytes(const jerry_value_t this,
                                             const jerry_value_t argv[],
-                                            const jerry_length_t argc)
+                                            const jerry_length_t argc,
+                                            int bytes, bool big_endian)
 {
     // requires: this is a JS buffer object created with zjs_buffer_create,
-    //             expects arguments of the value to write and an offset
-    //             into the buffer, but will treat offset as 0 if not given,
-    //             as node.js seems to
-    //  effects: writes single byte value into the buffer associated with the
-    //             this JS object, if found, at the given offset, if within
-    //             the bounds of the buffer; otherwise returns an error
+    //             argv[0] must be the value to be written, argv[1] should be
+    //             an offset into the buffer, but will treat offset as 0 if not
+    //             given, as node.js seems to
+    //           bytes is the number of bytes to write (expects 1, 2, or 4)
+    //           big_endian true writes the bytes in big endian order, false in
+    //             little endian order
+    //  effects: writes bytes into the buffer associated with this JS object, if
+    //             found, at the given offset, if within the bounds of the
+    //             buffer; otherwise returns an error
     if (argc < 1 || !jerry_value_is_number(argv[0]) ||
         (argc >= 2 && !jerry_value_is_number(argv[1]))) {
-        return zjs_error("zjs_buffer_write_uint8: invalid argument");
+        return zjs_error("zjs_buffer_write_bytes: invalid argument");
     }
 
-    uint8_t value = (uint8_t)jerry_get_number_value(argv[0]);
+    uint32_t value = jerry_get_number_value(argv[0]);
 
     uint32_t offset = 0;
     if (argc > 1)
         offset = (uint32_t)jerry_get_number_value(argv[1]);
 
     struct zjs_buffer_t *buf = zjs_buffer_find(this);
-    if (buf) {
-        if (offset >= buf->bufsize)
-            return zjs_error("zjs_buffer_write_uint8: write beyond end of buffer");
-        buf->buffer[offset] = value;
+    if (!buf)
+        return zjs_error("zjs_buffer_write_bytes: buffer not found on write");
 
-        return jerry_create_number(offset + 1);
+    if (offset + bytes > buf->bufsize)
+        return zjs_error("zjs_buffer_write_bytes: write attempted beyond buffer");
+
+    int dir = big_endian ? -1 : 1;
+    if (big_endian)
+        offset += bytes - 1;  // start on the little end
+
+    for (int i = 0; i < bytes; i++) {
+        buf->buffer[offset] = value & 0xff;
+        value >>= 8;
+        offset += dir;
     }
 
-    return zjs_error("zjs_buffer_write_uint8: read called on a buffer not in list");
+    return ZJS_UNDEFINED;
+}
+
+static jerry_value_t zjs_buffer_read_uint8(const jerry_value_t function_obj,
+                                           const jerry_value_t this,
+                                           const jerry_value_t argv[],
+                                           const jerry_length_t argc)
+{
+    return zjs_buffer_read_bytes(this, argv, argc, 1, true);
+}
+
+static jerry_value_t zjs_buffer_read_uint16_be(const jerry_value_t function_obj,
+                                               const jerry_value_t this,
+                                               const jerry_value_t argv[],
+                                               const jerry_length_t argc)
+{
+    return zjs_buffer_read_bytes(this, argv, argc, 2, true);
+}
+
+static jerry_value_t zjs_buffer_read_uint16_le(const jerry_value_t function_obj,
+                                               const jerry_value_t this,
+                                               const jerry_value_t argv[],
+                                               const jerry_length_t argc)
+{
+    return zjs_buffer_read_bytes(this, argv, argc, 2, false);
+}
+
+static jerry_value_t zjs_buffer_read_uint32_be(const jerry_value_t function_obj,
+                                               const jerry_value_t this,
+                                               const jerry_value_t argv[],
+                                               const jerry_length_t argc)
+{
+    return zjs_buffer_read_bytes(this, argv, argc, 4, true);
+}
+
+static jerry_value_t zjs_buffer_read_uint32_le(const jerry_value_t function_obj,
+                                               const jerry_value_t this,
+                                               const jerry_value_t argv[],
+                                               const jerry_length_t argc)
+{
+    return zjs_buffer_read_bytes(this, argv, argc, 4, false);
+}
+
+static jerry_value_t zjs_buffer_write_uint8(const jerry_value_t function_obj,
+                                           const jerry_value_t this,
+                                           const jerry_value_t argv[],
+                                           const jerry_length_t argc)
+{
+    return zjs_buffer_write_bytes(this, argv, argc, 1, true);
+}
+
+static jerry_value_t zjs_buffer_write_uint16_be(const jerry_value_t function_obj,
+                                               const jerry_value_t this,
+                                               const jerry_value_t argv[],
+                                               const jerry_length_t argc)
+{
+    return zjs_buffer_write_bytes(this, argv, argc, 2, true);
+}
+
+static jerry_value_t zjs_buffer_write_uint16_le(const jerry_value_t function_obj,
+                                               const jerry_value_t this,
+                                               const jerry_value_t argv[],
+                                               const jerry_length_t argc)
+{
+    return zjs_buffer_write_bytes(this, argv, argc, 2, false);
+}
+
+static jerry_value_t zjs_buffer_write_uint32_be(const jerry_value_t function_obj,
+                                               const jerry_value_t this,
+                                               const jerry_value_t argv[],
+                                               const jerry_length_t argc)
+{
+    return zjs_buffer_write_bytes(this, argv, argc, 4, true);
+}
+
+static jerry_value_t zjs_buffer_write_uint32_le(const jerry_value_t function_obj,
+                                               const jerry_value_t this,
+                                               const jerry_value_t argv[],
+                                               const jerry_length_t argc)
+{
+    return zjs_buffer_write_bytes(this, argv, argc, 4, false);
 }
 
 char zjs_int_to_hex(int value) {
@@ -264,6 +367,14 @@ jerry_value_t zjs_buffer_create(uint32_t size)
     zjs_obj_add_number(buf_obj, size, "length");
     zjs_obj_add_function(buf_obj, zjs_buffer_read_uint8, "readUInt8");
     zjs_obj_add_function(buf_obj, zjs_buffer_write_uint8, "writeUInt8");
+    zjs_obj_add_function(buf_obj, zjs_buffer_read_uint16_be, "readUInt16BE");
+    zjs_obj_add_function(buf_obj, zjs_buffer_write_uint16_be, "writeUInt16BE");
+    zjs_obj_add_function(buf_obj, zjs_buffer_read_uint16_le, "readUInt16LE");
+    zjs_obj_add_function(buf_obj, zjs_buffer_write_uint16_le, "writeUInt16LE");
+    zjs_obj_add_function(buf_obj, zjs_buffer_read_uint32_be, "readUInt32BE");
+    zjs_obj_add_function(buf_obj, zjs_buffer_write_uint32_be, "writeUInt32BE");
+    zjs_obj_add_function(buf_obj, zjs_buffer_read_uint32_le, "readUInt32LE");
+    zjs_obj_add_function(buf_obj, zjs_buffer_write_uint32_le, "writeUInt32LE");
     zjs_obj_add_function(buf_obj, zjs_buffer_to_string, "toString");
     zjs_obj_add_function(buf_obj, zjs_buffer_write_string, "write");
 
