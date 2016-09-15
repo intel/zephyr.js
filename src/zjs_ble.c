@@ -1105,11 +1105,10 @@ static jerry_value_t zjs_ble_set_services(const jerry_value_t function_obj,
                                           const jerry_length_t argc)
 {
     // arg 0 should be an array of services
-    // arg 1 is optionally an object, but unused currently (FIXME)
-    PRINT("setServices has been called\n");
-
-    if (argc < 1 || !jerry_value_is_object(argv[0]) ||
-        (argc >= 2 && !jerry_value_is_object(argv[1]))) {
+    // arg 1 is optionally an callback function
+    if (argc < 1 ||
+        !jerry_value_is_object(argv[0]) ||
+        (argc > 1 && !jerry_value_is_function(argv[1]))) {
         return zjs_error("zjs_ble_set_services: invalid arguments");
     }
 
@@ -1134,11 +1133,18 @@ static jerry_value_t zjs_ble_set_services(const jerry_value_t function_obj,
         return zjs_error("zjs_ble_set_services: failed to validate service object");
     }
 
-    if (zjs_ble_register_service(&zjs_ble_service)) {
-        return ZJS_UNDEFINED;
-    } else {
-        return zjs_error("zjs_ble_set_services: failed to register service");
+    bool success = zjs_ble_register_service(&zjs_ble_service);
+    if (argc > 1) {
+        jerry_value_t arg;
+        arg = success ? ZJS_UNDEFINED :
+              jerry_create_string((jerry_char_t *)"failed to register services");
+        jerry_value_t rval = jerry_call_function(argv[1], ZJS_UNDEFINED, &arg, 1);
+        if (jerry_value_has_error_flag(rval)) {
+            PRINT("zjs_ble_set_services: failed to call callback function\n");
+        }
     }
+
+    return ZJS_UNDEFINED;
 }
 
 // Constructor
