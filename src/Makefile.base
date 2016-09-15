@@ -6,6 +6,10 @@ ccflags-y += -I$(JERRY_BASE)/jerry-core
 ccflags-y += -I$(ZEPHYR_BASE)/drivers
 ccflags-y += -I$(ZJS_BASE)/outdir/include
 
+ifeq ($(VARIANT), debug)
+ccflags-y += -DDEBUG_BUILD
+endif
+
 ifeq ($(BOARD), qemu_x86)
 ccflags-y += -DQEMU_BUILD
 endif

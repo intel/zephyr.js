@@ -70,7 +70,7 @@ static void gpio_c_callback(void* h)
 
         jerry_release_value(event);
     } else {
-        DBG_PRINT("onChange has not been registered\n");
+        DBG_PRINT(("onChange has not been registered\n"));
     }
 
     jerry_release_value(onchange_func);

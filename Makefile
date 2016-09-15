@@ -16,7 +16,7 @@ VARIANT ?= release
 # Build for zephyr, default target
 .PHONY: zephyr
 zephyr: analyze generate
-	@make -f Makefile.zephyr BOARD=$(BOARD) KERNEL=$(KERNEL)
+	@make -f Makefile.zephyr BOARD=$(BOARD) KERNEL=$(KERNEL) VARIANT=$(VARIANT)
 
 .PHONY: analyze
 analyze:
