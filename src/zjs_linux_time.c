@@ -10,6 +10,20 @@ void zjs_port_timer_init(struct zjs_port_timer* timer, void* data)
     timer->data = data;
 }
 
+//clock_gettime is not implemented on OSX
+#ifdef __MACH__
+#include <sys/time.h>
+#define CLOCK_MONOTONIC 1
+int clock_gettime(int clk_id, struct timespec* t) {
+    struct timeval now;
+    int rv = gettimeofday(&now, NULL);
+    if (rv) return rv;
+    t->tv_sec  = now.tv_sec;
+    t->tv_nsec = now.tv_usec * 1000;
+    return 0;
+}
+#endif
+
 void zjs_port_timer_start(struct zjs_port_timer* timer, uint32_t interval)
 {
     struct timespec now;
