@@ -94,7 +94,7 @@ struct zjs_ble_list_item {
     struct zjs_ble_list_item *next;
 };
 
-static struct zjs_ble_service zjs_ble_service = { NULL, NULL, NULL };
+static struct zjs_ble_service *zjs_ble_services = NULL;
 static struct zjs_ble_list_item *zjs_ble_list = NULL;
 
 struct bt_uuid* zjs_ble_new_uuid_16(uint16_t value) {
@@ -118,8 +118,10 @@ static void zjs_ble_free_characteristics(struct zjs_ble_characteristic *chrc)
         tmp = chrc;
         chrc = chrc->next;
 
-        jerry_release_value(chrc->chrc_obj);
+        jerry_release_value(tmp->chrc_obj);
 
+        if (tmp->uuid)
+            zjs_free(tmp->uuid);
         if (tmp->read_cb.zjs_cb.js_callback)
             jerry_release_value(tmp->read_cb.zjs_cb.js_callback);
         if (tmp->write_cb.zjs_cb.js_callback)
@@ -130,6 +132,24 @@ static void zjs_ble_free_characteristics(struct zjs_ble_characteristic *chrc)
             jerry_release_value(tmp->unsubscribe_cb.zjs_cb.js_callback);
         if (tmp->notify_cb.zjs_cb.js_callback)
             jerry_release_value(tmp->notify_cb.zjs_cb.js_callback);
+
+        zjs_free(tmp);
+    }
+}
+
+static void zjs_ble_free_services(struct zjs_ble_service *service)
+{
+    struct zjs_ble_service *tmp;
+    while (service != NULL) {
+        tmp = service;
+        service = service->next;
+
+        jerry_release_value(tmp->service_obj);
+
+        if (tmp->uuid)
+            zjs_free(tmp->uuid);
+        if (tmp->characteristics)
+            zjs_ble_free_characteristics(tmp->characteristics);
 
         zjs_free(tmp);
     }
@@ -953,27 +973,6 @@ static bool zjs_ble_parse_service(struct zjs_ble_service *service)
     return true;
 }
 
-/*
- * WebBT Service Declaration
- *
-static struct bt_gatt_attr attrs[] = {
-    BT_GATT_PRIMARY_SERVICE(BT_UUID_WEBBT),
-
-    BT_GATT_CHARACTERISTIC(BT_UUID_TEMP,
-        BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY),
-    BT_GATT_DESCRIPTOR(BT_UUID_TEMP, BT_GATT_PERM_READ,
-        read_callback, NULL, NULL),
-    BT_GATT_CUD(SENSOR_1_NAME, BT_GATT_PERM_READ),
-    BT_GATT_CCC(blvl_ccc_cfg, blvl_ccc_cfg_changed),
-
-    BT_GATT_CHARACTERISTIC(BT_UUID_RGB,
-        BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE),
-    BT_GATT_DESCRIPTOR(BT_UUID_RGB, BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,
-        read_callback, write_callback, NULL),
-    BT_GATT_CUD(SENSOR_2_NAME, BT_GATT_PERM_READ),
-};
-*/
-
 static bool zjs_ble_register_service(struct zjs_ble_service *service)
 {
     if (!service) {
@@ -981,16 +980,21 @@ static bool zjs_ble_register_service(struct zjs_ble_service *service)
         return false;
     }
 
-    int num_of_entries = 1; // 1 attribute for service uuid
+    // calculate the number of GATT attributes to allocate
+    int entry_index = 0;
+    int num_of_entries = 1;   // 1 attribute for service uuid
     struct zjs_ble_characteristic *ch = service->characteristics;
-    while (ch != NULL) {
-        num_of_entries += 2; // 2 attributes for uuid and descriptor
 
-        if (ch->cud_value)
+    while (ch) {
+        num_of_entries += 2;  // 2 attributes for uuid and descriptor
+
+        if (ch->cud_value) {
             num_of_entries++; // 1 attribute for cud
+        }
 
-        if ((ch->flags & BT_GATT_CHRC_NOTIFY) == BT_GATT_CHRC_NOTIFY)
+        if ((ch->flags & BT_GATT_CHRC_NOTIFY) == BT_GATT_CHRC_NOTIFY) {
             num_of_entries++; // 1 attribute for ccc
+        }
 
         ch = ch->next;
     }
@@ -1001,10 +1005,10 @@ static bool zjs_ble_register_service(struct zjs_ble_service *service)
         return false;
     }
 
+    // populate the array
     memset(bt_attrs, 0, sizeof(struct bt_gatt_attr) * num_of_entries);
 
-    // SERVICE
-    int entry_index = 0;
+    // GATT Primary Service
     bt_attrs[entry_index].uuid = zjs_ble_new_uuid_16(BT_UUID_GATT_PRIMARY_VAL);
     bt_attrs[entry_index].perm = BT_GATT_PERM_READ;
     bt_attrs[entry_index].read = bt_gatt_attr_read_service;
@@ -1012,8 +1016,8 @@ static bool zjs_ble_register_service(struct zjs_ble_service *service)
     entry_index++;
 
     ch = service->characteristics;
-    while (ch != NULL) {
-        // CHARACTERISTIC
+    while (ch) {
+        // GATT Characteristic
         struct bt_gatt_chrc *chrc_user_data = zjs_malloc(sizeof(struct bt_gatt_chrc));
         if (!chrc_user_data) {
             PRINT("zjs_ble_register_service: out of memory allocating struct bt_gatt_chrc\n");
@@ -1109,7 +1113,7 @@ static jerry_value_t zjs_ble_set_services(const jerry_value_t function_obj,
     // arg 0 should be an array of services
     // arg 1 is optionally an callback function
     if (argc < 1 ||
-        !jerry_value_is_object(argv[0]) ||
+        !jerry_value_is_array(argv[0]) ||
         (argc > 1 && !jerry_value_is_function(argv[1]))) {
         return zjs_error("zjs_ble_set_services: invalid arguments");
     }
@@ -1117,25 +1121,57 @@ static jerry_value_t zjs_ble_set_services(const jerry_value_t function_obj,
     // FIXME: currently hard-coded to work with demo
     // which has only 1 primary service and 2 characteristics
     // add support for multiple services
-    jerry_value_t v_service;
-    v_service = jerry_get_property_by_index(argv[0], 0);
-    if (jerry_value_has_error_flag(v_service)) {
+    jerry_value_t v_services = argv[0];
+    int array_size = jerry_get_array_length(v_services);
+    if (array_size == 0) {
         return zjs_error("zjs_ble_set_services: services array is empty");
     }
 
-    if (zjs_ble_service.characteristics) {
-        zjs_ble_free_characteristics(zjs_ble_service.characteristics);
+    // free existing services
+    if (zjs_ble_services) {
+        zjs_ble_free_services(zjs_ble_services);
+        zjs_ble_services = NULL;
     }
 
-    zjs_ble_service.service_obj = jerry_acquire_value(v_service);
-    jerry_set_object_native_handle(zjs_ble_service.service_obj,
-                                   (uintptr_t)&zjs_ble_service, NULL);
+    bool success = true;
+    struct zjs_ble_service *previous = NULL;
+    for (int i = 0; i < array_size; i++) {
+        jerry_value_t v_service = jerry_get_property_by_index(v_services, i);
 
-    if (!zjs_ble_parse_service(&zjs_ble_service)) {
-        return zjs_error("zjs_ble_set_services: failed to validate service object");
+        if (!jerry_value_is_object(v_service)) {
+            return zjs_error("zjs_ble_set_services: service is not object");
+        }
+
+        struct zjs_ble_service *service = zjs_malloc(sizeof(struct zjs_ble_service));
+        if (!service) {
+            return zjs_error("zjs_ble_set_services: out of memory allocating struct zjs_ble_service");
+        }
+
+        memset(service, 0, sizeof(struct zjs_ble_service));
+
+        service->service_obj = jerry_acquire_value(v_service);
+        jerry_set_object_native_handle(service->service_obj,
+                                       (uintptr_t)service, NULL);
+
+        if (!zjs_ble_parse_service(service)) {
+            return zjs_error("zjs_ble_set_services: failed to parse service");
+        }
+
+        if (!zjs_ble_register_service(service)) {
+            success = false;
+            break;
+        }
+
+        // append to the list
+        if (!zjs_ble_services) {
+            zjs_ble_services = service;
+            previous = service;
+        }
+        else {
+           previous->next = service;
+        }
     }
 
-    bool success = zjs_ble_register_service(&zjs_ble_service);
     if (argc > 1) {
         jerry_value_t arg;
         arg = success ? ZJS_UNDEFINED :
