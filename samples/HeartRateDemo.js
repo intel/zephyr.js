@@ -67,8 +67,35 @@ var pin = aio.open({ device: 0, pin: pins.A1 });
 
 // Bluetooth LE
 var deviceName = 'Zephyr Heartrate Monitor';
-var hrsUuid = "180d";
-var hrsMeasurementUuid = "2a37";
+
+var gapUuid = '1800';
+var gapDeviceNameUuid = '2a00';
+var gapAppearanceUuid = '2a01';
+
+var hrsUuid = '180d';
+var hrsMeasurementUuid = '2a37';
+
+var gapDeviceNameCharacteristic = new ble.Characteristic({
+    uuid: gapDeviceNameUuid,
+    properties: ['read'],
+    descriptors: [
+        new ble.Descriptor({
+            uuid: '2901',
+            value: deviceName
+        })
+    ]
+});
+
+var gapAppearanceCharacteristic = new ble.Characteristic({
+    uuid: gapAppearanceUuid,
+    properties: ['read'],
+    descriptors: [
+        new ble.Descriptor({
+            uuid: '2901',
+            value: '0341'
+        })
+    ]
+});
 
 var heartRateCharacteristic = new ble.Characteristic({
     uuid: hrsMeasurementUuid,
@@ -220,6 +247,13 @@ ble.on('advertisingStart', function(error) {
     }
 
     ble.setServices([
+        new ble.PrimaryService({
+            uuid: gapUuid,
+            characteristics: [
+                gapDeviceNameCharacteristic,
+                gapAppearanceCharacteristic
+            ]
+        }),
         new ble.PrimaryService({
             uuid: hrsUuid,
             characteristics: [
