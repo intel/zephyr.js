@@ -19,7 +19,7 @@
 #ifdef ZJS_LINUX_BUILD
 #include <stdlib.h>
 #define zjs_malloc(sz) malloc(sz)
-#define zjs_free(ptr) free(ptr)
+#define zjs_free(ptr) free((void *)ptr)
 #else
 #ifdef ZJS_TRACE_MALLOC
 #include <zephyr.h>

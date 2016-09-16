@@ -42,7 +42,7 @@ extern const char script_gen[];
 #ifndef ZJS_LINUX_BUILD
 void main(void)
 #else
-void main(int argc, char *argv[])
+int main(int argc, char *argv[])
 #endif
 {
     const char *script = NULL;
@@ -112,14 +112,14 @@ void main(int argc, char *argv[])
         len = strnlen(script_gen, MAX_SCRIPT_SIZE);
         if (len == MAX_SCRIPT_SIZE) {
             PRINT("Error: Script size too large! Increase MAX_SCRIPT_SIZE.\n");
-            return;
+            goto error;
         }
     }
 
     code_eval = jerry_parse((jerry_char_t *)script, len, false);
     if (jerry_value_has_error_flag(code_eval)) {
         PRINT("JerryScript: cannot parse javascript\n");
-        return;
+        goto error;
     }
 
 #ifdef ZJS_LINUX_BUILD
@@ -131,7 +131,7 @@ void main(int argc, char *argv[])
     result = jerry_run(code_eval);
     if (jerry_value_has_error_flag(result)) {
         PRINT("JerryScript: cannot run javascript\n");
-        return;
+        goto error;
     }
 
     // Magic value set in JS to enable sleep during the loop
@@ -160,4 +160,11 @@ void main(int argc, char *argv[])
         //   busy wait
         zjs_sleep(1);
     }
+
+error:
+#ifdef ZJS_LINUX_BUILD
+    return 1;
+#else
+    return;
+#endif
 }
