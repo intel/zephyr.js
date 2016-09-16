@@ -6,7 +6,7 @@ UPDATE ?= exit
 TRACE ?= n
 
 ifndef ZJS_BASE
-$(error ZJS_BASE not defined)
+$(error ZJS_BASE not defined. You need to source zjs-env.sh)
 endif
 
 JERRY_BASE ?= $(ZJS_BASE)/deps/jerryscript
@@ -91,13 +91,17 @@ update:
 # Sets up prj/last_build files
 .PHONY: setup
 setup: update
-# Copy 256/216k board files to zephyr tree
-	@rsync -a deps/overlay-zephyr/ deps/zephyr/
-	@if [ $(BOARD) != qemu_x86 ]; then \
-		cp prj.conf.arduino_101_factory prj.conf; \
-	else \
-		cp prj.conf.qemu_x86 prj.conf; \
-	fi
+ifeq ($(BOARD), qemu_x86)
+	cp prj.conf.qemu_x86 prj.conf
+else
+	cp prj.conf.base prj.conf
+ifeq ($(BOARD), arduino_101_factory)
+ifeq ($(ZJS_PARTITION), 256)
+	cat prj.conf.partition_256 >> prj.conf
+endif
+endif
+endif
+
 # Remove .last_build file
 	@rm -f .*.last_build
 	@echo "" > .$(BOARD).last_build
@@ -144,11 +148,11 @@ qemu: analyze generate
 # Builds ARC binary
 .PHONY: arc
 arc:
-ifeq ($(BOARD), arduino_101_factory_256)
-	cd arc/; make BOARD=arduino_101_sss_factory_256
-else
-	cd arc/; make BOARD=arduino_101_sss_factory
+	@cp arc/prj.conf.base arc/prj.conf
+ifeq ($(ZJS_PARTITION), 256)
+	@cat arc/prj.conf.partition_256 >> arc/prj.conf
 endif
+	@cd arc; make BOARD=arduino_101_sss_factory
 
 # Run debug server over JTAG
 .PHONY: debug
@@ -172,7 +176,6 @@ linux: generate
 	rm -f .*.last_build
 	echo "" > .linux.last_build
 	make -f Makefile.linux JS=$(JS) VARIANT=$(VARIANT)
-
 
 .PHONY: help
 help:

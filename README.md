@@ -101,7 +101,11 @@ The easiest way to do this is to use a flashpack.zip file that I can provide
 you (geoff@linux.intel.com). I need to make sure of the license details before
 I add it to the repo.
 
-The default build settings currently expect you to be using the 256KB partition.
+The ZJS_PARTITION environment variable, set automatically by zjs-env.sh, is
+what controls whether the build targets 144KB or 256KB. The symptom if you use
+the wrong one is that the ARC side won't come up, because we'll be attempting
+to start it from the wrong place on the flash. (Note: both the ARC and X86
+images have to be rebuilt and reflashed when you switch partition sizes.)
 
 ## Building system images
 The Zephyr.js project uses a top-level Makefile to control the building of
