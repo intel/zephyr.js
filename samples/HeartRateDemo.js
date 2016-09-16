@@ -11,26 +11,25 @@
 // track the heart rate changes.
 
 // Hardware Requirements
-//   - A pulse sensor or other device that reports pulse rate using an analog voltage,
-//   - the one in this sample uses the sensor from www.pulsesensor.com
+//   - A pulse sensor that reports pulse rate using an analog voltage,
+//       the one in this sample uses the sensor from www.pulsesensor.com
 //   - A Grove LCD
-//   - pull-up resistors for SDA and SCL, we use two 10k resistors,
-//   - you should choose resistors that will work with the LCD hardware you have,
-//   - the ones we listed here are the ones that have known to work for us,
-//   - so your mileage may vary if you have different LCD
+//   - Two pull-up resistors for SDA and SCL, we use two 10k resistors,
+//       you should choose resistors that will work with the LCD hardware
+//       you have, the ones we listed here are the ones that have known
+//       to work for us, so your mileage may vary if you have different LCD
 // Wiring:
-//   For pulse sensor:
+//   For the pulse sensor:
 //     - Wire the Pulse sensor's RED to 3.3V or 5V
 //     - Wire the Pulse sensor's BLACK to GND
 //     - Wire the Pulse sensor's PURPLE to Arduino A1
-//   For LCD:
+//   For the LCD:
 //     - Wire SDA on the LCD to the pull-up resistor and connect that resistor to power (VCC)
 //     - Wire SCL on the LCD to the pull-up resistor and connect that resistor to power (VCC)
 //     - Wire SDA on the LCD to SDA on the Arduino 101
 //     - Wire SCL on the LCD to SCL on the Arduino 101
 //     - Wire power(5V) and ground accordingly
 
-// import aio module
 var aio = require("aio");
 var ble = require("ble");
 var grove_lcd = require("grove_lcd");
