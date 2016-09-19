@@ -7,19 +7,18 @@
 
 // Hardware Requirements:
 //   - A Grove LCD
-//   - pull-up resistors for SDA and SCL, we use two 10k resistors,
-//   - you should choose resistors that will work with the LCD hardware you have,
-//   - the ones we listed here are the ones that have known to work for us,
-//   - so your mileage may vary if you have different LCD
+//   - Two pull-up resistors for SDA and SCL, we use two 10k resistors,
+//       you should choose resistors that will work with the LCD hardware
+//       you have, the ones we listed here are the ones that have known
+//       to work for us, so your mileage may vary if you have different LCD
 // Wiring:
-//   For LCD:
+//   For the LCD:
 //     - Wire SDA on the LCD to the pull-up resistor and connect that resistor to power (VCC)
 //     - Wire SCL on the LCD to the pull-up resistor and connect that resistor to power (VCC)
 //     - Wire SDA on the LCD to SDA on the Arduino 101
 //     - Wire SCL on the LCD to SCL on the Arduino 101
 //     - Wire power(5V) and ground accordingly
 
-// import grove_lcd module
 var grove_lcd = require("grove_lcd");
 
 // set initial state

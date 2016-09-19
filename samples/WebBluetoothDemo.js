@@ -3,6 +3,19 @@
 // Test code for Arduino 101 that replicates the WebBluetooth demo
 // using BLE to advertise temperature changes and allow LED color changes
 
+// Hardware Requirements:
+//   - A temperature sensor (TMP36)
+//   - A color LED bulb
+//   - 200-ohm resisters
+// Wiring:
+//   For the temperature sensor:
+//     - Wire the device's power to Arduino 3.3V and ground to GND
+//     - Wire the signal pin to Arduino A0
+//   For the color LED bulb:
+//     - The LED has 4 legs, wire the longest one to the ground
+//     - Wire the other 3 legs to 220-ohm resisters that connect to the
+//         three PWM pins (IO3, IO5, IO6)
+
 var aio = require("aio");
 var ble = require("ble");
 var pwm = require("pwm");
