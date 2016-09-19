@@ -27,7 +27,7 @@ JERRY_LIBS = 		-ljerry-core -lm
 
 JERRY_LIB_PATH = 	-L$(JERRY_BASE)/build/lib/
 
-LINUX_FLAGS = -std=gnu99
+LINUX_FLAGS = -std=gnu99 -Wpointer-sign
 
 LINUX_DEFINES = -DZJS_LINUX_BUILD -DBUILD_MODULE_EVENTS
 
