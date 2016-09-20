@@ -14,8 +14,6 @@ ifeq ($(BOARD), qemu_x86)
 ccflags-y += -DQEMU_BUILD
 endif
 
-ccflags-y += -DBUILD_MODULE_EVENTS
-
 obj-y += main.o \
          zjs_ble.o \
          zjs_buffer.o \
