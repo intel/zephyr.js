@@ -104,6 +104,29 @@ static bool zjs_aio_ipm_send_sync(zjs_ipm_message_t* send,
     return true;
 }
 
+static jerry_value_t zjs_aio_call_remote_function(zjs_ipm_message_t* send)
+{
+    if (!send)
+        return zjs_error("zjs_aio_call_remote_function: invalid send message");
+
+    zjs_ipm_message_t reply;
+
+    bool success = zjs_aio_ipm_send_sync(send, &reply);
+    zjs_aio_free_msg(send);
+
+    if (!success) {
+        return zjs_error("zjs_aio_call_remote_function: ipm message failed or timed out!");
+    }
+
+    if (reply.error_code != ERROR_IPM_NONE) {
+        PRINT("error code: %lu\n", reply.error_code);
+        return zjs_error("zjs_aio_call_remote_function: error received");
+    }
+
+    uint32_t value = reply.data.aio.value;
+    return jerry_create_number(value);
+}
+
 static jerry_value_t *zjs_aio_pre_callback(void *h, uint32_t *argc)
 {
     // effects: sets up value argument for the callback
@@ -177,38 +200,12 @@ static jerry_value_t zjs_aio_pin_read(const jerry_value_t function_obj,
     }
 
     // send IPM message to the ARC side
-    zjs_ipm_message_t* reply = zjs_aio_alloc_msg();;
     zjs_ipm_message_t* send = zjs_aio_alloc_msg();
-
     send->type = TYPE_AIO_PIN_READ;
     send->data.aio.pin = pin;
-    bool success = zjs_aio_ipm_send_sync(send, reply);
-    zjs_aio_free_msg(send);
 
-    if (!success) {
-        zjs_aio_free_msg(reply);
-        return zjs_error("zjs_aio_pin_read: ipm message failed or timed out!");
-    }
-
-    if (reply->error_code != ERROR_IPM_NONE) {
-        PRINT("error code: %lu\n", reply->error_code);
-        zjs_aio_free_msg(reply);
-        return zjs_error("zjs_aio_pin_read: error received");
-    }
-
-    double value = reply->data.aio.value;
-    zjs_aio_free_msg(reply);
-
-    return jerry_create_number(value);
-}
-
-static jerry_value_t zjs_aio_pin_abort(const jerry_value_t function_obj,
-                                       const jerry_value_t this,
-                                       const jerry_value_t argv[],
-                                       const jerry_length_t argc)
-{
-    // NO-OP
-    return ZJS_UNDEFINED;
+    jerry_value_t result = zjs_aio_call_remote_function(send);
+    return result;
 }
 
 static jerry_value_t zjs_aio_pin_close(const jerry_value_t function_obj,
@@ -216,7 +213,18 @@ static jerry_value_t zjs_aio_pin_close(const jerry_value_t function_obj,
                                        const jerry_value_t argv[],
                                        const jerry_length_t argc)
 {
-    // NO-OP
+    uint32_t pin;
+    zjs_obj_get_uint32(this, "pin", &pin);
+
+    aio_handle_t* handle;
+    if (jerry_get_object_native_handle(this, (uintptr_t*)&handle) && handle) {
+        // remove existing onchange handler and unsubscribe
+        zjs_aio_ipm_send_async(TYPE_AIO_PIN_UNSUBSCRIBE, pin, handle);
+        zjs_remove_callback(handle->callback_id);
+        jerry_set_object_native_handle(this, 0, NULL);
+        zjs_aio_free_handle(handle);
+    }
+
     return ZJS_UNDEFINED;
 }
 
@@ -227,7 +235,7 @@ static jerry_value_t zjs_aio_pin_on(const jerry_value_t function_obj,
 {
     if (argc < 2 ||
         !jerry_value_is_string(argv[0]) ||
-        (!jerry_value_is_object(argv[1]) &&
+        (!jerry_value_is_function(argv[1]) &&
          !jerry_value_is_null(argv[1]))) {
         return zjs_error("zjs_aio_pin_on: invalid argument");
     }
@@ -246,28 +254,26 @@ static jerry_value_t zjs_aio_pin_on(const jerry_value_t function_obj,
     if (strcmp(event, "change"))
         return zjs_error("zjs_aio_pin_on: unsupported event type");
 
-    static aio_handle_t *handle;
-    jerry_get_object_native_handle(this, (uintptr_t * )handle);
-    if (jerry_value_is_null(argv[1])) {
-        // no change function, remove if one existed before
-        if (handle) {
+    aio_handle_t* handle;
+    if (jerry_get_object_native_handle(this, (uintptr_t*)&handle) && handle) {
+        if (jerry_value_is_null(argv[1])) {
+            // no change function, remove if one existed before
             zjs_aio_ipm_send_async(TYPE_AIO_PIN_UNSUBSCRIBE, pin, handle);
             zjs_remove_callback(handle->callback_id);
             jerry_set_object_native_handle(this, 0, NULL);
             zjs_aio_free_handle(handle);
+        } else {
+            // switch to new change function
+            zjs_edit_js_func(handle->callback_id, argv[1]);
         }
-    }
-    else if (handle) {
-        // switch to new change function
-        zjs_edit_js_func(handle->callback_id, argv[1]);
-    }
-    else {
+    } else if (!jerry_value_is_null(argv[1])) {
         // new change function
         handle = zjs_aio_alloc_handle();
         if (!handle)
             return zjs_error("zjs_aio_pin_on: could not allocate handle");
 
         handle->pin_obj = this;
+        jerry_set_object_native_handle(this, (uintptr_t)handle, NULL);
         handle->callback_id = zjs_add_callback(argv[1], handle,
                                                zjs_aio_pre_callback, NULL);
         zjs_aio_ipm_send_async(TYPE_AIO_PIN_SUBSCRIBE, pin, handle);
@@ -334,32 +340,17 @@ static jerry_value_t zjs_aio_open(const jerry_value_t function_obj,
 
     // send IPM message to the ARC side
     zjs_ipm_message_t* send = zjs_aio_alloc_msg();
-    zjs_ipm_message_t* reply = zjs_aio_alloc_msg();
-
     send->type = TYPE_AIO_OPEN;
     send->data.aio.pin = pin;
-    bool success = zjs_aio_ipm_send_sync(send, reply);
-    zjs_aio_free_msg(send);
 
-    if (!success) {
-        zjs_aio_free_msg(reply);
-        return zjs_error("zjs_aio_open: ipm message failed or timed out!");
-    }
-
-    if (reply->error_code != ERROR_IPM_NONE) {
-        PRINT("error code: %lu\n", reply->error_code);
-        zjs_aio_free_msg(reply);
-        return zjs_error("zjs_aio_open: error received");
-    }
-
-    zjs_aio_free_msg(send);
-    zjs_aio_free_msg(reply);
+    jerry_value_t result = zjs_aio_call_remote_function(send);
+    if (jerry_value_has_error_flag(result))
+        return result;
 
     // create the AIOPin object
     jerry_value_t pinobj = jerry_create_object();
     zjs_obj_add_function(pinobj, zjs_aio_pin_read, "read");
     zjs_obj_add_function(pinobj, zjs_aio_pin_read_async, "readAsync");
-    zjs_obj_add_function(pinobj, zjs_aio_pin_abort, "abort");
     zjs_obj_add_function(pinobj, zjs_aio_pin_close, "close");
     zjs_obj_add_function(pinobj, zjs_aio_pin_on, "on");
     zjs_obj_add_string(pinobj, name, "name");

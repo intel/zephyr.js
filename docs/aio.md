@@ -47,8 +47,7 @@ interface AIOPin {
     unsigned long read();
     void readAsync(ReadCallback callback);  // TODO: change to return a promise
     void on(string eventType, ReadCallback callback);
-    void abort();  // TODO: remove for now, currently does nothing
-    void close();  // TODO: remove for now, currently does nothing
+    void close();
 };
 
 callback ReadCallback = void (unsigned long value);
@@ -99,17 +98,12 @@ it actually gets called periodically even when it hasn't changed.) When null is
 passed for the change event, the previously registered callback will be
 discarded and no longer called.
 
-### AIOPin.abort
-
-`void abort();`
-
-*NOTE: Does nothing, should be removed for now.*
-
 ### AIOPin.close
 
 `void close();`
 
-*NOTE: Does nothing, should be removed for now.*
+Closes the AIOPin. Once it is closed, all event handlers registered will no
+longer be called.
 
 Sample Apps
 -----------
