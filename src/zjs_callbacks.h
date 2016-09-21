@@ -103,6 +103,22 @@ int32_t zjs_add_callback(jerry_value_t js_func, void* handle,
                          zjs_post_callback_func post);
 
 /*
+ * Add a JS callback that will only get called once. After it is called it will
+ * be automatically removed.
+ *
+ * @param js_func       JS function to be called (this could be native too)
+ * @param handle        Module specific handle, given to pre/post
+ * @param pre           Function called before the JS function (explained above)
+ * @param post          Function called after the JS function (explained above)
+ *
+ * @return              ID associated with this callback, use this ID to reference this CB
+ */
+int32_t zjs_add_callback_once(jerry_value_t js_func,
+                              void* handle,
+                              zjs_pre_callback_func pre,
+                              zjs_post_callback_func post);
+
+/*
  * Change a callbacks JS function
  *
  * @param id            ID of callback
