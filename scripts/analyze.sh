@@ -30,7 +30,7 @@ function check_for_require()
 
 check_for_require events
 if [ $? -eq 0 ]; then
-    >&2 echo Using module: GPIO
+    >&2 echo Using module: EVENTS
     MODULES+=" -DBUILD_MODULE_EVENTS"
 fi
 check_for_require gpio
