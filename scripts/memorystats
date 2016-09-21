@@ -1,0 +1,63 @@
+#!/bin/bash
+
+# Copyright (c) 2016, Intel Corporation.
+# Author: Brian Jones <brian.j.jones@intel.com>
+
+# memorystats - Get the ROM and RAM usages for Zephyr.js based on the javascript it has loaded.
+
+if [ ! -d $ZJS_BASE ]; then
+    echo "Couldn't find the samples folder, make sure and source zjs-env.sh and deps/zephyr/zephyr-env.sh"
+    exit
+fi
+
+cd $ZJS_BASE
+
+if [ ! -f "deps/zephyr/scripts/sanitycheck" ]; then
+    echo "Please build the dependencies first"
+    exit
+fi
+
+if [ -f "/tmp/memorystats_output.txt" ]; then
+    rm /tmp/memorystats_output.txt
+fi
+
+FILES=$ZJS_BASE/samples/*.js
+
+divider="--------------------------------------------------------------------"
+
+# Run test on the arc side
+echo "Testing with ARC..."
+make arc >& /dev/null
+if [ $? -eq 0 ]; then
+    echo "$divider" >> /tmp/memorystats_output.txt
+    echo "Results for ARC" >> /tmp/memorystats_output.txt
+    echo "$divider" >> /tmp/memorystats_output.txt
+    deps/zephyr/scripts/sanitycheck -z arc/outdir/zephyr.elf >> /tmp/memorystats_output.txt 2> /dev/null
+    str=$(tail -2 /tmp/memorystats_output.txt | head -1 | sed -e 's/Totals: //g')
+    results="${results}$str\tARC\n"
+else
+    echo "make failed for ARC, skipping it"
+fi
+# Run test on all the examples
+for f in $FILES
+do
+    #filename="${f/samples\//}"
+    filename="${f##*/}"
+    echo "Testing with $filename..."
+    make JS=$f >& /dev/null
+    if [ $? -eq 0 ]; then
+        echo "$divider" >> /tmp/memorystats_output.txt
+        echo "Results for $f" >> /tmp/memorystats_output.txt
+        echo "$divider" >> /tmp/memorystats_output.txt
+        deps/zephyr/scripts/sanitycheck -z outdir/zephyr.elf >> /tmp/memorystats_output.txt 2> /dev/null
+        str=$(tail -2 /tmp/memorystats_output.txt | head -1 | sed -e 's/Totals: //g')
+        results="${results}$str\t$filename\n"
+    else
+        echo "make failed for $f, skipping it"
+    fi
+done
+
+# Output the truncated results
+echo ""
+sed -i "1s/^/-= Total values for all demos =-\n$divider\n${results}\n-= Full reports =-\n/" /tmp/memorystats_output.txt
+sed '/Full/Q' /tmp/memorystats_output.txt
