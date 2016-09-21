@@ -103,6 +103,7 @@ endif
 endif
 
 # Remove .last_build file
+	@cat prj.conf.tmp >> prj.conf
 	@rm -f .*.last_build
 	@echo "" > .$(BOARD).last_build
 
