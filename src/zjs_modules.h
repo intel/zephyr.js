@@ -9,9 +9,9 @@
 
 #include "jerry-api.h"
 
-typedef jerry_value_t (*InitCB)();
+typedef jerry_value_t (*initcb_t)();
 
 void zjs_modules_init();
-void zjs_modules_add(const char *name, InitCB mod_init);
+void zjs_modules_add(const char *name, initcb_t mod_init);
 
 #endif  // __zjs_modules_h__

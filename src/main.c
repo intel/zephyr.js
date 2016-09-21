@@ -21,21 +21,7 @@
 #include "zjs_timers.h"
 #include "zjs_util.h"
 
-#ifndef ZJS_LINUX_BUILD
-// ZJS includes
-#include "zjs_aio.h"
 #include "zjs_ble.h"
-#include "zjs_gpio.h"
-#include "zjs_grove_lcd.h"
-#include "zjs_pwm.h"
-#include "zjs_i2c.h"
-#ifdef CONFIG_BOARD_ARDUINO_101
-#include "zjs_a101_pins.h"
-#endif // ZJS_LINUX_BUILD
-#ifdef CONFIG_BOARD_FRDM_K64F
-#include "zjs_k64f_pins.h"
-#endif
-#endif
 
 extern const char script_gen[];
 
@@ -63,43 +49,6 @@ int main(int argc, char *argv[])
 
     // initialize modules
     zjs_modules_init();
-
-#ifndef ZJS_LINUX_BUILD
-#ifndef QEMU_BUILD
-#ifndef CONFIG_BOARD_FRDM_K64F
-#ifdef BUILD_MODULE_AIO
-    zjs_modules_add("aio", zjs_aio_init);
-#endif
-#endif
-#ifdef BUILD_MODULE_BLE
-    zjs_modules_add("ble", zjs_ble_init);
-#endif
-#ifdef BUILD_MODULE_GPIO
-    zjs_modules_add("gpio", zjs_gpio_init);
-#endif
-#ifdef BUILD_MODULE_GROVE_LCD
-    zjs_modules_add("grove_lcd", zjs_grove_lcd_init);
-#endif
-#ifdef BUILD_MODULE_PWM
-    zjs_modules_add("pwm", zjs_pwm_init);
-#endif
-#ifdef BUILD_MODULE_I2C
-    zjs_modules_add("i2c", zjs_i2c_init);
-#endif
-#ifdef CONFIG_BOARD_ARDUINO_101
-#ifdef BUILD_MODULE_A101
-    zjs_modules_add("arduino101_pins", zjs_a101_init);
-#endif
-#endif
-#ifdef CONFIG_BOARD_FRDM_K64F
-    zjs_modules_add("k64f_pins", zjs_k64f_init);
-#endif
-#endif // QEMU_BUILD
-#endif // ZJS_LINUX_BUILD
-
-#ifdef BUILD_MODULE_EVENTS
-    zjs_modules_add("events", zjs_event_init);
-#endif
 
 #ifdef ZJS_LINUX_BUILD
     if (argc > 1) {
