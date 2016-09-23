@@ -21,7 +21,7 @@
 // to save string space and instead print error codes or something for release.
 
 // this is arbitrary but okay for now; added to avoid plain strlen below
-#define MAX_SCRIPT_SIZE 4096
+#define MAX_SCRIPT_SIZE 8192
 
 #if defined(CONFIG_BOARD_ARDUINO_101) || defined(CONFIG_BOARD_ARDUINO_101_SSS)
 #define ARC_AIO_MIN 9

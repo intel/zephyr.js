@@ -49,7 +49,11 @@ ble.on('advertisingStart', function(error) {
                 })
             ]
         })
-    ]);
+    ], function(error) {
+        if (error) {
+            print("Set services error: " + error);
+        }
+    });
 });
 
 print("BLE sample...");
