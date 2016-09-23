@@ -575,6 +575,22 @@ void zjs_ble_enable() {
     bt_conn_auth_cb_register(&zjs_ble_auth_cb_display);
 }
 
+static jerry_value_t zjs_ble_disconnect(const jerry_value_t function_obj,
+                                        const jerry_value_t this,
+                                        const jerry_value_t argv[],
+                                        const jerry_length_t argc)
+{
+    if (zjs_ble_default_conn) {
+        int error = bt_conn_disconnect(zjs_ble_default_conn,
+                                       BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+        if (error) {
+            return zjs_error("zjs_ble_disconnect: disconnect failed");
+        }
+    }
+
+    return ZJS_UNDEFINED;
+}
+
 static jerry_value_t zjs_ble_on(const jerry_value_t function_obj,
                                 const jerry_value_t this,
                                 const jerry_value_t argv[],
@@ -1254,6 +1270,7 @@ jerry_value_t zjs_ble_init()
 
     // create global BLE object
     jerry_value_t ble_obj = jerry_create_object();
+    zjs_obj_add_function(ble_obj, zjs_ble_disconnect, "disconnect");
     zjs_obj_add_function(ble_obj, zjs_ble_on, "on");
     zjs_obj_add_function(ble_obj, zjs_ble_start_advertising, "startAdvertising");
     zjs_obj_add_function(ble_obj, zjs_ble_stop_advertising, "stopAdvertising");
