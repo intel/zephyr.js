@@ -69,7 +69,7 @@ void zjs_add_event_listener(jerry_value_t obj, const char* event, jerry_value_t 
     jerry_value_t id_prop = zjs_get_property(event_obj, "callback_id");
     if (jerry_value_is_number(id_prop)) {
         // If there already is an event object, get the callback ID
-        zjs_obj_get_uint32(event_obj, "callback_id", &callback_id);
+        zjs_obj_get_int32(event_obj, "callback_id", &callback_id);
     }
     callback_id = zjs_add_callback_list(listener, ev, pre_event, post_event, callback_id);
 
@@ -179,7 +179,7 @@ static jerry_value_t remove_listener(const jerry_value_t function_obj,
     jerry_value_t id_prop = zjs_get_property(event_obj, "callback_id");
     if (jerry_value_is_number(id_prop)) {
         // If there already is an event object, get the callback ID
-        zjs_obj_get_uint32(event_obj, "callback_id", &callback_id);
+        zjs_obj_get_int32(event_obj, "callback_id", &callback_id);
     } else {
         DBG_PRINT(("callback_id not found for '%s'\n", event));
         return ZJS_UNDEFINED;
@@ -225,7 +225,7 @@ static jerry_value_t remove_all_listeners(const jerry_value_t function_obj,
     jerry_value_t id_prop = zjs_get_property(event_obj, "callback_id");
     if (jerry_value_is_number(id_prop)) {
         // If there already is an event object, get the callback ID
-        zjs_obj_get_uint32(event_obj, "callback_id", &callback_id);
+        zjs_obj_get_int32(event_obj, "callback_id", &callback_id);
     } else {
         DBG_PRINT(("callback_id not found for '%s'\n", event));
         return ZJS_UNDEFINED;
@@ -233,7 +233,7 @@ static jerry_value_t remove_all_listeners(const jerry_value_t function_obj,
 
     zjs_remove_callback(callback_id);
 
-    jerry_value_t event_name_val = jerry_create_string(event);
+    jerry_value_t event_name_val = jerry_create_string((const jerry_char_t*)event);
     jerry_delete_property(ev->map, (const jerry_value_t)event_name_val);
     jerry_release_value(event_name_val);
 
@@ -353,7 +353,7 @@ static jerry_value_t get_listener_count(const jerry_value_t function_obj,
     jerry_value_t id_prop = zjs_get_property(event_obj, "callback_id");
     if (jerry_value_is_number(id_prop)) {
         // If there already is an event object, get the callback ID
-        zjs_obj_get_uint32(event_obj, "callback_id", &callback_id);
+        zjs_obj_get_int32(event_obj, "callback_id", &callback_id);
     } else {
         DBG_PRINT(("callback_id not found for '%s'\n", event));
         return ZJS_UNDEFINED;
@@ -397,7 +397,7 @@ static jerry_value_t get_listeners(const jerry_value_t function_obj,
     jerry_value_t id_prop = zjs_get_property(event_obj, "callback_id");
     if (jerry_value_is_number(id_prop)) {
         // If there already is an event object, get the callback ID
-        zjs_obj_get_uint32(event_obj, "callback_id", &callback_id);
+        zjs_obj_get_int32(event_obj, "callback_id", &callback_id);
     } else {
         DBG_PRINT(("callback_id not found for '%s'\n", event));
         return ZJS_UNDEFINED;
@@ -454,10 +454,8 @@ bool zjs_trigger_event(jerry_value_t obj,
         return false;
     }
 
-    zjs_obj_get_uint32(event_obj, "callback_id", &callback_id);
-    if (callback_id == -1) {
-        zjs_free(trigger);
-        DBG_PRINT(("callback_id not found\n"));
+    if (!zjs_obj_get_int32(event_obj, "callback_id", &callback_id)) {
+        DBG_PRINT("[event] zjs_trigger_event(): Error, callback_id not found\n");
         return false;
     }
 

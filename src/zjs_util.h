@@ -68,6 +68,7 @@ bool zjs_obj_get_string(jerry_value_t obj, const char *name, char *buffer,
                         int len);
 bool zjs_obj_get_double(jerry_value_t obj, const char *name, double *num);
 bool zjs_obj_get_uint32(jerry_value_t obj, const char *name, uint32_t *num);
+bool zjs_obj_get_int32(jerry_value_t obj, const char *name, int32_t *num);
 
 bool zjs_hex_to_byte(char *buf, uint8_t *byte);
 
