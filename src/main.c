@@ -39,6 +39,15 @@
 
 extern const char script_gen[];
 
+// native eval handler
+static jerry_value_t native_eval_handler(const jerry_value_t function_obj,
+                                         const jerry_value_t this,
+                                         const jerry_value_t argv[],
+                                         const jerry_length_t argc)
+{
+    return zjs_error("native_eval_handler: eval not supported");
+}
+
 #ifndef ZJS_LINUX_BUILD
 void main(void)
 #else
@@ -116,6 +125,12 @@ int main(int argc, char *argv[])
         }
     }
 
+    jerry_value_t global_obj = jerry_get_global_object();
+
+    // Todo: find a better solution to disable eval() in JerryScript.
+    // For now, just inject our eval() function in the global space
+    zjs_obj_add_function(global_obj, native_eval_handler, "eval");
+
     code_eval = jerry_parse((jerry_char_t *)script, len, false);
     if (jerry_value_has_error_flag(code_eval)) {
         PRINT("JerryScript: cannot parse javascript\n");
@@ -134,10 +149,6 @@ int main(int argc, char *argv[])
         goto error;
     }
 
-    // Magic value set in JS to enable sleep during the loop
-    // This is needed to make WebBluetooth demo work for now, but breaks all
-    //   our other samples if we just do it all the time.
-    jerry_value_t global_obj = jerry_get_global_object();
     jerry_release_value(global_obj);
     jerry_release_value(code_eval);
     jerry_release_value(result);
