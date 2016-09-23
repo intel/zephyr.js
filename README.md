@@ -1,20 +1,222 @@
 # The Zephyr.js Project
 
-This purpose of this project is to provide a JavaScript API and environment
-for IoT development on low-memory systems, using JerryScript and the Zephyr
-operating system.
+The Zephyr.js project provides an IoT web runtime environment with JavaScript
+APIs for the Zephyr operating system, based on the JerryScript engine. It is
+intended for systems with low memory where node.js with V8 is too big.
 
 This code requires a local copy of JerryScript and Zephyr source, and we
-will upstream code to those projects as appropriate, but this repo is for
+will upstream patches to those projects as appropriate, but this repo is for
 everything else.
+
+## Getting Started
+
+This section will walk you through building and running your first Zephyr.js
+application on Arduino 101.
+
+### Prerequisites
+* [Arduino 101 board](https://www.arduino.cc/en/Main/ArduinoBoard101)
+* Ubuntu 16.04 host; adapt as necessary for other platforms.
+* If you're behind a proxy, go through all the [usual pain]
+(https://github.com/01org/zephyr.js/wiki/Proxy) to get ssh working to
+github.com and http working to zephyrproject.org.
+
+### Initial Setup
+
+#### Install dependencies
+First, install these packages that you will need beyond those installed by
+default with Ubuntu:
+
+```bash
+$ sudo apt-get update
+$ sudo apt-get install cmake dfu-util git screen uglifyjs
+```
+
+#### Clone the Zephyr.js repo
+Next, clone this git repo:
+```bash
+$ git clone http://github.com/01org/zephyr.js.git
+```
+
+*NOTE: This should start working after the repo goes public - we'll need to verify that.*
+
+#### Install the Zephyr SDK
+Download the [latest Zephyr SDK] (https://nexus.zephyrproject.org/content/repositories/releases/org/zephyrproject/zephyr-sdk/), then:
+```bash
+$ chmod +x /path/to/zephyr-sdk-<VERSION>-i686-setup.run
+$ sudo /path/to/zephyr-sdk-<VERSION>-i686-setup.run
+```
+
+Follow the prompts, but the defaults should be fine.
+
+#### Set up Zephyr SDK environment variables
+It is recommended that you add the following two lines to your `~/.bashrc` so
+that you don't have to type them again. If you installed your Zephyr SDK
+elsewhere, adjust as needed.
+```bash
+export ZEPHYR_GCC_VARIANT=zephyr
+export ZEPHYR_SDK_INSTALL_DIR=/opt/zephyr-sdk
+```
+
+Then source the .bashrc again:
+```bash
+$ source ~/.bashrc
+```
+
+#### Join the plugdev group
+Add your user to the plugdev group with this command:
+
+```bash
+$ sudo useradd -G plugdev USERNAME
+```
+
+#### Add udev rules
+Copy these two files into your /etc/udev.rules directory:
+
+* [99-openocd.rules](https://github.com/arduino/OpenOCD/blob/master/contrib/99-openocd.rules)
+* [99-dfu.rules](https://github.com/01org/CODK-A-ARC/blob/master/bin/99-dfu.rules)
+
+Then run this command:
+
+```bash
+$ sudo udevadm control --reload-rules
+```
+
+This should cause your `/dev/tty*` entries to have the plugdev group, which will
+let you use them without root privileges. Otherwise, you will have to run some
+of the following commands with `sudo`.
+
+### Shell setup and build
+Whenever you open a new terminal to work with this repo, you need to set up
+environment variables.
+
+#### Set up Zephyr.js environment variables
+First, the Zephyr.js variables:
+
+```bash
+$ cd zephyr.js
+$ source zjs-env.sh
+```
+
+#### Get source dependencies
+Next, this command will check out additional git repos into the deps/
+subdirectory, if you haven't done so before:
+
+```bash
+$ make update
+```
+
+(If this is the first time you've run this, will see an error.)
+
+#### Set up Zephyr OS environment variables
+As the previous command will complain, you need to set up some Zephyr OS
+environment variables, too. Here's the right way to do that:
+
+```bash
+$ source deps/zephyr/zephyr-env.sh
+```
+
+#### Build and flash the ARC image
+Now you're ready to build the image for the ARC core with this command:
+
+```bash
+$ make arc
+```
+
+Then connect the Arduino 101 to your host with a USB A/B cable. Press the
+Master Reset button on the Arduino 101 and after a few seconds type:
+
+```bash
+$ make dfu-arc
+```
+
+This will flash the ARC image to the device using the dfu-util program. 
+
+If you get a permission error, make sure you followed the 'Join the plugdev
+group' instructions above for this user. You shoudn't need to run this command
+with `sudo`.
+
+(The ARC image doesn't change very often so you won't need to do this again
+unless you pull updates to the source tree, and usually not even then.)
+
+#### Build the TrafficLight sample
+Next, build the x86 image with your JavaScript application:
+
+```bash
+$ make JS=samples/TrafficLight.js
+```
+
+#### Flash and boot the application
+Finally, you're ready to install and run your application. If you just flashed
+the ARC image as above, your Arduino 101 will already be waiting for more DFU
+commands. If not, press the Master Reset button, and either way do:
+
+```bash
+$ make dfu
+```
+
+After this completes flashing successfully, reboot the device with the Master
+Reset button to start the application, and after a few seconds the onboard LEDs
+should start cycling.
+
+You have built and run your first Zephyr.js application!
+
+If you want to make changes to the application, or run a different .js sample,
+you just need to repeat the last two steps with the desired JS filename.
+
+### Next steps
+
+#### Set up serial console
+
+Without the serial console set up, you won't be able to see error messages and
+other output from your Zephyr.js application. To hook up the serial console, you
+need a USB to TTL Serial Cable, such as the TTL-232R-3V3. On that particular
+cable, you wire the black wire to ground on the Arduino, the orange wire to
+GPIO pin 0 (RX), and the yellow wire to GPIO pin 1 (TX). The other three are
+unused.
+
+When you plug this in, the device should show up as something like
+`/dev/ttyUSB0`. You can then use the screen command to connect to the device
+with a command like this:
+
+```bash
+$ watch screen /dev/ttyUSB0 115200
+```
+
+The watch utility will restart screen you disconnect and reconnect your
+Arduino, so you shouldn't miss anything. You can leave a dedicated terminal
+running to watch the output.
+
+In screen, you can view scrollback with Ctrl-a, Esc, followed by PgUp/PgDn.
+Then Esc again to get back to the latest output (out of "Copy Mode").
+
+#### Debugging
+
+You can use the commands `make debug` and `make gdb` in two separate terminals
+to connect to the device with a debugger. Then you can set breakpoints such as
+`b main` and `run` to start debugging as usual with gdb.
+
+#### Additional details
+
+See below for more details, such as increasing the space available for your
+application on the Arduino 101, or how to use Zephyr.js with the FRDM-K64F.
 
 ## Contributing
 
-If you want to contribute code to the Zephyr.js project, first you need to fork the project. The next step is to send a pull request (PR) for review to the Zephyr.js repository. The PR will be reviewed by the project team members. You need at least two plus-ones (+1) , "Look Good To Me (LGTM)" or other positive signals for the project members. Once you have gained the required signals the project maintainers will merge the PR.
+If you want to contribute code to the Zephyr.js project, first you need to fork
+the project. The next step is to send a pull request (PR) for review to the
+Zephyr.js repository. The PR will be reviewed by the project team members. You
+need at least two plus-ones (+1) , "Look Good To Me (LGTM)" or other positive
+signals for the project members. Once you have gained the required signals the
+project maintainers will merge the PR.
 
 ## File Descriptions
-`zjs-env.sh` - Source this file to set environment variables and path to be
+* `zjs-env.sh` - Source this file to set environment variables and path to be
 able to use tools from ```scripts/``` anywhere.
+* `prj.conf` - The main configuration file for a Zephyr application; overrides
+settings from a defconfig file in the Zephyr tree. In the Zephyr.js builds, we
+assemble the prj.conf file at build time from other fragments.
+* `prj.mdef` - Another configuration file for a Zephyr application; we use it to
+configure the heap size available to the Zephyr.js API.
 
 ## Subdirectories
 - `arc/` - Contains sensor subsystem code for ARC side of the Arduino 101.
@@ -23,79 +225,15 @@ able to use tools from ```scripts/``` anywhere.
 - `samples/` - Sample JavaScript files that can be built with make JS=<path>.
 - `scripts/` - Subdirectory containing tools useful during development.
 - `src/` - JS API bindings for JerryScript written directly on top of Zephyr.
-
-## One-Time Environment Setup
-Download the [latest Zephyr SDK] (https://nexus.zephyrproject.org/content/repositories/releases/org/zephyrproject/zephyr-sdk/), then:
-```bash
-$ chmod +x zephyr-sdk-0.*.*-i686-setup.run
-$ sudo ./zephyr-sdk-0.*.*-i686-setup.run
-```
-
-From now on, we assume you have cloned this git repo and are working from its
-root directory.
-
-Next, set up the Zephyr SDK environment variables. It is recommended that you
-add the following two lines to your `.bashrc` so that you don't have to type
-them again. If you installed your Zephyr SDK elsewhere, adjust as needed.
-```bash
-$ export ZEPHYR_GCC_VARIANT=zephyr
-$ export ZEPHYR_SDK_INSTALL_DIR=/opt/zephyr-sdk
-```
-
-This should be done for you automatically by the Makefile now, but to manually
-check out the other repos Zephyr.js depends on:
-
-```bash
-$ cd deps
-$ ./getrepos
-```
-
-Later, to manually update them to the latest compatible code:
-```bash
-$ cd deps
-$ ./update
-```
-
-## Set Up a New Shell
-
-Whenever you open a new terminal to work with this repo, you need to set up
-environment variables.
-
-First, set up the Zephyr OS variables:
-```bash
-$ source deps/zephyr/zephyr-env.sh
-```
-
-If you wish to use a Zephyr tree elsewhere on your system, source its
-zephyr-env.sh file instead.
-
-Next, set up the Zephyr.js environment variables:
-```bash
-$ source zjs-env.sh
-```
-
-Note: If you are using Zephyr.js with an Arduino101 that you have converted to
-a 256KB X86 partition (see below), you should pass 256 to this command:
-```bash
-$ source zjs-env.sh 256
-```
+- `tests/` - JavaScript unit tests (incomplete).
 
 The command will display the current expected partition size to remind you of
 the expected target.
 
-### JS Minifier
-
-To save space it is recommended to use a minifier. In convert.sh, the script
-used to encode your JS into a source file, we use uglifyjs. This can be
-downloaded by doing:
-```bash
-sudo apt-get install node-uglify
-```
-
 ## Getting more space on your Arduino 101
 By default, Arduino 101 comes with a **144K** X86 partition, but we're able to
 pretty safely increase it to **256K**. You should only use the `dfu-util`
-method of flashing after this.
+method of flashing (not JTAG) after you do this.
 
 The easiest way to do this is to use a flashpack.zip file that I can provide
 you (geoff@linux.intel.com). I need to make sure of the license details before
@@ -106,6 +244,13 @@ what controls whether the build targets 144KB or 256KB. The symptom if you use
 the wrong one is that the ARC side won't come up, because we'll be attempting
 to start it from the wrong place on the flash. (Note: both the ARC and X86
 images have to be rebuilt and reflashed when you switch partition sizes.)
+
+If you are using Zephyr.js with an Arduino 101 that you have converted to a
+256KB X86 partition (see below), you should run this command when you set up
+your shell:
+```bash
+$ source zjs-env.sh 256
+```
 
 ## Building system images
 The Zephyr.js project uses a top-level Makefile to control the building of
@@ -163,6 +308,15 @@ one more time to boot your new image.
 The other samples may require some hardware to be set up and connected; read
 the top of each JS file, but then simply pass in the path to the JS file to make
 as with `HelloWorld.js` above.
+
+## JS Minifier
+
+To save space it is recommended to use a minifier. In convert.sh, the script
+used to encode your JS into a source file, we use uglifyjs. If you didn't
+install this earlier, you can do so with the command:
+```bash
+sudo apt-get install node-uglify
+```
 
 ## FRDM-K64F Platform
 
