@@ -11,13 +11,65 @@
 #include "zjs_modules.h"
 #include "zjs_util.h"
 
-struct modItem {
-    const char *name;
-    InitCB init;
-    struct modItem *next;
-};
+#ifndef ZJS_LINUX_BUILD
+// ZJS includes
+#include "zjs_aio.h"
+#include "zjs_ble.h"
+#include "zjs_gpio.h"
+#include "zjs_grove_lcd.h"
+#include "zjs_pwm.h"
+#include "zjs_i2c.h"
+#ifdef CONFIG_BOARD_ARDUINO_101
+#include "zjs_a101_pins.h"
+#endif // ZJS_LINUX_BUILD
+#ifdef CONFIG_BOARD_FRDM_K64F
+#include "zjs_k64f_pins.h"
+#endif
+#endif
 
-static struct modItem *modList;
+typedef struct module {
+    const char *name;
+    initcb_t init;
+} module_t;
+
+module_t zjs_modules_array[] = {
+#ifndef ZJS_LINUX_BUILD
+#ifndef QEMU_BUILD
+#ifndef CONFIG_BOARD_FRDM_K64F
+#ifdef BUILD_MODULE_AIO
+    { "aio", zjs_aio_init },
+#endif
+#endif
+#ifdef BUILD_MODULE_BLE
+    { "ble", zjs_ble_init },
+#endif
+#ifdef BUILD_MODULE_GPIO
+    { "gpio", zjs_gpio_init },
+#endif
+#ifdef BUILD_MODULE_GROVE_LCD
+    { "grove_lcd", zjs_grove_lcd_init },
+#endif
+#ifdef BUILD_MODULE_PWM
+    { "pwm", zjs_pwm_init },
+#endif
+#ifdef BUILD_MODULE_I2C
+    { "i2c", zjs_i2c_init },
+#endif
+#ifdef CONFIG_BOARD_ARDUINO_101
+#ifdef BUILD_MODULE_A101
+    { "arduino101_pins", zjs_a101_init },
+#endif
+#endif
+#ifdef CONFIG_BOARD_FRDM_K64F
+    { "k64f_pins", zjs_k64f_init },
+#endif
+#endif // QEMU_BUILD
+#endif // ZJS_LINUX_BUILD
+
+#ifdef BUILD_MODULE_EVENTS
+    { "events", zjs_event_init },
+#endif
+};
 
 static jerry_value_t native_require_handler(const jerry_value_t function_obj,
                                             const jerry_value_t this,
@@ -38,18 +90,14 @@ static jerry_value_t native_require_handler(const jerry_value_t function_obj,
     int len = jerry_string_to_char_buffer(arg, (jerry_char_t *)module, sz);
     module[len] = '\0';
 
-    if (modList) {
-        struct modItem *t = modList;
-        while (t) {
-            if (!strcmp(t->name, module)) {
-                jerry_value_t obj = jerry_acquire_value(t->init());
-                return obj;
-            }
-            t = t->next;
+    int modcount = sizeof(zjs_modules_array) / sizeof(module_t);
+    for (int i = 0; i < modcount; i++) {
+        module_t *mod = &zjs_modules_array[i];
+        if (!strcmp(mod->name, module)) {
+            return jerry_acquire_value(mod->init());
         }
     }
 
-    // Module is not in our list if it gets to this point.
     PRINT("MODULE: `%s'\n", module);
     return zjs_error("native_require_handler: module not found");
 }
@@ -60,28 +108,4 @@ void zjs_modules_init()
 
     // create the C handler for require JS call
     zjs_obj_add_function(global_obj, native_require_handler, "require");
-}
-
-void zjs_modules_add(const char *name, InitCB cb)
-{
-    struct modItem *item = (struct modItem *)zjs_malloc(sizeof(struct modItem));
-    if (!item) {
-        PRINT("Error: out of memory!\n");
-        exit(1);
-    }
-
-    item->name = name;
-    item->init = cb;
-    item->next = NULL;
-
-    if (!modList) {
-        modList = item;
-        return;
-    }
-
-    struct modItem *t = modList;
-    while (t->next)
-        t = t->next;
-
-    t->next = item;
 }
