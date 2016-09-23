@@ -8,6 +8,7 @@
 #include <stdlib.h>
 
 // ZJS includes
+#include "zjs_event.h"
 #include "zjs_modules.h"
 #include "zjs_util.h"
 
