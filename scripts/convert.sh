@@ -53,7 +53,7 @@ fi
 
 printf "/* This file was auto-generated */\n\n" > $OUTPUT
 printf "#include \"zjs_common.h\"\n\n" >> $OUTPUT
-printf "const char script_gen[MAX_SCRIPT_SIZE] = \"" >> $OUTPUT
+printf "const char *script_gen = \"" >> $OUTPUT
 
 # No field separator, read whole file (IFS=),
 # no backslash escape (-r),
