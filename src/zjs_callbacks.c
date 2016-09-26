@@ -259,7 +259,7 @@ int32_t add_callback(jerry_value_t js_func,
     cb_map[new_cb->js->id] = new_cb;
     cb_size++;
 
-    DBG_PRINT(("adding new callback id %ld, js_func=%u, once=%u\n",
+    DBG_PRINT(("adding new callback id %ld, js_func=%lu, once=%u\n",
             new_cb->js->id, new_cb->js->js_func, once));
 
     return new_cb->js->id;
@@ -357,7 +357,7 @@ void print_callbacks(void)
                 if (cb_map[i]->js->func_list == NULL &&
                     jerry_value_is_function(cb_map[i]->js->js_func)) {
                     PRINT("Single Function\n");
-                    PRINT("\tjs_func: %u\n", cb_map[i]->js->js_func);
+                    PRINT("\tjs_func: %lu\n", cb_map[i]->js->js_func);
                     PRINT("\tonce: %u\n", cb_map[i]->js->once);
                     PRINT("\tsignal: %u\n", cb_map[i]->signal);
                 } else {
