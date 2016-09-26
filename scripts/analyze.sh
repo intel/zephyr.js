@@ -19,6 +19,8 @@ MODULES=''
 
 SCRIPT=$1
 
+echo "# Modules found in $1:" > prj.conf.tmp
+
 function check_for_require()
 {
     # effects: checks for a line with requires("gpio"), with single or double
@@ -37,11 +39,14 @@ check_for_require gpio
 if [ $? -eq 0 ]; then
     >&2 echo Using module: GPIO
     MODULES+=" -DBUILD_MODULE_GPIO"
+    echo "CONFIG_GPIO=y" >> prj.conf.tmp
 fi
 check_for_require pwm
 if [ $? -eq 0 ]; then
     >&2 echo Using module: PWM
     MODULES+=" -DBUILD_MODULE_PWM"
+    echo "CONFIG_PWM=y" >> prj.conf.tmp
+    echo "CONFIG_PWM_QMSI_NUM_PORTS=4" >> prj.conf.tmp
 fi
 check_for_require uart
 if [ $? -eq 0 ]; then
@@ -52,6 +57,11 @@ check_for_require ble
 if [ $? -eq 0 ]; then
     >&2 echo Using module: BLE
     MODULES+=" -DBUILD_MODULE_BLE"
+    echo "CONFIG_BLUETOOTH=y" >> prj.conf.tmp
+    echo "CONFIG_BLUETOOTH_LE=y" >> prj.conf.tmp
+    echo "CONFIG_BLUETOOTH_SMP=y" >> prj.conf.tmp
+    echo "CONFIG_BLUETOOTH_PERIPHERAL=y" >> prj.conf.tmp
+    echo "CONFIG_BLUETOOTH_GATT_DYNAMIC_DB=y" >> prj.conf.tmp
 fi
 check_for_require aio
 if [ $? -eq 0 ]; then
