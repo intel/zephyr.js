@@ -33,6 +33,7 @@ specific API functions.
 
 [NoInterfaceObject]
 interface BLE {
+    void disconnect();
     void on(string eventType, EventCallback callback);
     void startAdvertising(string name, string[] uuids, string url);
     void stopAdvertising();
@@ -90,6 +91,12 @@ interface Characteristic {
 
 API Documentation
 -----------------
+### BLE.disconnect
+
+`void disconnect();`
+
+Disconnect the remote client.
+
 ### BLE.on
 
 `void on(string eventType, EventCallback callback);`
