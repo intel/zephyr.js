@@ -101,9 +101,11 @@ ifeq ($(ZJS_PARTITION), 256)
 endif
 endif
 endif
-
+# Append script specific modules to prj.conf
+	@if [ -e prj.conf.tmp ]; then \
+		cat prj.conf.tmp >> prj.conf; \
+	fi
 # Remove .last_build file
-	@cat prj.conf.tmp >> prj.conf
 	@rm -f .*.last_build
 	@echo "" > .$(BOARD).last_build
 
