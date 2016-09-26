@@ -5,7 +5,7 @@
 
 #define ZEPHYR_TICKS_PER_SEC
 
-void zjs_port_timer_init(struct zjs_port_timer* timer, void* data)
+void zjs_port_timer_init(zjs_port_timer_t* timer, void* data)
 {
     timer->data = data;
 }
@@ -24,7 +24,7 @@ int clock_gettime(int clk_id, struct timespec* t) {
 }
 #endif
 
-void zjs_port_timer_start(struct zjs_port_timer* timer, uint32_t interval)
+void zjs_port_timer_start(zjs_port_timer_t* timer, uint32_t interval)
 {
     struct timespec now;
     clock_gettime(CLOCK_MONOTONIC, &now);
@@ -33,12 +33,12 @@ void zjs_port_timer_start(struct zjs_port_timer* timer, uint32_t interval)
     timer->interval = interval * 1000 / 100;
 }
 
-void zjs_port_timer_stop(struct zjs_port_timer* timer)
+void zjs_port_timer_stop(zjs_port_timer_t* timer)
 {
     timer->interval = 0;
 }
 
-uint8_t zjs_port_timer_test(struct zjs_port_timer* timer, uint32_t ticks)
+uint8_t zjs_port_timer_test(zjs_port_timer_t* timer, uint32_t ticks)
 {
     uint32_t elapsed;
     struct timespec now;

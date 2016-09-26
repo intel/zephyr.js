@@ -14,17 +14,17 @@
 #include "zjs_util.h"
 #include "zjs_buffer.h"
 
-static struct zjs_buffer_t *zjs_buffers = NULL;
+static zjs_buffer_t *zjs_buffers = NULL;
 
 // TODO: this could probably be replaced more efficiently now that there is a
 //   get_native_handle API
-struct zjs_buffer_t *zjs_buffer_find(const jerry_value_t obj)
+zjs_buffer_t *zjs_buffer_find(const jerry_value_t obj)
 {
     // requires: obj should be the JS object associated with a buffer, created
     //             in zjs_buffer
     //  effects: looks up obj in our list of known buffer objects and returns
     //             the associated list item struct
-    for (struct zjs_buffer_t *buf = zjs_buffers; buf; buf = buf->next)
+    for (zjs_buffer_t *buf = zjs_buffers; buf; buf = buf->next)
         if (buf->obj == obj)
             return buf;
     return NULL;
@@ -51,7 +51,7 @@ static jerry_value_t zjs_buffer_read_bytes(const jerry_value_t this,
     if (argc >= 1)
         offset = (uint32_t)jerry_get_number_value(argv[0]);
 
-    struct zjs_buffer_t *buf = zjs_buffer_find(this);
+    zjs_buffer_t *buf = zjs_buffer_find(this);
     if (!buf)
         return zjs_error("zjs_buffer_read_bytes: buffer not found on read");
 
@@ -98,7 +98,7 @@ static jerry_value_t zjs_buffer_write_bytes(const jerry_value_t this,
     if (argc > 1)
         offset = (uint32_t)jerry_get_number_value(argv[1]);
 
-    struct zjs_buffer_t *buf = zjs_buffer_find(this);
+    zjs_buffer_t *buf = zjs_buffer_find(this);
     if (!buf)
         return zjs_error("zjs_buffer_write_bytes: buffer not found on write");
 
@@ -219,7 +219,7 @@ static jerry_value_t zjs_buffer_to_string(const jerry_value_t function_obj,
     if (argc > 1 || (argc == 1 && !jerry_value_is_string(argv[0])))
         return zjs_error("zjs_buffer_to_string: invalid argument");
 
-    struct zjs_buffer_t *buf = zjs_buffer_find(this);
+    zjs_buffer_t *buf = zjs_buffer_find(this);
     if (buf && argc == 0) {
         return jerry_create_string((jerry_char_t *)"[Buffer Object]");
     }
@@ -257,7 +257,7 @@ static void zjs_buffer_callback_free(uintptr_t handle)
     // requires: handle is the native pointer we registered with
     //             jerry_set_object_native_handle
     //  effects: frees the callback list item for the given pin object
-    struct zjs_buffer_t **pItem = &zjs_buffers;
+    zjs_buffer_t **pItem = &zjs_buffers;
     while (*pItem) {
         if ((uintptr_t)*pItem == handle) {
             zjs_free((*pItem)->buffer);
@@ -308,7 +308,7 @@ static jerry_value_t zjs_buffer_write_string(const jerry_value_t function_obj_va
     uint32_t offset = 0;
     jerry_value_t arg = argv[0];
     jerry_size_t sz = jerry_get_string_size(arg);
-    struct zjs_buffer_t *buf = zjs_buffer_find(this);
+    zjs_buffer_t *buf = zjs_buffer_find(this);
 
     if (sz > 4096) {
         return zjs_error("zjs_buffer_write_string: string is too long for the buffer");
@@ -347,8 +347,8 @@ jerry_value_t zjs_buffer_create(uint32_t size)
     //             and return NULL, otherwise return the JS object
     jerry_value_t buf_obj = jerry_create_object();
     void *buf = zjs_malloc(size);
-    struct zjs_buffer_t *buf_item =
-        (struct zjs_buffer_t *)zjs_malloc(sizeof(struct zjs_buffer_t));
+    zjs_buffer_t *buf_item =
+        (zjs_buffer_t *)zjs_malloc(sizeof(zjs_buffer_t));
 
     if (!buf_obj || !buf || !buf_item) {
         PRINT("zjs_buffer_create: unable to allocate buffer\n");
@@ -414,7 +414,7 @@ static jerry_value_t zjs_buffer(const jerry_value_t function_obj,
         jerry_value_t array = argv[0];
         uint32_t arr_size = jerry_get_array_length(array);
         jerry_value_t new_buf_obj = zjs_buffer_create(arr_size);
-        struct zjs_buffer_t *buf = zjs_buffer_find(new_buf_obj);
+        zjs_buffer_t *buf = zjs_buffer_find(new_buf_obj);
         jerry_value_t array_item;
 
         if (buf) {
@@ -437,7 +437,7 @@ static jerry_value_t zjs_buffer(const jerry_value_t function_obj,
         jerry_value_t arg = argv[0];
         jerry_size_t sz = jerry_get_string_size(arg);
         jerry_value_t new_buf_obj = zjs_buffer_create(sz);
-        struct zjs_buffer_t *buf = zjs_buffer_find(new_buf_obj);
+        zjs_buffer_t *buf = zjs_buffer_find(new_buf_obj);
 
         if (buf) {
             jerry_string_to_char_buffer(arg, (char*)buf->buffer, sz);

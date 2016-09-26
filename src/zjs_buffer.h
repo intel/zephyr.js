@@ -7,14 +7,14 @@
 
 void zjs_buffer_init();
 
-struct zjs_buffer_t {
+typedef struct zjs_buffer {
     jerry_value_t obj;
     uint8_t *buffer;
     uint32_t bufsize;
-    struct zjs_buffer_t *next;
-};
+    struct zjs_buffer *next;
+} zjs_buffer_t;
 
-struct zjs_buffer_t *zjs_buffer_find(const jerry_value_t obj);
+zjs_buffer_t *zjs_buffer_find(const jerry_value_t obj);
 
 jerry_value_t zjs_buffer_create(uint32_t size);
 

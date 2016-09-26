@@ -16,14 +16,14 @@
 static struct nano_sem i2c_sem;
 
 
-static struct zjs_ipm_message* zjs_i2c_alloc_msg()
+static zjs_ipm_message_t* zjs_i2c_alloc_msg()
 {
-    struct zjs_ipm_message *msg = task_malloc(sizeof(struct zjs_ipm_message));
+    zjs_ipm_message_t *msg = task_malloc(sizeof(zjs_ipm_message_t));
     if (!msg) {
         PRINT("zjs_i2c_alloc_msg: cannot allocate message\n");
         return NULL;
     } else {
-        memset(msg, 0, sizeof(struct zjs_ipm_message));
+        memset(msg, 0, sizeof(zjs_ipm_message_t));
     }
 
     msg->id = MSG_ID_I2C;
@@ -32,7 +32,7 @@ static struct zjs_ipm_message* zjs_i2c_alloc_msg()
     return msg;
 }
 
-static void zjs_i2c_free_msg(struct zjs_ipm_message* msg)
+static void zjs_i2c_free_msg(zjs_ipm_message_t* msg)
 {
     if (!msg)
         return;
@@ -44,8 +44,8 @@ static void zjs_i2c_free_msg(struct zjs_ipm_message* msg)
     }
 }
 
-static bool zjs_i2c_ipm_send_sync(struct zjs_ipm_message* send,
-                                  struct zjs_ipm_message* result) {
+static bool zjs_i2c_ipm_send_sync(zjs_ipm_message_t* send,
+                                  zjs_ipm_message_t* result) {
     send->flags |= MSG_SYNC_FLAG;
     send->user_data = (void *)result;
     send->error_code = ERROR_IPM_NONE;
@@ -69,13 +69,13 @@ static void ipm_msg_receive_callback(void *context, uint32_t id, volatile void *
     if (id != MSG_ID_I2C)
         return;
 
-    struct zjs_ipm_message *msg = (struct zjs_ipm_message*)(*(uintptr_t *)data);
+    zjs_ipm_message_t *msg = (zjs_ipm_message_t*)(*(uintptr_t *)data);
 
     if (msg->flags & MSG_SYNC_FLAG) {
-         struct zjs_ipm_message *result = (struct zjs_ipm_message*)msg->user_data;
+         zjs_ipm_message_t *result = (zjs_ipm_message_t*)msg->user_data;
         // synchronous ipm, copy the results
         if (result)
-            memcpy(result, msg, sizeof(struct zjs_ipm_message));
+            memcpy(result, msg, sizeof(zjs_ipm_message_t));
 
         // un-block sync api
         nano_isr_sem_give(&i2c_sem);
@@ -110,7 +110,7 @@ static jerry_value_t zjs_i2c_write(const jerry_value_t function_obj,
     uint32_t bus;
     zjs_obj_get_uint32(this, "bus", &bus);
 
-    struct zjs_buffer_t *dataBuf = zjs_buffer_find(argv[1]);
+    zjs_buffer_t *dataBuf = zjs_buffer_find(argv[1]);
 
     if (!dataBuf) {
         return zjs_error("zjs_i2c_write:  missing data buffer");
@@ -119,8 +119,8 @@ static jerry_value_t zjs_i2c_write(const jerry_value_t function_obj,
     uint32_t address = (uint32_t)jerry_get_number_value(argv[0]);
 
     // send IPM message to the ARC side
-    struct zjs_ipm_message* send = zjs_i2c_alloc_msg();
-    struct zjs_ipm_message* reply = zjs_i2c_alloc_msg();
+    zjs_ipm_message_t* send = zjs_i2c_alloc_msg();
+    zjs_ipm_message_t* reply = zjs_i2c_alloc_msg();
 
     send->type = TYPE_I2C_WRITE;
     send->data.i2c.bus = (uint8_t)bus;
@@ -186,8 +186,8 @@ static jerry_value_t zjs_i2c_open(const jerry_value_t function_obj,
     }
 
     // send IPM message to the ARC side
-    struct zjs_ipm_message* send = zjs_i2c_alloc_msg();
-    struct zjs_ipm_message* reply = zjs_i2c_alloc_msg();
+    zjs_ipm_message_t* send = zjs_i2c_alloc_msg();
+    zjs_ipm_message_t* reply = zjs_i2c_alloc_msg();
 
     send->type = TYPE_I2C_OPEN;
     send->data.i2c.bus = (uint8_t)bus;
