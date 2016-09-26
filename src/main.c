@@ -23,7 +23,7 @@
 
 #include "zjs_ble.h"
 
-extern const char script_gen[];
+extern const char *script_gen;
 
 // native eval handler
 static jerry_value_t native_eval_handler(const jerry_value_t function_obj,
