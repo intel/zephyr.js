@@ -173,6 +173,7 @@ ble.on('accept', function(clientAddress) {
     tmp36.on("change", function(data) {
         var voltage = (data / 4096.0) * 3.3;
         var celsius = (voltage - 0.5) * 100 + 0.5;
+        celsius = celsius | 0;
 
         print("Temperature change: " + celsius + " degrees Celsius");
         TemperatureCharacteristic.valueChange(celsius);

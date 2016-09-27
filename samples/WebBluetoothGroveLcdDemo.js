@@ -92,8 +92,8 @@ TemperatureCharacteristic.onUnsubscribe = function() {
 
 TemperatureCharacteristic.valueChange = function(value) {
     this._lastValue = value;
-    glcd.clear();
-    glcd.print("Temp: " + value);
+    glcd.setCursorPos(0, 0);
+    glcd.print("Temperature: " + value + "C");
 
     var data = new Buffer(1);
     data.writeUInt8(value);
@@ -184,10 +184,12 @@ ble.on('advertisingStart', function(error) {
 
 ble.on('accept', function(clientAddress) {
     print("Accepted Connection: " + clientAddress);
+    glcd.clear();
 
     tmp36.on("change", function(data) {
         var voltage = (data / 4096.0) * 3.3;
         var celsius = (voltage - 0.5) * 100 + 0.5;
+        celsius = celsius | 0;
 
         print("Temperature change: " + celsius + " degrees Celsius");
         TemperatureCharacteristic.valueChange(celsius);
