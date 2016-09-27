@@ -28,12 +28,9 @@ setInterval(function () {
     // convert 12-bit analog reading (0 - 4095) to voltage (0 - 3.3V)
     var voltage = value * 3.3 / 4095;
 
-    // TODO: round this to four significant digits instead of truncating
-    var vstr = '' + voltage;
-    if (voltage != 0)
-        // HACK: work around current lack of Math.round or String.slice
-        vstr = vstr[0] + vstr[1] + vstr[2] + vstr[3] + vstr[4]
+    // HACK: work around current lack of Math.round
+    var intVoltage = (voltage * 1000 | 0) / 1000.0
 
     // print it to the serial console
-    print(vstr + 'V');
+    print(intVoltage + 'V');
 }, 1000);
