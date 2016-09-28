@@ -375,59 +375,59 @@ void print_callbacks(void)
 #define print_callbacks() do {} while (0)
 #endif
 
+void zjs_call_callback(int32_t i)
+{
+    if (cb_map[i]->type == CALLBACK_TYPE_JS) {
+        if (cb_map[i]->js->func_list == NULL && jerry_value_is_function(cb_map[i]->js->js_func)) {
+            uint32_t argc = 0;
+            jerry_value_t ret_val;
+            jerry_value_t* args = NULL;
+
+            if (cb_map[i]->js->pre) {
+                args = cb_map[i]->js->pre(cb_map[i]->js->handle, &argc);
+            }
+
+            DBG_PRINT(("calling callback id %ld with %lu args\n", cb_map[i]->js->id, argc));
+            // TODO: Use 'this' in callback module
+            jerry_call_function(cb_map[i]->js->js_func, ZJS_UNDEFINED, args, argc);
+            if (cb_map[i]->js->post) {
+                cb_map[i]->js->post(cb_map[i]->js->handle, &ret_val);
+            }
+            if (cb_map[i]->js->once) {
+                zjs_remove_callback(i);
+            }
+        } else {
+            int j;
+            uint32_t argc = 0;
+            jerry_value_t ret_val;
+            jerry_value_t* args = NULL;
+
+            if (cb_map[i]->js->pre) {
+                args = cb_map[i]->js->pre(cb_map[i]->js->handle, &argc);
+            }
+
+            DBG_PRINT(("calling callback list id %ld with %lu args\n", cb_map[i]->js->id, argc));
+
+            for (j = 0; j < cb_map[i]->js->num_funcs; ++j) {
+                jerry_call_function(cb_map[i]->js->func_list[j], ZJS_UNDEFINED, args, argc);
+            }
+            if (cb_map[i]->js->post) {
+                cb_map[i]->js->post(cb_map[i]->js->handle, &ret_val);
+            }
+        }
+    } else if (cb_map[i]->type == CALLBACK_TYPE_C && cb_map[i]->c->function) {
+        DBG_PRINT(("calling callback id %ld\n", cb_map[i]->c->id));
+        cb_map[i]->c->function(cb_map[i]->c->handle);
+    }
+}
+
 void zjs_service_callbacks(void)
 {
     int i;
     for (i = 0; i < cb_size; i++) {
         if (cb_map[i] && cb_map[i]->signal) {
             cb_map[i]->signal = 0;
-            if (cb_map[i]->type == CALLBACK_TYPE_JS) {
-                if (cb_map[i]->js->func_list == NULL &&
-                        jerry_value_is_function(cb_map[i]->js->js_func)) {
-                    uint32_t argc = 0;
-                    jerry_value_t ret_val;
-                    jerry_value_t* args = NULL;
-
-                    if (cb_map[i]->js->pre) {
-                        args = cb_map[i]->js->pre(cb_map[i]->js->handle, &argc);
-                    }
-
-                    DBG_PRINT(("calling callback id %ld with %lu args\n",
-                            cb_map[i]->js->id, argc));
-                    // TODO: Use 'this' in callback module
-                    jerry_call_function(cb_map[i]->js->js_func, ZJS_UNDEFINED,
-                            args, argc);
-                    if (cb_map[i]->js->post) {
-                        cb_map[i]->js->post(cb_map[i]->js->handle, &ret_val);
-                    }
-                    if (cb_map[i]->js->once) {
-                        zjs_remove_callback(i);
-                    }
-                } else {
-                    int j;
-                    uint32_t argc = 0;
-                    jerry_value_t ret_val;
-                    jerry_value_t* args = NULL;
-
-                    if (cb_map[i]->js->pre) {
-                        args = cb_map[i]->js->pre(cb_map[i]->js->handle, &argc);
-                    }
-
-                    DBG_PRINT(("calling callback list id %ld with %lu args\n",
-                            cb_map[i]->js->id, argc));
-
-                    for (j = 0; j < cb_map[i]->js->num_funcs; ++j) {
-                        jerry_call_function(cb_map[i]->js->func_list[j],
-                                ZJS_UNDEFINED, args, argc);
-                    }
-                    if (cb_map[i]->js->post) {
-                        cb_map[i]->js->post(cb_map[i]->js->handle, &ret_val);
-                    }
-                }
-            } else if (cb_map[i]->type == CALLBACK_TYPE_C && cb_map[i]->c->function) {
-                DBG_PRINT(("calling callback id %ld\n", cb_map[i]->c->id));
-                cb_map[i]->c->function(cb_map[i]->c->handle);
-            }
+            zjs_call_callback(i);
         }
     }
 }

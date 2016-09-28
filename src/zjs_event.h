@@ -40,7 +40,31 @@ void zjs_add_event_listener(jerry_value_t obj, const char* event, jerry_value_t 
  *
  * @return              True if there were listeners
  */
-bool zjs_trigger_event(jerry_value_t obj, const char* event, jerry_value_t args[], uint32_t args_cnt, zjs_post_event post, void* handle);
+bool zjs_trigger_event(jerry_value_t obj,
+                       const char* event,
+                       jerry_value_t args[],
+                       uint32_t args_cnt,
+                       zjs_post_event post,
+                       void* handle);
+
+/*
+ * Call any registered event listeners immediately
+ *
+ * @param obj           Object that contains the event to be triggered
+ * @param event         Name of event
+ * @param args          Arguments to give to the event listener as parameters
+ * @param args_cnt      Number of arguments
+ * @param post          Function to be called after the event is triggered
+ * @param handle        A handle that is accessable in the 'post' call
+ *
+ * @return              True if there were listeners
+ */
+bool zjs_trigger_event_now(jerry_value_t obj,
+                           const char* event,
+                           jerry_value_t argv[],
+                           uint32_t argc,
+                           zjs_post_event post,
+                           void* h);
 
 /*
  * Initialize the event module

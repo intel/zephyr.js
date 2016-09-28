@@ -483,6 +483,65 @@ bool zjs_trigger_event(jerry_value_t obj,
     return jerry_create_boolean(true);
 }
 
+bool zjs_trigger_event_now(jerry_value_t obj,
+                           const char* event,
+                           jerry_value_t argv[],
+                           uint32_t argc,
+                           zjs_post_event post,
+                           void* h)
+{
+    struct event* ev;
+    struct event_trigger* trigger = zjs_malloc(sizeof(struct event_trigger));
+    if (!trigger) {
+        DBG_PRINT(("could not allocate trigger, out of memory\n"));
+        return false;
+    }
+
+    int32_t callback_id = -1;
+    jerry_value_t event_obj;
+
+    if (!jerry_get_object_native_handle(obj, (uintptr_t*)&ev)) {
+        zjs_free(trigger);
+        DBG_PRINT(("native handle not found\n"));
+        return jerry_create_boolean(false);
+    }
+
+    int i;
+    trigger->argv = zjs_malloc(sizeof(jerry_value_t) * argc);
+    if (!trigger->argv) {
+        zjs_free(trigger);
+        DBG_PRINT(("could not allocate trigger args, out of memory\n"));
+        return false;
+    }
+    for (i = 0; i < argc; ++i) {
+        trigger->argv[i] = argv[i];
+    }
+    trigger->argc = argc;
+
+    event_obj = zjs_get_property(ev->map, event);
+    if (!jerry_value_is_object(event_obj)) {
+        zjs_free(trigger);
+        DBG_PRINT(("event object not found\n"));
+        return false;
+    }
+
+    zjs_obj_get_uint32(event_obj, "callback_id", &callback_id);
+    if (callback_id == -1) {
+        zjs_free(trigger);
+        DBG_PRINT(("callback_id not found\n"));
+        return false;
+    }
+
+    trigger->handle = h;
+    trigger->post = post;
+
+    zjs_edit_callback_handle(callback_id, trigger);
+
+    zjs_call_callback(callback_id);
+
+    return jerry_create_boolean(true);
+}
+
 static void destroy_event(const uintptr_t pointer)
 {
     struct event* ev = (struct event*)pointer;
