@@ -13,7 +13,7 @@ var pins = require("arduino101_pins");
 // pins 3, 5, 6, and 9 are PWMs on Arduino 101, and map to channels 0-3
 var led0 = pwm.open({channel: pins.IO3});
 
-// set timings in microseconds with *US functions
+// set timings in milliseconds
 led0.setPeriod(1500);
 led0.setPulseWidth(1000);
 
