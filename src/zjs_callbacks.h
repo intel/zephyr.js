@@ -167,6 +167,16 @@ void zjs_signal_callback(int32_t id);
 int32_t zjs_add_c_callback(void* handle, zjs_c_callback_func callback);
 
 /*
+ * Call a callback immediately. This should only be used when absolutely needed
+ * and in a task context. If it is possible to use zjs_signal_callback(), use it.
+ * Using this function could result in a large recursion stack because it does
+ * not wait until the main loop to call the JS function.
+ *
+ * @param i             ID of callback
+ */
+void zjs_call_callback(int32_t i);
+
+/*
  * Service the callback module. Any callback's that have been signaled will
  * be serviced and the signal flag will be unset.
  */

@@ -1,18 +1,17 @@
 // Copyright (c) 2016, Intel Corporation.
 
-#include <zephyr.h>
-
 #include <string.h>
 #include "zjs_util.h"
 #include "zjs_promise.h"
 #include "zjs_callbacks.h"
 
 struct promise {
-    int32_t id;
+    uint8_t then_set;           // then() function has been set
     jerry_value_t then;         // Function registered from then()
     int32_t then_id;            // Callback ID for then JS callback
     jerry_value_t* then_argv;   // Arguments for fulfilling promise
     uint32_t then_argc;     // Number of arguments for then callback
+    uint8_t catch_set;          // catch() function has been set
     jerry_value_t catch;        // Function registered from catch()
     int32_t catch_id;           // Callback ID for catch JS callback
     jerry_value_t* catch_argv;  // Arguments for rejecting promise
@@ -21,44 +20,12 @@ struct promise {
     zjs_post_promise_func post;
 };
 
-// Bits track promises in use
-static uint64_t use = 0;
-
-#define BIT_IS_SET(i, b)  ((i) & (1 << (b)))
-#define BIT_SET(i, b)     ((i) |= (1 << (b)))
-#define BIT_CLR(i, b)     ((i) &= ~(1 << (b)))
-
-static int find_id(uint64_t* use)
-{
-    int id = 0;
-    while (BIT_IS_SET(*use, id)) {
-        ++id;
-    }
-    BIT_SET(*use, id);
-    return id;
-}
-
-char* make_name(uint32_t id, char* module)
-{
-    // requires: module should be null-terminated (up to first 8 bytes used)
-    // id can take up at most 10 bytes; with null terminator and dash this
-    //   leaves 8 bytes for module name
-    // Note: Returns a static name buffer, so it must be copied out before you
-    //   call make_name again.
-    static char name[20];
-    size_t len = strnlen(module, 8);
-    strncpy(name, module, len);
-    snprintf(name + len, 12, "-%ld", id);
-    return name;
-}
-
 struct promise* new_promise(void)
 {
-    struct promise* new = task_malloc(sizeof(struct promise));
+    struct promise* new = zjs_malloc(sizeof(struct promise));
     memset(new, 0, sizeof(struct promise));
     new->catch_id = -1;
     new->then_id = -1;
-    new->id = -1;
     return new;
 }
 
@@ -74,16 +41,20 @@ static jerry_value_t null_function(const jerry_value_t function_obj,
 static void post_promise(void* h, jerry_value_t* ret_val)
 {
     struct promise* handle = (struct promise*)h;
-
-    jerry_release_value(handle->then);
-    jerry_release_value(handle->catch);
+    if (handle) {
+        if (handle->post) {
+            handle->post(handle->user_handle);
+        }
+        jerry_release_value(handle->then);
+        jerry_release_value(handle->catch);
+    }
 }
 
 static void promise_free(const uintptr_t native)
 {
     struct promise* handle = (struct promise*)native;
     if (handle) {
-        task_free(handle);
+        zjs_free(handle);
     }
 }
 
@@ -100,15 +71,18 @@ static jerry_value_t promise_then(const jerry_value_t function_obj,
                                    const jerry_value_t argv[],
                                    const jerry_length_t argc)
 {
-    struct promise* handle;
+    struct promise* handle = NULL;
 
     jerry_value_t promise_obj = zjs_get_property(this, "promise");
     jerry_get_object_native_handle(promise_obj, (uintptr_t*)&handle);
 
     if (jerry_value_is_function(argv[0])) {
-        jerry_release_value(handle->then);
-        handle->then = jerry_acquire_value(argv[0]);
-        zjs_edit_js_func(handle->then_id, handle->then);
+        if (handle) {
+            jerry_release_value(handle->then);
+            handle->then = jerry_acquire_value(argv[0]);
+            zjs_edit_js_func(handle->then_id, handle->then);
+            handle->then_set = 1;
+        }
         // Return the promise so it can be used by catch()
         return this;
     } else {
@@ -129,79 +103,79 @@ static jerry_value_t promise_catch(const jerry_value_t function_obj,
                                    const jerry_value_t argv[],
                                    const jerry_length_t argc)
 {
-    struct promise* handle;
+    struct promise* handle = NULL;
 
     jerry_value_t promise_obj = zjs_get_property(this, "promise");
     jerry_get_object_native_handle(promise_obj, (uintptr_t*)&handle);
 
-    if (jerry_value_is_function(argv[0])) {
-        jerry_release_value(handle->catch);
-        handle->catch = jerry_acquire_value(argv[0]);
-        zjs_edit_js_func(handle->catch_id, handle->catch);
+    if (handle) {
+        if (jerry_value_is_function(argv[0])) {
+            jerry_release_value(handle->catch);
+            handle->catch = jerry_acquire_value(argv[0]);
+            zjs_edit_js_func(handle->catch_id, handle->catch);
+            handle->catch_set = 1;
+        }
     }
     return ZJS_UNDEFINED;
 }
 
-int32_t zjs_make_promise(jerry_value_t obj, zjs_post_promise_func post, void* handle)
+void zjs_make_promise(jerry_value_t obj, zjs_post_promise_func post, void* handle)
 {
     struct promise* new = new_promise();
     jerry_value_t promise_obj = jerry_create_object();
-    jerry_value_t global_obj = jerry_get_global_object();
 
     zjs_obj_add_function(obj, promise_then, "then");
     zjs_obj_add_function(obj, promise_catch, "catch");
     jerry_set_object_native_handle(promise_obj, (uintptr_t)new, promise_free);
 
-    new->id = find_id(&use);
     new->user_handle = handle;
     new->post = post;
+    new->then_set = 0;
+    new->catch_set = 0;
 
     // Add the "promise" object to the object passed as a property, because the
     // object being made to a promise may already have a native handle.
     zjs_obj_add_object(obj, promise_obj, "promise");
-    zjs_obj_add_object(global_obj, obj, make_name(new->id, "promise"));
 
-    jerry_release_value(global_obj);
-
-    return new->id;
+    DBG_PRINT(("created promise, obj=%d, promise=%p, handle=%p\n", obj, new, handle));
 }
 
-void zjs_fulfill_promise(int32_t id, jerry_value_t argv[], uint32_t argc)
+void zjs_fulfill_promise(jerry_value_t obj, jerry_value_t argv[], uint32_t argc)
 {
     struct promise* handle;
-    jerry_value_t global_obj = jerry_get_global_object();
-    jerry_value_t val = zjs_get_property(global_obj, make_name(id, "promise"));
-    jerry_value_t promise_obj = zjs_get_property(val, "promise");
+    jerry_value_t promise_obj = zjs_get_property(obj, "promise");
 
     jerry_get_object_native_handle(promise_obj, (uintptr_t*)&handle);
 
     // Put *something* here in case it never gets registered
-    handle->then = jerry_create_external_function(null_function);
-    handle->then_id = zjs_add_callback(handle->then, handle, pre_then, post_promise);
+    if (!handle->then_set) {
+        handle->then = jerry_create_external_function(null_function);
+    }
+    handle->then_id = zjs_add_callback_once(handle->then, handle, pre_then, post_promise);
     handle->then_argv = argv;
     handle->then_argc = argc;
 
     zjs_signal_callback(handle->then_id);
 
-    jerry_release_value(global_obj);
+    DBG_PRINT(("fulfilling promise, obj=%d, then_id=%d, argv=%p, nargs=%d\n", obj, handle->then_id, argv, argc));
 }
 
-void zjs_reject_promise(int32_t id, jerry_value_t argv[], uint32_t argc)
+void zjs_reject_promise(jerry_value_t obj, jerry_value_t argv[], uint32_t argc)
 {
     struct promise* handle;
-    jerry_value_t global_obj = jerry_get_global_object();
-    jerry_value_t val = zjs_get_property(global_obj, make_name(id, "promise"));
-    jerry_value_t promise_obj = zjs_get_property(val, "promise");
+    jerry_value_t promise_obj = zjs_get_property(obj, "promise");
 
     jerry_get_object_native_handle(promise_obj, (uintptr_t*)&handle);
 
     // Put *something* here in case it never gets registered
-    handle->catch = jerry_create_external_function(null_function);
-    handle->catch_id = zjs_add_callback(handle->catch, handle, pre_catch, post_promise);
+    if (!handle->catch_set) {
+        handle->catch = jerry_create_external_function(null_function);
+    }
+    handle->catch_id = zjs_add_callback_once(handle->catch, handle, pre_catch, post_promise);
     handle->catch_argv = argv;
     handle->catch_argc = argc;
 
     zjs_signal_callback(handle->catch_id);
 
-    jerry_release_value(global_obj);
+    DBG_PRINT(("rejecting promise, obj=%u, catch_id=%d, argv=%p, nargs=%d\n", obj, handle->catch_id, argv, argc));
 }

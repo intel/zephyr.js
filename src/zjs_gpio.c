@@ -43,7 +43,6 @@ struct gpio_handle {
     int32_t callbackId;             // ID for the C callback
     jerry_value_t pin_obj;          // Pin object returned from open()
     jerry_value_t onchange_func;    // Function registered to onChange
-    int32_t promise_id;
     jerry_value_t* open_ret_args;
 };
 
@@ -323,18 +322,17 @@ static jerry_value_t zjs_gpio_open(const jerry_value_t function_obj,
         handle->open_ret_args = task_malloc(sizeof(jerry_value_t) * 1);
 
         // Turn object into a promise
-        handle->promise_id = zjs_make_promise(promise_ret, post_open_promise,
-                                              (void*)handle);
+        zjs_make_promise(promise_ret, post_open_promise, (void*)handle);
 
         // TODO: Can open promise be rejected? For now, rejection is based on if
         // zjs_gpio_dev is not NULL
         if (zjs_gpio_dev[devnum]) {
             handle->open_ret_args[0] = jerry_acquire_value(pinobj);
             // Fulfill the promise
-            zjs_fulfill_promise(handle->promise_id, handle->open_ret_args, 1);
+            zjs_fulfill_promise(promise_ret, handle->open_ret_args, 1);
         } else {
             handle->open_ret_args[0] = jerry_acquire_value(zjs_error("GPIO could not be opened"));
-            zjs_reject_promise(handle->promise_id, handle->open_ret_args, 1);
+            zjs_reject_promise(promise_ret, handle->open_ret_args, 1);
         }
 
         return promise_ret;
