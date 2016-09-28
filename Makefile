@@ -12,19 +12,44 @@ endif
 JERRY_BASE ?= $(ZJS_BASE)/deps/jerryscript
 JS ?= samples/HelloWorld.js
 VARIANT ?= release
+# Dump memory information: on = print allocs, full = print allocs + dump pools
+TRACE ?= off
+# Specify pool malloc or heap malloc
+MALLOC ?= pool
 
 # Build for zephyr, default target
 .PHONY: zephyr
 zephyr: analyze generate
-	@make -f Makefile.zephyr BOARD=$(BOARD) KERNEL=$(KERNEL) VARIANT=$(VARIANT)
+	@make -f Makefile.zephyr BOARD=$(BOARD) KERNEL=$(KERNEL) VARIANT=$(VARIANT) MEM_STATS=$(MEM_STATS)
 
 .PHONY: analyze
 analyze:
 	@cat src/Makefile.base > src/Makefile
-	@echo "ccflags-y += $(shell ./scripts/analyze.sh $(JS))" >> src/Makefile
-	@if [ "$(TRACE)" = "y" ]; then \
+	cat prj.mdef.base > prj.mdef
+	@if [ "$(TRACE)" = "on" ] || [ "$(TRACE)" = "full" ]; then \
 		echo "ccflags-y += -DZJS_TRACE_MALLOC" >> src/Makefile; \
 	fi
+	@if [ $(MALLOC) = "pool" ]; then \
+		echo "obj-y += zjs_pool.o" >> src/Makefile; \
+		echo "ccflags-y += -DZJS_POOL_CONFIG" >> src/Makefile; \
+		if [ "$(TRACE)" = "full" ]; then \
+			echo "ccflags-y += -DDUMP_MEM_STATS" >> src/Makefile; \
+		fi; \
+		echo "" >> prj.mdef; \
+		echo "% POOL NAME         SIZE_SMALL SIZE_LARGE BLOCK_NUMBER" >> prj.mdef; \
+		echo "% ====================================================" >> prj.mdef; \
+		echo "POOL POOL_8             8         8             64" >> prj.mdef; \
+		echo "POOL POOL_16            16        16            32" >> prj.mdef; \
+		echo "POOL POOL_36            36        36            16" >> prj.mdef; \
+		echo "POOL POOL_64            64        64            10" >> prj.mdef; \
+		echo "POOL POOL_128           128       128           4" >> prj.mdef; \
+		echo "POOL POOL_256           256       256           2" >> prj.mdef; \
+	else \
+		echo "" >> prj.mdef; \
+		echo "% HEAP CONFIG: " >> prj.mdef; \
+		echo "HEAP_SIZE 5120" >> prj.mdef; \
+	fi
+	@echo "ccflags-y += $(shell ./scripts/analyze.sh $(JS))" >> src/Makefile
 
 .PHONY: all
 all: zephyr arc
@@ -146,7 +171,7 @@ generate: setup $(PRE_ACTION)
 # Run QEMU target
 .PHONY: qemu
 qemu: analyze generate
-	make -f Makefile.zephyr BOARD=qemu_x86 KERNEL=$(KERNEL) qemu
+	make -f Makefile.zephyr BOARD=qemu_x86 KERNEL=$(KERNEL) MEM_STATS=$(MEM_STATS) qemu
 
 # Builds ARC binary
 .PHONY: arc
