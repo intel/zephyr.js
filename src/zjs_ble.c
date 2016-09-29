@@ -14,9 +14,10 @@
 // ZJS includes
 #include "zjs_ble.h"
 #include "zjs_buffer.h"
+#include "zjs_callbacks.h"
+#include "zjs_event.h"
 #include "zjs_util.h"
 
-#define MAX_TYPE_LEN                                20
 #define ZJS_BLE_UUID_LEN                            36
 
 #define ZJS_BLE_RESULT_SUCCESS                      0x00
@@ -29,40 +30,22 @@
 
 struct nano_sem zjs_ble_nano_sem;
 
-typedef struct ble_read_handle {
+typedef struct ble_handle {
     struct zjs_callback zjs_cb;
-    uint16_t offset;                        // arg
-    uint32_t error_code;                    // return value
-    const void *buffer;                     // return value
-    ssize_t buffer_size;                    // return value
-} ble_read_handle_t;
-
-typedef struct ble_write_handle {
-    struct zjs_callback zjs_cb;
-    const void *buffer;                     // arg
-    uint16_t buffer_size;                   // arg
-    uint16_t offset;                        // arg
-    uint32_t error_code;                    // return value
-} ble_write_handle_t;
-
-typedef struct ble_subscribe_handle {
-    struct zjs_callback zjs_cb;
-    uint16_t max_value_size;
-} ble_subscribe_handle_t;
-
-typedef struct ble_unsubscribe_handle {
-    struct zjs_callback zjs_cb;
-} ble_unsubscribe_handle_t;
+    const void *buffer;
+    uint16_t buffer_size;
+    uint16_t offset;
+    uint32_t error_code;
+} ble_handle_t;
 
 typedef struct ble_notify_handle {
     struct zjs_callback zjs_cb;
+    uint16_t max_value_size;
 } ble_notify_handle_t;
 
 typedef struct ble_event_handle {
-    char event_type[MAX_TYPE_LEN];          // null-terminated
-    struct zjs_callback zjs_cb;
-    uint32_t intdata;
-    struct ble_event_handle *next;
+    int32_t id;
+    jerry_value_t arg;
 } ble_event_handle_t;
 
 typedef struct zjs_ble_characteristic {
@@ -71,10 +54,10 @@ typedef struct zjs_ble_characteristic {
     struct bt_uuid *uuid;
     struct bt_gatt_attr *chrc_attr;
     jerry_value_t cud_value;
-    ble_read_handle_t read_cb;
-    ble_write_handle_t write_cb;
-    ble_subscribe_handle_t subscribe_cb;
-    ble_unsubscribe_handle_t unsubscribe_cb;
+    ble_handle_t read_cb;
+    ble_handle_t write_cb;
+    ble_notify_handle_t subscribe_cb;
+    ble_notify_handle_t unsubscribe_cb;
     ble_notify_handle_t notify_cb;
     struct zjs_ble_characteristic *next;
 } ble_characteristic_t;
@@ -87,11 +70,15 @@ typedef struct zjs_ble_service {
 } ble_service_t;
 
 typedef struct zjs_ble_connection {
+    jerry_value_t ble_obj;
     struct bt_conn *default_conn;
     struct bt_gatt_ccc_cfg blvl_ccc_cfg[CONFIG_BLUETOOTH_MAX_PAIRED];
     uint8_t simulate_blvl;
     ble_service_t *services;
-    ble_event_handle_t *event_list;
+    ble_event_handle_t ready_cb;
+    ble_event_handle_t connected_cb;
+    ble_event_handle_t disconnected_cb;
+    ble_event_handle_t adv_start_cb;
 } ble_connection_t;
 
 // global connection object
@@ -100,7 +87,6 @@ static struct zjs_ble_connection *ble_conn = &(struct zjs_ble_connection) {
     .blvl_ccc_cfg = {},
     .simulate_blvl = 0,
     .services = NULL,
-    .event_list = NULL,
 };
 
 struct bt_uuid* zjs_ble_new_uuid_16(uint16_t value) {
@@ -161,44 +147,6 @@ static void zjs_ble_free_services(ble_service_t *service)
     }
 }
 
-static ble_event_handle_t *zjs_ble_event_callback_alloc()
-{
-    // effects: allocates a new callback list item and adds it to the list
-    ble_event_handle_t *item;
-    item = zjs_malloc(sizeof(ble_event_handle_t));
-    if (!item) {
-        PRINT("zjs_ble_event_callback_alloc: out of memory allocating callback struct\n");
-        return NULL;
-    }
-
-    item->next = ble_conn->event_list;
-    ble_conn->event_list = item;
-    return item;
-}
-
-static void zjs_ble_queue_dispatch(char *type, zjs_cb_wrapper_t func,
-                                   uint32_t intdata)
-{
-    // requires: called only from task context, type is the string event type
-    //             and at most MAX_TYPE_LEN (20) chars,  func is a function
-    //             that can handle calling the callback for this event type
-    //             when found, intdata is a uint32 that will be stored in the
-    //             appropriate callback struct for use by func (just set it to
-    //             0 if not needed)
-    //  effects: finds the first callback for the given type and queues it up
-    //             to run func to execute it at the next opportunity
-    ble_event_handle_t *ev = ble_conn->event_list;
-    while (ev) {
-        if (!strncmp(ev->event_type, type, MAX_TYPE_LEN)) {
-            ev->zjs_cb.call_function = func;
-            ev->intdata = intdata;
-            zjs_queue_callback(&ev->zjs_cb);
-            return;
-        }
-        ev = ev->next;
-    }
-}
-
 static jerry_value_t zjs_ble_read_attr_call_function_return(const jerry_value_t function_obj,
                                                             const jerry_value_t this,
                                                             const jerry_value_t argv[],
@@ -233,9 +181,9 @@ static jerry_value_t zjs_ble_read_attr_call_function_return(const jerry_value_t 
 
 static void zjs_ble_read_attr_call_function(struct zjs_callback *cb)
 {
-    ble_read_handle_t *mycb;
+    ble_handle_t *mycb;
     ble_characteristic_t *chrc;
-    mycb = CONTAINER_OF(cb, ble_read_handle_t, zjs_cb);
+    mycb = CONTAINER_OF(cb, ble_handle_t, zjs_cb);
     chrc = CONTAINER_OF(mycb, ble_characteristic_t, read_cb);
 
     jerry_value_t rval;
@@ -334,9 +282,9 @@ static jerry_value_t zjs_ble_write_attr_call_function_return(const jerry_value_t
 
 static void zjs_ble_write_attr_call_function(struct zjs_callback *cb)
 {
-    ble_write_handle_t *mycb;
+    ble_handle_t *mycb;
     ble_characteristic_t *chrc;
-    mycb = CONTAINER_OF(cb, ble_write_handle_t, zjs_cb);
+    mycb = CONTAINER_OF(cb, ble_handle_t, zjs_cb);
     chrc = CONTAINER_OF(mycb, ble_characteristic_t, write_cb);
 
     jerry_value_t rval;
@@ -454,9 +402,9 @@ static jerry_value_t zjs_ble_update_value_call_function(const jerry_value_t func
 
 static void zjs_ble_subscribe_call_function(struct zjs_callback *cb)
 {
-    ble_subscribe_handle_t *mycb;
+    ble_notify_handle_t *mycb;
     ble_characteristic_t *chrc;
-    mycb = CONTAINER_OF(cb, ble_subscribe_handle_t, zjs_cb);
+    mycb = CONTAINER_OF(cb, ble_notify_handle_t, zjs_cb);
     chrc = CONTAINER_OF(mycb, ble_characteristic_t, subscribe_cb);
 
     jerry_value_t rval;
@@ -480,49 +428,39 @@ static void zjs_ble_blvl_ccc_cfg_changed(uint16_t value)
     ble_conn->simulate_blvl = (value == BT_GATT_CCC_NOTIFY) ? 1 : 0;
 }
 
-static void zjs_ble_accept_call_function(struct zjs_callback *cb)
+static void zjs_ble_connected_c_callback(void *handle)
 {
     // FIXME: get real bluetooth address
     jerry_value_t arg = jerry_create_string((jerry_char_t *)"AB:CD:DF:AB:CD:EF");
-    jerry_value_t rval = jerry_call_function(cb->js_callback, ZJS_UNDEFINED, &arg, 1);
-    if (jerry_value_has_error_flag(rval)) {
-        PRINT("zjs_ble_accept_call_function: failed to call function\n");
-    }
-    jerry_release_value(rval);
-    jerry_release_value(arg);
-}
-
-static void zjs_ble_disconnect_call_function(struct zjs_callback *cb)
-{
-    // FIXME: get real bluetooth address
-    jerry_value_t arg = jerry_create_string((jerry_char_t *)"AB:CD:DF:AB:CD:EF");
-    jerry_value_t rval = jerry_call_function(cb->js_callback, ZJS_UNDEFINED, &arg, 1);
-    if (jerry_value_has_error_flag(rval)) {
-        PRINT("zjs_ble_disconnect_call_function: failed to call function\n");
-    }
-    jerry_release_value(rval);
-    jerry_release_value(arg);
+    zjs_trigger_event(ble_conn->ble_obj, "accept", &arg, 1, NULL, NULL);
 }
 
 static void zjs_ble_connected(struct bt_conn *conn, uint8_t err)
 {
-    PRINT("========= connected ========\n");
+    PRINT("========== connected ==========\n");
     if (err) {
         PRINT("zjs_ble_connected: Connection failed (err %u)\n", err);
     } else {
         ble_conn->default_conn = bt_conn_ref(conn);
-        zjs_ble_queue_dispatch("accept", zjs_ble_accept_call_function, 0);
+        zjs_signal_callback(ble_conn->connected_cb.id);
     }
+}
+
+static void zjs_ble_disconnected_c_callback(void *handle)
+{
+    // FIXME: get real bluetooth address
+    jerry_value_t arg = jerry_create_string((jerry_char_t *)"AB:CD:DF:AB:CD:EF");
+    zjs_trigger_event(ble_conn->ble_obj, "disconnect", &arg, 1, NULL, NULL);
 }
 
 static void zjs_ble_disconnected(struct bt_conn *conn, uint8_t reason)
 {
-    PRINT("Disconnected (reason %u)\n", reason);
+    PRINT("========== Disconnected (reason %u) ==========\n", reason);
 
     if (ble_conn->default_conn) {
         bt_conn_unref(ble_conn->default_conn);
         ble_conn->default_conn = NULL;
-        zjs_ble_queue_dispatch("disconnect", zjs_ble_disconnect_call_function, 0);
+        zjs_signal_callback(ble_conn->disconnected_cb.id);
     }
 }
 
@@ -544,30 +482,16 @@ static struct bt_conn_auth_cb zjs_ble_auth_cb_display = {
         .cancel = zjs_ble_auth_cancel,
 };
 
-static void zjs_ble_bt_ready_call_function(struct zjs_callback *cb)
+static void zjs_ble_ready_c_callback(void *handle)
 {
-    // requires: called only from task context
-    //  effects: handles execution of the bt ready JS callback
     jerry_value_t arg = jerry_create_string((jerry_char_t *)"poweredOn");
-    jerry_value_t rval = jerry_call_function(cb->js_callback, ZJS_UNDEFINED, &arg, 1);
-    if (jerry_value_has_error_flag(rval)) {
-        PRINT("zjs_ble_bt_ready_call_function: failed to call function\n");
-    }
-    jerry_release_value(rval);
-    jerry_release_value(arg);
+    zjs_trigger_event(ble_conn->ble_obj, "stateChange", &arg, 1, NULL, NULL);
 }
 
 static void zjs_ble_bt_ready(int err)
 {
-    if (!ble_conn->event_list) {
-        PRINT("zjs_ble_bt_ready: no event handlers present\n");
-        return;
-    }
     PRINT("zjs_ble_bt_ready is called [err %d]\n", err);
-
-    // FIXME: Probably we should return this err to JS like in adv_start?
-    //   Maybe this wasn't in the bleno API?
-    zjs_ble_queue_dispatch("stateChange", zjs_ble_bt_ready_call_function, 0);
+    zjs_signal_callback(ble_conn->ready_cb.id);
 }
 
 void zjs_ble_enable() {
@@ -592,54 +516,6 @@ static jerry_value_t zjs_ble_disconnect(const jerry_value_t function_obj,
     }
 
     return ZJS_UNDEFINED;
-}
-
-static jerry_value_t zjs_ble_on(const jerry_value_t function_obj,
-                                const jerry_value_t this,
-                                const jerry_value_t argv[],
-                                const jerry_length_t argc)
-{
-    // arg 0 should be a string event type
-    // arg 1 should be a callback function
-    if (argc < 2 ||
-        !jerry_value_is_string(argv[0]) ||
-        !jerry_value_is_object(argv[1])) {
-        return zjs_error("zjs_ble_on: invalid arguments");
-    }
-
-    char event[MAX_TYPE_LEN];
-    jerry_size_t sz = jerry_get_string_size(argv[0]);
-    if (sz >= MAX_TYPE_LEN) {
-        return zjs_error("zjs_ble_on: event type string too long");
-    }
-    jerry_string_to_char_buffer(argv[0], (jerry_char_t *)event, sz);
-    event[sz] = '\0';
-
-    ble_event_handle_t *item = zjs_ble_event_callback_alloc();
-    if (!item)
-        return zjs_error("zjs_ble_on: error allocating callback");
-
-    // TODO: we should only do this for valid event types; right now we'll
-    //   store anything
-    item->zjs_cb.js_callback = jerry_acquire_value(argv[1]);
-    memcpy(item->event_type, event, sz + 1);
-
-    return ZJS_UNDEFINED;
-}
-
-static void zjs_ble_adv_start_call_function(struct zjs_callback *cb)
-{
-    // requires: called only from task context, expects intdata in cb to have
-    //             been set previously
-    //  effects: handles execution of the adv start JS callback
-    ble_event_handle_t *mycb = CONTAINER_OF(cb, ble_event_handle_t, zjs_cb);
-    jerry_value_t arg = jerry_create_number(mycb->intdata);
-    jerry_value_t rval = jerry_call_function(cb->js_callback, ZJS_UNDEFINED, &arg, 1);
-    if (jerry_value_has_error_flag(rval)) {
-        PRINT("zjs_ble_adv_start_call_function: failed to call function\n");
-    }
-    jerry_release_value(arg);
-    jerry_release_value(rval);
 }
 
 const int ZJS_SUCCESS = 0;
@@ -809,8 +685,11 @@ static jerry_value_t zjs_ble_start_advertising(const jerry_value_t function_obj,
 
     int err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad),
                               sd, ARRAY_SIZE(sd));
-    PRINT("====>AdvertisingStarted..........\n");
-    zjs_ble_queue_dispatch("advertisingStart", zjs_ble_adv_start_call_function, err);
+    PRINT("========== AdvertisingStarted ==========\n");
+    jerry_value_t error = err ? zjs_error("advertising failed") :
+                                jerry_create_null();
+
+    zjs_trigger_event(ble_conn->ble_obj, "advertisingStart", &error, 1, NULL, NULL);
 
     zjs_free(url_frame);
     return ZJS_UNDEFINED;
@@ -1273,7 +1152,6 @@ jerry_value_t zjs_ble_init()
     // create global BLE object
     jerry_value_t ble_obj = jerry_create_object();
     zjs_obj_add_function(ble_obj, zjs_ble_disconnect, "disconnect");
-    zjs_obj_add_function(ble_obj, zjs_ble_on, "on");
     zjs_obj_add_function(ble_obj, zjs_ble_start_advertising, "startAdvertising");
     zjs_obj_add_function(ble_obj, zjs_ble_stop_advertising, "stopAdvertising");
     zjs_obj_add_function(ble_obj, zjs_ble_set_services, "setServices");
@@ -1282,6 +1160,18 @@ jerry_value_t zjs_ble_init()
     zjs_obj_add_function(ble_obj, zjs_ble_primary_service, "PrimaryService");
     zjs_obj_add_function(ble_obj, zjs_ble_characteristic, "Characteristic");
     zjs_obj_add_function(ble_obj, zjs_ble_descriptor, "Descriptor");
+
+    // make it an event object
+    zjs_make_event(ble_obj);
+
+    // bt events are called from the FIBER context, since we can't call
+    // zjs_trigger_event() directly, we need to register a c callback which
+    // the C callback will call zjs_trigger_event()
+    ble_conn->ready_cb.id = zjs_add_c_callback(ble_conn, zjs_ble_ready_c_callback);
+    ble_conn->connected_cb.id = zjs_add_c_callback(ble_conn, zjs_ble_connected_c_callback);
+    ble_conn->disconnected_cb.id = zjs_add_c_callback(ble_conn, zjs_ble_disconnected_c_callback);
+    ble_conn->ble_obj = ble_obj;
+
     return ble_obj;
 }
 #endif  // QEMU_BUILD
