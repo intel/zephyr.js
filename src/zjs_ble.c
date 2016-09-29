@@ -16,6 +16,7 @@
 #include "zjs_buffer.h"
 #include "zjs_util.h"
 
+#define MAX_TYPE_LEN                                20
 #define ZJS_BLE_UUID_LEN                            36
 
 #define ZJS_BLE_RESULT_SUCCESS                      0x00
@@ -28,77 +29,82 @@
 
 struct nano_sem zjs_ble_nano_sem;
 
-static struct bt_gatt_ccc_cfg zjs_ble_blvl_ccc_cfg[CONFIG_BLUETOOTH_MAX_PAIRED] = {};
-static uint8_t zjs_ble_simulate_blvl;
-
-struct bt_conn *zjs_ble_default_conn;
-
-struct zjs_ble_read_callback {
+typedef struct ble_read_handle {
     struct zjs_callback zjs_cb;
     uint16_t offset;                        // arg
     uint32_t error_code;                    // return value
     const void *buffer;                     // return value
     ssize_t buffer_size;                    // return value
-};
+} ble_read_handle_t;
 
-struct zjs_ble_write_callback {
+typedef struct ble_write_handle {
     struct zjs_callback zjs_cb;
     const void *buffer;                     // arg
     uint16_t buffer_size;                   // arg
     uint16_t offset;                        // arg
     uint32_t error_code;                    // return value
-};
+} ble_write_handle_t;
 
-struct zjs_ble_subscribe_callback {
+typedef struct ble_subscribe_handle {
     struct zjs_callback zjs_cb;
     uint16_t max_value_size;
-};
+} ble_subscribe_handle_t;
 
-struct zjs_ble_unsubscribe_callback {
+typedef struct ble_unsubscribe_handle {
     struct zjs_callback zjs_cb;
-    // placeholders args
-};
+} ble_unsubscribe_handle_t;
 
-struct zjs_ble_notify_callback {
+typedef struct ble_notify_handle {
     struct zjs_callback zjs_cb;
-    // placeholders args
-};
+} ble_notify_handle_t;
 
-struct zjs_ble_characteristic {
+typedef struct ble_event_handle {
+    char event_type[MAX_TYPE_LEN];          // null-terminated
+    struct zjs_callback zjs_cb;
+    uint32_t intdata;
+    struct ble_event_handle *next;
+} ble_event_handle_t;
+
+typedef struct zjs_ble_characteristic {
     int flags;
     jerry_value_t chrc_obj;
     struct bt_uuid *uuid;
     struct bt_gatt_attr *chrc_attr;
     jerry_value_t cud_value;
-    struct zjs_ble_read_callback read_cb;
-    struct zjs_ble_write_callback write_cb;
-    struct zjs_ble_subscribe_callback subscribe_cb;
-    struct zjs_ble_unsubscribe_callback unsubscribe_cb;
-    struct zjs_ble_notify_callback notify_cb;
+    ble_read_handle_t read_cb;
+    ble_write_handle_t write_cb;
+    ble_subscribe_handle_t subscribe_cb;
+    ble_unsubscribe_handle_t unsubscribe_cb;
+    ble_notify_handle_t notify_cb;
     struct zjs_ble_characteristic *next;
-};
+} ble_characteristic_t;
 
-struct zjs_ble_service {
+typedef struct zjs_ble_service {
     jerry_value_t service_obj;
     struct bt_uuid *uuid;
-    struct zjs_ble_characteristic *characteristics;
+    ble_characteristic_t *characteristics;
     struct zjs_ble_service *next;
+} ble_service_t;
+
+typedef struct zjs_ble_connection {
+    struct bt_conn *default_conn;
+    struct bt_gatt_ccc_cfg blvl_ccc_cfg[CONFIG_BLUETOOTH_MAX_PAIRED];
+    uint8_t simulate_blvl;
+    ble_service_t *services;
+    ble_event_handle_t *event_list;
+} ble_connection_t;
+
+// global connection object
+static struct zjs_ble_connection *ble_conn = &(struct zjs_ble_connection) {
+    .default_conn = NULL,
+    .blvl_ccc_cfg = {},
+    .simulate_blvl = 0,
+    .services = NULL,
+    .event_list = NULL,
 };
-
-#define MAX_TYPE_LEN 20
-
-struct zjs_ble_list_item {
-    char event_type[MAX_TYPE_LEN];  // null-terminated
-    struct zjs_callback zjs_cb;
-    uint32_t intdata;
-    struct zjs_ble_list_item *next;
-};
-
-static struct zjs_ble_service *zjs_ble_services = NULL;
-static struct zjs_ble_list_item *zjs_ble_list = NULL;
 
 struct bt_uuid* zjs_ble_new_uuid_16(uint16_t value) {
-    struct bt_uuid_16* uuid = zjs_malloc(sizeof(struct bt_uuid_16));
+    struct bt_uuid_16 *uuid = zjs_malloc(sizeof(struct bt_uuid_16));
     if (!uuid) {
         PRINT("zjs_ble_new_uuid_16: out of memory allocating struct bt_uuid_16\n");
         return NULL;
@@ -111,9 +117,9 @@ struct bt_uuid* zjs_ble_new_uuid_16(uint16_t value) {
     return (struct bt_uuid *) uuid;
 }
 
-static void zjs_ble_free_characteristics(struct zjs_ble_characteristic *chrc)
+static void zjs_ble_free_characteristics(ble_characteristic_t *chrc)
 {
-    struct zjs_ble_characteristic *tmp;
+    ble_characteristic_t *tmp;
     while (chrc != NULL) {
         tmp = chrc;
         chrc = chrc->next;
@@ -137,9 +143,9 @@ static void zjs_ble_free_characteristics(struct zjs_ble_characteristic *chrc)
     }
 }
 
-static void zjs_ble_free_services(struct zjs_ble_service *service)
+static void zjs_ble_free_services(ble_service_t *service)
 {
-    struct zjs_ble_service *tmp;
+    ble_service_t *tmp;
     while (service != NULL) {
         tmp = service;
         service = service->next;
@@ -155,18 +161,18 @@ static void zjs_ble_free_services(struct zjs_ble_service *service)
     }
 }
 
-static struct zjs_ble_list_item *zjs_ble_event_callback_alloc()
+static ble_event_handle_t *zjs_ble_event_callback_alloc()
 {
     // effects: allocates a new callback list item and adds it to the list
-    struct zjs_ble_list_item *item;
-    item = zjs_malloc(sizeof(struct zjs_ble_list_item));
+    ble_event_handle_t *item;
+    item = zjs_malloc(sizeof(ble_event_handle_t));
     if (!item) {
         PRINT("zjs_ble_event_callback_alloc: out of memory allocating callback struct\n");
         return NULL;
     }
 
-    item->next = zjs_ble_list;
-    zjs_ble_list = item;
+    item->next = ble_conn->event_list;
+    ble_conn->event_list = item;
     return item;
 }
 
@@ -181,7 +187,7 @@ static void zjs_ble_queue_dispatch(char *type, zjs_cb_wrapper_t func,
     //             0 if not needed)
     //  effects: finds the first callback for the given type and queues it up
     //             to run func to execute it at the next opportunity
-    struct zjs_ble_list_item *ev = zjs_ble_list;
+    ble_event_handle_t *ev = ble_conn->event_list;
     while (ev) {
         if (!strncmp(ev->event_type, type, MAX_TYPE_LEN)) {
             ev->zjs_cb.call_function = func;
@@ -211,7 +217,6 @@ static jerry_value_t zjs_ble_read_attr_call_function_return(const jerry_value_t 
         struct zjs_ble_characteristic *chrc = (struct zjs_ble_characteristic*)ptr;
         chrc->read_cb.error_code = (uint32_t)jerry_get_number_value(argv[0]);
 
-
         zjs_buffer_t *buf = zjs_buffer_find(argv[1]);
         if (buf) {
             chrc->read_cb.buffer = buf->buffer;
@@ -228,10 +233,10 @@ static jerry_value_t zjs_ble_read_attr_call_function_return(const jerry_value_t 
 
 static void zjs_ble_read_attr_call_function(struct zjs_callback *cb)
 {
-    struct zjs_ble_read_callback *mycb;
-    struct zjs_ble_characteristic *chrc;
-    mycb = CONTAINER_OF(cb, struct zjs_ble_read_callback, zjs_cb);
-    chrc = CONTAINER_OF(mycb, struct zjs_ble_characteristic, read_cb);
+    ble_read_handle_t *mycb;
+    ble_characteristic_t *chrc;
+    mycb = CONTAINER_OF(cb, ble_read_handle_t, zjs_cb);
+    chrc = CONTAINER_OF(mycb, ble_characteristic_t, read_cb);
 
     jerry_value_t rval;
     jerry_value_t args[2];
@@ -261,7 +266,7 @@ static ssize_t zjs_ble_read_attr_callback(struct bt_conn *conn,
         return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
     }
 
-    struct zjs_ble_characteristic* chrc = attr->user_data;
+    ble_characteristic_t *chrc = attr->user_data;
 
     if (!chrc) {
         PRINT("zjs_ble_read_attr_callback: characteristic not found\n");
@@ -329,10 +334,10 @@ static jerry_value_t zjs_ble_write_attr_call_function_return(const jerry_value_t
 
 static void zjs_ble_write_attr_call_function(struct zjs_callback *cb)
 {
-    struct zjs_ble_write_callback *mycb;
-    struct zjs_ble_characteristic *chrc;
-    mycb = CONTAINER_OF(cb, struct zjs_ble_write_callback, zjs_cb);
-    chrc = CONTAINER_OF(mycb, struct zjs_ble_characteristic, write_cb);
+    ble_write_handle_t *mycb;
+    ble_characteristic_t *chrc;
+    mycb = CONTAINER_OF(cb, ble_write_handle_t, zjs_cb);
+    chrc = CONTAINER_OF(mycb, ble_characteristic_t, write_cb);
 
     jerry_value_t rval;
     jerry_value_t args[4];
@@ -382,7 +387,7 @@ static ssize_t zjs_ble_write_attr_callback(struct bt_conn *conn,
                                            const void *buf, uint16_t len,
                                            uint16_t offset, uint8_t flags)
 {
-    struct zjs_ble_characteristic* chrc = attr->user_data;
+    ble_characteristic_t *chrc = attr->user_data;
 
     if (!chrc) {
         PRINT("zjs_ble_write_attr_callback: characteristic not found\n");
@@ -430,12 +435,13 @@ static jerry_value_t zjs_ble_update_value_call_function(const jerry_value_t func
     zjs_buffer_t *buf = zjs_buffer_find(argv[0]);
 
     if (buf) {
-        if (zjs_ble_default_conn) {
+        if (ble_conn->default_conn) {
             uintptr_t ptr;
             if (jerry_get_object_native_handle(this, &ptr)) {
-               struct zjs_ble_characteristic *chrc = (struct zjs_ble_characteristic*)ptr;
+               ble_characteristic_t *chrc = (ble_characteristic_t *)ptr;
                if (chrc->chrc_attr) {
-                   bt_gatt_notify(zjs_ble_default_conn, chrc->chrc_attr, buf->buffer, buf->bufsize);
+                   bt_gatt_notify(ble_conn->default_conn, chrc->chrc_attr,
+                                  buf->buffer, buf->bufsize);
                }
             }
         }
@@ -448,12 +454,10 @@ static jerry_value_t zjs_ble_update_value_call_function(const jerry_value_t func
 
 static void zjs_ble_subscribe_call_function(struct zjs_callback *cb)
 {
-    struct zjs_ble_subscribe_callback *mycb = CONTAINER_OF(cb,
-                                                           struct zjs_ble_subscribe_callback,
-                                                           zjs_cb);
-    struct zjs_ble_characteristic *chrc = CONTAINER_OF(mycb,
-                                                       struct zjs_ble_characteristic,
-                                                       subscribe_cb);
+    ble_subscribe_handle_t *mycb;
+    ble_characteristic_t *chrc;
+    mycb = CONTAINER_OF(cb, ble_subscribe_handle_t, zjs_cb);
+    chrc = CONTAINER_OF(mycb, ble_characteristic_t, subscribe_cb);
 
     jerry_value_t rval;
     jerry_value_t args[2];
@@ -473,7 +477,7 @@ static void zjs_ble_subscribe_call_function(struct zjs_callback *cb)
 // Port this to javascript
 static void zjs_ble_blvl_ccc_cfg_changed(uint16_t value)
 {
-    zjs_ble_simulate_blvl = (value == BT_GATT_CCC_NOTIFY) ? 1 : 0;
+    ble_conn->simulate_blvl = (value == BT_GATT_CCC_NOTIFY) ? 1 : 0;
 }
 
 static void zjs_ble_accept_call_function(struct zjs_callback *cb)
@@ -506,8 +510,7 @@ static void zjs_ble_connected(struct bt_conn *conn, uint8_t err)
     if (err) {
         PRINT("zjs_ble_connected: Connection failed (err %u)\n", err);
     } else {
-        zjs_ble_default_conn = bt_conn_ref(conn);
-        PRINT("Connected\n");
+        ble_conn->default_conn = bt_conn_ref(conn);
         zjs_ble_queue_dispatch("accept", zjs_ble_accept_call_function, 0);
     }
 }
@@ -516,9 +519,9 @@ static void zjs_ble_disconnected(struct bt_conn *conn, uint8_t reason)
 {
     PRINT("Disconnected (reason %u)\n", reason);
 
-    if (zjs_ble_default_conn) {
-        bt_conn_unref(zjs_ble_default_conn);
-        zjs_ble_default_conn = NULL;
+    if (ble_conn->default_conn) {
+        bt_conn_unref(ble_conn->default_conn);
+        ble_conn->default_conn = NULL;
         zjs_ble_queue_dispatch("disconnect", zjs_ble_disconnect_call_function, 0);
     }
 }
@@ -556,7 +559,7 @@ static void zjs_ble_bt_ready_call_function(struct zjs_callback *cb)
 
 static void zjs_ble_bt_ready(int err)
 {
-    if (!zjs_ble_list) {
+    if (!ble_conn->event_list) {
         PRINT("zjs_ble_bt_ready: no event handlers present\n");
         return;
     }
@@ -580,8 +583,8 @@ static jerry_value_t zjs_ble_disconnect(const jerry_value_t function_obj,
                                         const jerry_value_t argv[],
                                         const jerry_length_t argc)
 {
-    if (zjs_ble_default_conn) {
-        int error = bt_conn_disconnect(zjs_ble_default_conn,
+    if (ble_conn->default_conn) {
+        int error = bt_conn_disconnect(ble_conn->default_conn,
                                        BT_HCI_ERR_REMOTE_USER_TERM_CONN);
         if (error) {
             return zjs_error("zjs_ble_disconnect: disconnect failed");
@@ -612,7 +615,7 @@ static jerry_value_t zjs_ble_on(const jerry_value_t function_obj,
     jerry_string_to_char_buffer(argv[0], (jerry_char_t *)event, sz);
     event[sz] = '\0';
 
-    struct zjs_ble_list_item *item = zjs_ble_event_callback_alloc();
+    ble_event_handle_t *item = zjs_ble_event_callback_alloc();
     if (!item)
         return zjs_error("zjs_ble_on: error allocating callback");
 
@@ -629,8 +632,7 @@ static void zjs_ble_adv_start_call_function(struct zjs_callback *cb)
     // requires: called only from task context, expects intdata in cb to have
     //             been set previously
     //  effects: handles execution of the adv start JS callback
-    struct zjs_ble_list_item *mycb = CONTAINER_OF(cb, struct zjs_ble_list_item,
-                                                  zjs_cb);
+    ble_event_handle_t *mycb = CONTAINER_OF(cb, ble_event_handle_t, zjs_cb);
     jerry_value_t arg = jerry_create_number(mycb->intdata);
     jerry_value_t rval = jerry_call_function(cb->js_callback, ZJS_UNDEFINED, &arg, 1);
     if (jerry_value_has_error_flag(rval)) {
@@ -823,7 +825,7 @@ static jerry_value_t zjs_ble_stop_advertising(const jerry_value_t function_obj,
     return ZJS_UNDEFINED;
 }
 
-static bool zjs_ble_parse_characteristic(struct zjs_ble_characteristic *chrc)
+static bool zjs_ble_parse_characteristic(ble_characteristic_t *chrc)
 {
     char uuid[ZJS_BLE_UUID_LEN];
     if (!chrc || !chrc->chrc_obj)
@@ -932,7 +934,7 @@ static bool zjs_ble_parse_characteristic(struct zjs_ble_characteristic *chrc)
     return true;
 }
 
-static bool zjs_ble_parse_service(struct zjs_ble_service *service)
+static bool zjs_ble_parse_service(ble_service_t *service)
 {
     char uuid[ZJS_BLE_UUID_LEN];
     if (!service || !service->service_obj)
@@ -951,7 +953,7 @@ static bool zjs_ble_parse_service(struct zjs_ble_service *service)
         return false;
     }
 
-    struct zjs_ble_characteristic *previous = NULL;
+    ble_characteristic_t *previous = NULL;
     for (int i=0; i<jerry_get_array_length(v_array); i++) {
         jerry_value_t v_chrc = jerry_get_property_by_index(v_array, i);
 
@@ -960,13 +962,13 @@ static bool zjs_ble_parse_service(struct zjs_ble_service *service)
             return false;
         }
 
-        struct zjs_ble_characteristic *chrc = zjs_malloc(sizeof(struct zjs_ble_characteristic));
+        ble_characteristic_t *chrc = zjs_malloc(sizeof(ble_characteristic_t));
         if (!chrc) {
-            PRINT("zjs_ble_parse_service: out of memory allocating struct zjs_ble_characteristic\n");
+            PRINT("zjs_ble_parse_service: out of memory allocating ble_characteristic_t\n");
             return false;
         }
 
-        memset(chrc, 0, sizeof(struct zjs_ble_characteristic));
+        memset(chrc, 0, sizeof(ble_characteristic_t));
 
         chrc->chrc_obj = jerry_acquire_value(v_chrc);
         jerry_set_object_native_handle(chrc->chrc_obj, (uintptr_t)chrc, NULL);
@@ -989,7 +991,7 @@ static bool zjs_ble_parse_service(struct zjs_ble_service *service)
     return true;
 }
 
-static bool zjs_ble_register_service(struct zjs_ble_service *service)
+static bool zjs_ble_register_service(ble_service_t *service)
 {
     if (!service) {
         PRINT("zjs_ble_register_service: invalid ble_service\n");
@@ -999,7 +1001,7 @@ static bool zjs_ble_register_service(struct zjs_ble_service *service)
     // calculate the number of GATT attributes to allocate
     int entry_index = 0;
     int num_of_entries = 1;   // 1 attribute for service uuid
-    struct zjs_ble_characteristic *ch = service->characteristics;
+    ble_characteristic_t *ch = service->characteristics;
 
     while (ch) {
         num_of_entries += 2;  // 2 attributes for uuid and descriptor
@@ -1015,7 +1017,7 @@ static bool zjs_ble_register_service(struct zjs_ble_service *service)
         ch = ch->next;
     }
 
-   struct bt_gatt_attr* bt_attrs = zjs_malloc(sizeof(struct bt_gatt_attr) * num_of_entries);
+   struct bt_gatt_attr *bt_attrs = zjs_malloc(sizeof(struct bt_gatt_attr) * num_of_entries);
     if (!bt_attrs) {
         PRINT("zjs_ble_register_service: out of memory allocating struct bt_gatt_attr\n");
         return false;
@@ -1097,8 +1099,8 @@ static bool zjs_ble_register_service(struct zjs_ble_service *service)
 
             memset(ccc_user_data, 0, sizeof(struct _bt_gatt_ccc));
 
-            ccc_user_data->cfg = zjs_ble_blvl_ccc_cfg;
-            ccc_user_data->cfg_len = ARRAY_SIZE(zjs_ble_blvl_ccc_cfg);
+            ccc_user_data->cfg = ble_conn->blvl_ccc_cfg;
+            ccc_user_data->cfg_len = ARRAY_SIZE(ble_conn->blvl_ccc_cfg);
             ccc_user_data->cfg_changed = zjs_ble_blvl_ccc_cfg_changed;
             bt_attrs[entry_index].uuid = zjs_ble_new_uuid_16(BT_UUID_GATT_CCC_VAL);
             bt_attrs[entry_index].perm = BT_GATT_PERM_READ | BT_GATT_PERM_WRITE;
@@ -1144,13 +1146,13 @@ static jerry_value_t zjs_ble_set_services(const jerry_value_t function_obj,
     }
 
     // free existing services
-    if (zjs_ble_services) {
-        zjs_ble_free_services(zjs_ble_services);
-        zjs_ble_services = NULL;
+    if (ble_conn->services) {
+        zjs_ble_free_services(ble_conn->services);
+        ble_conn->services = NULL;
     }
 
     bool success = true;
-    struct zjs_ble_service *previous = NULL;
+    ble_service_t *previous = NULL;
     for (int i = 0; i < array_size; i++) {
         jerry_value_t v_service = jerry_get_property_by_index(v_services, i);
 
@@ -1158,12 +1160,12 @@ static jerry_value_t zjs_ble_set_services(const jerry_value_t function_obj,
             return zjs_error("zjs_ble_set_services: service is not object");
         }
 
-        struct zjs_ble_service *service = zjs_malloc(sizeof(struct zjs_ble_service));
+        ble_service_t *service = zjs_malloc(sizeof(ble_service_t));
         if (!service) {
-            return zjs_error("zjs_ble_set_services: out of memory allocating struct zjs_ble_service");
+            return zjs_error("zjs_ble_set_services: out of memory allocating ble_service_t");
         }
 
-        memset(service, 0, sizeof(struct zjs_ble_service));
+        memset(service, 0, sizeof(ble_service_t));
 
         service->service_obj = jerry_acquire_value(v_service);
         jerry_set_object_native_handle(service->service_obj,
@@ -1179,8 +1181,8 @@ static jerry_value_t zjs_ble_set_services(const jerry_value_t function_obj,
         }
 
         // append to the list
-        if (!zjs_ble_services) {
-            zjs_ble_services = service;
+        if (!ble_conn->services) {
+            ble_conn->services = service;
             previous = service;
         }
         else {
@@ -1266,7 +1268,7 @@ static jerry_value_t zjs_ble_descriptor(const jerry_value_t function_obj,
 
 jerry_value_t zjs_ble_init()
 {
-     nano_sem_init(&zjs_ble_nano_sem);
+    nano_sem_init(&zjs_ble_nano_sem);
 
     // create global BLE object
     jerry_value_t ble_obj = jerry_create_object();
