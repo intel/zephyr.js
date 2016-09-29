@@ -20,6 +20,7 @@ setInterval(function () {
     } else {
         var voltage = (rawValue / 4096.0) * 3.3;
         var celsius = (voltage - 0.5) * 100 + 0.5;
+        celsius = celsius | 0;
         print("PinA: temperature in Celsius is: " + celsius);
     }
 }, 1000);
