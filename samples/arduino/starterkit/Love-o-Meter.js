@@ -43,12 +43,8 @@ for (var id in leds) {
 }
 
 function clipNum(num) {
-    // TODO: round this to four significant digits instead of truncating
-    var str = '' + num;
-    if (num != 0)
-        // HACK: work around current lack of Math.round or String.slice
-        str = str[0] + str[1] + str[2] + str[3] + str[4]
-    return str;
+    // HACK: work around current lack of Math.round
+    return (num * 1000 | 0) / 1000.0
 }
 
 var lastValue;
