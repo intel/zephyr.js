@@ -212,7 +212,7 @@ static jerry_value_t zjs_ble_read_attr_call_function_return(const jerry_value_t 
         chrc->read_cb.error_code = (uint32_t)jerry_get_number_value(argv[0]);
 
 
-        struct zjs_buffer_t *buf = zjs_buffer_find(argv[1]);
+        zjs_buffer_t *buf = zjs_buffer_find(argv[1]);
         if (buf) {
             chrc->read_cb.buffer = buf->buffer;
             chrc->read_cb.buffer_size = buf->bufsize;
@@ -342,7 +342,7 @@ static void zjs_ble_write_attr_call_function(struct zjs_callback *cb)
         jerry_value_t buf_obj = zjs_buffer_create(mycb->buffer_size);
 
         if (buf_obj) {
-           struct zjs_buffer_t *buf = zjs_buffer_find(buf_obj);
+           zjs_buffer_t *buf = zjs_buffer_find(buf_obj);
 
            if (buf &&
                buf->buffer &&
@@ -427,7 +427,7 @@ static jerry_value_t zjs_ble_update_value_call_function(const jerry_value_t func
     }
 
     // expects a Buffer object
-    struct zjs_buffer_t *buf = zjs_buffer_find(argv[0]);
+    zjs_buffer_t *buf = zjs_buffer_find(argv[0]);
 
     if (buf) {
         if (zjs_ble_default_conn) {

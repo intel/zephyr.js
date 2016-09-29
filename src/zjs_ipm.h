@@ -64,7 +64,7 @@ typedef struct zjs_ipm_message {
     uint32_t id;
     uint32_t type;
     uint32_t flags;
-    void* user_data;
+    void *user_data;
     uint32_t error_code;
 
     union {
@@ -75,7 +75,7 @@ typedef struct zjs_ipm_message {
         } aio;
 
         // I2C
-        struct i2c_data{
+        struct i2c_data {
             uint8_t bus;
             uint8_t speed;
             uint16_t address;
@@ -91,14 +91,14 @@ typedef struct zjs_ipm_message {
             uint8_t color_r;
             uint8_t color_g;
             uint8_t color_b;
-            void* buffer;
+            void *buffer;
         } glcd;
     } data;
 } zjs_ipm_message_t;
 
 void zjs_ipm_init();
 
-int zjs_ipm_send(uint32_t id, struct zjs_ipm_message *data);
+int zjs_ipm_send(uint32_t id, zjs_ipm_message_t *data);
 
 void zjs_ipm_register_callback(uint32_t msg_id, ipm_callback_t cb);
 

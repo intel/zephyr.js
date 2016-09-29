@@ -60,7 +60,7 @@ void zjs_ipm_init()
 #endif
 }
 
-int zjs_ipm_send(uint32_t id, struct zjs_ipm_message *data)
+int zjs_ipm_send(uint32_t id, zjs_ipm_message_t *data)
 {
     if (!ipm_send_dev) {
         PRINT("Cannot find outbound ipm device!\n" );

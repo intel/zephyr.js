@@ -2,6 +2,7 @@
 
 #ifndef ZJS_LINUX_BUILD
 // Zephyr includes
+#include <zephyr.h>
 #include "zjs_zephyr_time.h"
 #else
 #include "zjs_linux_time.h"
@@ -16,8 +17,8 @@
 #include "zjs_util.h"
 #include "zjs_callbacks.h"
 
-struct zjs_timer_t {
-    struct zjs_port_timer timer;
+typedef struct zjs_timer {
+    zjs_port_timer_t timer;
     void *timer_data;
     jerry_value_t* argv;
     uint32_t argc;
@@ -25,14 +26,14 @@ struct zjs_timer_t {
     int32_t callback_id;
     bool repeat;
     bool completed;
-    struct zjs_timer_t *next;
-};
+    struct zjs_timer *next;
+} zjs_timer_t;
 
-static struct zjs_timer_t *zjs_timers = NULL;
+static zjs_timer_t *zjs_timers = NULL;
 
 jerry_value_t* pre_timer(void* h, uint32_t* argc)
 {
-    struct zjs_timer_t* handle = (struct zjs_timer_t*)h;
+    zjs_timer_t* handle = (zjs_timer_t*)h;
     *argc = handle->argc;
     return handle->argv;
 }
@@ -46,16 +47,16 @@ jerry_value_t* pre_timer(void* h, uint32_t* argc)
  * argv         Array of arguments to pass to timer callback function
  * argc         Number of arguments in argv
  */
-static struct zjs_timer_t* add_timer(uint32_t interval,
+static zjs_timer_t* add_timer(uint32_t interval,
                                      jerry_value_t callback,
                                      bool repeat,
                                      const jerry_value_t argv[],
                                      uint32_t argc)
 {
     int i;
-    struct zjs_timer_t *tm;
+    zjs_timer_t *tm;
 
-    tm = zjs_malloc(sizeof(struct zjs_timer_t));
+    tm = zjs_malloc(sizeof(zjs_timer_t));
     if (!tm) {
         PRINT("add_timer: out of memory allocating timer struct\n");
         return NULL;
@@ -88,8 +89,8 @@ static struct zjs_timer_t* add_timer(uint32_t interval,
  */
 static bool delete_timer(int32_t id)
 {
-    for (struct zjs_timer_t **ptm = &zjs_timers; *ptm; ptm = &(*ptm)->next) {
-        struct zjs_timer_t *tm = *ptm;
+    for (zjs_timer_t **ptm = &zjs_timers; *ptm; ptm = &(*ptm)->next) {
+        zjs_timer_t *tm = *ptm;
         if (id == tm->callback_id) {
             int i;
             zjs_port_timer_stop(&tm->timer);
@@ -121,7 +122,7 @@ static jerry_value_t add_timer_helper(const jerry_value_t function_obj,
     jerry_value_t callback = argv[0];
     jerry_value_t timer_obj = jerry_create_object();
 
-    struct zjs_timer_t* handle = add_timer(interval, callback, repeat, argv, argc - 2);
+    zjs_timer_t* handle = add_timer(interval, callback, repeat, argv, argc - 2);
     if (handle->callback_id == -1)
         return zjs_error("native_set_interval_handler: timer alloc failed");
     jerry_set_object_native_handle(timer_obj, (uintptr_t)handle, NULL);
@@ -162,7 +163,7 @@ static jerry_value_t native_clear_interval_handler(const jerry_value_t function_
                                                    const jerry_length_t argc)
 {
     jerry_value_t timer_obj = argv[0];
-    struct zjs_timer_t* handle;
+    zjs_timer_t* handle;
 
     if (!jerry_value_is_object(argv[0])) {
         PRINT ("native_clear_interval_handler: invalid arguments\n");
@@ -181,7 +182,7 @@ static jerry_value_t native_clear_interval_handler(const jerry_value_t function_
 
 void zjs_timers_process_events()
 {
-    for (struct zjs_timer_t *tm = zjs_timers; tm; tm = tm->next) {
+    for (zjs_timer_t *tm = zjs_timers; tm; tm = tm->next) {
         if (tm->completed) {
             delete_timer(tm->callback_id);
         }

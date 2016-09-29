@@ -20,14 +20,14 @@
 static struct nano_sem glcd_sem;
 
 
-static struct zjs_ipm_message* zjs_glcd_alloc_msg()
+static zjs_ipm_message_t* zjs_glcd_alloc_msg()
 {
-    struct zjs_ipm_message *msg = task_malloc(sizeof(struct zjs_ipm_message));
+    zjs_ipm_message_t *msg = task_malloc(sizeof(zjs_ipm_message_t));
     if (!msg) {
         PRINT("zjs_glcd_alloc_msg: cannot allocate message\n");
         return NULL;
     } else {
-        memset(msg, 0, sizeof(struct zjs_ipm_message));
+        memset(msg, 0, sizeof(zjs_ipm_message_t));
     }
 
     msg->id = MSG_ID_GLCD;
@@ -36,7 +36,7 @@ static struct zjs_ipm_message* zjs_glcd_alloc_msg()
     return msg;
 }
 
-static void zjs_glcd_free_msg(struct zjs_ipm_message* msg)
+static void zjs_glcd_free_msg(zjs_ipm_message_t* msg)
 {
     if (!msg)
         return;
@@ -48,8 +48,8 @@ static void zjs_glcd_free_msg(struct zjs_ipm_message* msg)
     }
 }
 
-static bool zjs_glcd_ipm_send_sync(struct zjs_ipm_message* send,
-                                   struct zjs_ipm_message* result) {
+static bool zjs_glcd_ipm_send_sync(zjs_ipm_message_t* send,
+                                   zjs_ipm_message_t* result) {
     send->flags |= MSG_SYNC_FLAG;
     send->user_data = (void *)result;
     send->error_code = ERROR_IPM_NONE;
@@ -68,12 +68,12 @@ static bool zjs_glcd_ipm_send_sync(struct zjs_ipm_message* send,
     return true;
 }
 
-static jerry_value_t zjs_glcd_call_remote_function(struct zjs_ipm_message* send)
+static jerry_value_t zjs_glcd_call_remote_function(zjs_ipm_message_t* send)
 {
     if (!send)
         return zjs_error("zjs_glcd_call_remote_function: invalid send message");
 
-    struct zjs_ipm_message* reply = zjs_glcd_alloc_msg();;
+    zjs_ipm_message_t* reply = zjs_glcd_alloc_msg();;
 
     bool success = zjs_glcd_ipm_send_sync(send, reply);
     zjs_glcd_free_msg(send);
@@ -100,13 +100,13 @@ static void ipm_msg_receive_callback(void *context, uint32_t id, volatile void *
     if (id != MSG_ID_GLCD)
         return;
 
-    struct zjs_ipm_message *msg = (struct zjs_ipm_message*)(*(uintptr_t *)data);
+    zjs_ipm_message_t *msg = (zjs_ipm_message_t*)(*(uintptr_t *)data);
 
     if ((msg->flags & MSG_SYNC_FLAG) == MSG_SYNC_FLAG) {
-         struct zjs_ipm_message *result = (struct zjs_ipm_message*)msg->user_data;
+         zjs_ipm_message_t *result = (zjs_ipm_message_t*)msg->user_data;
         // synchrounus ipm, copy the results
         if (result)
-            memcpy(result, msg, sizeof(struct zjs_ipm_message));
+            memcpy(result, msg, sizeof(zjs_ipm_message_t));
 
         // un-block sync api
         nano_isr_sem_give(&glcd_sem);
@@ -140,7 +140,7 @@ static jerry_value_t zjs_glcd_print(const jerry_value_t function_obj,
     buffer[len] = '\0';
 
     // send IPM message to the ARC side
-    struct zjs_ipm_message* send = zjs_glcd_alloc_msg();
+    zjs_ipm_message_t* send = zjs_glcd_alloc_msg();
     send->type = TYPE_GLCD_PRINT;
     send->data.glcd.buffer = buffer;
 
@@ -156,7 +156,7 @@ static jerry_value_t zjs_glcd_clear(const jerry_value_t function_obj,
                                     const jerry_length_t argc)
 {
     // send IPM message to the ARC side
-    struct zjs_ipm_message* send = zjs_glcd_alloc_msg();
+    zjs_ipm_message_t* send = zjs_glcd_alloc_msg();
     // no input parameter to set
     send->type = TYPE_GLCD_CLEAR;
 
@@ -177,7 +177,7 @@ static jerry_value_t zjs_glcd_set_cursor_pos(const jerry_value_t function_obj,
     }
 
     // send IPM message to the ARC side
-    struct zjs_ipm_message* send = zjs_glcd_alloc_msg();
+    zjs_ipm_message_t* send = zjs_glcd_alloc_msg();
     send->type = TYPE_GLCD_SET_CURSOR_POS;
     send->data.glcd.col = (uint8_t)jerry_get_number_value(argv[0]);
     send->data.glcd.row = (uint8_t)jerry_get_number_value(argv[1]);
@@ -197,7 +197,7 @@ static jerry_value_t zjs_glcd_select_color(const jerry_value_t function_obj,
     }
 
     // send IPM message to the ARC side
-    struct zjs_ipm_message* send = zjs_glcd_alloc_msg();
+    zjs_ipm_message_t* send = zjs_glcd_alloc_msg();
     send->type = TYPE_GLCD_SELECT_COLOR;
     send->data.glcd.value = (uint8_t)jerry_get_number_value(argv[0]);
 
@@ -219,7 +219,7 @@ static jerry_value_t zjs_glcd_set_color(const jerry_value_t function_obj,
     }
 
     // send IPM message to the ARC side
-    struct zjs_ipm_message* send = zjs_glcd_alloc_msg();
+    zjs_ipm_message_t* send = zjs_glcd_alloc_msg();
     send->type = TYPE_GLCD_SET_COLOR;
     send->data.glcd.color_r = (uint8_t)jerry_get_number_value(argv[0]);
     send->data.glcd.color_g = (uint8_t)jerry_get_number_value(argv[1]);
@@ -240,7 +240,7 @@ static jerry_value_t zjs_glcd_set_function(const jerry_value_t function_obj,
     }
 
     // send IPM message to the ARC side
-    struct zjs_ipm_message* send = zjs_glcd_alloc_msg();
+    zjs_ipm_message_t* send = zjs_glcd_alloc_msg();
     send->type = TYPE_GLCD_SET_FUNCTION;
     send->data.glcd.value = (uint8_t)jerry_get_number_value(argv[0]);
 
@@ -255,7 +255,7 @@ static jerry_value_t zjs_glcd_get_function(const jerry_value_t function_obj,
                                            const jerry_length_t argc)
 {
     // send IPM message to the ARC side
-    struct zjs_ipm_message* send = zjs_glcd_alloc_msg();
+    zjs_ipm_message_t* send = zjs_glcd_alloc_msg();
     // no input parameter to set
     send->type = TYPE_GLCD_GET_FUNCTION;
 
@@ -272,7 +272,7 @@ static jerry_value_t zjs_glcd_set_display_state(const jerry_value_t function_obj
     }
 
     // send IPM message to the ARC side
-    struct zjs_ipm_message* send = zjs_glcd_alloc_msg();
+    zjs_ipm_message_t* send = zjs_glcd_alloc_msg();
     send->type = TYPE_GLCD_SET_DISPLAY_STATE;
     send->data.glcd.value = (uint8_t)jerry_get_number_value(argv[0]);
 
@@ -287,7 +287,7 @@ static jerry_value_t zjs_glcd_get_display_state(const jerry_value_t function_obj
                                                 const jerry_length_t argc)
 {
     // send IPM message to the ARC side
-    struct zjs_ipm_message* send = zjs_glcd_alloc_msg();
+    zjs_ipm_message_t* send = zjs_glcd_alloc_msg();
     // no input parameter to set
     send->type = TYPE_GLCD_GET_DISPLAY_STATE;
 
@@ -304,7 +304,7 @@ static jerry_value_t zjs_glcd_set_input_state(const jerry_value_t function_obj,
     }
 
     // send IPM message to the ARC side
-    struct zjs_ipm_message* send = zjs_glcd_alloc_msg();
+    zjs_ipm_message_t* send = zjs_glcd_alloc_msg();
     send->type = TYPE_GLCD_SET_INPUT_STATE;
     send->data.glcd.value = (uint8_t)jerry_get_number_value(argv[0]);
 
@@ -319,7 +319,7 @@ static jerry_value_t zjs_glcd_get_input_state(const jerry_value_t function_obj,
                                               const jerry_length_t argc)
 {
     // send IPM message to the ARC side
-    struct zjs_ipm_message* send = zjs_glcd_alloc_msg();
+    zjs_ipm_message_t* send = zjs_glcd_alloc_msg();
     // no input parameter to set
     send->type = TYPE_GLCD_GET_INPUT_STATE;
 
@@ -332,7 +332,7 @@ static jerry_value_t zjs_glcd_init(const jerry_value_t function_obj,
                                    const jerry_length_t argc)
 {
     // send IPM message to the ARC side
-    struct zjs_ipm_message* send = zjs_glcd_alloc_msg();
+    zjs_ipm_message_t* send = zjs_glcd_alloc_msg();
     // no input parameter to set
     send->type = TYPE_GLCD_INIT;
 

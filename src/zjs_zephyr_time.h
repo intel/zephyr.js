@@ -5,7 +5,7 @@
 
 #include <zephyr.h>
 
-#define zjs_port_timer          nano_timer
+#define zjs_port_timer_t        struct nano_timer
 #define zjs_port_timer_init     nano_timer_init
 #define zjs_port_timer_start    nano_timer_start
 #define zjs_port_timer_stop     nano_task_timer_stop
