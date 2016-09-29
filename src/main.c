@@ -12,6 +12,10 @@
 // JerryScript includes
 #include "jerry-api.h"
 
+#ifdef ZJS_POOL_CONFIG
+#include "zjs_pool.h"
+#endif
+
 // Platform agnostic modules/headers
 #include "zjs_buffer.h"
 #include "zjs_callbacks.h"
@@ -44,6 +48,13 @@ int main(int argc, char *argv[])
     jerry_value_t code_eval;
     jerry_value_t result;
     uint32_t len;
+
+#ifdef ZJS_POOL_CONFIG
+    zjs_init_mem_pools();
+#ifdef DUMP_MEM_STATS
+    zjs_print_pools();
+#endif
+#endif
 
     jerry_init(JERRY_INIT_EMPTY);
 
