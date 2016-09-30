@@ -176,12 +176,12 @@ void* pool_malloc(uint32_t size)
     pool = lookup_pool(size);
 #endif
     if (pool == POOL_SIZE_TOO_SMALL) {
-        DBG_PRINT(("no pool size big enough for %lu bytes\n", size));
+        DBG_PRINT("no pool size big enough for %lu bytes\n", size);
         return NULL;
     }
     ret = task_mem_pool_alloc(&block, pool, size, TICKS_NONE);
     if (ret != RC_OK) {
-        DBG_PRINT(("task_mem_pool_alloc() returned an error: %u\n", ret));
+        DBG_PRINT("task_mem_pool_alloc() returned an error: %u\n", ret);
         return NULL;
     }
 #ifdef DUMP_MEM_STATS

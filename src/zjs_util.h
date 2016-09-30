@@ -12,9 +12,9 @@
 #define ZJS_UNDEFINED jerry_create_undefined()
 
 #ifdef DEBUG_BUILD
-#define DBG_PRINT(msg) \
+#define DBG_PRINT \
     PRINT("%s:%d %s(): ", __FILE__, __LINE__, __func__); \
-    PRINT msg;
+    PRINT
 #else
 #define DBG_PRINT(fmat ...) do {} while(0);
 #endif
