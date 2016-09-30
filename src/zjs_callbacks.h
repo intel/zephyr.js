@@ -83,6 +83,7 @@ bool zjs_remove_callback_list_func(int32_t id, jerry_value_t js_func);
  * @return              New callback ID for this list (or existing ID)
  */
 int32_t zjs_add_callback_list(jerry_value_t js_func,
+                              jerry_value_t this,
                               void* handle,
                               zjs_pre_callback_func pre,
                               zjs_post_callback_func post,
@@ -98,7 +99,9 @@ int32_t zjs_add_callback_list(jerry_value_t js_func,
  *
  * @return              ID associated with this callback, use this ID to reference this CB
  */
-int32_t zjs_add_callback(jerry_value_t js_func, void* handle,
+int32_t zjs_add_callback(jerry_value_t js_func,
+                         jerry_value_t this,
+                         void* handle,
                          zjs_pre_callback_func pre,
                          zjs_post_callback_func post);
 
@@ -114,6 +117,7 @@ int32_t zjs_add_callback(jerry_value_t js_func, void* handle,
  * @return              ID associated with this callback, use this ID to reference this CB
  */
 int32_t zjs_add_callback_once(jerry_value_t js_func,
+                              jerry_value_t this,
                               void* handle,
                               zjs_pre_callback_func pre,
                               zjs_post_callback_func post);

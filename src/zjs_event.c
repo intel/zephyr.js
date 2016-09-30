@@ -73,7 +73,7 @@ void zjs_add_event_listener(jerry_value_t obj, const char* event, jerry_value_t 
         // If there already is an event object, get the callback ID
         zjs_obj_get_int32(event_obj, "callback_id", &callback_id);
     }
-    callback_id = zjs_add_callback_list(listener, ev, pre_event, post_event, callback_id);
+    callback_id = zjs_add_callback_list(listener, obj, ev, pre_event, post_event, callback_id);
 
     // Add callback ID to event object
     zjs_obj_add_number(event_obj, callback_id, "callback_id");
