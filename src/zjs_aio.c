@@ -27,7 +27,7 @@ typedef struct aio_handle {
 static aio_handle_t *zjs_aio_alloc_handle()
 {
     size_t size = sizeof(aio_handle_t);
-    aio_handle_t *handle = task_malloc(size);
+    aio_handle_t *handle = zjs_malloc(size);
     if (handle) {
         memset(handle, 0, size);
     }
@@ -41,7 +41,7 @@ static void zjs_aio_free_handle(aio_handle_t *handle)
 
 static zjs_ipm_message_t* zjs_aio_alloc_msg()
 {
-    zjs_ipm_message_t *msg = task_malloc(sizeof(zjs_ipm_message_t));
+    zjs_ipm_message_t *msg = zjs_malloc(sizeof(zjs_ipm_message_t));
     if (!msg) {
         PRINT("zjs_aio_alloc_msg: cannot allocate message\n");
         return NULL;
@@ -61,7 +61,7 @@ static void zjs_aio_free_msg(zjs_ipm_message_t* msg)
         return;
 
     if (msg->flags & MSG_SAFE_TO_FREE_FLAG) {
-        task_free(msg);
+        zjs_free(msg);
     } else {
         PRINT("zjs_aio_free_msg: error! do not free message\n");
     }

@@ -91,7 +91,7 @@ static void gpio_zephyr_callback(struct device *port,
 static struct gpio_handle* new_gpio_handle(void)
 {
 
-    struct gpio_handle* handle = task_malloc(sizeof(struct gpio_handle));
+    struct gpio_handle* handle = zjs_malloc(sizeof(struct gpio_handle));
     memset(handle, 0, sizeof(struct gpio_handle));
     return handle;
 }
@@ -178,7 +178,7 @@ static jerry_value_t zjs_gpio_pin_close(const jerry_value_t function_obj,
             zjs_gpio_convert_pin(pin, &devnum, &newpin);
 
             gpio_remove_callback(zjs_gpio_dev[devnum], &handle->callback);
-            task_free(handle);
+            zjs_free(handle);
         }
     }
 
@@ -192,7 +192,7 @@ static void post_open_promise(void* h)
     // Handle is the ret_args array that was malloc'ed in open()
     if (handle) {
         jerry_release_value(handle->open_ret_args[0]);
-        task_free(handle->open_ret_args);
+        zjs_free(handle->open_ret_args);
     }
 }
 
@@ -319,7 +319,7 @@ static jerry_value_t zjs_gpio_open(const jerry_value_t function_obj,
     if (async) {
         // Promise obj returned by open(), will have then() and catch() funcs
         jerry_value_t promise_ret = jerry_create_object();
-        handle->open_ret_args = task_malloc(sizeof(jerry_value_t) * 1);
+        handle->open_ret_args = zjs_malloc(sizeof(jerry_value_t) * 1);
 
         // Turn object into a promise
         zjs_make_promise(promise_ret, post_open_promise, (void*)handle);

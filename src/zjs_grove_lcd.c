@@ -22,7 +22,7 @@ static struct nano_sem glcd_sem;
 
 static zjs_ipm_message_t* zjs_glcd_alloc_msg()
 {
-    zjs_ipm_message_t *msg = task_malloc(sizeof(zjs_ipm_message_t));
+    zjs_ipm_message_t *msg = zjs_malloc(sizeof(zjs_ipm_message_t));
     if (!msg) {
         PRINT("zjs_glcd_alloc_msg: cannot allocate message\n");
         return NULL;
@@ -42,7 +42,7 @@ static void zjs_glcd_free_msg(zjs_ipm_message_t* msg)
         return;
 
     if ((msg->flags & MSG_SAFE_TO_FREE_FLAG) == MSG_SAFE_TO_FREE_FLAG) {
-        task_free(msg);
+        zjs_free(msg);
     } else {
         PRINT("zjs_glcd_free_msg: error! do not free message\n");
     }
@@ -128,7 +128,7 @@ static jerry_value_t zjs_glcd_print(const jerry_value_t function_obj,
 
     jerry_size_t sz = jerry_get_string_size(argv[0]);
 
-    char *buffer = task_malloc(sz+1);
+    char *buffer = zjs_malloc(sz+1);
     if (!buffer) {
         PRINT("zjs_glcd_print: cannot allocate buffer\n");
         return zjs_error("cannot allocate buffer");
@@ -145,7 +145,7 @@ static jerry_value_t zjs_glcd_print(const jerry_value_t function_obj,
     send->data.glcd.buffer = buffer;
 
     jerry_value_t result = zjs_glcd_call_remote_function(send);
-    task_free(buffer);
+    zjs_free(buffer);
 
     return jerry_value_has_error_flag(result) ? result : ZJS_UNDEFINED;
 }

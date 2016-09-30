@@ -18,7 +18,7 @@ static struct nano_sem i2c_sem;
 
 static zjs_ipm_message_t* zjs_i2c_alloc_msg()
 {
-    zjs_ipm_message_t *msg = task_malloc(sizeof(zjs_ipm_message_t));
+    zjs_ipm_message_t *msg = zjs_malloc(sizeof(zjs_ipm_message_t));
     if (!msg) {
         PRINT("zjs_i2c_alloc_msg: cannot allocate message\n");
         return NULL;
@@ -38,7 +38,7 @@ static void zjs_i2c_free_msg(zjs_ipm_message_t* msg)
         return;
 
     if (msg->flags & MSG_SAFE_TO_FREE_FLAG) {
-        task_free(msg);
+        zjs_free(msg);
     } else {
         PRINT("zjs_i2c_free_msg: error! do not free message\n");
     }
