@@ -1087,6 +1087,17 @@ static jerry_value_t zjs_ble_set_services(const jerry_value_t function_obj,
     return ZJS_UNDEFINED;
 }
 
+static jerry_value_t zjs_ble_update_rssi(const jerry_value_t function_obj,
+                                         const jerry_value_t this,
+                                         const jerry_value_t argv[],
+                                         const jerry_length_t argc)
+{
+    // Todo: get actual RSSI value from Zephyr Bluetooth driver
+    jerry_value_t arg = jerry_create_number(-50);
+    zjs_trigger_event(ble_conn->ble_obj, "rssiUpdate", &arg, 1, NULL, NULL);
+    return ZJS_UNDEFINED;
+}
+
 // Constructor
 static jerry_value_t zjs_ble_primary_service(const jerry_value_t function_obj,
                                              const jerry_value_t this,
@@ -1160,6 +1171,7 @@ jerry_value_t zjs_ble_init()
     zjs_obj_add_function(ble_obj, zjs_ble_start_advertising, "startAdvertising");
     zjs_obj_add_function(ble_obj, zjs_ble_stop_advertising, "stopAdvertising");
     zjs_obj_add_function(ble_obj, zjs_ble_set_services, "setServices");
+    zjs_obj_add_function(ble_obj, zjs_ble_update_rssi, "updateRssi");
 
     // register constructors
     zjs_obj_add_function(ble_obj, zjs_ble_primary_service, "PrimaryService");

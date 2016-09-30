@@ -17,6 +17,19 @@ ble.on('stateChange', function(state) {
     }
 });
 
+ble.on('accept', function(clientAddress) {
+    print("Accepted Connection: " + clientAddress);
+    ble.updateRssi();
+});
+
+ble.on('disconnect', function(clientAddress) {
+    print("Disconnected Connection: " + clientAddress);
+});
+
+ble.on('rssiUpdate', function(rssi) {
+    print("RSSI value: " + rssi + "dBm");
+});
+
 ble.on('advertisingStart', function(error) {
     if (error) {
         print ("Advertising start error: " + error);
