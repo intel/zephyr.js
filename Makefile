@@ -15,7 +15,7 @@ VARIANT ?= release
 # Dump memory information: on = print allocs, full = print allocs + dump pools
 TRACE ?= off
 # Specify pool malloc or heap malloc
-MALLOC ?= pool
+MALLOC ?= heap
 
 # Build for zephyr, default target
 .PHONY: zephyr
