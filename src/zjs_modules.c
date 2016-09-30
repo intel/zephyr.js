@@ -11,6 +11,7 @@
 #include "zjs_event.h"
 #include "zjs_modules.h"
 #include "zjs_util.h"
+#include "zjs_json.h"
 
 #ifndef ZJS_LINUX_BUILD
 // ZJS includes
@@ -69,6 +70,9 @@ module_t zjs_modules_array[] = {
 
 #ifdef BUILD_MODULE_EVENTS
     { "events", zjs_event_init },
+#endif
+#ifdef BUILD_MODULE_JSON
+    { "json", zjs_json_init },
 #endif
 };
 
