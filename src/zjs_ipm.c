@@ -8,8 +8,8 @@
 #include "zjs_ipm.h"
 #include "zjs_common.h"
 
-
 #ifdef CONFIG_X86
+#include "zjs_util.h"
 QUARK_SE_IPM_DEFINE(ipm_msg_send, IPM_CHANNEL_X86_TO_ARC, QUARK_SE_IPM_OUTBOUND);
 QUARK_SE_IPM_DEFINE(ipm_msg_receive, IPM_CHANNEL_ARC_TO_X86, QUARK_SE_IPM_INBOUND);
 #elif CONFIG_ARC
@@ -80,7 +80,7 @@ void zjs_ipm_register_callback(uint32_t msg_id, ipm_callback_t cb)
 
 #ifdef CONFIG_X86
     // x86, register for ipm message that matches the MSG_ID
-    struct zjs_ipm_callback* callback = task_malloc(sizeof(struct zjs_ipm_callback));
+    struct zjs_ipm_callback* callback = zjs_malloc(sizeof(struct zjs_ipm_callback));
     if (!callback) {
         PRINT("zjs_ipm_register_callback: failed to allocate callback\n");
         return;
