@@ -8,6 +8,9 @@
 // Wiring:
 //   - Wire IO2 to A0
 
+print("Testing AIO APIs...");
+print("NOTE: Make sure IO2 is connected to A0!");
+
 var total = 0;
 var passed = 0;
 
@@ -48,9 +51,6 @@ try {
 }
 
 // Function: unsigned long read()
-var test_read_true = "Function read() works fine.";
-var test_read_false = "Function read() works abnormal.";
-
 var toggle = false;
 var i = 0, times = 10, count = 0;
 var IO2 = gpio.open({ pin: pins.IO2, direction: 'out' });
@@ -70,14 +70,11 @@ for (; i < times; i++) {
         }
     }
 }
-if (count == times) {
-    assert(true, test_read_true);
-} else {
-    assert(false, test_read_false);
-}
+
+assert(count == times, "read() function");
+
 count = 0;
 i = 0;
-
 
 // Function: void on(string eventType, ReadCallback callback);
 // Registe ReadCallback
@@ -86,11 +83,7 @@ A0.on('change', function() {
     onCount ++;
 });
 
-
 // Function: unsigned long readAsync()
-var test_read_true = "Function readAsync() works fine";
-var test_read_false = "Function readAsync() works abnormal";
-
 var test_readAsync = setInterval(function () {
     i ++;
     toggle = !toggle;
@@ -123,12 +116,7 @@ var test_readAsync = setInterval(function () {
 
         if (i == times) {
             clearInterval(test_readAsync);
-
-            if (count == times) {
-                assert(true, test_read_true);
-            } else {
-                assert(false, test_read_false);
-            }
+            assert(count == times, "readAsync() function");
             count = 0;
         }
     });
@@ -136,11 +124,7 @@ var test_readAsync = setInterval(function () {
 }, 1000);
 
 setTimeout(function() {
-    if (onCount == oldOnCount) {
-        assert(true, "Function on('change', null) unsubscribed to events on pin:A0");
-    } else {
-        assert(false, "Function on('change', null) unable to discard the ReadCallback.");
-    }
+    assert(onCount == oldOnCount, "on(string eventType, null) function");
     onCount = 0;
 
     IO2.write(true);
@@ -154,26 +138,12 @@ setTimeout(function() {
     A0.close();
 }, 12000);
 
-
 setTimeout(function() {
     IO2.write(false);
     A0.read();
-
-    if (onCount == 0) {
-        assert(true, "Function close() unsubscribed to events on pin:A0")
-    } else {
-        assert(false, "Function close() unable to discard the ReadCallback.");
-    }
+    
+    assert(onCount == 0, "close() function");
 
     print("TOTAL: " + passed + " of " + total + " passed");
   
 }, 15000);
-
-
-
-
-
-
-
-
-
