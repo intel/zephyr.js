@@ -119,7 +119,8 @@ static jerry_value_t promise_catch(const jerry_value_t function_obj,
     return ZJS_UNDEFINED;
 }
 
-void zjs_make_promise(jerry_value_t obj, zjs_post_promise_func post, void* handle)
+void zjs_make_promise(jerry_value_t obj, zjs_post_promise_func post,
+                      void* handle)
 {
     struct promise* new = new_promise();
     jerry_value_t promise_obj = jerry_create_object();
@@ -137,7 +138,8 @@ void zjs_make_promise(jerry_value_t obj, zjs_post_promise_func post, void* handl
     // object being made to a promise may already have a native handle.
     zjs_obj_add_object(obj, promise_obj, "promise");
 
-    DBG_PRINT(("created promise, obj=%d, promise=%p, handle=%p\n", obj, new, handle));
+    DBG_PRINT("created promise, obj=%lu, promise=%p, handle=%p\n", obj, new,
+              handle);
 }
 
 void zjs_fulfill_promise(jerry_value_t obj, jerry_value_t argv[], uint32_t argc)
@@ -151,13 +153,15 @@ void zjs_fulfill_promise(jerry_value_t obj, jerry_value_t argv[], uint32_t argc)
     if (!handle->then_set) {
         handle->then = jerry_create_external_function(null_function);
     }
-    handle->then_id = zjs_add_callback_once(handle->then, handle, pre_then, post_promise);
+    handle->then_id = zjs_add_callback_once(handle->then, handle, pre_then,
+                                            post_promise);
     handle->then_argv = argv;
     handle->then_argc = argc;
 
     zjs_signal_callback(handle->then_id);
 
-    DBG_PRINT(("fulfilling promise, obj=%d, then_id=%d, argv=%p, nargs=%d\n", obj, handle->then_id, argv, argc));
+    DBG_PRINT("fulfilling promise, obj=%lu, then_id=%lu, argv=%p, nargs=%lu\n",
+              obj, handle->then_id, argv, argc);
 }
 
 void zjs_reject_promise(jerry_value_t obj, jerry_value_t argv[], uint32_t argc)
@@ -171,11 +175,13 @@ void zjs_reject_promise(jerry_value_t obj, jerry_value_t argv[], uint32_t argc)
     if (!handle->catch_set) {
         handle->catch = jerry_create_external_function(null_function);
     }
-    handle->catch_id = zjs_add_callback_once(handle->catch, handle, pre_catch, post_promise);
+    handle->catch_id = zjs_add_callback_once(handle->catch, handle, pre_catch,
+                                             post_promise);
     handle->catch_argv = argv;
     handle->catch_argc = argc;
 
     zjs_signal_callback(handle->catch_id);
 
-    DBG_PRINT(("rejecting promise, obj=%u, catch_id=%d, argv=%p, nargs=%d\n", obj, handle->catch_id, argv, argc));
+    DBG_PRINT("rejecting promise, obj=%lu, catch_id=%ld, argv=%p, nargs=%lu\n",
+              obj, handle->catch_id, argv, argc);
 }
