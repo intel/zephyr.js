@@ -24,8 +24,12 @@ zephyr: analyze generate
 
 .PHONY: analyze
 analyze:
+ifeq ($(DEV), ashell)
+	@cp prj.mdef.dev prj.mdef
+else
+	@cat prj.mdef.base > prj.mdef
+endif
 	@cat src/Makefile.base > src/Makefile
-	cat prj.mdef.base > prj.mdef
 	@if [ "$(TRACE)" = "on" ] || [ "$(TRACE)" = "full" ]; then \
 		echo "ccflags-y += -DZJS_TRACE_MALLOC" >> src/Makefile; \
 	fi
@@ -47,7 +51,9 @@ analyze:
 	else \
 		echo "" >> prj.mdef; \
 		echo "% HEAP CONFIG: " >> prj.mdef; \
-		echo "HEAP_SIZE 5120" >> prj.mdef; \
+		if [ $(DEV) != "ashell" ]; then \
+			echo "HEAP_SIZE 5120" >> prj.mdef; \
+		fi; \
 	fi
 	@echo "ccflags-y += $(shell ./scripts/analyze.sh $(JS))" >> src/Makefile
 
@@ -119,7 +125,11 @@ setup: update
 ifeq ($(BOARD), qemu_x86)
 	cp prj.conf.qemu_x86 prj.conf
 else
+ifeq ($(DEV), ashell)
+	cp prj.conf.arduino_101_dev prj.conf
+else
 	cp prj.conf.base prj.conf
+endif
 ifeq ($(BOARD), arduino_101_factory)
 ifeq ($(ZJS_PARTITION), 256)
 	cat prj.conf.partition_256 >> prj.conf
