@@ -14,14 +14,6 @@ ifeq ($(BOARD), qemu_x86)
 ccflags-y += -DQEMU_BUILD
 endif
 
-#ifeq ($(MEM_STATS), on)
-#ccflags-y += -DPRINT_MALLOCS
-#endif
-#ifeq ($(MEM_STATS), full)
-#ccflags-y += -DPRINT_MALLOCS
-#ccflags-y += -DDUMP_MEM_STATS
-#endif
-
 obj-y += main.o \
          zjs_ble.o \
          zjs_buffer.o \
