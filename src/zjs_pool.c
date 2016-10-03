@@ -58,7 +58,7 @@ static pool_lookup_t lookup[] = {
     { 256,  POOL_256 }
 };
 
-#define MAX_CONCURRENT_POINTERS  32
+#define MAX_CONCURRENT_POINTERS  64
 
 static pool_map_t pointer_map[MAX_CONCURRENT_POINTERS];
 
