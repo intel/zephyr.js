@@ -66,7 +66,7 @@ static int ipm_send_reply(struct zjs_ipm_message *msg) {
 static int ipm_send_error_reply(struct zjs_ipm_message *msg, uint32_t error_code) {
     msg->flags |= MSG_ERROR_FLAG;
     msg->error_code = error_code;
-    PRINT("ARC - send error %lu\n", msg->error_code);
+    PRINT("send error %lu\n", msg->error_code);
     return zjs_ipm_send(msg->id, msg);
 }
 
@@ -89,12 +89,12 @@ static uint32_t pin_read(uint8_t pin)
     };
 
     if (!adc_dev) {
-       PRINT("ARC - ADC device not found\n");
+       PRINT("ADC device not found\n");
        return 0;
     }
 
     if (adc_read(adc_dev, &entry_table) != 0) {
-        PRINT("ARC - couldn't read from pin %d\n", pin);
+        PRINT("couldn't read from pin %d\n", pin);
         return 0;
     }
 
@@ -123,7 +123,7 @@ static void queue_message(struct zjs_ipm_message* incoming_msg)
         memcpy(msg, incoming_msg, sizeof(struct zjs_ipm_message));
     } else {
         // running out of spaces, disgard message
-        PRINT("ARC - skipping incoming message\n");
+        PRINT("skipping incoming message\n");
     }
     nano_isr_sem_give(&arc_sem);
 }
@@ -141,7 +141,7 @@ static void handle_aio(struct zjs_ipm_message* msg)
     uint32_t error_code = ERROR_IPM_NONE;
 
     if (pin < ARC_AIO_MIN || pin > ARC_AIO_MAX) {
-        PRINT("ARC - pin #%lu out of range\n", pin);
+        PRINT("pin #%lu out of range\n", pin);
         ipm_send_error_reply(msg, ERROR_IPM_INVALID_PARAMETER);
         return;
     }
@@ -170,7 +170,7 @@ static void handle_aio(struct zjs_ipm_message* msg)
         break;
 
     default:
-        PRINT("ARC - unsupported aio message type %lu\n", msg->type);
+        PRINT("unsupported aio message type %lu\n", msg->type);
         error_code = ERROR_IPM_NOT_SUPPORTED;
     }
 
@@ -231,23 +231,23 @@ static void handle_i2c(struct zjs_ipm_message* msg)
                 }
             }
             else {
-                PRINT("No I2C device is ready yet\n");
+                PRINT("no I2C device is ready yet\n");
                 error_code = ERROR_IPM_OPERATION_FAILED;
             }
         }
         break;
     case TYPE_I2C_WRITE_BIT:
-        PRINT("RECEIVED TYPE_I2C_WRITE_BIT\n");
+        PRINT("received TYPE_I2C_WRITE_BIT\n");
         break;
     case TYPE_I2C_READ:
-        PRINT("RECEIVED TYPE_I2C_READ\n");
+        PRINT("received TYPE_I2C_READ\n");
         break;
     case TYPE_I2C_TRANSFER:
-        PRINT("RECEIVED TYPE_I2C_TRANSFER\n");
+        PRINT("received TYPE_I2C_TRANSFER\n");
         break;
 
     default:
-        PRINT("ARC - unsupported i2c message type %lu\n", msg->type);
+        PRINT("unsupported i2c message type %lu\n", msg->type);
         error_code = ERROR_IPM_NOT_SUPPORTED;
     }
 
@@ -266,7 +266,7 @@ static void handle_glcd(struct zjs_ipm_message* msg)
     uint32_t error_code = ERROR_IPM_NONE;
 
     if (msg->type != TYPE_GLCD_INIT && !glcd) {
-        PRINT("ARC - Grove LCD device not found.\n");
+        PRINT("Grove LCD device not found.\n");
         ipm_send_error_reply(msg, ERROR_IPM_OPERATION_FAILED);
         return;
     }
@@ -280,7 +280,7 @@ static void handle_glcd(struct zjs_ipm_message* msg)
             if (!glcd) {
                 error_code = ERROR_IPM_OPERATION_FAILED;
             } else {
-                PRINT("ARC - Grove LCD initialized\n");
+                PRINT("Grove LCD initialized\n");
             }
         }
         break;
@@ -289,11 +289,11 @@ static void handle_glcd(struct zjs_ipm_message* msg)
         buffer = msg->data.glcd.buffer;
         if (!buffer) {
             error_code = ERROR_IPM_INVALID_PARAMETER;
-            PRINT("ARC - buffer not found\n");
+            PRINT("buffer not found\n");
         } else {
             snprintf(str, MAX_BUFFER_SIZE, "%s", buffer);
             glcd_print(glcd, str, strnlen(str, MAX_BUFFER_SIZE));
-            PRINT("ARC - Grove LCD: %s\n", str);
+            PRINT("Grove LCD print: %s\n", str);
         }
         break;
     case TYPE_GLCD_CLEAR:
@@ -332,7 +332,7 @@ static void handle_glcd(struct zjs_ipm_message* msg)
     break;
 
     default:
-        PRINT("ARC - unsupported grove lcd message type %lu\n", msg->type);
+        PRINT("unsupported grove lcd message type %lu\n", msg->type);
         error_code = ERROR_IPM_NOT_SUPPORTED;
     }
 
@@ -358,7 +358,7 @@ static void process_messages()
             } else if (msg->id == MSG_ID_GLCD) {
                 handle_glcd(msg);
             } else {
-                PRINT("ARC - unsupported ipm message id: %lu\n", msg->id);
+                PRINT("unsupported ipm message id: %lu\n", msg->id);
                 ipm_send_error_reply(msg, ERROR_IPM_NOT_SUPPORTED);
             }
 

@@ -137,8 +137,6 @@ ColorCharacteristic.onWriteRequest = function(data, offset, withoutResponse,
 };
 
 ble.on('stateChange', function(state) {
-    print("BLE state: " + state);
-
     if (state === 'poweredOn') {
         ble.startAdvertising(DEVICE_NAME, ['fc00'], "https://goo.gl/QEvyDZ");
     } else {

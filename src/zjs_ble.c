@@ -438,14 +438,15 @@ static void zjs_ble_connected_c_callback(void *handle)
     // FIXME: get real bluetooth address
     jerry_value_t arg = jerry_create_string((jerry_char_t *)"AB:CD:DF:AB:CD:EF");
     zjs_trigger_event(ble_conn->ble_obj, "accept", &arg, 1, NULL, NULL);
+    DBG_PRINT("BLE event: accept\n");
 }
 
 static void zjs_ble_connected(struct bt_conn *conn, uint8_t err)
 {
-    PRINT("========== connected ==========\n");
     if (err) {
-        PRINT("zjs_ble_connected: Connection failed (err %u)\n", err);
+        DBG_PRINT("zjs_ble_connected: Connection failed (err %u)\n", err);
     } else {
+        DBG_PRINT("========== connected ==========\n");
         ble_conn->default_conn = bt_conn_ref(conn);
         zjs_signal_callback(ble_conn->connected_cb.id);
     }
@@ -456,12 +457,12 @@ static void zjs_ble_disconnected_c_callback(void *handle)
     // FIXME: get real bluetooth address
     jerry_value_t arg = jerry_create_string((jerry_char_t *)"AB:CD:DF:AB:CD:EF");
     zjs_trigger_event(ble_conn->ble_obj, "disconnect", &arg, 1, NULL, NULL);
+    DBG_PRINT("BLE event: disconnect\n");
 }
 
 static void zjs_ble_disconnected(struct bt_conn *conn, uint8_t reason)
 {
-    PRINT("========== Disconnected (reason %u) ==========\n", reason);
-
+    DBG_PRINT("========== Disconnected (reason %u) ==========\n", reason);
     if (ble_conn->default_conn) {
         bt_conn_unref(ble_conn->default_conn);
         ble_conn->default_conn = NULL;
@@ -491,16 +492,17 @@ static void zjs_ble_ready_c_callback(void *handle)
 {
     jerry_value_t arg = jerry_create_string((jerry_char_t *)"poweredOn");
     zjs_trigger_event(ble_conn->ble_obj, "stateChange", &arg, 1, NULL, NULL);
+    DBG_PRINT("BLE event: stateChange - poweredOn");
 }
 
 static void zjs_ble_bt_ready(int err)
 {
-    PRINT("zjs_ble_bt_ready is called [err %d]\n", err);
+    DBG_PRINT("bt_ready() is called [err %d]\n", err);
     zjs_signal_callback(ble_conn->ready_cb.id);
 }
 
 void zjs_ble_enable() {
-    PRINT("About to enable the bluetooth, wait for bt_ready()...\n");
+    DBG_PRINT("Enabling the bluetooth, wait for bt_ready()...\n");
     bt_enable(zjs_ble_bt_ready);
     // setup connection callbacks
     bt_conn_cb_register(&zjs_ble_conn_callbacks);
@@ -690,11 +692,11 @@ static jerry_value_t zjs_ble_start_advertising(const jerry_value_t function_obj,
 
     int err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad),
                               sd, ARRAY_SIZE(sd));
-    PRINT("========== AdvertisingStarted ==========\n");
     jerry_value_t error = err ? zjs_error("advertising failed") :
                                 jerry_create_null();
 
     zjs_trigger_event(ble_conn->ble_obj, "advertisingStart", &error, 1, NULL, NULL);
+    DBG_PRINT("BLE event: adveristingStart\n");
 
     zjs_free(url_frame);
     return ZJS_UNDEFINED;
@@ -705,7 +707,7 @@ static jerry_value_t zjs_ble_stop_advertising(const jerry_value_t function_obj,
                                               const jerry_value_t argv[],
                                               const jerry_length_t argc)
 {
-    PRINT("zjs_ble_stop_advertising: stopAdvertising has been called\n");
+    DBG_PRINT("zjs_ble_stop_advertising: stopAdvertising has been called\n");
     return ZJS_UNDEFINED;
 }
 
@@ -858,7 +860,7 @@ static bool zjs_ble_parse_service(ble_service_t *service)
         jerry_set_object_native_handle(chrc->chrc_obj, (uintptr_t)chrc, NULL);
 
         if (!zjs_ble_parse_characteristic(chrc)) {
-            PRINT("failed to parse temp characteristic\n");
+            DBG_PRINT("failed to parse temp characteristic\n");
             return false;
         }
 
@@ -1002,7 +1004,7 @@ static bool zjs_ble_register_service(ble_service_t *service)
         return false;
     }
 
-    PRINT("register service %d entries\n", entry_index);
+    DBG_PRINT("Registered service: %d entries\n", entry_index);
     bt_gatt_register(bt_attrs, entry_index);
     return true;
 }
