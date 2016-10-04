@@ -26,12 +26,16 @@ uint32_t zjs_get_ms(void);
     PRINT
 
 #else
+
+uint32_t zjs_get_sec(void);
+uint32_t zjs_get_ms(void);
+
 #define DBG_PRINT \
-    PRINT("[INFO] %s:%d %s(): ", __FILE__, __LINE__, __func__); \
+    PRINT("[%lu.%3.3lu][INFO] %s:%d %s(): ", zjs_get_sec(), zjs_get_ms(), __FILE__, __LINE__, __func__); \
     PRINT
 
 #define ERR_PRINT \
-    PRINT("[ERROR] %s:%d %s(): ", __FILE__, __LINE__, __func__); \
+    PRINT("[%lu.%3.3lu][ERROR] %s:%d %s(): ", zjs_get_sec(), zjs_get_ms(), __FILE__, __LINE__, __func__); \
     PRINT
 
 #endif  // ZJS_LINUX_BUILD

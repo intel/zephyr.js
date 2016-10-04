@@ -254,7 +254,7 @@ jerry_value_t zjs_error(const char *error)
     PRINT("%s\n", error);
     return jerry_create_error(JERRY_ERROR_TYPE, (jerry_char_t *)error);
 }
-
+#ifdef DEBUG_BUILD
 #ifdef ZJS_LINUX_BUILD
 #include <time.h>
 
@@ -282,4 +282,53 @@ uint32_t zjs_get_ms(void)
     }
     return (now.tv_nsec / 1000000);
 }
-#endif
+#else
+
+#define TICKS_PER_MS 10
+
+static struct nano_timer print_timer;
+static uint8_t init = 0;
+static uint32_t seconds = 0;
+static uint32_t milli = 0;
+
+static void* dummy = (void*)0xFFFFFFFF;
+
+void update_print_timer(void)
+{
+    if (!init) {
+        nano_timer_init(&print_timer, dummy);
+        nano_timer_start(&print_timer, 10);
+        init = 1;
+    }
+    if (nano_task_timer_test(&print_timer, TICKS_NONE)) {
+        if (milli >= 100) {
+            milli = 0;
+            seconds++;
+        } else {
+            milli += TICKS_PER_MS;
+        }
+        nano_timer_start(&print_timer, 10);
+    }
+}
+
+uint32_t zjs_get_sec(void)
+{
+    if (!init) {
+        nano_timer_init(&print_timer, dummy);
+        nano_timer_start(&print_timer, 10);
+        init = 1;
+    }
+    return seconds;
+}
+
+uint32_t zjs_get_ms(void)
+{
+    if (!init) {
+        nano_timer_init(&print_timer, dummy);
+        nano_timer_start(&print_timer, 10);
+        init = 1;
+    }
+    return milli;
+}
+#endif // ZJS_LINUX_BUILD
+#endif // DEBUG_BUILD
