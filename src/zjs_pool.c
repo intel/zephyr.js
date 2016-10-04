@@ -23,7 +23,7 @@
  *                  8 * 6
  *                  = 48 bytes
  *
- * pointer_map:     sizeof(pool_map_t) * MAX_CONCURENT_POINTERS
+ * pointer_map:     sizeof(pool_map_t) * MAX_CONCURRENT_POINTERS
  *                  8 * 32
  *                  = 256 bytes
  *
