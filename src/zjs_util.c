@@ -254,3 +254,32 @@ jerry_value_t zjs_error(const char *error)
     PRINT("%s\n", error);
     return jerry_create_error(JERRY_ERROR_TYPE, (jerry_char_t *)error);
 }
+
+#ifdef ZJS_LINUX_BUILD
+#include <time.h>
+
+static uint8_t init = 0;
+static uint32_t seconds = 0;
+
+uint32_t zjs_get_sec(void)
+{
+    struct timespec now;
+    clock_gettime(CLOCK_MONOTONIC, &now);
+    if (!init) {
+        seconds = now.tv_sec;
+        init = 1;
+    }
+    return now.tv_sec - seconds;
+}
+
+uint32_t zjs_get_ms(void)
+{
+    struct timespec now;
+    clock_gettime(CLOCK_MONOTONIC, &now);
+    if (!init) {
+        seconds = now.tv_sec;
+        init = 1;
+    }
+    return (now.tv_nsec / 1000000);
+}
+#endif

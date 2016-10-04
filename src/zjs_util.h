@@ -11,6 +11,35 @@
 
 #define ZJS_UNDEFINED jerry_create_undefined()
 
+#ifdef DEBUG_BUILD
+#ifdef ZJS_LINUX_BUILD
+
+uint32_t zjs_get_sec(void);
+uint32_t zjs_get_ms(void);
+
+#define DBG_PRINT \
+    PRINT("[%u.%3.3u][INFO] %s:%d %s(): ", zjs_get_sec(), zjs_get_ms(), __FILE__, __LINE__, __func__); \
+    PRINT
+
+#define ERR_PRINT \
+    PRINT("[%u.%3.3u][ERROR] %s:%d %s(): ", zjs_get_sec(), zjs_get_ms(), __FILE__, __LINE__, __func__); \
+    PRINT
+
+#else
+#define DBG_PRINT \
+    PRINT("[INFO] %s:%d %s(): ", __FILE__, __LINE__, __func__); \
+    PRINT
+
+#define ERR_PRINT \
+    PRINT("[ERROR] %s:%d %s(): ", __FILE__, __LINE__, __func__); \
+    PRINT
+
+#endif  // ZJS_LINUX_BUILD
+#else
+#define DBG_PRINT(fmat ...) do {} while(0);
+#define ERR_PRINT(fmat ...) do {} while(0);
+#endif
+
 #ifdef ZJS_LINUX_BUILD
 #include <stdlib.h>
 #define zjs_malloc(sz) malloc(sz)
