@@ -130,7 +130,7 @@ static uint32_t find_pool_id(uint32_t size)
             return lookup[i].pool_id;
         }
     }
-    DBG_PRINT(("no pool ID found\n"));
+    DBG_PRINT("no pool ID found\n");
     return 0;
 }
 
