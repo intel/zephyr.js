@@ -24,11 +24,11 @@
  *                  = 48 bytes
  *
  * pointer_map:     sizeof(pool_map_t) * MAX_CONCURRENT_POINTERS
- *                  8 * 32
- *                  = 256 bytes
+ *                  8 * 64
+ *                  = 512 bytes
  *
- * total overhead:  48 + 256
- *                  = 304 bytes
+ * total overhead:  48 + 512
+ *                  = 560 bytes
  *
  *
  * TODO: Find a better way to generate the pool sizes and max concurrent
