@@ -115,8 +115,8 @@ environment variables, too. Here's the right way to do that:
 $ source deps/zephyr/zephyr-env.sh
 ```
 
-#### Build and flash the ARC image
-Now you're ready to build the image for the ARC core with this command:
+#### Build and flash the ARC support image
+Now you're ready to build the support image for the ARC core with this command:
 
 ```bash
 $ make arc
@@ -129,7 +129,9 @@ Master Reset button on the Arduino 101 and after a few seconds type:
 $ make dfu-arc
 ```
 
-This will flash the ARC image to the device using the dfu-util program. 
+This will flash the ARC image to the device using the dfu-util program.
+(Note, this is not running the JavaScript engine and application yet, that will
+occur on the x86 side below.)
 
 If you get a permission error, make sure you followed the 'Join the plugdev
 group' instructions above for this user. You shoudn't need to run this command
@@ -138,14 +140,20 @@ with `sudo`.
 (The ARC image doesn't change very often so you won't need to do this again
 unless you pull updates to the source tree, and usually not even then.)
 
-#### Build the TrafficLight sample
-Next, build the x86 image with your JavaScript application:
+#### Build and flash the x86 application image
+Next, build the x86 image which includes the JerryScript engine and the
+Zephyr.js runtime support, along with your JavaScript application:
 
 ```bash
 $ make JS=samples/TrafficLight.js
 ```
 
-#### Flash and boot the application
+The JS= argument lets you provide the path to your application. The TrafficLight
+sample is a good first choice because you don't need to wire up any additional
+hardware. It just blinks onboard LEDs on your Arduino 101. Also, for many of
+the samples you will want to hook up the serial console (see below), but for
+this one it's not really needed.
+
 Finally, you're ready to install and run your application. If you just flashed
 the ARC image as above, your Arduino 101 will already be waiting for more DFU
 commands. If not, press the Master Reset button, and either way do:
@@ -161,7 +169,7 @@ should start cycling.
 You have built and run your first Zephyr.js application!
 
 If you want to make changes to the application, or run a different .js sample,
-you just need to repeat the last two steps with the desired JS filename.
+you just need to repeat the last two steps with the desired JavaScript filename.
 
 ### Next steps
 
