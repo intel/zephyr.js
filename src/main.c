@@ -49,6 +49,10 @@ int main(int argc, char *argv[])
     jerry_value_t result;
     uint32_t len;
 
+    // print newline here to make it easier to find
+    // the beginning of the program
+    PRINT("\n");
+
 #ifdef ZJS_POOL_CONFIG
     zjs_init_mem_pools();
 #ifdef DUMP_MEM_STATS
