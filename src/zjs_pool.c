@@ -11,8 +11,9 @@
 /*
  * Overhead:
  *
- * pool_map_t:      block = 16 bytes
- *                  total = 16 bytes
+ * pool_map_t:      ptr = 4 bytes
+ *                  req_size = 4 bytes
+ *                  total = 8 bytes
  *
  * pool_lookup_t:   size = 4 bytes
  *                  pool_id = 4 bytes
@@ -22,8 +23,8 @@
  *                  8 * 6
  *                  = 48 bytes
  *
- * pointer_map:     sizeof(pool_map_t) * MAX_CONCURENT_POINTERS
- *                  16 * 32
+ * pointer_map:     sizeof(pool_map_t) * MAX_CONCURRENT_POINTERS
+ *                  8 * 64
  *                  = 512 bytes
  *
  * total overhead:  48 + 512
@@ -37,9 +38,9 @@
  */
 
 typedef struct pool_map {
-    struct k_block block;
+    void* ptr;
+    uint32_t req_size;
 #ifdef DUMP_MEM_STATS
-    uint32_t size;
     uint32_t pool_size;
 #endif
 } pool_map_t;
@@ -84,14 +85,14 @@ void zjs_print_pools(void)
         uint32_t max_size = lookup[i].size;
         PRINT("Pool size: %lu\n", lookup[i].size);
         for (j = 0; j < MAX_CONCURRENT_POINTERS; ++j) {
-            if (pointer_map[j].block.pointer_to_data && pointer_map[j].pool_size == lookup[i].size) {
+            if (pointer_map[j].ptr && pointer_map[j].pool_size == lookup[i].size) {
                 cur_use++;
-                cur_waste += lookup[i].size - pointer_map[j].block.req_size;
-                if (min_size > pointer_map[j].size) {
-                    min_size = pointer_map[j].size;
+                cur_waste += lookup[i].size - pointer_map[j].req_size;
+                if (min_size > pointer_map[j].req_size) {
+                    min_size = pointer_map[j].req_size;
                 }
-                if (max_size < pointer_map[j].size) {
-                    max_size = pointer_map[j].size;
+                if (max_size < pointer_map[j].req_size) {
+                    max_size = pointer_map[j].req_size;
                 }
             }
         }
@@ -115,25 +116,38 @@ void zjs_init_mem_pools(void)
     int i;
     for (i = 0; i < MAX_CONCURRENT_POINTERS; ++i) {
 #ifdef DUMP_MEM_STATS
-        pointer_map[i].size = 0;
+        pointer_map[i].req_size = 0;
 #endif
-        pointer_map[i].block.pointer_to_data = NULL;
+        pointer_map[i].ptr = NULL;
     }
 }
 
+static uint32_t find_pool_id(uint32_t size)
+{
+    int i;
+    for (i = 0; i < (sizeof(lookup) / sizeof(lookup[0])); ++i) {
+        if (size <= lookup[i].size) {
+            return lookup[i].pool_id;
+        }
+    }
+    DBG_PRINT("no pool ID found\n");
+    return 0;
+}
+
 #ifdef DUMP_MEM_STATS
-static void add_pointer(struct k_block* block, uint32_t size, uint32_t pool_size)
+static void add_pointer(void* ptr, uint32_t req_size, uint32_t size, uint32_t pool_size)
 #else
-static void add_pointer(struct k_block* block)
+static void add_pointer(void* ptr, uint32_t req_size)
 
 #endif
 {
     int i;
     for (i = 0; i < MAX_CONCURRENT_POINTERS; ++i) {
-        if (pointer_map[i].block.pointer_to_data == NULL) {
-            memcpy(&pointer_map[i].block, block, sizeof(struct k_block));
+        if (pointer_map[i].ptr == NULL) {
+            pointer_map[i].ptr = ptr;
+            pointer_map[i].req_size = req_size;
 #ifdef DUMP_MEM_STATS
-            pointer_map[i].size = size;
+            pointer_map[i].req_size = size;
             pointer_map[i].pool_size = pool_size;
             mem_in_use += size;
             if (mem_in_use > mem_high_water) {
@@ -185,13 +199,13 @@ void* pool_malloc(uint32_t size)
         return NULL;
     }
 #ifdef DUMP_MEM_STATS
-    add_pointer(&block, size, pool_size);
+    add_pointer(block.pointer_to_data, block.req_size, size, pool_size);
     pointers_used++;
     if (max_pointers_used < pointers_used) {
         max_pointers_used = pointers_used;
     }
 #else
-    add_pointer(&block);
+    add_pointer(block.pointer_to_data, block.req_size);
 #endif
 #ifdef ZJS_TRACE_MALLOC
 #ifdef DUMP_MEM_STATS
@@ -208,20 +222,23 @@ void pool_free(void* ptr)
 {
     int i;
     for (i = 0; i < MAX_CONCURRENT_POINTERS; ++i) {
-        if (pointer_map[i].block.pointer_to_data == ptr) {
+        if (pointer_map[i].ptr == ptr) {
             struct k_block block;
-            memcpy(&block, &pointer_map[i].block, sizeof(struct k_block));
+            block.address_in_pool = pointer_map[i].ptr;
+            block.pointer_to_data = pointer_map[i].ptr;
+            block.req_size = pointer_map[i].req_size;
+            block.pool_id = find_pool_id(pointer_map[i].req_size);
 #ifdef DUMP_MEM_STATS
-            mem_in_use -= pointer_map[i].size;
+            mem_in_use -= pointer_map[i].req_size;
             pointers_used--;
 #endif
 #ifdef ZJS_TRACE_MALLOC
 #ifdef DUMP_MEM_STATS
-            PRINT("\tpointer size=%lu bytes\n", pointer_map[i].size);
+            PRINT("\tpointer size=%lu bytes\n", pointer_map[i].req_size);
 #endif
 #endif
             task_mem_pool_free(&block);
-            pointer_map[i].block.pointer_to_data = NULL;
+            pointer_map[i].ptr = NULL;
             zjs_print_pools();
             return;
         }
