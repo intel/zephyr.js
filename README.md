@@ -1,8 +1,9 @@
-# The Zephyr.js Project
+# JavaScript* Runtime for Zephyr* OS
 
-The Zephyr.js project provides an IoT web runtime environment with JavaScript
-APIs for the Zephyr operating system, based on the JerryScript engine. It is
-intended for systems with low memory where node.js with V8 is too big.
+The JavaScript Runtime for Zephyr OS project (ZJS for short) provides an IoT
+web runtime environment with JavaScript APIs for the Zephyr operating system,
+based on the JerryScript engine. It is intended for systems with low memory
+where node.js with V8 is too big.
 
 This code requires a local copy of JerryScript and Zephyr source, and we
 will upstream patches to those projects as appropriate, but this repo is for
@@ -10,7 +11,7 @@ everything else.
 
 ## Getting Started
 
-This section will walk you through building and running your first Zephyr.js
+This section will walk you through building and running your first ZJS
 application on Arduino 101.
 
 ### Prerequisites
@@ -31,7 +32,7 @@ $ sudo apt-get update
 $ sudo apt-get install cmake dfu-util git screen uglifyjs
 ```
 
-#### Clone the Zephyr.js repo
+#### Clone the ZJS repo
 Next, clone this git repo:
 ```bash
 $ git clone http://github.com/01org/zephyr.js.git
@@ -89,8 +90,8 @@ of the following commands with `sudo`.
 Whenever you open a new terminal to work with this repo, you need to set up
 environment variables.
 
-#### Set up Zephyr.js environment variables
-First, the Zephyr.js variables:
+#### Set up ZJS environment variables
+First, the ZJS variables:
 
 ```bash
 $ cd zephyr.js
@@ -142,7 +143,7 @@ unless you pull updates to the source tree, and usually not even then.)
 
 #### Build and flash the x86 application image
 Next, build the x86 image which includes the JerryScript engine and the
-Zephyr.js runtime support, along with your JavaScript application:
+ZJS runtime support, along with your JavaScript application:
 
 ```bash
 $ make JS=samples/TrafficLight.js
@@ -166,7 +167,7 @@ After this completes flashing successfully, reboot the device with the Master
 Reset button to start the application, and after a few seconds the onboard LEDs
 should start cycling.
 
-You have built and run your first Zephyr.js application!
+You have built and run your first ZJS application!
 
 If you want to make changes to the application, or run a different .js sample,
 you just need to repeat the last two steps with the desired JavaScript filename.
@@ -176,11 +177,10 @@ you just need to repeat the last two steps with the desired JavaScript filename.
 #### Set up serial console
 
 Without the serial console set up, you won't be able to see error messages and
-other output from your Zephyr.js application. To hook up the serial console, you
-need a USB to TTL Serial Cable, such as the TTL-232R-3V3. On that particular
-cable, you wire the black wire to ground on the Arduino, the orange wire to
-GPIO pin 0 (RX), and the yellow wire to GPIO pin 1 (TX). The other three are
-unused.
+other output from your ZJS application. To hook up the serial console, you need
+a USB to TTL Serial Cable, such as the TTL-232R-3V3. On that particular cable,
+you wire the black wire to ground on the Arduino, the orange wire to GPIO pin 0
+(RX), and the yellow wire to GPIO pin 1 (TX). The other three are unused.
 
 When you plug this in, the device should show up as something like
 `/dev/ttyUSB0`. You can then use the screen command to connect to the device
@@ -206,25 +206,25 @@ to connect to the device with a debugger. Then you can set breakpoints such as
 #### Additional details
 
 See below for more details, such as increasing the space available for your
-application on the Arduino 101, or how to use Zephyr.js with the FRDM-K64F.
+application on the Arduino 101, or how to use ZJS with the FRDM-K64F.
 
 ## Contributing
 
-If you want to contribute code to the Zephyr.js project, first you need to fork
-the project. The next step is to send a pull request (PR) for review to the
-Zephyr.js repository. The PR will be reviewed by the project team members. You
-need at least two plus-ones (+1) , "Look Good To Me (LGTM)" or other positive
-signals for the project members. Once you have gained the required signals the
-project maintainers will merge the PR.
+If you want to contribute code to the ZJS project, first you need to fork the
+project. The next step is to send a pull request (PR) for review to the ZJS
+repository. The PR will be reviewed by the project team members. You need at
+least two plus-ones (+1) , "Look Good To Me (LGTM)" or other positive signals
+for the project members. Once you have gained the required signals the project
+maintainers will merge the PR.
 
 ## File Descriptions
 * `zjs-env.sh` - Source this file to set environment variables and path to be
 able to use tools from ```scripts/``` anywhere.
 * `prj.conf` - The main configuration file for a Zephyr application; overrides
-settings from a defconfig file in the Zephyr tree. In the Zephyr.js builds, we
+settings from a defconfig file in the Zephyr tree. In the ZJS builds, we
 assemble the prj.conf file at build time from other fragments.
 * `prj.mdef` - Another configuration file for a Zephyr application; we use it to
-configure the heap size available to the Zephyr.js API.
+configure the heap size available to the ZJS API.
 
 ## Subdirectories
 - `arc/` - Contains sensor subsystem code for ARC side of the Arduino 101.
@@ -253,17 +253,15 @@ the wrong one is that the ARC side won't come up, because we'll be attempting
 to start it from the wrong place on the flash. (Note: both the ARC and X86
 images have to be rebuilt and reflashed when you switch partition sizes.)
 
-If you are using Zephyr.js with an Arduino 101 that you have converted to a
-256KB X86 partition (see below), you should run this command when you set up
-your shell:
+If you are using ZJS with an Arduino 101 that you have converted to a 256KB X86
+partition (see below), you should run this command when you set up your shell:
 ```bash
 $ source zjs-env.sh 256
 ```
 
 ## Building system images
-The Zephyr.js project uses a top-level Makefile to control the building of
-code from the project itself as well as the JerryScript and Zephyr projects it
-depends on.
+The ZJS project uses a top-level Makefile to control the building of code from
+he project itself as well as the JerryScript and Zephyr projects it depends on.
 
 To see the available make commands, type:
 
@@ -276,7 +274,7 @@ On Arduino 101, there are two embedded microcontrollers, an X86 and an ARC one.
 If you only need the x86 side, you can disable ARC with CONFIG_ARC_INIT=n in
 the Zephyr prj.conf. Otherwise, you need a working image running on it.
 
-For the best flexibility in using Zephyr.js, you should build and install our
+For the best flexibility in using ZJS, you should build and install our
 project's ARC image. Some of the APIs you can call from JavaScript won't work
 until you have this server image running there (for now this is just AIO API).
 This is because only the ARC MCU can perform certain functions, like converting
@@ -354,7 +352,7 @@ shows up as.)
 
 Then, follow [these instructions] (https://developer.mbed.org/handbook/Firmware-FRDM-K64F) to update your firmware.
 
-Next, you can try to build Zephyr.js for the platform:
+Next, you can try to build ZJS for the platform:
 ```bash
 $ make BOARD=frdm_k64f JS=samples/HelloWorld.js
 $ cp outdir/zephyr.bin /media/<USERNAME>/MBED/
@@ -363,8 +361,8 @@ $ cp outdir/zephyr.bin /media/<USERNAME>/MBED/
 After you copy the new .bin file to that directory, the device will reboot,
 blink an LED quickly as it writes the image somewhere, and then you should see
 the device reconnect as a USB storage device to your PC. Then you can press the
-Reset button to run the Zephyr image. You should see "Hello, Zephyr.js world!"
-output on the serial console in less than a second.
+Reset button to run the Zephyr image. You should see "Hello, ZJS world!" output
+on the serial console in less than a second.
 
 If something doesn't work, you may want to establish that you're able to
 upload the K64F [hello world application] (https://developer.mbed.org/platforms/FRDM-K64F/#flash-a-project-binary).
@@ -378,3 +376,5 @@ $ cp outdir/zephyr.bin /media/<USERNAME>/MBED/
 
 Using the same procedure as above, once you hit Reset you should see
 "Hello World!" within a second on your serial console.
+
+*Other names and brands may be claimed as the property of others.

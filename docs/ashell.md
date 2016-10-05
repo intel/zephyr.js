@@ -19,8 +19,7 @@ Compilation
 This command will enable the shell compilation:
 `make DEV=ashell`
 
-Dev mode will append all the functionality from Zephyr.js
-so it might not fit in ROM.
+Dev mode will append all the functionality from ZJS, so it might not fit in ROM.
 
 Commands
 --------
@@ -158,5 +157,5 @@ HEX> run test.js
 Problems and known issues
 ========================
 
-Zephyr.js will only execute time-outs or events on the first run.
-Sometimes there is a duplicated character written to the ACM.
+ZJS will only execute timeouts or events on the first run. Sometimes there is
+a duplicated character written to the ACM.

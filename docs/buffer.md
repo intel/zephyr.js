@@ -1,5 +1,5 @@
-Zephyr.js API for Buffer
-========================
+ZJS API for Buffer
+==================
 
 * [Introduction](#introduction)
 * [Web IDL](#web-idl)
@@ -10,8 +10,8 @@ Introduction
 ------------
 Buffer is a [node.js API]
 (https://nodejs.org/dist/latest-v6.x/docs/api/buffer.html)
-to read and write binary data accurately from JavaScript. Zephyr.js supports a
-minimal subset of this API that will be expanded as the need arises.
+to read and write binary data accurately from JavaScript. ZJS supports a minimal
+subset of this API that will be expanded as the need arises.
 
 Web IDL
 -------

@@ -1,5 +1,5 @@
 if [ "X$(basename -z -- "$0")" "==" "Xzjs-env.sh" ]; then
-    echo "Source this file (do NOT execute it!) to set up the Zephyr JS dev environment."
+    echo "Source this file (do NOT execute it!) to set up the ZJS dev environment."
     exit
 fi
 

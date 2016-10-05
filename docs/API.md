@@ -1,7 +1,7 @@
-JS API for Zephyr.js
-====================
+JavaScript* Runtime for Zephyr* OS (ZJS) API
+============================================
 
-These are the current APIs supported by Zephyr.js:
+These are the current APIs supported by ZJS:
 
 I/O
 ---

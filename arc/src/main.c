@@ -396,7 +396,7 @@ static void process_aio_updates()
 
 void main(void)
 {
-    PRINT("Sensor core running Zephyr.js ARC support image\n");
+    PRINT("Sensor core running ZJS ARC support image\n");
 
     nano_sem_init(&arc_sem);
     nano_sem_give(&arc_sem);

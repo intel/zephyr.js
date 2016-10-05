@@ -1,5 +1,5 @@
-Zephyr.js API for Grove LCD
-===========================
+ZJS API for Grove LCD
+=====================
 
 * [Introduction](#introduction)
 * [Web IDL](#web-idl)

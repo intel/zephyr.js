@@ -1,5 +1,5 @@
-Zephyr.js API for Bluetooth Low Energy (BLE)
-============================================
+ZJS API for Bluetooth Low Energy (BLE)
+======================================
 
 * [Introduction](#introduction)
 * [Web IDL](#web-idl)

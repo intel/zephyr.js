@@ -1,5 +1,5 @@
-Zephyr.js Board Support for FRDM-K64F
-=======================================
+ZJS Board Support for FRDM-K64F
+===============================
 
 * [Introduction](#introduction)
 * [Web IDL](#web-idl)

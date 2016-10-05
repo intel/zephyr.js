@@ -1,5 +1,5 @@
-Zephyr.js API for Timers
-========================
+ZJS API for Timers
+==================
 
 * [Introduction](#introduction)
 * [Web IDL](#web-idl)
@@ -8,8 +8,8 @@ Zephyr.js API for Timers
 
 Introduction
 ------------
-Zephyr.js provides the familiar setTimeout and setInterval interfaces. They
-are always available.
+ZJS provides the familiar setTimeout and setInterval interfaces. They are always
+available.
 
 Web IDL
 -------
