@@ -11,14 +11,6 @@
 
 #define ZJS_UNDEFINED jerry_create_undefined()
 
-#ifdef DEBUG_BUILD
-#define DBG_PRINT \
-    PRINT("%s:%d %s(): ", __FILE__, __LINE__, __func__); \
-    PRINT
-#else
-#define DBG_PRINT(fmat ...) do {} while(0);
-#endif
-
 #ifdef ZJS_LINUX_BUILD
 #include <stdlib.h>
 #define zjs_malloc(sz) malloc(sz)

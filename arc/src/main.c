@@ -280,7 +280,7 @@ static void handle_glcd(struct zjs_ipm_message* msg)
             if (!glcd) {
                 error_code = ERROR_IPM_OPERATION_FAILED;
             } else {
-                PRINT("Grove LCD initialized\n");
+                DBG_PRINT("Grove LCD initialized\n");
             }
         }
         break;
@@ -293,7 +293,7 @@ static void handle_glcd(struct zjs_ipm_message* msg)
         } else {
             snprintf(str, MAX_BUFFER_SIZE, "%s", buffer);
             glcd_print(glcd, str, strnlen(str, MAX_BUFFER_SIZE));
-            PRINT("Grove LCD print: %s\n", str);
+            DBG_PRINT("Grove LCD print: %s\n", str);
         }
         break;
     case TYPE_GLCD_CLEAR:
