@@ -4,6 +4,10 @@
 // will print out hello world to the console, then echo back any characters
 // that are typed and store the string. If enter is pressed, it will print
 // out the saved string and clear it.
+// On the Arduino 101, this sample can be used by hooking up a USB-to-serial
+// device to the RX and TX lines (pins 0 and 1 respectively).
+
+print("Starting UART example");
 
 var board = require('uart');
 

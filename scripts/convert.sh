@@ -62,9 +62,14 @@ last_char=0
 # read 1 character at a time (-n1)
 while IFS= read $FLAGS char
 do
+    # Case for escaping a quote (") character
     if [ "$char" = "\"" ]; then
         printf "\\\\$char" >> $OUTPUT
     elif [ "$last_char" = $'\\' ]; then
+        # Special case for new line and carrage return that can appear in a
+        # string e.g. print("some string\n");
+        # This is needed because BASH reads the "\n" as two characters, but
+        # in a C string it is just one character.
         if [ "$char" = $'r' ] || [ "$char" = $'n' ]; then
             printf "\\\\$char" >> $OUTPUT
         fi

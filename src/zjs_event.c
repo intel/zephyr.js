@@ -542,7 +542,7 @@ bool zjs_trigger_event_now(jerry_value_t obj,
     trigger->handle = h;
     trigger->post = post;
 
-    DBG_PRINT(("triggering event %s now\n", event));
+    DBG_PRINT("triggering event %s now\n", event);
 
     zjs_edit_callback_handle(callback_id, trigger);
 

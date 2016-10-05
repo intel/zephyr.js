@@ -36,12 +36,6 @@ static uart_dev_map device_map[] = {
     { "UART_1", "tty1" }
 };
 
-#define ZJS_GET_STRING(jval, name) \
-    int name##_sz = jerry_get_string_size(jval); \
-    char name[name##_sz]; \
-    int name##_len = jerry_string_to_char_buffer(jval, (jerry_char_t *)name, name##_sz); \
-    name[name##_len] = '\0';
-
 #define UART_BUFFER_INITIAL_SIZE    16
 
 static uart_handle* handle = NULL;
@@ -65,14 +59,14 @@ static jerry_value_t make_uart_error(const char* name, const char* msg)
     if (name) {
         zjs_obj_add_string(ret, name, "name");
     } else {
-        DBG_PRINT(("error must have a name\n"));
+        DBG_PRINT("error must have a name\n");
         jerry_release_value(ret);
         return ZJS_UNDEFINED;
     }
     if (msg) {
         zjs_obj_add_string(ret, msg, "message");
     } else {
-        DBG_PRINT(("error must have a message\n"));
+        DBG_PRINT("error must have a message\n");
         jerry_release_value(ret);
         return ZJS_UNDEFINED;
     }
@@ -99,7 +93,7 @@ static void post_event(void* h)
 static void uart_c_callback(void* h)
 {
     if (!handle) {
-        DBG_PRINT(("UART handle not found\n"));
+        DBG_PRINT("UART handle not found\n");
         return;
     }
     if (handle->size >= handle->min) {
@@ -143,7 +137,7 @@ static jerry_value_t uart_write(const jerry_value_t function_obj,
     zjs_make_promise(promise, NULL, NULL);
 
     if (!jerry_value_is_object(argv[0])) {
-        DBG_PRINT(("first parameter must be a Buffer"));
+        DBG_PRINT("first parameter must be a Buffer");
         jerry_value_t error = make_uart_error("TypeMismatchError",
                 "first parameter must be a Buffer");
         zjs_reject_promise(promise, &error, 1);
@@ -151,8 +145,6 @@ static jerry_value_t uart_write(const jerry_value_t function_obj,
     }
 
     zjs_buffer_t* buffer = zjs_buffer_find(argv[0]);
-
-    //ZJS_GET_STRING(argv[0], data);
 
     uart_irq_tx_enable(uart_dev);
 
@@ -175,7 +167,7 @@ static jerry_value_t uart_set_read_range(const jerry_value_t function_obj,
                                          const jerry_length_t argc)
 {
     if (!jerry_value_is_number(argv[0]) || !jerry_value_is_number(argv[1])) {
-        DBG_PRINT(("parameters must be min and max read size\n"));
+        DBG_PRINT("parameters must be min and max read size\n");
         return ZJS_UNDEFINED;
     }
 
@@ -212,7 +204,7 @@ static jerry_value_t uart_init(const jerry_value_t function_obj,
     zjs_make_promise(promise, NULL, NULL);
 
     if (!jerry_value_is_object(argv[0])) {
-        DBG_PRINT(("first parameter must be UART options object\n"));
+        DBG_PRINT("first parameter must be UART options object\n");
         jerry_value_t error = make_uart_error("TypeMismatchError",
                 "first parameter must be UART options");
         zjs_reject_promise(promise, &error, 1);
@@ -220,7 +212,29 @@ static jerry_value_t uart_init(const jerry_value_t function_obj,
     }
 
     jerry_value_t port_val = zjs_get_property(argv[0], "port");
-    ZJS_GET_STRING(port_val, port);
+
+    int sz = jerry_get_string_size(port_val);
+    if (sz > 16) {
+        DBG_PRINT("port length is too long\n");
+        jerry_value_t error = make_uart_error("TypeMismatchError",
+                "port length is too long");
+        zjs_reject_promise(promise, &error, 1);
+        return promise;
+    }
+    char port[sz];
+    int len = jerry_string_to_char_buffer(port_val, (jerry_char_t *)port, sz);
+    port[len] = '\0';
+
+    jerry_release_value(port_val);
+
+    if (sz != len) {
+        DBG_PRINT("size mismatch\n");
+        jerry_value_t error = make_uart_error("TypeMismatchError",
+                "size mismatch");
+        zjs_reject_promise(promise, &error, 1);
+        return promise;
+    }
+
     for (i = 0; i < (sizeof(device_map) / sizeof(device_map[0])); ++i) {
         if (strncmp(device_map[0].port, port, 4) == 0) {
             uart_dev = device_get_binding((char*)device_map[0].name);
@@ -228,7 +242,7 @@ static jerry_value_t uart_init(const jerry_value_t function_obj,
         }
     }
     if (uart_dev == NULL) {
-        DBG_PRINT(("could not find port %s\n", port));
+        DBG_PRINT("could not find port %s\n", port);
         jerry_value_t error = make_uart_error("NotFoundError",
                 "could not find port provided");
         zjs_reject_promise(promise, &error, 1);
