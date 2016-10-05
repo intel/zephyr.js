@@ -28,6 +28,7 @@
 #include <misc/printk.h>
 #include <misc/reboot.h>
 #include <ctype.h>
+#include <jerry-port.h>
 
 #include "acm-uart.h"
 #include "acm-shell.h"
@@ -67,14 +68,14 @@ const char MSG_EXIT[] = ANSI_FG_GREEN "Back to shell!";
 
 const char READY_FOR_RAW_DATA[] =
     "Ready for JavaScript. \r\n" \
-    "\tCtrl+Z to finish transfer.\r\n" \
+    "\tCtrl+Z or Ctrl+D to finish transfer.\r\n" \
     "\tCtrl+X or Ctrl+C to cancel.";
 
 const char MSG_IMMEDIATE_MODE[] =
     "Ready to evaluate JavaScript.\r\n" \
-    "\tCtrl+X or Ctrl+C to return to shell.";
+    "\tCtrl+D or Ctrl+C to return to shell.";
 
-const char hex_prompt[] = "HEX> ";
+const char hex_prompt[] = "[HEX]\r\n";
 const char raw_prompt[] = ANSI_FG_YELLOW "RAW> " ANSI_FG_RESTORE;
 const char eval_prompt[] = ANSI_FG_GREEN "js> " ANSI_FG_RESTORE;
 
@@ -95,7 +96,10 @@ int32_t ashell_get_filename_buffer(const char *buf, char *destination)
     if (len == 0)
         return RET_ERROR;
 
-    buf = ashell_get_next_arg_s(buf, len, destination, MAX_FILENAME_SIZE, &arg_len);
+    if (buf[0] == '-')
+        return 0;
+
+    ashell_get_next_arg_s(buf, len, destination, MAX_FILENAME_SIZE, &arg_len);
 
     if (arg_len == 0) {
         *destination = '\0';
@@ -189,6 +193,13 @@ int32_t ashell_rename(char *buf)
     return RET_OK;
 }
 
+int32_t ashell_error(char *buf)
+{
+    printk("[Error](%s)\n", buf);
+    jerry_port_log(JERRY_LOG_LEVEL_ERROR, "stderr test (%s)\n", buf);
+    return 0;
+}
+
 int32_t ashell_reboot(char *buf)
 {
     acm_println("Rebooting now!");
@@ -228,7 +239,10 @@ int32_t ashell_list_dir(char *buf)
         return res;
     }
 
-    printf(ANSI_FG_LIGHT_BLUE "      .\n      ..\n" ANSI_FG_RESTORE);
+    if (shell.state_flags & !kShellTransferIhex) {
+        printf(ANSI_FG_LIGHT_BLUE "      .\n      ..\n" ANSI_FG_RESTORE);
+    }
+
     for (;;) {
         res = fs_readdir(&dp, &entry);
 
@@ -258,6 +272,16 @@ int32_t ashell_print_file(char *buf)
     char data[READ_BUFFER_SIZE];
     ZFILE *file;
     size_t count;
+    size_t line = 1;
+
+    // Show not printing
+    bool hidden = ashell_check_parameter(buf, 'v');
+    bool lines = ashell_check_parameter(buf, 'n');
+    if (lines)
+        printk(" Print lines \n");
+
+    if (hidden)
+        printk(" Print hidden \n");
 
     if (ashell_get_filename_buffer(buf, filename) <= 0) {
         return RET_ERROR;
@@ -285,17 +309,42 @@ int32_t ashell_print_file(char *buf)
     }
 
     csseek(file, 0, SEEK_SET);
+    if (lines)
+        acm_printf("%5d  ", line++);
+
     do {
         count = csread(data, 4, 1, file);
         for (int t = 0; t < count; t++) {
-            if (data[t] == '\n' || data[t] == '\r')
+            uint8_t byte = data[t];
+            if (byte == '\n' || byte == '\r') {
                 acm_write("\r\n", 2);
-            else
-                acm_writec(data[t]);
+                if (lines)
+                    acm_printf("%5d  ", line++);
+
+            } else {
+                if (hidden && !isprint(byte)) {
+                    acm_printf("(%x)", byte);
+                } else
+                    acm_writec(byte);
+            }
         }
     } while (count > 0);
 
+    acm_write("\r\n", 2);
     csclose(file);
+    return RET_OK;
+}
+
+int32_t ashell_parse_javascript(char *buf)
+{
+    char filename[MAX_FILENAME_SIZE];
+    if (ashell_get_filename_buffer(buf, filename) <= 0) {
+        return RET_ERROR;
+    }
+
+    bool verbose = ashell_check_parameter(buf, 'v');
+
+    javascript_parse_code(filename, verbose);
     return RET_OK;
 }
 
@@ -307,6 +356,11 @@ int32_t ashell_run_javascript(char *buf)
     }
 
     printk("[RUN][%s]\r\n", filename);
+
+    if (shell.state_flags & kShellTransferIhex) {
+        acm_print("[RUN]\n");
+    }
+
     javascript_run_code(filename);
     return RET_OK;
 }
@@ -343,6 +397,7 @@ int32_t ashell_eval_javascript(const char *buf, uint32_t len)
         uint8_t byte = *buf++;
         if (!isprint(byte)) {
             switch (byte) {
+            case ASCII_END_OF_TRANS:
             case ASCII_SUBSTITUTE:
             case ASCII_END_OF_TEXT:
             case ASCII_CANCEL:
@@ -367,11 +422,11 @@ int32_t ashell_raw_capture(const char *buf, uint32_t len)
         uint8_t byte = *buf++;
         if (!isprint(byte)) {
             switch (byte) {
+            case ASCII_END_OF_TRANS:
             case ASCII_SUBSTITUTE:
                 acm_println(MSG_FILE_SAVED);
                 shell.state_flags &= ~kShellCaptureRaw;
                 acm_set_prompt(NULL);
-                cswrite(&eol, 1, 1, file_code);
                 ashell_close_capture();
                 return RET_OK;
                 break;
@@ -381,7 +436,7 @@ int32_t ashell_raw_capture(const char *buf, uint32_t len)
                 shell.state_flags &= ~kShellCaptureRaw;
                 acm_set_prompt(NULL);
                 ashell_discard_capture();
-                break;
+                return RET_OK;
             case ASCII_CR:
             case ASCII_IF:
                 acm_println("");
@@ -400,7 +455,7 @@ int32_t ashell_raw_capture(const char *buf, uint32_t len)
     }
 
     cswrite(&eol, 1, 1, file_code);
-    return RET_OK;
+    return RET_OK_NO_RET;
 }
 
 int32_t ashell_read_data(char *buf)
@@ -509,6 +564,12 @@ int32_t ashell_test(char *buf)
     return RET_OK;
 }
 
+int32_t ashell_ping(char *buf)
+{
+    acm_println("[PONG]\r\n");
+    return RET_OK;
+}
+
 int32_t ashell_clear(char *buf)
 {
     acm_print(ANSI_CLEAR);
@@ -527,9 +588,13 @@ int32_t ashell_check_control(const char *buf, uint32_t len)
         uint8_t byte = *buf++;
         if (!isprint(byte)) {
             switch (byte) {
-            case ASCII_SUBSTITUTE:
-                DBG("<CTRL + Z>");
-                break;
+                case ASCII_SUBSTITUTE:
+                    DBG("<CTRL + Z>");
+                    break;
+
+                case ASCII_END_OF_TRANS:
+                    DBG("<CTRL + D>");
+                    break;
             }
         }
         len--;
@@ -539,32 +604,35 @@ int32_t ashell_check_control(const char *buf, uint32_t len)
 
 #define ASHELL_COMMAND(name,syntax,cmd) {name, syntax, cmd}
 
-static const struct shell_cmd commands[] =
+static const struct ashell_cmd commands[] =
 {
     ASHELL_COMMAND("help",  "This help", ashell_help),
     ASHELL_COMMAND("eval",  "Evaluate JavaScript in realtime"                ,ashell_js_immediate_mode),
     ASHELL_COMMAND("clear", "Clear the terminal screen"                      ,ashell_clear),
     ASHELL_COMMAND("load",  "[FILE] Saves the input text into a file"        ,ashell_read_data),
     ASHELL_COMMAND("run",   "[FILE] Runs the JavaScript program in the file" ,ashell_run_javascript),
+    ASHELL_COMMAND("parse", "[FILE] Check if the JS syntax is correct"       ,ashell_parse_javascript),
     ASHELL_COMMAND("stop",  "Stops current JavaScript execution"             ,ashell_stop_javascript),
 
     ASHELL_COMMAND("ls",    "[FILE] List directory contents or file stat"    ,ashell_list_dir),
-    ASHELL_COMMAND("cat",   "[FILE] Print the file contents on the stdout"   ,ashell_print_file),
+    ASHELL_COMMAND("cat",   "[FILE] Print the file contents of a file"       ,ashell_print_file),
     ASHELL_COMMAND("du",    "[FILE] Estimate file space usage"               ,ashell_disk_usage),
     ASHELL_COMMAND("rm",    "[FILE] Remove file or directory"                ,ashell_remove_file),
     ASHELL_COMMAND("mv",    "[SOURCE] [DEST] Move a file to destination"     ,ashell_rename),
 
     ASHELL_COMMAND("rmdir", "[TODO]"                                         ,ashell_remove_dir),
     ASHELL_COMMAND("mkdir", "[TODO]"                                         ,ashell_make_dir),
-    ASHELL_COMMAND("test",  ""                                               ,ashell_test),
-    ASHELL_COMMAND("at",    "OK"                                             ,ashell_at),
+    ASHELL_COMMAND("test",  "Runs your current test"                         ,ashell_test),
+    ASHELL_COMMAND("error", "Prints an error using JerryScript"              ,ashell_error),
+    ASHELL_COMMAND("ping",  "Prints '[PONG]' to check that we are alive"     ,ashell_ping),
+    ASHELL_COMMAND("at",    "OK used by the driver when initializing"        ,ashell_at),
 
     ASHELL_COMMAND("set",   "Sets the input mode for 'load' accept data\r\n\ttransfer raw\r\n\ttransfer ihex\t",ashell_set_state),
     ASHELL_COMMAND("get",   "Get states on the shell"                        ,ashell_get_state),
     ASHELL_COMMAND("reboot","Reboots the device"                             ,ashell_reboot)
 };
 
-#define ASHELL_COMMANDS_COUNT (sizeof(commands)/sizeof(struct shell_cmd))
+#define ASHELL_COMMANDS_COUNT (sizeof(commands)/sizeof(*commands))
 
 int32_t ashell_help(char *buf)
 {
@@ -609,13 +677,28 @@ int32_t ashell_main_state(char *buf, uint32_t len)
     /* Tokenize and isolate the command */
     char *next = ashell_get_token_arg(buf);
 
+    /* Begin command */
+    if (shell.state_flags & kShellTransferIhex) {
+        acm_print("[BCMD]\n");
+    }
+
     for (uint8_t t = 0; t < ASHELL_COMMANDS_COUNT; t++) {
         if (!strcmp(commands[t].cmd_name, buf)) {
-            return commands[t].cb(next);
+            int32_t res = commands[t].cb(next);
+            /* End command */
+            if (shell.state_flags & kShellTransferIhex) {
+                acm_print("[ECMD]\n");
+            }
+            return res;
         }
     }
 
-    acm_printf("%s: command not found. \r\n", buf);
-    acm_println("Type 'help' for available commands.");
+    /* Shell didn't recognize the command */
+    if (shell.state_flags & kShellTransferIhex) {
+        acm_print("[ERRCMD]\n");
+    } else {
+        acm_printf("%s: command not found. \r\n", buf);
+        acm_println("Type 'help' for available commands.");
+    }
     return RET_UNKNOWN;
 }
