@@ -89,6 +89,7 @@ ssize_t cssize(ZFILE *file)
         return -1;
 
     off_t file_len = fs_tell(file);
+    csseek(file, 0, SEEK_SET);
     return file_len;
 }
 
@@ -99,11 +100,9 @@ ssize_t cswrite(const char * ptr, size_t size, size_t count, ZFILE * fp)
 
     brw = fs_write(fp, (const char *)ptr, size);
     if (brw < 0) {
-        printk("Failed writing to file [%d]\n", brw);
+        printk("Failed writing to file [%d]\n", (int) brw);
         fs_close(fp);
         return 0;
-    } else {
-        printk("Saved [%d]\n", brw);
     }
 
     return brw;
@@ -113,7 +112,7 @@ ssize_t csread(char * ptr, size_t size, size_t count, ZFILE * fp)
 {
     ssize_t brw = fs_read(fp, ptr, size);
     if (brw < 0) {
-        printk("Failed reading file [%d]\n", brw);
+        printk("Failed reading file [%d]\n", (int) brw);
         fs_close(fp);
         return -1;
     }

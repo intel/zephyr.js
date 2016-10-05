@@ -39,6 +39,9 @@
 /* CTLR-Z */
 #define ASCII_SUBSTITUTE         0x1A
 
+/* CTLR-D End of transmission */
+#define ASCII_END_OF_TRANS       0x04
+
 #define ASCII_CR                 '\r'
 #define ASCII_IF                 '\n'
 #define ASCII_TAB                '\t'

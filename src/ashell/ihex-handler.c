@@ -77,7 +77,9 @@ ihex_bool_t ihex_data_read(struct ihex_state *ihex,
         unsigned long address = (unsigned long)IHEX_LINEAR_ADDRESS(ihex);
         ihex->data[ihex->length] = 0;
 
-        printk("%d::%d:: \n%s \n", (int)address, ihex->length, ihex->data);
+        DBG("%d::%d:: \n%s \n", (int)address, ihex->length, ihex->data);
+        acm_write("[ACK]", 5);
+        acm_write("\n", 1);
 
         csseek(zfile, address, SEEK_SET);
         size_t written = cswrite(ihex->data, ihex->length, 1, zfile);
@@ -108,7 +110,8 @@ uint32_t ihex_process_init()
 {
     upload_state = UPLOAD_START;
     printk("[READY]\n");
-    acm_println("[READY]");
+    acm_print("\n");
+    acm_print("[RDY]\n");
 
     ihex_begin_read(&ihex);
     zfile = csopen(TEMPORAL_FILENAME, "w+");
@@ -173,7 +176,8 @@ uint32_t ihex_process_finish()
 
     csclose(zfile);
     ihex_end_read(&ihex);
-    printf("[EOF]\n");
+    acm_print("[EOF]\n");
+
     printf("Saved file '%s'\n", TEMPORAL_FILENAME);
 
     ashell_process_start();
@@ -182,14 +186,6 @@ uint32_t ihex_process_finish()
 
 void ihex_print_status()
 {
-    if (zfile != NULL) {
-        printf("[CODE START]\n");
-        printf((char *)zfile);
-        printf("[CODE END]\n");
-    }
-
-    if (marker)
-        printf("[Marker]\n");
 }
 
 void ihex_process_start()
