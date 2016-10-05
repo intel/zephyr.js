@@ -274,7 +274,7 @@ static jerry_value_t zjs_aio_pin_on(const jerry_value_t function_obj,
 
         handle->pin_obj = this;
         jerry_set_object_native_handle(this, (uintptr_t)handle, NULL);
-        handle->callback_id = zjs_add_callback(argv[1], handle,
+        handle->callback_id = zjs_add_callback(argv[1], this, handle,
                                                zjs_aio_pre_callback, NULL);
         zjs_aio_ipm_send_async(TYPE_AIO_PIN_SUBSCRIBE, pin, handle);
     }
@@ -300,7 +300,7 @@ static jerry_value_t zjs_aio_pin_read_async(const jerry_value_t function_obj,
         return zjs_error("zjs_aio_pin_read_async: could not allocate handle");
 
     handle->pin_obj = this;
-    handle->callback_id = zjs_add_callback(argv[0], handle,
+    handle->callback_id = zjs_add_callback(argv[0], this, handle,
                                            zjs_aio_pre_callback,
                                            zjs_aio_free_callback);
 

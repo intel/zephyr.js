@@ -153,7 +153,10 @@ void zjs_fulfill_promise(jerry_value_t obj, jerry_value_t argv[], uint32_t argc)
     if (!handle->then_set) {
         handle->then = jerry_create_external_function(null_function);
     }
-    handle->then_id = zjs_add_callback_once(handle->then, handle, pre_then,
+
+    handle->then_id = zjs_add_callback_once(handle->then,
+                                            obj, handle,
+                                            pre_then,
                                             post_promise);
     handle->then_argv = argv;
     handle->then_argc = argc;
@@ -175,7 +178,11 @@ void zjs_reject_promise(jerry_value_t obj, jerry_value_t argv[], uint32_t argc)
     if (!handle->catch_set) {
         handle->catch = jerry_create_external_function(null_function);
     }
-    handle->catch_id = zjs_add_callback_once(handle->catch, handle, pre_catch,
+
+    handle->catch_id = zjs_add_callback_once(handle->catch,
+                                             obj,
+                                             handle,
+                                             pre_catch,
                                              post_promise);
     handle->catch_argv = argv;
     handle->catch_argc = argc;

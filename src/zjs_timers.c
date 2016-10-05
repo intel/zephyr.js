@@ -48,10 +48,11 @@ jerry_value_t* pre_timer(void* h, uint32_t* argc)
  * argc         Number of arguments in argv
  */
 static zjs_timer_t* add_timer(uint32_t interval,
-                                     jerry_value_t callback,
-                                     bool repeat,
-                                     const jerry_value_t argv[],
-                                     uint32_t argc)
+                              jerry_value_t callback,
+                              jerry_value_t this,
+                              bool repeat,
+                              const jerry_value_t argv[],
+                              uint32_t argc)
 {
     int i;
     zjs_timer_t *tm;
@@ -67,7 +68,7 @@ static zjs_timer_t* add_timer(uint32_t interval,
     tm->repeat = repeat;
     tm->completed = false;
     tm->next = zjs_timers;
-    tm->callback_id = zjs_add_callback(callback, tm, pre_timer, NULL);
+    tm->callback_id = zjs_add_callback(callback, this, tm, pre_timer, NULL);
     tm->argc = argc;
     tm->argv = zjs_malloc(sizeof(jerry_value_t) * argc);
     for (i = 0; i < argc; ++i) {
@@ -122,7 +123,7 @@ static jerry_value_t add_timer_helper(const jerry_value_t function_obj,
     jerry_value_t callback = argv[0];
     jerry_value_t timer_obj = jerry_create_object();
 
-    zjs_timer_t* handle = add_timer(interval, callback, repeat, argv, argc - 2);
+    zjs_timer_t* handle = add_timer(interval, callback, this, repeat, argv, argc - 2);
     if (handle->callback_id == -1)
         return zjs_error("native_set_interval_handler: timer alloc failed");
     jerry_set_object_native_handle(timer_obj, (uintptr_t)handle, NULL);

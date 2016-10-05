@@ -24,6 +24,7 @@ struct zjs_callback_t {
     zjs_pre_callback_func pre;
     zjs_post_callback_func post;
     jerry_value_t js_func;
+    jerry_value_t this;
     uint8_t once;
     int max_funcs;
     int num_funcs;
@@ -151,6 +152,7 @@ jerry_value_t* zjs_get_callback_func_list(int32_t id, int* count)
 }
 
 int32_t zjs_add_callback_list(jerry_value_t js_func,
+                              jerry_value_t this,
                               void* handle,
                               zjs_pre_callback_func pre,
                               zjs_post_callback_func post,
@@ -227,6 +229,7 @@ int32_t zjs_add_callback_list(jerry_value_t js_func,
 }
 
 int32_t add_callback(jerry_value_t js_func,
+                     jerry_value_t this,
                      void* handle,
                      zjs_pre_callback_func pre,
                      zjs_post_callback_func post,
@@ -247,6 +250,7 @@ int32_t add_callback(jerry_value_t js_func,
     new_cb->signal = 0;
     new_cb->js->id = new_id();
     new_cb->js->js_func = jerry_acquire_value(js_func);
+    new_cb->js->this = this;
     new_cb->js->pre = pre;
     new_cb->js->post = post;
     new_cb->js->handle = handle;
@@ -266,19 +270,21 @@ int32_t add_callback(jerry_value_t js_func,
 }
 
 int32_t zjs_add_callback(jerry_value_t js_func,
+                         jerry_value_t this,
                          void* handle,
                          zjs_pre_callback_func pre,
                          zjs_post_callback_func post)
 {
-    return add_callback(js_func, handle, pre, post, 0);
+    return add_callback(js_func, this, handle, pre, post, 0);
 }
 
 int32_t zjs_add_callback_once(jerry_value_t js_func,
+                              jerry_value_t this,
                               void* handle,
                               zjs_pre_callback_func pre,
                               zjs_post_callback_func post)
 {
-    return add_callback(js_func, handle, pre, post, 1);
+    return add_callback(js_func, this, handle, pre, post, 1);
 }
 
 void zjs_remove_callback(int32_t id)
@@ -389,7 +395,7 @@ void zjs_call_callback(int32_t i)
 
             DBG_PRINT("calling callback id %ld with %lu args\n", cb_map[i]->js->id, argc);
             // TODO: Use 'this' in callback module
-            jerry_call_function(cb_map[i]->js->js_func, ZJS_UNDEFINED, args, argc);
+            jerry_call_function(cb_map[i]->js->js_func, cb_map[i]->js->this, args, argc);
             if (cb_map[i]->js->post) {
                 cb_map[i]->js->post(cb_map[i]->js->handle, &ret_val);
             }
@@ -409,7 +415,7 @@ void zjs_call_callback(int32_t i)
             DBG_PRINT("calling callback list id %ld with %lu args\n", cb_map[i]->js->id, argc);
 
             for (j = 0; j < cb_map[i]->js->num_funcs; ++j) {
-                jerry_call_function(cb_map[i]->js->func_list[j], ZJS_UNDEFINED, args, argc);
+                jerry_call_function(cb_map[i]->js->func_list[j], cb_map[i]->js->this, args, argc);
             }
             if (cb_map[i]->js->post) {
                 cb_map[i]->js->post(cb_map[i]->js->handle, &ret_val);
