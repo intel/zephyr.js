@@ -110,6 +110,11 @@ static uint32_t pin_read(uint8_t pin)
 static void queue_message(struct zjs_ipm_message* incoming_msg)
 {
     struct zjs_ipm_message* msg = msg_queue;
+    if (!msg) {
+        PRINT("message is NULL\n");
+        return;
+    }
+
     nano_isr_sem_take(&arc_sem, TICKS_UNLIMITED);
     while(msg && msg < end_of_queue_ptr) {
        if (msg->id == MSG_ID_DONE) {
@@ -131,7 +136,9 @@ static void queue_message(struct zjs_ipm_message* incoming_msg)
 static void ipm_msg_receive_callback(void *context, uint32_t id, volatile void *data)
 {
     struct zjs_ipm_message *incoming_msg = (struct zjs_ipm_message*)(*(uintptr_t *)data);
-    queue_message(incoming_msg);
+    if (incoming_msg) {
+        queue_message(incoming_msg);
+    }
 }
 
 static void handle_aio(struct zjs_ipm_message* msg)
