@@ -39,54 +39,28 @@ static void zjs_aio_free_handle(aio_handle_t *handle)
     zjs_free(handle);
 }
 
-static zjs_ipm_message_t* zjs_aio_alloc_msg()
-{
-    zjs_ipm_message_t *msg = zjs_malloc(sizeof(zjs_ipm_message_t));
-    if (!msg) {
-        PRINT("zjs_aio_alloc_msg: cannot allocate message\n");
-        return NULL;
-    } else {
-        memset(msg, 0, sizeof(zjs_ipm_message_t));
-    }
-
-    msg->id = MSG_ID_AIO;
-    msg->flags = 0 | MSG_SAFE_TO_FREE_FLAG;
-    msg->error_code = ERROR_IPM_NONE;
-    return msg;
-}
-
-static void zjs_aio_free_msg(zjs_ipm_message_t* msg)
-{
-    if (!msg)
-        return;
-
-    if (msg->flags & MSG_SAFE_TO_FREE_FLAG) {
-        zjs_free(msg);
-    } else {
-        PRINT("zjs_aio_free_msg: error! do not free message\n");
-    }
-}
-
 static bool zjs_aio_ipm_send_async(uint32_t type, uint32_t pin, void *data) {
-    zjs_ipm_message_t *msg = zjs_aio_alloc_msg();
-    msg->type = type;
-    msg->user_data = data;
-    msg->data.aio.pin = pin;
-    msg->data.aio.value = 0;
+    zjs_ipm_message_t msg;
+    msg.id = MSG_ID_AIO;
+    msg.flags = 0;
+    msg.type = type;
+    msg.user_data = data;
+    msg.data.aio.pin = pin;
+    msg.data.aio.value = 0;
 
-    int success = zjs_ipm_send(MSG_ID_AIO, msg);
+    int success = zjs_ipm_send(MSG_ID_AIO, &msg);
     if (success != 0) {
         PRINT("zjs_aio_ipm_send: failed to send message\n");
         return false;
     }
 
-    zjs_aio_free_msg(msg);
     return true;
 }
 
 static bool zjs_aio_ipm_send_sync(zjs_ipm_message_t* send,
                                   zjs_ipm_message_t* result) {
-    send->flags |= MSG_SYNC_FLAG;
+    send->id = MSG_ID_AIO;
+    send->flags = 0 | MSG_SYNC_FLAG;
     send->user_data = (void *)result;
     send->error_code = ERROR_IPM_NONE;
 
@@ -95,9 +69,11 @@ static bool zjs_aio_ipm_send_sync(zjs_ipm_message_t* send,
         return false;
     }
 
-    // block until reply or timeout
+    // block until reply or timeout, we shouldn't see the ARC
+    // time out, if the ARC response comes back after it
+    // times out, it could pollute the result on the stack
     if (!nano_sem_take(&aio_sem, ZJS_AIO_TIMEOUT_TICKS)) {
-        PRINT("zjs_aio_ipm_send_sync: ipm timed out\n");
+        PRINT("zjs_aio_ipm_send_sync: FATAL ERROR, ipm timed out\n");
         return false;
     }
 
@@ -112,7 +88,6 @@ static jerry_value_t zjs_aio_call_remote_function(zjs_ipm_message_t* send)
     zjs_ipm_message_t reply;
 
     bool success = zjs_aio_ipm_send_sync(send, &reply);
-    zjs_aio_free_msg(send);
 
     if (!success) {
         return zjs_error("zjs_aio_call_remote_function: ipm message failed or timed out!");
@@ -202,11 +177,11 @@ static jerry_value_t zjs_aio_pin_read(const jerry_value_t function_obj,
     }
 
     // send IPM message to the ARC side
-    zjs_ipm_message_t* send = zjs_aio_alloc_msg();
-    send->type = TYPE_AIO_PIN_READ;
-    send->data.aio.pin = pin;
+    zjs_ipm_message_t send;
+    send.type = TYPE_AIO_PIN_READ;
+    send.data.aio.pin = pin;
 
-    jerry_value_t result = zjs_aio_call_remote_function(send);
+    jerry_value_t result = zjs_aio_call_remote_function(&send);
     return result;
 }
 
@@ -341,11 +316,11 @@ static jerry_value_t zjs_aio_open(const jerry_value_t function_obj,
     zjs_obj_get_boolean(data, "raw", &raw);
 
     // send IPM message to the ARC side
-    zjs_ipm_message_t* send = zjs_aio_alloc_msg();
-    send->type = TYPE_AIO_OPEN;
-    send->data.aio.pin = pin;
+    zjs_ipm_message_t send;
+    send.type = TYPE_AIO_OPEN;
+    send.data.aio.pin = pin;
 
-    jerry_value_t result = zjs_aio_call_remote_function(send);
+    jerry_value_t result = zjs_aio_call_remote_function(&send);
     if (jerry_value_has_error_flag(result))
         return result;
 
