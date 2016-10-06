@@ -13,15 +13,15 @@
 
 #ifdef DEBUG_BUILD
 
-uint32_t zjs_get_sec(void);
-uint32_t zjs_get_ms(void);
+int zjs_get_sec(void);
+int zjs_get_ms(void);
 
 #define DBG_PRINT \
-    PRINT("[%lu.%3.3lu][INFO] %s:%d %s(): ", zjs_get_sec(), zjs_get_ms(), __FILE__, __LINE__, __func__); \
+    PRINT("[%u.%3.3u][INFO] %s:%d %s(): ", zjs_get_sec(), zjs_get_ms(), __FILE__, __LINE__, __func__); \
     PRINT
 
 #define ERR_PRINT \
-    PRINT("[%lu.%3.3lu][ERROR] %s:%d %s(): ", zjs_get_sec(), zjs_get_ms(), __FILE__, __LINE__, __func__); \
+    PRINT("[%u.%3.3u][ERROR] %s:%d %s(): ", zjs_get_sec(), zjs_get_ms(), __FILE__, __LINE__, __func__); \
     PRINT
 
 #else

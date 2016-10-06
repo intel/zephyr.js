@@ -254,14 +254,16 @@ jerry_value_t zjs_error(const char *error)
     PRINT("%s\n", error);
     return jerry_create_error(JERRY_ERROR_TYPE, (jerry_char_t *)error);
 }
+
 #ifdef DEBUG_BUILD
+
+static uint8_t init = 0;
+static int seconds = 0;
+
 #ifdef ZJS_LINUX_BUILD
 #include <time.h>
 
-static uint8_t init = 0;
-static uint32_t seconds = 0;
-
-uint32_t zjs_get_sec(void)
+int zjs_get_sec(void)
 {
     struct timespec now;
     clock_gettime(CLOCK_MONOTONIC, &now);
@@ -272,7 +274,7 @@ uint32_t zjs_get_sec(void)
     return now.tv_sec - seconds;
 }
 
-uint32_t zjs_get_ms(void)
+int zjs_get_ms(void)
 {
     struct timespec now;
     clock_gettime(CLOCK_MONOTONIC, &now);
@@ -284,20 +286,19 @@ uint32_t zjs_get_ms(void)
 }
 #else
 
+// Timer granularity
 #define MS_PER_TICK    1000 / CONFIG_SYS_CLOCK_TICKS_PER_SEC
-
 static struct nano_timer print_timer;
-static uint8_t init = 0;
-static uint32_t seconds = 0;
+// Millisecond counter to increment
 static uint32_t milli = 0;
-
+// Dummy user handle so nano_task_timer_test() works
 static void* dummy = (void*)0xFFFFFFFF;
 
 void update_print_timer(void)
 {
     if (!init) {
         nano_timer_init(&print_timer, dummy);
-        nano_timer_start(&print_timer, 10);
+        nano_timer_start(&print_timer, MS_PER_TICK);
         init = 1;
     }
     if (nano_task_timer_test(&print_timer, TICKS_NONE)) {
@@ -307,25 +308,25 @@ void update_print_timer(void)
         } else {
             milli += MS_PER_TICK;
         }
-        nano_timer_start(&print_timer, 10);
+        nano_timer_start(&print_timer, MS_PER_TICK);
     }
 }
 
-uint32_t zjs_get_sec(void)
+int zjs_get_sec(void)
 {
     if (!init) {
         nano_timer_init(&print_timer, dummy);
-        nano_timer_start(&print_timer, 10);
+        nano_timer_start(&print_timer, MS_PER_TICK);
         init = 1;
     }
     return seconds;
 }
 
-uint32_t zjs_get_ms(void)
+int zjs_get_ms(void)
 {
     if (!init) {
         nano_timer_init(&print_timer, dummy);
-        nano_timer_start(&print_timer, 10);
+        nano_timer_start(&print_timer, MS_PER_TICK);
         init = 1;
     }
     return milli;
