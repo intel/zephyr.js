@@ -110,8 +110,8 @@ static uint32_t pin_read(uint8_t pin)
 static void queue_message(struct zjs_ipm_message* incoming_msg)
 {
     struct zjs_ipm_message* msg = msg_queue;
-    if (!msg) {
-        PRINT("message is NULL\n");
+
+    if (!incoming_msg) {
         return;
     }
 
@@ -138,6 +138,8 @@ static void ipm_msg_receive_callback(void *context, uint32_t id, volatile void *
     struct zjs_ipm_message *incoming_msg = (struct zjs_ipm_message*)(*(uintptr_t *)data);
     if (incoming_msg) {
         queue_message(incoming_msg);
+    } else {
+        PRINT("error: message is NULL\n");
     }
 }
 
