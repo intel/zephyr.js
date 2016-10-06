@@ -284,7 +284,7 @@ uint32_t zjs_get_ms(void)
 }
 #else
 
-#define TICKS_PER_MS 10
+#define MS_PER_TICK    1000 / CONFIG_SYS_CLOCK_TICKS_PER_SEC
 
 static struct nano_timer print_timer;
 static uint8_t init = 0;
@@ -305,7 +305,7 @@ void update_print_timer(void)
             milli = 0;
             seconds++;
         } else {
-            milli += TICKS_PER_MS;
+            milli += MS_PER_TICK;
         }
         nano_timer_start(&print_timer, 10);
     }
