@@ -74,6 +74,6 @@ setInterval(function () {
     greenLED.setPulseWidthCycles(greenValue);
     blueLED.setPulseWidthCycles(blueValue);
 
-// FIXME: Currently, Zephyr.js only reads analog pins once per second, so
-//   there's no point in checking more often. This should be fixed soon.
+    // FIXME: Currently, ZJS only reads analog pins once per second, so there's
+    // no point in checking more often. This should be fixed soon.
 }, 1000);

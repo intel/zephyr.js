@@ -1,5 +1,5 @@
-Zephyr.js API for General Purpose I/O (GPIO)
-============================================
+ZJS API for General Purpose I/O (GPIO)
+======================================
 
 * [Introduction](#introduction)
 * [Web IDL](#web-idl)

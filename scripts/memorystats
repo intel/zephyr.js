@@ -3,7 +3,8 @@
 # Copyright (c) 2016, Intel Corporation.
 # Author: Brian Jones <brian.j.jones@intel.com>
 
-# memorystats - Get the ROM and RAM usages for Zephyr.js based on the javascript it has loaded.
+# memorystats - Get the ROM and RAM usages for ZJS based on the javascript it
+#   has loaded.
 
 if [ ! -d $ZJS_BASE ]; then
     echo "Couldn't find the samples folder, make sure and source zjs-env.sh and deps/zephyr/zephyr-env.sh"

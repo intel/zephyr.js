@@ -1,5 +1,5 @@
-Zephyr.js API for Pulse Width Modulation (PWM)
-==============================================
+ZJS API for Pulse Width Modulation (PWM)
+========================================
 
 * [Introduction](#introduction)
 * [Web IDL](#web-idl)

@@ -1,1 +1,1 @@
-print('Hello, Zephyr.js world!')
+print('Hello, ZJS world!')

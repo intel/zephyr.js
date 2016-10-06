@@ -1,5 +1,5 @@
-Zephyr.js API for I2C
-========================
+ZJS API for I2C
+===============
 
 * [Introduction](#introduction)
 * [Web IDL](#web-idl)

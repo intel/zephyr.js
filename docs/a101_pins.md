@@ -1,5 +1,5 @@
-Zephyr.js Board Support for Arduino 101
-=======================================
+ZJS Board Support for Arduino 101
+=================================
 
 * [Introduction](#introduction)
 * [Web IDL](#web-idl)

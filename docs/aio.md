@@ -1,5 +1,5 @@
-Zephyr.js API for Analog I/O (AIO)
-==================================
+ZJS API for Analog I/O (AIO)
+============================
 
 * [Introduction](#introduction)
 * [Web IDL](#web-idl)
