@@ -63,6 +63,11 @@ if [ $? -eq 0 ]; then
     echo "CONFIG_BLUETOOTH_PERIPHERAL=y" >> prj.conf.tmp
     echo "CONFIG_BLUETOOTH_GATT_DYNAMIC_DB=y" >> prj.conf.tmp
 fi
+check_for_require json
+if [ $? -eq 0 ]; then
+    >&2 echo Using module: JSON
+    MODULES+=" -DBUILD_MODULE_JSON"
+fi
 check_for_require aio
 if [ $? -eq 0 ]; then
     >&2 echo Using module: AIO

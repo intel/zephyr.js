@@ -20,6 +20,7 @@ obj-y += main.o \
          zjs_callbacks.o \
          zjs_event.o \
          zjs_gpio.o \
+         zjs_json.o \
          zjs_modules.o \
          zjs_promise.o \
          zjs_pwm.o \
