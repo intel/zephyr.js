@@ -73,7 +73,7 @@ static jerry_value_t zjs_i2c_read_base(const jerry_value_t this,
     //           that size containing the data.
 
     if (argc < 2 || !jerry_value_is_number(argv[0]) ||
-                      !jerry_value_is_number(argv[1])) {
+        !jerry_value_is_number(argv[1])) {
         return zjs_error("zjs_i2c_read_base: missing arguments");
     }
 
