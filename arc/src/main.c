@@ -249,8 +249,7 @@ static void handle_i2c(struct zjs_ipm_message* msg)
                                      msg->data.i2c.length,
                                      msg->data.i2c.address);
 
-                if (reply < 0)
-                {
+                if (reply < 0) {
                     error_code = ERROR_IPM_OPERATION_FAILED;
                 }
             }
@@ -270,8 +269,7 @@ static void handle_i2c(struct zjs_ipm_message* msg)
                                           msg->data.i2c.data,
                                           msg->data.i2c.length);
 
-                if (reply < 0)
-                {
+                if (reply < 0) {
                     error_code = ERROR_IPM_OPERATION_FAILED;
                 }
             }

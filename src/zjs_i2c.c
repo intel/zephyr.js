@@ -15,39 +15,11 @@
 
 static struct nano_sem i2c_sem;
 
-
-static zjs_ipm_message_t* zjs_i2c_alloc_msg()
-{
-    zjs_ipm_message_t *msg = zjs_malloc(sizeof(zjs_ipm_message_t));
-    if (!msg) {
-        PRINT("zjs_i2c_alloc_msg: cannot allocate message\n");
-        return NULL;
-    } else {
-        memset(msg, 0, sizeof(zjs_ipm_message_t));
-    }
-
-    msg->id         = MSG_ID_I2C;
-    msg->flags      = 0 | MSG_SAFE_TO_FREE_FLAG;
-    msg->error_code = ERROR_IPM_NONE;
-    return msg;
-}
-
-static void zjs_i2c_free_msg(zjs_ipm_message_t* msg)
-{
-    if (!msg)
-        return;
-
-    if (msg->flags & MSG_SAFE_TO_FREE_FLAG) {
-        zjs_free(msg);
-    } else {
-        PRINT("zjs_i2c_free_msg: error! do not free message\n");
-    }
-}
-
 static bool zjs_i2c_ipm_send_sync(zjs_ipm_message_t* send,
                                   zjs_ipm_message_t* result) {
-    send->flags     |= MSG_SYNC_FLAG;
-    send->user_data  = (void *)result;
+    send->id = MSG_ID_I2C;
+    send->flags = 0 | MSG_SYNC_FLAG;
+    send->user_data = (void *)result;
     send->error_code = ERROR_IPM_NONE;
 
     if (zjs_ipm_send(MSG_ID_I2C, send) != 0) {
@@ -85,8 +57,8 @@ static void ipm_msg_receive_callback(void *context, uint32_t id, volatile void *
     }
 }
 
-static jerry_value_t zjs_i2c_read_base(const jerry_value_t  this,
-                                       const jerry_value_t  argv[],
+static jerry_value_t zjs_i2c_read_base(const jerry_value_t this,
+                                       const jerry_value_t argv[],
                                        const jerry_length_t argc,
                                        bool                 burst)
 {
@@ -100,12 +72,13 @@ static jerry_value_t zjs_i2c_read_base(const jerry_value_t  this,
     //           from the register address. Returns a buffer object
     //           that size containing the data.
 
-    if ((argc < 2) || (!jerry_value_is_number(argv[0]) ||
-                       (!jerry_value_is_number(argv[1])))) {
+    if (argc < 2 || !jerry_value_is_number(argv[0]) ||
+                      !jerry_value_is_number(argv[1])) {
         return zjs_error("zjs_i2c_read_base: missing arguments");
     }
 
     uint32_t register_addr = 0;
+    uint32_t size = (uint32_t)jerry_get_number_value(argv[1]);
 
     if (argc >= 3) {
         if (!jerry_value_is_number(argv[2])) {
@@ -114,19 +87,14 @@ static jerry_value_t zjs_i2c_read_base(const jerry_value_t  this,
         register_addr = (uint32_t)jerry_get_number_value(argv[2]);
     }
 
-    uint32_t size = (uint32_t)jerry_get_number_value(argv[1]);
-
     if (size < 1) {
         return zjs_error("zjs_i2c_read_base: size should be greater than zero");
     }
 
     uint32_t bus;
     zjs_obj_get_uint32(this, "bus", &bus);
-
     uint32_t address = (uint32_t)jerry_get_number_value(argv[0]);
-
     jerry_value_t buf_obj = zjs_buffer_create(size);
-
     zjs_buffer_t *buf;
 
     if (jerry_value_is_object(buf_obj)) {
@@ -142,42 +110,33 @@ static jerry_value_t zjs_i2c_read_base(const jerry_value_t  this,
         return zjs_error("zjs_i2c_read_base: buffer creation failed");
     }
 
-    // send IPM message to the ARC side
-    struct zjs_ipm_message* send  = zjs_i2c_alloc_msg();
-    struct zjs_ipm_message* reply = zjs_i2c_alloc_msg();
+    zjs_ipm_message_t send;
+    zjs_ipm_message_t reply;
 
     if (!burst) {
-        send->type = TYPE_I2C_READ;
+        send.type = TYPE_I2C_READ;
     } else {
-        send->type = TYPE_I2C_BURST_READ;
+        send.type = TYPE_I2C_BURST_READ;
     }
-    send->data.i2c.bus           = (uint8_t)bus;
-    send->data.i2c.data          = buf->buffer;
-    send->data.i2c.address       = (uint16_t)address;
-    send->data.i2c.register_addr = register_addr;
-    send->data.i2c.length        = size;
 
-    bool success = zjs_i2c_ipm_send_sync(send, reply);
-    zjs_i2c_free_msg(send);
+    send.data.i2c.bus = (uint8_t)bus;
+    send.data.i2c.data = buf->buffer;
+    send.data.i2c.address = (uint16_t)address;
+    send.data.i2c.register_addr = register_addr;
+    send.data.i2c.length = size;
+
+    bool success = zjs_i2c_ipm_send_sync(&send, &reply);
 
     if (!success) {
-        zjs_i2c_free_msg(reply);
         return zjs_error("zjs_i2c_read_base: ipm message failed or timed out!");
     }
 
-    if (!reply || (reply->error_code != ERROR_IPM_NONE)) {
-        PRINT("error code: %lu\n", reply->error_code);
-        zjs_i2c_free_msg(reply);
-        return zjs_error("zjs_i2c_read_base: error received");
-    }
-
-    zjs_i2c_free_msg(reply);
     return buf_obj;
 }
 
-static jerry_value_t zjs_i2c_read(const jerry_value_t  function_obj,
-                                  const jerry_value_t  this,
-                                  const jerry_value_t  argv[],
+static jerry_value_t zjs_i2c_read(const jerry_value_t function_obj,
+                                  const jerry_value_t this,
+                                  const jerry_value_t argv[],
                                   const jerry_length_t argc)
 {
     // requires: Requires two arguments and has an optional third.
@@ -192,9 +151,9 @@ static jerry_value_t zjs_i2c_read(const jerry_value_t  function_obj,
     return zjs_i2c_read_base(this, argv, argc, false);
 }
 
-static jerry_value_t zjs_i2c_burst_read(const jerry_value_t  function_obj,
-                                        const jerry_value_t  this,
-                                        const jerry_value_t  argv[],
+static jerry_value_t zjs_i2c_burst_read(const jerry_value_t function_obj,
+                                        const jerry_value_t this,
+                                        const jerry_value_t argv[],
                                         const jerry_length_t argc)
 {
     // requires: Requires two arguments and has an optional third.
@@ -210,9 +169,9 @@ static jerry_value_t zjs_i2c_burst_read(const jerry_value_t  function_obj,
     return zjs_i2c_read_base(this, argv, argc, true);
 }
 
-static jerry_value_t zjs_i2c_write(const jerry_value_t  function_obj,
-                                   const jerry_value_t  this,
-                                   const jerry_value_t  argv[],
+static jerry_value_t zjs_i2c_write(const jerry_value_t function_obj,
+                                   const jerry_value_t this,
+                                   const jerry_value_t argv[],
                                    const jerry_length_t argc)
 {
     // requires: Requires two arguments and has an optional third.
@@ -224,7 +183,7 @@ static jerry_value_t zjs_i2c_write(const jerry_value_t  function_obj,
     //  effects: Writes the number of bytes requested to the I2C device
     //           at the register address. Returns an error if unsuccessful.
 
-    if ((argc < 2) || !jerry_value_is_number(argv[0])) {
+    if (argc < 2 || !jerry_value_is_number(argv[0])) {
         return zjs_error("zjs_i2c_write: missing arguments");
     }
 
@@ -242,7 +201,6 @@ static jerry_value_t zjs_i2c_write(const jerry_value_t  function_obj,
 
     uint32_t bus;
     zjs_obj_get_uint32(this, "bus", &bus);
-
     zjs_buffer_t *dataBuf = zjs_buffer_find(argv[1]);
 
     if (dataBuf != NULL) {
@@ -258,55 +216,46 @@ static jerry_value_t zjs_i2c_write(const jerry_value_t  function_obj,
     uint32_t address = (uint32_t)jerry_get_number_value(argv[0]);
 
     // send IPM message to the ARC side
-    zjs_ipm_message_t* send  = zjs_i2c_alloc_msg();
-    zjs_ipm_message_t* reply = zjs_i2c_alloc_msg();
+    zjs_ipm_message_t send;
+    zjs_ipm_message_t reply;
 
-    send->type                   = TYPE_I2C_WRITE;
-    send->data.i2c.bus           = (uint8_t)bus;
-    send->data.i2c.data          = dataBuf->buffer;
-    send->data.i2c.register_addr = register_addr;
-    send->data.i2c.address       = (uint16_t)address;
-    send->data.i2c.length        = dataBuf->bufsize;
+    send.type = TYPE_I2C_WRITE;
+    send.data.i2c.bus = (uint8_t)bus;
+    send.data.i2c.data = dataBuf->buffer;
+    send.data.i2c.register_addr = register_addr;
+    send.data.i2c.address = (uint16_t)address;
+    send.data.i2c.length = dataBuf->bufsize;
 
-    bool success = zjs_i2c_ipm_send_sync(send, reply);
-    zjs_i2c_free_msg(send);
+    bool success = zjs_i2c_ipm_send_sync(&send, &reply);
 
     if (!success) {
-        zjs_i2c_free_msg(reply);
         return zjs_error("zjs_i2c_write: ipm message failed or timed out!");
     }
 
-    if (!reply || (reply->error_code != ERROR_IPM_NONE)) {
-        PRINT("error code: %lu\n", reply->error_code);
-        zjs_i2c_free_msg(reply);
-        return zjs_error("zjs_i2c_write: error received");
-    }
-
-    zjs_i2c_free_msg(reply);
     return ZJS_UNDEFINED;
 }
 
-static jerry_value_t zjs_i2c_abort(const jerry_value_t  function_obj,
-                                   const jerry_value_t  this,
-                                   const jerry_value_t  argv[],
+static jerry_value_t zjs_i2c_abort(const jerry_value_t function_obj,
+                                   const jerry_value_t this,
+                                   const jerry_value_t argv[],
                                    const jerry_length_t argc)
 {
     // Not implemented yet
     return ZJS_UNDEFINED;
 }
 
-static jerry_value_t zjs_i2c_close(const jerry_value_t  function_obj,
-                                   const jerry_value_t  this,
-                                   const jerry_value_t  argv[],
+static jerry_value_t zjs_i2c_close(const jerry_value_t function_obj,
+                                   const jerry_value_t this,
+                                   const jerry_value_t argv[],
                                    const jerry_length_t argc)
 {
     // Not implemented yet
     return ZJS_UNDEFINED;
 }
 
-static jerry_value_t zjs_i2c_open(const jerry_value_t  function_obj,
-                                  const jerry_value_t  this,
-                                  const jerry_value_t  argv[],
+static jerry_value_t zjs_i2c_open(const jerry_value_t function_obj,
+                                  const jerry_value_t this,
+                                  const jerry_value_t argv[],
                                   const jerry_length_t argc)
 {
     // requires: Requires two arguments
@@ -314,55 +263,44 @@ static jerry_value_t zjs_i2c_open(const jerry_value_t  function_obj,
     //           arg[1] - Bus speed in kbps.
     //  effects: Creates a I2C object connected to the bus number specified.
 
-    if ((argc < 1) || !jerry_value_is_object(argv[0])) {
+    if (argc < 1 || !jerry_value_is_object(argv[0])) {
         return zjs_error("zjs_i2c_open: invalid argument");
     }
 
     jerry_value_t data = argv[0];
     uint32_t bus;
+    uint32_t speed;
 
     if (!zjs_obj_get_uint32(data, "bus", &bus)) {
         return zjs_error("zjs_i2c_open: missing required field (bus)");
     }
-
-    uint32_t speed;
 
     if (!zjs_obj_get_uint32(data, "speed", &speed)) {
         return zjs_error("zjs_i2c_open: missing required field (speed)");
     }
 
     // send IPM message to the ARC side
-    zjs_ipm_message_t* send = zjs_i2c_alloc_msg();
-    zjs_ipm_message_t* reply = zjs_i2c_alloc_msg();
+    zjs_ipm_message_t send;
+    zjs_ipm_message_t reply;
 
-    send->type           = TYPE_I2C_OPEN;
-    send->data.i2c.bus   = (uint8_t)bus;
-    send->data.i2c.speed = (uint8_t)speed;
+    send.type = TYPE_I2C_OPEN;
+    send.data.i2c.bus = (uint8_t)bus;
+    send.data.i2c.speed = (uint8_t)speed;
 
-    bool success = zjs_i2c_ipm_send_sync(send, reply);
-    zjs_i2c_free_msg(send);
+    bool success = zjs_i2c_ipm_send_sync(&send, &reply);
 
     if (!success) {
-        zjs_i2c_free_msg(reply);
         return zjs_error("zjs_i2c_write: ipm message failed or timed out!");
     }
 
-    if (!reply || (reply->error_code != ERROR_IPM_NONE)) {
-        PRINT("error code: %lu\n", reply->error_code);
-        zjs_i2c_free_msg(reply);
-        return zjs_error("zjs_i2c_write: error received");
-    }
-
-    zjs_i2c_free_msg(reply);
-
     // create the I2C object
     jerry_value_t i2c_obj = jerry_create_object();
-    zjs_obj_add_function(i2c_obj, zjs_i2c_read,       "read");
+    zjs_obj_add_function(i2c_obj, zjs_i2c_read, "read");
     zjs_obj_add_function(i2c_obj, zjs_i2c_burst_read, "burstRead");
-    zjs_obj_add_function(i2c_obj, zjs_i2c_write,      "write");
-    zjs_obj_add_function(i2c_obj, zjs_i2c_abort,      "abort");
-    zjs_obj_add_function(i2c_obj, zjs_i2c_close,      "close");
-    zjs_obj_add_number(i2c_obj, bus,   "bus");
+    zjs_obj_add_function(i2c_obj, zjs_i2c_write, "write");
+    zjs_obj_add_function(i2c_obj, zjs_i2c_abort, "abort");
+    zjs_obj_add_function(i2c_obj, zjs_i2c_close, "close");
+    zjs_obj_add_number(i2c_obj, bus, "bus");
     zjs_obj_add_number(i2c_obj, speed, "speed");
 
     return i2c_obj;

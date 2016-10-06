@@ -77,11 +77,11 @@ typedef struct zjs_ipm_message {
 
         // I2C
         struct i2c_data {
-            uint8_t  bus;
-            uint8_t  speed;
+            uint8_t bus;
+            uint8_t speed;
             uint16_t address;
             uint16_t register_addr;
-            uint8_t  *data;
+            uint8_t *data;
             uint32_t length;
         } i2c;
 
