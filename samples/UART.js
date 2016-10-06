@@ -26,4 +26,6 @@ board.init({port:"tty0"}).then(function(uart) {
         }
     });
     uart.write(new Buffer('hello world'));
-});
+}).catch(function(error) {
+    print("Error starting UART: " + error.name + " msg: " + error.message);
+})

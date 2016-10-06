@@ -9,6 +9,14 @@
 
 #define PRINT printf
 
+#ifdef DEBUG_BUILD
+#define DBG_PRINT \
+    PRINT("%s:%d %s(): ", __FILE__, __LINE__, __func__); \
+    PRINT
+#else
+#define DBG_PRINT(fmat ...) do {} while(0);
+#endif
+
 // TODO: We should instead have a macro that changes in debug vs. release build,
 // to save string space and instead print error codes or something for release.
 

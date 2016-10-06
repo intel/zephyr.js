@@ -179,10 +179,10 @@ static jerry_value_t uart_set_read_range(const jerry_value_t function_obj,
         handle->buf = zjs_malloc(max);
         memcpy(handle->buf, old, handle->size);
         zjs_free(old);
-        if (handle->size >= min) {
-            jerry_value_t data = jerry_create_string((const jerry_char_t *)handle->buf);
-            zjs_trigger_event(handle->uart_obj, "read", &data, 1, NULL, NULL);
-        }
+        //if (handle->size >= min) {
+        //    jerry_value_t data = jerry_create_string((const jerry_char_t *)handle->buf);
+        //    zjs_trigger_event(handle->uart_obj, "read", &data, 1, NULL, NULL);
+        //}
     } else {
         handle->buf = zjs_malloc(max);
         handle->size = 0;
@@ -228,7 +228,7 @@ static jerry_value_t uart_init(const jerry_value_t function_obj,
     jerry_release_value(port_val);
 
     if (sz != len) {
-        DBG_PRINT("size mismatch\n");
+        DBG_PRINT("size mismatch, sz=%u, len=%u\n", sz, len);
         jerry_value_t error = make_uart_error("TypeMismatchError",
                 "size mismatch");
         zjs_reject_promise(promise, &error, 1);
