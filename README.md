@@ -73,8 +73,8 @@ $ sudo useradd -G plugdev USERNAME
 #### Add udev rules
 Copy these two files into your /etc/udev.rules directory:
 
-* [99-openocd.rules](https://github.com/arduino/OpenOCD/blob/master/contrib/99-openocd.rules)
-* [99-dfu.rules](https://github.com/01org/CODK-A-ARC/blob/master/bin/99-dfu.rules)
+* [99-openocd.rules](https://raw.githubusercontent.com/arduino/OpenOCD/master/contrib/99-openocd.rules) (from this [Arduino github project](https://github.com/arduino/OpenOCD/blob/master/contrib/99-openocd.rules))
+* [99-dfu.rules](https://raw.githubusercontent.com/01org/CODK-A-ARC/master/bin/99-dfu.rules) (from this [01org github project](https://github.com/01org/CODK-A-ARC/blob/master/bin/99-dfu.rules))
 
 Then run this command:
 
