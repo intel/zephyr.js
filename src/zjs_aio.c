@@ -163,7 +163,9 @@ static void ipm_msg_receive_callback(void *context, uint32_t id,
     } else {
         // asynchronous ipm
         aio_handle_t *handle = (aio_handle_t *)msg->user_data;
+#ifdef DEBUG_BUILD
         uint32_t pin = msg->data.aio.pin;
+#endif
         uint32_t pin_value = msg->data.aio.value;
 
         switch(msg->type) {
@@ -173,10 +175,10 @@ static void ipm_msg_receive_callback(void *context, uint32_t id,
             zjs_signal_callback(handle->callback_id);
             break;
         case TYPE_AIO_PIN_SUBSCRIBE:
-            PRINT("ipm_msg_receive_callback: subscribed to events on pin %lu\n", pin);
+            DBG_PRINT("ipm_msg_receive_callback: subscribed to events on pin %lu\n", pin);
             break;
         case TYPE_AIO_PIN_UNSUBSCRIBE:
-            PRINT("ipm_msg_receive_callback: unsubscribed to events on pin %lu\n", pin);
+            DBG_PRINT("ipm_msg_receive_callback: unsubscribed to events on pin %lu\n", pin);
             break;
 
         default:

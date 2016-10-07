@@ -61,13 +61,13 @@ TemperatureCharacteristic.onReadRequest = function(offset, callback) {
 
 TemperatureCharacteristic.onSubscribe = function(maxValueSize,
                                                  updateValueCallback) {
-    print("Subscribed to temperature change.");
+    print("Subscribed to temperature change");
     this._onChange = updateValueCallback;
     this._lastValue = undefined;
 };
 
 TemperatureCharacteristic.onUnsubscribe = function() {
-    print("Unsubscribed to temperature change.");
+    print("Unsubscribed to temperature change");
     this._onChange = null;
 };
 
@@ -137,8 +137,6 @@ ColorCharacteristic.onWriteRequest = function(data, offset, withoutResponse,
 };
 
 ble.on('stateChange', function(state) {
-    print("BLE state: " + state);
-
     if (state === 'poweredOn') {
         ble.startAdvertising(DEVICE_NAME, ['fc00'], "https://goo.gl/QEvyDZ");
     } else {

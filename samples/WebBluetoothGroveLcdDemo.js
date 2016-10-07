@@ -80,13 +80,13 @@ TemperatureCharacteristic.onReadRequest = function(offset, callback) {
 
 TemperatureCharacteristic.onSubscribe = function(maxValueSize,
                                                  updateValueCallback) {
-    print("Subscribed to temperature change.");
+    print("Subscribed to temperature change");
     this._onChange = updateValueCallback;
     this._lastValue = undefined;
 };
 
 TemperatureCharacteristic.onUnsubscribe = function() {
-    print("Unsubscribed to temperature change.");
+    print("Unsubscribed to temperature change");
     this._onChange = null;
 };
 
@@ -152,8 +152,6 @@ ColorCharacteristic.onWriteRequest = function(data, offset, withoutResponse,
 };
 
 ble.on('stateChange', function(state) {
-    print("BLE state: " + state);
-
     if (state === 'poweredOn') {
         ble.startAdvertising(DEVICE_NAME, ['fc00'], "https://goo.gl/QEvyDZ");
     } else {
@@ -165,9 +163,8 @@ ble.on('stateChange', function(state) {
 });
 
 ble.on('advertisingStart', function(error) {
-    print('advertisingStart: ' + (error ? error : 'success'));
-
     if (error) {
+        print("Failed to advertise physical web");
         return;
     }
 
@@ -180,10 +177,12 @@ ble.on('advertisingStart', function(error) {
             ]
         })
     ]);
+
+    print("Advertising as physical web device");
 });
 
 ble.on('accept', function(clientAddress) {
-    print("Accepted Connection: " + clientAddress);
+    print("Client connected: " + clientAddress);
     glcd.clear();
 
     tmp36.on("change", function(data) {
@@ -191,15 +190,15 @@ ble.on('accept', function(clientAddress) {
         var celsius = (voltage - 0.5) * 100 + 0.5;
         celsius = celsius | 0;
 
-        print("Temperature change: " + celsius + " degrees Celsius");
+        print("Temperature change: " + celsius + "C");
         TemperatureCharacteristic.valueChange(celsius);
     });
 });
 
 ble.on('disconnect', function(clientAddress) {
-    print("Disconnected Connection: " + clientAddress);
+    print("Client disconnected: " + clientAddress);
 
     tmp36.on("change", null);
 });
 
-print("WebBluetooth Demo with BLE...");
+print("WebBluetooth Demo with Grove LCD...");
