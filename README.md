@@ -38,8 +38,6 @@ Next, clone this git repo:
 $ git clone http://github.com/01org/zephyr.js.git
 ```
 
-*NOTE: This should start working after the repo goes public - we'll need to verify that.*
-
 #### Install the Zephyr SDK
 Download the [latest Zephyr SDK] (https://nexus.zephyrproject.org/content/repositories/releases/org/zephyrproject/zephyr-sdk/), then:
 ```bash
