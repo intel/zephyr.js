@@ -115,7 +115,8 @@ function changeRGB(red, green, blue) {
     var greenData = new Buffer([glcd.REGISTER_G, green]);
     var blueData = new Buffer([glcd.REGISTER_B, blue]);
 
-    // Send messages as close together as possible so that the color change is smoother
+    // Send messages as close together as possible,
+    // so that the color change is smoother
     i2cDevice.write(glcd.GROVE_RGB_BACKLIGHT_ADDR, blueData);
     i2cDevice.write(glcd.GROVE_RGB_BACKLIGHT_ADDR, redData);
     i2cDevice.write(glcd.GROVE_RGB_BACKLIGHT_ADDR, greenData);
@@ -169,12 +170,16 @@ function init() {
     /* Setup Grove LCD */
     clear();
     // Set our preferences for the Grove LCD
-    var setup = glcd.GLCD_CMD_FUNCTION_SET | (glcd.GLCD_FS_ROWS_2 | glcd.GLCD_FS_DOT_SIZE_LITTLE | glcd.GLCD_FS_8BIT_MODE);
+    var setup = glcd.GLCD_CMD_FUNCTION_SET | (glcd.GLCD_FS_ROWS_2 |
+                                              glcd.GLCD_FS_DOT_SIZE_LITTLE |
+                                              glcd.GLCD_FS_8BIT_MODE);
     setupData.writeUInt8(0, 0);
     setupData.writeUInt8(setup, 1);
     i2cDevice.write(glcd.GROVE_LCD_DISPLAY_ADDR, setupData);
 
-    setup = glcd.GLCD_CMD_DISPLAY_SWITCH | (glcd.GLCD_DS_DISPLAY_ON | glcd.GLCD_DS_CURSOR_ON | glcd.GLCD_DS_BLINK_ON);
+    setup = glcd.GLCD_CMD_DISPLAY_SWITCH | (glcd.GLCD_DS_DISPLAY_ON |
+                                            glcd.GLCD_DS_CURSOR_ON |
+                                            glcd.GLCD_DS_BLINK_ON);
     setupData.writeUInt8(setup, 1);
     i2cDevice.write(glcd.GROVE_LCD_DISPLAY_ADDR, setupData);
 
