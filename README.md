@@ -67,7 +67,7 @@ $ source ~/.bashrc
 Add your user to the plugdev group with this command:
 
 ```bash
-$ sudo useradd -G plugdev USERNAME
+$ sudo usermod -a -G plugdev USERNAME
 ```
 
 #### Add udev rules
