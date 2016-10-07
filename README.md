@@ -86,7 +86,7 @@ This should cause your `/dev/tty*` entries to have the plugdev group, which will
 let you use them without root privileges. Otherwise, you will have to run some
 of the following commands with `sudo`.
 
-### Shell setup and build
+### Shell setup
 Whenever you open a new terminal to work with this repo, you need to set up
 environment variables.
 
@@ -116,7 +116,8 @@ environment variables, too. Here's the right way to do that:
 $ source deps/zephyr/zephyr-env.sh
 ```
 
-#### Build and flash the ARC support image
+### Build and Flash
+#### ARC support image
 Now you're ready to build the support image for the ARC core with this command:
 
 ```bash
@@ -141,7 +142,7 @@ with `sudo`.
 (The ARC image doesn't change very often so you won't need to do this again
 unless you pull updates to the source tree, and usually not even then.)
 
-#### Build and flash the x86 application image
+#### x86 application image
 Next, build the x86 image which includes the JerryScript engine and the
 ZJS runtime support, along with your JavaScript application:
 
