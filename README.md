@@ -3,7 +3,7 @@
 The JavaScript Runtime for Zephyr OS project (ZJS for short) provides an IoT
 web runtime environment with JavaScript APIs for the Zephyr operating system,
 based on the JerryScript engine. It is intended for systems with low memory
-where node.js with V8 is too big.
+where Node.js with V8 is too big.
 
 This code requires a local copy of JerryScript and Zephyr source, and we
 will upstream patches to those projects as appropriate, but this repo is for
