@@ -6,7 +6,7 @@ based on the JerryScript engine. It is intended for systems with little memory
 where Node.js with V8 is too big.
 
 This code requires a local copy of JerryScript and Zephyr OS source.  We
-will upstream patches to those projects as appropriate, but this zephyr.js repo is for
+will upstream patches to those projects as appropriate, but this repo is for
 everything else.
 
 ## Getting Started
