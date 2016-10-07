@@ -52,6 +52,7 @@ check_for_require uart
 if [ $? -eq 0 ]; then
     >&2 echo Using module: UART
     MODULES+=" -DBUILD_MODULE_UART"
+    MODULES+=" -DBUILD_MODULE_BUFFER"
 fi
 check_for_require ble
 if [ $? -eq 0 ]; then
@@ -67,6 +68,12 @@ check_for_require aio
 if [ $? -eq 0 ]; then
     >&2 echo Using module: AIO
     MODULES+=" -DBUILD_MODULE_AIO"
+fi
+check_for_require uart
+if [ $? -eq 0 ]; then
+    >&2 echo Using module: UART
+    MODULES+=" -DBUILD_MODULE_UART"
+    echo "CONFIG_UART_INTERRUPT_DRIVEN=y" >> prj.conf.tmp
 fi
 check_for_require i2c
 if [ $? -eq 0 ]; then

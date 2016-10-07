@@ -11,7 +11,9 @@
 #include "zjs_event.h"
 #include "zjs_modules.h"
 #include "zjs_util.h"
-
+#ifdef BUILD_MODULE_OCF
+#include "zjs_ocf_common.h"
+#endif
 #ifndef ZJS_LINUX_BUILD
 // ZJS includes
 #include "zjs_aio.h"
@@ -20,6 +22,7 @@
 #include "zjs_grove_lcd.h"
 #include "zjs_pwm.h"
 #include "zjs_i2c.h"
+#include "zjs_uart.h"
 #ifdef CONFIG_BOARD_ARDUINO_101
 #include "zjs_a101_pins.h"
 #endif // ZJS_LINUX_BUILD
@@ -65,12 +68,25 @@ module_t zjs_modules_array[] = {
     { "k64f_pins", zjs_k64f_init },
 #endif
 #endif // QEMU_BUILD
+#ifdef BUILD_MODULE_UART
+    { "uart", zjs_init_uart },
+#endif
 #endif // ZJS_LINUX_BUILD
-
 #ifdef BUILD_MODULE_EVENTS
     { "events", zjs_event_init },
 #endif
+#ifdef BUILD_MODULE_OCF
+    { "ocf", zjs_ocf_init }
+#endif
 };
+
+struct routine_map {
+    zjs_service_routine func;
+    void* handle;
+};
+
+static uint8_t num_routines = 0;
+struct routine_map svc_routine_map[NUM_SERVICE_ROUTINES];
 
 static jerry_value_t native_require_handler(const jerry_value_t function_obj,
                                             const jerry_value_t this,
@@ -109,4 +125,24 @@ void zjs_modules_init()
 
     // create the C handler for require JS call
     zjs_obj_add_function(global_obj, native_require_handler, "require");
+}
+
+void zjs_register_service_routine(void* handle, zjs_service_routine func)
+{
+    if (num_routines >= NUM_SERVICE_ROUTINES) {
+        DBG_PRINT(("not enough space, increase NUM_SERVICE_ROUTINES\n"));
+        return;
+    }
+    svc_routine_map[num_routines].handle = handle;
+    svc_routine_map[num_routines].func = func;
+    num_routines++;
+    return;
+}
+
+void zjs_service_routines(void)
+{
+    int i;
+    for (i = 0; i < num_routines; ++i) {
+        svc_routine_map[i].func(svc_routine_map[i].handle);
+    }
 }
