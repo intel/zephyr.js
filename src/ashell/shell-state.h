@@ -17,9 +17,13 @@
 #ifndef __SHELL__STATE__H__
 #define __SHELL__STATE__H__
 
-#define RET_OK      0
-#define RET_ERROR   -1
-#define RET_UNKNOWN -2
+// We are not expecting to return the command line
+#define RET_OK_NO_RET 1
+
+// All went fine, print the shell prompt
+#define RET_OK        0
+#define RET_ERROR    -1
+#define RET_UNKNOWN  -2
 
 /**
  * @brief State of the shell to control the data flow
@@ -42,7 +46,7 @@ enum
  */
 typedef int32_t(*ashell_cmd)(char *buf);
 
-struct shell_cmd
+struct ashell_cmd
 {
     const char *cmd_name;
     const char *syntax;

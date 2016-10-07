@@ -307,6 +307,43 @@ const char *ashell_get_next_arg_s(const char *str, uint32_t nsize, char *str_arg
     return ashell_get_next_arg(str, nsize, str_arg, length);
 }
 
+/** @brief Check a buffer for a parameter
+ * Parameters are single characters in a '-xyz' sequence
+ *
+ * @param str          Null terminated string
+ * @param parameter    Token we are looking for
+ * @return bool Returns if the parameter is on the string
+ */
+
+bool ashell_check_parameter(const char *buf, const char parameter)
+{
+    size_t t = 0;
+    bool space = true;
+    bool token = false;
+
+    if (buf == NULL)
+        return false;
+
+    while (buf[t] != 0) {
+        char byte = buf[t];
+        if (space && byte == '-')
+            token = true;
+
+        if (byte == ' ') {
+            space = true;
+            token = false;
+        } else {
+            space = false;
+        }
+
+        if (token && byte == parameter) {
+            return true;
+        }
+        t++;
+    }
+    return false;
+}
+
 /**
  * @brief Skips all the spaces until it finds the first character
  *
@@ -365,7 +402,6 @@ uint32_t ashell_process_init()
 {
     DBG("[SHELL] Init\n");
     acm_println("");
-    ashell_help("");
     acm_print(acm_get_prompt());
     return 0;
 }
@@ -373,22 +409,10 @@ uint32_t ashell_process_init()
 void ashell_process_line(const char *buf, uint32_t len)
 {
 #ifdef CONFIG_SHELL_UPLOADER_DEBUG
-    char arg[MAX_ARGUMENT_SIZE];
-    uint32_t argc, arg_len;
-
-    printk("[BOF]");
     printk("%s", buf);
-    printk("[EOF]\n");
-    argc = ashell_get_argc(buf, len);
-
-    printk("[ARGS %u]\n", argc);
-    for (int t = 0; t < argc; t++) {
-        buf = ashell_get_next_arg_s(buf, len, arg, MAX_ARGUMENT_SIZE, &arg_len);
-        len -= arg_len;
-        printf(" Arg [%s]::%d \n", arg, (int)arg_len);
-    }
-#endif
+#else
     printk("\n%s", system_get_prompt());
+#endif
     acm_print(acm_get_prompt());
 }
 
@@ -414,7 +438,7 @@ uint32_t ashell_process_data(const char *buf, uint32_t len)
             tail = 0;
         }
 
-        DBG("(%x)", byte);
+        //DBG("(%x)", byte);
 
         /* Handle ANSI escape mode */
         if (atomic_test_bit(&esc_state, ESC_ANSI)) {
@@ -454,6 +478,7 @@ uint32_t ashell_process_data(const char *buf, uint32_t len)
                 acm_writec('\t');
                 break;
             case ASCII_IF:
+                flush_line = true;
                 DBG("<IF>");
                 break;
             default:
@@ -467,7 +492,7 @@ uint32_t ashell_process_data(const char *buf, uint32_t len)
         if (flush_line) {
             DBG("Line %u %u \n", cur, end);
             shell_line[cur + end] = '\0';
-            acm_write("\r\n", 3);
+            acm_write("\r\n", 2);
 
             uint32_t length = strnlen(shell_line, MAX_LINE);
             int32_t ret = 0;
@@ -518,6 +543,9 @@ uint32_t ashell_process_finish()
 void ashell_print_status()
 {
     printk("Shell Status\n");
+
+    malloc_stats();
+
     if (shell_line != NULL) {
         printk("Line [%s]\n", shell_line);
     } else {
@@ -588,6 +616,22 @@ struct shell_tests test[] =
     TEST_PARAMS(NULL, 0, 0)
 };
 
+struct shell_tests param_test[] =
+{
+    TEST_PARAMS("-xyz", 't', 0),
+    TEST_PARAMS("-xyz ", 't', 0),
+    TEST_PARAMS("-xyz ", 'x', 1),
+    TEST_PARAMS("test -xyz", 'y', 1),
+    TEST_PARAMS(" test  -xyz", 'y', 1),
+    TEST_PARAMS("  test  -xyz -x", 'x', 1),
+    TEST_PARAMS("test  -xyz -x", 'a', 0),
+    TEST_PARAMS(" test  -xyz -x", 'e', 0),
+    TEST_PARAMS(" test  -xyz abc a ", 'a', 0),
+    TEST_PARAMS(" test  -x abc a ", 'x', 1),
+    TEST_PARAMS(" test  abc  -x a ", 'x', 1),
+    TEST_PARAMS("", ' ', 0)
+};
+
 void shell_unit_test()
 {
     uint32_t t = 0;
@@ -654,6 +698,15 @@ void shell_unit_test()
                 printf(" Failed test %d\n", t);
             }
         }
+        t++;
+    }
+
+    t = 0;
+    while (t != sizeof(param_test) / sizeof(shell_tests)) {
+        uint32_t res = ashell_check_parameter(param_test[t].str, (char)param_test[t].size);
+        if (res != param_test[t].result) {
+            printf("Failed test (%s) %c\n", param_test[t].str, (char)param_test[t].size);
+        };
         t++;
     }
     printf("All tests were successful \n");
