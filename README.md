@@ -1,22 +1,22 @@
-# JavaScript* Runtime for Zephyr* OS
+# JavaScript\* Runtime for Zephyr&trade; OS
 
-The JavaScript Runtime for Zephyr OS project (ZJS for short) provides an IoT
+The JavaScript\* Runtime for the Zephyr&trade; OS project (ZJS for short) provides an IoT
 web runtime environment with JavaScript APIs for the Zephyr operating system,
-based on the JerryScript engine. It is intended for systems with low memory
+based on the JerryScript engine. It is intended for systems with little memory
 where Node.js with V8 is too big.
 
-This code requires a local copy of JerryScript and Zephyr source, and we
+This code requires a local copy of JerryScript and Zephyr OS source.  We
 will upstream patches to those projects as appropriate, but this repo is for
 everything else.
 
 ## Getting Started
 
 This section will walk you through building and running your first ZJS
-application on Arduino 101.
+application on Arduino 101\*.
 
 ### Prerequisites
 * [Arduino 101 board](https://www.arduino.cc/en/Main/ArduinoBoard101)
-* Ubuntu 16.04 host; adapt as necessary for other platforms.
+* Ubuntu\* 16.04 host; adapt as necessary for other platforms.
 * If you're behind a proxy, go through all the [usual pain]
 (https://github.com/01org/zephyr.js/wiki/Proxy) to get ssh working to
 github.com and http working to zephyrproject.org.
@@ -39,7 +39,7 @@ $ git clone http://github.com/01org/zephyr.js.git
 ```
 
 #### Install the Zephyr SDK
-Download the [latest Zephyr SDK] (https://nexus.zephyrproject.org/content/repositories/releases/org/zephyrproject/zephyr-sdk/), then:
+Download the [latest Zephyr SDK] (https://www.zephyrproject.org/downloads/tools), then:
 ```bash
 $ chmod +x /path/to/zephyr-sdk-<VERSION>-i686-setup.run
 $ sudo /path/to/zephyr-sdk-<VERSION>-i686-setup.run
@@ -48,15 +48,14 @@ $ sudo /path/to/zephyr-sdk-<VERSION>-i686-setup.run
 Follow the prompts, but the defaults should be fine.
 
 #### Set up Zephyr SDK environment variables
-It is recommended that you add the following two lines to your `~/.bashrc` so
-that you don't have to type them again. If you installed your Zephyr SDK
+Add the following two lines to your `~/.bashrc`. If you installed your Zephyr SDK
 elsewhere, adjust as needed.
 ```bash
 export ZEPHYR_GCC_VARIANT=zephyr
 export ZEPHYR_SDK_INSTALL_DIR=/opt/zephyr-sdk
 ```
 
-Then source the .bashrc again:
+Then source the .bashrc :
 ```bash
 $ source ~/.bashrc
 ```
@@ -162,8 +161,8 @@ commands. If not, press the Master Reset button, and either way do:
 $ make dfu
 ```
 
-After this completes flashing successfully, reboot the device with the Master
-Reset button to start the application, and after a few seconds the onboard LEDs
+After this flashing completes successfully, reboot the device with the Master
+Reset button to start the application. After a few seconds the onboard LEDs
 should start cycling.
 
 You have built and run your first ZJS application!
@@ -178,22 +177,22 @@ you just need to repeat the last two steps with the desired JavaScript filename.
 Without the serial console set up, you won't be able to see error messages and
 other output from your ZJS application. To hook up the serial console, you need
 a USB to TTL Serial Cable, such as the TTL-232R-3V3. On that particular cable,
-you wire the black wire to ground on the Arduino, the orange wire to GPIO pin 0
+you wire the black wire to ground on the Arduino 101 board, the orange wire to GPIO pin 0
 (RX), and the yellow wire to GPIO pin 1 (TX). The other three are unused.
 
-When you plug this in, the device should show up as something like
+When you plug this in, the device should show up as something such as
 `/dev/ttyUSB0`. You can then use the screen command to connect to the device
-with a command like this:
+with a command such as this:
 
 ```bash
 $ watch screen /dev/ttyUSB0 115200
 ```
 
-The watch utility will restart screen you disconnect and reconnect your
-Arduino, so you shouldn't miss anything. You can leave a dedicated terminal
+The `watch` utility will restart screen when you disconnect and reconnect your
+Arduino 101, so you shouldn't miss anything. You can leave a dedicated terminal
 running to watch the output.
 
-In screen, you can view scrollback with Ctrl-a, Esc, followed by PgUp/PgDn.
+In `screen`, you can scroll back the output with Ctrl-A, Esc, followed by PgUp/PgDn.
 Then Esc again to get back to the latest output (out of "Copy Mode").
 
 #### Debugging
@@ -204,7 +203,7 @@ to connect to the device with a debugger. Then you can set breakpoints such as
 
 #### Additional details
 
-See below for more details, such as increasing the space available for your
+See below for a few more tips, such as increasing the space available for your
 application on the Arduino 101, or how to use ZJS with the FRDM-K64F.
 
 ## Contributing
@@ -247,8 +246,8 @@ you (geoff@linux.intel.com). I need to make sure of the license details before
 I add it to the repo.
 
 The ZJS_PARTITION environment variable, set automatically by zjs-env.sh, is
-what controls whether the build targets 144KB or 256KB. The symptom if you use
-the wrong one is that the ARC side won't come up, because we'll be attempting
+what controls whether the build targets 144KB or 256KB. If you use
+the wrong one, the ARC side won't come up because we'll be attempting
 to start it from the wrong place on the flash. (Note: both the ARC and X86
 images have to be rebuilt and reflashed when you switch partition sizes.)
 
@@ -295,7 +294,7 @@ attempt the DFU command, or it will fail.)
 $ make JS=samples/HelloWorld.js
 ```
 
-This will build the system image, resulting in outdir/zephyr.bin as the final
+This will build the system image, resulting in `outdir/zephyr.bin` as the final
 output. To flash this to your device with dfu-util, first press the Master Reset
 button on your Arduino 101, and about three seconds later type:
 
@@ -316,8 +315,8 @@ as with `HelloWorld.js` above.
 
 ## JS Minifier
 
-To save space it is recommended to use a minifier. In convert.sh, the script
-used to encode your JS into a source file, we use uglifyjs. If you didn't
+To save space it is recommended to use a minifier. In `convert.sh`, the script
+used to encode your JS into a source file, we use `uglifyjs`. If you didn't
 install this earlier, you can do so with the command:
 ```bash
 sudo apt-get install node-uglify
@@ -325,9 +324,10 @@ sudo apt-get install node-uglify
 
 ## FRDM-K64F Platform
 
-See the [Zephyr Wiki] (https://wiki.zephyrproject.org/view/NXP_FRDM-K64F) for general information about Zephyr on the FRDM-K64F.
+See the [Zephyr Project Wiki] (https://wiki.zephyrproject.org/view/NXP_FRDM-K64F) for general information 
+about running Zephyr OS on the FRDM-K64F.
 
-The instructions below are assuming Ubuntu 14.04 on the host PC.
+The instructions below assume Ubuntu 14.04 on the host PC.
 
 Connect a micro-USB cable from the device to your PC.
 
@@ -342,12 +342,12 @@ or
 $ minicom -D /dev/ttyACM0
 ```
 
-worked for me, but I typically had to try either command several times before it
-would work. The benefit of minicom is it will keep running even if you unplug
+(I typically had to try either command several times before it
+would work.) The benefit of minicom is it will keep running even if you unplug
 the cable and then plug it back in later.
 
-(Check your dmesg output or watch your /dev directory to know what device it
-shows up as.)
+Check your dmesg output or watch your /dev directory to know what device it
+shows up as.
 
 Then, follow [these instructions] (https://developer.mbed.org/handbook/Firmware-FRDM-K64F) to update your firmware.
 
@@ -357,8 +357,8 @@ $ make BOARD=frdm_k64f JS=samples/HelloWorld.js
 $ cp outdir/zephyr.bin /media/<USERNAME>/MBED/
 ```
 
-After you copy the new .bin file to that directory, the device will reboot,
-blink an LED quickly as it writes the image somewhere, and then you should see
+After you copy the new `.bin` file to that directory, the device will reboot,
+blink an LED quickly as it writes the image, and then you should see
 the device reconnect as a USB storage device to your PC. Then you can press the
 Reset button to run the Zephyr image. You should see "Hello, ZJS world!" output
 on the serial console in less than a second.
@@ -366,7 +366,7 @@ on the serial console in less than a second.
 If something doesn't work, you may want to establish that you're able to
 upload the K64F [hello world application] (https://developer.mbed.org/platforms/FRDM-K64F/#flash-a-project-binary).
 
-Then, you could try the Zephyr hello_world sample to narrow down the problem:
+Then, you could try the Zephyr OS `hello_world` sample to narrow down the problem:
 ```bash
 $ cd deps/zephyr/samples/hello_world/nanokernel
 $ make pristine && make BOARD=frdm_k64f
@@ -376,4 +376,4 @@ $ cp outdir/zephyr.bin /media/<USERNAME>/MBED/
 Using the same procedure as above, once you hit Reset you should see
 "Hello World!" within a second on your serial console.
 
-*Other names and brands may be claimed as the property of others.
+Zephyr is a trademark of the Linux Foundation. *Other names and brands may be claimed as the property of others.
