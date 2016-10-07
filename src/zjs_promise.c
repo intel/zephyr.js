@@ -42,7 +42,6 @@ static void post_promise(void* h, jerry_value_t* ret_val)
 {
     struct promise* handle = (struct promise*)h;
     if (handle) {
-        int i;
         if (handle->post) {
             handle->post(handle->user_handle);
         }
