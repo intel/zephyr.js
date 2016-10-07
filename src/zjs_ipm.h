@@ -44,6 +44,7 @@ enum {
 #define TYPE_I2C_WRITE_BIT                                 0x0012
 #define TYPE_I2C_READ                                      0x0013
 #define TYPE_I2C_TRANSFER                                  0x0014
+#define TYPE_I2C_BURST_READ                                0x0015
 
 // GROVE_LCD
 #define TYPE_GLCD_INIT                                     0x0020
@@ -79,6 +80,7 @@ typedef struct zjs_ipm_message {
             uint8_t bus;
             uint8_t speed;
             uint16_t address;
+            uint16_t register_addr;
             uint8_t *data;
             uint32_t length;
         } i2c;

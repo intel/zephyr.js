@@ -240,7 +240,44 @@ static void handle_i2c(struct zjs_ipm_message* msg)
         PRINT("received TYPE_I2C_WRITE_BIT\n");
         break;
     case TYPE_I2C_READ:
-        PRINT("received TYPE_I2C_READ\n");
+        if (msg_bus < MAX_I2C_BUS) {
+            // Read has to come after an Open I2C message
+            if (i2c_device[msg_bus]) {
+
+                int reply = i2c_read(i2c_device[msg_bus],
+                                     msg->data.i2c.data,
+                                     msg->data.i2c.length,
+                                     msg->data.i2c.address);
+
+                if (reply < 0) {
+                    error_code = ERROR_IPM_OPERATION_FAILED;
+                }
+            }
+            else {
+                PRINT("No I2C device is ready yet\n");
+                error_code = ERROR_IPM_OPERATION_FAILED;
+            }
+        }
+        break;
+    case TYPE_I2C_BURST_READ:
+        if (msg_bus < MAX_I2C_BUS) {
+            // Burst read has to come after an Open I2C message
+            if (i2c_device[msg_bus]) {
+               int reply = i2c_burst_read(i2c_device[msg_bus],
+                                          msg->data.i2c.address,
+                                          msg->data.i2c.register_addr,
+                                          msg->data.i2c.data,
+                                          msg->data.i2c.length);
+
+                if (reply < 0) {
+                    error_code = ERROR_IPM_OPERATION_FAILED;
+                }
+            }
+            else {
+                PRINT("No I2C device is ready yet\n");
+                error_code = ERROR_IPM_OPERATION_FAILED;
+            }
+        }
         break;
     case TYPE_I2C_TRANSFER:
         PRINT("received TYPE_I2C_TRANSFER\n");

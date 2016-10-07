@@ -56,6 +56,20 @@ Writes the data to the given device address. The first byte of data typically
 contains the register you want to write the data to.  This will vary from device
 to device.
 
+### I2CBus.read
+
+`void read(octet device, unsigned int size, octet registerAddress);`
+
+Reads 'size' bytes of data from the device at the registerAddress. The default
+value of registerAdress is 0x00;
+
+### I2CBus.burstRead
+
+`void burstRead(octet device, unsigned int size, octet registerAddress);`
+
+Reads 'size' bytes of data from the device across multiple addresses starting
+at the registerAddress. The default value of registerAdress is 0x00;
+
 Sample Apps
 -----------
 * [I2C sample](../samples/I2C.js)
