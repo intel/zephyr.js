@@ -3,11 +3,34 @@
 // Test to see whether eval is working; it shouldn't be, as it is a security
 // risk
 
-print("Test of the eval() function");
+var total = 0;
+var passed = 0;
 
-try {
+function assert(actual, description) {
+    total += 1;
+    
+    var label = "\033[1m\033[31mFAIL\033[0m";
+    if (actual === true) {
+        passed += 1;
+        label = "\033[1m\033[32mPASS\033[0m";
+    }
+    
+    print(label + " - " + description);
+}
+
+function expectThrow(description, func) {
+    var threw = false;
+    try {
+        func();
+    }
+    catch (err) {
+        threw = true;
+    }
+    assert(threw, description);
+}
+
+expectThrow("Test of the eval() function disabled", function () {
     eval("print('Oh no, eval is working!')");
-}
-catch (err) {
-    print("Hooray, trying to use eval failed!");
-}
+});
+
+print("TOTAL: " + passed + " of " + total + " passed");
