@@ -1,0 +1,99 @@
+OCF_ROOT ?= deps/iotivity-constrained
+CC=gcc
+
+.PHONY: setup
+setup:
+	@if [ -d $(OCF_ROOT) ]; then \
+		if [ ! "$$(ls -A $(OCF_ROOT)/deps/tinycbor)" ]; then \
+			cd $(OCF_ROOT); git submodule update --init; \
+			cd port/linux; make; \
+		fi \
+	fi
+
+DTLS =		$(OCF_ROOT)/deps/tinydtls/ccm.c \
+		$(OCF_ROOT)/deps/tinydtls/hmac.c \
+		$(OCF_ROOT)/deps/tinydtls/netq.c \
+		$(OCF_ROOT)/deps/tinydtls/peer.c \
+		$(OCF_ROOT)/deps/tinydtls/dtls_time.c \
+		$(OCF_ROOT)/deps/tinydtls/session.c \
+		$(OCF_ROOT)/deps/tinydtls/sha2/sha2.c \
+		$(OCF_ROOT)/deps/tinydtls/ecc/ecc.c \
+		$(OCF_ROOT)/deps/tinydtls/aes/rijndael.c \
+		$(OCF_ROOT)/deps/tinydtls/crypto.c \
+		$(OCF_ROOT)/deps/tinydtls/dtls.c
+
+DTLSFLAGS =	-DDTLSV12 \
+		-DWITH_SHA256 \
+		-DDTLS_CHECK_CONTENTTYPE \
+		-DWITH_OCF \
+		-I$(OCF_ROOT)/deps/tinydtls \
+		-DNDEBUG
+
+CBOR =		$(OCF_ROOT)/deps/tinycbor/src/cborencoder.c \
+		$(OCF_ROOT)/deps/tinycbor/src/cborencoder_close_container_checked.c \
+		$(OCF_ROOT)/deps/tinycbor/src/cborparser.c
+
+SRC  =		$(wildcard $(OCF_ROOT)/util/*.c) ${CBOR}
+SRC +=		$(wildcard $(OCF_ROOT)/messaging/coap/*.c)
+SRC +=		$(wildcard $(OCF_ROOT)/api/*.c)
+SRC +=		$(wildcard $(OCF_ROOT)/port/linux/*.c)
+
+CFLAGS =	-fno-asynchronous-unwind-tables \
+		-fno-omit-frame-pointer \
+		-Wall \
+		-Wno-format-zero-length \
+		-Wno-main \
+		-ffreestanding \
+		-Os \
+		-fno-stack-protector \
+		-ffunction-sections \
+		-fdata-sections \
+		-Wno-unused-but-set-variable \
+		-fno-reorder-functions \
+		-fno-defer-pop \
+		-Wno-pointer-sign \
+		-fno-strict-overflow \
+		-Werror=implicit-int \
+		-I$(OCF_ROOT)/port/linux/ \
+		-I$(OCF_ROOT)/include/ \
+		-I$(OCF_ROOT)/  \
+		-Wall \
+		-std=gnu99
+
+OBJS +=		$(SRC:%.c=%.o)	
+
+VPATH =		$(OCF_ROOT)/messaging/coap/:\
+		$(OCF_ROOT)/util/:\
+		$(OCF_ROOT)/api/:\
+		$(OCF_ROOT)/deps/tinycbor/src/:
+
+ifeq ($(DEBUG),1)
+CFLAGS += 	-DDEBUG -g
+else
+CFLAGS += 	-Wl,--gc-sections
+endif
+
+ifeq ($(SECURE),1)
+SRC += 		$(wildcard $(OCF_ROOT)/security/*.c)
+SRC_COMMON += 	${DTLS}
+CFLAGS += 	${DTLSFLAGS} -DOC_SECURITY
+VPATH += 	$(OCF_ROOT)/security/:\
+		$(OCF_ROOT)/deps/tinydtls/:\
+		$(OCF_ROOT)/deps/tinydtls/aes/:\
+		$(OCF_ROOT)/deps/tinydtls/sha2/:\
+		$(OCF_ROOT)/deps/tinydtls/ecc/:
+endif
+
+%.o: %.c
+	${CC} -c -o $@ $< ${CFLAGS} -DOC_SERVER -DOC_CLIENT
+
+.PHONY: ocf-lib
+ocf-lib: setup $(OBJS)
+	ar rcs libocf.a $(OBJS)
+
+.PHONY: clean
+clean:
+	rm -f $(OBJS)
+	rm -f libocf.a
+
+

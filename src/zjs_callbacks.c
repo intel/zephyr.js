@@ -234,6 +234,7 @@ int32_t zjs_add_callback_list(jerry_value_t js_func,
         new_cb->js->handle = handle;
         new_cb->js->max_funcs = CB_LIST_MULTIPLIER;
         new_cb->js->num_funcs = 1;
+        new_cb->js->this = jerry_acquire_value(this);
         new_cb->js->func_list = zjs_malloc(sizeof(jerry_value_t) * CB_LIST_MULTIPLIER);
         if (!new_cb->js->func_list) {
             DBG_PRINT("could not allocate function list\n");
@@ -281,6 +282,7 @@ int32_t add_callback(jerry_value_t js_func,
     if (new_cb->id >= cb_size - 1) {
         cb_size++;
     }
+
     DBG_PRINT("adding new callback id %ld, js_func=%lu, once=%u\n",
               new_cb->id, new_cb->js->js_func, once);
 
@@ -489,7 +491,6 @@ void zjs_service_callbacks(void)
                 num_callbacks++;
 #endif
             } else {
-                DBG_PRINT("no items in ring buffer. ret=%i\n", ret);
                 // no more items in ring buffer
                 break;
             }
