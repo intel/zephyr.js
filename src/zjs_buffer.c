@@ -234,21 +234,24 @@ static jerry_value_t zjs_buffer_to_string(const jerry_value_t function_obj,
                                           sz);
     encoding[len] = '\0';
 
-    if (strcmp(encoding, "hex"))
-        return zjs_error("zjs_buffer_to_string: unsupported encoding type");
-
-    if (buf && buf->bufsize > 0) {
-        char hexbuf[buf->bufsize * 2 + 1];
-        for (int i=0; i<buf->bufsize; i++) {
-            int high = (0xf0 & buf->buffer[i]) >> 4;
-            int low = 0xf & buf->buffer[i];
-            hexbuf[2*i] = zjs_int_to_hex(high);
-            hexbuf[2*i+1] = zjs_int_to_hex(low);
+    if (strcmp(encoding, "ascii") == 0) {
+        buf->buffer[buf->bufsize] = '\0';
+        return jerry_create_string((jerry_char_t *)buf->buffer);
+    } else if (strcmp(encoding, "hex") == 0) {
+        if (buf && buf->bufsize > 0) {
+            char hexbuf[buf->bufsize * 2 + 1];
+            for (int i=0; i<buf->bufsize; i++) {
+                int high = (0xf0 & buf->buffer[i]) >> 4;
+                int low = 0xf & buf->buffer[i];
+                hexbuf[2*i] = zjs_int_to_hex(high);
+                hexbuf[2*i+1] = zjs_int_to_hex(low);
+            }
+            hexbuf[buf->bufsize * 2] = '\0';
+            return jerry_create_string((jerry_char_t *)hexbuf);
         }
-        hexbuf[buf->bufsize * 2] = '\0';
-        return jerry_create_string((jerry_char_t *)hexbuf);
+    } else {
+        return zjs_error("zjs_buffer_to_string: unsupported encoding type");
     }
-
     return zjs_error("zjs_buffer_to_string: buffer is empty");
 }
 
@@ -295,9 +298,12 @@ static jerry_value_t zjs_buffer_write_string(const jerry_value_t function_obj_va
             return zjs_error("zjs_buffer_write_string: encoding arg string is too long");
         }
 
-        char arg4_str[arg4_sz];
-        char utf8_str[4];
+        char arg4_str[arg4_sz + 1];
+        char utf8_str[5];
+        jerry_string_to_char_buffer(arg4, (jerry_char_t *)arg4_str, arg4_sz);
         strcpy(utf8_str, "utf8");
+        utf8_str[4] = '\0';
+        arg4_str[arg4_sz] = '\0';
         uint8_t utf8 = strcmp(arg4_str, utf8_str);
 
         if (utf8 != 0) {
