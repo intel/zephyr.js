@@ -9,6 +9,7 @@ ifndef ZJS_BASE
 $(error ZJS_BASE not defined. You need to source zjs-env.sh)
 endif
 
+OCF_ROOT ?= deps/iotivity-constrained
 JERRY_BASE ?= $(ZJS_BASE)/deps/jerryscript
 JS ?= samples/HelloWorld.js
 VARIANT ?= release
@@ -155,7 +156,8 @@ clean:
 		make -C $(JERRY_BASE) -f targets/zephyr/Makefile clean; \
 		rm -rf deps/jerryscript/build/$(BOARD)/; \
 	fi
-	@rm -f src/*.o
+	make -f Makefile.linux clean
+	rm -f src/*.o
 	cd arc; make clean
 
 # Flash Arduino 101 x86 image

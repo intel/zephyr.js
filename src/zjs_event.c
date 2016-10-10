@@ -3,7 +3,11 @@
 
 #define ZJS_MAX_EVENT_NAME_SIZE     24
 #define DEFAULT_MAX_LISTENERS       10
+#ifdef DEBUG_BUILD
+#define HIDDEN_PROP(n) n
+#else
 #define HIDDEN_PROP(n) "\377" n
+#endif
 
 struct event {
     int num_events;
@@ -500,11 +504,14 @@ bool zjs_trigger_event_now(jerry_value_t obj,
     int32_t callback_id = -1;
     jerry_value_t event_obj;
 
-    if (!jerry_get_object_native_handle(obj, (uintptr_t*)&ev)) {
+    jerry_value_t event_emitter = zjs_get_property(obj, HIDDEN_PROP("event"));
+    if (!jerry_get_object_native_handle(event_emitter, (uintptr_t*)&ev)) {
         zjs_free(trigger);
         DBG_PRINT("native handle not found\n");
-        return jerry_create_boolean(false);
+        return false;
     }
+
+    jerry_release_value(event_emitter);
 
     int i;
     trigger->argv = zjs_malloc(sizeof(jerry_value_t) * argc);
@@ -539,7 +546,7 @@ bool zjs_trigger_event_now(jerry_value_t obj,
 
     zjs_call_callback(callback_id);
 
-    return jerry_create_boolean(true);
+    return true;
 }
 
 static void destroy_event(const uintptr_t pointer)

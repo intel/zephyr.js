@@ -2,6 +2,7 @@
 
 #include <string.h>
 #include "zjs_util.h"
+#include "zjs_common.h"
 #include "zjs_promise.h"
 #include "zjs_callbacks.h"
 
@@ -16,6 +17,7 @@ struct promise {
     int32_t catch_id;           // Callback ID for catch JS callback
     jerry_value_t* catch_argv;  // Arguments for rejecting promise
     uint32_t catch_argc;    // Number of arguments for catch callback
+    jerry_value_t this;
     void* user_handle;
     zjs_post_promise_func post;
 };
@@ -42,11 +44,19 @@ static void post_promise(void* h, jerry_value_t* ret_val)
 {
     struct promise* handle = (struct promise*)h;
     if (handle) {
+        int i;
         if (handle->post) {
             handle->post(handle->user_handle);
         }
         jerry_release_value(handle->then);
         jerry_release_value(handle->catch);
+        jerry_release_value(handle->this);
+        if (handle->catch_argv) {
+            zjs_free(handle->catch_argv);
+        }
+        if (handle->then_argv) {
+            zjs_free(handle->then_argv);
+        }
     }
 }
 
@@ -133,6 +143,7 @@ void zjs_make_promise(jerry_value_t obj, zjs_post_promise_func post,
     new->post = post;
     new->then_set = 0;
     new->catch_set = 0;
+    new->this = jerry_acquire_value(obj);
 
     // Add the "promise" object to the object passed as a property, because the
     // object being made to a promise may already have a native handle.
@@ -144,51 +155,82 @@ void zjs_make_promise(jerry_value_t obj, zjs_post_promise_func post,
 
 void zjs_fulfill_promise(jerry_value_t obj, jerry_value_t argv[], uint32_t argc)
 {
-    struct promise* handle;
+    int i;
+    struct promise* handle = NULL;
     jerry_value_t promise_obj = zjs_get_property(obj, "promise");
+
+    if (!jerry_value_is_object(promise_obj)) {
+        ERR_PRINT("'promise' not found in object %u\n", obj);
+        return;
+    }
 
     jerry_get_object_native_handle(promise_obj, (uintptr_t*)&handle);
 
-    // Put *something* here in case it never gets registered
-    if (!handle->then_set) {
-        handle->then = jerry_create_external_function(null_function);
+    if (handle) {
+        // Put *something* here in case it never gets registered
+        if (!handle->then_set) {
+            handle->then = jerry_create_external_function(null_function);
+        }
+        handle->then_id = zjs_add_callback_once(handle->then,
+                                                handle->this,
+                                                handle,
+                                                pre_then,
+                                                post_promise);
+
+        if (argv) {
+            handle->then_argv = zjs_malloc(sizeof(jerry_value_t) * argc);
+            for (i = 0; i < argc; ++i) {
+                handle->then_argv[i] = argv[i];
+            }
+        } else {
+            handle->then_argv = NULL;
+        }
+        handle->then_argc = argc;
+
+        zjs_signal_callback(handle->then_id);
+
+        DBG_PRINT("fulfilling promise, obj=%lu, then_id=%lu, argv=%p, nargs=%lu\n",
+                obj, handle->then_id, argv, argc);
+    } else {
+        ERR_PRINT("native handle not found\n");
     }
-
-    handle->then_id = zjs_add_callback_once(handle->then,
-                                            obj, handle,
-                                            pre_then,
-                                            post_promise);
-    handle->then_argv = argv;
-    handle->then_argc = argc;
-
-    zjs_signal_callback(handle->then_id);
-
-    DBG_PRINT("fulfilling promise, obj=%lu, then_id=%lu, argv=%p, nargs=%lu\n",
-              obj, handle->then_id, argv, argc);
 }
 
 void zjs_reject_promise(jerry_value_t obj, jerry_value_t argv[], uint32_t argc)
 {
-    struct promise* handle;
+    int i;
+    struct promise* handle = NULL;
     jerry_value_t promise_obj = zjs_get_property(obj, "promise");
 
     jerry_get_object_native_handle(promise_obj, (uintptr_t*)&handle);
 
-    // Put *something* here in case it never gets registered
-    if (!handle->catch_set) {
-        handle->catch = jerry_create_external_function(null_function);
+    if (!handle) {
+        // Put *something* here in case it never gets registered
+        if (!handle->catch_set) {
+            handle->catch = jerry_create_external_function(null_function);
+        }
+
+        handle->catch_id = zjs_add_callback_once(handle->catch,
+                                                 handle->this,
+                                                 handle,
+                                                 pre_catch,
+                                                 post_promise);
+
+        if (argv) {
+            handle->catch_argv = zjs_malloc(sizeof(jerry_value_t) * argc);
+            for (i = 0; i < argc; ++i) {
+                handle->catch_argv[i] = argv[i];
+            }
+        } else {
+            handle->catch_argv = NULL;
+        }
+        handle->catch_argc = argc;
+
+        zjs_signal_callback(handle->catch_id);
+
+        DBG_PRINT("rejecting promise, obj=%lu, catch_id=%ld, argv=%p, nargs=%lu\n",
+                obj, handle->catch_id, argv, argc);
+    } else {
+        ERR_PRINT("native handle not found\n");
     }
-
-    handle->catch_id = zjs_add_callback_once(handle->catch,
-                                             obj,
-                                             handle,
-                                             pre_catch,
-                                             post_promise);
-    handle->catch_argv = argv;
-    handle->catch_argc = argc;
-
-    zjs_signal_callback(handle->catch_id);
-
-    DBG_PRINT("rejecting promise, obj=%lu, catch_id=%ld, argv=%p, nargs=%lu\n",
-              obj, handle->catch_id, argv, argc);
 }

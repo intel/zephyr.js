@@ -211,11 +211,13 @@ int32_t zjs_add_callback_list(jerry_value_t js_func,
         new_cb->type = CALLBACK_TYPE_JS;
         new_cb->signal = 0;
         new_cb->js->id = new_id();
+        new_cb->js->this = jerry_acquire_value(this);
         new_cb->js->pre = pre;
         new_cb->js->post = post;
         new_cb->js->handle = handle;
         new_cb->js->max_funcs = CB_LIST_MULTIPLIER;
         new_cb->js->num_funcs = 1;
+        new_cb->js->this = jerry_acquire_value(this);
         new_cb->js->func_list = zjs_malloc(sizeof(jerry_value_t) * CB_LIST_MULTIPLIER);
         if (!new_cb->js->func_list) {
             DBG_PRINT("could not allocate function list\n");
@@ -226,6 +228,7 @@ int32_t zjs_add_callback_list(jerry_value_t js_func,
         if (new_cb->js->id >= cb_size - 1) {
             cb_size++;
         }
+
         return new_cb->js->id;
     }
 }
@@ -252,7 +255,7 @@ int32_t add_callback(jerry_value_t js_func,
     new_cb->signal = 0;
     new_cb->js->id = new_id();
     new_cb->js->js_func = jerry_acquire_value(js_func);
-    new_cb->js->this = this;
+    new_cb->js->this = jerry_acquire_value(this);
     new_cb->js->pre = pre;
     new_cb->js->post = post;
     new_cb->js->handle = handle;
@@ -266,6 +269,7 @@ int32_t add_callback(jerry_value_t js_func,
     if (new_cb->js->id >= cb_size - 1) {
         cb_size++;
     }
+
     DBG_PRINT("adding new callback id %ld, js_func=%lu, once=%u\n",
               new_cb->js->id, new_cb->js->js_func, once);
 
@@ -303,6 +307,7 @@ void zjs_remove_callback(int32_t id)
             } else {
                 jerry_release_value(cb_map[id]->js->js_func);
             }
+            jerry_release_value(cb_map[id]->js->this);
             zjs_free(cb_map[id]->js);
         } else if (cb_map[id]->c) {
             zjs_free(cb_map[id]->c);
