@@ -74,7 +74,7 @@ var dig_T1;
 var dig_T2;
 var dig_T3;
 var setupData = new Buffer(2);
-var msgData = new Buffer("@Temperature is ");
+var msgData = new Buffer("Temperature is ");
 var tempData = new Buffer(" ##.#C");
 var changeData = new Buffer(" +");
 var baseTemp = prevTemp = 25;
@@ -124,24 +124,25 @@ function changeRGB(red, green, blue) {
 
 function updateColor(newTemp) {
     var diff = newTemp - baseTemp;
-    var change = diff > 0 ? diff * 40 : diff * -40;
-    change = change > 255 ? 255 : change | 0;
+    var change = (diff > 0) ? (diff * 40) : (diff * -40);
+    change = (change > 255) ? 255 : (change | 0);
 
     if (baseTemp < newTemp) {
-        blue = 200 - change < 0 ? 0 : 200 - change;
+        blue = (200 - change < 0) ? 0 : (200 - change);
         green = blue;
-        red = 200 + change > 255 ? 255 : 200 + change;
+        red = (200 + change > 255) ? 255 : (200 + change);
     } else {
-        red = 200 - change < 0 ? 0 : 200 - change;
+        red = (200 - change < 0) ? 0 : (200 - change);
         green = red;
-        blue = 200 + change > 255 ? 255 : 200 + change;
+        blue = (200 + change > 255) ? 255 : (200 + change);
     }
 
     prevTemp = newTemp;
-    changeRGB(red | 0, green | 0, blue | 0);
+    changeRGB(red, green, blue);
 }
 
 function writeWord(word, buffer) {
+    word = "@" + word;  //This is needed to write to the correct address register
     buffer.write(word);
     i2cDevice.write(glcd.GROVE_LCD_DISPLAY_ADDR, buffer);
 }
@@ -184,7 +185,7 @@ function init() {
     i2cDevice.write(glcd.GROVE_LCD_DISPLAY_ADDR, setupData);
 
     resetCursor(0, 0);
-    writeWord("@Temperature is ", msgData);    
+    writeWord("Temperature is ", msgData);    
 }
 
 function readCoefficients() {
@@ -213,24 +214,23 @@ function readTemperature() {
     tempDec >>>= 12;
 
     //Convert raw temperature to Celsius
-    var1 = ((((tempDec >> 3) - (dig_T1 << 1))) * (dig_T2)) >> 11;
+    var1 = (((tempDec >> 3) - (dig_T1 << 1))  * (dig_T2)) >> 11;
     var2 = (((((tempDec >> 4) - (dig_T1)) * ((tempDec >> 4) - (dig_T1))) >> 12) *
             (dig_T3)) >> 14;
 
-    t_fine = var1 + var2;
-    T = ((t_fine * 5 + 128) >> 8) / 100 ;
+    var t_fine = var1 + var2;
+    var T = ((t_fine * 5 + 128) >> 8) / 100 ;
 
     print ("Temp = " + T);
     var dec = (T * 10) | 0;
-    dec = (dec - (T | 0) * 10) | 0;
-    var tempStr = "@" + (T | 0)  + '.' + dec + "C";
-
+    dec = dec - (T | 0) * 10;    
+    var tempStr = (T | 0)  + '.' + dec + "C";    
     //Draw icon for direction temp has changed
     resetCursor(0, 1);
     if (prevTemp < T) {
-        writeWord("@+", changeData);
+        writeWord("+", changeData);
     } else {
-        writeWord("@-", changeData);
+        writeWord("-", changeData);
     }
 
     //Write out the temp to the LCD
