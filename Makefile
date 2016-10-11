@@ -49,9 +49,9 @@ endif
 		echo "POOL POOL_128           128       128           4" >> prj.mdef; \
 		echo "POOL POOL_256           256       256           2" >> prj.mdef; \
 	else \
-		echo "" >> prj.mdef; \
-		echo "% HEAP CONFIG: " >> prj.mdef; \
-		if [ $(DEV) != "ashell" ]; then \
+		if [ "$(DEV)" != "ashell" ]; then \
+			echo "" >> prj.mdef; \
+			echo "% HEAP CONFIG: " >> prj.mdef; \
 			echo "HEAP_SIZE 5120" >> prj.mdef; \
 		fi; \
 	fi
