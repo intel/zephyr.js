@@ -209,7 +209,7 @@ void zjs_timers_process_events()
         }
         else if (zjs_port_timer_test(&tm->timer, ZJS_TICKS_NONE)) {
             // timer has expired, signal the callback
-            zjs_signal_callback(tm->callback_id);
+            zjs_signal_callback_args(tm->callback_id, tm->argv, tm->argc * sizeof(jerry_value_t));
 
             // reschedule or remove timer
             if (tm->repeat) {

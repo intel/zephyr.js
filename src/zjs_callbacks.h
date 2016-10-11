@@ -33,7 +33,7 @@ typedef void (*zjs_post_callback_func)(void* handle, jerry_value_t* ret_val);
  *
  * @param handle        Handle registered by zjs_add_c_callback()
  */
-typedef void (*zjs_c_callback_func)(void* handle);
+typedef void (*zjs_c_callback_func)(void* handle, void* args);
 
 /*
  * Initialize the callback module
@@ -159,6 +159,15 @@ void zjs_remove_callback(int32_t id);
  * @param id            ID returned from zjs_add_callback
  */
 void zjs_signal_callback(int32_t id);
+
+/*
+ * Signal the system to make a callback and specify the arguments at this time.
+ *
+ * @param id            ID returned from zjs_add_callback
+ * @param args          Arguments given to the JS/C callback
+ * @param size          Size of arguments (in bytes)
+ */
+void zjs_signal_callback_args(int32_t id, void* args, uint32_t size);
 
 /*
  * Add/register a C callback

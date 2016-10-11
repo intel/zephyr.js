@@ -45,10 +45,12 @@ struct gpio_handle {
     jerry_value_t pin_obj;          // Pin object returned from open()
     jerry_value_t onchange_func;    // Function registered to onChange
     jerry_value_t* open_ret_args;
+    uint8_t edge_both;
+    uint32_t last;
 };
 
 // C callback to be called after a GPIO input ISR fires
-static void gpio_c_callback(void* h)
+static void gpio_c_callback(void* h, void* args)
 {
     struct gpio_handle *handle = (struct gpio_handle*)h;
     jerry_value_t onchange_func = zjs_get_property(handle->pin_obj, "onchange");
@@ -56,8 +58,10 @@ static void gpio_c_callback(void* h)
     // If pin.onChange exists, call it
     if (jerry_value_is_function(onchange_func)) {
         jerry_value_t event = jerry_create_object();
+        uint32_t val = 0;
+        memcpy(&val, args, 4);
         // Put the boolean GPIO trigger value in the object
-        zjs_obj_add_boolean(event, handle->value, "value");
+        zjs_obj_add_boolean(event, val, "value");
 
         // Only aquire once, once we have it just keep using it.
         // It will be released in close()
@@ -85,8 +89,11 @@ static void gpio_zephyr_callback(struct device *port,
     struct gpio_handle *handle = CONTAINER_OF(cb, struct gpio_handle, callback);
     // Read the value and save it in the handle
     gpio_pin_read(port, handle->pin, &handle->value);
-    // Signal the C callback, where we call the JS callback
-    zjs_signal_callback(handle->callbackId);
+    if ((handle->edge_both && handle->value != handle->last) || !handle->edge_both) {
+        // Signal the C callback, where we call the JS callback
+        zjs_signal_callback_args(handle->callbackId, &handle->value, 4);
+        handle->last = handle->value;
+    }
 }
 
 static struct gpio_handle* new_gpio_handle(void)
@@ -327,6 +334,13 @@ static jerry_value_t zjs_gpio_open(const jerry_value_t function_obj,
 
         // Register a C callback (will be called after the ISR is called)
         handle->callbackId = zjs_add_c_callback(handle, gpio_c_callback);
+
+        if (!strcmp(edge, ZJS_EDGE_BOTH)) {
+            handle->edge_both = 1;
+        } else {
+            handle->edge_both = 0;
+        }
+
         // Set the native handle so we can free it when close() is called
         jerry_set_object_native_handle(pinobj, (uintptr_t)handle, zjs_gpio_free_cb);
     }

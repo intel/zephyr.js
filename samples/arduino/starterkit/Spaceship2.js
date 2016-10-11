@@ -17,18 +17,20 @@
 var gpio = require('gpio');
 var pins = require('arduino101_pins');
 
+print("Starting Spaceship2.js");
+
 // set up the GPIO pins
 var button = gpio.open({
-    pin: pins.IO2,
+    pin: pins.IO4,
     direction: 'in',
     edge: 'any'
 });
 var led1 = gpio.open({
-    pin: pins.IO4,
+    pin: pins.LED0,
     direction: 'out'
 });
 var led2 = gpio.open({
-    pin: pins.IO7,
+    pin: pins.LED1,
     direction: 'out'
 });
 var led3 = gpio.open({
@@ -41,31 +43,34 @@ var btnstate = false;
 // turn green LED on initially
 led1.write(true);
 
-var timer;
+var timer = null;
 var toggle;
+var last;
 
 button.onchange = function (event) {
     if (event.value) {
-        // button has been pressed
-        toggle = false;
-        led1.write(false);
-        led2.write(false);
-        led3.write(true);
+        if (timer == null) {
+            // button has been pressed
+            toggle = false;
+            led1.write(false);
+            led2.write(false);
+            led3.write(true);
 
-        // start timer to toggle LED states every 250ms (1/4 second)
-        timer = setInterval(function () {
-            toggle = !toggle;
-            led2.write(toggle);
-            led3.write(!toggle);
-        }, 250);
+            // start timer to toggle LED states every 250ms (1/4 second)
+            timer = setInterval(function () {
+                toggle = !toggle;
+                led2.write(toggle);
+                led3.write(!toggle);
+            }, 250);
+        }
     }
     else {
         // button has been released
         led1.write(true);
         led2.write(false);
         led3.write(false);
-
         // remove the timer event
         clearInterval(timer);
+        timer = null;
     }
 }

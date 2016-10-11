@@ -12,6 +12,7 @@ CORE_SRC = 	src/main.c \
 			src/zjs_callbacks.c \
 			src/zjs_console.c \
 			src/zjs_event.c \
+			src/zjs_linux_queue.c \
 			src/zjs_linux_time.c \
 			src/zjs_modules.c \
 			src/zjs_performance.c \
@@ -36,6 +37,7 @@ LINUX_DEFINES = -DZJS_LINUX_BUILD -DBUILD_MODULE_EVENTS -DBUILD_MODULE_CONSOLE \
 
 ifeq ($(VARIANT), debug)
 LINUX_DEFINES += -DDEBUG_BUILD
+LINUX_FLAGS += -g
 endif
 
 %.o:%.c
