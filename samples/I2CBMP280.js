@@ -103,14 +103,14 @@ function resetCursor(col, row) {
     } else {
         col |= 0xC0;
     }
-    
+
     setupData.writeUInt8(glcd.GLCD_CMD_SET_DDRAM_ADDR, 0);
     setupData.writeUInt8(col, 1);
     i2cDevice.write(glcd.GROVE_LCD_DISPLAY_ADDR, setupData);
 }
 
 function changeRGB(red, green, blue) {
-    // Valid range for color is 0 - 255    
+    // Valid range for color is 0 - 255
     var redData = new Buffer([glcd.REGISTER_R, red]);
     var greenData = new Buffer([glcd.REGISTER_G, green]);
     var blueData = new Buffer([glcd.REGISTER_B, blue]);
@@ -142,7 +142,7 @@ function updateColor(newTemp) {
 }
 
 function writeWord(word, buffer) {
-    word = "@" + word;  //This is needed to write to the correct address register
+    word = "@" + word;  //This is needed to write to the correct register address
     buffer.write(word);
     i2cDevice.write(glcd.GROVE_LCD_DISPLAY_ADDR, buffer);
 }
@@ -185,7 +185,7 @@ function init() {
     i2cDevice.write(glcd.GROVE_LCD_DISPLAY_ADDR, setupData);
 
     resetCursor(0, 0);
-    writeWord("Temperature is ", msgData);    
+    writeWord("Temperature is ", msgData);
 }
 
 function readCoefficients() {
@@ -223,8 +223,8 @@ function readTemperature() {
 
     print ("Temp = " + T);
     var dec = (T * 10) | 0;
-    dec = dec - (T | 0) * 10;    
-    var tempStr = (T | 0)  + '.' + dec + "C";    
+    dec = dec - (T | 0) * 10;
+    var tempStr = (T | 0)  + '.' + dec + "C";
     //Draw icon for direction temp has changed
     resetCursor(0, 1);
     if (prevTemp < T) {
