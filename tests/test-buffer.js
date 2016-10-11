@@ -2,9 +2,30 @@
 
 // Buffer Testing
 
+var total = 0;
+var passed = 0;
+
 function assert(actual, description) {
-    print((actual === true ? "\033[1m\033[32mPASS\033[0m":"\033[1m\033[31mFAIL\033[0m") +
-           " - " + description);
+    total += 1;
+    
+    var label = "\033[1m\033[31mFAIL\033[0m";
+    if (actual === true) {
+        passed += 1;
+        label = "\033[1m\033[32mPASS\033[0m";
+    }
+    
+    print(label + " - " + description);
+}
+
+function expectThrow(description, func) {
+    var threw = false;
+    try {
+        func();
+    }
+    catch (err) {
+        threw = true;
+    }
+    assert(threw, description);
 }
 
 // Attribute: readonly unsigned long length
@@ -53,24 +74,18 @@ for(var i = 0; i < uints.length; i++) {
            " got:" + actual + " when writeUInt8(" + uints[i][0] + ")");
 }
 
-var test_write_error = "Error thrown when the offset of writeUInt8() is outside the bounds of the Buffer";
-try {
+
+expectThrow("Error thrown when the offset of writeUInt8() " +
+            "is outside the bounds of the Buffer", function () {
     // write beyond end of buffer
     buff.writeUInt8(0, uints.length);
-    assert(false, test_write_error);
-} catch(e) {
-    assert(true, test_write_error);
-}
+});
 
-var test_read_error = "Error thrown when the offset of readUInt8() is outside the bounds of the Buffer";
-try {
+expectThrow("Error thrown when the offset of readUInt8() " +
+            "is outside the bounds of the Buffer", function () {
     // read beyond end of buffer
     buff.readUInt8(uints.length);
-    assert(false, test_read_error);
-} catch(e) {
-    assert(true, test_read_error);
-}
-
+});
 
 // Function: string toString(string encoding)
 var hexs = [[0, "00"],
@@ -84,14 +99,13 @@ for(var i = 0; i < hexs.length; i++) {
     buff.writeUInt8(hexs[i][0], i);
     expected += hexs[i][1];
 }
-assert(buff.toString('hex') === expected,
-       "The value of toString('hex') expected:" + expected + " got:" + buff.toString('hex'));
+assert(buff.toString('hex') === expected, 
+       "The value of toString('hex') expected:" + expected +
+       " got:" + buff.toString('hex'));
 
-var test_toString_error = "Error thrown when 'hex' is not given to toString()";
-try {
+expectThrow("Error thrown when 'hex' is not given to toString()", function () {
     // unsupported encoding
     buff.toString("utf8");
-    assert(false, test_toString_error);
-} catch(e) {
-    assert(true, test_toString_error);
-}
+});
+
+print("TOTAL: " + passed + " of " + total + " passed");
