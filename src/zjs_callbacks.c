@@ -223,7 +223,9 @@ int32_t zjs_add_callback_list(jerry_value_t js_func,
         }
         new_cb->js->func_list[0] = jerry_acquire_value(js_func);
         cb_map[new_cb->js->id] = new_cb;
-        cb_size++;
+        if (new_cb->js->id >= cb_size - 1) {
+            cb_size++;
+        }
         return new_cb->js->id;
     }
 }
@@ -261,8 +263,9 @@ int32_t add_callback(jerry_value_t js_func,
 
     // Add callback to list
     cb_map[new_cb->js->id] = new_cb;
-    cb_size++;
-
+    if (new_cb->js->id >= cb_size - 1) {
+        cb_size++;
+    }
     DBG_PRINT("adding new callback id %ld, js_func=%lu, once=%u\n",
               new_cb->js->id, new_cb->js->js_func, once);
 
@@ -345,8 +348,9 @@ int32_t zjs_add_c_callback(void* handle, zjs_c_callback_func callback)
 
     // Add callback to list
     cb_map[new_cb->c->id] = new_cb;
-    cb_size++;
-
+    if (new_cb->js->id >= cb_size - 1) {
+        cb_size++;
+    }
     DBG_PRINT("adding new C callback id %ld\n", new_cb->c->id);
 
     return new_cb->c->id;
