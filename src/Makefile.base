@@ -2,6 +2,9 @@ JERRY_BASE ?= $(ZJS_BASE)/deps/jerryscript
 
 ccflags-y += -Wall -Werror
 
+# Select extended ANSI C/POSIX function set in recent Newlib versions
+ccflags-y += -D_XOPEN_SOURCE=700
+
 ccflags-y += -I$(JERRY_BASE)/jerry-core
 ccflags-y += -I$(ZEPHYR_BASE)/drivers
 ccflags-y += -I$(ZJS_BASE)/outdir/include
