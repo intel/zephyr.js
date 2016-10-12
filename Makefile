@@ -9,6 +9,7 @@ ifndef ZJS_BASE
 $(error ZJS_BASE not defined. You need to source zjs-env.sh)
 endif
 
+OCF_ROOT ?= deps/iotivity-constrained
 JERRY_BASE ?= $(ZJS_BASE)/deps/jerryscript
 JS ?= samples/HelloWorld.js
 VARIANT ?= release
@@ -49,9 +50,9 @@ endif
 		echo "POOL POOL_128           128       128           4" >> prj.mdef; \
 		echo "POOL POOL_256           256       256           2" >> prj.mdef; \
 	else \
-		echo "" >> prj.mdef; \
-		echo "% HEAP CONFIG: " >> prj.mdef; \
-		if [ $(DEV) != "ashell" ]; then \
+		if [ "$(DEV)" != "ashell" ]; then \
+			echo "" >> prj.mdef; \
+			echo "% HEAP CONFIG: " >> prj.mdef; \
 			echo "HEAP_SIZE 5120" >> prj.mdef; \
 		fi; \
 	fi
@@ -155,7 +156,8 @@ clean:
 		make -C $(JERRY_BASE) -f targets/zephyr/Makefile clean; \
 		rm -rf deps/jerryscript/build/$(BOARD)/; \
 	fi
-	@rm -f src/*.o
+	make -f Makefile.linux clean
+	rm -f src/*.o
 	cd arc; make clean
 
 # Flash Arduino 101 x86 image
