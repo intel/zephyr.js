@@ -183,6 +183,12 @@ static jerry_value_t native_clear_interval_handler(const jerry_value_t function_
 
 void zjs_timers_process_events()
 {
+#ifdef DEBUG_BUILD
+#ifndef ZJS_LINUX_BUILD
+    extern void update_print_timer(void);
+    update_print_timer();
+#endif
+#endif
     for (zjs_timer_t *tm = zjs_timers; tm; tm = tm->next) {
         if (tm->completed) {
             delete_timer(tm->callback_id);
