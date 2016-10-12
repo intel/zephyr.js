@@ -152,7 +152,7 @@ function writeWord(word, buffer) {
 
 function init() {
     var reader = i2cDevice.read(bmp280.BMP280_ADDRESS, 1,
-                            bmp280.BMP280_REGISTER_CHIPID);
+                                bmp280.BMP280_REGISTER_CHIPID);
 
     // Check that we have a BMP280 on the I2C bus
     if (reader.toString('hex') !== "58")
@@ -220,9 +220,9 @@ function readTemperature() {
 
     // Convert raw temperature to Celsius using the algorithm found here
     // https://www.bosch-sensortec.com/bst/products/all_products/bmp280
-    var var1 = (((tempDec >> 3) - (dig_T1 << 1))  * (dig_T2)) >> 11;
+    var var1 = (((tempDec >> 3) - (dig_T1 << 1)) * (dig_T2)) >> 11;
     var var2 = (((((tempDec >> 4) - (dig_T1)) * ((tempDec >> 4) - (dig_T1))) >> 12) *
-            (dig_T3)) >> 14;
+                (dig_T3)) >> 14;
 
     var t_fine = var1 + var2;
     var T = ((t_fine * 5 + 128) >> 8) / 100 ;
@@ -248,4 +248,4 @@ function readTemperature() {
 }
 
 init();
-setInterval(readTemperature, 200);
+setInterval(readTemperature, 10);
