@@ -888,6 +888,11 @@ static bool zjs_ble_parse_service(ble_service_t *service)
         }
 
         memset(chrc, 0, sizeof(ble_characteristic_t));
+        chrc->read_cb.id = chrc->write_cb.id
+                         = chrc->subscribe_cb.id
+                         = chrc->unsubscribe_cb.id
+                         = chrc->notify_cb.id
+                         = -1;
 
         chrc->chrc_obj = jerry_acquire_value(v_chrc);
         jerry_set_object_native_handle(chrc->chrc_obj, (uintptr_t)chrc, NULL);
