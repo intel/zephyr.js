@@ -12,6 +12,9 @@
 #ifdef BUILD_MODULE_I2C
 #include <i2c.h>
 #endif
+#ifdef BUILD_MODULE_SENSOR
+#include <sensor.h>
+#endif
 #ifdef BUILD_MODULE_GROVE_LCD
 #include <display/grove_lcd.h>
 #endif
@@ -57,6 +60,13 @@ static struct device *i2c_device[MAX_I2C_BUS];
 static struct device *glcd = NULL;
 static char str[MAX_BUFFER_SIZE];
 #endif
+
+// BMI160 sensor
+static struct device *bmi160 = NULL;
+static bool accel_poll = false;
+static bool gyro_poll = false;
+static double accel_last_value[3];
+static double gyro_last_value[3];
 
 // add strnlen() support for security since it is missing
 // in Zephyr's minimal libc implementation
@@ -356,6 +366,7 @@ static void handle_glcd(struct zjs_ipm_message* msg)
             glcd = device_get_binding(GROVE_LCD_NAME);
 
             if (!glcd) {
+                PRINT("failed to initialize Grove LCD\n");
                 error_code = ERROR_IPM_OPERATION_FAILED;
             } else {
                 DBG_PRINT("Grove LCD initialized\n");
@@ -421,6 +432,246 @@ static void handle_glcd(struct zjs_ipm_message* msg)
 }
 #endif
 
+#ifdef	BUILD_MODULE_SENSOR
+#ifndef DEBUG_BUILD
+static inline int sensor_value_snprintf(char *buf, size_t len,
+                                        const struct sensor_value *val)
+{
+    int32_t val1, val2;
+
+    switch (val->type) {
+    case SENSOR_VALUE_TYPE_INT:
+        return snprintf(buf, len, "%d", val->val1);
+    case SENSOR_VALUE_TYPE_INT_PLUS_MICRO:
+        if (val->val2 == 0) {
+            return snprintf(buf, len, "%d", val->val1);
+        }
+
+        /* normalize value */
+        if (val->val1 < 0 && val->val2 > 0) {
+            val1 = val->val1 + 1;
+            val2 = val->val2 - 1000000;
+        } else {
+            val1 = val->val1;
+            val2 = val->val2;
+        }
+
+        /* print value to buffer */
+        if (val1 > 0 || (val1 == 0 && val2 > 0)) {
+                return snprintf(buf, len, "%d.%06d", val1, val2);
+        } else if (val1 == 0 && val2 < 0) {
+                return snprintf(buf, len, "-0.%06d", -val2);
+        } else {
+                return snprintf(buf, len, "%d.%06d", val1, -val2);
+        }
+    case SENSOR_VALUE_TYPE_DOUBLE:
+        return snprintf(buf, len, "%f", val->dval);
+    default:
+        return 0;
+    }
+}
+#endif
+
+static void send_sensor_data(enum sensor_channel channel,
+                             double array[])
+{
+    struct zjs_ipm_message msg;
+    msg.id = MSG_ID_SENSOR;
+    msg.type = TYPE_SENSOR_EVENT_VALUE_CHANGE;
+    msg.flags = 0;
+    msg.user_data = NULL;
+    msg.error_code = ERROR_IPM_NONE;
+    msg.data.sensor.channel = channel;
+    memcpy(msg.data.sensor.value, array, sizeof(double) * 3);
+    zjs_ipm_send(MSG_ID_SENSOR, &msg);
+}
+
+#define ABS(x) ((x) > 0) ? (x) : -(x)
+
+static double convert_sensor_value(const struct sensor_value *val)
+{
+    int32_t val1, val2;
+    double result = 0;
+
+    switch (val->type) {
+    case SENSOR_VALUE_TYPE_INT:
+        result = val->val1;
+        break;
+    case SENSOR_VALUE_TYPE_INT_PLUS_MICRO:
+        if (val->val2 == 0) {
+            result = (double)val->val1;
+            break;
+        }
+
+        /* normalize value */
+        if (val->val1 < 0 && val->val2 > 0) {
+            val1 = val->val1 + 1;
+            val2 = val->val2 - 1000000;
+        } else {
+            val1 = val->val1;
+            val2 = val->val2;
+        }
+
+        if (val1 > 0 || (val1 == 0 && val2 > 0)) {
+            result = val1 + (double)val2 * 0.000001;
+        } else if (val1 == 0 && val2 < 0) {
+            result = (double)val2 * (-0.000001);
+        } else {
+            result = val1 + (double)val2 * (-0.000001);
+        }
+        break;
+    case SENSOR_VALUE_TYPE_DOUBLE:
+        result = val->dval;
+        break;
+    default:
+        PRINT("convert_sensor_value: invalid type %d\n", val->type);
+        return 0;
+    }
+
+    return result;
+}
+
+static void process_accel_data(struct device *dev)
+{
+    struct sensor_value val[3];
+    double dval[3];
+
+    if (sensor_channel_get(dev, SENSOR_CHAN_ACCEL_ANY, val) < 0) {
+        PRINT("Cannot read accelerometer channels.\n");
+        return;
+    }
+
+    dval[0] = convert_sensor_value(&val[0]);
+    dval[1] = convert_sensor_value(&val[1]);
+    dval[2] = convert_sensor_value(&val[2]);
+
+    if (dval[0] == 0 && dval[1] == 0 && dval[2] == 0) {
+        // FIXME: BUG? why sometimes it reports 0, 0, 0 on all axis
+        return;
+    }
+
+    // set slope threshold to 0.1G (0.1 * 9.80665 = 4.903325 m/s^2)
+    double threshold = 0.980665;
+    if (ABS(dval[0] - accel_last_value[0]) > threshold ||
+        ABS(dval[1] - accel_last_value[1]) > threshold ||
+        ABS(dval[2] - accel_last_value[2]) > threshold) {
+        memcpy(accel_last_value, dval, sizeof(double) * 3);
+        send_sensor_data(SENSOR_CHAN_ACCEL_ANY, dval);
+    }
+
+#ifdef DEBUG_BUILD
+    char buf_x[18], buf_y[18], buf_z[18];
+
+    sensor_value_snprintf(buf_x, sizeof(buf_x), &val[0]);
+    sensor_value_snprintf(buf_y, sizeof(buf_y), &val[1]);
+    sensor_value_snprintf(buf_z, sizeof(buf_z), &val[2]);
+    PRINT("sending accel: X=%s, Y=%s, Z=%s\n", buf_x, buf_y, buf_z);
+#endif
+}
+
+static void process_gyro_data(struct device *dev)
+{
+    struct sensor_value val[3];
+    double dval[3];
+
+    if (sensor_channel_get(dev, SENSOR_CHAN_GYRO_ANY, val) < 0) {
+        PRINT("Cannot read gyroscope channels.\n");
+        return;
+    }
+
+    dval[0] = convert_sensor_value(&val[0]);
+    dval[1] = convert_sensor_value(&val[1]);
+    dval[2] = convert_sensor_value(&val[2]);
+
+    if (ABS(dval[0] - accel_last_value[0]) > 0 ||
+        ABS(dval[1] - accel_last_value[1]) > 0 ||
+        ABS(dval[2] - accel_last_value[2]) > 0) {
+        memcpy(gyro_last_value, dval, sizeof(double) * 3);
+        send_sensor_data(SENSOR_CHAN_GYRO_ANY, dval);
+    }
+
+#ifdef DEBUG_BUILD
+    char buf_x[18], buf_y[18], buf_z[18];
+
+    sensor_value_snprintf(buf_x, sizeof(buf_x), &val[0]);
+    sensor_value_snprintf(buf_y, sizeof(buf_y), &val[1]);
+    sensor_value_snprintf(buf_z, sizeof(buf_z), &val[2]);
+    PRINT("Sending gyro : X=%s, Y=%s, Z=%s\n", buf_x, buf_y, buf_z);
+#endif
+}
+
+static void fetch_sensor(struct device *dev) {
+    if (sensor_sample_fetch(dev) < 0) {
+        PRINT("failed to fetch sensor data\n");
+        return;
+    }
+
+    if (accel_poll) {
+        process_accel_data(dev);
+    }
+    if (gyro_poll) {
+        process_gyro_data(dev);
+    }
+}
+
+static void handle_sensor(struct zjs_ipm_message* msg)
+{
+    uint32_t error_code = ERROR_IPM_NONE;
+
+    if (msg->type != TYPE_SENSOR_INIT && !bmi160) {
+        PRINT("Grove LCD device not found.\n");
+        ipm_send_error_reply(msg, ERROR_IPM_OPERATION_FAILED);
+        return;
+    }
+
+    switch(msg->type) {
+    case TYPE_SENSOR_INIT:
+        if (!bmi160) {
+            bmi160 = device_get_binding("bmi160");
+
+            if (!bmi160) {
+                error_code = ERROR_IPM_OPERATION_FAILED;
+                PRINT("failed to initialize BMI160 sensor\n");
+            } else {
+                accel_poll = gyro_poll = false;
+                DBG_PRINT("BMI160 sensor initialized\n");
+            }
+        }
+        break;
+    case TYPE_SENSOR_START:
+        if (msg->data.sensor.channel == SENSOR_CHAN_ACCEL_ANY) {
+            accel_poll = true;
+        } else if (msg->data.sensor.channel == SENSOR_CHAN_GYRO_ANY) {
+            gyro_poll = true;
+        } else {
+            PRINT("invalid sensor channel\n");
+            error_code = ERROR_IPM_NOT_SUPPORTED;
+        }
+        break;
+    case TYPE_SENSOR_STOP:
+        if (msg->data.sensor.channel == SENSOR_CHAN_ACCEL_ANY) {
+            accel_poll = false;
+        } else if (msg->data.sensor.channel == SENSOR_CHAN_GYRO_ANY) {
+            gyro_poll = false;
+        } else {
+            PRINT("invalid sensor channel\n");
+            error_code = ERROR_IPM_NOT_SUPPORTED;
+        }
+        break;
+    default:
+        PRINT("unsupported sensor message type %lu\n", msg->type);
+        error_code = ERROR_IPM_NOT_SUPPORTED;
+    }
+
+    if (error_code != ERROR_IPM_NONE) {
+        ipm_send_error_reply(msg, error_code);
+        return;
+    }
+
+    ipm_send_reply(msg);
+}
+#endif
+
 static void process_messages()
 {
     struct zjs_ipm_message* msg = msg_queue;
@@ -441,6 +692,11 @@ static void process_messages()
 #ifdef BUILD_MODULE_GROVE_LCD
        case MSG_ID_GLCD:
            handle_glcd(msg);
+           break;
+#endif
+#ifdef BUILD_MODULE_SENSOR
+       case MSG_ID_SENSOR:
+           handle_sensor(msg);
            break;
 #endif
        case MSG_ID_DONE:
@@ -482,6 +738,11 @@ void main(void)
             tick_count = 0;
         }
         tick_count += SLEEP_TICKS;
+#endif
+#ifdef BUILD_MODULE_SENSOR
+        if (accel_poll || gyro_poll) {
+            fetch_sensor(bmi160);
+        }
 #endif
         task_sleep(SLEEP_TICKS);
     }

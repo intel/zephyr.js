@@ -48,8 +48,9 @@ obj-y += main.o \
 # skip for now for frdm_k64f
 ifneq ($(BOARD), frdm_k64f)
 obj-y += zjs_aio.o \
+         zjs_grove_lcd.o \
          zjs_i2c.o \
-         zjs_grove_lcd.o
+         zjs_sensor.o
 endif
 
 obj-$(CONFIG_BOARD_ARDUINO_101) += \
@@ -65,6 +66,7 @@ ccflags-y += -DBUILD_MODULE_GPIO -DBUILD_MODULE_PWM -DBUILD_MODULE_UART
 ccflags-y += -DBUILD_MODULE_BLE -DBUILD_MODULE_AIO -DBUILD_MODULE_A101
 ccflags-y += -DBUILD_MODULE_TIMER -DBUILD_MODULE_BUFFER
 ccflags-y += -DBUILD_MODULE_GROVE_LCD -DBUILD_MODULE_I2C
+ccflags-y += -DBUILD_MODULE_SENSOR
 export JERRY_INCLUDE = $(JERRY_BASE)/jerry-core/
 obj-y += ashell/
 endif

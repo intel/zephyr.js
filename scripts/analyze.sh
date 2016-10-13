@@ -162,6 +162,11 @@ if [ $? -eq 0 ] && [[ $MODULE != *"BUILD_MODULE_BUFFER"* ]]; then
     >&2 echo Using module: Buffer
     MODULES+=" -DBUILD_MODULE_BUFFER"
 fi
+sensor=$(grep -E AccelerometerSensor\|Gyroscope  $SCRIPT)
+if [ $? -eq 0 ]; then
+    >&2 echo Using module: Sensor
+    MODULES+=" -DBUILD_MODULE_SENSOR"
+fi
 
 console=$(grep console $SCRIPT)
 if [ $? -eq 0 ] && [[ $MODULE != *"BUILD_MODULE_CONSOLE"* ]]; then
