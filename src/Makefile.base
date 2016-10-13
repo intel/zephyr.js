@@ -45,6 +45,7 @@ obj-$(ZJS_BUFFER) += zjs_buffer.o
 obj-$(ZJS_CONSOLE) += zjs_console.o
 obj-$(ZJS_DGRAM) += zjs_dgram.o
 obj-$(ZJS_EVENTS) += zjs_event.o
+obj-$(ZJS_FS) += zjs_fs.o
 obj-$(ZJS_GPIO) += zjs_gpio.o
 obj-$(ZJS_BLE) += zjs_ble.o
 obj-$(ZJS_PWM) += zjs_pwm.o

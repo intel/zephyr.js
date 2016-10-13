@@ -36,6 +36,7 @@
 #include "zjs_i2c.h"
 #include "zjs_pwm.h"
 #include "zjs_uart.h"
+#include "zjs_fs.h"
 #ifdef CONFIG_BOARD_ARDUINO_101
 #include "zjs_a101_pins.h"
 #endif
@@ -79,6 +80,9 @@ module_t zjs_modules_array[] = {
 #endif
 #ifdef BUILD_MODULE_I2C
     { "i2c", zjs_i2c_init },
+#endif
+#ifdef BUILD_MODULE_FS
+    { "fs", zjs_fs_init },
 #endif
 #ifdef CONFIG_BOARD_ARDUINO_101
 #ifdef BUILD_MODULE_A101
