@@ -79,7 +79,6 @@ typedef struct zjs_ble_connection {
     ble_event_handle_t ready_cb;
     ble_event_handle_t connected_cb;
     ble_event_handle_t disconnected_cb;
-    ble_event_handle_t adv_start_cb;
 } ble_connection_t;
 
 // global connection object
