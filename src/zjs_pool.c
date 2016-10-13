@@ -248,3 +248,31 @@ void pool_free(void* ptr)
 #endif
 }
 #endif
+
+void zjs_pool_cleanup(void)
+{
+    int i;
+    // Loop through pointer map
+    for (i = 0; i < MAX_CONCURRENT_POINTERS; ++i) {
+        // if pointer is being used, free it
+        if (pointer_map[i].ptr) {
+            struct k_block block;
+            block.address_in_pool = pointer_map[i].ptr;
+            block.pointer_to_data = pointer_map[i].ptr;
+            block.req_size = pointer_map[i].req_size;
+            block.pool_id = find_pool_id(pointer_map[i].req_size);
+            task_mem_pool_free(&block);
+            pointer_map[i].ptr = NULL;
+        }
+    }
+#ifdef ZJS_DUMP_MEM_STATS
+    mem_high_water = 0;
+    mem_in_use = 0;
+    pointers_used = 0;
+    max_pointers_used = 0;
+    max_waste = 0;
+#endif
+#ifdef ZJS_TRACE_MALLOC
+    PRINT("zjs_pool_cleanup(): all pools freed\n");
+#endif
+}
