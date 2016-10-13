@@ -185,19 +185,25 @@ ble.on('accept', function(clientAddress) {
     print("Client connected: " + clientAddress);
     glcd.clear();
 
+    var lastTemp = 0;
+
     tmp36.on("change", function(data) {
         var voltage = (data / 4096.0) * 3.3;
         var celsius = (voltage - 0.5) * 100 + 0.5;
         celsius = celsius | 0;
 
-        print("Temperature change: " + celsius + " degrees Celsius");
-        TemperatureCharacteristic.valueChange(celsius);
+        if (celsius != lastTemp) {
+            lastTemp = celsius;
+            print("Temperature change: " + celsius + "C");
+            TemperatureCharacteristic.valueChange(celsius);
+        }
     });
 });
 
 ble.on('disconnect', function(clientAddress) {
     print("Client disconnected: " + clientAddress);
+
     tmp36.on("change", null);
 });
 
-print("WebBluetooth Demo with BLE...");
+print("WebBluetooth Demo with Grove LCD...");

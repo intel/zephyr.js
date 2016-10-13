@@ -61,13 +61,13 @@ TemperatureCharacteristic.onReadRequest = function(offset, callback) {
 
 TemperatureCharacteristic.onSubscribe = function(maxValueSize,
                                                  updateValueCallback) {
-    print("Subscribed to temperature change.");
+    print("Subscribed to temperature change");
     this._onChange = updateValueCallback;
     this._lastValue = undefined;
 };
 
 TemperatureCharacteristic.onUnsubscribe = function() {
-    print("Unsubscribed to temperature change.");
+    print("Unsubscribed to temperature change");
     this._onChange = null;
 };
 
@@ -148,9 +148,8 @@ ble.on('stateChange', function(state) {
 });
 
 ble.on('advertisingStart', function(error) {
-    print('advertisingStart: ' + (error ? error : 'success'));
-
     if (error) {
+        print("Failed to advertise physical web");
         return;
     }
 
@@ -163,25 +162,31 @@ ble.on('advertisingStart', function(error) {
             ]
         })
     ]);
+
+    print("Advertising as physical web device");
 });
 
 ble.on('accept', function(clientAddress) {
-    print("Accepted Connection: " + clientAddress);
+    print("Client connected: " + clientAddress);
+    var lastTemp = 0;
 
     tmp36.on("change", function(data) {
         var voltage = (data / 4096.0) * 3.3;
         var celsius = (voltage - 0.5) * 100 + 0.5;
         celsius = celsius | 0;
 
-        print("Temperature change: " + celsius + " degrees Celsius");
-        TemperatureCharacteristic.valueChange(celsius);
+        if (celsius != lastTemp) {
+            lastTemp = celsius;
+            print("Temperature change: " + celsius + "C");
+            TemperatureCharacteristic.valueChange(celsius);
+        }
     });
 });
 
 ble.on('disconnect', function(clientAddress) {
-    print("Disconnected Connection: " + clientAddress);
+    print("Client disconnected: " + clientAddress);
 
     tmp36.on("change", null);
 });
 
-print("WebBluetooth Demo with BLE...");
+print("WebBluetooth Demo with LED Bulb...");
