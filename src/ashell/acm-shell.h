@@ -32,6 +32,7 @@ void ashell_register_app_line_handler(ashell_line_parser_t cb);
 
 char *ashell_skip_spaces(char *str);
 char *ashell_get_token_arg(char *str);
+bool ashell_check_parameter(const char *buf, const char parameter);
 
 uint32_t ashell_get_argc(const char *str, uint32_t nsize);
 const char *ashell_get_next_arg_s(const char *str, uint32_t nsize, char *str_arg, uint32_t max_arg_size, uint32_t *length);

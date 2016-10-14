@@ -50,6 +50,7 @@ $(info Insecure Mode (development))
 ccflags-y += -DBUILD_MODULE_GPIO -DBUILD_MODULE_PWM -DBUILD_MODULE_UART
 ccflags-y += -DBUILD_MODULE_BLE -DBUILD_MODULE_AIO -DBUILD_MODULE_A101
 ccflags-y += -DBUILD_MODULE_TIMER -DBUILD_MODULE_BUFFER
+ccflags-y += -DBUILD_MODULE_GROVE_LCD -DBUILD_MODULE_I2C
 export JERRY_INCLUDE = $(JERRY_BASE)/jerry-core/
 obj-y += ashell/
 endif

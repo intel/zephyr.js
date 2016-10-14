@@ -54,8 +54,12 @@
 
 #include "acm-uart.h"
 #include "acm-shell.h"
+#include "shell-state.h"
 
 #include "ihex/kk_ihex_read.h"
+
+#define FIVE_SECONDS    (5 * sys_clock_ticks_per_sec)
+#define TEN_SECONDS     (10 * sys_clock_ticks_per_sec)
 
 #ifndef CONFIG_IHEX_DEBUG
 #define DBG(...) { ; }
@@ -65,18 +69,10 @@
 
 extern void __stdout_hook_install(int(*fn)(int));
 
-static const char banner[] = "ZephyrJerry\r\n" \
-    __DATE__ " " __TIME__ "\r\n" \
-    "    ____\r\n"\
-    "  ,'   Y`.\r\n"\
-    " /        \\\r\n"\
-    " \\ ()  () /\r\n"\
-    "  `. /\\ ,'\r\n"\
-    "8===|\"\"|===8\r\n"\
-    "    `LL'\r\n";
+static const char banner[] = "Zephyr.js DEV MODE " __DATE__ " " __TIME__ "\n";
 
 const char WRONG_TERMINAL_WARNING[] = "\n" \
-    "Thank you Mario, but our JavaScript is in a different interface. \n" \
+    "Warning: The JavaScript terminal is in a different interface.\n" \
     "Examples:\n" \
     "\tMac   /dev/cu.usbmodem\n" \
     "\tLinux /dev/ttyACM0\n";
@@ -120,15 +116,21 @@ static bool uart_process_done = false;
 static uint8_t fifo_size = 0;
 static uint8_t max_fifo_size = 0;
 
+atomic_t data_queue_count = 0;
+
 uint32_t alloc_count = 0;
 uint32_t free_count = 0;
+
+static struct acm_input *isr_data = NULL;
+static uint32_t tail = 0;
+static char *buf;
 
 struct acm_input *fifo_get_isr_buffer()
 {
     void *data = nano_isr_fifo_get(&avail_queue, TICKS_NONE);
     if (!data) {
         data = (void *)malloc(sizeof(struct acm_input));
-        memset(data, '-', sizeof(struct acm_input));
+        memset(data, '*', sizeof(struct acm_input));
         alloc_count++;
         fifo_size++;
         if (fifo_size > max_fifo_size)
@@ -137,9 +139,26 @@ struct acm_input *fifo_get_isr_buffer()
     return (struct acm_input *) data;
 }
 
+void fifo_cache_clear()
+{
+    while(fifo_size > 0) {
+        void *data = nano_isr_fifo_get(&avail_queue, TICKS_NONE);
+        if (!data)
+            return;
+
+        printk("Clear buf %d\n", fifo_size);
+        free(data);
+        fifo_size--;
+        free_count++;
+    }
+    tail = 0;
+    buf = NULL;
+    isr_data = NULL;
+}
+
 void fifo_recycle_buffer(struct acm_input *data)
 {
-    if (fifo_size > FIFO_CACHE) {
+    if (fifo_size > 1) {
         free(data);
         fifo_size--;
         free_count++;
@@ -173,7 +192,8 @@ static volatile bool data_transmitted;
 uint32_t bytes_received = 0;
 uint32_t bytes_processed = 0;
 
-uint8_t uart_state = 0;
+atomic_t uart_state = 0;
+
 enum
 {
     UART_INIT,
@@ -187,6 +207,8 @@ enum
     UART_FIFO_DATA_PROCESS,
     UART_RESET_HEAD,
     UART_POST_RESET,
+    UART_ISR_END,
+    UART_TASK_DATA_CAPTURE,
     UART_PROCESS_ENDED,
     UART_RESET_TAIL,
     UART_BUFFER_OVERFLOW,
@@ -197,9 +219,7 @@ enum
     UART_TERMINATED
 };
 
-static struct acm_input *data = NULL;
-static uint32_t tail = 0;
-static char *buf;
+int process_state = 0;
 
 static void acm_interrupt_handler(struct device *dev)
 {
@@ -208,85 +228,91 @@ static void acm_interrupt_handler(struct device *dev)
     uint32_t bytes_read = 0;
     uint32_t len = 0;
 
-    uart_state = UART_IRQ_UPDATE;
+    atomic_set(&uart_state, UART_IRQ_UPDATE);
 
-    if (!uart_irq_is_pending(dev))
-        return;
+    while (uart_irq_is_pending(dev)) {
+        if (uart_irq_rx_ready(dev)) {
+            atomic_set(&uart_state, UART_RX_READY);
 
-    if (uart_irq_tx_ready(dev)) {
-        data_transmitted = true;
-        uart_state = UART_TX_READY;
-    }
+            /* We allocate a new buffer everytime we don't have a tail
+            * the buffer might be recycled or not from a previous run.
+            */
+            if (tail == 0) {
+                DBG("[New]\n");
+                isr_data = fifo_get_isr_buffer();
+                buf = isr_data->line;
+            }
 
-    while (uart_irq_rx_ready(dev)) {
-        uart_state = UART_RX_READY;
+            /* Read only until the end of the buffer
+            * before i was using a ring buffer but was making things really
+            * complicated for process side.
+            */
+            len = MAX_LINE_LEN - tail;
+            bytes_read = uart_fifo_read(dev_upload, buf, len);
+            bytes_received += bytes_read;
+            tail += bytes_read;
 
-        /* We allocate a new buffer everytime we don't have a tail
-        * the buffer might be recycled or not from a previous run.
-        */
-        if (tail == 0) {
-            DBG("[New]\n");
-            data = fifo_get_isr_buffer();
-            buf = data->line;
-        }
+            for (uint32_t t = 0; t<bytes_read; t++) {
+                printk("%c",buf[t]);
+            }
 
-        /* Read only until the end of the buffer
-        * before i was using a ring buffer but was making things really
-        * complicated for process side.
-        */
-        len = MAX_LINE_LEN - tail;
-        bytes_read = uart_fifo_read(dev_upload, buf, len);
-        bytes_received += bytes_read;
-        tail += bytes_read;
+            /* We don't want to flush data too fast otherwise we would be allocating
+            * but we want to flush as soon as we have processed the data on the task
+            * so we don't queue too much and delay the system response.
+            *
+            * When the process has finished dealing with the data it signals this method
+            * with a 'i am ready to continue' by changing uart_process_done.
+            *
+            * It is also imperative to flush when we reach the limit of the buffer.
+            *
+            * If we are still fine in the cache limits, then we keep flushing every
+            * time we get a byte.
+            */
+            bool flush = false;
 
-        //data->line[tail] = 0;
-        //DGB("[%s]\r\n", data->line);
+            if (fifo_size == 1 ||
+                tail == MAX_LINE_LEN ||
+                uart_process_done) {
+                flush = true;
+                uart_process_done = false;
+                DBG("+");
+            } else {
+                /* Check for line ends, to flush the data. The decoder / shell will probably
+                 * sit for a bit in the data so it is better if we finish this buffer and send it.
+                 */
+                atomic_set(&uart_state, UART_FIFO_READ);
 
-        /* We don't want to flush data too fast otherwise we would be allocating
-        * but we want to flush as soon as we have processed the data on the task
-        * so we don't queue too much and delay the system response.
-        *
-        * When the process has finished dealing with the data it signals this method
-        * with a 'i am ready to continue' by changing uart_process_done.
-        *
-        * It is also imperative to flush when we reach the limit of the buffer.
-        *
-        * If we are still fine in the cache limits, then we keep flushing every
-        * time we get a byte.
-        */
-        bool flush = false;
-
-        if (fifo_size < FIFO_CACHE ||
-            tail == MAX_LINE_LEN ||
-            uart_process_done) {
-            flush = true;
-            uart_process_done = false;
-        } else {
-            /* Check for line ends, to flush the data. The decoder / shell will probably
-             * sit for a bit in the data so it is better if we finish this buffer and send it.
-             */
-            uart_state = UART_FIFO_READ;
-            while (bytes_read-- > 0) {
-                byte = *buf++;
-                if (byte == '\r' || byte == '\n' ||
-                    (byte >= CTRL_START && byte <= CTRL_END)) {
-                    flush = true;
-                    break;
+                while (bytes_read-- > 0) {
+                    byte = *buf++;
+                    if (byte == '\r' || byte == '\n' ||
+                        (byte >= CTRL_START && byte <= CTRL_END)) {
+                        flush = true;
+                        DBG("&");
+                        break;
+                    }
                 }
+            }
+
+            atomic_set(&uart_state, UART_FIFO_READ_END);
+
+            /* Happy to flush the data into the queue for processing */
+            if (flush) {
+                DBG("-");
+                isr_data->line[tail] = 0;
+                tail = 0;
+                atomic_inc(&data_queue_count);
+                nano_isr_fifo_put(&data_queue, isr_data);
+                isr_data = NULL;
             }
         }
 
-        uart_state = UART_FIFO_READ_END;
-
-        /* Happy to flush the data into the queue for processing */
-        if (flush) {
-            data->line[tail] = 0;
-            uart_state = UART_FIFO_READ_FLUSH;
-            nano_isr_fifo_put(&data_queue, data);
-            data = NULL;
-            tail = 0;
+        if (uart_irq_tx_ready(dev)) {
+            atomic_set(&uart_state, UART_TX_READY);
+            data_transmitted = true;
         }
     }
+
+    atomic_set(&uart_state, UART_ISR_END);
 }
 
 /*************************** ACM OUTPUT *******************************/
@@ -323,8 +349,9 @@ void acm_write(const char *buf, int len)
 
     data_transmitted = false;
     uart_fifo_fill(dev, buf, len);
-    while (data_transmitted == false)
-        ;
+
+    while (data_transmitted == false);
+
     uart_irq_tx_disable(dev);
 }
 
@@ -341,7 +368,7 @@ void acm_print(const char *buf)
 void acm_println(const char *buf)
 {
     acm_write(buf, strnlen(buf, MAX_LINE_LEN));
-    acm_write("\r\n", 3);
+    acm_write("\r\n", 2);
 }
 
 /**
@@ -373,7 +400,7 @@ uint32_t acm_get_baudrate(void)
 void acm_print_status()
 {
     printk("******* SYSTEM STATE ********\n");
-    if (uart_state == UART_INIT)
+    if (atomic_get(&uart_state) == UART_INIT)
         printk(ANSI_FG_RED "JavaScript terminal not connected\n" ANSI_FG_RESTORE);
 
     if (acm_config.print_state != NULL)
@@ -383,10 +410,16 @@ void acm_print_status()
     acm_get_baudrate();
 #endif
 
+    if (!data_transmitted)
+        printk("[Data TX]\n");
+
     printk("[State] %d\n", (int)uart_state);
+    printk("[Process State] %d\n", (int)process_state);
+
     printk("[Mem] Fifo %d Max Fifo %d Alloc %d Free %d \n",
         (int)fifo_size, (int)max_fifo_size, (int)alloc_count, (int)free_count);
     printk("[Usage] Max fifo usage %d bytes\n", (int)(max_fifo_size * sizeof(struct acm_input)));
+    printk("[Queue size] %d\n", (int)data_queue_count);
     printk("[Data] Received %d Processed %d \n",
         (int)bytes_received, (int)bytes_processed);
 }
@@ -400,33 +433,63 @@ void acm_runner()
     DBG("[Listening]\n");
     __stdout_hook_install(acm_out);
 
+    // Disable buffering on stdout since some parts write directly to uart fifo
+    setbuf(stdout, NULL);
+
+    ashell_help("");
+
+    process_state = 0;
+
     while (1) {
-        uart_state = UART_INIT;
+        atomic_set(&uart_state, UART_INIT);
         if (acm_config.interface.init_cb != NULL) {
             DBG("[Init]\n");
             acm_config.interface.init_cb();
         }
 
         while (!acm_config.interface.is_done()) {
-            uart_state = UART_WAITING;
+            atomic_set(&uart_state, UART_WAITING);
+            process_state = 10;
 
             while (data == NULL) {
                 DBG("[Wait]\n");
-                data = nano_task_fifo_get(&data_queue, TICKS_UNLIMITED);
-                buf = data->line;
-                len = strnlen(buf, MAX_LINE_LEN);
+                data = nano_task_fifo_get(&data_queue, FIVE_SECONDS);
+                if (data) {
+                    atomic_dec(&data_queue_count);
+                    buf = data->line;
+                    len = strnlen(buf, MAX_LINE_LEN);
 
-                DBG("[Data]\n");
-                DBG("%s\n", buf);
+                    DBG("[Data]\n");
+                    DBG("%s\n", buf);
+                } else {
+                    /* We clear the cache memory if there are no data transactions */
+                    if (tail == 0) {
+                        fifo_cache_clear();
+                    } else {
+                        /* Wait for a timeout and flush data if there was not a carriage return */
+                        if (atomic_get(&uart_state) == UART_ISR_END && isr_data != NULL) {
+                            DBG("Capturing buffer\n");
+                            process_state = 20;
+                            isr_data->line[tail] = 0;
+                            tail = 0;
+                            data = isr_data;
+                            buf = data->line;
+                            isr_data = NULL;
+                            atomic_set(&uart_state, UART_TASK_DATA_CAPTURE);
+                        }
+                    }
+                }
             }
 
+            process_state = 30;
             uint32_t processed = acm_config.interface.process_cb(buf, len);
 
             bytes_processed += processed;
 
+            process_state = 40;
             if (acm_config.interface.is_done()) {
                 len -= processed;
-                // appears these regions could overlap, so use memmove
+                // Moving the remaining data to be processed by the new callback
                 memmove(buf, buf + processed, len);
                 buf[len] = '\0';
                 DBG("New buf [%s]\n", buf);
@@ -436,15 +499,17 @@ void acm_runner()
                 fifo_recycle_buffer(data);
                 data = NULL;
             }
+
         }
 
-        uart_state = UART_CLOSE;
+        process_state = 50;
+        atomic_set(&uart_state, UART_CLOSE);
         if (acm_config.interface.close_cb != NULL)
             acm_config.interface.close_cb();
     }
 
     // Not possible
-    uart_state = UART_TERMINATED;
+    atomic_set(&uart_state, UART_TERMINATED);
 }
 
 /**
