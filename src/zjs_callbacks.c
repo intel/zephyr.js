@@ -211,6 +211,7 @@ int32_t zjs_add_callback_list(jerry_value_t js_func,
         new_cb->type = CALLBACK_TYPE_JS;
         new_cb->signal = 0;
         new_cb->js->id = new_id();
+        new_cb->js->this = jerry_acquire_value(this);
         new_cb->js->pre = pre;
         new_cb->js->post = post;
         new_cb->js->handle = handle;
@@ -252,7 +253,7 @@ int32_t add_callback(jerry_value_t js_func,
     new_cb->signal = 0;
     new_cb->js->id = new_id();
     new_cb->js->js_func = jerry_acquire_value(js_func);
-    new_cb->js->this = this;
+    new_cb->js->this = jerry_acquire_value(this);
     new_cb->js->pre = pre;
     new_cb->js->post = post;
     new_cb->js->handle = handle;
@@ -303,6 +304,7 @@ void zjs_remove_callback(int32_t id)
             } else {
                 jerry_release_value(cb_map[id]->js->js_func);
             }
+            jerry_release_value(cb_map[id]->js->this);
             zjs_free(cb_map[id]->js);
         } else if (cb_map[id]->c) {
             zjs_free(cb_map[id]->c);
@@ -398,8 +400,10 @@ void zjs_call_callback(int32_t i)
             }
 
             DBG_PRINT("calling callback id %ld with %lu args\n", cb_map[i]->js->id, argc);
-            // TODO: Use 'this' in callback module
-            jerry_call_function(cb_map[i]->js->js_func, cb_map[i]->js->this, args, argc);
+            ret_val = jerry_call_function(cb_map[i]->js->js_func, cb_map[i]->js->this, args, argc);
+            if (jerry_value_has_error_flag(ret_val)) {
+                DBG_PRINT("callback %ld returned an error\n", i);
+            }
             if (cb_map[i]->js->post) {
                 cb_map[i]->js->post(cb_map[i]->js->handle, &ret_val);
             }
@@ -419,7 +423,10 @@ void zjs_call_callback(int32_t i)
             DBG_PRINT("calling callback list id %ld with %lu args\n", cb_map[i]->js->id, argc);
 
             for (j = 0; j < cb_map[i]->js->num_funcs; ++j) {
-                jerry_call_function(cb_map[i]->js->func_list[j], cb_map[i]->js->this, args, argc);
+                ret_val = jerry_call_function(cb_map[i]->js->func_list[j], cb_map[i]->js->this, args, argc);
+                if (jerry_value_has_error_flag(ret_val)) {
+                    DBG_PRINT("callback %ld returned an error for function[%lu]\n", i, j);
+                }
             }
             if (cb_map[i]->js->post) {
                 cb_map[i]->js->post(cb_map[i]->js->handle, &ret_val);
