@@ -425,7 +425,7 @@ void zjs_call_callback(int32_t i)
             for (j = 0; j < cb_map[i]->js->num_funcs; ++j) {
                 ret_val = jerry_call_function(cb_map[i]->js->func_list[j], cb_map[i]->js->this, args, argc);
                 if (jerry_value_has_error_flag(ret_val)) {
-                    DBG_PRINT("callback %ld returned an error for function[%lu]\n", i, j);
+                    DBG_PRINT("callback %ld returned an error for function[%i]\n", i, j);
                 }
             }
             if (cb_map[i]->js->post) {
