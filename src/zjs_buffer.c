@@ -268,6 +268,16 @@ static void zjs_buffer_callback_free(uintptr_t handle)
     }
 }
 
+void zjs_buffer_free_buffers()
+{
+    zjs_buffer_t **pItem = &zjs_buffers;
+    while (*pItem) {
+        zjs_free((*pItem)->buffer);
+        pItem = &(*pItem)->next;
+    }
+    zjs_buffers = NULL;
+}
+
 static jerry_value_t zjs_buffer_write_string(const jerry_value_t function_obj_val,
                                              const jerry_value_t this,
                                              const jerry_value_t argv[],

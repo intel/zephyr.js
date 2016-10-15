@@ -18,4 +18,6 @@ zjs_buffer_t *zjs_buffer_find(const jerry_value_t obj);
 
 jerry_value_t zjs_buffer_create(uint32_t size);
 
+void zjs_buffer_free_buffers();
+
 #endif  // __zjs_buffer_h__
