@@ -149,7 +149,7 @@ ble.on('stateChange', function(state) {
 
 ble.on('advertisingStart', function(error) {
     if (error) {
-        print("Failed to advertise physical web");
+        print("Failed to advertise Physical Web URL");
         return;
     }
 
@@ -163,7 +163,7 @@ ble.on('advertisingStart', function(error) {
         })
     ]);
 
-    print("Advertising as physical web device");
+    print("Advertising as Physical Web device");
 });
 
 ble.on('accept', function(clientAddress) {
@@ -175,7 +175,7 @@ ble.on('accept', function(clientAddress) {
         var celsius = (voltage - 0.5) * 100 + 0.5;
         celsius = celsius | 0;
 
-        if (celsius != lastTemp) {
+        if (celsius !== lastTemp) {
             lastTemp = celsius;
             print("Temperature change: " + celsius + "C");
             TemperatureCharacteristic.valueChange(celsius);
