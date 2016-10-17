@@ -18,7 +18,7 @@ function onupdate(resource) {
     print("Resource updated:");
     print("    deviceId: " + resource.deviceId);
     print("    resourcePath: " + resource.resourcePath);
-    if (resource.properties != undefined) {
+    if (resource.properties !== undefined) {
         print("Resource has properties");
     } else {
         print("resource.properties not found");
@@ -60,7 +60,8 @@ function found(resource) {
         client.update(resource).then(function(resource) {
             print("update successful");
         }).catch(function(error) {
-            print("Error updating name='" + error.name + "' message='" + error.message + "' " + "code=" + error.errorCode);
+            print("Error updating name='" + error.name + "' message='" + 
+                    error.message + "' " + "code=" + error.errorCode);
         });
     }, 1000);
 }

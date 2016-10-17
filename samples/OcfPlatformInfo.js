@@ -18,7 +18,7 @@ client.on('error', function(error) {
     print("Error for device: " + error.deviceId);
 });
 
-function found(resource) {
+function onfound(resource) {
     print("Resource found: path=" + resource.resourcePath + " id=" + resource.deviceId);
 
     client.getPlatformInfo(resource.deviceId).then(function(info) {
@@ -28,7 +28,7 @@ function found(resource) {
     });
 }
 
-client.findResources({resourceType:"oic.r.light"}, found).then(function(resource) {
+client.findResources({ resourceType:"oic.r.light" }, onfound).then(function(resource) {
     print("findResources() was successful, deviceId=" + resource.deviceId);
 }).catch(function(error) {
     print("findResources() returned an error: " + error.name);

@@ -26,26 +26,27 @@ function onupdate(resource) {
 
 client.on('update', onupdate);
 
-var light_state = true;
+var lightOn = true;
 
-function found(resource) {
+function onfound(resource) {
     setInterval(function() {
-        light_state = (light_state) ? false : true;
-        resource.state = light_state;
+        lightOn = lightOn ? false : true;
+        resource.state = lightOn;
         client.update(resource).then(function(resource) {
             print("update successful");
-            client.retrieve(resource.deviceId, {observable: false}).then(function(res) {
+            client.retrieve(resource.deviceId, { observable: false }).then(function(res) {
                 print("retrieve() was successful, deviceId=" + res.deviceId);
             }).catch(function(error) {
                 print("retrieve() returned an error: " + error.name);
             });
         }).catch(function(error) {
-            print("Error updating name='" + error.name + "' message='" + error.message + "' " + "code=" + error.errorCode);
+            print("Error updating name='" + error.name + "' message='" + 
+                    error.message + "' " + "code=" + error.errorCode);
         });
     }, 1000);
 }
 
-client.findResources({resourceType:"oic.r.light"}, found).then(function(resource) {
+client.findResources({ resourceType:"oic.r.light" }, onfound).then(function(resource) {
     print("findResources() was successful, deviceId=" + resource.deviceId);
 }).catch(function(error) {
     print("findResources() returned an error: " + error.name);

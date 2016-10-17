@@ -29,7 +29,7 @@ function found(resource) {
     });
 }
 
-client.findResources({resourceType:"oic.r.light"}, found).then(function(resource) {
+client.findResources({ resourceType:"oic.r.light" }, found).then(function(resource) {
     print("findResources() was successful, deviceId=" + resource.deviceId);
 }).catch(function(error) {
     print("findResources() returned an error: " + error.name);
