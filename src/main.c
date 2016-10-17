@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
 
     // print newline here to make it easier to find
     // the beginning of the program
-    PRINT("\n");
+    ZJS_PRINT("\n");
 
 #ifdef ZJS_POOL_CONFIG
     zjs_init_mem_pools();
@@ -111,7 +111,7 @@ int main(int argc, char *argv[])
         script = script_gen;
         len = strnlen(script_gen, MAX_SCRIPT_SIZE);
         if (len == MAX_SCRIPT_SIZE) {
-            PRINT("Error: Script size too large! Increase MAX_SCRIPT_SIZE.\n");
+            ZJS_PRINT("Error: Script size too large! Increase MAX_SCRIPT_SIZE.\n");
             goto error;
         }
     }
@@ -125,7 +125,7 @@ int main(int argc, char *argv[])
 
     code_eval = jerry_parse((jerry_char_t *)script, len, false);
     if (jerry_value_has_error_flag(code_eval)) {
-        PRINT("JerryScript: cannot parse javascript\n");
+        ZJS_PRINT("JerryScript: cannot parse javascript\n");
         goto error;
     }
 
@@ -137,7 +137,7 @@ int main(int argc, char *argv[])
 
     result = jerry_run(code_eval);
     if (jerry_value_has_error_flag(result)) {
-        PRINT("JerryScript: cannot run javascript\n");
+        ZJS_PRINT("JerryScript: cannot run javascript\n");
         goto error;
     }
 

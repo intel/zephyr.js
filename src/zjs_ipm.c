@@ -44,13 +44,13 @@ void zjs_ipm_init()
     ipm_send_dev = device_get_binding("ipm_msg_send");
 
     if (!ipm_send_dev) {
-        PRINT("Cannot find outbound ipm device!\n" );
+        ZJS_PRINT("Cannot find outbound ipm device!\n" );
     }
 
     ipm_receive_dev = device_get_binding("ipm_msg_receive");
 
     if (!ipm_receive_dev) {
-        PRINT("Cannot find inbound ipm device!\n" );
+        ZJS_PRINT("Cannot find inbound ipm device!\n" );
     }
 
 #ifdef CONFIG_X86
@@ -63,7 +63,7 @@ void zjs_ipm_init()
 int zjs_ipm_send(uint32_t id, zjs_ipm_message_t *data)
 {
     if (!ipm_send_dev) {
-        PRINT("Cannot find outbound ipm device!\n" );
+        ZJS_PRINT("Cannot find outbound ipm device!\n" );
         return -1;
     }
 
@@ -74,7 +74,7 @@ int zjs_ipm_send(uint32_t id, zjs_ipm_message_t *data)
 void zjs_ipm_register_callback(uint32_t msg_id, ipm_callback_t cb)
 {
     if (!ipm_receive_dev) {
-        PRINT("Cannot find inbound ipm device!\n" );
+        ZJS_PRINT("Cannot find inbound ipm device!\n" );
         return;
     }
 
@@ -82,7 +82,7 @@ void zjs_ipm_register_callback(uint32_t msg_id, ipm_callback_t cb)
     // x86, register for ipm message that matches the MSG_ID
     struct zjs_ipm_callback* callback = zjs_malloc(sizeof(struct zjs_ipm_callback));
     if (!callback) {
-        PRINT("zjs_ipm_register_callback: failed to allocate callback\n");
+        ZJS_PRINT("zjs_ipm_register_callback: failed to allocate callback\n");
         return;
     }
 

@@ -206,7 +206,7 @@ void zjs_default_convert_pin(uint32_t orig, int *dev, int *pin) {
 
 jerry_value_t zjs_error(const char *error)
 {
-    PRINT("%s\n", error);
+    ZJS_PRINT("%s\n", error);
     return jerry_create_error(JERRY_ERROR_TYPE, (jerry_char_t *)error);
 }
 

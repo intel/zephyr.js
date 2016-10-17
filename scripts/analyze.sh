@@ -35,6 +35,11 @@ if [ $? -eq 0 ]; then
     >&2 echo Using module: EVENTS
     MODULES+=" -DBUILD_MODULE_EVENTS"
 fi
+check_for_require ocf
+if [ $? -eq 0 ]; then
+    >&2 echo Using module: OCF
+    MODULES+=" -DBUILD_MODULE_OCF"
+fi
 check_for_require gpio
 if [ $? -eq 0 ]; then
     >&2 echo Using module: GPIO

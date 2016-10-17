@@ -1,3 +1,5 @@
+#ifdef BUILD_MODULE_OCF
+
 #include "jerry-api.h"
 
 #include "zjs_util.h"
@@ -227,6 +229,7 @@ static struct client_resource* find_resource_by_id(const char* device_id)
     return NULL;
 }
 
+#if 0
 /*
  * Find a client_resource by searching with a resource path
  */
@@ -245,6 +248,7 @@ static struct client_resource* find_resource_by_path(const char* path)
     }
     return NULL;
 }
+#endif
 
 /*
  * Create a new resource object
@@ -327,12 +331,10 @@ static void post_resource_found(void* handle)
  */
 static void observe_callback(oc_client_response_t *data)
 {
-    oc_rep_t *rep = data->payload;
-    struct client_resource* resource = (struct client_resource*)data->user_data;
-    DBG_PRINT("device_id=%s\n", resource->device_id);
     print_props_data(data);
 }
 
+#if 0
 static oc_event_callback_retval_t stop_observe(void* data)
 {
     struct client_resource* cli = (struct client_resource*)data;
@@ -342,7 +344,7 @@ static oc_event_callback_retval_t stop_observe(void* data)
 
     return DONE;
 }
-
+#endif
 
 /*
  * Callback for resource discovery
@@ -433,7 +435,6 @@ static jerry_value_t ocf_find_resources(const jerry_value_t function_val,
     char* resource_type = NULL;
     char* device_id = NULL;
     char* resource_path = NULL;
-    struct resource* new_res;
     uint8_t listen_idx = 0xff;
     jerry_value_t listener = ZJS_UNDEFINED;
     jerry_value_t promise = jerry_create_object();
@@ -542,8 +543,7 @@ static jerry_value_t ocf_retrieve(const jerry_value_t function_val,
                                   const jerry_value_t argv[],
                                   const jerry_length_t argc)
 {
-    char* path;
-    jerry_value_t options;
+    jerry_value_t options = 0;
     jerry_value_t listener;
     jerry_value_t promise = jerry_create_object();
     struct ocf_handler* h;
@@ -1041,3 +1041,5 @@ jerry_value_t zjs_ocf_client_init()
 
     return ocf_client;
 }
+
+#endif // BUILD_MODULE_OCF

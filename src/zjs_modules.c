@@ -124,7 +124,7 @@ static jerry_value_t native_require_handler(const jerry_value_t function_obj,
         }
     }
 
-    PRINT("MODULE: `%s'\n", module);
+    ZJS_PRINT("MODULE: `%s'\n", module);
     return zjs_error("native_require_handler: module not found");
 }
 

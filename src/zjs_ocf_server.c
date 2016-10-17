@@ -1,3 +1,5 @@
+#ifdef BUILD_MODULE_OCF
+
 #include "oc_api.h"
 #include "port/oc_clock.h"
 //#include "port/oc_signal_main_loop.h"
@@ -101,7 +103,6 @@ static jerry_value_t make_ocf_error(const char* name, const char* msg, struct se
 static jerry_value_t request_to_jerry_value(oc_request_t *request)
 {
     jerry_value_t props = jerry_create_object();
-    int i;
     oc_rep_t *rep = request->request_payload;
     while (rep != NULL) {
         switch (rep->type) {
@@ -199,7 +200,7 @@ static jerry_value_t create_request(struct server_resource* resource, oc_method_
 
     return object;
 }
-
+#if 0
 static void print_props_data(oc_request_t *data)
 {
     int i;
@@ -211,7 +212,7 @@ static void print_props_data(oc_request_t *data)
             PRINT("%d\n", rep->value_boolean);
             break;
         case INT:
-            PRINT("%ld\n", rep->value_int);
+            PRINT("%ld\n", (int32_t)rep->value_int);
             break;
         case BYTE_STRING:
         case STRING:
@@ -233,6 +234,7 @@ static void print_props_data(oc_request_t *data)
         rep = rep->next;
     }
 }
+#endif
 
 static jerry_value_t ocf_respond(const jerry_value_t function_val,
                                  const jerry_value_t this,
@@ -248,7 +250,6 @@ static jerry_value_t ocf_respond(const jerry_value_t function_val,
         return ZJS_UNDEFINED;
     }
 
-    jerry_value_t error = argv[1];
     jerry_value_t data;
 
     if (argc > 2) {
@@ -514,3 +515,5 @@ jerry_value_t zjs_ocf_server_init()
 
     return server;
 }
+
+#endif // BUILD_MODULE_OCF

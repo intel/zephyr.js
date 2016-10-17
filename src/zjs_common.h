@@ -7,7 +7,7 @@
 
 #include <stdio.h>
 
-#define PRINT printf
+#define ZJS_PRINT printf
 
 #ifdef DEBUG_BUILD
 

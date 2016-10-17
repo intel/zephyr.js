@@ -1,3 +1,5 @@
+#ifdef BUILD_MODULE_OCF
+
 #include "jerry-api.h"
 
 #include "zjs_util.h"
@@ -133,7 +135,7 @@ void* zjs_ocf_props_setup(jerry_value_t props_object,
         } else if (jerry_value_is_object(prop) && !jerry_value_is_array(prop)) {
             CborEncoder child;
             DBG_PRINT("Encoding object: %s   {\n", h->names_array[i]);
-            jerry_value_t jobject = zjs_get_property(prop, h->names_array[i]);
+            //jerry_value_t jobject = zjs_get_property(prop, h->names_array[i]);
             // Start child object
             zjs_rep_start_object(enc, &child);
             // Set child object property name
@@ -147,7 +149,7 @@ void* zjs_ocf_props_setup(jerry_value_t props_object,
         } else if (jerry_value_is_array(prop)) {
             CborEncoder child;
             DBG_PRINT("Encoding array: %s   [\n", h->names_array[i]);
-            jerry_value_t jarray = zjs_get_property(prop, h->names_array[i]);
+            //jerry_value_t jarray = zjs_get_property(prop, h->names_array[i]);
             zjs_rep_set_array(enc, &child, h->names_array[i]);
             // Recursively add new properties to child object (array)
             ret = zjs_ocf_props_setup(prop, &child, false);
@@ -228,3 +230,5 @@ jerry_value_t zjs_ocf_init()
 
     return ocf;
 }
+
+#endif // BUILD_MODULE_OCF

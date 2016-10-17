@@ -1,4 +1,5 @@
 JERRY_BASE ?= $(ZJS_BASE)/deps/jerryscript
+OCF_ROOT ?= deps/iotivity-constrained
 
 export LDFLAGS += -u _printf_float
 
@@ -24,6 +25,10 @@ ifeq ($(CB_STATS), on)
 ccflags-y += -DZJS_PRINT_CALLBACK_STATS
 endif
 
+ifneq ($(BOARD), arduino_101)
+include $(ZJS_BASE)/Makefile.ocf_zephyr
+endif
+
 obj-y += main.o \
          zjs_ble.o \
          zjs_buffer.o \
@@ -33,6 +38,9 @@ obj-y += main.o \
          zjs_gpio.o \
          zjs_modules.o \
          zjs_performance.o \
+         zjs_ocf_client.o \
+         zjs_ocf_server.o \
+         zjs_ocf_common.o \
          zjs_promise.o \
          zjs_pwm.o \
          zjs_script.o \
