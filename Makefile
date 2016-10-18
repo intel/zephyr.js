@@ -24,12 +24,14 @@ zephyr: analyze generate
 
 .PHONY: analyze
 analyze:
+	@echo "% This is a generated file" > prj.mdef
 ifeq ($(DEV), ashell)
-	@cp prj.mdef.dev prj.mdef
+	@cat prj.mdef.dev >> prj.mdef
 else
-	@cat prj.mdef.base > prj.mdef
+	@cat prj.mdef.base >> prj.mdef
 endif
-	@cat src/Makefile.base > src/Makefile
+	@echo "# This is a generated file" > src/Makefile
+	@cat src/Makefile.base >> src/Makefile
 	@if [ "$(TRACE)" = "on" ] || [ "$(TRACE)" = "full" ]; then \
 		echo "ccflags-y += -DZJS_TRACE_MALLOC" >> src/Makefile; \
 	fi
@@ -122,17 +124,18 @@ update:
 # Sets up prj/last_build files
 .PHONY: setup
 setup: update
+	@echo "# This is a generated file" > prj.conf
 ifeq ($(BOARD), qemu_x86)
-	cp prj.conf.qemu_x86 prj.conf
+	@cat prj.conf.qemu_x86 >> prj.conf
 else
 ifeq ($(DEV), ashell)
-	cp prj.conf.arduino_101_dev prj.conf
+	@cat prj.conf.arduino_101_dev >> prj.conf
 else
-	cp prj.conf.base prj.conf
+	@cat prj.conf.base >> prj.conf
 endif
 ifeq ($(BOARD), arduino_101_factory)
 ifeq ($(ZJS_PARTITION), 256)
-	cat prj.conf.partition_256 >> prj.conf
+	@cat prj.conf.partition_256 >> prj.conf
 endif
 endif
 endif
@@ -156,7 +159,11 @@ clean:
 		rm -rf deps/jerryscript/build/$(BOARD)/; \
 	fi
 	@rm -f src/*.o
+	@rm -f src/Makefile
 	cd arc; make clean
+	@rm -f arc/prj.conf
+	@rm -f prj.conf
+	@rm -f prj.mdef
 
 # Flash Arduino 101 x86 image
 .PHONY: dfu
@@ -186,7 +193,8 @@ qemu: analyze generate
 # Builds ARC binary
 .PHONY: arc
 arc:
-	@cp arc/prj.conf.base arc/prj.conf
+	echo "# This is a generated file" > arc/prj.conf
+	@cat arc/prj.conf.base >> arc/prj.conf
 ifeq ($(ZJS_PARTITION), 256)
 	@cat arc/prj.conf.partition_256 >> arc/prj.conf
 endif
