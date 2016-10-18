@@ -13,9 +13,9 @@
 #include "zjs_common.h"
 #include "zjs_ipm.h"
 
-#define QUEUE_SIZE      10  // max incoming message can handle
-#define SLEEP_TICKS      1  // sleep time in cpu ticks
-#define UPDATE_INTERVAL 50  // interval in between notifications
+#define QUEUE_SIZE       10  // max incoming message can handle
+#define SLEEP_TICKS       1  // 10ms sleep time in cpu ticks
+#define UPDATE_INTERVAL 200  // 2sec interval in between notifications
 
 // AIO
 #define ADC_DEVICE_NAME "ADC_0"
