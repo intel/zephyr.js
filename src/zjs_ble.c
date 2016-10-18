@@ -119,16 +119,26 @@ static void zjs_ble_free_characteristics(ble_characteristic_t *chrc)
 
         if (tmp->uuid)
             zjs_free(tmp->uuid);
-        if (tmp->read_cb.id != -1)
+        if (tmp->read_cb.id != -1) {
             zjs_remove_callback(tmp->read_cb.id);
-        if (tmp->write_cb.id != -1)
+            jerry_release_value(tmp->read_cb.js_callback);
+        }
+        if (tmp->write_cb.id != -1) {
             zjs_remove_callback(tmp->write_cb.id);
-        if (tmp->subscribe_cb.id != -1)
+            jerry_release_value(tmp->write_cb.js_callback);
+        }
+        if (tmp->subscribe_cb.id != -1) {
             zjs_remove_callback(tmp->subscribe_cb.id);
-        if (tmp->unsubscribe_cb.id != -1)
+            jerry_release_value(tmp->subscribe_cb.js_callback);
+        }
+        if (tmp->unsubscribe_cb.id != -1) {
             zjs_remove_callback(tmp->unsubscribe_cb.id);
-        if (tmp->notify_cb.id != -1)
+            jerry_release_value(tmp->unsubscribe_cb.js_callback);
+        }
+        if (tmp->notify_cb.id != -1) {
             zjs_remove_callback(tmp->notify_cb.id);
+            jerry_release_value(tmp->notify_cb.js_callback);
+        }
 
         zjs_free(tmp);
     }
@@ -306,7 +316,7 @@ static void zjs_ble_write_c_callback(void *handle)
            }
 
            jerry_release_value(args[0]);
-           args[0]= buf_obj;
+           args[0] = buf_obj;
         }
     }
     args[1] = jerry_create_number(cb->offset);
@@ -322,6 +332,8 @@ static void zjs_ble_write_c_callback(void *handle)
     }
 
     jerry_release_value(args[0]);
+    jerry_release_value(args[1]);
+    jerry_release_value(args[2]);
     jerry_release_value(args[3]);
     jerry_release_value(rval);
 }
@@ -410,6 +422,7 @@ static void zjs_ble_subscribe_c_callback(void *handle)
         PRINT("zjs_ble_subscribe_c_callback: failed to call onSubscribe function\n");
     }
 
+    jerry_release_value(args[0]);
     jerry_release_value(args[1]);
     jerry_release_value(rval);
 }
