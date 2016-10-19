@@ -13,6 +13,8 @@ I/O
 
 [I2C](./i2c.md)
 
+[UART](./uart.md)
+
 Communications
 --------------
 [BLE](./ble.md)

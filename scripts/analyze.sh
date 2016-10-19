@@ -5,21 +5,21 @@
 # This will output gcc pre-processor defines (-D____) so it can be used in-line
 # during the compile step.
 
-if [ $# -lt 1 ]; then
-    echo "Usage: ./analyze.sh <script>"
+if [ $# -lt 2 ]; then
+    echo "Usage: ./analyze.sh <board> <script>"
     exit
 fi
 
-if [ ! -e $1 ]; then
-    echo "Could not find file $1"
+if [ ! -e $2 ]; then
+    echo "Could not find file $2"
     exit
 fi
 
 MODULES=''
+BOARD=$1
+SCRIPT=$2
 
-SCRIPT=$1
-
-echo "# Modules found in $1:" > prj.conf.tmp
+echo "# Modules found in $SCRIPT:" > prj.conf.tmp
 
 function check_for_require()
 {
@@ -56,7 +56,25 @@ fi
 check_for_require uart
 if [ $? -eq 0 ]; then
     >&2 echo Using module: UART
+    if [ $BOARD = "arduino_101" ]; then
+        echo "CONFIG_EARLY_CONSOLE=y" >> prj.conf.tmp
+        echo "CONFIG_CONSOLE_HANDLER=y" >> prj.conf.tmp
+        echo "CONFIG_CONSOLE_HANDLER_SHELL=y" >> prj.conf.tmp
+        echo "CONFIG_USB=y" >> prj.conf.tmp
+        echo "CONFIG_USB_DW=y" >> prj.conf.tmp
+        echo "CONFIG_USB_DEVICE_STACK=y" >> prj.conf.tmp
+        echo "CONFIG_USB_DW_DEBUG=n" >> prj.conf.tmp
+        echo "CONFIG_USB_CDC_ACM=y" >> prj.conf.tmp
+        echo "CONFIG_USB_DEBUG=n" >> prj.conf.tmp
+        echo "CONFIG_SERIAL=y" >> prj.conf.tmp
+        echo "CONFIG_UART_LINE_CTRL=y" >> prj.conf.tmp
+        echo "CONFIG_USB_CDC_ACM_DEBUG=n" >> prj.conf.tmp
+        echo "CONFIG_DEVICE_POWER_MANAGEMENT=y" >> prj.conf.tmp
+        echo "CONFIG_GPIO=y" >> prj.conf.tmp
+    fi
+    echo "CONFIG_UART_INTERRUPT_DRIVEN=y" >> prj.conf.tmp
     MODULES+=" -DBUILD_MODULE_UART"
+    MODULES+=" -DBUILD_MODULE_BUFFER"
 fi
 check_for_require ble
 if [ $? -eq 0 ]; then
