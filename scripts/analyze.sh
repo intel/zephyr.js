@@ -105,4 +105,10 @@ if [ $? -eq 0 ] && [[ $MODULE != *"BUILD_MODULE_BUFFER"* ]]; then
     MODULES+=" -DBUILD_MODULE_BUFFER"
 fi
 
+console=$(grep console $SCRIPT)
+if [ $? -eq 0 ] && [[ $MODULE != *"BUILD_MODULE_CONSOLE"* ]]; then
+    >&2 echo Using module: Console
+    MODULES+=" -DBUILD_MODULE_CONSOLE"
+fi
+
 echo $MODULES

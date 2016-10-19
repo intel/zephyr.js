@@ -20,6 +20,7 @@
 #include "zjs_buffer.h"
 #include "zjs_callbacks.h"
 #include "zjs_common.h"
+#include "zjs_console.h"
 #include "zjs_event.h"
 #include "zjs_modules.h"
 #include "zjs_timers.h"
@@ -63,6 +64,9 @@ int main(int argc, char *argv[])
     jerry_init(JERRY_INIT_EMPTY);
 
     zjs_timers_init();
+#ifdef BUILD_MODULE_CONSOLE
+    zjs_console_init();
+#endif
 #ifdef BUILD_MODULE_BUFFER
     zjs_buffer_init();
 #endif

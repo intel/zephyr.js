@@ -18,7 +18,7 @@
 //   Larger resistors will make the LED dimmer. Smaller ones could reduce its
 //     life.
 
-print("Starting TrafficLight example...");
+console.log("Starting TrafficLight example...");
 
 // WARNING: These traffic light timings are appropriate for hummingbirds only
 

@@ -13,7 +13,7 @@
 
 // Also toggles an onboard LED off and on faster for good measure.
 
-print("RGB LED sample...");
+console.log("RGB LED sample...");
 
 // import gpio module
 var gpio = require("gpio");

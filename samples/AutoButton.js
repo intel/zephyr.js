@@ -13,7 +13,7 @@
 // Wiring:
 //   - Wire IO11 to IO12
 
-print("Starting AutoButton example...");
+console.log("Starting AutoButton example...");
 
 // time between iterations (in milliseconds)
 var delay = 10;
@@ -39,7 +39,7 @@ var count = 0;
 
 input.onchange = function(event) {
     count += 1;
-    print("Iteration #" + count);
+    console.log("Iteration #" + count);
     // add code here to test for problems
 }
 

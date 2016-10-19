@@ -62,7 +62,7 @@ TemperatureCharacteristic.onReadRequest = function(offset, callback) {
     if (!this._lastValue) {
         var rawValue = pinA0.read();
         if (rawValue == 0) {
-            print("PinA: invalid temperature value");
+            console.log("PinA: invalid temperature value");
             callback(this.RESULT_UNLIKELY_ERROR, null);
             return;
         }
@@ -72,7 +72,7 @@ TemperatureCharacteristic.onReadRequest = function(offset, callback) {
         this._lastValue = celsius;
     }
 
-    print("Temperature: " + this._lastValue);
+    console.log("Temperature: " + this._lastValue);
     var data = new Buffer(1);
     data.writeUInt8(this._lastValue);
     callback(this.RESULT_SUCCESS, data);
@@ -80,13 +80,13 @@ TemperatureCharacteristic.onReadRequest = function(offset, callback) {
 
 TemperatureCharacteristic.onSubscribe = function(maxValueSize,
                                                  updateValueCallback) {
-    print("Subscribed to temperature change");
+    console.log("Subscribed to temperature change");
     this._onChange = updateValueCallback;
     this._lastValue = undefined;
 };
 
 TemperatureCharacteristic.onUnsubscribe = function() {
-    print("Unsubscribed to temperature change");
+    console.log("Unsubscribed to temperature change");
     this._onChange = null;
 };
 
@@ -123,7 +123,7 @@ ColorCharacteristic._value.writeUInt8(0, 2);
 glcd.setColor(255, 0, 0);
 
 ColorCharacteristic.onReadRequest = function(offset, callback) {
-    print("Color change: #" + this._value.toString('hex'));
+    console.log("Color change: #" + this._value.toString('hex'));
     callback(this.RESULT_SUCCESS, this._value);
 };
 
@@ -131,7 +131,7 @@ ColorCharacteristic.onWriteRequest = function(data, offset, withoutResponse,
                                               callback) {
     var value = data;
     if (!value) {
-        print("Error - color onWriteRequest: buffer not available");
+        console.log("Error - color onWriteRequest: buffer not available");
         callback(this.RESULT_UNLIKELY_ERROR);
         return;
     }
@@ -156,7 +156,7 @@ ble.on('stateChange', function(state) {
         ble.startAdvertising(DEVICE_NAME, ['fc00'], "https://goo.gl/QEvyDZ");
     } else {
         if (state === 'unsupported') {
-            print("BLE not enabled on board");
+            console.log("BLE not enabled on board");
         }
         ble.stopAdvertising();
     }
@@ -164,7 +164,7 @@ ble.on('stateChange', function(state) {
 
 ble.on('advertisingStart', function(error) {
     if (error) {
-        print("Failed to advertise Physical Web URL");
+        console.log("Failed to advertise Physical Web URL");
         return;
     }
 
@@ -178,11 +178,11 @@ ble.on('advertisingStart', function(error) {
         })
     ]);
 
-    print("Advertising as Physical Web device");
+    console.log("Advertising as Physical Web device");
 });
 
 ble.on('accept', function(clientAddress) {
-    print("Client connected: " + clientAddress);
+    console.log("Client connected: " + clientAddress);
     glcd.clear();
 
     var lastTemp = 0;
@@ -194,16 +194,16 @@ ble.on('accept', function(clientAddress) {
 
         if (celsius !== lastTemp) {
             lastTemp = celsius;
-            print("Temperature change: " + celsius + "C");
+            console.log("Temperature change: " + celsius + "C");
             TemperatureCharacteristic.valueChange(celsius);
         }
     });
 });
 
 ble.on('disconnect', function(clientAddress) {
-    print("Client disconnected: " + clientAddress);
+    console.log("Client disconnected: " + clientAddress);
 
     tmp36.on("change", null);
 });
 
-print("WebBluetooth Demo with Grove LCD...");
+console.log("WebBluetooth Demo with Grove LCD...");

@@ -7,7 +7,7 @@
 //   - None, to use the onboard LED
 //   - Otherwise, an LED and a resistor (see basics/Blink.js for wiring info)
 
-print("Starting Blink-k64f example...");
+console.log("Starting Blink-k64f example...");
 
 // import gpio module
 var gpio = require("gpio");

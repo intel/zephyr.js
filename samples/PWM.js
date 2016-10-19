@@ -4,7 +4,7 @@
 // pattern to on for 1s, then off 1/2s, indefinitely. Another PWM on IO5 sets
 // an LED's brightness to 33%. Another PWM on IO6 oscillates an LED through a
 // series of blink periods.
-print("PWM test for brightness and blink patterns...");
+console.log("PWM test for brightness and blink patterns...");
 
 // import pwm module
 var pwm = require("pwm");

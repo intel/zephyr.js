@@ -10,7 +10,7 @@
 //   - Wire the device's power to Arduino 3.3V and ground to GND
 //   - Wire the signal pin to Arduino A0
 
-print("Starting ReadAnalogVoltage example...");
+console.log("Starting ReadAnalogVoltage example...");
 
 var aio = require("aio");
 var pins = require("arduino101_pins");
@@ -32,5 +32,5 @@ setInterval(function () {
     var intVoltage = (voltage * 1000 | 0) / 1000.0
 
     // print it to the serial console
-    print(intVoltage + 'V');
+    console.log(intVoltage + 'V');
 }, 1000);
