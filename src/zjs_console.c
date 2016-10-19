@@ -4,6 +4,8 @@
 #include "zjs_common.h"
 #include "zjs_util.h"
 
+#define MAX_STR_LENGTH   256
+
 #ifdef ZJS_LINUX_BUILD
 #define STDERR_PRINT(s, ...) fprintf(stderr, s, __VA_ARGS__)
 #define STDOUT_PRINT(s, ...) fprintf(stdout, s, __VA_ARGS__)
@@ -22,6 +24,10 @@ static jerry_value_t console_log(const jerry_value_t function_obj,
         return ZJS_UNDEFINED;
     }
     jerry_size_t jlen = jerry_get_string_size(argv[0]);
+    if (jlen > MAX_STR_LENGTH) {
+        ERR_PRINT("console string is too long, max length=%u\n", MAX_STR_LENGTH);
+        return ZJS_UNDEFINED;
+    }
     char buffer[jlen + 1];
     int wlen = jerry_string_to_char_buffer(argv[0], (jerry_char_t *)buffer, jlen);
     buffer[wlen] = '\0';
@@ -41,6 +47,10 @@ static jerry_value_t console_error(const jerry_value_t function_obj,
         return ZJS_UNDEFINED;
     }
     jerry_size_t jlen = jerry_get_string_size(argv[0]);
+    if (jlen > MAX_STR_LENGTH) {
+        ERR_PRINT("console string is too long, max length=%u\n", MAX_STR_LENGTH);
+        return ZJS_UNDEFINED;
+    }
     char buffer[jlen + 1];
     int wlen = jerry_string_to_char_buffer(argv[0], (jerry_char_t *)buffer, jlen);
     buffer[wlen] = '\0';
