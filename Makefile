@@ -20,9 +20,11 @@ MALLOC ?= pool
 # MAKECMDGOALS is a Make variable that is set to the target your building for.
 TARGET = $(MAKECMDGOALS)
 
+# TODO: The latest Zephyr seems to require running make mrproper for each build
+#       the mrproper target should be removed when this is fixed
 # Build for zephyr, default target
 .PHONY: zephyr
-zephyr: $(PRE_ACTION) analyze generate
+zephyr: $(PRE_ACTION) mrproper analyze generate
 	@make -f Makefile.zephyr BOARD=$(BOARD) KERNEL=$(KERNEL) VARIANT=$(VARIANT) MEM_STATS=$(MEM_STATS)
 
 .PHONY: analyze
@@ -182,7 +184,7 @@ pristine:
 # Flash Arduino 101 x86 image
 .PHONY: dfu
 dfu:
-	dfu-util -a x86_app -D outdir/arduino_101/zephyr.bin
+	dfu-util -a x86_app -D outdir/$(shell ls .*.last_build | cut -d'.' -f2)/zephyr.bin
 
 # Flash Arduino 101 ARC image
 .PHONY: dfu-arc
@@ -206,7 +208,7 @@ qemu: $(PRE_ACTION) analyze generate
 
 # Builds ARC binary
 .PHONY: arc
-arc:
+arc: mrproper
 	@echo "# This is a generated file" > arc/prj.conf
 	@cat arc/prj.conf.base >> arc/prj.conf
 ifeq ($(ZJS_PARTITION), 256)
@@ -236,6 +238,9 @@ linux: $(PRE_ACTION) generate
 	rm -f .*.last_build
 	echo "" > .linux.last_build
 	make -f Makefile.linux JS=$(JS) VARIANT=$(VARIANT)
+
+mrproper:
+	make -f Makefile.app mrproper
 
 .PHONY: help
 help:
