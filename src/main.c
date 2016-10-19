@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
 
     // print newline here to make it easier to find
     // the beginning of the program
-    PRINT("\n");
+    PRINT("\nTESTING\n");
 
 #ifdef ZJS_POOL_CONFIG
     zjs_init_mem_pools();

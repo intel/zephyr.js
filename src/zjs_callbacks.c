@@ -287,7 +287,7 @@ int32_t add_callback(jerry_value_t js_func,
         cb_size++;
     }
     DBG_PRINT("adding new callback id %ld, js_func=%lu, once=%u\n",
-              new_cb->js->id, new_cb->js->js_func, once);
+              new_cb->id, new_cb->js->js_func, once);
 
     return new_cb->id;
 }
@@ -337,7 +337,15 @@ void zjs_remove_callback(int32_t id)
 void zjs_signal_callback_args(int32_t id, void* args, uint32_t size)
 {
     if (args && size) {
+        // signal with args
         int ret = zjs_port_ring_buf_put(&ring_buffer, (uint16_t)id, 0, (uint32_t*)args, (uint8_t)size / 4);
+        if (ret != 0) {
+            DBG_PRINT("error putting into ring buffer, ret=%u\n", ret);
+        }
+    } else {
+        // signal without args
+        uint32_t dummy = 0;
+        int ret = zjs_port_ring_buf_put(&ring_buffer, (uint16_t)id, 0, (uint32_t*)&dummy, (uint8_t)1);
         if (ret != 0) {
             DBG_PRINT("error putting into ring buffer, ret=%u\n", ret);
         }
@@ -358,7 +366,7 @@ void zjs_signal_callback(int32_t id)
             DBG_PRINT("signaling C callback id %ld\n", id);
         }
 #endif
-        zjs_port_queue_put(&service_queue, cb_map[id]);
+        zjs_signal_callback_args(id, NULL, 0);
     }
 }
 
@@ -385,7 +393,7 @@ int32_t zjs_add_c_callback(void* handle, zjs_c_callback_func callback)
     if (new_cb->id >= cb_size - 1) {
         cb_size++;
     }
-    DBG_PRINT("adding new C callback id %ld\n", new_cb->c->id);
+    DBG_PRINT("adding new C callback id %ld\n", new_cb->id);
 
     return new_cb->id;
 }
@@ -424,24 +432,23 @@ void zjs_call_callback(int32_t i)
         if (cb_map[i]->type == CALLBACK_TYPE_JS) {
             if (cb_map[i]->js->func_list == NULL && jerry_value_is_function(cb_map[i]->js->js_func)) {
                 if (cb_map[i]->ring_buffer) {
-                    if (cb_map[i]->arg_sz) {
-                        // JS callback with ring buffer args
-                        uint16_t type;
-                        uint8_t value;
-                        jerry_value_t data[cb_map[i]->arg_sz / 4];
-                        uint8_t size = cb_map[i]->arg_sz / 4;
+                    uint16_t type;
+                    uint8_t value;
+                    uint8_t size = (cb_map[i]->arg_sz == 0) ? 1 : (cb_map[i]->arg_sz / 4);
+                    jerry_value_t data[size];
 
-                        int ret = zjs_port_ring_buf_get(&ring_buffer,
-                                                        &type,
-                                                        &value,
-                                                        (uint32_t*)data,
-                                                        &size);
-                        if (ret != 0) {
-                            DBG_PRINT("(JS) error pulling from ring buffer: ret = %u\n", ret);
-                        }
-                        if (type != i) {
-                            DBG_PRINT("(JS) type != callback ID : type=%lu, id=%ld\n", type, i);
-                        }
+                    int ret = zjs_port_ring_buf_get(&ring_buffer,
+                                                    &type,
+                                                    &value,
+                                                    (uint32_t*)data,
+                                                    &size);
+                    if (ret != 0) {
+                        DBG_PRINT("(JS) error pulling from ring buffer: ret = %u\n", ret);
+                    }
+                    if (type != i) {
+                        DBG_PRINT("(JS) type != callback ID : type=%u, id=%ld\n", type, i);
+                    }
+                    if (cb_map[i]->arg_sz) {
                         jerry_call_function(cb_map[i]->js->js_func, cb_map[i]->js->this, data, cb_map[i]->arg_sz / 4);
                     } else {
                         jerry_call_function(cb_map[i]->js->js_func, cb_map[i]->js->this, NULL, 0);
@@ -490,27 +497,23 @@ void zjs_call_callback(int32_t i)
             }
         } else if (cb_map[i]->type == CALLBACK_TYPE_C && cb_map[i]->c->function) {
             if (cb_map[i]->ring_buffer) {
+                uint16_t type;
+                uint8_t value;
+                uint8_t size = (cb_map[i]->arg_sz == 0) ? 1 : (cb_map[i]->arg_sz / 4);
+                jerry_value_t data[size];
+
+                int ret = zjs_port_ring_buf_get(&ring_buffer,
+                                                &type,
+                                                &value,
+                                                (uint32_t*)data,
+                                                &size);
+                if (ret != 0) {
+                    DBG_PRINT("(JS) error pulling from ring buffer: ret = %u\n", ret);
+                }
+                if (type != i) {
+                    DBG_PRINT("(JS) type != callback ID : type=%u, id=%ld\n", type, i);
+                }
                 if (cb_map[i]->arg_sz) {
-                    // C callback with ring buffer args
-                    uint16_t type;
-                    uint8_t value;
-                    uint32_t data[cb_map[i]->arg_sz / 4];
-                    uint8_t size = cb_map[i]->arg_sz / 4;
-
-                    memset(data, 0, cb_map[i]->arg_sz);
-
-                    int ret = zjs_port_ring_buf_get(&ring_buffer,
-                                                    &type,
-                                                    &value,
-                                                    (uint32_t*)data,
-                                                    &size);
-                    if (ret != 0) {
-                        DBG_PRINT("(C) error pulling from ring buffer: ret = %u\n", ret);
-                    }
-                    if (type != i) {
-                        DBG_PRINT("(C) type != callback ID : type=%lu, id=%ld\n", type, i);
-                    }
-                    DBG_PRINT("calling callback id %ld, args=%p, args[0]=%lu\n", cb_map[i]->id, data, data[0]);
                     cb_map[i]->c->function(cb_map[i]->c->handle, data);
                 } else {
                     cb_map[i]->c->function(cb_map[i]->c->handle, NULL);
