@@ -214,6 +214,7 @@ int32_t zjs_add_callback_list(jerry_value_t js_func,
         new_cb->js->this = jerry_acquire_value(this);
         new_cb->js->pre = pre;
         new_cb->js->post = post;
+        new_cb->js->this = jerry_acquire_value(this);
         new_cb->js->handle = handle;
         new_cb->js->max_funcs = CB_LIST_MULTIPLIER;
         new_cb->js->num_funcs = 1;

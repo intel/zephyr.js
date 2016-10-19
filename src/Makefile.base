@@ -31,6 +31,7 @@ obj-y += main.o \
          zjs_script.o \
          zjs_script_gen.o \
          zjs_timers.o \
+         zjs_uart.o \
          zjs_util.o
 
 # skip for now for frdm_k64f

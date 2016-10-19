@@ -20,6 +20,7 @@
 #include "zjs_grove_lcd.h"
 #include "zjs_pwm.h"
 #include "zjs_i2c.h"
+#include "zjs_uart.h"
 #ifdef CONFIG_BOARD_ARDUINO_101
 #include "zjs_a101_pins.h"
 #endif // ZJS_LINUX_BUILD
@@ -66,11 +67,14 @@ module_t zjs_modules_array[] = {
     { "k64f_pins", zjs_k64f_init },
 #endif
 #endif // QEMU_BUILD
+#ifdef BUILD_MODULE_UART
+    { "uart", zjs_init_uart },
+#endif
 #endif // ZJS_LINUX_BUILD
-
 #ifdef BUILD_MODULE_EVENTS
     { "events", zjs_event_init },
 #endif
+
 };
 
 static jerry_value_t native_require_handler(const jerry_value_t function_obj,
