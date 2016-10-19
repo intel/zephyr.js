@@ -72,17 +72,6 @@ var i2cDevice = i2c.open({ bus: 0, speed: 100 });
 var dig_T1;
 var dig_T2;
 var dig_T3;
-
-// Global Buffer objects
-var setupData = new Buffer(2);
-var clearData = new Buffer([0, glcd.GLCD_CMD_SCREEN_CLEAR]);
-var msgData = new Buffer("Temperature is ");
-var tempData = new Buffer(" ##.#C");
-var changeData = new Buffer(" +");
-var redData = new Buffer([glcd.REGISTER_R, 0]);
-var greenData = new Buffer([glcd.REGISTER_G, 0]);
-var blueData = new Buffer([glcd.REGISTER_B, 0]);
-
 var baseTemp = prevTemp = 25;
 var firstRead = true;
 var red = green = blue = 200;
@@ -107,9 +96,9 @@ function resetCursor(col, row) {
         col |= 0xC0;
     }
 
-    setupData.writeUInt8(glcd.GLCD_CMD_SET_DDRAM_ADDR, 0);
-    setupData.writeUInt8(col, 1);
-    i2cDevice.write(glcd.GROVE_LCD_DISPLAY_ADDR, setupData);
+    // Write new cursor position via I2C
+    i2cDevice.write(glcd.GROVE_LCD_DISPLAY_ADDR,
+                    new Buffer([glcd.GLCD_CMD_SET_DDRAM_ADDR, col]));
 }
 
 function setColorFromTemperature(newTemp) {
@@ -130,24 +119,27 @@ function setColorFromTemperature(newTemp) {
     prevTemp = newTemp;
 
     // Valid range for color is 0 - 255
-    redData.writeUInt8(red, 1);
-    greenData.writeUInt8(green, 1);
-    blueData.writeUInt8(blue, 1);
-    // Send messages as close together as possible,
-    // so that the color change is smoother
-    i2cDevice.write(glcd.GROVE_RGB_BACKLIGHT_ADDR, blueData);
-    i2cDevice.write(glcd.GROVE_RGB_BACKLIGHT_ADDR, redData);
-    i2cDevice.write(glcd.GROVE_RGB_BACKLIGHT_ADDR, greenData);
+    // Write new color values
+    i2cDevice.write(glcd.GROVE_RGB_BACKLIGHT_ADDR,
+                    new Buffer([glcd.REGISTER_B, blue]));
+    i2cDevice.write(glcd.GROVE_RGB_BACKLIGHT_ADDR,
+                    new Buffer([glcd.REGISTER_R, red]));
+    i2cDevice.write(glcd.GROVE_RGB_BACKLIGHT_ADDR,
+                    new Buffer([glcd.REGISTER_G, green]));
 }
 
-function writeWord(word, buffer) {
-    // Add the word to the buffer
-    buffer.write(word, 1);
+function writeText(word) {
+    var wordBuffer = new Buffer(word.length + 1);
+
     // The first byte in the buffer is for the register address,
     // which is where the word is going to be written to.
-    buffer.writeUInt8(glcd.GLCD_CMD_SET_CGRAM_ADDR, 0);
+    wordBuffer.writeUInt8(glcd.GLCD_CMD_SET_CGRAM_ADDR, 0);
+
+    // Append the text we want to print after that
+    wordBuffer.write(word, 1);
+
     // Write the buffer to I2C
-    i2cDevice.write(glcd.GROVE_LCD_DISPLAY_ADDR, buffer);
+    i2cDevice.write(glcd.GROVE_LCD_DISPLAY_ADDR, wordBuffer);
 }
 
 function init() {
@@ -160,38 +152,39 @@ function init() {
 
     readCoefficients();
 
-    //var powerData = new Buffer([bmp280.BMP280_REGISTER_CONTROL, 0]);
-    setupData.writeUInt8(bmp280.BMP280_REGISTER_CONTROL, 0);
-    setupData.writeUInt8(bmp280.BMP280_PRESS_OVER | bmp280.BMP280_TEMP_OVER |
-                         bmp280.BMP280_NORMAL_MODE, 1)
+    /* Setup BMP280 sensor */
+    i2cDevice.write(bmp280.BMP280_ADDRESS,
+                    new Buffer([bmp280.BMP280_REGISTER_CONTROL,
+                                bmp280.BMP280_PRESS_OVER |
+                                bmp280.BMP280_TEMP_OVER |
+                                bmp280.BMP280_NORMAL_MODE]));
 
-    i2cDevice.write(bmp280.BMP280_ADDRESS, setupData);
-
-    setupData.writeUInt8(bmp280.BMP280_REGISTER_CONFIG, 0);
-    setupData.writeUInt8(bmp280.BMP280_STANDBY | bmp280.BMP280_FILTER |
-                         bmp280.BMP280_SPI_3W_DISABLE, 1);
-
-    i2cDevice.write(bmp280.BMP280_ADDRESS, setupData);
+    i2cDevice.write(bmp280.BMP280_ADDRESS,
+                    new Buffer([bmp280.BMP280_REGISTER_CONFIG,
+                                bmp280.BMP280_STANDBY |
+                                bmp280.BMP280_FILTER |
+                                bmp280.BMP280_SPI_3W_DISABLE]));
 
     /* Setup Grove LCD */
     // Clear the LCD
-    i2cDevice.write(glcd.GROVE_LCD_DISPLAY_ADDR, clearData);
-    // Set our preferences for the Grove LCD
-    var setup = glcd.GLCD_CMD_FUNCTION_SET | (glcd.GLCD_FS_ROWS_2 |
-                                              glcd.GLCD_FS_DOT_SIZE_LITTLE |
-                                              glcd.GLCD_FS_8BIT_MODE);
-    setupData.writeUInt8(0, 0);
-    setupData.writeUInt8(setup, 1);
-    i2cDevice.write(glcd.GROVE_LCD_DISPLAY_ADDR, setupData);
+    i2cDevice.write(glcd.GROVE_LCD_DISPLAY_ADDR,
+                    new Buffer([0, glcd.GLCD_CMD_SCREEN_CLEAR]));
 
-    setup = glcd.GLCD_CMD_DISPLAY_SWITCH | (glcd.GLCD_DS_DISPLAY_ON |
-                                            glcd.GLCD_DS_CURSOR_ON |
-                                            glcd.GLCD_DS_BLINK_ON);
-    setupData.writeUInt8(setup, 1);
-    i2cDevice.write(glcd.GROVE_LCD_DISPLAY_ADDR, setupData);
+    // Set our preferences for the Grove LCD
+    i2cDevice.write(glcd.GROVE_LCD_DISPLAY_ADDR,
+                    new Buffer([0, glcd.GLCD_CMD_FUNCTION_SET |
+                                   glcd.GLCD_FS_ROWS_2 |
+                                   glcd.GLCD_FS_DOT_SIZE_LITTLE |
+                                   glcd.GLCD_FS_8BIT_MODE]));
+
+    i2cDevice.write(glcd.GROVE_LCD_DISPLAY_ADDR,
+                    new Buffer([0, glcd.GLCD_CMD_DISPLAY_SWITCH |
+                                   glcd.GLCD_DS_DISPLAY_ON |
+                                   glcd.GLCD_DS_CURSOR_OFF |
+                                   glcd.GLCD_DS_BLINK_OFF]));
 
     resetCursor(0, 0);
-    writeWord("Temperature is ", msgData);
+    writeText("Temperature is ");
 }
 
 function readCoefficients() {
@@ -209,7 +202,6 @@ function readCoefficients() {
 }
 
 function readTemperature() {
-
     // Read the raw temperature value.
     var tempBuffer = i2cDevice.burstRead(bmp280.BMP280_ADDRESS, 4,
                                          bmp280.BMP280_REGISTER_TEMPDATA);
@@ -235,14 +227,14 @@ function readTemperature() {
     // Draw icon for direction temp has changed
     resetCursor(0, 1);
     if (prevTemp < T) {
-        writeWord("+", changeData);
+        writeText("+");
     } else {
-        writeWord("-", changeData);
+        writeText("-");
     }
 
     // Write out the temp to the LCD
     resetCursor(9, 1);
-    writeWord(tempStr, tempData);
+    writeText(tempStr);
     setColorFromTemperature(T);
     prevTemp = T;
 }
