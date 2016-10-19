@@ -11,6 +11,8 @@ I/O
 
 [PWM](./pwm.md)
 
+[UART](./uart.md)
+
 Communications
 --------------
 [BLE](./ble.md)
