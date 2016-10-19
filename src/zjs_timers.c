@@ -112,10 +112,9 @@ void zjs_timers_cleanup()
 {
     for (zjs_timer_t **ptm = &zjs_timers; *ptm; ptm = &(*ptm)->next) {
         zjs_timer_t *tm = *ptm;
-        int i;
         zjs_port_timer_stop(&tm->timer);
         *ptm = tm->next;
-        for (i = 0; i < tm->argc; ++i) {
+        for (int i = 0; i < tm->argc; ++i) {
             jerry_release_value(tm->argv[i]);
         }
         zjs_remove_callback(tm->callback_id);
