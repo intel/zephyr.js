@@ -98,7 +98,7 @@ void zjs_ipm_register_callback(uint32_t msg_id, ipm_callback_t cb)
 #endif
 }
 
-void zjs_ipm_free_callbacks() {
+void zjs_ipm_cleanup() {
     #ifdef CONFIG_X86
     struct zjs_ipm_callback **pItem = &zjs_ipm_callbacks;
     while (*pItem) {

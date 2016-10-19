@@ -108,7 +108,7 @@ static bool delete_timer(int32_t id)
     return false;
 }
 
-void zjs_timers_free_timers()
+void zjs_timers_cleanup()
 {
     for (zjs_timer_t **ptm = &zjs_timers; *ptm; ptm = &(*ptm)->next) {
         zjs_timer_t *tm = *ptm;

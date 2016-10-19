@@ -268,7 +268,7 @@ static void zjs_buffer_callback_free(uintptr_t handle)
     }
 }
 
-void zjs_buffer_free_buffers()
+void zjs_buffer_cleanup()
 {
     zjs_buffer_t **pItem = &zjs_buffers;
     while (*pItem) {
