@@ -26,7 +26,9 @@ Connect
 
 Use this command to connect to ashell from a terminal
 
-screen /dev/ttyACM0 115200
+```bash
+$ screen /dev/ttyACM0 115200
+```
 
 Note: It will take about 30 seconds for it to be up and running after you boot.
 Until then you will see screen terminate immediately.  If you see this, just
