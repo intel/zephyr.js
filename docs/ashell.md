@@ -17,9 +17,22 @@ Compilation
 ------------
 
 This command will enable the shell compilation:
-`make DEV=ashell`
+`make DEV=ashell MALLOC=heap`
 
 Dev mode will append all the functionality from ZJS, so it might not fit in ROM.
+
+Connect
+-------
+
+Use this command to connect to ashell from a terminal
+
+```bash
+$ screen /dev/ttyACM0 115200
+```
+
+Note: It will take about 30 seconds for it to be up and running after you boot.
+Until then you will see screen terminate immediately.  If you see this, just
+try again in a few seconds.
 
 Commands
 --------
