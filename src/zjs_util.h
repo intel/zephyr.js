@@ -39,24 +39,6 @@
 #endif  // ZJS_POOL_CONFIG
 #endif  // ZJS_LINUX_BUILD
 
-struct zjs_callback;
-
-typedef void (*zjs_cb_wrapper_t)(struct zjs_callback *);
-
-struct zjs_callback {
-    void *fifo_reserved;
-    jerry_value_t js_callback;
-    // function called from task context to execute the callback
-    zjs_cb_wrapper_t call_function;
-    // embed this within your own struct to add data fields you need
-};
-
-// TODO: We may want to reuse the queue code on ARC side at some point, and move
-//   this to zjs_common
-void zjs_queue_init();
-void zjs_queue_callback(struct zjs_callback *cb);
-void zjs_run_pending_callbacks();
-
 void zjs_set_property(const jerry_value_t obj, const char *str,
                       const jerry_value_t prop);
 jerry_value_t zjs_get_property (const jerry_value_t obj, const char *str);

@@ -5,51 +5,6 @@
 // ZJS includes
 #include "zjs_util.h"
 
-#ifndef ZJS_LINUX_BUILD
-// Zephyr includes
-#include <zephyr.h>
-// fifo of pointers to zjs_callback objects representing JS callbacks
-struct nano_fifo zjs_callbacks_fifo;
-
-void zjs_queue_init()
-{
-    nano_fifo_init(&zjs_callbacks_fifo);
-}
-
-void zjs_queue_callback(struct zjs_callback *cb) {
-    // requires: cb is a callback structure containing a pointer to a JS
-    //             callback object and a wrapper function that knows how to
-    //             call the callback; this structure may contain additional
-    //             fields used by that wrapper; JS objects and values within
-    //             the structure should already be ref-counted so they won't
-    //             be lost, and you deref them from call_function
-    //  effects: adds this callback info to a fifo queue and will call the
-    //             wrapper with this structure later, in a safe way, within
-    //             the task context for proper serialization
-    nano_fifo_put(&zjs_callbacks_fifo, cb);
-}
-
-void zjs_run_pending_callbacks()
-{
-    // requires: call only from task context
-    //  effects: calls all the callbacks in the queue
-    struct zjs_callback *cb;
-    while (1) {
-        cb = nano_task_fifo_get(&zjs_callbacks_fifo, TICKS_NONE);
-        if (!cb) {
-            break;
-        }
-
-        if (unlikely(!cb->call_function)) {
-            PRINT("error: no JS callback found\n");
-            continue;
-        }
-
-        cb->call_function(cb);
-    }
-}
-#endif // ZJS_LINUX_BUILD
-
 void zjs_set_property(const jerry_value_t obj, const char *str,
                       const jerry_value_t prop)
 {
