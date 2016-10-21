@@ -19,7 +19,7 @@ if __name__ == "__main__":
     # parse command line arguments
     parser = argparse.ArgumentParser()
     parser.add_argument('-b', metavar='BOARDNAME', default='placeholder',
-                        help='override board name (default: arduino_101_factory)')
+                        help='override board name (default: arduino_101)')
     parser.add_argument('-c', action='store_true',
                         help='clean build, recreating build dir from scratch')
     parser.add_argument('-j', action='store_true',
@@ -52,7 +52,7 @@ if __name__ == "__main__":
 
     if not args.s:
         if args.b == "placeholder":
-            board = 'BOARD=arduino_101_factory'
+            board = 'BOARD=arduino_101'
 
             partsize = os.getenv('ZJS_PARTITION')
             if partsize == '216' or partsize == '256':
