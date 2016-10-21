@@ -155,8 +155,7 @@ void zjs_fulfill_promise(jerry_value_t obj, jerry_value_t argv[], uint32_t argc)
     }
 
     handle->then_id = zjs_add_callback_once(handle->then,
-                                            obj,
-                                            handle,
+                                            obj, handle,
                                             pre_then,
                                             post_promise);
     handle->then_argv = argv;
