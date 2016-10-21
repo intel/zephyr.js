@@ -6,8 +6,14 @@
 // This file includes code common to both X86 and ARC
 
 #include <stdio.h>
-
+#ifndef ZJS_LINUX_BUILD
+#include <misc/printk.h>
+#define PRINT printk
+#else
 #define PRINT printf
+#endif
+
+
 
 #ifdef DEBUG_BUILD
 

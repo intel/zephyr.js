@@ -11,6 +11,7 @@ ccflags-y += -I$(ZJS_BASE)/outdir/include
 
 ifeq ($(VARIANT), debug)
 ccflags-y += -DDEBUG_BUILD
+ccflags-y += -g
 endif
 
 ifeq ($(BOARD), qemu_x86)
