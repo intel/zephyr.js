@@ -63,9 +63,6 @@ int main(int argc, char *argv[])
     jerry_init(JERRY_INIT_EMPTY);
 
     zjs_timers_init();
-#ifndef ZJS_LINUX_BUILD
-    zjs_queue_init();
-#endif
 #ifdef BUILD_MODULE_BUFFER
     zjs_buffer_init();
 #endif
@@ -127,9 +124,6 @@ int main(int argc, char *argv[])
 
     while (1) {
         zjs_timers_process_events();
-#ifndef ZJS_LINUX_BUILD
-        zjs_run_pending_callbacks();
-#endif
         zjs_service_callbacks();
         // not sure if this is okay, but it seems better to sleep than
         //   busy wait
