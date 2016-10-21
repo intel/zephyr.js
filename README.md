@@ -292,7 +292,7 @@ attempt the DFU command, or it will fail.)
 $ make JS=samples/HelloWorld.js
 ```
 
-This will build the system image, resulting in `outdir/arduino_101_factory/zephyr.bin`
+This will build the system image, resulting in `outdir/arduino_101/zephyr.bin`
 as the final output. To flash this to your device with dfu-util, first press
 the Master Reset button on your Arduino 101, and about three seconds later type:
 
