@@ -174,12 +174,12 @@ clean:
 # Flash Arduino 101 x86 image
 .PHONY: dfu
 dfu:
-	dfu-util -a x86_app -D outdir/zephyr.bin
+	dfu-util -a x86_app -D outdir/arduino_101_factory/zephyr.bin
 
 # Flash Arduino 101 ARC image
 .PHONY: dfu-arc
 dfu-arc:
-	dfu-util -a sensor_core -D arc/outdir/zephyr.bin
+	dfu-util -a sensor_core -D arc/outdir/arduino_101_sss_factory/zephyr.bin
 
 # Flash both
 .PHONY: dfu-all
