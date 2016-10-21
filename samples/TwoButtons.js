@@ -7,7 +7,7 @@
 // it doesn't work the other way and I haven't figured out why yet. It may
 // relate to IO5 being connected to both the X86 and ARC processors.
 
-print("GPIO test with two buttons controlling two LEDs...");
+console.log("GPIO test with two buttons controlling two LEDs...");
 
 // import gpio module
 var gpio = require("gpio");

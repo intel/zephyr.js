@@ -61,7 +61,7 @@ var REGISTER_R      = 0x04
 var REGISTER_G      = 0x03
 var REGISTER_B      = 0x02
 
-print("I2C sample...");
+console.log("I2C sample...");
 
 var setupData = new Buffer(2);
 
@@ -109,7 +109,7 @@ function resetCursor() {
 
 function changeRGB(red, green, blue) {
     // Valid range for color is 0 - 255
-    print("RGB = " + red + " : " + green + " : " + blue);
+    console.log("RGB = " + red + " : " + green + " : " + blue);
     var redData = new Buffer([REGISTER_R, red]);
     var greenData = new Buffer([REGISTER_G, green]);
     var blueData = new Buffer([REGISTER_B, blue]);

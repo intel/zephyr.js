@@ -148,7 +148,7 @@ function init() {
 
     // Check that we have a BMP280 on the I2C bus
     if (reader.toString('hex') !== "58")
-        print("BMP280 not found! ChipId " + reader.toString('hex') !== "58");
+        console.log("BMP280 not found! ChipId " + reader.toString('hex') !== "58");
 
     readCoefficients();
 
@@ -219,7 +219,7 @@ function readTemperature() {
     var t_fine = var1 + var2;
     var T = ((t_fine * 5 + 128) >> 8) / 100 ;
 
-    print("Temp = " + T);
+    console.log("Temp = " + T);
     var whole = T | 0;
     var dec = (T * 10) | 0;
     dec = dec - whole * 10;

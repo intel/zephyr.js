@@ -18,7 +18,7 @@
 //   Larger resistors will make the LED dimmer. Smaller ones could reduce its
 //     life.
 
-print("Starting Blink example...");
+console.log("Starting Blink example...");
 
 // import gpio module
 var gpio = require("gpio");

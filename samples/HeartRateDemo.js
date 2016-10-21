@@ -110,12 +110,12 @@ var heartRateCharacteristic = new ble.Characteristic({
 
 heartRateCharacteristic.onSubscribe = function(maxValueSize,
                                                updateValueCallback) {
-    print("Subscribed to heart rate change.");
+    console.log("Subscribed to heart rate change.");
     this._onChange = updateValueCallback;
 };
 
 heartRateCharacteristic.onUnsubscribe = function() {
-    print("Unsubscribed to heart rate change.");
+    console.log("Unsubscribed to heart rate change.");
     this._onChange = null;
 };
 
@@ -158,7 +158,7 @@ function measureHeartRate(signal) {
             lastBeatTime = sampleCounter;       // keep track of time for next pulse
 
             if (secondBeat) {                   // if this is the second beat, if secondBeat == TRUE
-                print("Measured 2nd beat");
+                console.log("Measured 2nd beat");
                 secondBeat = false;             // clear secondBeat flag
                 for(var i = 0; i <= 9; i++) {   // seed the running total to get a realisitic BPM at startup
                     rate[i] = IBI;
@@ -166,7 +166,7 @@ function measureHeartRate(signal) {
             }
 
             if (firstBeat) {                    // if it's the first time we found a beat, if firstBeat == TRUE
-                print("Measured 1st beat");
+                console.log("Measured 1st beat");
                 firstBeat = false;              // clear firstBeat flag
                 secondBeat = true;              // set the second beat flag
                 return 0;                       // IBI value is unreliable so discard it
@@ -227,20 +227,20 @@ function showHeartBeatUsingFadeEffect(index) {
 }
 
 ble.on('stateChange', function(state) {
-    print("BLE state: " + state);
+    console.log("BLE state: " + state);
 
     if (state === 'poweredOn') {
         ble.startAdvertising(deviceName, [hrsUuid]);
     } else {
         if (state === 'unsupported') {
-            print("BLE not enabled on board");
+            console.log("BLE not enabled on board");
         }
         ble.stopAdvertising();
     }
 });
 
 ble.on('advertisingStart', function(error) {
-    print('advertisingStart: ' + (error ? error : 'success'));
+    console.log('advertisingStart: ' + (error ? error : 'success'));
 
     if (error) {
         return;

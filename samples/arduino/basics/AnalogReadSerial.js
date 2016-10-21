@@ -11,7 +11,7 @@
 //   - Wire the signal pin to Arduino A0
 // Note: The maximum reading may not reach all the way to 4095
 
-print("Starting AnalogReadSerial example...");
+console.log("Starting AnalogReadSerial example...");
 
 var aio = require("aio");
 var pins = require("arduino101_pins");
@@ -27,5 +27,5 @@ setInterval(function () {
     var value = pin.read();
 
     // print it to the serial console
-    print(value);
+    console.log(value);
 }, 1000);

@@ -76,7 +76,7 @@ setInterval(function () {
     line += ', degrees F: ' + clipNum(fahrenheit);
 
     // send the output to the serial console
-    print(line);
+    console.log(line);
 
     // Note: The original code seems to have a bug in that it doesn't handle
     //   temperatures between the baseline and baseline + 2, so this is

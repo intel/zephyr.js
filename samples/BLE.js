@@ -18,16 +18,16 @@ ble.on('stateChange', function(state) {
 });
 
 ble.on('accept', function(clientAddress) {
-    print("Accepted Connection: " + clientAddress);
+    console.log("Accepted Connection: " + clientAddress);
     ble.updateRssi();
 });
 
 ble.on('disconnect', function(clientAddress) {
-    print("Disconnected Connection: " + clientAddress);
+    console.log("Disconnected Connection: " + clientAddress);
 });
 
 ble.on('rssiUpdate', function(rssi) {
-    print("RSSI value: " + rssi + "dBm");
+    console.log("RSSI value: " + rssi + "dBm");
 });
 
 ble.on('advertisingStart', function(error) {
@@ -50,12 +50,12 @@ ble.on('advertisingStart', function(error) {
                         })
                     ],
                     onReadRequest: function(offset, callback) {
-                        print("Read value: " + echoValue.toString('hex'));
+                        console.log("Read value: " + echoValue.toString('hex'));
                         callback(this.RESULT_SUCCESS, echoValue);
                     },
                     onWriteRequest: function(data, offset, withoutResponse,
                                              callback) {
-                        print("Write value: " + data.toString('hex'));
+                        console.log("Write value: " + data.toString('hex'));
                         echoValue = data;
                         callback(this.RESULT_SUCCESS);
                     }
@@ -64,9 +64,9 @@ ble.on('advertisingStart', function(error) {
         })
     ], function(error) {
         if (error) {
-            print("Set services error: " + error);
+            console.log("Set services error: " + error);
         }
     });
 });
 
-print("BLE sample...");
+console.log("BLE sample...");
