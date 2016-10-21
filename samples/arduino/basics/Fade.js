@@ -17,7 +17,7 @@
 //   Larger resistors will make the LED dimmer. Smaller ones could reduce its
 //     life.
 
-print("Starting Fade example...");
+console.log("Starting Fade example...");
 
 var brightness = 0;
 var fadeAmount = 5;

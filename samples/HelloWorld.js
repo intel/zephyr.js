@@ -1,1 +1,1 @@
-print('Hello, ZJS world!')
+console.log('Hello, ZJS world!')

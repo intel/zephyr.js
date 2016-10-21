@@ -7,7 +7,7 @@
 // off together, but when the button is pressed turns one on and one off until
 // the next timer expires.
 
-print("Async GPIO test with two LEDs and a button...");
+console.log("Async GPIO test with two LEDs and a button...");
 
 // import gpio module
 var gpio = require("gpio");
@@ -41,5 +41,5 @@ gpio.openAsync({ pin: pins.IO4, direction: 'in', edge: 'rising' }).then(function
         pinB.write(false);
     };
 }).catch(function(error) {
-    print("Error opening GPIO pin");
+    console.log("Error opening GPIO pin");
 });

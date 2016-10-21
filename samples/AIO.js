@@ -16,17 +16,17 @@ var pinB = aio.open({ device: 0, pin: pins.A1 });
 setInterval(function () {
     var rawValue = pinA.read();
     if (rawValue == 0) {
-        print("PinA: invalid temperature value");
+        console.log("PinA: invalid temperature value");
     } else {
         var voltage = (rawValue / 4096.0) * 3.3;
         var celsius = (voltage - 0.5) * 100 + 0.5;
         celsius = celsius | 0;
-        print("PinA: temperature in Celsius is: " + celsius);
+        console.log("PinA: temperature in Celsius is: " + celsius);
     }
 }, 1000);
 
 setInterval(function () {
     pinB.readAsync(function(rawValue) {
-        print("PinB - raw value is: " + rawValue);
+        console.log("PinB - raw value is: " + rawValue);
     });
 }, 1000);

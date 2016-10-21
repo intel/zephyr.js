@@ -53,10 +53,10 @@ setInterval(function () {
     var greenValue = greenSensor.read();
     var blueValue = blueSensor.read();
 
-    print("Raw Sensor Values: " +
-          "\tRed: " + redValue +
-          "\tGreen: " + greenValue +
-          "\tBlue: " + blueValue);
+    console.log("Raw Sensor Values: " +
+                "\tRed: " + redValue +
+                "\tGreen: " + greenValue +
+                "\tBlue: " + blueValue);
 
     // NOTE: The Arduino has 12-bit ADC resolution (0-4095) vs. the Arduino
     //   Uno's 10-bit resolution (0-1023), so we divide by 16 instead of 4 to
@@ -65,10 +65,10 @@ setInterval(function () {
     greenValue = greenValue / 16;
     blueValue = blueValue / 16;
 
-    print("Mapped Sensor Values: " +
-          "\tRed: " + redValue +
-          "\tGreen: " + greenValue +
-          "\tBlue: " + blueValue);
+    console.log("Mapped Sensor Values: " +
+                "\tRed: " + redValue +
+                "\tGreen: " + greenValue +
+                "\tBlue: " + blueValue);
 
     redLED.setPulseWidthCycles(redValue);
     greenLED.setPulseWidthCycles(greenValue);

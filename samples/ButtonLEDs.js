@@ -5,7 +5,7 @@
 // off together, but when the button is pressed turns one on and one off until
 // the next timer expires.
 
-print("GPIO test with two LEDs and a button...");
+console.log("GPIO test with two LEDs and a button...");
 
 // import gpio module
 var gpio = require("gpio");
