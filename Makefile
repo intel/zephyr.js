@@ -60,7 +60,7 @@ endif
 			echo "HEAP_SIZE 5120" >> prj.mdef; \
 		fi; \
 	fi
-	@echo "ccflags-y += $(shell ./scripts/analyze.sh $(BOARD) $(JS))" >> src/Makefile
+	@echo "ccflags-y += $(shell ./scripts/analyze.sh $(JS))" >> src/Makefile
 
 .PHONY: all
 all: zephyr arc
