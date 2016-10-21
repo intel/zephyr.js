@@ -2,5 +2,5 @@
 # second field: git URL to clone the repo
 # third field: branch or commit to check out
 jerryscript https://github.com/Samsung/jerryscript.git 63f739e5a
-zephyr https://gerrit.zephyrproject.org/r/zephyr 5c7a265
+zephyr https://gerrit.zephyrproject.org/r/zephyr 5e4b62c
 ihex https://github.com/arkku/ihex.git 0ebfce8

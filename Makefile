@@ -172,6 +172,13 @@ clean:
 	@rm -f prj.conf.tmp
 	@rm -f prj.mdef
 
+.PHONY: pristine
+pristine:
+	@if [ -d deps/zephyr ] && [ -e outdir ]; then \
+		make -f Makefile.zephyr pristine; \
+		cd arc; make pristine; \
+	fi
+
 # Flash Arduino 101 x86 image
 .PHONY: dfu
 dfu:
