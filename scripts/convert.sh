@@ -55,30 +55,20 @@ printf "/* This file was auto-generated */\n\n" > $OUTPUT
 printf "#include \"zjs_common.h\"\n\n" >> $OUTPUT
 printf "const char *script_gen = \"" >> $OUTPUT
 
-last_char=0
-
 # No field separator, read whole file (IFS=),
 # no backslash escape (-r),
 # read 1 character at a time (-n1)
 while IFS= read $FLAGS char
 do
-    # Case for escaping a quote (") character
-    if [ "$char" = "\"" ]; then
-        printf "\\\\$char" >> $OUTPUT
-    elif [ "$last_char" = $'\\' ]; then
-        # Special case for new line and carrage return that can appear in a
-        # string e.g. print("some string\n");
-        # This is needed because BASH reads the "\n" as two characters, but
-        # in a C string it is just one character.
-        if [ "$char" = $'r' ] || [ "$char" = $'n' ]; then
-            printf "\\\\$char" >> $OUTPUT
-        fi
-    else
-        printf "$char" >> $OUTPUT
-    fi
-    last_char=$char
-    COUNT=$((COUNT+1))
-    percent $COUNT $SIZE "'$char"
+	if [ "$char" = "\"" ]; then
+	    printf "\\\\$char" >> $OUTPUT
+	elif [ "$char" = $'\n' ]; then
+	    printf "\\\n\"$char\"" >> $OUTPUT
+	else
+	    printf "$char" >> $OUTPUT
+	fi
+	COUNT=$((COUNT+1))
+	percent $COUNT $SIZE "'$char"
 done < /tmp/gen.tmp
 
 printf "\n"

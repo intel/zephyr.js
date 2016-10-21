@@ -234,24 +234,21 @@ static jerry_value_t zjs_buffer_to_string(const jerry_value_t function_obj,
                                           sz);
     encoding[len] = '\0';
 
-    if (strcmp(encoding, "ascii") == 0) {
-        buf->buffer[buf->bufsize] = '\0';
-        return jerry_create_string((jerry_char_t *)buf->buffer);
-    } else if (strcmp(encoding, "hex") == 0) {
-        if (buf && buf->bufsize > 0) {
-            char hexbuf[buf->bufsize * 2 + 1];
-            for (int i=0; i<buf->bufsize; i++) {
-                int high = (0xf0 & buf->buffer[i]) >> 4;
-                int low = 0xf & buf->buffer[i];
-                hexbuf[2*i] = zjs_int_to_hex(high);
-                hexbuf[2*i+1] = zjs_int_to_hex(low);
-            }
-            hexbuf[buf->bufsize * 2] = '\0';
-            return jerry_create_string((jerry_char_t *)hexbuf);
-        }
-    } else {
+    if (strcmp(encoding, "hex"))
         return zjs_error("zjs_buffer_to_string: unsupported encoding type");
+
+    if (buf && buf->bufsize > 0) {
+        char hexbuf[buf->bufsize * 2 + 1];
+        for (int i=0; i<buf->bufsize; i++) {
+            int high = (0xf0 & buf->buffer[i]) >> 4;
+            int low = 0xf & buf->buffer[i];
+            hexbuf[2*i] = zjs_int_to_hex(high);
+            hexbuf[2*i+1] = zjs_int_to_hex(low);
+        }
+        hexbuf[buf->bufsize * 2] = '\0';
+        return jerry_create_string((jerry_char_t *)hexbuf);
     }
+
     return zjs_error("zjs_buffer_to_string: buffer is empty");
 }
 
