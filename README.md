@@ -292,9 +292,9 @@ attempt the DFU command, or it will fail.)
 $ make JS=samples/HelloWorld.js
 ```
 
-This will build the system image, resulting in `outdir/zephyr.bin` as the final
-output. To flash this to your device with dfu-util, first press the Master Reset
-button on your Arduino 101, and about three seconds later type:
+This will build the system image, resulting in `outdir/arduino_101_factory/zephyr.bin`
+as the final output. To flash this to your device with dfu-util, first press
+the Master Reset button on your Arduino 101, and about three seconds later type:
 
 ```bash
 $ make dfu
@@ -352,7 +352,7 @@ Then, follow [these instructions] (https://developer.mbed.org/handbook/Firmware-
 Next, you can try to build ZJS for the platform:
 ```bash
 $ make BOARD=frdm_k64f JS=samples/HelloWorld.js
-$ cp outdir/zephyr.bin /media/<USERNAME>/MBED/
+$ cp outdir/frdm_k64f/zephyr.bin /media/<USERNAME>/MBED/
 ```
 
 After you copy the new `.bin` file to that directory, the device will reboot,
@@ -364,11 +364,12 @@ on the serial console in less than a second.
 If something doesn't work, you may want to establish that you're able to
 upload the K64F [hello world application] (https://developer.mbed.org/platforms/FRDM-K64F/#flash-a-project-binary).
 
-Then, you could try the Zephyr OS `hello_world` sample to narrow down the problem:
+Then, you could try the Zephyr OS `hello_world` sample to narrow down the
+problem:
 ```bash
 $ cd deps/zephyr/samples/hello_world/nanokernel
 $ make pristine && make BOARD=frdm_k64f
-$ cp outdir/zephyr.bin /media/<USERNAME>/MBED/
+$ cp outdir/frdm_k64f/zephyr.bin /media/<USERNAME>/MBED/
 ```
 
 Using the same procedure as above, once you hit Reset you should see

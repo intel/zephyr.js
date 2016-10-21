@@ -78,7 +78,7 @@ if __name__ == "__main__":
             input("Press Enter to begin flashing OS image with dfu-util...")
 
             print("Flashing OS image...");
-            BINFILE = os.path.join(BASEDIR, 'outdir', 'zephyr.bin')
+            BINFILE = os.path.join(BASEDIR, 'outdir', board, 'zephyr.bin')
             rval = subprocess.call(['dfu-util', '-a', 'x86_app', '-D',
                                     BINFILE])
             if rval:

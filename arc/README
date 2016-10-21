@@ -10,4 +10,4 @@ To build and flash to the ARC on the Arduino 101:
 $ make BOARD=arduino_101_sss_factory
 
 (hit master reset to enter DFU mode on the Arduino)
-$ dfu-util -a sensor_core -D outdir/zephyr.bin
+$ dfu-util -a sensor_core -D outdir/arduino_101_sss_factory/zephyr.bin
