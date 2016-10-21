@@ -136,6 +136,7 @@ else
 	@cat prj.conf.base >> prj.conf
 endif
 ifeq ($(BOARD), arduino_101_factory)
+	cat prj.conf.arduino_101 >> prj.conf
 ifeq ($(ZJS_PARTITION), 256)
 	@cat prj.conf.partition_256 >> prj.conf
 endif
