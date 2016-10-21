@@ -15,7 +15,7 @@ function assert(actual, description) {
         label = "\033[1m\033[32mPASS\033[0m";
     }
     
-    print(label + " - " + description);
+    console.log(label + " - " + description);
 }
 
 function expectThrow(description, func) {
@@ -30,7 +30,7 @@ function expectThrow(description, func) {
 }
 
 expectThrow("Test of the eval() function disabled", function () {
-    eval("print('Oh no, eval is working!')");
+    eval("console.log('Oh no, eval is working!')");
 });
 
-print("TOTAL: " + passed + " of " + total + " passed");
+console.log("TOTAL: " + passed + " of " + total + " passed");
