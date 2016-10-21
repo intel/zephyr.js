@@ -8,8 +8,8 @@
 // Wiring:
 //   - Wire IO2 to A0
 
-print("Testing AIO APIs...");
-print("NOTE: Make sure IO2 is connected to A0!");
+console.log("Testing AIO APIs...");
+console.log("NOTE: Make sure IO2 is connected to A0!");
 
 var total = 0;
 var passed = 0;
@@ -23,7 +23,7 @@ function assert(actual, description) {
         label = "\033[1m\033[32mPASS\033[0m";
     }
 
-    print(label + " - " + description);
+    console.log(label + " - " + description);
 }
 
 // import aio and gpio module
@@ -90,7 +90,7 @@ var test_readAsync = setInterval(function () {
     IO2.write(toggle);
 
     A0.readAsync(function(rawValue) {
-        print("...");
+        console.log("...");
         if (toggle) {
             if (rawValue >= 4000) {
                 count ++;
@@ -144,6 +144,6 @@ setTimeout(function() {
 
     assert(onCount == 0, "close() function");
 
-    print("TOTAL: " + passed + " of " + total + " passed");
+    console.log("TOTAL: " + passed + " of " + total + " passed");
 
 }, 15000);

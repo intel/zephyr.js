@@ -11,7 +11,7 @@ function assert(actual, description) {
         passed += 1;
         label = "\033[1m\033[32mPASS\033[0m";
     }
-    print(label + " - " + description);
+    console.log(label + " - " + description);
 }
 
 function expectThrow(description, func) {
@@ -83,6 +83,6 @@ expectThrow("clearTimeout: timeoutID does not exist", function () {
 });
 
 setTimeout(function () {
-    print("TOTAL: " + passed + " of " + total + " passed");
+    console.log("TOTAL: " + passed + " of " + total + " passed");
 }, 2000);
 

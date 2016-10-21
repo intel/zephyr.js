@@ -14,7 +14,7 @@ function assert(actual, description) {
         label = "\033[1m\033[32mPASS\033[0m";
     }
     
-    print(label + " - " + description);
+    console.log(label + " - " + description);
 }
 
 function expectThrow(description, func) {
@@ -131,4 +131,4 @@ assert(buf.readUInt8(4) == 0xce && buf.readUInt8(5) == 0xfa &&
        buf.readUInt8(6) == 0xad && buf.readUInt8(7) == 0xbe,
        "writeUInt32LE: write long, offset 4");
 
-print("TOTAL: " + passed + " of " + total + " passed");
+console.log("TOTAL: " + passed + " of " + total + " passed");
