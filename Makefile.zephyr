@@ -1,6 +1,6 @@
 MDEF_FILE = prj.mdef
 KERNEL_TYPE = $(KERNEL)
-BOARD ?= arduino_101_factory
+BOARD ?= arduino_101
 CONF_FILE ?= prj.conf
 
 KBUILD_ZEPHYR_APP = libjerry-core.a

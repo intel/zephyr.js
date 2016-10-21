@@ -1,4 +1,4 @@
-BOARD ?= arduino_101_factory
+BOARD ?= arduino_101
 KERNEL ?= micro
 UPDATE ?= exit
 
@@ -135,7 +135,7 @@ ifeq ($(DEV), ashell)
 else
 	@cat prj.conf.base >> prj.conf
 endif
-ifeq ($(BOARD), arduino_101_factory)
+ifeq ($(BOARD), arduino_101)
 	cat prj.conf.arduino_101 >> prj.conf
 ifeq ($(ZJS_PARTITION), 256)
 	@cat prj.conf.partition_256 >> prj.conf
@@ -182,12 +182,12 @@ pristine:
 # Flash Arduino 101 x86 image
 .PHONY: dfu
 dfu:
-	dfu-util -a x86_app -D outdir/arduino_101_factory/zephyr.bin
+	dfu-util -a x86_app -D outdir/arduino_101/zephyr.bin
 
 # Flash Arduino 101 ARC image
 .PHONY: dfu-arc
 dfu-arc:
-	dfu-util -a sensor_core -D arc/outdir/arduino_101_sss_factory/zephyr.bin
+	dfu-util -a sensor_core -D arc/outdir/arduino_101_sss/zephyr.bin
 
 # Flash both
 .PHONY: dfu-all
@@ -212,7 +212,7 @@ arc:
 ifeq ($(ZJS_PARTITION), 256)
 	@cat arc/prj.conf.partition_256 >> arc/prj.conf
 endif
-	@cd arc; make BOARD=arduino_101_sss_factory
+	@cd arc; make BOARD=arduino_101_sss
 
 # Run debug server over JTAG
 .PHONY: debug
