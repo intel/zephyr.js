@@ -53,13 +53,9 @@ struct zjs_callback_map {
     };
 };
 
-#ifdef ZJS_LINUX_BUILD
 static uint8_t args_buffer[1024];
 static struct zjs_port_ring_buf ring_buffer;
-#else
-SYS_RING_BUF_DECLARE_POW2(ring_buffer, 10);
-#endif
-struct zjs_port_queue service_queue;
+static uint8_t ring_buf_initialized = 0;
 
 static int32_t cb_limit = INITIAL_CALLBACK_SIZE;
 static int32_t cb_size = 0;
@@ -101,10 +97,8 @@ void zjs_init_callbacks(void)
         }
         memset(cb_map, 0, size);
     }
-    zjs_port_init_queue(&service_queue);
-#ifdef ZJS_LINUX_BUILD
     zjs_port_ring_buf_init(&ring_buffer, 1024, (uint32_t*)args_buffer);
-#endif
+    ring_buf_initialized = 1;
     return;
 }
 
@@ -338,19 +332,20 @@ void zjs_signal_callback_args(int32_t id, void* args, uint32_t size)
 {
     if (args && size) {
         // signal with args
+        PRINT("Putting callback %ld into ring buffer, args=%p, size=%lu\n", id, args, size);
         int ret = zjs_port_ring_buf_put(&ring_buffer, (uint16_t)id, 0, (uint32_t*)args, (uint8_t)size / 4);
         if (ret != 0) {
             DBG_PRINT("error putting into ring buffer, ret=%u\n", ret);
         }
     } else {
         // signal without args
+        PRINT("Putting callback %ld into ring buffer (no args), args=%p, size=%lu\n", id, args, size);
         uint32_t dummy = 0;
         int ret = zjs_port_ring_buf_put(&ring_buffer, (uint16_t)id, 0, (uint32_t*)&dummy, (uint8_t)1);
         if (ret != 0) {
             DBG_PRINT("error putting into ring buffer, ret=%u\n", ret);
         }
     }
-    zjs_port_queue_put(&service_queue, cb_map[id]);
 
     cb_map[id]->arg_sz = size;
     cb_map[id]->ring_buffer = 1;
@@ -426,6 +421,7 @@ void print_callbacks(void)
 #define print_callbacks() do {} while (0)
 #endif
 
+#if 0
 void zjs_call_callback(int32_t i)
 {
     if (cb_map[i]) {
@@ -525,18 +521,138 @@ void zjs_call_callback(int32_t i)
         }
     }
 }
+#endif
 
+void zjs_call_callback(int32_t id, void* data, uint32_t sz)
+{
+    if(cb_map[id]) {
+        if (cb_map[id]->type == CALLBACK_TYPE_JS) {
+            if (cb_map[id]->js->func_list == NULL && jerry_value_is_function(cb_map[id]->js->js_func)) {
+                jerry_value_t ret_val;
+                // Single function callback
+                if (sz) {
+                    ret_val = jerry_call_function(cb_map[id]->js->js_func, cb_map[id]->js->this, data, sz);
+                } else {
+                    ret_val = jerry_call_function(cb_map[id]->js->js_func, cb_map[id]->js->this, NULL, 0);
+                }
+                if (cb_map[id]->js->post) {
+                    cb_map[id]->js->post(cb_map[id]->js->handle, &ret_val);
+                }
+                if (cb_map[id]->js->once) {
+                    zjs_remove_callback(id);
+                }
+            } else {
+                // Function list callback
+                int i;
+                jerry_value_t ret_val;
+
+                for (i = 0; i < cb_map[id]->js->num_funcs; ++i) {
+                    if (sz) {
+                        ret_val = jerry_call_function(cb_map[id]->js->func_list[i], cb_map[id]->js->this, data, sz);
+                    } else {
+                        ret_val = jerry_call_function(cb_map[id]->js->js_func, cb_map[id]->js->this, NULL, 0);
+                    }
+                    if (jerry_value_has_error_flag(ret_val)) {
+                        DBG_PRINT("callback %d returned an error for function[%i]\n", id, i);
+                    }
+                }
+                if (cb_map[id]->js->post) {
+                    cb_map[id]->js->post(cb_map[id]->js->handle, &ret_val);
+                }
+            }
+        } else if (cb_map[id]->type == CALLBACK_TYPE_C && cb_map[id]->c->function) {
+            if (sz) {
+                cb_map[id]->c->function(cb_map[id]->c->handle, data);
+            } else {
+                cb_map[id]->c->function(cb_map[id]->c->handle, NULL);
+            }
+        }
+    } else {
+        PRINT("cb_map[%ld]=%p\n", id, cb_map[id]);
+    }
+}
 
 void zjs_service_callbacks(void)
 {
-    struct zjs_callback_map *cb = NULL;
-    while (1) {
-        cb = zjs_port_queue_get(&service_queue, ZJS_TICKS_NONE);
-        if (!cb) {
-            break;
-        }
+    if (ring_buf_initialized) {
+        uint16_t type;
+        uint8_t value;
+        uint8_t size = 0;
+        uint32_t dummy;
+        while (zjs_port_ring_buf_get(&ring_buffer,
+                                     &type,
+                                     &value,
+                                     &dummy,
+                                     &size) == -EMSGSIZE) {
+            if (size == 0) {
+                break;
+            } else {
+                // Pull from ring buffer
+                uint16_t id;
+                uint8_t value1;
+                uint8_t sz = size;
+                jerry_value_t data[sz];
 
-        zjs_call_callback(cb->id);
+                int ret = zjs_port_ring_buf_get(&ring_buffer,
+                                                &id,
+                                                &value1,
+                                                (uint32_t*)data,
+                                                &sz);
+                if (ret != 0) {
+                    DBG_PRINT("(JS) error pulling from ring buffer: ret = %u\n", ret);
+                    break;
+                }
+                PRINT("Calling callback, id=%d, sz=%u\n", id, sz);
+                zjs_call_callback(id, data, sz);
+#if 0
+                if(cb_map[id]) {
+                    if (cb_map[id]->type == CALLBACK_TYPE_JS) {
+                        if (cb_map[id]->js->func_list == NULL && jerry_value_is_function(cb_map[id]->js->js_func)) {
+                            jerry_value_t ret_val;
+                            // Single function callback
+                            if (sz) {
+                                ret_val = jerry_call_function(cb_map[id]->js->js_func, cb_map[id]->js->this, data, sz);
+                            } else {
+                                ret_val = jerry_call_function(cb_map[id]->js->js_func, cb_map[id]->js->this, NULL, 0);
+                            }
+                            if (cb_map[id]->js->post) {
+                                cb_map[id]->js->post(cb_map[id]->js->handle, &ret_val);
+                            }
+                            if (cb_map[id]->js->once) {
+                                zjs_remove_callback(id);
+                            }
+                        } else {
+                            // Function list callback
+                            int i;
+                            jerry_value_t ret_val;
+
+                            for (i = 0; i < cb_map[id]->js->num_funcs; ++i) {
+                                if (sz) {
+                                    ret_val = jerry_call_function(cb_map[id]->js->func_list[i], cb_map[id]->js->this, data, sz);
+                                } else {
+                                    ret_val = jerry_call_function(cb_map[id]->js->js_func, cb_map[id]->js->this, NULL, 0);
+                                }
+                                if (jerry_value_has_error_flag(ret_val)) {
+                                    DBG_PRINT("callback %d returned an error for function[%i]\n", id, i);
+                                }
+                            }
+                            if (cb_map[id]->js->post) {
+                                cb_map[id]->js->post(cb_map[id]->js->handle, &ret_val);
+                            }
+                        }
+                    } else if (cb_map[id]->type == CALLBACK_TYPE_C && cb_map[id]->c->function) {
+                        if (sz) {
+                            cb_map[id]->c->function(cb_map[id]->c->handle, data);
+                        } else {
+                            cb_map[id]->c->function(cb_map[id]->c->handle, NULL);
+                        }
+                    }
+                } else {
+                    PRINT("cb_map[%u]=%p\n", id, cb_map[id]);
+                }
+#endif
+            }
+        }
     }
 }
 

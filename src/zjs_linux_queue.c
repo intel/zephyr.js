@@ -74,6 +74,9 @@ void zjs_port_ring_buf_init(struct zjs_port_ring_buf* buf,
     buf->buf = data;
 }
 
+#define likely(x)   __builtin_expect((long)!!(x), 1L)
+#define unlikely(x) __builtin_expect((long)!!(x), 0L)
+
 int zjs_port_ring_buf_get(struct zjs_port_ring_buf* buf,
                           uint16_t* type,
                           uint8_t* value,
@@ -98,11 +101,21 @@ int zjs_port_ring_buf_get(struct zjs_port_ring_buf* buf,
     *type = header->type;
     *value = header->value;
 
-    for (i = 0; i < header->length; ++i) {
-        index = (i + buf->head + 1) % buf->size;
-        data[i] = buf->buf[index];
+    if (likely(buf->mask)) {
+        for (i = 0; i < header->length; ++i) {
+            index = (i + buf->head + 1) & buf->mask;
+            data[i] = buf->buf[index];
+        }
+        buf->head = (buf->head + header->length + 1) & buf->mask;
+    } else {
+        for (i = 0; i < header->length; ++i) {
+            index = (i + buf->head + 1) % buf->size;
+            data[i] = buf->buf[index];
+        }
+        buf->head = (buf->head + header->length + 1) % buf->size;
     }
-    buf->head = (buf->head + header->length + 1) % buf->size;
+
+
 
     return 0;
 }
@@ -123,12 +136,19 @@ int zjs_port_ring_buf_put(struct zjs_port_ring_buf* buf,
         header->length = size32;
         header->value = value;
 
-        for (i = 0; i < size32; ++i) {
-            index = (i + buf->tail + 1) % buf->size;
-            buf->buf[index] = data[i];
+        if (likely(buf->mask)) {
+            for (i = 0; i < size32; ++i) {
+                index = (i + buf->tail + 1) & buf->mask;
+                buf->buf[index] = data[i];
+            }
+            buf->tail = (buf->tail + size32 + 1) & buf->mask;
+        } else {
+            for (i = 0; i < size32; ++i) {
+                index = (i + buf->tail + 1) % buf->size;
+                buf->buf[index] = data[i];
+            }
+            buf->tail = (buf->tail + size32 + 1) % buf->size;
         }
-        buf->tail = (buf->tail + size32 + 1) % buf->size;
-
         rc = 0;
     } else {
         rc = -EMSGSIZE;

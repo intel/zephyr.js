@@ -187,7 +187,7 @@ int32_t zjs_add_c_callback(void* handle, zjs_c_callback_func callback);
  *
  * @param i             ID of callback
  */
-void zjs_call_callback(int32_t i);
+void zjs_call_callback(int32_t i, void* data, uint32_t sz);
 
 /*
  * Service the callback module. Any callback's that have been signaled will
