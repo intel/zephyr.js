@@ -19,7 +19,7 @@ MALLOC ?= pool
 
 # Build for zephyr, default target
 .PHONY: zephyr
-zephyr: generate analyze
+zephyr: analyze generate
 	@make -f Makefile.zephyr BOARD=$(BOARD) KERNEL=$(KERNEL) VARIANT=$(VARIANT) MEM_STATS=$(MEM_STATS)
 
 .PHONY: analyze
@@ -164,6 +164,7 @@ clean:
 	cd arc; make clean
 	@rm -f arc/prj.conf
 	@rm -f prj.conf
+	@rm -f prj.conf.tmp
 	@rm -f prj.mdef
 
 # Flash Arduino 101 x86 image
