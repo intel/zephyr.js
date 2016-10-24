@@ -11,7 +11,7 @@
 // it doesn't work the other way and I haven't figured out why yet. It may
 // relate to IO5 being connected to both the X86 and ARC processors.
 
-print("Button enable test...");
+console.log("Button enable test...");
 
 // import gpio module
 var gpio = require("gpio");
