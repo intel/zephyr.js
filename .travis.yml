@@ -16,7 +16,7 @@ env:
     - TARGET="zephyr"
     - TARGET="JS=samples/TrafficLight.js"
     - TARGET="JS=samples/I2C.js"
-    - TARGET="JS=samples/WebBluetoothGroveLcdDemo.js"
+    - TARGET="JS=samples/WebBluetoothGroveLcdDemo.js" PARTSIZE=256
     - TARGET="BOARD=frdm_k64f"
     - TARGET="arc"
     - TARGET="linux"
@@ -33,7 +33,7 @@ install: >
   fi
 
 before_script: >
-  source zjs-env.sh && make update && source deps/zephyr/zephyr-env.sh
+  source zjs-env.sh $PARTSIZE && make update && source deps/zephyr/zephyr-env.sh
 
 script: >
   make V=1 $TARGET;
