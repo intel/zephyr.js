@@ -19,7 +19,7 @@ MALLOC ?= pool
 
 # Build for zephyr, default target
 .PHONY: zephyr
-zephyr: analyze generate
+zephyr: generate analyze
 	@make -f Makefile.zephyr BOARD=$(BOARD) KERNEL=$(KERNEL) VARIANT=$(VARIANT) MEM_STATS=$(MEM_STATS)
 
 .PHONY: analyze
@@ -63,11 +63,11 @@ endif
 all: zephyr arc
 
 # MAKECMDGOALS is a Make variable that is set to the target your building for.
-# This is how we can check if we are building for linux and if a clean is needed.
+# This is how we can check if we are building for linux and if clean is needed.
 # The linux target does not use the BOARD variable, so without this special
 # case, the linux target would clean every time.
 ifneq ($(MAKECMDGOALS), linux)
-# Building for Zephyr, check for .$(BOARD).last_build to see if a clean is needed
+# Building for Zephyr, check for .$(BOARD).last_build to see if clean is needed
 ifeq ("$(wildcard .$(BOARD).last_build)", "")
 PRE_ACTION=clean
 endif
@@ -182,7 +182,7 @@ dfu-all: dfu dfu-arc
 
 # Generate the script file from the JS variable
 .PHONY: generate
-generate: setup $(PRE_ACTION)
+generate: $(PRE_ACTION) setup
 	@echo Creating C string from JS application...
 	@./scripts/convert.sh $(JS) src/zjs_script_gen.c
 
@@ -194,7 +194,7 @@ qemu: analyze generate
 # Builds ARC binary
 .PHONY: arc
 arc:
-	echo "# This is a generated file" > arc/prj.conf
+	@echo "# This is a generated file" > arc/prj.conf
 	@cat arc/prj.conf.base >> arc/prj.conf
 ifeq ($(ZJS_PARTITION), 256)
 	@cat arc/prj.conf.partition_256 >> arc/prj.conf
