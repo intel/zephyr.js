@@ -35,11 +35,11 @@ before_script: >
 
 script: >
   if [ "$TARGET" == "zephyr" ]; then
-    make
-    make "JS=samples/TrafficLight.js"
-    make "JS=samples/I2C.js"
+    make V=1
+    make V=1 "JS=samples/TrafficLight.js"
+    make V=1 "JS=samples/I2C.js"
   elif [ "$TARGET" == "zephyr-large" ]; then
-    make "JS=samples/WebBluetoothGroveLcdDemo.js"
+    make V=1 "JS=samples/WebBluetoothGroveLcdDemo.js"
   else
     make V=1 $TARGET;
   fi
