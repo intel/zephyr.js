@@ -14,9 +14,7 @@ env:
     - ZEPHYR_SDK_DOWNLOAD_URL=$ZEPHYR_SDK_DOWNLOAD_FOLDER/$ZEPHYR_SDK_SETUP_BINARY
   matrix:
     - TARGET="zephyr"
-    - TARGET="JS=samples/TrafficLight.js"
-    - TARGET="JS=samples/I2C.js"
-    - TARGET="JS=samples/WebBluetoothGroveLcdDemo.js" PARTSIZE=256
+    - TARGET="zephyr-large" PARTSIZE=256
     - TARGET="BOARD=frdm_k64f"
     - TARGET="arc"
     - TARGET="linux"
@@ -36,4 +34,12 @@ before_script: >
   source zjs-env.sh $PARTSIZE && make update && source deps/zephyr/zephyr-env.sh
 
 script: >
-  make V=1 $TARGET;
+  if [ "$TARGET" == "zephyr" ]; then
+    make
+    make "JS=samples/TrafficLight.js"
+    make "JS=samples/I2C.js"
+  else if [ "$TARGET" == "zephyr-large" ]; then
+    make "JS=samples/WebBluetoothGroveLcdDemo.js"
+  else
+    make V=1 $TARGET;
+  fi
