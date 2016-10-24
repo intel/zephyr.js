@@ -8,17 +8,17 @@ var EventEmitter = require('events');
 var myEmitter = new EventEmitter();
 
 function test_event_listener1(arg1, arg2) {
-    print('test_event: handler 1: arg1=' + arg1 + ' arg2=' + arg2);
+    console.log('test_event: handler 1: arg1=' + arg1 + ' arg2=' + arg2);
 }
 
 function test_event_listener2(arg1, arg2) {
-    print('test_event: handler 2: arg1=' + arg1 + ' arg2=' + arg2);
+    console.log('test_event: handler 2: arg1=' + arg1 + ' arg2=' + arg2);
 }
 
 myEmitter.setMaxListeners(20);
 var maxListeners = myEmitter.getMaxListeners();
 if (maxListeners != 20) {
-    print("Error, myEmitter.setMaxListeners() did not work");
+    console.log("Error, myEmitter.setMaxListeners() did not work");
     pass = false;
 }
 
@@ -27,27 +27,27 @@ myEmitter.on('test_event', test_event_listener1);
 myEmitter.on('test_event', test_event_listener2);
 
 myEmitter.on('test_event1', function(arg1, arg2) {
-    print('test_event1: arg1=' + arg1 + ' arg2=' + arg2);
+    console.log('test_event1: arg1=' + arg1 + ' arg2=' + arg2);
 });
 
 var testEventNames = myEmitter.eventNames();
 for (var i = 0; i < testEventNames.length - 1; i++) {
-    print("EventName[" + i + "]: " + testEventNames[i]);
+    console.log("EventName[" + i + "]: " + testEventNames[i]);
 }
 
 var testListenerNames = myEmitter.listeners('test_event');
-print("testListenerNames.length = " + testListenerNames.length);
+console.log("testListenerNames.length = " + testListenerNames.length);
 
 if (testListenerNames.length != 2) {
-    print("Error, myEmitter.listeners() length was wrong");
+    console.log("Error, myEmitter.listeners() length was wrong");
     pass = false;
 }
 
 var testListenerCount = myEmitter.listenerCount('test_event');
-print("testListenerCount.length = " + testListenerCount);
+console.log("testListenerCount.length = " + testListenerCount);
 
 if (testListenerCount != 2) {
-    print("Error, myEmitter.listenerCount() was wrong");
+    console.log("Error, myEmitter.listenerCount() was wrong");
     pass = false;
 }
 
@@ -62,23 +62,23 @@ setTimeout(function() {
     myEmitter.removeListener('test_event', test_event_listener1);
     myEmitter.emit('test_event', 1234, 4567);
     var numListeners = myEmitter.listenerCount('test_event');
-    print("Listeners for test_event = " + numListeners);
+    console.log("Listeners for test_event = " + numListeners);
     if (numListeners != 1) {
-        print("Error, myEmitter.listenerCount() was wrong");
+        console.log("Error, myEmitter.listenerCount() was wrong");
         pass = false;
     }
     setTimeout(function() {
         myEmitter.removeAllListeners('test_event');
         numListeners = myEmitter.listenerCount('test_event');
-        print("Listeners for test_event after removeAllListeners = " + numListeners);
+        console.log("Listeners for test_event after removeAllListeners = " + numListeners);
         if (numListeners != 0) {
-            print("Error, myEmitter.listenerCount() was wrong");
+            console.log("Error, myEmitter.listenerCount() was wrong");
             pass = false;
         }
         if (pass == false) {
-            print("Event test failed");
+            console.log("Event test failed");
         } else {
-            print("Event test passed");
+            console.log("Event test passed");
         }
     }, 1000);
 }, 1000);
