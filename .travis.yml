@@ -38,7 +38,7 @@ script: >
     make
     make "JS=samples/TrafficLight.js"
     make "JS=samples/I2C.js"
-  else if [ "$TARGET" == "zephyr-large" ]; then
+  elif [ "$TARGET" == "zephyr-large" ]; then
     make "JS=samples/WebBluetoothGroveLcdDemo.js"
   else
     make V=1 $TARGET;
