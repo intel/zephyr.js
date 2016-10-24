@@ -19,7 +19,7 @@ MALLOC ?= pool
 
 # Build for zephyr, default target
 .PHONY: zephyr
-zephyr: analyze generate
+zephyr: $(PRE_ACTION) analyze generate
 	@make -f Makefile.zephyr BOARD=$(BOARD) KERNEL=$(KERNEL) VARIANT=$(VARIANT) MEM_STATS=$(MEM_STATS)
 
 .PHONY: analyze
@@ -183,13 +183,13 @@ dfu-all: dfu dfu-arc
 
 # Generate the script file from the JS variable
 .PHONY: generate
-generate: $(PRE_ACTION) setup
+generate: setup
 	@echo Creating C string from JS application...
 	@./scripts/convert.sh $(JS) src/zjs_script_gen.c
 
 # Run QEMU target
 .PHONY: qemu
-qemu: analyze generate
+qemu: $(PRE_ACTION) analyze generate
 	make -f Makefile.zephyr BOARD=qemu_x86 KERNEL=$(KERNEL) MEM_STATS=$(MEM_STATS) qemu
 
 # Builds ARC binary
@@ -220,7 +220,7 @@ arcgdb:
 # Linux target
 .PHONY: linux
 # Linux command line target, script can be specified on the command line
-linux: generate
+linux: $(PRE_ACTION) generate
 	rm -f .*.last_build
 	echo "" > .linux.last_build
 	make -f Makefile.linux JS=$(JS) VARIANT=$(VARIANT)
