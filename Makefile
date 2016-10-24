@@ -150,13 +150,14 @@ endif
 # Explicit clean
 .PHONY: clean
 clean:
-	@if [ -d deps/zephyr ] && [ -e src/Makefile ]; then \
-		make -f Makefile.zephyr clean; \
-	fi
 	@if [ -d deps/jerryscript ]; then \
 		make -C $(JERRY_BASE) -f targets/zephyr/Makefile.zephyr clean; \
 		make -C $(JERRY_BASE) -f targets/zephyr/Makefile clean; \
 		rm -rf deps/jerryscript/build/$(BOARD)/; \
+		rm -rf deps/jerryscript/build/lib; \
+	fi
+	@if [ -d deps/zephyr ] && [ -e src/Makefile ]; then \
+		make -f Makefile.zephyr clean; \
 	fi
 	@rm -f src/*.o
 	@rm -f src/Makefile
