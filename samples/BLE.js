@@ -32,7 +32,7 @@ ble.on('rssiUpdate', function(rssi) {
 
 ble.on('advertisingStart', function(error) {
     if (error) {
-        print ("Advertising start error: " + error);
+        console.log("Advertising start error: " + error);
         return;
     }
 
