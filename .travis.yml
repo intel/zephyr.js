@@ -31,15 +31,17 @@ install: >
   fi
 
 before_script: >
-  source zjs-env.sh $PARTSIZE && make update && source deps/zephyr/zephyr-env.sh
+  source zjs-env.sh $PARTSIZE && \
+  make update && \
+  source deps/zephyr/zephyr-env.sh
 
 script: >
   if [ "$TARGET" == "zephyr" ]; then
-    banner "Test 1"
-    make V=1
-    banner "Test 2"
-    make V=1 JS=samples/TrafficLight.js
-    banner "Test 3"
+    banner "Test 1" && \
+    make V=1 && \
+    banner "Test 2" && \
+    make V=1 JS=samples/TrafficLight.js && \
+    banner "Test 3" && \
     make V=1 JS=samples/I2C.js
   elif [ "$TARGET" == "zephyr-large" ]; then
     make V=1 JS=samples/WebBluetoothGroveLcdDemo.js
