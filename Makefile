@@ -19,17 +19,19 @@ MALLOC ?= pool
 
 # Build for zephyr, default target
 .PHONY: zephyr
-zephyr: analyze generate
+zephyr: $(PRE_ACTION) analyze generate
 	@make -f Makefile.zephyr BOARD=$(BOARD) KERNEL=$(KERNEL) VARIANT=$(VARIANT) MEM_STATS=$(MEM_STATS)
 
 .PHONY: analyze
 analyze:
+	@echo "% This is a generated file" > prj.mdef
 ifeq ($(DEV), ashell)
-	@cp prj.mdef.dev prj.mdef
+	@cat prj.mdef.dev >> prj.mdef
 else
-	@cat prj.mdef.base > prj.mdef
+	@cat prj.mdef.base >> prj.mdef
 endif
-	@cat src/Makefile.base > src/Makefile
+	@echo "# This is a generated file" > src/Makefile
+	@cat src/Makefile.base >> src/Makefile
 	@if [ "$(TRACE)" = "on" ] || [ "$(TRACE)" = "full" ]; then \
 		echo "ccflags-y += -DZJS_TRACE_MALLOC" >> src/Makefile; \
 	fi
@@ -61,11 +63,11 @@ endif
 all: zephyr arc
 
 # MAKECMDGOALS is a Make variable that is set to the target your building for.
-# This is how we can check if we are building for linux and if a clean is needed.
+# This is how we can check if we are building for linux and if clean is needed.
 # The linux target does not use the BOARD variable, so without this special
 # case, the linux target would clean every time.
 ifneq ($(MAKECMDGOALS), linux)
-# Building for Zephyr, check for .$(BOARD).last_build to see if a clean is needed
+# Building for Zephyr, check for .$(BOARD).last_build to see if clean is needed
 ifeq ("$(wildcard .$(BOARD).last_build)", "")
 PRE_ACTION=clean
 endif
@@ -122,17 +124,18 @@ update:
 # Sets up prj/last_build files
 .PHONY: setup
 setup: update
+	@echo "# This is a generated file" > prj.conf
 ifeq ($(BOARD), qemu_x86)
-	cp prj.conf.qemu_x86 prj.conf
+	@cat prj.conf.qemu_x86 >> prj.conf
 else
 ifeq ($(DEV), ashell)
-	cp prj.conf.arduino_101_dev prj.conf
+	@cat prj.conf.arduino_101_dev >> prj.conf
 else
-	cp prj.conf.base prj.conf
+	@cat prj.conf.base >> prj.conf
 endif
 ifeq ($(BOARD), arduino_101_factory)
 ifeq ($(ZJS_PARTITION), 256)
-	cat prj.conf.partition_256 >> prj.conf
+	@cat prj.conf.partition_256 >> prj.conf
 endif
 endif
 endif
@@ -147,16 +150,22 @@ endif
 # Explicit clean
 .PHONY: clean
 clean:
-	@if [ -d deps/zephyr ] && [ -e src/Makefile ]; then \
-		make -f Makefile.zephyr clean; \
-	fi
 	@if [ -d deps/jerryscript ]; then \
 		make -C $(JERRY_BASE) -f targets/zephyr/Makefile.zephyr clean; \
 		make -C $(JERRY_BASE) -f targets/zephyr/Makefile clean; \
 		rm -rf deps/jerryscript/build/$(BOARD)/; \
+		rm -rf deps/jerryscript/build/lib; \
+	fi
+	@if [ -d deps/zephyr ] && [ -e src/Makefile ]; then \
+		make -f Makefile.zephyr clean; \
 	fi
 	@rm -f src/*.o
+	@rm -f src/Makefile
 	cd arc; make clean
+	@rm -f arc/prj.conf
+	@rm -f prj.conf
+	@rm -f prj.conf.tmp
+	@rm -f prj.mdef
 
 # Flash Arduino 101 x86 image
 .PHONY: dfu
@@ -174,19 +183,20 @@ dfu-all: dfu dfu-arc
 
 # Generate the script file from the JS variable
 .PHONY: generate
-generate: setup $(PRE_ACTION)
+generate: setup
 	@echo Creating C string from JS application...
 	@./scripts/convert.sh $(JS) src/zjs_script_gen.c
 
 # Run QEMU target
 .PHONY: qemu
-qemu: analyze generate
+qemu: $(PRE_ACTION) analyze generate
 	make -f Makefile.zephyr BOARD=qemu_x86 KERNEL=$(KERNEL) MEM_STATS=$(MEM_STATS) qemu
 
 # Builds ARC binary
 .PHONY: arc
 arc:
-	@cp arc/prj.conf.base arc/prj.conf
+	@echo "# This is a generated file" > arc/prj.conf
+	@cat arc/prj.conf.base >> arc/prj.conf
 ifeq ($(ZJS_PARTITION), 256)
 	@cat arc/prj.conf.partition_256 >> arc/prj.conf
 endif
@@ -210,7 +220,7 @@ arcgdb:
 # Linux target
 .PHONY: linux
 # Linux command line target, script can be specified on the command line
-linux: generate
+linux: $(PRE_ACTION) generate
 	rm -f .*.last_build
 	echo "" > .linux.last_build
 	make -f Makefile.linux JS=$(JS) VARIANT=$(VARIANT)
