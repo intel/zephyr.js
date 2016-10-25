@@ -68,7 +68,7 @@ static zjs_timer_t* add_timer(uint32_t interval,
     tm->repeat = repeat;
     tm->completed = false;
     tm->next = zjs_timers;
-    tm->callback_id = zjs_add_callback(callback, this, tm, pre_timer, NULL);
+    tm->callback_id = zjs_add_callback(callback, this, tm, NULL);
     tm->argc = argc;
     tm->argv = zjs_malloc(sizeof(jerry_value_t) * argc);
     for (i = 0; i < argc; ++i) {
@@ -209,7 +209,7 @@ void zjs_timers_process_events()
         }
         else if (zjs_port_timer_test(&tm->timer, ZJS_TICKS_NONE)) {
             // timer has expired, signal the callback
-            zjs_signal_callback_args(tm->callback_id, tm->argv, tm->argc * sizeof(jerry_value_t));
+            zjs_signal_callback(tm->callback_id, tm->argv, tm->argc * sizeof(jerry_value_t));
 
             // reschedule or remove timer
             if (tm->repeat) {

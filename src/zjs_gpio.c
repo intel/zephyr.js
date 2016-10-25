@@ -91,7 +91,7 @@ static void gpio_zephyr_callback(struct device *port,
     gpio_pin_read(port, handle->pin, &handle->value);
     if ((handle->edge_both && handle->value != handle->last) || !handle->edge_both) {
         // Signal the C callback, where we call the JS callback
-        zjs_signal_callback_args(handle->callbackId, &handle->value, 4);
+        zjs_signal_callback(handle->callbackId, &handle->value, 4);
         handle->last = handle->value;
     }
 }

@@ -109,15 +109,6 @@ static jerry_value_t zjs_aio_call_remote_function(zjs_ipm_message_t* send)
     return jerry_create_number(value);
 }
 
-static jerry_value_t *zjs_aio_pre_callback(void *h, uint32_t *argc)
-{
-    // effects: sets up value argument for the callback
-    aio_handle_t *handle = (aio_handle_t *)h;
-    *argc = 1;
-    handle->jvalue = jerry_create_number(handle->value);
-    return &handle->jvalue;
-}
-
 static void zjs_aio_free_callback(void *h, jerry_value_t *ret_val)
 {
     // effects: post-callback handler to free up one-shot callback and handle
@@ -154,7 +145,7 @@ static void ipm_msg_receive_callback(void *context, uint32_t id,
         case TYPE_AIO_PIN_READ:
         case TYPE_AIO_PIN_EVENT_VALUE_CHANGE:
             handle->value = (double)pin_value;
-            zjs_signal_callback(handle->callback_id);
+            zjs_signal_callback(handle->callback_id, &pin_value, sizeof(pin_value));
             break;
         case TYPE_AIO_PIN_SUBSCRIBE:
             DBG_PRINT("ipm_msg_receive_callback: subscribed to events on pin %lu\n", pin);
@@ -258,8 +249,7 @@ static jerry_value_t zjs_aio_pin_on(const jerry_value_t function_obj,
 
         handle->pin_obj = this;
         jerry_set_object_native_handle(this, (uintptr_t)handle, zjs_aio_free_cb);
-        handle->callback_id = zjs_add_callback(argv[1], this, handle,
-                                               zjs_aio_pre_callback, NULL);
+        handle->callback_id = zjs_add_callback(argv[1], this, handle, NULL);
         zjs_aio_ipm_send_async(TYPE_AIO_PIN_SUBSCRIBE, pin, handle);
     }
 
@@ -285,8 +275,7 @@ static jerry_value_t zjs_aio_pin_read_async(const jerry_value_t function_obj,
 
     handle->pin_obj = this;
     handle->callback_id = zjs_add_callback(argv[0], this, handle,
-                                           zjs_aio_pre_callback,
-                                           zjs_aio_free_callback);
+            zjs_aio_free_callback);
 
     jerry_set_object_native_handle(this, (uintptr_t)handle, zjs_aio_free_cb);
 
