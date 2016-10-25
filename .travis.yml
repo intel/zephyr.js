@@ -38,11 +38,14 @@ script: >
     banner "Test 1"
     make V=1
     banner "Test 2"
-    make V=1 "JS=samples/TrafficLight.js"
+    cat samples/TrafficLight.js
+    make V=1 JS=samples/TrafficLight.js
     banner "Test 3"
-    make V=1 "JS=samples/I2C.js"
+    make V=1 JS=samples/I2C.js
+    banner "Test 4"
+    make V=1 JS=samples/Bogus.js
   elif [ "$TARGET" == "zephyr-large" ]; then
-    make V=1 "JS=samples/WebBluetoothGroveLcdDemo.js"
+    make V=1 JS=samples/WebBluetoothGroveLcdDemo.js
   else
     make V=1 $TARGET;
   fi
