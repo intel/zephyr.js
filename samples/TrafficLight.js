@@ -20,6 +20,9 @@
 
 console.log("Starting TrafficLight example...");
 
+// break the build with bad syntax to test travis script
+aasdf9{
+
 // WARNING: These traffic light timings are appropriate for hummingbirds only
 
 // import gpio module
