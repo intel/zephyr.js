@@ -21,7 +21,7 @@ env:
 
 before_install:
   - sudo apt-get update -qq
-  - sudo apt-get install make gcc g++ python3-ply ncurses-dev sysvbanner -qq
+  - sudo apt-get install make gcc g++ python3-ply ncurses-dev uglifyjs sysvbanner -qq
 
 install: >
   if [ "$TARGET" != "linux" ]; then
@@ -38,12 +38,9 @@ script: >
     banner "Test 1"
     make V=1
     banner "Test 2"
-    cat samples/TrafficLight.js
     make V=1 JS=samples/TrafficLight.js
     banner "Test 3"
     make V=1 JS=samples/I2C.js
-    banner "Test 4"
-    make V=1 JS=samples/Bogus.js
   elif [ "$TARGET" == "zephyr-large" ]; then
     make V=1 JS=samples/WebBluetoothGroveLcdDemo.js
   else
