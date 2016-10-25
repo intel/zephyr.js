@@ -203,7 +203,7 @@ generate: setup
 
 # Run QEMU target
 .PHONY: qemu
-qemu: $(PRE_ACTION) analyze generate
+qemu: $(PRE_ACTION) mrproper analyze generate
 	make -f Makefile.zephyr BOARD=qemu_x86 KERNEL=$(KERNEL) MEM_STATS=$(MEM_STATS) qemu
 
 # Builds ARC binary
