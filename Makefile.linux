@@ -61,6 +61,7 @@ endif
 
 .PHONY: ocf-setup
 ocf-setup:
+	cd $(OCF_ROOT); git submodule update --init;
 	make -f Makefile.ocf ocf-lib DEBUG=$(DEBUG) SECURE=0
 
 %.o:%.c
