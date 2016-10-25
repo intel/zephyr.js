@@ -9,18 +9,19 @@ env:
     - ZEPHYR_SDK_INSTALL_DIR=/opt/zephyr-sdk
     - ZEPHYR_BASE=$TRAVIS_BUILD_DIR/deps/zephyr
     - ZEPHYR_SDK_VERSION=0.8.2
-    - ZEPHYR_SDK_DOWNLOAD_FOLDER=https://nexus.zephyrproject.org/content/repositories/releases/org/zephyrproject/zephyr-sdk/$ZEPHYR_SDK_VERSION-i686/
+    - ZEPHYR_SDK_DOWNLOAD_FOLDER=https://nexus.zephyrproject.org/content/repositories/releases/org/zephyrproject/zephyr-sdk/$ZEPHYR_SDK_VERSION-i686
     - ZEPHYR_SDK_SETUP_BINARY=zephyr-sdk-$ZEPHYR_SDK_VERSION-i686-setup.run
-    - ZEPHYR_SDK_DOWNLOAD_URL=$ZEPHYR_SDK_DOWNLOAD_FOLDER$ZEPHYR_SDK_SETUP_BINARY
+    - ZEPHYR_SDK_DOWNLOAD_URL=$ZEPHYR_SDK_DOWNLOAD_FOLDER/$ZEPHYR_SDK_SETUP_BINARY
   matrix:
-    - TARGET="default"
+    - TARGET="zephyr"
+    - TARGET="zephyr-large" PARTSIZE=256
+    - TARGET="BOARD=frdm_k64f"
     - TARGET="arc"
     - TARGET="linux"
-    - TARGET="BOARD=frdm_k64f"
 
 before_install:
   - sudo apt-get update -qq
-  - sudo apt-get install make gcc g++ python3-ply ncurses-dev -qq
+  - sudo apt-get install make gcc g++ python3-ply ncurses-dev uglifyjs sysvbanner -qq
 
 install: >
   if [ "$TARGET" != "linux" ]; then
@@ -30,10 +31,20 @@ install: >
   fi
 
 before_script: >
-  source zjs-env.sh && make update && source deps/zephyr/zephyr-env.sh
+  source zjs-env.sh $PARTSIZE &&
+  make update &&
+  source deps/zephyr/zephyr-env.sh
 
 script: >
-  if [ "$TARGET" == "default" ]; then
-    make V=1; else
-    make V=1 "${TARGET}";
+  if [ "$TARGET" == "zephyr" ]; then
+    banner "Test 1" &&
+    make V=1 &&
+    banner "Test 2" &&
+    make V=1 JS=samples/TrafficLight.js &&
+    banner "Test 3" &&
+    make V=1 JS=samples/I2C.js
+  elif [ "$TARGET" == "zephyr-large" ]; then
+    make V=1 JS=samples/WebBluetoothGroveLcdDemo.js
+  else
+    make V=1 $TARGET;
   fi
