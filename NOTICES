@@ -1,0 +1,6 @@
+You should be aware that by default, ZJS enables newlib in our prj.conf*
+files, with CONFIG_NEWLIB_LIBC=y.
+
+If you release software built with newlib, you should make sure you're aware of
+the BSD-like licenses it's under and the copyright statements that you should
+be preserving.
