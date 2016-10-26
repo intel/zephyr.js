@@ -19,7 +19,7 @@
 
 // AIO
 #define ADC_DEVICE_NAME "ADC_0"
-#define ADC_BUFFER_SIZE 4
+#define ADC_BUFFER_SIZE 2
 
 // I2C
 #define MAX_I2C_BUS 1
@@ -100,9 +100,7 @@ static uint32_t pin_read(uint8_t pin)
 
     // read from buffer, not sure if byte order is important
     uint32_t raw_value = (uint32_t) seq_buffer[0]
-                       | (uint32_t) seq_buffer[1] << 8
-                       | (uint32_t) seq_buffer[2] << 16
-                       | (uint32_t) seq_buffer[3] << 24;
+                       | (uint32_t) seq_buffer[1] << 8;
 
     return raw_value;
 }
