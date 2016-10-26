@@ -24,7 +24,7 @@ TARGET = $(MAKECMDGOALS)
 #       the mrproper target should be removed when this is fixed
 # Build for zephyr, default target
 .PHONY: zephyr
-zephyr: $(PRE_ACTION) mrproper analyze generate
+zephyr: $(PRE_ACTION) proper analyze generate
 	@make -f Makefile.zephyr BOARD=$(BOARD) KERNEL=$(KERNEL) VARIANT=$(VARIANT) MEM_STATS=$(MEM_STATS)
 
 .PHONY: analyze
@@ -128,6 +128,11 @@ update:
 # Sets up prj/last_build files
 .PHONY: setup
 setup: update
+# TODO: This is a temp patch for the A101/qemu builds to work
+ifneq ($(TARGET), linux)
+	cd deps/zephyr/; git checkout kernel/Kconfig
+	cd deps/zephyr/; git apply ../../clock_patch.diff;
+endif
 	@echo "# This is a generated file" > prj.conf
 ifeq ($(BOARD), qemu_x86)
 	@cat prj.conf.qemu_x86 >> prj.conf
@@ -203,12 +208,12 @@ generate: setup
 
 # Run QEMU target
 .PHONY: qemu
-qemu: $(PRE_ACTION) mrproper analyze generate
+qemu: $(PRE_ACTION) proper analyze generate
 	make -f Makefile.zephyr BOARD=qemu_x86 KERNEL=$(KERNEL) MEM_STATS=$(MEM_STATS) qemu
 
 # Builds ARC binary
 .PHONY: arc
-arc: mrproper
+arc: proper
 	@echo "# This is a generated file" > arc/prj.conf
 	@cat arc/prj.conf.base >> arc/prj.conf
 ifeq ($(ZJS_PARTITION), 256)
@@ -239,8 +244,8 @@ linux: $(PRE_ACTION) generate
 	echo "" > .linux.last_build
 	make -f Makefile.linux JS=$(JS) VARIANT=$(VARIANT)
 
-mrproper:
-	make -f Makefile.app mrproper
+proper:
+	make -f Makefile.app proper
 
 .PHONY: help
 help:

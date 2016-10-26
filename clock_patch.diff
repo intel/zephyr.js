@@ -1,0 +1,12 @@
+diff --git a/kernel/Kconfig b/kernel/Kconfig
+index e97057b..4b2932e 100644
+--- a/kernel/Kconfig
++++ b/kernel/Kconfig
+@@ -44,6 +44,7 @@ config SYS_CLOCK_TICKS_PER_SEC
+ 
+ config SYS_CLOCK_HW_CYCLES_PER_SEC
+ 	int "System clock's h/w timer frequency"
++	default 32000000
+ 	help
+ 	This option specifies the frequency of the hardware timer used for the
+ 	system clock (in Hz). This option is set by the board's Kconfig file

@@ -458,7 +458,7 @@ static void zjs_ble_notify_c_callback(void *handle)
 }
 
 // Port this to javascript
-static void zjs_ble_blvl_ccc_cfg_changed(uint16_t value)
+static void zjs_ble_blvl_ccc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
     ble_conn->simulate_blvl = (value == BT_GATT_CCC_NOTIFY) ? 1 : 0;
 }

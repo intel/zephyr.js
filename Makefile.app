@@ -5,5 +5,5 @@ $(KBUILD_ZEPHYR_APP):
 	make -C $(JERRY_BASE) -f targets/zephyr/Makefile.zephyr BOARD=$(BOARD) jerry
 	cp $(JERRY_BASE)/build/$(BOARD)/obj-$(BOARD)/lib/$@ $(O)
 
-mrproper:
+proper:
 	cd deps/zephyr; make mrproper
