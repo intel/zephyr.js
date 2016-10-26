@@ -82,4 +82,4 @@ called.
 Sample Apps
 -----------
 * [Timers sample](../samples/Timers.js)
-* [Spaceship2 sample](../arduino/starterkit/Spaceship2.js)
+* [Spaceship2 sample](../samples/arduino/starterkit/Spaceship2.js)
