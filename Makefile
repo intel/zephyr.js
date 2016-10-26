@@ -16,6 +16,9 @@ VARIANT ?= release
 TRACE ?= off
 # Specify pool malloc or heap malloc
 MALLOC ?= pool
+# Make target (linux or zephyr)
+# MAKECMDGOALS is a Make variable that is set to the target your building for.
+TARGET = $(MAKECMDGOALS)
 
 # Build for zephyr, default target
 .PHONY: zephyr
@@ -62,11 +65,10 @@ endif
 .PHONY: all
 all: zephyr arc
 
-# MAKECMDGOALS is a Make variable that is set to the target your building for.
 # This is how we can check if we are building for linux and if clean is needed.
 # The linux target does not use the BOARD variable, so without this special
 # case, the linux target would clean every time.
-ifneq ($(MAKECMDGOALS), linux)
+ifneq ($(TARGET), linux)
 # Building for Zephyr, check for .$(BOARD).last_build to see if clean is needed
 ifeq ("$(wildcard .$(BOARD).last_build)", "")
 PRE_ACTION=clean
@@ -156,12 +158,14 @@ clean:
 		rm -rf deps/jerryscript/build/$(BOARD)/; \
 		rm -rf deps/jerryscript/build/lib; \
 	fi
-	@if [ -d deps/zephyr ] && [ -e src/Makefile ]; then \
-		make -f Makefile.zephyr clean; \
+	@if [ "$(TARGET)" != "linux" ]; then \
+		if [ -d deps/zephyr ] && [ -e src/Makefile ]; then \
+			make -f Makefile.zephyr clean; \
+		fi; \
+		cd arc; make clean; \
 	fi
 	@rm -f src/*.o
 	@rm -f src/Makefile
-	cd arc; make clean
 	@rm -f arc/prj.conf
 	@rm -f prj.conf
 	@rm -f prj.conf.tmp

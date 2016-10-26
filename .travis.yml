@@ -31,9 +31,13 @@ install: >
   fi
 
 before_script: >
-  source zjs-env.sh $PARTSIZE &&
-  make update &&
-  source deps/zephyr/zephyr-env.sh
+  if [ "$TARGET" != "linux" ]; then
+    source zjs-env.sh $PARTSIZE &&
+    make update &&
+    source deps/zephyr/zephyr-env.sh
+  else
+    source zjs-env.sh
+  fi
 
 script: >
   if [ "$TARGET" == "zephyr" ]; then
