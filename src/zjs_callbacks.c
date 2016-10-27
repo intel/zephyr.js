@@ -39,7 +39,6 @@ struct zjs_c_callback_t {
 };
 
 struct zjs_callback_map {
-    void* reserved;
     int32_t id;
     uint8_t type;
     union {
@@ -388,16 +387,13 @@ void print_callbacks(void)
 
 void zjs_call_callback(int32_t id, void* data, uint32_t sz)
 {
-    if(cb_map[id]) {
+    if (cb_map[id]) {
         if (cb_map[id]->type == CALLBACK_TYPE_JS) {
             if (cb_map[id]->js->func_list == NULL && jerry_value_is_function(cb_map[id]->js->js_func)) {
                 jerry_value_t ret_val;
                 // Single function callback
-                if (sz) {
-                    ret_val = jerry_call_function(cb_map[id]->js->js_func, cb_map[id]->js->this, data, sz);
-                } else {
-                    ret_val = jerry_call_function(cb_map[id]->js->js_func, cb_map[id]->js->this, NULL, 0);
-                }
+                ret_val = jerry_call_function(cb_map[id]->js->js_func, cb_map[id]->js->this, data, sz);
+
                 if (cb_map[id]->js->post) {
                     cb_map[id]->js->post(cb_map[id]->js->handle, &ret_val);
                 }
@@ -410,11 +406,7 @@ void zjs_call_callback(int32_t id, void* data, uint32_t sz)
                 jerry_value_t ret_val;
 
                 for (i = 0; i < cb_map[id]->js->num_funcs; ++i) {
-                    if (sz) {
-                        ret_val = jerry_call_function(cb_map[id]->js->func_list[i], cb_map[id]->js->this, data, sz);
-                    } else {
-                        ret_val = jerry_call_function(cb_map[id]->js->js_func, cb_map[id]->js->this, NULL, 0);
-                    }
+                    ret_val = jerry_call_function(cb_map[id]->js->func_list[i], cb_map[id]->js->this, data, sz);
                     if (jerry_value_has_error_flag(ret_val)) {
                         DBG_PRINT("callback %ld returned an error for function[%i]\n", id, i);
                     }
@@ -424,11 +416,7 @@ void zjs_call_callback(int32_t id, void* data, uint32_t sz)
                 }
             }
         } else if (cb_map[id]->type == CALLBACK_TYPE_C && cb_map[id]->c->function) {
-            if (sz) {
-                cb_map[id]->c->function(cb_map[id]->c->handle, data);
-            } else {
-                cb_map[id]->c->function(cb_map[id]->c->handle, NULL);
-            }
+            cb_map[id]->c->function(cb_map[id]->c->handle, data);
         }
     }
 }
@@ -440,6 +428,7 @@ void zjs_service_callbacks(void)
         uint8_t value;
         uint8_t size = 0;
         uint32_t dummy;
+        // setting size = 0 will check if there is an item in the ring buffer
         while (zjs_port_ring_buf_get(&ring_buffer,
                                      &type,
                                      &value,
@@ -448,7 +437,7 @@ void zjs_service_callbacks(void)
             if (size == 0) {
                 break;
             } else {
-                // Pull from ring buffer
+                // pull from ring buffer
                 uint16_t id;
                 uint8_t value1;
                 uint8_t sz = size;
@@ -460,10 +449,10 @@ void zjs_service_callbacks(void)
                                                 (uint32_t*)data,
                                                 &sz);
                 if (ret != 0) {
-                    DBG_PRINT("(JS) error pulling from ring buffer: ret = %u\n", ret);
+                    ERR_PRINT("error pulling from ring buffer: ret = %u\n", ret);
                     break;
                 }
-                zjs_call_callback(id, data, sz);
+                zjs_call_callback(id, (sz) ? data : NULL, sz);
             }
         }
     }

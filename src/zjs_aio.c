@@ -274,8 +274,7 @@ static jerry_value_t zjs_aio_pin_read_async(const jerry_value_t function_obj,
         return zjs_error("zjs_aio_pin_read_async: could not allocate handle");
 
     handle->pin_obj = this;
-    handle->callback_id = zjs_add_callback(argv[0], this, handle,
-            zjs_aio_free_callback);
+    handle->callback_id = zjs_add_callback(argv[0], this, handle, zjs_aio_free_callback);
 
     jerry_set_object_native_handle(this, (uintptr_t)handle, zjs_aio_free_cb);
 

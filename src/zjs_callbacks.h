@@ -153,6 +153,7 @@ void zjs_remove_callback(int32_t id);
  * @param id            ID returned from zjs_add_callback
  * @param args          Arguments given to the JS/C callback
  * @param size          Size of arguments (in bytes)
+ *                      the size should also be in word chunks (divisible by 4)
  */
 void zjs_signal_callback(int32_t id, void* args, uint32_t size);
 
