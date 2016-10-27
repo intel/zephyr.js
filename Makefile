@@ -23,7 +23,6 @@ TARGET = $(MAKECMDGOALS)
 # Build for zephyr, default target
 .PHONY: zephyr
 zephyr: $(PRE_ACTION) analyze generate
-	#@cd $(ZJS_BASE)/deps/zephyr; make mrproper;
 	@make -f Makefile.zephyr BOARD=$(BOARD) KERNEL=$(KERNEL) VARIANT=$(VARIANT) MEM_STATS=$(MEM_STATS)
 
 .PHONY: analyze
@@ -127,11 +126,6 @@ update:
 # Sets up prj/last_build files
 .PHONY: setup
 setup: update
-# TODO: This is a temp patch for the A101/qemu builds to work
-ifneq ($(TARGET), linux)
-	cd deps/zephyr/; git checkout kernel/Kconfig
-	cd deps/zephyr/; git apply ../../clock_patch.diff;
-endif
 	@echo "# This is a generated file" > prj.conf
 ifeq ($(BOARD), qemu_x86)
 	@cat prj.conf.qemu_x86 >> prj.conf
