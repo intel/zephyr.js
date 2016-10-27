@@ -28,6 +28,8 @@
 
 #include "zjs_ble.h"
 
+#define ZJS_MAX_PRINT_SIZE      512
+
 extern const char *script_gen;
 
 // native eval handler
@@ -37,6 +39,25 @@ static jerry_value_t native_eval_handler(const jerry_value_t function_obj,
                                          const jerry_length_t argc)
 {
     return zjs_error("native_eval_handler: eval not supported");
+}
+
+// native print handler
+static jerry_value_t native_print_handler(const jerry_value_t function_obj,
+                                          const jerry_value_t this,
+                                          const jerry_value_t argv[],
+                                          const jerry_length_t argc)
+{
+    jerry_size_t jlen = jerry_get_string_size(argv[0]);
+    if (jlen > ZJS_MAX_PRINT_SIZE) {
+        ERR_PRINT("maximum print string length exceeded\n");
+        return ZJS_UNDEFINED;
+    }
+    char buffer[jlen + 1];
+    int wlen = jerry_string_to_char_buffer(argv[0], (jerry_char_t *)buffer, jlen);
+    buffer[wlen] = '\0';
+
+    PRINT("%s\n", buffer);
+    return ZJS_UNDEFINED;
 }
 
 #ifndef ZJS_LINUX_BUILD
@@ -95,6 +116,7 @@ int main(int argc, char *argv[])
     // Todo: find a better solution to disable eval() in JerryScript.
     // For now, just inject our eval() function in the global space
     zjs_obj_add_function(global_obj, native_eval_handler, "eval");
+    zjs_obj_add_function(global_obj, native_print_handler, "print");
 
     code_eval = jerry_parse((jerry_char_t *)script, len, false);
     if (jerry_value_has_error_flag(code_eval)) {

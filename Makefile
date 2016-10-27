@@ -154,16 +154,15 @@ endif
 .PHONY: clean
 clean:
 	@if [ -d deps/jerryscript ]; then \
-		make -C $(JERRY_BASE) -f targets/zephyr/Makefile.zephyr clean; \
-		make -C $(JERRY_BASE) -f targets/zephyr/Makefile clean; \
+		make -C $(JERRY_BASE) -f targets/zephyr/Makefile clean BOARD=$(BOARD); \
 		rm -rf deps/jerryscript/build/$(BOARD)/; \
 		rm -rf deps/jerryscript/build/lib; \
 	fi
 	@if [ "$(TARGET)" != "linux" ]; then \
 		if [ -d deps/zephyr ] && [ -e src/Makefile ]; then \
-			make -f Makefile.zephyr clean; \
+			cd deps/zephyr; make clean BOARD=$(BOARD); \
+			cd arc/; make clean; \
 		fi; \
-		cd arc; make clean; \
 	fi
 	@rm -f src/*.o
 	@rm -f src/Makefile
