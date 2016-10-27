@@ -98,4 +98,15 @@ void zjs_ipm_register_callback(uint32_t msg_id, ipm_callback_t cb)
 #endif
 }
 
+void zjs_ipm_free_callbacks() {
+    #ifdef CONFIG_X86
+    struct zjs_ipm_callback **pItem = &zjs_ipm_callbacks;
+    while (*pItem) {        
+        zjs_free(*pItem);            
+        pItem = &(*pItem)->next;
+    }
+    zjs_free(zjs_ipm_callbacks);
+    zjs_ipm_callbacks = NULL;
+    #endif
+}
 #endif // QEMU_BUILD
