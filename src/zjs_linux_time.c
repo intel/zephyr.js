@@ -1,6 +1,6 @@
 // Copyright (c) 2016, Intel Corporation.
 
-#include "zjs_linux_time.h"
+#include "zjs_linux_port.h"
 #include <time.h>
 
 #define ZEPHYR_TICKS_PER_SEC

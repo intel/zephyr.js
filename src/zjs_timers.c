@@ -3,9 +3,9 @@
 #ifndef ZJS_LINUX_BUILD
 // Zephyr includes
 #include <zephyr.h>
-#include "zjs_zephyr_time.h"
+#include "zjs_zephyr_port.h"
 #else
-#include "zjs_linux_time.h"
+#include "zjs_linux_port.h"
 #endif
 
 #include <string.h>

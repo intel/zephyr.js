@@ -12,7 +12,7 @@ CORE_SRC = 	src/main.c \
 			src/zjs_callbacks.c \
 			src/zjs_console.c \
 			src/zjs_event.c \
-			src/zjs_linux_queue.c \
+			src/zjs_linux_ring_buffer.c \
 			src/zjs_linux_time.c \
 			src/zjs_modules.c \
 			src/zjs_performance.c \

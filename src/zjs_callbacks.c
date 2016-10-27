@@ -3,11 +3,9 @@
 #ifndef ZJS_LINUX_BUILD
 #include <zephyr.h>
 #include <misc/ring_buffer.h>
-#include "zjs_zephyr_queue.h"
-#include "zjs_zephyr_time.h"
+#include "zjs_zephyr_port.h"
 #else
-#include "zjs_linux_time.h"
-#include "zjs_linux_queue.h"
+#include "zjs_linux_port.h"
 #endif
 #include <string.h>
 

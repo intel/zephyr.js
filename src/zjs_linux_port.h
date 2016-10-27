@@ -1,23 +1,29 @@
-#ifndef SRC_ZJS_LINUX_QUEUE_H_
-#define SRC_ZJS_LINUX_QUEUE_H_
+// Copyright (c) 2016, Intel Corporation.
+
+#ifndef ZJS_LINUX_PORT_H_
+#define ZJS_LINUX_PORT_H_
 
 #include "zjs_util.h"
+#include <unistd.h>
 
-struct linux_queue_element {
+typedef struct zjs_port_timer {
+    uint32_t sec;
+    uint32_t milli;
+    uint32_t interval;
     void* data;
-    struct linux_queue_element* next;
-};
+} zjs_port_timer_t;
 
-struct zjs_port_queue {
-    struct linux_queue_element* head;
-    struct linux_queue_element* tail;
-};
+void zjs_port_timer_init(zjs_port_timer_t* timer, void* data);
 
-void zjs_port_init_queue(struct zjs_port_queue* queue);
+void zjs_port_timer_start(zjs_port_timer_t* timer, uint32_t interval);
 
-void zjs_port_queue_put(struct zjs_port_queue* queue, void* data);
+void zjs_port_timer_stop(zjs_port_timer_t* timer);
 
-void* zjs_port_queue_get(struct zjs_port_queue* queue, uint32_t wait);
+uint8_t zjs_port_timer_test(zjs_port_timer_t* timer, uint32_t ticks);
+
+#define ZJS_TICKS_NONE          0
+#define CONFIG_SYS_CLOCK_TICKS_PER_SEC 100
+#define zjs_sleep usleep
 
 #define SIZE32_OF(x) (sizeof((x))/sizeof(uint32_t))
 
@@ -49,4 +55,5 @@ int zjs_port_ring_buf_put(struct zjs_port_ring_buf* buf,
                           uint32_t* data,
                           uint8_t size32);
 
-#endif /* SRC_ZJS_LINUX_QUEUE_H_ */
+#endif /* ZJS_LINUX_PORT_H_ */
+
