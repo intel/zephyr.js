@@ -38,6 +38,21 @@ Next, clone this git repo:
 $ git clone http://github.com/01org/zephyr.js.git
 ```
 
+#### Check out the stable tag
+Next, unless you know you have other plans, check out the `stable` tag. This is
+currently based on the stable Zephyr 1.5.0 release and should be the best
+working version. (By this we mean it had the highest pass rate by our QA folks.)
+
+```bash
+$ git checkout stable
+```
+
+If you do nothing and remain on master, in our current process you would get
+the latest code which made it through QA without too much gnashing of teeth. On
+the other hand, if you really want to see the latest changes, currently based on
+a recent Zephyr 1.6.0 pre-release version, you should check out the `devel`
+branch.
+
 #### Install the Zephyr SDK
 Download the [latest Zephyr SDK] (https://www.zephyrproject.org/downloads/tools), then:
 ```bash
