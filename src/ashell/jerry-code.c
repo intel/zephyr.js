@@ -123,20 +123,18 @@ void javascript_eval_code(const char *source_buffer)
 }
 
 
-void restore_zjs_api() {    
-#ifdef ZJS_POOL_CONFIG    
+void restore_zjs_api() {
+#ifdef ZJS_POOL_CONFIG
     zjs_init_mem_pools();
-#ifdef DUMP_MEM_STATS    
+#ifdef DUMP_MEM_STATS
     zjs_print_pools();
 #endif
 #endif
-
     jerry_init(JERRY_INIT_EMPTY);
     zjs_timers_init();
-#ifndef ZJS_LINUX_BUILD
-    //zjs_queue_init();
+#ifdef BUILD_MODULE_CONSOLE
+    zjs_console_init();
 #endif
-
     zjs_buffer_init();
     zjs_init_callbacks();
     zjs_modules_init();
