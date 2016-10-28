@@ -315,7 +315,7 @@ void zjs_signal_callback(int32_t id, void* args, uint32_t size)
 {
     int ret = zjs_port_ring_buf_put(&ring_buffer, (uint16_t)id, 0, (uint32_t*)args, (uint8_t)((size + 3) / 4));
     if (ret != 0) {
-        DBG_PRINT("error putting into ring buffer, ret=%u\n", ret);
+        ERR_PRINT("error putting into ring buffer, ret=%u\n", ret);
     }
 }
 
