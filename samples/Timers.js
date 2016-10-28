@@ -15,7 +15,12 @@ var i = setInterval(function(a, b) {
     count++;
 }, 1000, 1, 2);
 
-setTimeout(function(a) {
+var i1 = setInterval(function() {
+    console.log("No args interval ");
+}, 500);
+
+setTimeout(function(a, b) {
     console.log("Timeout, clearing interval");
     clearInterval(a);
-}, 5000, i);
+    clearInterval(b)
+}, 5000, i, i1);

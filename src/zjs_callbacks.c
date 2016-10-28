@@ -313,19 +313,9 @@ void zjs_remove_callback(int32_t id)
 
 void zjs_signal_callback(int32_t id, void* args, uint32_t size)
 {
-    if (args && size) {
-        // signal with args
-        int ret = zjs_port_ring_buf_put(&ring_buffer, (uint16_t)id, 0, (uint32_t*)args, (uint8_t)size / 4);
-        if (ret != 0) {
-            DBG_PRINT("error putting into ring buffer, ret=%u\n", ret);
-        }
-    } else {
-        // signal without args
-        uint32_t dummy = 0;
-        int ret = zjs_port_ring_buf_put(&ring_buffer, (uint16_t)id, 0, (uint32_t*)&dummy, (uint8_t)1);
-        if (ret != 0) {
-            DBG_PRINT("error putting into ring buffer, ret=%u\n", ret);
-        }
+    int ret = zjs_port_ring_buf_put(&ring_buffer, (uint16_t)id, 0, (uint32_t*)args, (uint8_t)((size + 3) / 4));
+    if (ret != 0) {
+        DBG_PRINT("error putting into ring buffer, ret=%u\n", ret);
     }
 }
 
@@ -424,35 +414,39 @@ void zjs_call_callback(int32_t id, void* data, uint32_t sz)
 void zjs_service_callbacks(void)
 {
     if (ring_buf_initialized) {
-        uint16_t type;
-        uint8_t value;
-        uint8_t size = 0;
-        uint32_t dummy;
-        // setting size = 0 will check if there is an item in the ring buffer
-        while (zjs_port_ring_buf_get(&ring_buffer,
-                                     &type,
-                                     &value,
-                                     &dummy,
-                                     &size) == -EMSGSIZE) {
-            if (size == 0) {
-                break;
-            } else {
+        while (1) {
+            int ret;
+            uint16_t id;
+            uint8_t value;
+            uint8_t size = 0;
+            // setting size = 0 will check if there is an item in the ring buffer
+            ret = zjs_port_ring_buf_get(&ring_buffer,
+                                        &id,
+                                        &value,
+                                        NULL,
+                                        &size);
+            if (ret == -EMSGSIZE) {
+                // item in ring buffer with size > 0, has args
                 // pull from ring buffer
-                uint16_t id;
-                uint8_t value1;
                 uint8_t sz = size;
                 jerry_value_t data[sz];
 
                 int ret = zjs_port_ring_buf_get(&ring_buffer,
                                                 &id,
-                                                &value1,
+                                                &value,
                                                 (uint32_t*)data,
                                                 &sz);
                 if (ret != 0) {
                     ERR_PRINT("error pulling from ring buffer: ret = %u\n", ret);
                     break;
                 }
-                zjs_call_callback(id, (sz) ? data : NULL, sz);
+                zjs_call_callback(id, data, sz);
+            } else if (ret == 0) {
+                // item in ring buffer with size == 0, no args
+                zjs_call_callback(id, NULL, 0);
+            } else {
+                // no more items in ring buffer
+                break;
             }
         }
     }
