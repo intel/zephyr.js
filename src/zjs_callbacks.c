@@ -14,9 +14,15 @@
 
 #include "jerry-api.h"
 
-// This could be defined with config options in the future
+// this could be defined with config options in the future
 #ifndef ZJS_CALLBACK_BUF_SIZE
 #define ZJS_CALLBACK_BUF_SIZE   1024
+#endif
+// max number of callbacks that can be serviced before continuing execution. If
+// this value is reached, any additional callbacks will be serviced on the next
+// time around the main loop.
+#ifndef ZJS_MAX_CB_LOOP_ITERATION
+#define ZJS_MAX_CB_LOOP_ITERATION   12
 #endif
 
 #define INITIAL_CALLBACK_SIZE  16
@@ -423,7 +429,12 @@ void zjs_call_callback(int32_t id, void* data, uint32_t sz)
 void zjs_service_callbacks(void)
 {
     if (ring_buf_initialized) {
-        while (1) {
+#ifdef ZJS_PRINT_CALLBACK_STATS
+        uint8_t header_printed = 0;
+        uint32_t num_callbacks = 0;
+#endif
+        uint16_t count = 0;
+        while (count++ < ZJS_MAX_CB_LOOP_ITERATION) {
             int ret;
             uint16_t id;
             uint8_t value;
@@ -434,30 +445,52 @@ void zjs_service_callbacks(void)
                                         &value,
                                         NULL,
                                         &size);
-            if (ret == -EMSGSIZE) {
-                // item in ring buffer with size > 0, has args
-                // pull from ring buffer
-                uint8_t sz = size;
-                jerry_value_t data[sz];
+            if (ret == -EMSGSIZE || ret == 0) {
+                if (ret == -EMSGSIZE) {
+                    // item in ring buffer with size > 0, has args
+                    // pull from ring buffer
+                    uint8_t sz = size;
+                    jerry_value_t data[sz];
 
-                int ret = zjs_port_ring_buf_get(&ring_buffer,
-                                                &id,
-                                                &value,
-                                                (uint32_t*)data,
-                                                &sz);
-                if (ret != 0) {
-                    ERR_PRINT("error pulling from ring buffer: ret = %u\n", ret);
-                    break;
+                    int ret = zjs_port_ring_buf_get(&ring_buffer,
+                            &id,
+                            &value,
+                            (uint32_t*)data,
+                            &sz);
+                    if (ret != 0) {
+                        ERR_PRINT("error pulling from ring buffer: ret = %u\n", ret);
+                        break;
+                    }
+                    zjs_call_callback(id, data, sz);
+                } else if (ret == 0) {
+                    // item in ring buffer with size == 0, no args
+                    zjs_call_callback(id, NULL, 0);
                 }
-                zjs_call_callback(id, data, sz);
-            } else if (ret == 0) {
-                // item in ring buffer with size == 0, no args
-                zjs_call_callback(id, NULL, 0);
+#ifdef ZJS_PRINT_CALLBACK_STATS
+                if (!header_printed) {
+                    PRINT("\n--------- Callback Stats ------------\n");
+                    header_printed = 1;
+                }
+                if (cb_map[id]) {
+                    PRINT("[cb stats] Callback[%u]: type=%s, arg_sz=%u\n",
+                            id,
+                            (cb_map[id]->type == CALLBACK_TYPE_JS) ? "JS" : "C",
+                            size);
+                }
+                num_callbacks++;
+#endif
             } else {
                 // no more items in ring buffer
                 break;
             }
         }
+#ifdef ZJS_PRINT_CALLBACK_STATS
+        if (num_callbacks) {
+            PRINT("[cb stats] Number of Callbacks (this service): %lu\n", num_callbacks);
+            PRINT("[cb stats] Max Callbacks Per Service: %u\n", ZJS_MAX_CB_LOOP_ITERATION);
+            PRINT("------------- End ----------------\n");
+        }
+#endif
     }
 }
 

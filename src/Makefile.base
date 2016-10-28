@@ -18,6 +18,10 @@ ifeq ($(BOARD), qemu_x86)
 ccflags-y += -DQEMU_BUILD
 endif
 
+ifeq ($(CB_STATS), on)
+ccflags-y += -DZJS_PRINT_CALLBACK_STATS
+endif
+
 obj-y += main.o \
          zjs_ble.o \
          zjs_buffer.o \

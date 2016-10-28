@@ -40,6 +40,10 @@ LINUX_DEFINES += -DDEBUG_BUILD
 LINUX_FLAGS += -g
 endif
 
+ifeq ($(CB_STATS), on)
+LINUX_DEFINES += -DZJS_PRINT_CALLBACK_STATS
+endif
+
 %.o:%.c
 	@echo "Building $@"
 	gcc -c -o $@ $< $(LINUX_INCLUDES) $(LINUX_DEFINES) $(LINUX_FLAGS)
