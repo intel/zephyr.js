@@ -108,6 +108,22 @@ static bool delete_timer(int32_t id)
     return false;
 }
 
+void zjs_timers_cleanup()
+{
+    for (zjs_timer_t **ptm = &zjs_timers; *ptm; ptm = &(*ptm)->next) {
+        zjs_timer_t *tm = *ptm;
+        zjs_port_timer_stop(&tm->timer);
+        *ptm = tm->next;
+        for (int i = 0; i < tm->argc; ++i) {
+            jerry_release_value(tm->argv[i]);
+        }
+        zjs_remove_callback(tm->callback_id);
+        zjs_free(tm->argv);
+        zjs_free(tm);
+    }
+    zjs_timers = NULL;
+}
+
 static jerry_value_t add_timer_helper(const jerry_value_t function_obj,
                                       const jerry_value_t this,
                                       const jerry_value_t argv[],

@@ -5,5 +5,6 @@
 
 void zjs_timers_process_events();
 void zjs_timers_init();
+void zjs_timers_cleanup();
 
 #endif  // __zjs_timers_h__
