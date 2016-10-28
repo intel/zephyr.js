@@ -14,6 +14,11 @@
 
 #include "jerry-api.h"
 
+// This could be defined with config options in the future
+#ifndef ZJS_CALLBACK_BUF_SIZE
+#define ZJS_CALLBACK_BUF_SIZE   1024
+#endif
+
 #define INITIAL_CALLBACK_SIZE  16
 #define CB_CHUNK_SIZE          16
 
@@ -47,7 +52,7 @@ struct zjs_callback_map {
     };
 };
 
-static uint8_t args_buffer[1024];
+static uint8_t args_buffer[ZJS_CALLBACK_BUF_SIZE];
 static struct zjs_port_ring_buf ring_buffer;
 static uint8_t ring_buf_initialized = 0;
 
@@ -91,7 +96,7 @@ void zjs_init_callbacks(void)
         }
         memset(cb_map, 0, size);
     }
-    zjs_port_ring_buf_init(&ring_buffer, 1024, (uint32_t*)args_buffer);
+    zjs_port_ring_buf_init(&ring_buffer, ZJS_CALLBACK_BUF_SIZE, (uint32_t*)args_buffer);
     ring_buf_initialized = 1;
     return;
 }
@@ -313,7 +318,11 @@ void zjs_remove_callback(int32_t id)
 
 void zjs_signal_callback(int32_t id, void* args, uint32_t size)
 {
-    int ret = zjs_port_ring_buf_put(&ring_buffer, (uint16_t)id, 0, (uint32_t*)args, (uint8_t)((size + 3) / 4));
+    int ret = zjs_port_ring_buf_put(&ring_buffer,
+                                    (uint16_t)id,
+                                    0,
+                                    (uint32_t*)args,
+                                    (uint8_t)((size + 3) / 4));
     if (ret != 0) {
         ERR_PRINT("error putting into ring buffer, ret=%u\n", ret);
     }
