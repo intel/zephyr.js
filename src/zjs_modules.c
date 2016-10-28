@@ -31,6 +31,7 @@
 typedef struct module {
     const char *name;
     initcb_t init;
+    jerry_value_t instance;
 } module_t;
 
 module_t zjs_modules_array[] = {
@@ -95,7 +96,11 @@ static jerry_value_t native_require_handler(const jerry_value_t function_obj,
     for (int i = 0; i < modcount; i++) {
         module_t *mod = &zjs_modules_array[i];
         if (!strcmp(mod->name, module)) {
-            return jerry_acquire_value(mod->init());
+            // We only want one intance of each module at a time
+            if (mod->instance == 0) {
+                mod->instance = jerry_acquire_value(mod->init());
+            }
+            return mod->instance;
         }
     }
 
@@ -105,6 +110,13 @@ static jerry_value_t native_require_handler(const jerry_value_t function_obj,
 
 void zjs_modules_init()
 {
+    int modcount = sizeof(zjs_modules_array) / sizeof(module_t);
+
+    for (int i = 0; i < modcount; i++) {
+        module_t *mod = &zjs_modules_array[i];
+        mod->instance = 0;
+    }
+
     jerry_value_t global_obj = jerry_get_global_object();
 
     // create the C handler for require JS call
