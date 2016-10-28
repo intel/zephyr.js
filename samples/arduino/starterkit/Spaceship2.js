@@ -41,31 +41,36 @@ var btnstate = false;
 // turn green LED on initially
 led1.write(true);
 
-var timer;
+var timer = null;
 var toggle;
 
 button.onchange = function (event) {
     if (event.value) {
-        // button has been pressed
-        toggle = false;
-        led1.write(false);
-        led2.write(false);
-        led3.write(true);
+        if (timer == null) {
+            // button has been pressed
+            toggle = false;
+            led1.write(false);
+            led2.write(false);
+            led3.write(true);
 
-        // start timer to toggle LED states every 250ms (1/4 second)
-        timer = setInterval(function () {
-            toggle = !toggle;
-            led2.write(toggle);
-            led3.write(!toggle);
-        }, 250);
+            // start timer to toggle LED states every 250ms (1/4 second)
+            timer = setInterval(function () {
+                toggle = !toggle;
+                led2.write(toggle);
+                led3.write(!toggle);
+            }, 250);
+        }
     }
     else {
-        // button has been released
-        led1.write(true);
-        led2.write(false);
-        led3.write(false);
+        if (timer != null) {
+            // button has been released
+            led1.write(true);
+            led2.write(false);
+            led3.write(false);
 
-        // remove the timer event
-        clearInterval(timer);
+            // remove the timer event
+            clearInterval(timer);
+            timer = null;
+        }
     }
 }
