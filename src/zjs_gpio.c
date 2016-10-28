@@ -323,6 +323,8 @@ static jerry_value_t zjs_gpio_open(const jerry_value_t function_obj,
 
         handle->pin = newpin;
         handle->pin_obj = async ? jerry_acquire_value(pinobj) : pinobj;
+        handle->devnum = devnum;
+
         // Register a C callback (will be called after the ISR is called)
         handle->callbackId = zjs_add_c_callback(handle, gpio_c_callback);
         // Set the native handle so we can free it when close() is called
