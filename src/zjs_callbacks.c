@@ -127,6 +127,7 @@ bool zjs_remove_callback_list_func(int32_t id, jerry_value_t js_func)
             }
         }
     }
+    DBG_PRINT("could not remove callback %d\n", id);
     return false;
 }
 
