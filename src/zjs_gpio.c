@@ -39,6 +39,7 @@ void (*zjs_gpio_convert_pin)(uint32_t orig, int *dev, int *pin) =
 struct gpio_handle {
     struct gpio_callback callback;  // Callback structure for zephyr
     uint32_t pin;                   // Pin associated with this handle
+    uint32_t devnum;
     uint32_t value;                 // Value of the pin
     int32_t callbackId;             // ID for the C callback
     jerry_value_t pin_obj;          // Pin object returned from open()
@@ -185,6 +186,18 @@ static jerry_value_t zjs_gpio_pin_close(const jerry_value_t function_obj,
     return ZJS_UNDEFINED;
 }
 
+static void zjs_gpio_free_cb(const uintptr_t native)
+{
+    struct gpio_handle* handle = (struct gpio_handle*)native;
+    zjs_remove_callback(handle->callbackId);
+    if (handle->onchange_func) {
+        jerry_release_value(handle->onchange_func);
+    }
+
+    gpio_remove_callback(zjs_gpio_dev[handle->devnum], &handle->callback);
+    zjs_free(handle);
+}
+
 // Called after the promise is fulfilled/rejected
 static void post_open_promise(void* h)
 {
@@ -310,10 +323,12 @@ static jerry_value_t zjs_gpio_open(const jerry_value_t function_obj,
 
         handle->pin = newpin;
         handle->pin_obj = async ? jerry_acquire_value(pinobj) : pinobj;
+        handle->devnum = devnum;
+
         // Register a C callback (will be called after the ISR is called)
         handle->callbackId = zjs_add_c_callback(handle, gpio_c_callback);
         // Set the native handle so we can free it when close() is called
-        jerry_set_object_native_handle(pinobj, (uintptr_t)handle, NULL);
+        jerry_set_object_native_handle(pinobj, (uintptr_t)handle, zjs_gpio_free_cb);
     }
 
     if (async) {

@@ -108,6 +108,11 @@ static bool delete_timer(int32_t id)
     return false;
 }
 
+static void zjs_timer_free_cb(uintptr_t handle)
+{
+    delete_timer(((zjs_timer_t *)handle)->callback_id);
+}
+
 static jerry_value_t add_timer_helper(const jerry_value_t function_obj,
                                       const jerry_value_t this,
                                       const jerry_value_t argv[],
@@ -126,7 +131,7 @@ static jerry_value_t add_timer_helper(const jerry_value_t function_obj,
     zjs_timer_t* handle = add_timer(interval, callback, this, repeat, argv, argc - 2);
     if (handle->callback_id == -1)
         return zjs_error("native_set_interval_handler: timer alloc failed");
-    jerry_set_object_native_handle(timer_obj, (uintptr_t)handle, NULL);
+    jerry_set_object_native_handle(timer_obj, (uintptr_t)handle, zjs_timer_free_cb);
 
     return timer_obj;
 }
@@ -223,4 +228,5 @@ void zjs_timers_init()
     // create the C handler for clearTimeout JS call (same as clearInterval)
     zjs_obj_add_function(global_obj, native_clear_interval_handler,
                          "clearTimeout");
+    jerry_release_value(global_obj);
 }

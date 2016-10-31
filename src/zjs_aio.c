@@ -34,6 +34,13 @@ static aio_handle_t *zjs_aio_alloc_handle()
     return handle;
 }
 
+static void zjs_aio_free_cb(uintptr_t handle)
+{
+    aio_handle_t *free_handle = (aio_handle_t *)handle;
+    zjs_remove_callback(free_handle->callback_id);
+    zjs_free(free_handle);
+}
+
 static void zjs_aio_free_handle(aio_handle_t *handle)
 {
     zjs_free(handle);
@@ -250,7 +257,7 @@ static jerry_value_t zjs_aio_pin_on(const jerry_value_t function_obj,
             return zjs_error("zjs_aio_pin_on: could not allocate handle");
 
         handle->pin_obj = this;
-        jerry_set_object_native_handle(this, (uintptr_t)handle, NULL);
+        jerry_set_object_native_handle(this, (uintptr_t)handle, zjs_aio_free_cb);
         handle->callback_id = zjs_add_callback(argv[1], this, handle,
                                                zjs_aio_pre_callback, NULL);
         zjs_aio_ipm_send_async(TYPE_AIO_PIN_SUBSCRIBE, pin, handle);
@@ -280,6 +287,8 @@ static jerry_value_t zjs_aio_pin_read_async(const jerry_value_t function_obj,
     handle->callback_id = zjs_add_callback(argv[0], this, handle,
                                            zjs_aio_pre_callback,
                                            zjs_aio_free_callback);
+
+    jerry_set_object_native_handle(this, (uintptr_t)handle, zjs_aio_free_cb);
 
     // send IPM message to the ARC side; response will come on an ISR
     zjs_aio_ipm_send_async(TYPE_AIO_PIN_READ, pin, handle);
