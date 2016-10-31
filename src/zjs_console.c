@@ -71,6 +71,7 @@ void zjs_console_init(void)
     zjs_obj_add_function(console, console_error, "warn");
 
     zjs_set_property(global_obj, "console", console);
+    jerry_release_value(global_obj);
 }
 
 #endif

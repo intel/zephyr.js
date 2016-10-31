@@ -121,4 +121,5 @@ void zjs_modules_init()
 
     // create the C handler for require JS call
     zjs_obj_add_function(global_obj, native_require_handler, "require");
+    jerry_release_value(global_obj);
 }
