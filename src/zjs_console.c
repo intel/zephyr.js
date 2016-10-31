@@ -51,7 +51,6 @@ static jerry_value_t do_print(const jerry_value_t function_obj,
             char buffer[jlen + 1];
             int wlen = jerry_string_to_char_buffer(argv[0], (jerry_char_t *)buffer, jlen);
             buffer[wlen] = '\0';
-
             fprintf(out, "%s ", buffer);
         } else if (jerry_value_is_number(argv[i])) {
             int type = is_int(argv[i]);
@@ -69,6 +68,7 @@ static jerry_value_t do_print(const jerry_value_t function_obj,
             fprintf(out, "[Object] ");
         }
     }
+    fprintf(out, "\n");
     return ZJS_UNDEFINED;
 }
 
@@ -77,22 +77,7 @@ static jerry_value_t console_log(const jerry_value_t function_obj,
                                  const jerry_value_t argv[],
                                  const jerry_length_t argc)
 {
-    if (!jerry_value_is_string(argv[0])) {
-        ERR_PRINT("first parameter must be a string\n");
-        return ZJS_UNDEFINED;
-    }
-    jerry_size_t jlen = jerry_get_string_size(argv[0]);
-    if (jlen > MAX_STR_LENGTH) {
-        ERR_PRINT("console string is too long, max length=%u\n", MAX_STR_LENGTH);
-        return ZJS_UNDEFINED;
-    }
-    char buffer[jlen + 1];
-    int wlen = jerry_string_to_char_buffer(argv[0], (jerry_char_t *)buffer, jlen);
-    buffer[wlen] = '\0';
-
-    STDOUT_PRINT("%s\n", buffer);
-
-    return ZJS_UNDEFINED;
+    return do_print(function_obj, this, argv, argc, stdout);
 }
 
 static jerry_value_t console_error(const jerry_value_t function_obj,
@@ -100,22 +85,7 @@ static jerry_value_t console_error(const jerry_value_t function_obj,
                                    const jerry_value_t argv[],
                                    const jerry_length_t argc)
 {
-    if (!jerry_value_is_string(argv[0])) {
-        ERR_PRINT("first parameter must be a string\n");
-        return ZJS_UNDEFINED;
-    }
-    jerry_size_t jlen = jerry_get_string_size(argv[0]);
-    if (jlen > MAX_STR_LENGTH) {
-        ERR_PRINT("console string is too long, max length=%u\n", MAX_STR_LENGTH);
-        return ZJS_UNDEFINED;
-    }
-    char buffer[jlen + 1];
-    int wlen = jerry_string_to_char_buffer(argv[0], (jerry_char_t *)buffer, jlen);
-    buffer[wlen] = '\0';
-
-    STDERR_PRINT("%s\n", buffer);
-
-    return ZJS_UNDEFINED;
+    return do_print(function_obj, this, argv, argc, stderr);
 }
 
 void zjs_console_init(void)
