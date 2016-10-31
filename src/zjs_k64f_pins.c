@@ -71,9 +71,9 @@ jerry_value_t zjs_k64f_init()
     zjs_obj_add_number(obj, PTE + 26, "LEDG");  // verified
     zjs_obj_add_number(obj, PTB + 21, "LEDB");  // verified
 
-    // These are onboard switches SW2 and SW3
+    // These are onboard switches SW2 and SW3 (SW1 is Reset)
     zjs_obj_add_number(obj, PTC +  6, "SW2");  // verified (press: falling edge)
-    zjs_obj_add_number(obj, PTC + 13, "SW3");  // doesn't work (elsewhere PTA4)
+    zjs_obj_add_number(obj, PTA +  4, "SW3");
 
     // TODO: More pins at https://developer.mbed.org/platforms/FRDM-K64F/
 
