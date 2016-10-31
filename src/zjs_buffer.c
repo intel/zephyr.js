@@ -453,5 +453,6 @@ void zjs_buffer_init()
 {
     jerry_value_t global_obj = jerry_get_global_object();
     zjs_obj_add_function(global_obj, zjs_buffer, "Buffer");
+    jerry_release_value(global_obj);
 }
 #endif // BUILD_MODULE_BUFFER

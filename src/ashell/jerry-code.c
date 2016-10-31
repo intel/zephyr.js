@@ -122,6 +122,24 @@ void javascript_eval_code(const char *source_buffer)
     jerry_release_value(ret_val);
 }
 
+
+void restore_zjs_api() {
+#ifdef ZJS_POOL_CONFIG
+    zjs_init_mem_pools();
+#ifdef DUMP_MEM_STATS
+    zjs_print_pools();
+#endif
+#endif
+    jerry_init(JERRY_INIT_EMPTY);
+    zjs_timers_init();
+#ifdef BUILD_MODULE_CONSOLE
+    zjs_console_init();
+#endif
+    zjs_buffer_init();
+    zjs_init_callbacks();
+    zjs_modules_init();
+}
+
 void javascript_stop()
 {
     if (parsed_code == 0)
@@ -133,9 +151,9 @@ void javascript_stop()
 
     /* Cleanup engine */
     jerry_cleanup();
+    zjs_ipm_free_callbacks();
 
-    /* Initialize engine */
-    jerry_init(JERRY_INIT_EMPTY);
+    restore_zjs_api();
 }
 
 int javascript_parse_code(const char *file_name, bool show_lines)
@@ -218,7 +236,7 @@ void javascript_run_code(const char *file_name)
     /* Execute the parsed source code in the Global scope */
     jerry_value_t ret_value = jerry_run(parsed_code);
 
-    if (jerry_value_has_error_flag(parsed_code)) {
+    if (jerry_value_has_error_flag(ret_value)) {
         javascript_print_error(ret_value);
     }
 
