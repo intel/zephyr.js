@@ -41,6 +41,11 @@ if [ $? -eq 0 ]; then
     MODULES+=" -DBUILD_MODULE_GPIO"
     echo "CONFIG_GPIO=y" >> prj.conf.tmp
 fi
+check_for_require performance
+if [ $? -eq 0 ]; then
+    >&2 echo Using module: Performance
+    MODULES+=" -DBUILD_MODULE_PERFORMANCE"
+fi
 check_for_require pwm
 if [ $? -eq 0 ]; then
     >&2 echo Using module: PWM
