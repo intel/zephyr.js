@@ -26,6 +26,7 @@ obj-y += main.o \
          zjs_event.o \
          zjs_gpio.o \
          zjs_modules.o \
+         zjs_performance.o \
          zjs_promise.o \
          zjs_pwm.o \
          zjs_script.o \

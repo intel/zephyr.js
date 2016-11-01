@@ -31,4 +31,6 @@ General
 -------
 [Buffer](./buffer.md)
 
+[Performance](./performance.md)
+
 [Timers](./timers.md)
