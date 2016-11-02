@@ -146,7 +146,7 @@ static jerry_value_t get_props_from_response(oc_client_response_t* data)
             break;
         case INT:
             zjs_obj_add_number(prop_object, (double)rep->value_int, oc_string(rep->name));
-            DBG_PRINT("%ld\n", rep->value_int);
+            DBG_PRINT("%ld\n", (uint32_t)rep->value_int);
             break;
         case BYTE_STRING:
         case STRING:
@@ -184,7 +184,7 @@ static void print_props_data(oc_client_response_t *data)
             PRINT("%d\n", rep->value_boolean);
             break;
         case INT:
-            PRINT("%ld\n", rep->value_int);
+            PRINT("%ld\n", (uint32_t)rep->value_int);
             break;
         case BYTE_STRING:
         case STRING:
@@ -264,7 +264,7 @@ static jerry_value_t create_resource(const char* device_id, const char* path)
         zjs_obj_add_string(resource, path, "resourcePath");
     }
 
-    DBG_PRINT("id=%s, path=%s, obj number=%u\n", device_id, path, resource);
+    DBG_PRINT("id=%s, path=%s, obj number=%lu\n", device_id, path, resource);
 
     return resource;
 }
@@ -818,7 +818,7 @@ static void ocf_get_platform_info_handler(oc_client_response_t *data)
                 DBG_PRINT("%d\n", rep->value_boolean);
                 break;
             case INT:
-                DBG_PRINT("%ld\n", rep->value_int);
+                DBG_PRINT("%ld\n", (uint32_t)rep->value_int);
                 break;
             case BYTE_STRING:
             case STRING:
@@ -915,7 +915,7 @@ static void ocf_get_device_info_handler(oc_client_response_t *data)
                 DBG_PRINT("%d\n", rep->value_boolean);
                 break;
             case INT:
-                DBG_PRINT("%d\n", rep->value_int);
+                DBG_PRINT("%ld\n", (uint32_t)rep->value_int);
                 break;
             case BYTE_STRING:
             case STRING:

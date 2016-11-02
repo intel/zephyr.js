@@ -172,7 +172,7 @@ static jerry_value_t create_resource(const char* path, jerry_value_t resource_in
 
     zjs_set_property(res, "properties", properties);
 
-    DBG_PRINT("path=%s, obj number=%u\n", path, res);
+    DBG_PRINT("path=%s, obj number=%lu\n", path, res);
 
     return res;
 }
@@ -271,7 +271,7 @@ static jerry_value_t ocf_respond(const jerry_value_t function_val,
         return promise;
     }
 
-    DBG_PRINT("responding to method type=%u, properties=%u\n", h->resp->method, h->properties);
+    DBG_PRINT("responding to method type=%u, properties=%lu\n", h->resp->method, h->properties);
 
     zjs_make_promise(promise, NULL, NULL);
 
