@@ -108,9 +108,20 @@ static bool delete_timer(int32_t id)
     return false;
 }
 
-static void zjs_timer_free_cb(uintptr_t handle)
+void zjs_timers_free_timers()
 {
-    delete_timer(((zjs_timer_t *)handle)->callback_id);
+    for (zjs_timer_t **ptm = &zjs_timers; *ptm; ptm = &(*ptm)->next) {
+        zjs_timer_t *tm = *ptm;
+        int i;
+        zjs_port_timer_stop(&tm->timer);
+        *ptm = tm->next;
+        for (i = 0; i < tm->argc; ++i) {
+            jerry_release_value(tm->argv[i]);
+        }
+        zjs_remove_callback(tm->callback_id);
+        zjs_free(tm->argv);
+        zjs_free(tm);
+    }
 }
 
 static jerry_value_t add_timer_helper(const jerry_value_t function_obj,
