@@ -28,8 +28,11 @@ client.on('update', onupdate);
 
 var lightOn = true;
 
+// TODO: Must save away the timer handle or else GC will destroy it after a few iterations
+var t1 = null;
+
 function onfound(resource) {
-    setInterval(function() {
+    t1 = setInterval(function() {
         lightOn = lightOn ? false : true;
         resource.state = lightOn;
         client.update(resource).then(function(resource) {
