@@ -57,7 +57,7 @@ static jerry_value_t native_print_handler(const jerry_value_t function_obj,
     int wlen = jerry_string_to_char_buffer(argv[0], (jerry_char_t *)buffer, jlen);
     buffer[wlen] = '\0';
 
-    PRINT("%s\n", buffer);
+    ZJS_PRINT("%s\n", buffer);
     return ZJS_UNDEFINED;
 }
 
