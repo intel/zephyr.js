@@ -47,7 +47,7 @@ var testIntervalMoreArg = setInterval(function (arg1, arg2) {
     countMoreArg++;
     arg1++;
     if (countMoreArg == countFlag) {
-        assert((arg1 === IntervalArg1 + 1) && (arg2 === IntervalArg2), 
+        assert((arg1 === IntervalArg1 + 1) && (arg2 === IntervalArg2),
                "setInterval: set delay and optional arg");
         clearInterval(testIntervalMoreArg);
     }

@@ -7,13 +7,13 @@ var passed = 0;
 
 function assert(actual, description) {
     total += 1;
-    
+
     var label = "\033[1m\033[31mFAIL\033[0m";
     if (actual === true) {
         passed += 1;
         label = "\033[1m\033[32mPASS\033[0m";
     }
-    
+
     console.log(label + " - " + description);
 }
 
@@ -99,7 +99,7 @@ for(var i = 0; i < hexs.length; i++) {
     buff.writeUInt8(hexs[i][0], i);
     expected += hexs[i][1];
 }
-assert(buff.toString('hex') === expected, 
+assert(buff.toString('hex') === expected,
        "The value of toString('hex') expected:" + expected +
        " got:" + buff.toString('hex'));
 
