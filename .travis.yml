@@ -13,25 +13,26 @@ env:
     - ZEPHYR_SDK_SETUP_BINARY=zephyr-sdk-$ZEPHYR_SDK_VERSION-i686-setup.run
     - ZEPHYR_SDK_DOWNLOAD_URL=$ZEPHYR_SDK_DOWNLOAD_FOLDER/$ZEPHYR_SDK_SETUP_BINARY
   matrix:
+    - TARGET="git-check" NOZEPHYR=y
     - TARGET="zephyr"
     - TARGET="zephyr-large" PARTSIZE=256
     - TARGET="BOARD=frdm_k64f"
     - TARGET="arc"
-    - TARGET="linux"
+    - TARGET="linux" NOZEPHYR=y
 
 before_install:
   - sudo apt-get update -qq
   - sudo apt-get install make gcc g++ python3-ply ncurses-dev uglifyjs sysvbanner -qq
 
 install: >
-  if [ "$TARGET" != "linux" ]; then
+  if [ "$NOZEPHYR" != "y" ]; then
     wget $ZEPHYR_SDK_DOWNLOAD_URL &&
     chmod +x $ZEPHYR_SDK_SETUP_BINARY &&
     ./$ZEPHYR_SDK_SETUP_BINARY --quiet -- -y -d $ZEPHYR_SDK_INSTALL_DIR > /dev/null;
   fi
 
 before_script: >
-  if [ "$TARGET" != "linux" ]; then
+  if [ "$NOZEPHYR" != "y" ]; then
     source zjs-env.sh $PARTSIZE &&
     make update &&
     source deps/zephyr/zephyr-env.sh
@@ -41,14 +42,20 @@ before_script: >
 
 script: >
   if [ "$TARGET" == "zephyr" ]; then
-    banner "Test 1" &&
+    banner "Test 1/3" &&
     make V=1 &&
-    banner "Test 2" &&
+    banner "Test 2/3" &&
     make V=1 JS=samples/TrafficLight.js &&
-    banner "Test 3" &&
+    banner "Test 3/3" &&
     make V=1 JS=samples/I2C.js
   elif [ "$TARGET" == "zephyr-large" ]; then
+    banner "Test 1/1" &&
     make V=1 JS=samples/WebBluetoothGroveLcdDemo.js
+  elif [ "$TARGET" == "git-check" ]; then
+    # check for any new trailing whitespace since the first fetched commit
+    banner "git check" &&
+    git diff --check HEAD~49
   else
+    banner "Test 1/1" &&
     make V=1 $TARGET;
   fi

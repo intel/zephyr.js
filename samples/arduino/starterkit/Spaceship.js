@@ -3,7 +3,7 @@
 // Reimplementation of Arduino Starter Kit's Spaceship example
 //   - Toggles LEDs in while a button is pressed
 //   - This "easy" version does not quite match the original behavior, since
-//       we only check the button state every 250ms. So the lasers may take up  
+//       we only check the button state every 250ms. So the lasers may take up
 //       to 250ms to engage, which could mean the difference between life and
 //       death. See Spaceship2.js for a more accurate version.
 

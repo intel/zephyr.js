@@ -594,4 +594,3 @@ jerry_value_t zjs_event_init()
 {
     return jerry_create_external_function(event_constructor);
 }
-

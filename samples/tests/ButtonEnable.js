@@ -40,4 +40,3 @@ btn1.onchange = function (event) {
         btn2.onchange = null;
     }
 };
-

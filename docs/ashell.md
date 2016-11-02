@@ -96,7 +96,7 @@ and run.
 In case of an error while parsing it will stop parsing and output
 "Failed parsing JS"
 
-### ls 
+### ls
 
 `ls`
 
@@ -119,22 +119,22 @@ Example of raw text input
 ```
 acm> load test.js
 
-Saving to 'test.js' 
-Ready for JavaScript. 
+Saving to 'test.js'
+Ready for JavaScript.
         Ctrl+Z to finish transfer.
         Ctrl+X or Ctrl+C to cancel.
-RAW> 
+RAW>
 ```
 
 ### Data transfer
 
 Set the mode to accept data when the 'load' transmission starts
 
-1. Raw data 
-Will be plain text that contains the code. No CRC or error checking. 
+1. Raw data
+Will be plain text that contains the code. No CRC or error checking.
 After the transmission is finished you can parse or run the code.
 
-2. Intel Hex 
+2. Intel Hex
 Basic CRC, hexadecimal data with data sections and regions.
 It might be that the code is divided in sections and you will only update a section of the memory.
 This will be used for the future integration to support JS Snapshots.
@@ -149,23 +149,23 @@ set transfer raw
 The motivation of the IHEX use is to be able to upload binary or text
 files and have some basic support for CRC.
 
-``` 
+```
 acm> set transfer ihex
 HEX> load
-``` 
+```
 <Send ihex data here>
 Example:
-``` 
+```
 :2000000066756E6374696F6E2074657374696E67286E756D62657229207B0A097265747514
 :20002000726E206E756D6265722A323B0A7D3B0A7072696E742822486920776F726C642044
 :0F004000222B74657374696E6728313829293B48
 :00000001FF
-``` 
+```
 Move the temporary file to a destination file
-``` 
-HEX> mv temp.dat test.js 
+```
+HEX> mv temp.dat test.js
 HEX> run test.js
-``` 
+```
 
 Problems and known issues
 ========================

@@ -85,4 +85,3 @@ expectThrow("clearTimeout: timeoutID does not exist", function () {
 setTimeout(function () {
     console.log("TOTAL: " + passed + " of " + total + " passed");
 }, 2000);
-
