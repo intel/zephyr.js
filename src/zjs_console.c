@@ -62,7 +62,7 @@ static jerry_value_t do_print(const jerry_value_t function_obj,
                 fprintf(out, "%lu ", num);
             } else if (type == IS_INT) {
                 int32_t num = (int32_t)jerry_get_number_value(argv[i]);
-                fprintf(out, "%ld ", num);
+                fprintf(out, "%li ", num);
             }
         } else if (jerry_value_is_object(argv[i])) {
             fprintf(out, "[Object] ");
