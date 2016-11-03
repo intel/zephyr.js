@@ -22,13 +22,7 @@ env:
 before_install:
   - sudo apt-get update -qq
   - sudo apt-get install make gcc g++ python3-ply ncurses-dev uglifyjs sysvbanner -qq
-
-install: >
-  if [ "$TARGET" != "linux" ]; then
-    wget $ZEPHYR_SDK_DOWNLOAD_URL &&
-    chmod +x $ZEPHYR_SDK_SETUP_BINARY &&
-    ./$ZEPHYR_SDK_SETUP_BINARY --quiet -- -y -d $ZEPHYR_SDK_INSTALL_DIR > /dev/null;
-  fi
+  - wget -O $HOME/sdk/$ZEPHYR_SDK_SETUP_BINARY $ZEPHYR_SDK_DOWNLOAD_URL && chmod +x ZEPHYR_SDK_SETUP_BINARY && ./$ZEPHYR_SDK_SETUP_BINARY --quiet -- -y -d $ZEPHYR_SDK_INSTALL_DIR > /dev/null;
 
 before_script: >
   if [ "$TARGET" != "linux" ]; then
@@ -52,3 +46,7 @@ script: >
   else
     make V=1 $TARGET;
   fi
+
+cache:
+  directories:
+    - $HOME/sdk
