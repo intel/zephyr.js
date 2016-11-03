@@ -366,7 +366,6 @@ static void handle_glcd(struct zjs_ipm_message* msg)
             glcd = device_get_binding(GROVE_LCD_NAME);
 
             if (!glcd) {
-                PRINT("failed to initialize Grove LCD\n");
                 error_code = ERROR_IPM_OPERATION_FAILED;
             } else {
                 DBG_PRINT("Grove LCD initialized\n");
@@ -477,7 +476,7 @@ static void send_sensor_data(enum sensor_channel channel,
 {
     struct zjs_ipm_message msg;
     msg.id = MSG_ID_SENSOR;
-    msg.type = TYPE_SENSOR_EVENT_VALUE_CHANGE;
+    msg.type = TYPE_SENSOR_EVENT_READING_CHANGE;
     msg.flags = 0;
     msg.user_data = NULL;
     msg.error_code = ERROR_IPM_NONE;

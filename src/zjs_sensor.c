@@ -200,14 +200,11 @@ static void zjs_sensor_update_reading(jerry_value_t obj,
     jerry_value_t y_val = jerry_create_number(y);
     jerry_value_t z_val = jerry_create_number(z);
     jerry_value_t reading_obj = jerry_create_object();
-    if (channel == SENSOR_CHAN_ACCEL_ANY) {
-        zjs_set_property(reading_obj, "accelerationX", x_val);
-        zjs_set_property(reading_obj, "accelerationY", y_val);
-        zjs_set_property(reading_obj, "accelerationZ", z_val);
-    } else if (channel == SENSOR_CHAN_GYRO_ANY) {
-        zjs_set_property(reading_obj, "rotationRateX", x_val);
-        zjs_set_property(reading_obj, "rotationRateY", y_val);
-        zjs_set_property(reading_obj, "rotationRateZ", z_val);
+    if (channel == SENSOR_CHAN_ACCEL_ANY ||
+        channel == SENSOR_CHAN_GYRO_ANY) {
+        zjs_set_property(reading_obj, "x", x_val);
+        zjs_set_property(reading_obj, "y", y_val);
+        zjs_set_property(reading_obj, "z", z_val);
     }
     zjs_set_property(obj, "reading", reading_obj);
     jerry_value_t func = zjs_get_property(obj, "onchange");
@@ -285,7 +282,7 @@ static void ipm_msg_receive_callback(void *context, uint32_t id, volatile void *
         }
         // un-block sync api
         nano_isr_sem_give(&sensor_sem);
-    } else if (msg->type == TYPE_SENSOR_EVENT_VALUE_CHANGE) {
+    } else if (msg->type == TYPE_SENSOR_EVENT_READING_CHANGE) {
         // value change event, copy the data, and signal event callback
         if (msg->data.sensor.channel == SENSOR_CHAN_ACCEL_ANY) {
             zjs_sensor_signal_callbacks(accel_handle, msg->data.sensor.value);
@@ -401,12 +398,12 @@ static jerry_value_t zjs_sensor_create(const jerry_value_t function_obj,
             // For now, frequency is ignored,  we just report new event
             // as soon as we detect a value change.
             if (option_freq <= 0) {
-                PRINT("zjs_sensor_create: invalid frequency, default to 50hz\n");
+                PRINT("zjs_sensor_create: invalid frequency, defaulting to 50hz\n");
             } else {
                 frequency = option_freq;
             }
         } else {
-            PRINT("zjs_sensor_create: frequency not found, default to 50hz\n");
+            PRINT("zjs_sensor_create: frequency not found, defaulting to 50hz\n");
         }
 
         if (channel == SENSOR_CHAN_ACCEL_ANY) {
@@ -459,9 +456,9 @@ static jerry_value_t zjs_accel_create(const jerry_value_t function_obj,
                                       const jerry_length_t argc)
 {
     // requires: arg 0 is an object containing sensor options:
-    //             frequency (double) - sampling frequency, default to 60
+    //             frequency (double) - sampling frequency, default to 50
     //             includeGravity (bool) - whether you want gravity included
-    //  effects: Creates a AccelerometerSensor object to the local sensor
+    //  effects: Creates a Accelerometer object to the local sensor
     return zjs_sensor_create(function_obj,
                              this,
                              argv,
@@ -492,7 +489,7 @@ void zjs_sensor_init()
     nano_sem_init(&sensor_sem);
 
     jerry_value_t global_obj = jerry_get_global_object();
-    zjs_obj_add_function(global_obj, zjs_accel_create, "AccelerometerSensor");
+    zjs_obj_add_function(global_obj, zjs_accel_create, "Accelerometer");
     zjs_obj_add_function(global_obj, zjs_gyro_create, "Gyroscope");
     jerry_release_value(global_obj);
 }

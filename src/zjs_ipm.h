@@ -85,7 +85,7 @@ enum {
 #define TYPE_SENSOR_START                                  0x0031
 #define TYPE_SENSOR_STOP                                   0x0032
 #define TYPE_SENSOR_EVENT_STATE_CHANGE                     0x0033
-#define TYPE_SENSOR_EVENT_VALUE_CHANGE                     0x0034
+#define TYPE_SENSOR_EVENT_READING_CHANGE                   0x0034
 #endif
 
 typedef struct zjs_ipm_message {
