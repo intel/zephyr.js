@@ -14,6 +14,7 @@ CORE_SRC = 	src/main.c \
 			src/zjs_event.c \
 			src/zjs_linux_time.c \
 			src/zjs_modules.c \
+			src/zjs_performance.c \
 			src/zjs_script.c \
 			src/zjs_script_gen.c \
 			src/zjs_timers.c \
@@ -30,7 +31,7 @@ JERRY_LIB_PATH = 	-L$(JERRY_BASE)/build/lib/
 
 LINUX_FLAGS = -std=gnu99 -Wpointer-sign
 
-LINUX_DEFINES = -DZJS_LINUX_BUILD -DBUILD_MODULE_EVENTS -DBUILD_MODULE_CONSOLE
+LINUX_DEFINES = -DZJS_LINUX_BUILD -DBUILD_MODULE_EVENTS -DBUILD_MODULE_CONSOLE -DBUILD_MODULE_PERFORMANCE
 
 ifeq ($(VARIANT), debug)
 LINUX_DEFINES += -DDEBUG_BUILD
