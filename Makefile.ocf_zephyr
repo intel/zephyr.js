@@ -49,24 +49,4 @@ obj-y += ../$(OCF_ROOT)/deps/tinycbor/src/cborencoder_close_container_checked.o 
          ../$(OCF_ROOT)/port/zephyr/src/ipadapter.o \
          ../$(OCF_ROOT)/port/zephyr/src/random.o \
          ../$(OCF_ROOT)/port/zephyr/src/clock.o \
-         ../$(OCF_ROOT)/port/zephyr/src/abort.o \
-#         ../../../deps/tinydtls/ccm.o \
-#         ../../../deps/tinydtls/hmac.o \
-#         ../../../deps/tinydtls/netq.o \
-#         ../../../deps/tinydtls/peer.o \
-#         ../../../deps/tinydtls/dtls_time.o \
-#         ../../../deps/tinydtls/session.o \
-#         ../../../deps/tinydtls/sha2/sha2.o \
-#         ../../../deps/tinydtls/ecc/ecc.o \
-#         ../../../deps/tinydtls/aes/rijndael.o \
-#         ../../../deps/tinydtls/crypto.o \
-#         ../../../deps/tinydtls/dtls.o \
-#         ../../../security/oc_acl.o \
-#         ../../../security/oc_cred.o \
-#         ../../../security/oc_doxm.o \
-#         ../../../security/oc_dtls.o \
-#         ../../../security/oc_pstat.o \
-#         ../../../security/oc_store.o \
-#         ../../../security/oc_svr.o \
-         ../$(OCF_ROOT)/port/zephyr/src/storage.o
-
+         ../$(OCF_ROOT)/port/zephyr/src/abort.o

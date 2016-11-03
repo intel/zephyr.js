@@ -22,7 +22,7 @@ server.register(resourceInit).then(function(resource) {
     MyResource = resource;
     server.on('retrieve', function(request, observe) {
         MyProperties.state = (MyProperties.state) ? false : true;
-        print("on('retrieve'): request.target.resourcePath=" + 
+        print("on('retrieve'): request.target.resourcePath=" +
                 request.target.resourcePath + " observe=" + observe);
         var err = null;
         server.respond(request, err, resourceInit).then(function() {

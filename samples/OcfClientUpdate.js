@@ -43,7 +43,7 @@ function onfound(resource) {
                 print("retrieve() returned an error: " + error.name);
             });
         }).catch(function(error) {
-            print("Error updating name='" + error.name + "' message='" + 
+            print("Error updating name='" + error.name + "' message='" +
                     error.message + "' " + "code=" + error.errorCode);
         });
     }, 1000);

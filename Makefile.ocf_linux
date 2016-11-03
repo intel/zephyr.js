@@ -60,7 +60,7 @@ CFLAGS =	-fno-asynchronous-unwind-tables \
 		-Wall \
 		-std=gnu99
 
-OBJS +=		$(SRC:%.c=%.o)	
+OBJS +=		$(SRC:%.c=%.o)
 
 VPATH =		$(OCF_ROOT)/messaging/coap/:\
 		$(OCF_ROOT)/util/:\
@@ -95,5 +95,3 @@ ocf-lib: setup $(OBJS)
 clean:
 	rm -f $(OBJS)
 	rm -f libocf.a
-
-

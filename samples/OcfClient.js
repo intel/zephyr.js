@@ -60,7 +60,7 @@ function found(resource) {
         client.update(resource).then(function(resource) {
             print("update successful");
         }).catch(function(error) {
-            print("Error updating name='" + error.name + "' message='" + 
+            print("Error updating name='" + error.name + "' message='" +
                     error.message + "' " + "code=" + error.errorCode);
         });
     }, 1000);
