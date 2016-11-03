@@ -215,16 +215,16 @@ The `init` object should contain:
 
 Client Requirements
 -------------------
-You can use any device that have BLE support to connect to the Arduino 101 when running
- any of the BLE app or demos, we've succesfully tested the following setup:
+You can use any device that has BLE support to connect to the Arduino 101 when running
+ any of the BLE apps or demos. We've successfully tested the following setup:
 
-* Update the bluetooth firmware, follow instructions [here](https://wiki.zephyrproject.org/view/Arduino_101#Bluetooth_firmware_for_the_Arduino_101)
+* Update the Bluetooth firmware, follow instructions [here](https://wiki.zephyrproject.org/view/Arduino_101#Bluetooth_firmware_for_the_Arduino_101)
 * Any Android device running Android 6.0 Marshmallow or higher (We use Nexus 5/5X, iOS devices not tested)
-* Increase the X86 parition to 256K described [here](https://github.com/01org/zephyr.js#getting-more-space-on-your-arduino-101)
+* Increase the X86 partition to 256K as described [here](https://github.com/01org/zephyr.js#getting-more-space-on-your-arduino-101)
 
-For the WebBluetooth Demo which support Physical Web, you'll need:
-* Chromium version 0.50 or higher
-* Make sure Bluetooth on and Location Services enabled
+For the WebBluetooth Demo which supports the Physical Web, you'll need:
+* Chromium version 50.0 or higher
+* Make sure Bluetooth on and Location Services is on
 * Go to chrome://flags and enable the #enable-web-bluetooth flag
 
 Sample Apps
