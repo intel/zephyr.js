@@ -22,8 +22,9 @@ sensor.onstatechange = function(event) {
     console.log("state: " + event);
 };
 
-sensor.onerrorchange = function(error) {
-    console.log("error: " + error);
+sensor.onerror = function(event) {
+    console.log("error: " + event.error.name +
+                " - " + event.error.message);
 };
 
 sensor.start();

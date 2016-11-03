@@ -224,18 +224,28 @@ static void zjs_sensor_update_reading(jerry_value_t obj,
 }
 
 static void zjs_sensor_trigger_error(jerry_value_t obj,
-                                     const char *error_type)
+                                     const char *error_name,
+                                     const char *error_message)
 {
     zjs_sensor_set_state(obj, SENSOR_STATE_ERRORED);
     jerry_value_t func = zjs_get_property(obj, "onerror");
     if (jerry_value_is_function(func)) {
         // if onerror exists, call it
-        jerry_value_t event = jerry_create_string(error_type);
+        jerry_value_t event = jerry_create_object();
+        jerry_value_t error_obj = jerry_create_object();
+        jerry_value_t name_val = jerry_create_string(error_name);
+        jerry_value_t message_val = jerry_create_string(error_message);
+        zjs_set_property(error_obj, "name", name_val);
+        zjs_set_property(error_obj, "message", message_val);
+        zjs_set_property(event, "error", error_obj);
         jerry_value_t rval = jerry_call_function(func, obj, &event, 1);
         if (jerry_value_has_error_flag(rval)) {
             PRINT("zjs_sensor_trigger_error: error calling onerrorhange\n");
         }
         jerry_release_value(rval);
+        jerry_release_value(name_val);
+        jerry_release_value(message_val);
+        jerry_release_value(error_obj);
         jerry_release_value(event);
     }
     jerry_release_value(func);
@@ -248,9 +258,12 @@ static void zjs_sensor_onchange_c_callback(void *h)
         PRINT("zjs_sensor_onchange_c_callback: handle not found\n");
         return;
     }
-    zjs_sensor_update_reading(handle->sensor_obj,
-                              handle->channel,
-                              handle->reading);
+
+    if (zjs_sensor_get_state(handle->sensor_obj) == SENSOR_STATE_ACTIVATED) {
+        zjs_sensor_update_reading(handle->sensor_obj,
+                                  handle->channel,
+                                  handle->reading);
+    }
 }
 
 static void zjs_sensor_signal_callbacks(sensor_handle_t *handle,
@@ -327,8 +340,10 @@ static jerry_value_t zjs_sensor_start(const jerry_value_t function_obj,
     send.data.sensor.channel = handle->channel;
     int error = zjs_sensor_call_remote_function(&send);
     if (error != ERROR_IPM_NONE) {
-        if (error == ERROR_IPM_OPERATION_DENIED) {
-            zjs_sensor_trigger_error(this, "NotAllowedError");
+        if (error == ERROR_IPM_OPERATION_NOT_ALLOWED) {
+            zjs_sensor_trigger_error(this, "NotAllowedError",
+                                     "permission denied");
+            return ZJS_UNDEFINED;
         }
         else {
             // throw exception for all other errors

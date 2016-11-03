@@ -38,7 +38,7 @@ enum {
 #define ERROR_IPM_NOT_SUPPORTED                            0x0001
 #define ERROR_IPM_INVALID_PARAMETER                        0x0002
 #define ERROR_IPM_OPERATION_FAILED                         0x0003
-#define ERROR_IPM_OPERATION_DENIED                         0x0004
+#define ERROR_IPM_OPERATION_NOT_ALLOWED                    0x0004
 
 // Message Types
 
