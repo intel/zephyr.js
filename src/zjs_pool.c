@@ -76,14 +76,14 @@ void zjs_print_pools(void)
 {
     int i;
     uint32_t total_waste = 0;
-    PRINT("\nDumping pools:\n");
+    ZJS_PRINT("\nDumping pools:\n");
     for (i = 0; i < (sizeof(lookup) / sizeof(lookup[0])); ++i) {
         int j;
         uint32_t cur_use = 0;
         uint32_t cur_waste = 0;
         uint32_t min_size = lookup[i].size;
         uint32_t max_size = lookup[i].size;
-        PRINT("Pool size: %lu\n", lookup[i].size);
+        ZJS_PRINT("Pool size: %lu\n", lookup[i].size);
         for (j = 0; j < MAX_CONCURRENT_POINTERS; ++j) {
             if (pointer_map[j].ptr && pointer_map[j].pool_size == lookup[i].size) {
                 cur_use++;
@@ -96,16 +96,16 @@ void zjs_print_pools(void)
                 }
             }
         }
-        PRINT("\tBlocks Used: %lu, Memory Used: %lu, Memory Waste: %lu\n", cur_use, cur_use * lookup[i].size, cur_waste);
-        PRINT("\tMin Size: %lu, Max Size: %lu\n", min_size, max_size);
+        ZJS_PRINT("\tBlocks Used: %lu, Memory Used: %lu, Memory Waste: %lu\n", cur_use, cur_use * lookup[i].size, cur_waste);
+        ZJS_PRINT("\tMin Size: %lu, Max Size: %lu\n", min_size, max_size);
         total_waste += cur_waste;
     }
     if (max_waste < total_waste) {
         max_waste = total_waste;
     }
-    PRINT("Memory Used: %lu, High Water: %lu\n", mem_in_use, mem_high_water);
-    PRINT("Memory Waste: %lu, Max Waste: %lu\n", total_waste, max_waste);
-    PRINT("Pointers Used: %lu, Max Used: %lu\n", pointers_used, max_pointers_used);
+    ZJS_PRINT("Memory Used: %lu, High Water: %lu\n", mem_in_use, mem_high_water);
+    ZJS_PRINT("Memory Waste: %lu, Max Waste: %lu\n", total_waste, max_waste);
+    ZJS_PRINT("Pointers Used: %lu, Max Used: %lu\n", pointers_used, max_pointers_used);
 }
 #else
 #define zjs_print_pools(void) do {} while (0);
@@ -209,7 +209,7 @@ void* pool_malloc(uint32_t size)
 #endif
 #ifdef ZJS_TRACE_MALLOC
 #ifdef DUMP_MEM_STATS
-    PRINT("\tpool size=%lu\n", pool_size);
+    ZJS_PRINT("\tpool size=%lu\n", pool_size);
 #endif
 #endif
 
@@ -234,7 +234,7 @@ void pool_free(void* ptr)
 #endif
 #ifdef ZJS_TRACE_MALLOC
 #ifdef DUMP_MEM_STATS
-            PRINT("\tpointer size=%lu bytes\n", pointer_map[i].req_size);
+            ZJS_PRINT("\tpointer size=%lu bytes\n", pointer_map[i].req_size);
 #endif
 #endif
             task_mem_pool_free(&block);
@@ -273,6 +273,6 @@ void zjs_pool_cleanup(void)
     max_waste = 0;
 #endif
 #ifdef ZJS_TRACE_MALLOC
-    PRINT("zjs_pool_cleanup(): all pools freed\n");
+    ZJS_PRINT("zjs_pool_cleanup(): all pools freed\n");
 #endif
 }

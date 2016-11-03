@@ -119,18 +119,10 @@ static jerry_value_t request_to_jerry_value(oc_request_t *request)
             /*
              * TODO: Implement encoding for complex types
              */
-#if 0
         case STRING_ARRAY:
-            PRINT("[ ");
-            for (i = 0; i < oc_string_array_get_allocated_size(rep->value_array); i++) {
-                PRINT("%s ", oc_string_array_get_item(rep->value_array, i));
-            }
-            PRINT("]\n");
-            break;
         case OBJECT:
-            PRINT("{ Object }\n");
+            ZJS_PRINT("{ Object }\n");
             break;
-#endif
         default:
             break;
         }
@@ -200,33 +192,34 @@ static jerry_value_t create_request(struct server_resource* resource, oc_method_
 
     return object;
 }
+
 #if 0
 static void print_props_data(oc_request_t *data)
 {
     int i;
     oc_rep_t *rep = data->request_payload;
     while (rep != NULL) {
-        PRINT("Type: %u, Key: %s, Value: ", rep->type, oc_string(rep->name));
+        ZJS_PRINT("Type: %u, Key: %s, Value: ", rep->type, oc_string(rep->name));
         switch (rep->type) {
         case BOOL:
-            PRINT("%d\n", rep->value_boolean);
+            ZJS_PRINT("%d\n", rep->value_boolean);
             break;
         case INT:
-            PRINT("%ld\n", (int32_t)rep->value_int);
+            ZJS_PRINT("%ld\n", (int32_t)rep->value_int);
             break;
         case BYTE_STRING:
         case STRING:
-            PRINT("%s\n", oc_string(rep->value_string));
+            ZJS_PRINT("%s\n", oc_string(rep->value_string));
             break;
         case STRING_ARRAY:
-            PRINT("[ ");
+            ZJS_PRINT("[ ");
             for (i = 0; i < oc_string_array_get_allocated_size(rep->value_array); i++) {
-                PRINT("%s ", oc_string_array_get_item(rep->value_array, i));
+                ZJS_PRINT("%s ", oc_string_array_get_item(rep->value_array, i));
             }
-            PRINT("]\n");
+            ZJS_PRINT("]\n");
             break;
         case OBJECT:
-            PRINT("{ Object }\n");
+            ZJS_PRINT("{ Object }\n");
             break;
         default:
             break;
@@ -282,7 +275,7 @@ static jerry_value_t ocf_respond(const jerry_value_t function_val,
 
 static void post_get(void* handler)
 {
-    PRINT("POST GET\n");
+    // ZJS_PRINT("POST GET\n");
 }
 
 static void ocf_get_handler(oc_request_t *request, oc_interface_mask_t interface, void* user_data)
@@ -322,7 +315,7 @@ static void ocf_get_handler(oc_request_t *request, oc_interface_mask_t interface
 
 static void post_put(void* handler)
 {
-    PRINT("POST PUT\n");
+    // ZJS_PRINT("POST PUT\n");
 }
 
 static void ocf_put_handler(oc_request_t *request, oc_interface_mask_t interface, void* user_data)
@@ -356,7 +349,7 @@ static void ocf_put_handler(oc_request_t *request, oc_interface_mask_t interface
 
 static void post_delete(void* handler)
 {
-    PRINT("POST DELETE\n");
+    // ZJS_PRINT("POST DELETE\n");
 }
 
 static void ocf_delete_handler(oc_request_t *request, oc_interface_mask_t interface, void* user_data)
@@ -375,7 +368,7 @@ static void ocf_delete_handler(oc_request_t *request, oc_interface_mask_t interf
 
 static void ocf_post_handler(oc_request_t *request, oc_interface_mask_t interface, void* user_data)
 {
-    PRINT("ocf_post_handler(): POST\n");
+    // ZJS_PRINT("ocf_post_handler(): POST\n");
 }
 
 static jerry_value_t ocf_notify(const jerry_value_t function_val,
@@ -500,7 +493,7 @@ static jerry_value_t ocf_register(const jerry_value_t function_val,
  */
 void zjs_ocf_register_resources(void)
 {
-    PRINT("zjs_ocf_register_resources()\n");
+    // ZJS_PRINT("zjs_ocf_register_resources()\n");
 }
 
 jerry_value_t zjs_ocf_server_init()

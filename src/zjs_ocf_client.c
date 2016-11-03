@@ -178,27 +178,27 @@ static void print_props_data(oc_client_response_t *data)
     int i;
     oc_rep_t *rep = data->payload;
     while (rep != NULL) {
-        PRINT("Type: %u, Key: %s, Value: ", rep->type, oc_string(rep->name));
+        ZJS_PRINT("Type: %u, Key: %s, Value: ", rep->type, oc_string(rep->name));
         switch (rep->type) {
         case BOOL:
-            PRINT("%d\n", rep->value_boolean);
+            ZJS_PRINT("%d\n", rep->value_boolean);
             break;
         case INT:
-            PRINT("%ld\n", (uint32_t)rep->value_int);
+            ZJS_PRINT("%ld\n", (uint32_t)rep->value_int);
             break;
         case BYTE_STRING:
         case STRING:
-            PRINT("%s\n", oc_string(rep->value_string));
+            ZJS_PRINT("%s\n", oc_string(rep->value_string));
             break;
         case STRING_ARRAY:
-            PRINT("[ ");
+            ZJS_PRINT("[ ");
             for (i = 0; i < oc_string_array_get_allocated_size(rep->value_array); i++) {
-                PRINT("%s ", oc_string_array_get_item(rep->value_array, i));
+                ZJS_PRINT("%s ", oc_string_array_get_item(rep->value_array, i));
             }
-            PRINT("]\n");
+            ZJS_PRINT("]\n");
             break;
         case OBJECT:
-            PRINT("{ Object }\n");
+            ZJS_PRINT("{ Object }\n");
             break;
         default:
             break;

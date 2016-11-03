@@ -27,7 +27,7 @@ static bool zjs_glcd_ipm_send_sync(zjs_ipm_message_t* send,
     send->error_code = ERROR_IPM_NONE;
 
     if (zjs_ipm_send(MSG_ID_GLCD, send) != 0) {
-        PRINT("zjs_glcd_ipm_send_sync: failed to send message\n");
+        ERR_PRINT("zjs_glcd_ipm_send_sync: failed to send message\n");
         return false;
     }
 
@@ -35,7 +35,7 @@ static bool zjs_glcd_ipm_send_sync(zjs_ipm_message_t* send,
     // time out, if the ARC response comes back after it
     // times out, it could pollute the result on the stack
     if (!nano_sem_take(&glcd_sem, ZJS_GLCD_TIMEOUT_TICKS)) {
-        PRINT("zjs_glcd_ipm_send_sync: FATAL ERROR, ipm timed out\n");
+        ERR_PRINT("zjs_glcd_ipm_send_sync: FATAL ERROR, ipm timed out\n");
         return false;
     }
 
@@ -56,7 +56,7 @@ static jerry_value_t zjs_glcd_call_remote_function(zjs_ipm_message_t* send)
     }
 
     if (reply.error_code != ERROR_IPM_NONE) {
-        PRINT("error code: %lu\n", reply.error_code);
+        ERR_PRINT("error code: %lu\n", reply.error_code);
         return zjs_error("zjs_glcd_call_remote_function: error received");
     }
 
@@ -82,7 +82,7 @@ static void ipm_msg_receive_callback(void *context, uint32_t id, volatile void *
         nano_isr_sem_give(&glcd_sem);
     } else {
         // asynchronous ipm, should not get here
-        PRINT("ipm_msg_receive_callback: async message received\n");
+        ERR_PRINT("ipm_msg_receive_callback: async message received\n");
     }
 }
 

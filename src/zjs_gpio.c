@@ -122,7 +122,7 @@ static jerry_value_t zjs_gpio_pin_read(const jerry_value_t function_obj,
     uint32_t value;
     int rval = gpio_pin_read(zjs_gpio_dev[devnum], newpin, &value);
     if (rval) {
-        PRINT("PIN: #%d\n", newpin);
+        ERR_PRINT("PIN: #%d\n", newpin);
         return zjs_error("zjs_gpio_pin_read: reading from GPIO");
     }
 
@@ -159,7 +159,7 @@ static jerry_value_t zjs_gpio_pin_write(const jerry_value_t function_obj,
         value = 1;
     int rval = gpio_pin_write(zjs_gpio_dev[devnum], newpin, value);
     if (rval) {
-        PRINT("GPIO: #%d!n", newpin);
+        ERR_PRINT("GPIO: #%d!n", newpin);
         return zjs_error("zjs_gpio_pin_write: error writing to GPIO");
     }
 
@@ -276,7 +276,7 @@ static jerry_value_t zjs_gpio_open(const jerry_value_t function_obj,
             both = false;
         }
         else if (!strcmp(buffer, ZJS_EDGE_NONE)) {
-            PRINT("warning: invalid edge value provided\n");
+            DBG_PRINT("warning: invalid edge value provided\n");
         }
     }
 
@@ -300,7 +300,7 @@ static jerry_value_t zjs_gpio_open(const jerry_value_t function_obj,
 
     int rval = gpio_pin_configure(zjs_gpio_dev[devnum], newpin, flags);
     if (rval) {
-        PRINT("GPIO: #%d (RVAL: %d)\n", newpin, rval);
+        ERR_PRINT("GPIO: #%d (RVAL: %d)\n", newpin, rval);
         return zjs_error("zjs_gpio_open: error opening GPIO pin");
     }
 
@@ -395,7 +395,7 @@ jerry_value_t zjs_gpio_init()
         snprintf(devname, 8, "GPIO_%d", i);
         zjs_gpio_dev[i] = device_get_binding(devname);
         if (!zjs_gpio_dev[i]) {
-            PRINT("DEVICE: %s\n", devname);
+            ERR_PRINT("DEVICE: %s\n", devname);
             return zjs_error("zjs_gpio_init: cannot find GPIO device");
         }
     }
