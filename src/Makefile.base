@@ -25,9 +25,7 @@ ifeq ($(CB_STATS), on)
 ccflags-y += -DZJS_PRINT_CALLBACK_STATS
 endif
 
-ifneq ($(BOARD), arduino_101)
 include $(ZJS_BASE)/Makefile.ocf_zephyr
-endif
 
 obj-y += main.o \
          zjs_ble.o \

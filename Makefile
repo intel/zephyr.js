@@ -101,8 +101,8 @@ update:
 		exit 1; \
 	fi
 	@cd $(OCF_ROOT); git submodule update --init;
-	@cd $(OCF_ROOT)/deps/tinycbor/; git stash; git apply ../../../../patches/tinycbor.patch
-	@cd $(OCF_ROOT)/; git stash; git apply ../../patches/ocf.patch
+	@cd $(OCF_ROOT); git stash; git apply ../../patches/ocf.patch
+	@cd $(OCF_ROOT)/deps/tinycbor; git checkout 0a78b71322;
 
 # Sets up prj/last_build files
 .PHONY: setup

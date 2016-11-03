@@ -41,7 +41,7 @@ JERRY_LIB_PATH = 	-L$(JERRY_BASE)/build/lib/ -L.
 
 LINUX_FLAGS = -std=gnu99 -Wpointer-sign
 
-LINUX_LIBS = -locf -lm -pthread
+LINUX_LIBS = -locf -pthread $(JERRY_LIBS)
 
 LINUX_DEFINES = -DZJS_LINUX_BUILD -DOC_CLIENT -DOC_SERVER -DBUILD_MODULE_OCF -DBUILD_MODULE_EVENTS -DBUILD_MODULE_PERFORMANCE
 
@@ -62,7 +62,7 @@ endif
 .PHONY: ocf-setup
 ocf-setup:
 	cd $(OCF_ROOT); git submodule update --init;
-	make -f Makefile.ocf ocf-lib DEBUG=$(DEBUG) SECURE=0
+	make -f Makefile.ocf_linux ocf-lib DEBUG=$(DEBUG) SECURE=0
 
 %.o:%.c
 	@echo "Building $@"
@@ -76,4 +76,4 @@ linux: ocf-setup $(CORE_OBJ)
 
 .PHONY: clean
 clean:
-	make -f Makefile.ocf clean
+	make -f Makefile.ocf_linux clean

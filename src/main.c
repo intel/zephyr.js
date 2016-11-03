@@ -28,6 +28,9 @@
 #ifdef BUILD_MODULE_OCF
 #include "zjs_ocf_common.h"
 #endif
+#ifdef BUILD_MODULE_BLE
+#include "zjs_ble.h"
+#endif
 
 #define ZJS_MAX_PRINT_SIZE      512
 

@@ -1,10 +1,9 @@
 OCF_ROOT ?= deps/iotivity-constrained
 
-#ccflags-y += ${PROJECTINCLUDE}
 ccflags-y += -I${ZEPHYR_BASE}/net/ip
-ccflags-y +=-I${ZEPHYR_BASE}/net/ip/contiki
-ccflags-y +=-I${ZEPHYR_BASE}/net/ip/contiki/os/lib
-ccflags-y +=-I${ZEPHYR_BASE}/net/ip/contiki/os
+ccflags-y += -I${ZEPHYR_BASE}/net/ip/contiki
+ccflags-y += -I${ZEPHYR_BASE}/net/ip/contiki/os/lib
+ccflags-y += -I${ZEPHYR_BASE}/net/ip/contiki/os
 
 ccflags-y += -I$(OCF_ROOT)/port/zephyr/src \
              -I$(OCF_ROOT)/include -I$(OCF_ROOT) \
@@ -21,9 +20,6 @@ ccflags-y += -DDTLSV12 \
 ccflags-y += -include $(ZJS_BASE)/$(OCF_ROOT)/port/zephyr/src/config.h
 ccflags-y += -I$(ZJS_BASE)/$(OCF_ROOT)/$(OCF_ROOT)/include
 ccflags-y += -I$(ZJS_BASE)/$(OCF_ROOT)
-
-#obj-y += ../../../apps/server_zephyr.o
-#obj-y += ../../../apps/sensor_interrupt_server_zephyr.o
 
 obj-y += ../$(OCF_ROOT)/deps/tinycbor/src/cborencoder_close_container_checked.o \
          ../$(OCF_ROOT)/deps/tinycbor/src/cborencoder.o \

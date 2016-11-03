@@ -25,11 +25,12 @@ index 2ceaf7a..8e6fde5 100644
        case 65:
        case 97:
 diff --git a/deps/tinycbor b/deps/tinycbor
+index 31c7f81..0a78b71 160000
 --- a/deps/tinycbor
 +++ b/deps/tinycbor
 @@ -1 +1 @@
 -Subproject commit 31c7f81d45d115d2007b1c881cbbd3a19618465c
-+Subproject commit 31c7f81d45d115d2007b1c881cbbd3a19618465c-dirty
++Subproject commit 0a78b71322fe2f54b342c1b6ea66ce31da41383e
 diff --git a/util/oc_list.c b/util/oc_list.c
 index 429f411..1eee62f 100644
 --- a/util/oc_list.c
