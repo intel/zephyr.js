@@ -139,5 +139,3 @@ gpio.openAsync({ pin: pins.IO2 }).then(function(pin2) {
 setTimeout(function () {
     console.log("TOTAL: " + passed + " of " + total + " passed");
 }, 1500);
-
-

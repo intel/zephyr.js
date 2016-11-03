@@ -52,4 +52,3 @@ uint8_t zjs_port_timer_test(zjs_port_timer_t* timer, uint32_t ticks)
     }
     return 0;
 }
-

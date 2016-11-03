@@ -337,8 +337,9 @@ sudo apt-get install node-uglify
 
 ## FRDM-K64F Platform
 
-See the [Zephyr Project Wiki] (https://wiki.zephyrproject.org/view/NXP_FRDM-K64F) for general information 
-about running Zephyr OS on the FRDM-K64F.
+See the
+[Zephyr Project Wiki] (https://wiki.zephyrproject.org/view/NXP_FRDM-K64F)
+for general information about running Zephyr OS on the FRDM-K64F.
 
 The instructions below assume Ubuntu 14.04 on the host PC.
 
