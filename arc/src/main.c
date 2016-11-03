@@ -472,7 +472,7 @@ static inline int sensor_value_snprintf(char *buf, size_t len,
 #endif
 
 static void send_sensor_data(enum sensor_channel channel,
-                             double array[])
+                             union sensor_reading reading)
 {
     struct zjs_ipm_message msg;
     msg.id = MSG_ID_SENSOR;
@@ -481,7 +481,7 @@ static void send_sensor_data(enum sensor_channel channel,
     msg.user_data = NULL;
     msg.error_code = ERROR_IPM_NONE;
     msg.data.sensor.channel = channel;
-    memcpy(msg.data.sensor.value, array, sizeof(double) * 3);
+    memcpy(&msg.data.sensor.reading, &reading, sizeof(union sensor_reading));
     zjs_ipm_send(MSG_ID_SENSOR, &msg);
 }
 
@@ -554,8 +554,11 @@ static void process_accel_data(struct device *dev)
     if (ABS(dval[0] - accel_last_value[0]) > threshold ||
         ABS(dval[1] - accel_last_value[1]) > threshold ||
         ABS(dval[2] - accel_last_value[2]) > threshold) {
-        memcpy(accel_last_value, dval, sizeof(double) * 3);
-        send_sensor_data(SENSOR_CHAN_ACCEL_ANY, dval);
+        union sensor_reading reading;
+        reading.x = dval[0];
+        reading.y = dval[1];
+        reading.z = dval[2];
+        send_sensor_data(SENSOR_CHAN_ACCEL_ANY, reading);
     }
 
 #ifdef DEBUG_BUILD
@@ -582,11 +585,14 @@ static void process_gyro_data(struct device *dev)
     dval[1] = convert_sensor_value(&val[1]);
     dval[2] = convert_sensor_value(&val[2]);
 
-    if (ABS(dval[0] - accel_last_value[0]) > 0 ||
-        ABS(dval[1] - accel_last_value[1]) > 0 ||
-        ABS(dval[2] - accel_last_value[2]) > 0) {
-        memcpy(gyro_last_value, dval, sizeof(double) * 3);
-        send_sensor_data(SENSOR_CHAN_GYRO_ANY, dval);
+    if (ABS(dval[0] - gyro_last_value[0]) > 0 ||
+        ABS(dval[1] - gyro_last_value[1]) > 0 ||
+        ABS(dval[2] - gyro_last_value[2]) > 0) {
+        union sensor_reading reading;
+        reading.x = dval[0];
+        reading.y = dval[1];
+        reading.z = dval[2];
+        send_sensor_data(SENSOR_CHAN_GYRO_ANY, reading);
     }
 
 #ifdef DEBUG_BUILD

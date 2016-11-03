@@ -29,7 +29,7 @@ typedef struct sensor_handle {
     int32_t id;
     enum sensor_channel channel;
     enum sensor_state state;
-    double sensor_value[3];
+    union sensor_reading reading;
     jerry_value_t sensor_obj;
     struct sensor_handle *next;
 } sensor_handle_t;
@@ -190,21 +190,21 @@ static void zjs_sensor_set_state(jerry_value_t obj, enum sensor_state state)
 
 static void zjs_sensor_update_reading(jerry_value_t obj,
                                       enum sensor_channel channel,
-                                      double value[])
+                                      union sensor_reading reading)
 {
     // update reading property and trigger onchange event
-    double x = value[0];
-    double y = value[1];
-    double z = value[2];
-    jerry_value_t x_val = jerry_create_number(x);
-    jerry_value_t y_val = jerry_create_number(y);
-    jerry_value_t z_val = jerry_create_number(z);
     jerry_value_t reading_obj = jerry_create_object();
     if (channel == SENSOR_CHAN_ACCEL_ANY ||
         channel == SENSOR_CHAN_GYRO_ANY) {
+        jerry_value_t x_val = jerry_create_number(reading.x);
+        jerry_value_t y_val = jerry_create_number(reading.y);
+        jerry_value_t z_val = jerry_create_number(reading.z);
         zjs_set_property(reading_obj, "x", x_val);
         zjs_set_property(reading_obj, "y", y_val);
         zjs_set_property(reading_obj, "z", z_val);
+        jerry_release_value(x_val);
+        jerry_release_value(y_val);
+        jerry_release_value(z_val);
     }
     zjs_set_property(obj, "reading", reading_obj);
     jerry_value_t func = zjs_get_property(obj, "onchange");
@@ -220,9 +220,6 @@ static void zjs_sensor_update_reading(jerry_value_t obj,
         jerry_release_value(event);
     }
     jerry_release_value(func);
-    jerry_release_value(x_val);
-    jerry_release_value(y_val);
-    jerry_release_value(z_val);
     jerry_release_value(reading_obj);
 }
 
@@ -253,17 +250,18 @@ static void zjs_sensor_onchange_c_callback(void *h)
     }
     zjs_sensor_update_reading(handle->sensor_obj,
                               handle->channel,
-                              handle->sensor_value);
+                              handle->reading);
 }
 
-static void zjs_sensor_signal_callbacks(sensor_handle_t *handle, double value[])
+static void zjs_sensor_signal_callbacks(sensor_handle_t *handle,
+                                        union sensor_reading reading)
 {
     if (!handle)
         return;
 
     // iterate all sensor instances to update readings and trigger event
     for (sensor_handle_t *h = handle; h; h = h->next) {
-        memcpy(h->sensor_value, value, sizeof(double) * 3);
+        memcpy(&h->reading, &reading, sizeof(reading));
         zjs_signal_callback(h->id);
     }
 }
@@ -285,10 +283,10 @@ static void ipm_msg_receive_callback(void *context, uint32_t id, volatile void *
     } else if (msg->type == TYPE_SENSOR_EVENT_READING_CHANGE) {
         // value change event, copy the data, and signal event callback
         if (msg->data.sensor.channel == SENSOR_CHAN_ACCEL_ANY) {
-            zjs_sensor_signal_callbacks(accel_handle, msg->data.sensor.value);
+            zjs_sensor_signal_callbacks(accel_handle, msg->data.sensor.reading);
         }
         else if (msg->data.sensor.channel == SENSOR_CHAN_GYRO_ANY) {
-            zjs_sensor_signal_callbacks(gyro_handle, msg->data.sensor.value);
+            zjs_sensor_signal_callbacks(gyro_handle, msg->data.sensor.reading);
         } else {
             PRINT("ipm_msg_receive_callback: unsupported sensor type\n");
         }
