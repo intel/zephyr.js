@@ -5,32 +5,32 @@
 
 var client = require('ocf').client;
 
-print("Started OCF client");
+console.log("Started OCF client");
 
 client.on('devicefound', function(device) {
-  print("Device found:");
-  print("    uuid: " + device.uuid);
-  print("    url: " + device.url);
-  print("    name: " + device.name);
+  console.log("Device found:");
+  console.log("    uuid: " + device.uuid);
+  console.log("    url: " + device.url);
+  console.log("    name: " + device.name);
 });
 
 client.on('error', function(error) {
   if (error.deviceId)
-    print("Error for device: " + error.deviceId);
+    console.log("Error for device: " + error.deviceId);
 });
 
 function found(resource) {
-    print("Resource found: path=" + resource.resourcePath + " id=" + resource.deviceId);
+    console.log("Resource found: path=" + resource.resourcePath + " id=" + resource.deviceId);
 
     client.getDeviceInfo(resource.deviceId).then(function(info) {
-        print("Got device info for: " + info.uuid);
+        console.log("Got device info for: " + info.uuid);
     }).catch(function(error) {
-        print("Error getting device info: " + error.name);
+        console.log("Error getting device info: " + error.name);
     });
 }
 
 client.findResources({ resourceType:"oic.r.light" }, found).then(function(resource) {
-    print("findResources() was successful, deviceId=" + resource.deviceId);
+    console.log("findResources() was successful, deviceId=" + resource.deviceId);
 }).catch(function(error) {
-    print("findResources() returned an error: " + error.name);
+    console.log("findResources() returned an error: " + error.name);
 });

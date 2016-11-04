@@ -5,31 +5,31 @@
 
 var client = require('ocf').client;
 
-print("Started OCF client");
+console.log("Started OCF client");
 
 client.on('platformfound', function(platform) {
-    print("Platform found:");
-    print("    id: " + platform.id);
-    print("    Manufacturer Name: " + platform.manufacturerName);
+    console.log("Platform found:");
+    console.log("    id: " + platform.id);
+    console.log("    Manufacturer Name: " + platform.manufacturerName);
 });
 
 client.on('error', function(error) {
   if (error.deviceId)
-    print("Error for device: " + error.deviceId);
+    console.log("Error for device: " + error.deviceId);
 });
 
 function onfound(resource) {
-    print("Resource found: path=" + resource.resourcePath + " id=" + resource.deviceId);
+    console.log("Resource found: path=" + resource.resourcePath + " id=" + resource.deviceId);
 
     client.getPlatformInfo(resource.deviceId).then(function(info) {
-        print("Got platform info for: " + info.id);
+        console.log("Got platform info for: " + info.id);
     }).catch(function(error) {
-        print("Error getting platform info: " + error.name);
+        console.log("Error getting platform info: " + error.name);
     });
 }
 
 client.findResources({ resourceType:"oic.r.light" }, onfound).then(function(resource) {
-    print("findResources() was successful, deviceId=" + resource.deviceId);
+    console.log("findResources() was successful, deviceId=" + resource.deviceId);
 }).catch(function(error) {
-    print("findResources() returned an error: " + error.name);
+    console.log("findResources() returned an error: " + error.name);
 });

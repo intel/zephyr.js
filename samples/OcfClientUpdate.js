@@ -6,21 +6,21 @@
 
 var client = require('ocf').client;
 
-print("Started OCF client");
+console.log("Started OCF client");
 
 client.on('error', function(error) {
   if (error.deviceId)
-    print("Error for device: " + error.deviceId);
+    console.log("Error for device: " + error.deviceId);
 });
 
 function onupdate(resource) {
-    print("Resource updated:");
-    print("    deviceId: " + resource.deviceId);
-    print("    resourcePath: " + resource.resourcePath);
+    console.log("Resource updated:");
+    console.log("    deviceId: " + resource.deviceId);
+    console.log("    resourcePath: " + resource.resourcePath);
     if (resource.properties != undefined) {
-        print("Resource property 'state' is " + resource.properties.state);
+        console.log("Resource property 'state' is " + resource.properties.state);
     } else {
-        print("resource.properties not found");
+        console.log("resource.properties not found");
     }
 }
 
@@ -36,22 +36,21 @@ function onfound(resource) {
         lightOn = lightOn ? false : true;
         resource.state = lightOn;
         client.update(resource).then(function(resource) {
-            print("update successful");
+            console.log("update successful");
             client.retrieve(resource.deviceId, { observable: false }).then(function(res) {
-                print("retrieve() was successful, deviceId=" + res.deviceId);
+                console.log("retrieve() was successful, deviceId=" + res.deviceId);
             }).catch(function(error) {
-                print("retrieve() returned an error: " + error.name);
+                console.log("retrieve() returned an error: " + error.name);
             });
         }).catch(function(error) {
-            print("Error updating name='" + error.name + "' message='" +
+            console.log("Error updating name='" + error.name + "' message='" +
                     error.message + "' " + "code=" + error.errorCode);
         });
     }, 1000);
 }
 
 client.findResources({ resourceType:"oic.r.light" }, onfound).then(function(resource) {
-    print("findResources() was successful, deviceId=" + resource.deviceId);
+    console.log("findResources() was successful, deviceId=" + resource.deviceId);
 }).catch(function(error) {
-    print("findResources() returned an error: " + error.name);
+    console.log("findResources() returned an error: " + error.name);
 });
-

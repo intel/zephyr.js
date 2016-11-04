@@ -43,7 +43,7 @@ LINUX_FLAGS = -std=gnu99 -Wpointer-sign
 
 LINUX_LIBS = -locf -pthread $(JERRY_LIBS)
 
-LINUX_DEFINES = -DZJS_LINUX_BUILD -DOC_CLIENT -DOC_SERVER -DBUILD_MODULE_OCF -DBUILD_MODULE_EVENTS -DBUILD_MODULE_PERFORMANCE
+LINUX_DEFINES = -DZJS_LINUX_BUILD -DOC_CLIENT -DOC_SERVER -DBUILD_MODULE_OCF -DBUILD_MODULE_EVENTS -DBUILD_MODULE_PERFORMANCE -DBUILD_MODULE_CONSOLE
 
 CFLAGS=-fno-asynchronous-unwind-tables -fno-omit-frame-pointer -Wall -Wno-format-zero-length -Wno-main -ffreestanding -Os -fno-stack-protector -ffunction-sections -fdata-sections -Wno-unused-but-set-variable -fno-reorder-functions -fno-defer-pop -Wno-pointer-sign -fno-strict-overflow -Werror=implicit-int -Wall -std=gnu99 #-Wl,-Map,client.map
 
@@ -72,7 +72,7 @@ ocf-setup:
 linux: ocf-setup $(CORE_OBJ)
 	@echo "Building for Linux $(CORE_OBJ)"
 	cd deps/jerryscript; python ./tools/build.py;
-	gcc -static src/main.c $(CORE_OBJ) $(LINUX_INCLUDES) $(CFLAGS) $(LINUX_DEFINES) $(JERRY_LIB_PATH) $(JERRY_LIBS) $(LINUX_LIBS) $(LINUX_LIB_PATH) -o jslinux
+	gcc -static src/main.c $(CORE_OBJ) $(LINUX_INCLUDES) $(CFLAGS) $(LINUX_DEFINES) $(JERRY_LIB_PATH) $(LINUX_LIBS) $(LINUX_LIB_PATH) -o jslinux
 
 .PHONY: clean
 clean:
