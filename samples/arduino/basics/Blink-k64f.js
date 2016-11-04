@@ -16,7 +16,7 @@ var pins = require("k64f_pins");
 // LEDG is the green LED within the RGB LED on the FRDM-K64F
 // 'out' direction is default, could be left out
 var pin = gpio.open({
-    pin: pins.D5,
+    pin: pins.LEDG,
     direction: 'out'
 });
 
