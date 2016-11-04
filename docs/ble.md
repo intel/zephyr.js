@@ -4,6 +4,7 @@ ZJS API for Bluetooth Low Energy (BLE)
 * [Introduction](#introduction)
 * [Web IDL](#web-idl)
 * [API Documentation](#api-documentation)
+* [Client Requirements](#requirements)
 * [Sample Apps](#sample-apps)
 
 Introduction
@@ -38,6 +39,7 @@ interface BLE {
     void startAdvertising(string name, string[] uuids, string url);
     void stopAdvertising();
     void setServices();
+    void updateRssi();
     PrimaryService PrimaryService(PrimaryServiceInit init);
     Characteristic Characteristic(CharacteristicInit init);
     Descriptor Descriptor(DescriptorInit init);
@@ -103,16 +105,21 @@ Disconnect the remote client.
 
 The `eventType` can be one of the following:
 * 'accept' - a BLE client has connected
+  * callback should expect an "client address"
+  * *NOTE: currently the address is dummy string "AB:CD:DF:AB:CD:EF"*
+* 'advertisingStart' - BLE services have begun to be advertised
+  * callback should expect an error integer (0 for success)
+  * *NOTE: this may change*
+* 'disconnect' - a BLE client has disconnected
+  * callback should expect an "client address"
+  * *NOTE: currently the address is dummy string "AB:CD:DF:AB:CD:EF"*
+* 'rssiUpdate' - most recent RSSI (Received signal strength indication) value
+  * callback should expect an integer value measured in dBm
+  * *NOTE: currently the value is dummy value of "-50"*
+* 'stateChange' - state of BLE stack has changed
   * callback should expect a string state:
     * 'poweredOn' - the BLE stack is now ready to be used
     * no others supported at this time
-* 'advertisingStart' - BLE services have begun to be advertised
-  * callback should currently expect an error integer (0 for success)
-  * *NOTE: this may change*
-* 'disconnect' - a BLE client has disconnected
-  * *NOTE: callback currently receives a 0 but it should be "clientAddress"*
-* 'stateChange' - state of BLE stack has changed
-  * *NOTE: callback currently receives a 0 but it should be "clientAddress"*
 
 ### BLE.startAdvertising
 
@@ -144,8 +151,12 @@ Currently does nothing.
 Pass an array of PrimaryService objects to set up the services that are
 implemented by your app.
 
-*NOTE: Currently this function only looks at the first service, but this will be
-expanded.*
+### BLE.updateRssi()
+
+`void updateRssi();`
+
+Query the RSSI (received signal strength indication) value, it will trigger
+a 'rssiUpdate' event that will contain the relative signal value.
 
 ### BLE.PrimaryService constructor
 
@@ -202,7 +213,23 @@ The `init` object should contain:
 * `value` field with a string supplying the defined information
   * *NOTE: Values can also be Buffer objects, but that's not currently supported.*
 
+Client Requirements
+-------------------
+You can use any device that has BLE support to connect to the Arduino 101 when running
+ any of the BLE apps or demos. We've successfully tested the following setup:
+
+* Update the Bluetooth firmware, follow instructions [here](https://wiki.zephyrproject.org/view/Arduino_101#Bluetooth_firmware_for_the_Arduino_101)
+* Any Android device running Android 6.0 Marshmallow or higher (We use Nexus 5/5X, iOS devices not tested)
+* Increase the X86 partition to 256K as described [here](https://github.com/01org/zephyr.js#getting-more-space-on-your-arduino-101)
+
+For the WebBluetooth Demo which supports the Physical Web, you'll need:
+* Chromium version 50.0 or higher
+* Make sure Bluetooth is on and Location Services is enabled
+* Go to chrome://flags and enable the #enable-web-bluetooth flag
+
 Sample Apps
 -----------
-* [BLE sample](../samples/BLE.js)
+* [BLE with multiple services](../samples/BLE.js)
 * [WebBluetooth Demo](../samples/WebBluetoothDemo.js)
+* [WebBluetooth Demo with Grove LCD](../samples/WebBluetoothGroveLcdDemo.js)
+* [Heartrate Demo with Grove LCD](../samples/HeartRateDemo.js)
