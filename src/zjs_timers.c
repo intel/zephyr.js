@@ -93,10 +93,9 @@ static bool delete_timer(int32_t id)
     for (zjs_timer_t **ptm = &zjs_timers; *ptm; ptm = &(*ptm)->next) {
         zjs_timer_t *tm = *ptm;
         if (id == tm->callback_id) {
-            int i;
             zjs_port_timer_stop(&tm->timer);
             *ptm = tm->next;
-            for (i = 0; i < tm->argc; ++i) {
+            for (int i = 0; i < tm->argc; ++i) {
                 jerry_release_value(tm->argv[i]);
             }
             zjs_remove_callback(tm->callback_id);
@@ -110,12 +109,11 @@ static bool delete_timer(int32_t id)
 
 void zjs_timers_free_timers()
 {
-    for (zjs_timer_t **ptm = &zjs_timers; *ptm; ptm = &(*ptm)->next) {
-        zjs_timer_t *tm = *ptm;
-        int i;
+    while (zjs_timers) {
+        zjs_timer_t *tm = zjs_timers;
         zjs_port_timer_stop(&tm->timer);
-        *ptm = tm->next;
-        for (i = 0; i < tm->argc; ++i) {
+        zjs_timers = tm->next;
+        for (int i = 0; i < tm->argc; ++i) {
             jerry_release_value(tm->argv[i]);
         }
         zjs_remove_callback(tm->callback_id);
@@ -142,7 +140,7 @@ static jerry_value_t add_timer_helper(const jerry_value_t function_obj,
     zjs_timer_t* handle = add_timer(interval, callback, this, repeat, argv, argc - 2);
     if (handle->callback_id == -1)
         return zjs_error("native_set_interval_handler: timer alloc failed");
-    jerry_set_object_native_handle(timer_obj, (uintptr_t)handle, zjs_timer_free_cb);
+    jerry_set_object_native_handle(timer_obj, (uintptr_t)handle, NULL);
 
     return timer_obj;
 }
