@@ -56,7 +56,13 @@ static jerry_value_t do_print(const jerry_value_t function_obj,
             int type = is_int(argv[i]);
             if (type == IS_NUMBER) {
                 double num = jerry_get_number_value(argv[i]);
-                fprintf(out, "%lf ", num);
+#ifdef ZJS_LINUX_BUILD
+                fprintf(out, "%f ", num);
+#else
+                // TODO: printing floats does not currently work on Zephyr
+                int32_t num32 = (int32_t)num;
+                fprintf(out, "[Float ~%ld] ", num32);
+#endif
             } else if (type == IS_UINT) {
                 uint32_t num = (uint32_t)jerry_get_number_value(argv[i]);
                 fprintf(out, "%lu ", num);
