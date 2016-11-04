@@ -11,6 +11,8 @@ I/O
 
 [PWM](./pwm.md)
 
+[I2C](./i2c.md)
+
 Communications
 --------------
 [BLE](./ble.md)
