@@ -107,17 +107,17 @@ static bool delete_timer(int32_t id)
     return false;
 }
 
-void zjs_timers_free_timers()
+void zjs_timers_cleanup()
 {
     while (zjs_timers) {
-        zjs_timer_t *tm = zjs_timers;
-        zjs_port_timer_stop(&tm->timer);
-        zjs_timers = tm->next;
         for (int i = 0; i < tm->argc; ++i) {
             jerry_release_value(tm->argv[i]);
         }
+        zjs_timer_t *tm = zjs_timers;
+        zjs_port_timer_stop(&tm->timer);
         zjs_remove_callback(tm->callback_id);
         zjs_free(tm->argv);
+        zjs_timers = tm->next;
         zjs_free(tm);
     }
 }
