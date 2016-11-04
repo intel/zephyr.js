@@ -224,7 +224,7 @@ You can use any device that has BLE support to connect to the Arduino 101 when r
 
 For the WebBluetooth Demo which supports the Physical Web, you'll need:
 * Chromium version 50.0 or higher
-* Make sure Bluetooth on and Location Services is on
+* Make sure Bluetooth is on and Location Services is enabled
 * Go to chrome://flags and enable the #enable-web-bluetooth flag
 
 Sample Apps
