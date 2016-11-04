@@ -83,38 +83,7 @@ endif
 # Update dependency repos using deps/repos.txt
 .PHONY: update
 update:
-	@cd deps/; \
-	while read line; do \
-		case \
-			"$$line" in \#*) \
-				continue ;; \
-			*) \
-				name=$$(echo $$line | cut -d ' ' -f 1); \
-				repo=$$(echo $$line | cut -d ' ' -f 2); \
-				commit=$$(echo $$line | cut -d ' ' -f 3); \
-				if [ ! -d $$name ]; then \
-					git clone -q $$repo $$name; \
-				fi; \
-				echo Found dependency: $$name; \
-				cd $$name; \
-				if ! git checkout -q $$commit; then \
-					if ! git pull -q; then \
-						echo "Error attempting git pull on $$name"; \
-					fi; \
-					if ! git checkout -q $$commit; then \
-						echo "Error checking out commit '$$commit' on $$name"; \
-						if [ $(UPDATE) = "force" ]; then \
-							echo "Continuing anyway (UPDATE=force)"; \
-						else \
-							echo "Exiting"; \
-							exit 1; \
-						fi; \
-					fi; \
-				fi; \
-				cd ..; \
-				continue ;; \
-		esac \
-	done < repos.txt
+	@git submodule update --init
 	@if ! env | grep -q ^ZEPHYR_BASE=; then \
 		echo; \
 		echo "ZEPHYR_BASE has not been set! It must be set to build"; \
