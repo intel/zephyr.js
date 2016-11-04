@@ -152,6 +152,7 @@ void javascript_stop()
     /* Cleanup engine */
     jerry_cleanup();
     zjs_ipm_free_callbacks();
+    zjs_timers_cleanup();
 
     restore_zjs_api();
 }
