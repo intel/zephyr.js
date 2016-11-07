@@ -1,5 +1,7 @@
 JERRY_BASE ?= $(ZJS_BASE)/deps/jerryscript
 
+export LDFLAGS += -u _printf_float
+
 ccflags-y += -Wall -Werror
 
 # Select extended ANSI C/POSIX function set in recent Newlib versions
