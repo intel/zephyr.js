@@ -507,8 +507,6 @@ bool zjs_trigger_event_now(jerry_value_t obj,
 
     zjs_call_callback(callback_id, argv, argc * sizeof(jerry_value_t));
 
-    zjs_free(trigger->argv);
-
     return jerry_create_boolean(true);
 }
 
