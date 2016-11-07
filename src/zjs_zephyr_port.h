@@ -19,4 +19,3 @@
 #define zjs_port_ring_buf_put sys_ring_buf_put
 
 #endif /* ZJS_ZEPHYR_PORT_H_ */
-

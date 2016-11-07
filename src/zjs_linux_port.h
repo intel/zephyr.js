@@ -56,4 +56,3 @@ int zjs_port_ring_buf_put(struct zjs_port_ring_buf* buf,
                           uint8_t size32);
 
 #endif /* ZJS_LINUX_PORT_H_ */
-
