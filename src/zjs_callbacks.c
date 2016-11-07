@@ -392,7 +392,7 @@ void print_callbacks(void)
 
 void zjs_call_callback(int32_t id, void* data, uint32_t sz)
 {
-    if (cb_map[id]) {
+    if (id <= cb_size && cb_map[id]) {
         if (cb_map[id]->type == CALLBACK_TYPE_JS) {
             if (cb_map[id]->js->func_list == NULL && jerry_value_is_function(cb_map[id]->js->js_func)) {
                 jerry_value_t ret_val;
@@ -423,6 +423,8 @@ void zjs_call_callback(int32_t id, void* data, uint32_t sz)
         } else if (cb_map[id]->type == CALLBACK_TYPE_C && cb_map[id]->c->function) {
             cb_map[id]->c->function(cb_map[id]->c->handle, data);
         }
+    } else {
+        ERR_PRINT("callback does not exist: %ld\n", id);
     }
 }
 
@@ -446,22 +448,24 @@ void zjs_service_callbacks(void)
                                         NULL,
                                         &size);
             if (ret == -EMSGSIZE || ret == 0) {
+                // item in ring buffer with size > 0, has args
+                // pull from ring buffer
+                int ret1;
+                uint16_t id1;
+                uint8_t value1;
+                uint8_t sz = size;
+                jerry_value_t data[sz];
                 if (ret == -EMSGSIZE) {
-                    // item in ring buffer with size > 0, has args
-                    // pull from ring buffer
-                    uint8_t sz = size;
-                    jerry_value_t data[sz];
-
-                    int ret = zjs_port_ring_buf_get(&ring_buffer,
-                            &id,
-                            &value,
-                            (uint32_t*)data,
-                            &sz);
-                    if (ret != 0) {
-                        ERR_PRINT("error pulling from ring buffer: ret = %u\n", ret);
+                    ret1 = zjs_port_ring_buf_get(&ring_buffer,
+                                                &id1,
+                                                &value1,
+                                                (uint32_t*)data,
+                                                &sz);
+                    if (ret1 != 0) {
+                        ERR_PRINT("error pulling from ring buffer: ret = %u\n", ret1);
                         break;
                     }
-                    zjs_call_callback(id, data, sz);
+                    zjs_call_callback(id1, data, sz);
                 } else if (ret == 0) {
                     // item in ring buffer with size == 0, no args
                     zjs_call_callback(id, NULL, 0);
