@@ -47,11 +47,12 @@ working version. (By this we mean it had the highest pass rate by our QA folks.)
 $ git checkout stable
 ```
 
-If you do nothing and remain on master, in our current process you would get
-the latest code which made it through QA without too much gnashing of teeth. On
-the other hand, if you really want to see the latest changes, currently based on
-a recent Zephyr 1.6.0 pre-release version, you should check out the `devel`
-branch.
+If you do nothing and remain on master, you will be looking at the very latest
+changes which may have regressions or instability. Instead, you could check out
+the `latest` tag which will still be pretty recent but at least sanity-checked
+by QA and known to basically work. You can read the `version` file in the root
+of the source tree to see what version you're on. If you're on the master
+development branch it will just say 'devel'.
 
 #### Install the Zephyr SDK
 Download the [latest Zephyr SDK] (https://www.zephyrproject.org/downloads/tools), then:
