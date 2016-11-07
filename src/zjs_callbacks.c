@@ -456,23 +456,20 @@ void zjs_service_callbacks(void)
             if (ret == -EMSGSIZE || ret == 0) {
                 // item in ring buffer with size > 0, has args
                 // pull from ring buffer
-                int ret1;
-                uint16_t id1;
-                uint8_t value1;
                 uint8_t sz = size;
                 jerry_value_t data[sz];
                 if (ret == -EMSGSIZE) {
-                    ret1 = zjs_port_ring_buf_get(&ring_buffer,
-                                                &id1,
-                                                &value1,
+                    ret = zjs_port_ring_buf_get(&ring_buffer,
+                                                &id,
+                                                &value,
                                                 (uint32_t*)data,
                                                 &sz);
-                    if (ret1 != 0) {
-                        ERR_PRINT("error pulling from ring buffer: ret = %u\n", ret1);
+                    if (ret != 0) {
+                        ERR_PRINT("error pulling from ring buffer: ret = %u\n", ret);
                         break;
                     }
-                    DBG_PRINT("calling callback with args. id=%u, args=%p, sz=%u, ret=%i\n", id1, data, sz, ret1);
-                    zjs_call_callback(id1, data, sz);
+                    DBG_PRINT("calling callback with args. id=%u, args=%p, sz=%u, ret=%i\n", id, data, sz, ret);
+                    zjs_call_callback(id, data, sz);
                 } else if (ret == 0) {
                     // item in ring buffer with size == 0, no args
                     DBG_PRINT("calling callback with no args, original vals id=%u, size=%u, ret=%i\n", id, size, ret);
