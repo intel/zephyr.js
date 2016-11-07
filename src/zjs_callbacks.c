@@ -57,10 +57,13 @@ struct zjs_callback_map {
         struct zjs_c_callback_t* c;
     };
 };
-
+#ifdef ZJS_LINUX_BUILD
 static uint8_t args_buffer[ZJS_CALLBACK_BUF_SIZE];
 static struct zjs_port_ring_buf ring_buffer;
-static uint8_t ring_buf_initialized = 0;
+#else
+SYS_RING_BUF_DECLARE_POW2(ring_buffer, 10);
+#endif
+static uint8_t ring_buf_initialized = 1;
 
 static int32_t cb_limit = INITIAL_CALLBACK_SIZE;
 static int32_t cb_size = 0;
@@ -102,7 +105,9 @@ void zjs_init_callbacks(void)
         }
         memset(cb_map, 0, size);
     }
+#ifdef ZJS_LINUX_BUILD
     zjs_port_ring_buf_init(&ring_buffer, ZJS_CALLBACK_BUF_SIZE, (uint32_t*)args_buffer);
+#endif
     ring_buf_initialized = 1;
     return;
 }
