@@ -1,0 +1,9 @@
+[submodule "deps/zephyr"]
+	path = deps/zephyr
+	url = https://gerrit.zephyrproject.org/r/zephyr
+[submodule "deps/jerryscript"]
+	path = deps/jerryscript
+	url = https://github.com/Samsung/jerryscript.git
+[submodule "deps/ihex"]
+	path = deps/ihex
+	url = https://github.com/arkku/ihex.git
