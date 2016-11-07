@@ -324,6 +324,7 @@ void zjs_remove_callback(int32_t id)
 
 void zjs_signal_callback(int32_t id, void* args, uint32_t size)
 {
+    DBG_PRINT("pushing item to ring buffer. id=%li, args=%p, size=%lu\n", id, args, size);
     int ret = zjs_port_ring_buf_put(&ring_buffer,
                                     (uint16_t)id,
                                     0,
@@ -465,9 +466,11 @@ void zjs_service_callbacks(void)
                         ERR_PRINT("error pulling from ring buffer: ret = %u\n", ret1);
                         break;
                     }
+                    DBG_PRINT("calling callback with args. id=%u, args=%p, sz=%u, ret=%i\n", id1, data, sz, ret1);
                     zjs_call_callback(id1, data, sz);
                 } else if (ret == 0) {
                     // item in ring buffer with size == 0, no args
+                    DBG_PRINT("calling callback with no args, original vals id=%u, size=%u, ret=%i\n", id, size, ret);
                     zjs_call_callback(id, NULL, 0);
                 }
 #ifdef ZJS_PRINT_CALLBACK_STATS
@@ -484,6 +487,7 @@ void zjs_service_callbacks(void)
                 num_callbacks++;
 #endif
             } else {
+                DBG_PRINT("no items in ring buffer. ret=%i\n", ret);
                 // no more items in ring buffer
                 break;
             }
