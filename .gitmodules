@@ -7,3 +7,6 @@
 [submodule "deps/ihex"]
 	path = deps/ihex
 	url = https://github.com/arkku/ihex.git
+[submodule "deps/iotivity-constrained"]
+	path = deps/iotivity-constrained
+	url = https://gerrit.iotivity.org/gerrit/p/iotivity-constrained.git

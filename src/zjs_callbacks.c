@@ -383,7 +383,6 @@ void print_callbacks(void)
                     ZJS_PRINT("Single Function\n");
                     ZJS_PRINT("\tjs_func: %lu\n", cb_map[i]->js->js_func);
                     ZJS_PRINT("\tonce: %u\n", cb_map[i]->js->once);
-                    ZJS_PRINT("\tsignal: %u\n", cb_map[i]->signal);
                 } else {
                     ZJS_PRINT("List\n");
                     ZJS_PRINT("\tmax_funcs: %u\n", cb_map[i]->js->max_funcs);
