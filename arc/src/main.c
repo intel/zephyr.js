@@ -619,6 +619,38 @@ static void fetch_sensor(struct device *dev) {
     }
 }
 
+/*
+ * The values in the following map are the expected values that the
+ * accelerometer needs to converge to if the device lies flat on the table. The
+ * device has to stay still for about 500ms = 250ms(accel) + 250ms(gyro).
+ */
+struct sensor_value acc_calib[] = {
+    {SENSOR_VALUE_TYPE_INT_PLUS_MICRO, { {0, 0} } },      /* X */
+    {SENSOR_VALUE_TYPE_INT_PLUS_MICRO, { {0, 0} } },      /* Y */
+    {SENSOR_VALUE_TYPE_INT_PLUS_MICRO, { {9, 806650} } }, /* Z */
+};
+
+static bool auto_calibration(struct device *dev)
+{
+    /* calibrate accelerometer */
+    if (sensor_attr_set(dev, SENSOR_CHAN_ACCEL_ANY,
+                        SENSOR_ATTR_CALIB_TARGET, acc_calib) < 0) {
+        return false;
+    }
+
+    /*
+     * Calibrate gyro. No calibration value needs to be passed to BMI160 as
+     * the target on all axis is set internally to 0. This is used just to
+     * trigger a gyro calibration.
+     */
+    if (sensor_attr_set(dev, SENSOR_CHAN_GYRO_ANY,
+                        SENSOR_ATTR_CALIB_TARGET, NULL) < 0) {
+        return false;
+    }
+
+    return true;
+}
+
 static void handle_sensor(struct zjs_ipm_message* msg)
 {
     uint32_t error_code = ERROR_IPM_NONE;
@@ -638,6 +670,10 @@ static void handle_sensor(struct zjs_ipm_message* msg)
                 error_code = ERROR_IPM_OPERATION_FAILED;
                 PRINT("failed to initialize BMI160 sensor\n");
             } else {
+                if (!auto_calibration(bmi160)) {
+                    PRINT("failed to perform auto calibration\n");
+                }
+
                 accel_poll = gyro_poll = false;
                 DBG_PRINT("BMI160 sensor initialized\n");
             }
