@@ -4,4 +4,4 @@
 jerryscript https://github.com/Samsung/jerryscript.git 86ac644
 zephyr https://gerrit.zephyrproject.org/r/zephyr 9cbd41ab
 ihex https://github.com/arkku/ihex.git 0ebfce8
-iotivity-constrained https://gerrit.iotivity.org/gerrit/p/iotivity-constrained.git 0e1ca32ea
+iotivity-constrained https://gerrit.iotivity.org/gerrit/p/iotivity-constrained.git 1b751339

@@ -200,6 +200,7 @@ static void issue_requests(void)
 static void app_init(void)
 {
     oc_init_platform("Zephyr.js", NULL, NULL);
+    oc_add_device("/oic/d", "oic.d.zephyrjs", "Zephyr.js Device", "1.0", "1.0", NULL, NULL);
 }
 
 void main_poll_routine(void* handle)
@@ -207,10 +208,10 @@ void main_poll_routine(void* handle)
     oc_main_poll();
 }
 
-static oc_handler_t handler = { .init = app_init,
-                                .signal_event_loop = oc_signal_main_loop,
-                                .requests_entry = issue_requests,
-                                .register_resources = zjs_ocf_register_resources
+static const oc_handler_t handler = { .init = app_init,
+                                      .signal_event_loop = oc_signal_main_loop,
+                                      .requests_entry = issue_requests,
+                                      .register_resources = zjs_ocf_register_resources
 };
 
 jerry_value_t zjs_ocf_init()
