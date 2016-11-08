@@ -251,7 +251,7 @@ static void zjs_sensor_trigger_error(jerry_value_t obj,
     jerry_release_value(func);
 }
 
-static void zjs_sensor_onchange_c_callback(void *h)
+static void zjs_sensor_onchange_c_callback(void *h, void *argv)
 {
     sensor_handle_t *handle = (sensor_handle_t *)h;
     if (!handle) {
@@ -272,7 +272,7 @@ static void zjs_sensor_signal_callbacks(sensor_handle_t *handle,
     // iterate all sensor instances to update readings and trigger event
     for (sensor_handle_t *h = handle; h; h = h->next) {
         memcpy(&h->reading, &reading, sizeof(reading));
-        zjs_signal_callback(h->id);
+        zjs_signal_callback(h->id, NULL, 0);
     }
 }
 
