@@ -9,13 +9,9 @@ struct promise {
     uint8_t then_set;           // then() function has been set
     jerry_value_t then;         // Function registered from then()
     int32_t then_id;            // Callback ID for then JS callback
-    jerry_value_t* then_argv;   // Arguments for fulfilling promise
-    uint32_t then_argc;     // Number of arguments for then callback
     uint8_t catch_set;          // catch() function has been set
     jerry_value_t catch;        // Function registered from catch()
     int32_t catch_id;           // Callback ID for catch JS callback
-    jerry_value_t* catch_argv;  // Arguments for rejecting promise
-    uint32_t catch_argc;    // Number of arguments for catch callback
     void* user_handle;
     zjs_post_promise_func post;
 };
@@ -58,14 +54,6 @@ static void promise_free(const uintptr_t native)
     }
 }
 
-static jerry_value_t* pre_then(void* h, uint32_t* argc)
-{
-    struct promise* handle = (struct promise*)h;
-
-    *argc = handle->then_argc;
-    return handle->then_argv;
-}
-
 static jerry_value_t promise_then(const jerry_value_t function_obj,
                                    const jerry_value_t this,
                                    const jerry_value_t argv[],
@@ -88,14 +76,6 @@ static jerry_value_t promise_then(const jerry_value_t function_obj,
     } else {
         return ZJS_UNDEFINED;
     }
-}
-
-static jerry_value_t* pre_catch(void* h, uint32_t* argc)
-{
-    struct promise* handle = (struct promise*)h;
-
-    *argc = handle->catch_argc;
-    return handle->catch_argv;
 }
 
 static jerry_value_t promise_catch(const jerry_value_t function_obj,
@@ -155,13 +135,11 @@ void zjs_fulfill_promise(jerry_value_t obj, jerry_value_t argv[], uint32_t argc)
     }
 
     handle->then_id = zjs_add_callback_once(handle->then,
-                                            obj, handle,
-                                            pre_then,
+                                            obj,
+                                            handle,
                                             post_promise);
-    handle->then_argv = argv;
-    handle->then_argc = argc;
 
-    zjs_signal_callback(handle->then_id);
+    zjs_signal_callback(handle->then_id, argv, argc * sizeof(jerry_value_t));
 
     DBG_PRINT("fulfilling promise, obj=%lu, then_id=%lu, argv=%p, nargs=%lu\n",
               obj, handle->then_id, argv, argc);
@@ -182,12 +160,9 @@ void zjs_reject_promise(jerry_value_t obj, jerry_value_t argv[], uint32_t argc)
     handle->catch_id = zjs_add_callback_once(handle->catch,
                                              obj,
                                              handle,
-                                             pre_catch,
                                              post_promise);
-    handle->catch_argv = argv;
-    handle->catch_argc = argc;
 
-    zjs_signal_callback(handle->catch_id);
+    zjs_signal_callback(handle->catch_id, argv, argc * sizeof(jerry_value_t));
 
     DBG_PRINT("rejecting promise, obj=%lu, catch_id=%ld, argv=%p, nargs=%lu\n",
               obj, handle->catch_id, argv, argc);

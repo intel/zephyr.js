@@ -10,12 +10,19 @@ console.log("Starting Timers example...");
 
 var count = 1;
 
-var i = setInterval(function(a, b) {
-    console.log("Interval #" + count + ' arg1: ' + a + ' arg2: ' + b);
+// Test without arguments
+var i1 = setInterval(function() {
+    console.log("Interval (no args) #" + count);
+}, 1000);
+
+// Test with arguments
+var i2 = setInterval(function(a, b) {
+    console.log("Interval (args) #" + count + ' arg1: ' + a + ' arg2: ' + b);
     count++;
 }, 1000, 1, 2);
 
-setTimeout(function(a) {
+setTimeout(function(a, b) {
     console.log("Timeout, clearing interval");
     clearInterval(a);
-}, 5000, i);
+    clearInterval(b);
+}, 5000, i1, i2);

@@ -194,7 +194,7 @@ static jerry_value_t zjs_ble_read_callback_function(const jerry_value_t function
     return ZJS_UNDEFINED;
 }
 
-static void zjs_ble_read_c_callback(void *handle)
+static void zjs_ble_read_c_callback(void *handle, void* argv)
 {
     ble_characteristic_t *chrc = (ble_characteristic_t *)handle;
     ble_handle_t *cb = &chrc->read_cb;
@@ -241,7 +241,7 @@ static ssize_t zjs_ble_read_attr_callback(struct bt_conn *conn,
         chrc->read_cb.buffer = NULL;
         chrc->read_cb.buffer_size = 0;
         chrc->read_cb.error_code = BT_ATT_ERR_NOT_SUPPORTED;
-        zjs_signal_callback(chrc->read_cb.id);
+        zjs_signal_callback(chrc->read_cb.id, NULL, 0);
 
         // block until result is ready
         if (!nano_fiber_sem_take(&zjs_ble_nano_sem, ZJS_BLE_TIMEOUT_TICKS)) {
@@ -293,7 +293,7 @@ static jerry_value_t zjs_ble_write_callback_function(const jerry_value_t functio
     return ZJS_UNDEFINED;
 }
 
-static void zjs_ble_write_c_callback(void *handle)
+static void zjs_ble_write_c_callback(void *handle, void* argv)
 {
     ble_characteristic_t *chrc = (ble_characteristic_t *)handle;
     ble_handle_t *cb = &chrc->write_cb;
@@ -357,7 +357,7 @@ static ssize_t zjs_ble_write_attr_callback(struct bt_conn *conn,
         chrc->write_cb.buffer = (len > 0) ? buf : NULL;
         chrc->write_cb.buffer_size = len;
         chrc->write_cb.error_code = BT_ATT_ERR_NOT_SUPPORTED;
-        zjs_signal_callback(chrc->write_cb.id);
+        zjs_signal_callback(chrc->write_cb.id, NULL, 0);
 
         // block until result is ready
         if (!nano_fiber_sem_take(&zjs_ble_nano_sem, ZJS_BLE_TIMEOUT_TICKS)) {
@@ -407,7 +407,7 @@ static jerry_value_t zjs_ble_update_value_callback_function(const jerry_value_t 
     return zjs_error("updateValueCallback: buffer not found or empty");
 }
 
-static void zjs_ble_subscribe_c_callback(void *handle)
+static void zjs_ble_subscribe_c_callback(void *handle, void* argv)
 {
     ble_characteristic_t *chrc = (ble_characteristic_t *)handle;
     ble_notify_handle_t *cb = &chrc->subscribe_cb;
@@ -427,7 +427,7 @@ static void zjs_ble_subscribe_c_callback(void *handle)
     jerry_release_value(rval);
 }
 
-static void zjs_ble_unsubscribe_c_callback(void *handle)
+static void zjs_ble_unsubscribe_c_callback(void *handle, void* argv)
 {
     ble_characteristic_t *chrc = (ble_characteristic_t *)handle;
     ble_notify_handle_t *cb = &chrc->unsubscribe_cb;
@@ -442,7 +442,7 @@ static void zjs_ble_unsubscribe_c_callback(void *handle)
     jerry_release_value(rval);
 }
 
-static void zjs_ble_notify_c_callback(void *handle)
+static void zjs_ble_notify_c_callback(void *handle, void* argv)
 {
     ble_characteristic_t *chrc = (ble_characteristic_t *)handle;
     ble_notify_handle_t *cb = &chrc->notify_cb;
@@ -463,7 +463,7 @@ static void zjs_ble_blvl_ccc_cfg_changed(const struct bt_gatt_attr *attr, uint16
     ble_conn->simulate_blvl = (value == BT_GATT_CCC_NOTIFY) ? 1 : 0;
 }
 
-static void zjs_ble_connected_c_callback(void *handle)
+static void zjs_ble_connected_c_callback(void *handle, void* argv)
 {
     // FIXME: get real bluetooth address
     jerry_value_t arg = jerry_create_string((jerry_char_t *)"AB:CD:DF:AB:CD:EF");
@@ -478,11 +478,11 @@ static void zjs_ble_connected(struct bt_conn *conn, uint8_t err)
     } else {
         DBG_PRINT("========== connected ==========\n");
         ble_conn->default_conn = bt_conn_ref(conn);
-        zjs_signal_callback(ble_conn->connected_cb.id);
+        zjs_signal_callback(ble_conn->connected_cb.id, NULL, 0);
     }
 }
 
-static void zjs_ble_disconnected_c_callback(void *handle)
+static void zjs_ble_disconnected_c_callback(void *handle, void* argv)
 {
     // FIXME: get real bluetooth address
     jerry_value_t arg = jerry_create_string((jerry_char_t *)"AB:CD:DF:AB:CD:EF");
@@ -496,7 +496,7 @@ static void zjs_ble_disconnected(struct bt_conn *conn, uint8_t reason)
     if (ble_conn->default_conn) {
         bt_conn_unref(ble_conn->default_conn);
         ble_conn->default_conn = NULL;
-        zjs_signal_callback(ble_conn->disconnected_cb.id);
+        zjs_signal_callback(ble_conn->disconnected_cb.id, NULL, 0);
     }
 }
 
@@ -518,7 +518,7 @@ static struct bt_conn_auth_cb zjs_ble_auth_cb_display = {
         .cancel = zjs_ble_auth_cancel,
 };
 
-static void zjs_ble_ready_c_callback(void *handle)
+static void zjs_ble_ready_c_callback(void *handle, void* argv)
 {
     jerry_value_t arg = jerry_create_string((jerry_char_t *)"poweredOn");
     zjs_trigger_event(ble_conn->ble_obj, "stateChange", &arg, 1, NULL, NULL);
@@ -528,7 +528,7 @@ static void zjs_ble_ready_c_callback(void *handle)
 static void zjs_ble_bt_ready(int err)
 {
     DBG_PRINT("bt_ready() is called [err %d]\n", err);
-    zjs_signal_callback(ble_conn->ready_cb.id);
+    zjs_signal_callback(ble_conn->ready_cb.id, NULL, 0);
 }
 
 void zjs_ble_enable() {
@@ -841,7 +841,7 @@ static bool zjs_ble_parse_characteristic(ble_characteristic_t *chrc)
         chrc->subscribe_cb.js_callback = jerry_acquire_value(v_func);
         chrc->subscribe_cb.id = zjs_add_c_callback(chrc, zjs_ble_subscribe_c_callback);
         // TODO: we need to monitor onSubscribe events from BLE driver eventually
-        zjs_signal_callback(chrc->subscribe_cb.id);
+        zjs_signal_callback(chrc->subscribe_cb.id, NULL, 0);
     } else {
         chrc->subscribe_cb.id = -1;
     }

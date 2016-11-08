@@ -3,9 +3,9 @@
 #ifndef ZJS_LINUX_BUILD
 // Zephyr includes
 #include <zephyr.h>
-#include "zjs_zephyr_time.h"
+#include "zjs_zephyr_port.h"
 #else
-#include "zjs_linux_time.h"
+#include "zjs_linux_port.h"
 #endif
 
 #include <string.h>
@@ -68,15 +68,21 @@ static zjs_timer_t* add_timer(uint32_t interval,
     tm->repeat = repeat;
     tm->completed = false;
     tm->next = zjs_timers;
-    tm->callback_id = zjs_add_callback(callback, this, tm, pre_timer, NULL);
+    tm->callback_id = zjs_add_callback(callback, this, tm, NULL);
     tm->argc = argc;
-    tm->argv = zjs_malloc(sizeof(jerry_value_t) * argc);
-    for (i = 0; i < argc; ++i) {
-        tm->argv[i] = jerry_acquire_value(argv[i + 2]);
+    if (tm->argc) {
+        tm->argv = zjs_malloc(sizeof(jerry_value_t) * argc);
+        for (i = 0; i < argc; ++i) {
+            tm->argv[i] = jerry_acquire_value(argv[i + 2]);
+        }
+    } else {
+        tm->argv = NULL;
     }
 
     zjs_timers = tm;
 
+    DBG_PRINT("adding timer. id=%li, interval=%lu, repeat=%u, argv=%p, argc=%lu\n",
+            tm->callback_id, interval, repeat, argv, argc);
     zjs_port_timer_start(&tm->timer, interval);
     return tm;
 }
@@ -93,6 +99,7 @@ static bool delete_timer(int32_t id)
     for (zjs_timer_t **ptm = &zjs_timers; *ptm; ptm = &(*ptm)->next) {
         zjs_timer_t *tm = *ptm;
         if (id == tm->callback_id) {
+            DBG_PRINT("removing timer. id=%li\n", tm->callback_id);
             zjs_port_timer_stop(&tm->timer);
             *ptm = tm->next;
             for (int i = 0; i < tm->argc; ++i) {
@@ -209,7 +216,9 @@ void zjs_timers_process_events()
         }
         else if (zjs_port_timer_test(&tm->timer, ZJS_TICKS_NONE)) {
             // timer has expired, signal the callback
-            zjs_signal_callback(tm->callback_id);
+            DBG_PRINT("signaling timer. id=%li, argv=%p, argc=%lu\n",
+                    tm->callback_id, tm->argv, tm->argc);
+            zjs_signal_callback(tm->callback_id, tm->argv, tm->argc * sizeof(jerry_value_t));
 
             // reschedule or remove timer
             if (tm->repeat) {

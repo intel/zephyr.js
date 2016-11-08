@@ -16,8 +16,6 @@ struct event {
 };
 
 struct event_trigger {
-    jerry_value_t* argv;
-    uint32_t argc;
     void* handle;
     zjs_post_event post;
 };
@@ -27,25 +25,12 @@ struct event_names {
     int idx;
 };
 
-jerry_value_t* pre_event(void* h, uint32_t* args_cnt)
-{
-    struct event_trigger* trigger = (struct event_trigger*)h;
-    if (trigger) {
-        *args_cnt = trigger->argc;
-        return trigger->argv;
-    }
-    return NULL;
-}
-
 void post_event(void* h, jerry_value_t* ret_val)
 {
     struct event_trigger* trigger = (struct event_trigger*)h;
     if (trigger) {
         if (trigger->post) {
             trigger->post(trigger->handle);
-        }
-        if (trigger->argv) {
-            zjs_free(trigger->argv);
         }
         zjs_free(trigger);
     }
@@ -77,7 +62,7 @@ void zjs_add_event_listener(jerry_value_t obj, const char* event, jerry_value_t 
         // If there already is an event object, get the callback ID
         zjs_obj_get_int32(event_obj, "callback_id", &callback_id);
     }
-    callback_id = zjs_add_callback_list(listener, obj, ev, pre_event, post_event, callback_id);
+    callback_id = zjs_add_callback_list(listener, obj, ev, post_event, callback_id);
 
     // Add callback ID to event object
     zjs_obj_add_number(event_obj, callback_id, "callback_id");
@@ -449,18 +434,6 @@ bool zjs_trigger_event(jerry_value_t obj,
         return jerry_create_boolean(false);
     }
 
-    int i;
-    trigger->argv = zjs_malloc(sizeof(jerry_value_t) * argc);
-    if (!trigger->argv) {
-        zjs_free(trigger);
-        DBG_PRINT("could not allocate trigger args, out of memory\n");
-        return false;
-    }
-    for (i = 0; i < argc; ++i) {
-        trigger->argv[i] = argv[i];
-    }
-    trigger->argc = argc;
-
     event_obj = zjs_get_property(ev->map, event);
     if (!jerry_value_is_object(event_obj)) {
         zjs_free(trigger);
@@ -479,10 +452,10 @@ bool zjs_trigger_event(jerry_value_t obj,
 
     zjs_edit_callback_handle(callback_id, trigger);
 
-    zjs_signal_callback(callback_id);
+    zjs_signal_callback(callback_id, argv, argc * sizeof(jerry_value_t));
 
     DBG_PRINT("triggering event '%s', args_cnt=%lu, callback_id=%ld\n",
-              event, trigger->argc, callback_id);
+              event, argc, callback_id);
 
     return jerry_create_boolean(true);
 }
@@ -511,18 +484,6 @@ bool zjs_trigger_event_now(jerry_value_t obj,
         return jerry_create_boolean(false);
     }
 
-    int i;
-    trigger->argv = zjs_malloc(sizeof(jerry_value_t) * argc);
-    if (!trigger->argv) {
-        zjs_free(trigger);
-        DBG_PRINT("could not allocate trigger args, out of memory\n");
-        return false;
-    }
-    for (i = 0; i < argc; ++i) {
-        trigger->argv[i] = argv[i];
-    }
-    trigger->argc = argc;
-
     event_obj = zjs_get_property(ev->map, event);
     if (!jerry_value_is_object(event_obj)) {
         zjs_free(trigger);
@@ -544,9 +505,7 @@ bool zjs_trigger_event_now(jerry_value_t obj,
 
     zjs_edit_callback_handle(callback_id, trigger);
 
-    zjs_call_callback(callback_id);
-
-    zjs_free(trigger->argv);
+    zjs_call_callback(callback_id, argv, argc * sizeof(jerry_value_t));
 
     return jerry_create_boolean(true);
 }
