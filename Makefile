@@ -101,7 +101,6 @@ update:
 		exit 1; \
 	fi
 	@cd $(OCF_ROOT); git submodule update --init;
-	@cd $(OCF_ROOT)/deps/tinycbor; git checkout 0a78b71322;
 
 # Sets up prj/last_build files
 .PHONY: setup
@@ -144,6 +143,7 @@ clean:
 			cd arc/; make clean; \
 		fi; \
 	fi
+	make -f Makefile.linux clean
 	@rm -f src/*.o
 	@rm -f src/Makefile
 	@rm -f arc/prj.conf

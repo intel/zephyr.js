@@ -494,7 +494,7 @@ bool zjs_trigger_event_now(jerry_value_t obj,
         return false;
     }
 
-    zjs_obj_get_uint32(event_obj, "callback_id", &callback_id);
+    zjs_obj_get_int32(event_obj, "callback_id", &callback_id);
     if (callback_id == -1) {
         zjs_free(trigger);
         DBG_PRINT("callback_id not found\n");

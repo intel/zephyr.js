@@ -8,7 +8,9 @@ OCF_ROOT ?= deps/iotivity-constrained
 .PHONY: all
 all: linux
 
-CORE_SRC = 	src/zjs_buffer.c \
+include Makefile.ocf_linux
+
+CORE_SRC +=	src/zjs_buffer.c \
 			src/zjs_callbacks.c \
 			src/zjs_console.c \
 			src/zjs_event.c \
@@ -27,7 +29,7 @@ CORE_SRC = 	src/zjs_buffer.c \
 
 CORE_OBJ =	$(CORE_SRC:%.c=%.o)
 
-LINUX_INCLUDES = 	-Isrc/ \
+LINUX_INCLUDES += 	-Isrc/ \
 				-I$(JERRY_BASE)/jerry-core \
 				-I$(OCF_ROOT)/deps/tinydtls \
 				-I$(OCF_ROOT) \
@@ -35,17 +37,17 @@ LINUX_INCLUDES = 	-Isrc/ \
 				-I$(OCF_ROOT)/include \
 				-include $(OCF_ROOT)/port/linux/config.h
 
-JERRY_LIBS = 		-ljerry-core -lm
+JERRY_LIBS += 		-ljerry-core -lm
 
-JERRY_LIB_PATH = 	-L$(JERRY_BASE)/build/lib/ -L.
+JERRY_LIB_PATH += 	-L$(JERRY_BASE)/build/lib/ -L.
 
-LINUX_FLAGS = -std=gnu99 -Wpointer-sign
+LINUX_FLAGS += -std=gnu99 -Wpointer-sign
 
-LINUX_LIBS = -locf -pthread $(JERRY_LIBS)
+LINUX_LIBS += -pthread $(JERRY_LIBS)
 
-LINUX_DEFINES = -DZJS_LINUX_BUILD -DOC_CLIENT -DOC_SERVER -DBUILD_MODULE_OCF -DBUILD_MODULE_EVENTS -DBUILD_MODULE_PERFORMANCE -DBUILD_MODULE_CONSOLE
+LINUX_DEFINES += -DZJS_LINUX_BUILD -DOC_CLIENT -DOC_SERVER -DBUILD_MODULE_OCF -DBUILD_MODULE_EVENTS -DBUILD_MODULE_PERFORMANCE -DBUILD_MODULE_CONSOLE
 
-CFLAGS=-fno-asynchronous-unwind-tables -fno-omit-frame-pointer -Wall -Wno-format-zero-length -Wno-main -ffreestanding -Os -fno-stack-protector -ffunction-sections -fdata-sections -Wno-unused-but-set-variable -fno-reorder-functions -fno-defer-pop -Wno-pointer-sign -fno-strict-overflow -Werror=implicit-int -Wall -std=gnu99 #-Wl,-Map,client.map
+CFLAGS += -fno-asynchronous-unwind-tables -fno-omit-frame-pointer -Wall -Wno-format-zero-length -Wno-main -ffreestanding -Os -fno-stack-protector -ffunction-sections -fdata-sections -Wno-unused-but-set-variable -fno-reorder-functions -fno-defer-pop -Wno-pointer-sign -fno-strict-overflow -Werror=implicit-int -Wall -std=gnu99 #-Wl,-Map,client.map
 
 ifeq ($(VARIANT), debug)
 LINUX_DEFINES += -DDEBUG_BUILD
@@ -59,21 +61,16 @@ ifeq ($(CB_STATS), on)
 LINUX_DEFINES += -DZJS_PRINT_CALLBACK_STATS
 endif
 
-.PHONY: ocf-setup
-ocf-setup:
-	cd $(OCF_ROOT); git submodule update --init;
-	make -f Makefile.ocf_linux ocf-lib DEBUG=$(DEBUG) SECURE=0
-
 %.o:%.c
 	@echo "Building $@"
 	gcc -c -o $@ $< $(LINUX_INCLUDES) $(LINUX_DEFINES) $(LINUX_FLAGS)
 
 .PHONY: linux
-linux: ocf-setup $(CORE_OBJ)
+linux: $(CORE_OBJ)
 	@echo "Building for Linux $(CORE_OBJ)"
 	cd deps/jerryscript; python ./tools/build.py;
 	gcc -static src/main.c $(CORE_OBJ) $(LINUX_INCLUDES) $(CFLAGS) $(LINUX_DEFINES) $(JERRY_LIB_PATH) $(LINUX_LIBS) $(LINUX_LIB_PATH) -o jslinux
 
 .PHONY: clean
 clean:
-	make -f Makefile.ocf_linux clean
+	rm -f $(CORE_OBJ)

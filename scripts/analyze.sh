@@ -39,6 +39,18 @@ check_for_require ocf
 if [ $? -eq 0 ]; then
     >&2 echo Using module: OCF
     MODULES+=" -DBUILD_MODULE_OCF"
+    echo "CONFIG_NETWORKING_WITH_IPV6=y" >> prj.conf.tmp
+    echo "CONFIG_NET_TESTING=y" >> prj.conf.tmp
+    echo "CONFIG_NETWORKING_IPV6_NO_ND=y" >> prj.conf.tmp
+    echo "CONFIG_NETWORKING=y" >> prj.conf.tmp
+    echo "CONFIG_NETWORKING_WITH_LOGGING=y" >> prj.conf.tmp
+    echo "CONFIG_NETWORKING_WITH_LOOPBACK=y" >> prj.conf.tmp
+    echo "CONFIG_NETWORKING_UART=y" >> prj.conf.tmp
+    echo "CONFIG_NETWORKING_DEBUG_UART=y" >> prj.conf.tmp
+    echo "CONFIG_UDP_MAX_CONNECTIONS=30" >> prj.conf.tmp
+    echo "CONFIG_IP_BUF_RX_SIZE=5" >> prj.conf.tmp
+    echo "CONFIG_IP_BUF_TX_SIZE=5" >> prj.conf.tmp
+    echo "CONFIG_NET_MAX_CONTEXTS=9" >> prj.conf.tmp
 fi
 check_for_require gpio
 if [ $? -eq 0 ]; then
