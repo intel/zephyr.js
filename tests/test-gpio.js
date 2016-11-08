@@ -73,35 +73,39 @@ bValue = pinB.read();
 assert(bValue, "activeLow: true");
 
 // test GPIOPin onchange
-var changes = {"any": 2,
-               "rising": 1,
-               "falling": 1};
 
-function testChangeWithEdge(key, inital) {
-    var count = 0;
-    pinA.write(inital);
+setTimeout(function () {
+    var changes = {"any": 2,
+                   "rising": 1,
+                   "falling": 1};
 
-    pinB = gpio.open({ pin: pins.IO4, direction: "in", edge: key });
-    pinB.onchange = function () {
-        count++;
+    function testChangeWithEdge(key, inital) {
+        var count = 0;
         pinA.write(inital);
-    };
 
-    pinA.write(!inital);
+        pinB = gpio.open({ pin: pins.IO4, direction: "in", edge: key });
+        pinB.onchange = function () {
+            count++;
+            pinA.write(inital);
+        };
 
-    setTimeout(function () {
-        assert(count == changes[key],
-              "gpiopin: onchange with edge '" + key + "'");
+        pinA.write(!inital);
 
-        if(key == "any") {
-            testChangeWithEdge("rising", false);
-        } else if(key == "rising") {
-            testChangeWithEdge("falling", true);
-        }
-    }, 200);
-}
+        setTimeout(function () {
+            pinB.close();
+            assert(count == changes[key],
+                  "gpiopin: onchange with edge '" + key + "'");
 
-testChangeWithEdge("any", false);
+            if(key == "any") {
+                testChangeWithEdge("rising", false);
+            } else if(key == "rising") {
+                testChangeWithEdge("falling", true);
+            }
+        }, 200);
+    }
+
+    testChangeWithEdge("any", false);
+}, 1000);
 
 // test GPIOPin close
 setTimeout(function () {
@@ -118,7 +122,7 @@ setTimeout(function () {
     setTimeout(function () {
         assert(expected, "gpiopin: close onchange");
     }, 200);
-}, 1000);
+}, 2000);
 
 // test GPIO openAsync
 gpio.openAsync({ pin: pins.IO2 }).then(function(pin2) {
@@ -138,4 +142,4 @@ gpio.openAsync({ pin: pins.IO2 }).then(function(pin2) {
 
 setTimeout(function () {
     console.log("TOTAL: " + passed + " of " + total + " passed");
-}, 1500);
+}, 3000);
