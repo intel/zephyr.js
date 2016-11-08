@@ -4,9 +4,7 @@
 #define __zjs_ipm_h__
 
 #include <ipm.h>
-#ifdef BUILD_MODULE_SENSOR
 #include <sensor.h>
-#endif
 
 #define IPM_CHANNEL_X86_TO_ARC                             0x01
 #define IPM_CHANNEL_ARC_TO_X86                             0x02
