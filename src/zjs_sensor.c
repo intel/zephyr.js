@@ -34,8 +34,8 @@ typedef struct sensor_handle {
     struct sensor_handle *next;
 } sensor_handle_t;
 
-static sensor_handle_t *accel_handle = NULL;
-static sensor_handle_t *gyro_handle = NULL;
+static sensor_handle_t *accel_handles = NULL;
+static sensor_handle_t *gyro_handles = NULL;
 
 static sensor_handle_t *zjs_sensor_alloc_handle(enum sensor_channel channel)
 {
@@ -48,10 +48,10 @@ static sensor_handle_t *zjs_sensor_alloc_handle(enum sensor_channel channel)
     // append to the list
     sensor_handle_t **head = NULL;
     if (channel == SENSOR_CHAN_ACCEL_ANY) {
-        head = &accel_handle;
+        head = &accel_handles;
     }
     else if (channel == SENSOR_CHAN_GYRO_ANY) {
-        head = &gyro_handle;
+        head = &gyro_handles;
     } else {
         PRINT("zjs_sensor_alloc_handle: invalid channel\n");
         zjs_free(handle);
@@ -269,9 +269,6 @@ static void zjs_sensor_onchange_c_callback(void *h)
 static void zjs_sensor_signal_callbacks(sensor_handle_t *handle,
                                         union sensor_reading reading)
 {
-    if (!handle)
-        return;
-
     // iterate all sensor instances to update readings and trigger event
     for (sensor_handle_t *h = handle; h; h = h->next) {
         memcpy(&h->reading, &reading, sizeof(reading));
@@ -296,10 +293,10 @@ static void ipm_msg_receive_callback(void *context, uint32_t id, volatile void *
     } else if (msg->type == TYPE_SENSOR_EVENT_READING_CHANGE) {
         // value change event, copy the data, and signal event callback
         if (msg->data.sensor.channel == SENSOR_CHAN_ACCEL_ANY) {
-            zjs_sensor_signal_callbacks(accel_handle, msg->data.sensor.reading);
+            zjs_sensor_signal_callbacks(accel_handles, msg->data.sensor.reading);
         }
         else if (msg->data.sensor.channel == SENSOR_CHAN_GYRO_ANY) {
-            zjs_sensor_signal_callbacks(gyro_handle, msg->data.sensor.reading);
+            zjs_sensor_signal_callbacks(gyro_handles, msg->data.sensor.reading);
         } else {
             PRINT("ipm_msg_receive_callback: unsupported sensor type\n");
         }
@@ -509,11 +506,11 @@ void zjs_sensor_init()
 
 void zjs_sensor_cleanup()
 {
-    if (accel_handle) {
-        zjs_sensor_free_handles(accel_handle);
+    if (accel_handles) {
+        zjs_sensor_free_handles(accel_handles);
     }
-    if (gyro_handle) {
-        zjs_sensor_free_handles(gyro_handle);
+    if (gyro_handles) {
+        zjs_sensor_free_handles(gyro_handles);
     }
 }
 

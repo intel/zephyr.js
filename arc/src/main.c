@@ -432,7 +432,7 @@ static void handle_glcd(struct zjs_ipm_message* msg)
 #endif
 
 #ifdef	BUILD_MODULE_SENSOR
-#ifndef DEBUG_BUILD
+#ifdef DEBUG_BUILD
 static inline int sensor_value_snprintf(char *buf, size_t len,
                                         const struct sensor_value *val)
 {
@@ -485,7 +485,7 @@ static void send_sensor_data(enum sensor_channel channel,
     zjs_ipm_send(MSG_ID_SENSOR, &msg);
 }
 
-#define ABS(x) ((x) > 0) ? (x) : -(x)
+#define ABS(x) ((x) >= 0) ? (x) : -(x)
 
 static double convert_sensor_value(const struct sensor_value *val)
 {
@@ -545,7 +545,7 @@ static void process_accel_data(struct device *dev)
     dval[2] = convert_sensor_value(&val[2]);
 
     if (dval[0] == 0 && dval[1] == 0 && dval[2] == 0) {
-        // FIXME: BUG? why sometimes it reports 0, 0, 0 on all axis
+        // FIXME: BUG? why sometimes it reports 0, 0, 0 on all axes
         return;
     }
 
@@ -585,9 +585,9 @@ static void process_gyro_data(struct device *dev)
     dval[1] = convert_sensor_value(&val[1]);
     dval[2] = convert_sensor_value(&val[2]);
 
-    if (ABS(dval[0] - gyro_last_value[0]) > 0 ||
-        ABS(dval[1] - gyro_last_value[1]) > 0 ||
-        ABS(dval[2] - gyro_last_value[2]) > 0) {
+    if (dval[0] != gyro_last_value[0] ||
+        dval[1] != gyro_last_value[1] ||
+        dval[2] != gyro_last_value[2]) {
         union sensor_reading reading;
         reading.x = dval[0];
         reading.y = dval[1];
