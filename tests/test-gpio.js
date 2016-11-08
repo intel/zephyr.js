@@ -5,6 +5,9 @@
 // Pre-conditions
 console.log("Wire IO2 to IO4");
 
+var gpio = require("gpio");
+var pins = require("arduino101_pins");
+
 var total = 0;
 var passed = 0;
 
@@ -31,12 +34,53 @@ function expectThrow(description, func) {
     assert(threw, description);
 }
 
-var gpio = require("gpio");
-var pins = require("arduino101_pins");
-
-// test GPIO open
 var pinA, pinB, aValue, bValue;
 
+// test GPIOPin onchange
+var changes = [
+    ["falling", 1, true],
+    ["rising", 1, false],
+    ["any", 1, false]
+];
+var mark = 0;
+
+var edgeInterval = setInterval(function () {
+    var count = 0;
+    pinA = gpio.open({ pin: pins.IO2 });
+    pinA.write(changes[mark][2]);
+    pinB = gpio.open({
+        pin: pins.IO4,
+        direction: "in",
+        edge: changes[mark][0]
+    });
+
+    pinB.onchange = function () {
+        count++;
+        pinB.close();
+    };
+
+    pinA.write(!changes[mark][2]);
+
+    setTimeout(function () {
+        assert(count == changes[mark][1],
+               "gpiopin: onchange with edge '" + changes[mark][0] + "'");
+
+        if (changes[mark][0] == "any") {
+            // test GPIOPin close
+            pinA.write(!changes[mark][2]);
+            assert(count == changes[mark][1], "gpiopin: close onchange");
+        }
+
+        mark = mark + 1;
+
+        if (mark == 3) {
+            console.log("TOTAL: " + passed + " of " + total + " passed");
+            clearInterval(edgeInterval);
+        }
+    }, 1000);
+}, 2000);
+
+// test GPIO open
 pinA = gpio.open({ pin: pins.IO2 });
 pinB = gpio.open({ pin: pins.IO4, direction: "in" });
 
@@ -72,62 +116,15 @@ pinA.write(false);
 bValue = pinB.read();
 assert(bValue, "activeLow: true");
 
-// test GPIOPin onchange
-var changes = {"any": 2,
-               "rising": 1,
-               "falling": 1};
-
-function testChangeWithEdge(key, inital) {
-    var count = 0;
-    pinA.write(inital);
-
-    pinB = gpio.open({ pin: pins.IO4, direction: "in", edge: key });
-    pinB.onchange = function () {
-        count++;
-        pinA.write(inital);
-    };
-
-    pinA.write(!inital);
-
-    setTimeout(function () {
-        assert(count == changes[key],
-              "gpiopin: onchange with edge '" + key + "'");
-
-        if(key == "any") {
-            testChangeWithEdge("rising", false);
-        } else if(key == "rising") {
-            testChangeWithEdge("falling", true);
-        }
-    }, 200);
-}
-
-testChangeWithEdge("any", false);
-
-// test GPIOPin close
-setTimeout(function () {
-    var expected = true;
-    pinA.write(false);
-    pinB = gpio.open({ pin: pins.IO4, direction: "in", edge: "any" });
-    pinB.onchange = function (event) {
-        expected = event.value;
-        pinB.close();
-        pinA.write(false);
-    };
-    pinA.write(true);
-
-    setTimeout(function () {
-        assert(expected, "gpiopin: close onchange");
-    }, 200);
-}, 1000);
-
 // test GPIO openAsync
-gpio.openAsync({ pin: pins.IO2 }).then(function(pin2) {
+gpio.openAsync({ pin: pins.IO2 }).then(function (pin2) {
     assert(pin2 != null && typeof pin2 == "object",
           "openAsync: defined pin and default as 'out' direction");
     gpio.openAsync({ pin: pins.IO4, direction: "in", edge: "any" })
-        .then(function(pin4) {
+        .then(function (pin4) {
             pin4.onchange = function (event) {
                 assert(true, "gpiopin: onchange in openAsync");
+                pin4.close();
             };
             pin2.write(true);
             var pin4v = pin4.read();
@@ -135,7 +132,3 @@ gpio.openAsync({ pin: pins.IO2 }).then(function(pin2) {
     });
     pin2.write(false);
 });
-
-setTimeout(function () {
-    console.log("TOTAL: " + passed + " of " + total + " passed");
-}, 1500);
