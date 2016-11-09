@@ -132,12 +132,12 @@ endif
 # Explicit clean
 .PHONY: clean
 clean: update
-	@if [ -d deps/jerryscript ]; then \
-		make -C $(JERRY_BASE) -f targets/zephyr/Makefile clean BOARD=$(BOARD); \
-		rm -rf deps/jerryscript/build/$(BOARD)/; \
-		rm -rf deps/jerryscript/build/lib; \
-	fi
-	@if [ "$(TARGET)" != "linux" ]; then \
+	@if [ -d $(ZEPHYR_SDK_INSTALL_DIR) ]; then \
+		if [ -d deps/jerryscript ]; then \
+			make -C $(JERRY_BASE) -f targets/zephyr/Makefile clean BOARD=$(BOARD); \
+			rm -rf deps/jerryscript/build/$(BOARD)/; \
+			rm -rf deps/jerryscript/build/lib; \
+		fi; \
 		if [ -d deps/zephyr ] && [ -e src/Makefile ]; then \
 			cd deps/zephyr; make clean BOARD=$(BOARD); \
 			cd arc/; make clean; \
@@ -214,7 +214,7 @@ arcgdb:
 linux: $(PRE_ACTION) generate
 	rm -f .*.last_build
 	echo "" > .linux.last_build
-	make -f Makefile.linux JS=$(JS) VARIANT=$(VARIANT) CB_STATS=$(CB_STATS)
+	make -f Makefile.linux JS=$(JS) VARIANT=$(VARIANT) CB_STATS=$(CB_STATS) V=$(V)
 
 .PHONY: help
 help:
