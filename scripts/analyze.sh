@@ -32,7 +32,7 @@ function check_for_require()
 
 check_for_require events
 if [ $? -eq 0 ]; then
-    >&2 echo Using module: EVENTS
+    >&2 echo Using module: Events
     MODULES+=" -DBUILD_MODULE_EVENTS"
 fi
 check_for_require gpio
@@ -102,7 +102,7 @@ if [ $? -eq 0 ]; then
 fi
 check_for_require grove_lcd
 if [ $? -eq 0 ]; then
-    >&2 echo Using module: GROVE_LCD
+    >&2 echo Using module: Grove LCD
     MODULES+=" -DBUILD_MODULE_GROVE_LCD"
 fi
 check_for_require arduino101_pins
