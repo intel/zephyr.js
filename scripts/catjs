@@ -1,0 +1,34 @@
+#!/bin/bash
+
+# Copyright (c) 2016, Intel Corporation.
+# Author: Brian Jones <brian.j.jones@intel.com>
+
+# catjs - Takes the main JS file, checks for any includeJS
+# and cats them all into a new JS file that is passed to the
+# make JS=* command
+
+if [ -f "/tmp/zjsapp.js" ]; then
+    rm /tmp/zjsapp.js
+fi
+
+str=$(grep "import" $1 | grep -oP "(?<=from )[^ ]+")
+
+for file in $str
+do    
+    funcNames=$(grep "import" $1 | grep "$file" | awk -vRS="}" -vFS="{" '{print $2}' | sed 's/,/ /g')
+
+    echo "Looking for $file in $ZJS_BASE"
+    fileLoc=$(find $ZJS_BASE -iname $file)
+    
+    for func in $funcNames
+    do
+        echo "Importing $func from $fileLoc"
+        awk "/export.*$func/,/exportend/" < "$fileLoc" >> /tmp/zjsapp.js
+    done
+done
+
+cat $1 >> /tmp/zjsapp.js
+# Remove import and export from JS as they currently
+# aren't recognized by JerryScript
+sed -i '/import/d' /tmp/zjsapp.js
+sed -i 's/\S*\(export\)\S*//g' /tmp/zjsapp.js
