@@ -131,7 +131,7 @@ endif
 
 # Explicit clean
 .PHONY: clean
-clean:
+clean: update
 	@if [ -d deps/jerryscript ]; then \
 		make -C $(JERRY_BASE) -f targets/zephyr/Makefile clean BOARD=$(BOARD); \
 		rm -rf deps/jerryscript/build/$(BOARD)/; \
