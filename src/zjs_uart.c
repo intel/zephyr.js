@@ -95,7 +95,7 @@ static void post_event(void* h)
     jerry_release_value(handle->buf_obj);
 }
 
-static void uart_c_callback(void* h)
+static void uart_c_callback(void* h, void* args)
 {
     if (!handle) {
         DBG_PRINT("UART handle not found\n");
@@ -105,7 +105,7 @@ static void uart_c_callback(void* h)
         handle->buf_obj = zjs_buffer_create(handle->size);
         zjs_buffer_t* buffer = zjs_buffer_find(handle->buf_obj);
 
-        memcpy(buffer->buffer, handle->buf, handle->size);
+        memcpy(buffer->buffer, args, handle->size);
 
         zjs_trigger_event_now(handle->uart_obj, "read", &handle->buf_obj, 1, post_event, NULL);
 
@@ -130,7 +130,7 @@ static void uart_irq_handler(struct device *dev)
         rx = true;
         handle->buf[len] = '\0';
         handle->size = len;
-        zjs_signal_callback(read_id);
+        zjs_signal_callback(read_id, handle->buf, len);
     }
 }
 
