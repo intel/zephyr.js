@@ -14,12 +14,12 @@ fi
 str=$(grep "import" $1 | grep -oP "(?<=from )[^ ]+")
 
 for file in $str
-do    
+do
     funcNames=$(grep "import" $1 | grep "$file" | awk -vRS="}" -vFS="{" '{print $2}' | sed 's/,/ /g')
 
     echo "Looking for $file in $ZJS_BASE"
     fileLoc=$(find $ZJS_BASE -iname $file)
-    
+
     for func in $funcNames
     do
         echo "Importing $func from $fileLoc"
