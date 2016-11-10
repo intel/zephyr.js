@@ -33,7 +33,7 @@ static void zjs_pwm_set(jerry_value_t obj, double periodHW, double pulseWidthHW)
     zjs_pwm_convert_pin(orig_chan, &devnum, &channel);
 
     if (pulseWidthHW > periodHW) {
-        PRINT("zjs_pwm_set: pulseWidth was greater than period\n");
+        ERR_PRINT("zjs_pwm_set: pulseWidth was greater than period\n");
         pulseWidthHW = periodHW;
     }
 
@@ -230,7 +230,7 @@ jerry_value_t zjs_pwm_init()
         snprintf(devname, 7, "PWM_%d", i);
         zjs_pwm_dev[i] = device_get_binding(devname);
         if (!zjs_pwm_dev[i]) {
-            PRINT("DEVICE: '%s'\n", devname);
+            ERR_PRINT("DEVICE: '%s'\n", devname);
             return zjs_error("zjs_pwm_init: cannot find PWM device");
         }
     }

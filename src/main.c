@@ -25,8 +25,12 @@
 #include "zjs_modules.h"
 #include "zjs_timers.h"
 #include "zjs_util.h"
-
+#ifdef BUILD_MODULE_OCF
+#include "zjs_ocf_common.h"
+#endif
+#ifdef BUILD_MODULE_BLE
 #include "zjs_ble.h"
+#endif
 
 #define ZJS_MAX_PRINT_SIZE      512
 
@@ -56,7 +60,7 @@ static jerry_value_t native_print_handler(const jerry_value_t function_obj,
     int wlen = jerry_string_to_char_buffer(argv[0], (jerry_char_t *)buffer, jlen);
     buffer[wlen] = '\0';
 
-    PRINT("%s\n", buffer);
+    ZJS_PRINT("%s\n", buffer);
     return ZJS_UNDEFINED;
 }
 
@@ -73,7 +77,7 @@ int main(int argc, char *argv[])
 
     // print newline here to make it easier to find
     // the beginning of the program
-    PRINT("\n");
+    ZJS_PRINT("\n");
 
 #ifdef ZJS_POOL_CONFIG
     zjs_init_mem_pools();
@@ -96,6 +100,10 @@ int main(int argc, char *argv[])
     // initialize modules
     zjs_modules_init();
 
+#ifdef BUILD_MODULE_OCF
+    zjs_register_service_routine(NULL, main_poll_routine);
+#endif
+
 #ifdef ZJS_LINUX_BUILD
     if (argc > 1) {
         zjs_read_script(argv[1], &script, &len);
@@ -106,7 +114,7 @@ int main(int argc, char *argv[])
         script = script_gen;
         len = strnlen(script_gen, MAX_SCRIPT_SIZE);
         if (len == MAX_SCRIPT_SIZE) {
-            PRINT("Error: Script size too large! Increase MAX_SCRIPT_SIZE.\n");
+            ZJS_PRINT("Error: Script size too large! Increase MAX_SCRIPT_SIZE.\n");
             goto error;
         }
     }
@@ -120,7 +128,7 @@ int main(int argc, char *argv[])
 
     code_eval = jerry_parse((jerry_char_t *)script, len, false);
     if (jerry_value_has_error_flag(code_eval)) {
-        PRINT("JerryScript: cannot parse javascript\n");
+        ZJS_PRINT("JerryScript: cannot parse javascript\n");
         goto error;
     }
 
@@ -132,7 +140,7 @@ int main(int argc, char *argv[])
 
     result = jerry_run(code_eval);
     if (jerry_value_has_error_flag(result)) {
-        PRINT("JerryScript: cannot run javascript\n");
+        ZJS_PRINT("JerryScript: cannot run javascript\n");
         goto error;
     }
 
@@ -151,6 +159,7 @@ int main(int argc, char *argv[])
     while (1) {
         zjs_timers_process_events();
         zjs_service_callbacks();
+        zjs_service_routines();
         // not sure if this is okay, but it seems better to sleep than
         //   busy wait
         zjs_sleep(1);

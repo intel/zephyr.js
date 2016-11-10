@@ -7,7 +7,7 @@
 
 #include <stdio.h>
 
-#define PRINT printf
+#define ZJS_PRINT printf
 
 #ifdef DEBUG_BUILD
 
@@ -15,12 +15,12 @@ int zjs_get_sec(void);
 int zjs_get_ms(void);
 
 #define DBG_PRINT \
-    PRINT("[%u.%3.3u][INFO] %s:%d %s(): ", zjs_get_sec(), zjs_get_ms(), __FILE__, __LINE__, __func__); \
-    PRINT
+    ZJS_PRINT("[%u.%3.3u][INFO] %s:%d %s(): ", zjs_get_sec(), zjs_get_ms(), __FILE__, __LINE__, __func__); \
+    ZJS_PRINT
 
 #define ERR_PRINT \
-    PRINT("[%u.%3.3u][ERROR] %s:%d %s(): ", zjs_get_sec(), zjs_get_ms(), __FILE__, __LINE__, __func__); \
-    PRINT
+    ZJS_PRINT("[%u.%3.3u][ERROR] %s:%d %s(): ", zjs_get_sec(), zjs_get_ms(), __FILE__, __LINE__, __func__); \
+    ZJS_PRINT
 
 #else
 #define DBG_PRINT(fmat ...) do {} while(0);

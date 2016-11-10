@@ -354,7 +354,7 @@ jerry_value_t zjs_buffer_create(uint32_t size)
         (zjs_buffer_t *)zjs_malloc(sizeof(zjs_buffer_t));
 
     if (!buf_obj || !buf || !buf_item) {
-        PRINT("zjs_buffer_create: unable to allocate buffer\n");
+        ERR_PRINT("zjs_buffer_create: unable to allocate buffer\n");
         jerry_release_value(buf_obj);
         zjs_free(buf);
         zjs_free(buf_item);

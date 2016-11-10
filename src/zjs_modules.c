@@ -12,7 +12,9 @@
 #include "zjs_modules.h"
 #include "zjs_performance.h"
 #include "zjs_util.h"
-
+#ifdef BUILD_MODULE_OCF
+#include "zjs_ocf_common.h"
+#endif
 #ifndef ZJS_LINUX_BUILD
 // ZJS includes
 #include "zjs_aio.h"
@@ -78,7 +80,18 @@ module_t zjs_modules_array[] = {
 #ifdef BUILD_MODULE_PERFORMANCE
     { "performance", zjs_performance_init },
 #endif
+#ifdef BUILD_MODULE_OCF
+    { "ocf", zjs_ocf_init }
+#endif
 };
+
+struct routine_map {
+    zjs_service_routine func;
+    void* handle;
+};
+
+static uint8_t num_routines = 0;
+struct routine_map svc_routine_map[NUM_SERVICE_ROUTINES];
 
 static jerry_value_t native_require_handler(const jerry_value_t function_obj,
                                             const jerry_value_t this,
@@ -111,7 +124,7 @@ static jerry_value_t native_require_handler(const jerry_value_t function_obj,
         }
     }
 
-    PRINT("MODULE: `%s'\n", module);
+    ZJS_PRINT("MODULE: `%s'\n", module);
     return zjs_error("native_require_handler: module not found");
 }
 
@@ -129,4 +142,24 @@ void zjs_modules_init()
     // create the C handler for require JS call
     zjs_obj_add_function(global_obj, native_require_handler, "require");
     jerry_release_value(global_obj);
+}
+
+void zjs_register_service_routine(void* handle, zjs_service_routine func)
+{
+    if (num_routines >= NUM_SERVICE_ROUTINES) {
+        DBG_PRINT(("not enough space, increase NUM_SERVICE_ROUTINES\n"));
+        return;
+    }
+    svc_routine_map[num_routines].handle = handle;
+    svc_routine_map[num_routines].func = func;
+    num_routines++;
+    return;
+}
+
+void zjs_service_routines(void)
+{
+    int i;
+    for (i = 0; i < num_routines; ++i) {
+        svc_routine_map[i].func(svc_routine_map[i].handle);
+    }
 }

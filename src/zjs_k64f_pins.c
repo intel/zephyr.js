@@ -21,7 +21,7 @@ static void zjs_k64f_num_to_pwm(uint32_t num, int *dev, int *pin)
 {
     int devnum = (num & 0xe0) >> 5;
     if (devnum > 3) {
-        PRINT("Warning: invalid PWM device number\n");
+        DBG_PRINT("Warning: invalid PWM device number\n");
         devnum = 0;
     }
 

@@ -19,7 +19,7 @@
 #ifndef ZJS_POOL_CONFIG
 #ifdef ZJS_TRACE_MALLOC
 #include <zephyr.h>
-#define zjs_malloc(sz) ({void *zjs_ptr = task_malloc(sz); PRINT("%s:%d: allocating %lu bytes (%p)\n", __func__, __LINE__, (uint32_t)sz, zjs_ptr); zjs_ptr;})
+#define zjs_malloc(sz) ({void *zjs_ptr = task_malloc(sz); ZJS_PRINT("%s:%d: allocating %lu bytes (%p)\n", __func__, __LINE__, (uint32_t)sz, zjs_ptr); zjs_ptr;})
 #define zjs_free(ptr) (PRINT("%s:%d: freeing %p\n", __func__, __LINE__, ptr), task_free(ptr))
 #else
 #include <zephyr.h>
@@ -29,7 +29,7 @@
 #else
 #ifdef ZJS_TRACE_MALLOC
 #include <zephyr.h>
-#define zjs_malloc(sz) ({void *zjs_ptr = pool_malloc(sz); PRINT("%s:%d: allocating %lu bytes (%p)\n", __func__, __LINE__, (uint32_t)sz, zjs_ptr); zjs_ptr;})
+#define zjs_malloc(sz) ({void *zjs_ptr = pool_malloc(sz); ZJS_PRINT("%s:%d: allocating %lu bytes (%p)\n", __func__, __LINE__, (uint32_t)sz, zjs_ptr); zjs_ptr;})
 #define zjs_free(ptr) (PRINT("%s:%d: freeing %p\n", __func__, __LINE__, ptr), pool_free(ptr))
 #else
 #include <zephyr.h>

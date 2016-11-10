@@ -9,6 +9,7 @@ ifndef ZJS_BASE
 $(error ZJS_BASE not defined. You need to source zjs-env.sh)
 endif
 
+OCF_ROOT ?= deps/iotivity-constrained
 JERRY_BASE ?= $(ZJS_BASE)/deps/jerryscript
 JS ?= samples/HelloWorld.js
 VARIANT ?= release
@@ -63,6 +64,10 @@ endif
 		fi; \
 	fi
 	@echo "ccflags-y += $(shell ./scripts/analyze.sh $(BOARD) $(JS))" >> src/Makefile
+	@# Add the include for the OCF Makefile only if the script is using OCF
+	@if grep BUILD_MODULE_OCF src/Makefile; then \
+		echo "include \$$(ZJS_BASE)/Makefile.ocf_zephyr" >> src/Makefile; \
+	fi
 
 .PHONY: all
 all: zephyr arc
@@ -93,6 +98,7 @@ update:
 		echo; \
 		exit 1; \
 	fi
+	@cd $(OCF_ROOT); git submodule update --init;
 
 # Sets up prj/last_build files
 .PHONY: setup
@@ -122,19 +128,23 @@ endif
 	@echo "" > .$(BOARD).last_build
 
 # Explicit clean
+# Update is here because on a fresh checkout, clean will fail. So we want to
+# initialize submodules first so clean will succeed in that case. We should find
+# a way to make clean work from the start, but for now this should be harmless.
 .PHONY: clean
-clean:
-	@if [ -d deps/jerryscript ]; then \
-		make -C $(JERRY_BASE) -f targets/zephyr/Makefile clean BOARD=$(BOARD); \
-		rm -rf deps/jerryscript/build/$(BOARD)/; \
-		rm -rf deps/jerryscript/build/lib; \
-	fi
-	@if [ "$(TARGET)" != "linux" ]; then \
+clean: update
+	@if [ -d $(ZEPHYR_SDK_INSTALL_DIR) ]; then \
+		if [ -d deps/jerryscript ]; then \
+			make -C $(JERRY_BASE) -f targets/zephyr/Makefile clean BOARD=$(BOARD); \
+			rm -rf deps/jerryscript/build/$(BOARD)/; \
+			rm -rf deps/jerryscript/build/lib; \
+		fi; \
 		if [ -d deps/zephyr ] && [ -e src/Makefile ]; then \
 			cd deps/zephyr; make clean BOARD=$(BOARD); \
 			cd arc/; make clean; \
 		fi; \
 	fi
+	make -f Makefile.linux clean
 	@rm -f src/*.o
 	@rm -f src/Makefile
 	@rm -f arc/prj.conf
@@ -205,7 +215,7 @@ arcgdb:
 linux: $(PRE_ACTION) generate
 	rm -f .*.last_build
 	echo "" > .linux.last_build
-	make -f Makefile.linux JS=$(JS) VARIANT=$(VARIANT) CB_STATS=$(CB_STATS)
+	make -f Makefile.linux JS=$(JS) VARIANT=$(VARIANT) CB_STATS=$(CB_STATS) V=$(V)
 
 .PHONY: help
 help:

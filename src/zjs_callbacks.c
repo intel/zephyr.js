@@ -281,6 +281,7 @@ int32_t add_callback(jerry_value_t js_func,
     if (new_cb->id >= cb_size - 1) {
         cb_size++;
     }
+
     DBG_PRINT("adding new callback id %ld, js_func=%lu, once=%u\n",
               new_cb->id, new_cb->js->js_func, once);
 
@@ -375,20 +376,20 @@ void print_callbacks(void)
     for (i = 0; i < cb_size; i++) {
         if (cb_map[i]) {
             if (cb_map[i]->type == CALLBACK_TYPE_JS) {
-                PRINT("[%u] JS Callback:\n\tType: ", i);
+                ZJS_PRINT("[%u] JS Callback:\n\tType: ", i);
                 if (cb_map[i]->js->func_list == NULL &&
                     jerry_value_is_function(cb_map[i]->js->js_func)) {
-                    PRINT("Single Function\n");
-                    PRINT("\tjs_func: %lu\n", cb_map[i]->js->js_func);
-                    PRINT("\tonce: %u\n", cb_map[i]->js->once);
+                    ZJS_PRINT("Single Function\n");
+                    ZJS_PRINT("\tjs_func: %lu\n", cb_map[i]->js->js_func);
+                    ZJS_PRINT("\tonce: %u\n", cb_map[i]->js->once);
                 } else {
-                    PRINT("List\n");
-                    PRINT("\tmax_funcs: %u\n", cb_map[i]->js->max_funcs);
-                    PRINT("\tmax_funcs: %u\n", cb_map[i]->js->num_funcs);
+                    ZJS_PRINT("List\n");
+                    ZJS_PRINT("\tmax_funcs: %u\n", cb_map[i]->js->max_funcs);
+                    ZJS_PRINT("\tmax_funcs: %u\n", cb_map[i]->js->num_funcs);
                 }
             }
         } else {
-            PRINT("[%u] Empty\n", i);
+            ZJS_PRINT("[%u] Empty\n", i);
         }
     }
 }
@@ -489,7 +490,6 @@ void zjs_service_callbacks(void)
                 num_callbacks++;
 #endif
             } else {
-                DBG_PRINT("no items in ring buffer. ret=%i\n", ret);
                 // no more items in ring buffer
                 break;
             }

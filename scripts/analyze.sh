@@ -35,6 +35,33 @@ if [ $? -eq 0 ]; then
     >&2 echo Using module: Events
     MODULES+=" -DBUILD_MODULE_EVENTS"
 fi
+check_for_require ocf
+if [ $? -eq 0 ]; then
+    >&2 echo Using module: OCF
+    MODULES+=" -DBUILD_MODULE_OCF"
+    echo "CONFIG_NETWORKING_WITH_IPV6=y" >> prj.conf.tmp
+    echo "CONFIG_NET_TESTING=y" >> prj.conf.tmp
+    echo "CONFIG_NETWORKING_IPV6_NO_ND=y" >> prj.conf.tmp
+    echo "CONFIG_NETWORKING=y" >> prj.conf.tmp
+    echo "CONFIG_NETWORKING_WITH_LOGGING=y" >> prj.conf.tmp
+    echo "CONFIG_NETWORKING_WITH_LOOPBACK=y" >> prj.conf.tmp
+    echo "CONFIG_NETWORKING_UART=y" >> prj.conf.tmp
+    echo "CONFIG_NETWORKING_DEBUG_UART=y" >> prj.conf.tmp
+    echo "CONFIG_UDP_MAX_CONNECTIONS=30" >> prj.conf.tmp
+    echo "CONFIG_IP_BUF_RX_SIZE=8" >> prj.conf.tmp
+    echo "CONFIG_IP_BUF_TX_SIZE=2" >> prj.conf.tmp
+    echo "CONFIG_NET_MAX_CONTEXTS=9" >> prj.conf.tmp
+    echo "CONFIG_NET_IPV6=y" >> prj.conf.tmp
+    echo "CONFIG_NET_IPV4=y" >> prj.conf.tmp
+    echo "CONFIG_NET_YAIP=y" >> prj.conf.tmp
+    echo "CONFIG_NET_UDP=y" >> prj.conf.tmp
+    echo "CONFIG_NET_LOG=y" >> prj.conf.tmp
+    echo "CONFIG_NET_SLIP=y" >> prj.conf.tmp
+    echo "CONFIG_SLIP_TAP=y" >> prj.conf.tmp
+    echo "CONFIG_SYS_LOG=y" >> prj.conf.tmp
+    echo "CONFIG_SYS_LOG_SHOW_COLOR=y" >> prj.conf.tmp
+    echo "CONFIG_TEST_RANDOM_GENERATOR=y" >> prj.conf.tmp
+fi
 check_for_require gpio
 if [ $? -eq 0 ]; then
     >&2 echo Using module: GPIO

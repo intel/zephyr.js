@@ -10,8 +10,8 @@
 #define STDERR_PRINT(s, ...) fprintf(stderr, s, __VA_ARGS__)
 #define STDOUT_PRINT(s, ...) fprintf(stdout, s, __VA_ARGS__)
 #else
-#define STDERR_PRINT(s, ...) PRINT(s, __VA_ARGS__)
-#define STDOUT_PRINT(s, ...) PRINT(s, __VA_ARGS__)
+#define STDERR_PRINT(s, ...) ZJS_PRINT(s, __VA_ARGS__)
+#define STDOUT_PRINT(s, ...) ZJS_PRINT(s, __VA_ARGS__)
 #endif
 
 #define IS_NUMBER 0

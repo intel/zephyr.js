@@ -480,9 +480,12 @@ bool zjs_trigger_event_now(jerry_value_t obj,
     jerry_value_t event_emitter = zjs_get_property(obj, HIDDEN_PROP("event"));
     if (!jerry_get_object_native_handle(event_emitter, (uintptr_t*)&ev)) {
         zjs_free(trigger);
+        jerry_release_value(event_emitter);
         DBG_PRINT("native handle not found\n");
-        return jerry_create_boolean(false);
+        return false;
     }
+
+    jerry_release_value(event_emitter);
 
     event_obj = zjs_get_property(ev->map, event);
     if (!jerry_value_is_object(event_obj)) {
@@ -491,7 +494,7 @@ bool zjs_trigger_event_now(jerry_value_t obj,
         return false;
     }
 
-    zjs_obj_get_uint32(event_obj, "callback_id", &callback_id);
+    zjs_obj_get_int32(event_obj, "callback_id", &callback_id);
     if (callback_id == -1) {
         zjs_free(trigger);
         DBG_PRINT("callback_id not found\n");
@@ -507,7 +510,7 @@ bool zjs_trigger_event_now(jerry_value_t obj,
 
     zjs_call_callback(callback_id, argv, argc);
 
-    return jerry_create_boolean(true);
+    return true;
 }
 
 static void destroy_event(const uintptr_t pointer)

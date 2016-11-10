@@ -66,7 +66,7 @@ static int ipm_send_reply(struct zjs_ipm_message *msg) {
 static int ipm_send_error_reply(struct zjs_ipm_message *msg, uint32_t error_code) {
     msg->flags |= MSG_ERROR_FLAG;
     msg->error_code = error_code;
-    PRINT("send error %lu\n", msg->error_code);
+    ZJS_PRINT("send error %lu\n", msg->error_code);
     return zjs_ipm_send(msg->id, msg);
 }
 
@@ -89,12 +89,12 @@ static uint32_t pin_read(uint8_t pin)
     };
 
     if (!adc_dev) {
-       PRINT("ADC device not found\n");
+       ZJS_PRINT("ADC device not found\n");
        return 0;
     }
 
     if (adc_read(adc_dev, &entry_table) != 0) {
-        PRINT("couldn't read from pin %d\n", pin);
+        ZJS_PRINT("couldn't read from pin %d\n", pin);
         return 0;
     }
 
@@ -126,7 +126,7 @@ static void queue_message(struct zjs_ipm_message* incoming_msg)
         memcpy(msg, incoming_msg, sizeof(struct zjs_ipm_message));
     } else {
         // running out of spaces, disgard message
-        PRINT("skipping incoming message\n");
+        ZJS_PRINT("skipping incoming message\n");
     }
     nano_isr_sem_give(&arc_sem);
 }
@@ -137,7 +137,7 @@ static void ipm_msg_receive_callback(void *context, uint32_t id, volatile void *
     if (incoming_msg) {
         queue_message(incoming_msg);
     } else {
-        PRINT("error: message is NULL\n");
+        ZJS_PRINT("error: message is NULL\n");
     }
 }
 
@@ -148,7 +148,7 @@ static void handle_aio(struct zjs_ipm_message* msg)
     uint32_t error_code = ERROR_IPM_NONE;
 
     if (pin < ARC_AIO_MIN || pin > ARC_AIO_MAX) {
-        PRINT("pin #%lu out of range\n", pin);
+        ZJS_PRINT("pin #%lu out of range\n", pin);
         ipm_send_error_reply(msg, ERROR_IPM_INVALID_PARAMETER);
         return;
     }
@@ -177,7 +177,7 @@ static void handle_aio(struct zjs_ipm_message* msg)
         break;
 
     default:
-        PRINT("unsupported aio message type %lu\n", msg->type);
+        ZJS_PRINT("unsupported aio message type %lu\n", msg->type);
         error_code = ERROR_IPM_NOT_SUPPORTED;
     }
 
@@ -204,7 +204,7 @@ static void handle_i2c(struct zjs_ipm_message* msg)
             i2c_device[msg_bus] = device_get_binding(bus);
 
             if (!i2c_device[msg_bus]) {
-                PRINT("I2C bus %s not found.\n", bus);
+                ZJS_PRINT("I2C bus %s not found.\n", bus);
                 error_code = ERROR_IPM_OPERATION_FAILED;
             } else {
                 /* TODO remove these hard coded numbers
@@ -216,12 +216,12 @@ static void handle_i2c(struct zjs_ipm_message* msg)
                 cfg.bits.is_master_device = 1;
 
                 if (i2c_configure(i2c_device[msg_bus], cfg.raw) != 0) {
-                    PRINT("I2C bus %s configure failed.\n", bus);
+                    ZJS_PRINT("I2C bus %s configure failed.\n", bus);
                     error_code = ERROR_IPM_OPERATION_FAILED;
                 }
             }
         } else {
-            PRINT("I2C bus I2C_%s is not a valid I2C bus.\n", msg_bus);
+            ZJS_PRINT("I2C bus I2C_%s is not a valid I2C bus.\n", msg_bus);
             error_code = ERROR_IPM_OPERATION_FAILED;
         }
         break;
@@ -233,18 +233,18 @@ static void handle_i2c(struct zjs_ipm_message* msg)
                               msg->data.i2c.data,
                               msg->data.i2c.length,
                               msg->data.i2c.address) != 0) {
-                    PRINT("i2c_write failed!\n");
+                    ZJS_PRINT("i2c_write failed!\n");
                     error_code = ERROR_IPM_OPERATION_FAILED;
                 }
             }
             else {
-                PRINT("no I2C device is ready yet\n");
+                ZJS_PRINT("no I2C device is ready yet\n");
                 error_code = ERROR_IPM_OPERATION_FAILED;
             }
         }
         break;
     case TYPE_I2C_WRITE_BIT:
-        PRINT("received TYPE_I2C_WRITE_BIT\n");
+        ZJS_PRINT("received TYPE_I2C_WRITE_BIT\n");
         break;
     case TYPE_I2C_READ:
         if (msg_bus < MAX_I2C_BUS) {
@@ -261,7 +261,7 @@ static void handle_i2c(struct zjs_ipm_message* msg)
                 }
             }
             else {
-                PRINT("No I2C device is ready yet\n");
+                ZJS_PRINT("No I2C device is ready yet\n");
                 error_code = ERROR_IPM_OPERATION_FAILED;
             }
         }
@@ -281,17 +281,17 @@ static void handle_i2c(struct zjs_ipm_message* msg)
                 }
             }
             else {
-                PRINT("No I2C device is ready yet\n");
+                ZJS_PRINT("No I2C device is ready yet\n");
                 error_code = ERROR_IPM_OPERATION_FAILED;
             }
         }
         break;
     case TYPE_I2C_TRANSFER:
-        PRINT("received TYPE_I2C_TRANSFER\n");
+        ZJS_PRINT("received TYPE_I2C_TRANSFER\n");
         break;
 
     default:
-        PRINT("unsupported i2c message type %lu\n", msg->type);
+        ZJS_PRINT("unsupported i2c message type %lu\n", msg->type);
         error_code = ERROR_IPM_NOT_SUPPORTED;
     }
 
@@ -310,7 +310,7 @@ static void handle_glcd(struct zjs_ipm_message* msg)
     uint32_t error_code = ERROR_IPM_NONE;
 
     if (msg->type != TYPE_GLCD_INIT && !glcd) {
-        PRINT("Grove LCD device not found.\n");
+        ZJS_PRINT("Grove LCD device not found.\n");
         ipm_send_error_reply(msg, ERROR_IPM_OPERATION_FAILED);
         return;
     }
@@ -333,7 +333,7 @@ static void handle_glcd(struct zjs_ipm_message* msg)
         buffer = msg->data.glcd.buffer;
         if (!buffer) {
             error_code = ERROR_IPM_INVALID_PARAMETER;
-            PRINT("buffer not found\n");
+            ZJS_PRINT("buffer not found\n");
         } else {
             snprintf(str, MAX_BUFFER_SIZE, "%s", buffer);
             glcd_print(glcd, str, strnlen(str, MAX_BUFFER_SIZE));
@@ -376,7 +376,7 @@ static void handle_glcd(struct zjs_ipm_message* msg)
     break;
 
     default:
-        PRINT("unsupported grove lcd message type %lu\n", msg->type);
+        ZJS_PRINT("unsupported grove lcd message type %lu\n", msg->type);
         error_code = ERROR_IPM_NOT_SUPPORTED;
     }
 
@@ -402,7 +402,7 @@ static void process_messages()
             } else if (msg->id == MSG_ID_GLCD) {
                 handle_glcd(msg);
             } else {
-                PRINT("unsupported ipm message id: %lu\n", msg->id);
+                ZJS_PRINT("unsupported ipm message id: %lu\n", msg->id);
                 ipm_send_error_reply(msg, ERROR_IPM_NOT_SUPPORTED);
             }
 
@@ -440,7 +440,7 @@ static void process_aio_updates()
 
 void main(void)
 {
-    PRINT("Sensor core running ZJS ARC support image\n");
+    ZJS_PRINT("Sensor core running ZJS ARC support image\n");
 
     nano_sem_init(&arc_sem);
     nano_sem_give(&arc_sem);
