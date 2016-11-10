@@ -47,20 +47,10 @@ endif
 		if [ "$(TRACE)" = "full" ]; then \
 			echo "ccflags-y += -DDUMP_MEM_STATS" >> src/Makefile; \
 		fi; \
-		echo "" >> prj.mdef; \
-		echo "% POOL NAME         SIZE_SMALL SIZE_LARGE BLOCK_NUMBER" >> prj.mdef; \
-		echo "% ====================================================" >> prj.mdef; \
-		echo "POOL POOL_8             8         8             64" >> prj.mdef; \
-		echo "POOL POOL_16            16        16            32" >> prj.mdef; \
-		echo "POOL POOL_36            36        36            16" >> prj.mdef; \
-		echo "POOL POOL_64            64        64            10" >> prj.mdef; \
-		echo "POOL POOL_128           128       128           4" >> prj.mdef; \
-		echo "POOL POOL_256           256       256           2" >> prj.mdef; \
+		cat prj.mdef.pool >> prj.mdef; \
 	else \
 		if [ "$(DEV)" != "ashell" ]; then \
-			echo "" >> prj.mdef; \
-			echo "% HEAP CONFIG: " >> prj.mdef; \
-			echo "HEAP_SIZE 5120" >> prj.mdef; \
+			cat prj.mdef.heap >> prj.mdef; \
 		fi; \
 	fi
 	@echo "ccflags-y += $(shell ./scripts/analyze.sh $(BOARD) $(JS))" >> src/Makefile

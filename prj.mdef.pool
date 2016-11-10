@@ -1,0 +1,9 @@
+
+% POOL NAME         SIZE_SMALL SIZE_LARGE BLOCK_NUMBER
+% ====================================================
+POOL POOL_8             8         8             64
+POOL POOL_16            16        16            32
+POOL POOL_36            36        36            16
+POOL POOL_64            64        64            10
+POOL POOL_128           128       128           4
+POOL POOL_256           256       256           2
