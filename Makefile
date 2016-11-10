@@ -31,16 +31,15 @@ zephyr: $(PRE_ACTION) analyze generate
 .PHONY: analyze
 analyze:
 	@echo "% This is a generated file" > prj.mdef
-ifeq ($(DEV), ashell)
-	@cat fragments/prj.mdef.dev >> prj.mdef
-else
-	@cat fragments/prj.mdef.base >> prj.mdef
-endif
 	@echo "# This is a generated file" > src/Makefile
 	@cat src/Makefile.base >> src/Makefile
 	@if [ "$(TRACE)" = "on" ] || [ "$(TRACE)" = "full" ]; then \
 		echo "ccflags-y += -DZJS_TRACE_MALLOC" >> src/Makefile; \
 	fi
+ifeq ($(DEV), ashell)
+	@cat fragments/prj.mdef.dev >> prj.mdef
+else
+	@cat fragments/prj.mdef.base >> prj.mdef
 	@if [ $(MALLOC) = "pool" ]; then \
 		echo "obj-y += zjs_pool.o" >> src/Makefile; \
 		echo "ccflags-y += -DZJS_POOL_CONFIG" >> src/Makefile; \
@@ -49,10 +48,9 @@ endif
 		fi; \
 		cat fragments/prj.mdef.pool >> prj.mdef; \
 	else \
-		if [ "$(DEV)" != "ashell" ]; then \
-			cat fragments/prj.mdef.heap >> prj.mdef; \
-		fi; \
+		cat fragments/prj.mdef.heap >> prj.mdef; \
 	fi
+endif
 	@echo "ccflags-y += $(shell ./scripts/analyze.sh $(BOARD) $(JS))" >> src/Makefile
 	@# Add the include for the OCF Makefile only if the script is using OCF
 	@if grep BUILD_MODULE_OCF src/Makefile; then \
