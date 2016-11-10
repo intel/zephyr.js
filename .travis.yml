@@ -19,6 +19,11 @@ env:
     - TARGET="BOARD=frdm_k64f"
     - TARGET="arc"
     - TARGET="linux" NOZEPHYR=y
+    - TARGET="ashell"
+
+matrix:
+   allow_failures:
+   - env: TARGET="ashell"
 
 before_install:
   - sudo apt-get update -qq
@@ -59,6 +64,9 @@ script: >
   elif [ "$TARGET" == "zephyr-large" ]; then
     banner "Test 1/1" &&
     make V=1 JS=samples/WebBluetoothGroveLcdDemo.js
+  elif [ "$TARGET" == "ashell" ]; then
+    banner "ashell" &&
+    make V=1 DEV=ashell
   elif [ "$TARGET" == "git-check" ]; then
     # check for any new trailing whitespace since the first fetched commit
     banner "git check" &&
