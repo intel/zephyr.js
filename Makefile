@@ -66,9 +66,7 @@ endif
 	@echo "ccflags-y += $(shell ./scripts/analyze.sh $(BOARD) $(JS))" >> src/Makefile
 	@# Add the include for the OCF Makefile only if the script is using OCF
 	@if grep BUILD_MODULE_OCF src/Makefile; then \
-		echo "ifneq (\$$(BOARD), arduino_101)" >> src/Makefile; \
 		echo "include \$$(ZJS_BASE)/Makefile.ocf_zephyr" >> src/Makefile; \
-		echo "endif" >> src/Makefile; \
 	fi
 
 .PHONY: all
