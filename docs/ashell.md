@@ -17,7 +17,7 @@ Compilation
 ------------
 
 This command will enable the shell compilation:
-`make DEV=ashell MALLOC=heap`
+`make DEV=ashell`
 
 Dev mode will append all the functionality from ZJS, so it might not fit in ROM.
 
