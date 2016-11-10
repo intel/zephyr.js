@@ -38,6 +38,8 @@ analyze: $(JS)
 	@echo "% This is a generated file" > prj.mdef
 	@echo "# This is a generated file" > src/Makefile
 	@cat src/Makefile.base >> src/Makefile
+	@echo "# This is a generated file" > arc/src/Makefile
+	@cat arc/src/Makefile.base >> arc/src/Makefile
 	@if [ "$(TRACE)" = "on" ] || [ "$(TRACE)" = "full" ]; then \
 		echo "ccflags-y += -DZJS_TRACE_MALLOC" >> src/Makefile; \
 	fi
@@ -56,7 +58,7 @@ else
 		cat fragments/prj.mdef.heap >> prj.mdef; \
 	fi
 endif
-	@echo "ccflags-y += $(shell ./scripts/analyze.sh $(BOARD) $(JS))" >> src/Makefile
+	@echo "ccflags-y += $(shell ./scripts/analyze.sh $(BOARD) $(JS))" | tee -a src/Makefile arc/src/Makefile
 	@# Add the include for the OCF Makefile only if the script is using OCF
 	@if grep BUILD_MODULE_OCF src/Makefile; then \
 		echo "include \$$(ZJS_BASE)/Makefile.ocf_zephyr" >> src/Makefile; \
@@ -141,6 +143,8 @@ clean: update
 	@rm -f src/*.o
 	@rm -f src/Makefile
 	@rm -f arc/prj.conf
+	@rm -f arc/prj.conf.tmp
+	@rm -f arc/src/Makefile
 	@rm -f prj.conf
 	@rm -f prj.conf.tmp
 	@rm -f prj.mdef
@@ -179,9 +183,12 @@ qemu: $(PRE_ACTION) analyze generate
 
 # Builds ARC binary
 .PHONY: arc
-arc:
+arc: $(PRE_ACTION) analyze
 	@echo "# This is a generated file" > arc/prj.conf
 	@cat arc/fragments/prj.conf.base >> arc/prj.conf
+	@if [ -e arc/prj.conf.tmp ]; then \
+		cat arc/prj.conf.tmp >> arc/prj.conf; \
+	fi
 ifeq ($(ZJS_PARTITION), 256)
 	@cat arc/fragments/prj.conf.partition_256 >> arc/prj.conf
 endif
