@@ -6,9 +6,15 @@
 #include <string.h>
 #include <device.h>
 #include <init.h>
+#ifdef BUILD_MODULE_AIO
 #include <adc.h>
+#endif
+#ifdef BUILD_MODULE_I2C
 #include <i2c.h>
+#endif
+#ifdef BUILD_MODULE_GROVE_LCD
 #include <display/grove_lcd.h>
+#endif
 
 #include "zjs_common.h"
 #include "zjs_ipm.h"
@@ -17,35 +23,40 @@
 #define SLEEP_TICKS       1  // 10ms sleep time in cpu ticks
 #define UPDATE_INTERVAL 200  // 2sec interval in between notifications
 
-// AIO
+#ifdef BUILD_MODULE_AIO
 #define ADC_DEVICE_NAME "ADC_0"
 #define ADC_BUFFER_SIZE 2
+#endif
 
-// I2C
+#ifdef BUILD_MODULE_I2C
 #define MAX_I2C_BUS 1
+#endif
 
-// GROVE_LCD
+#ifdef BUILD_MODULE_GROVE_LCD
 #define MAX_BUFFER_SIZE 256
+#endif
 
-// IPM
 static struct nano_sem arc_sem;
 static struct zjs_ipm_message msg_queue[QUEUE_SIZE];
 static struct zjs_ipm_message* end_of_queue_ptr = msg_queue + QUEUE_SIZE;
 
-// AIO
-static struct device* adc_dev;
+#ifdef BUILD_MODULE_AIO
+static struct device* adc_dev = NULL;
 static uint32_t pin_values[ARC_AIO_LEN] = {};
 static uint32_t pin_last_values[ARC_AIO_LEN] = {};
 static void *pin_user_data[ARC_AIO_LEN] = {};
 static uint8_t pin_send_updates[ARC_AIO_LEN] = {};
 static uint8_t seq_buffer[ADC_BUFFER_SIZE];
+#endif
 
-// I2C
+#ifdef BUILD_MODULE_I2C
 static struct device *i2c_device[MAX_I2C_BUS];
+#endif
 
-// Grove_LCD
+#ifdef BUILD_MODULE_GROVE_LCD
 static struct device *glcd = NULL;
 static char str[MAX_BUFFER_SIZE];
+#endif
 
 // add strnlen() support for security since it is missing
 // in Zephyr's minimal libc implementation
@@ -70,10 +81,7 @@ static int ipm_send_error_reply(struct zjs_ipm_message *msg, uint32_t error_code
     return zjs_ipm_send(msg->id, msg);
 }
 
-static int ipm_send_updates(struct zjs_ipm_message *msg) {
-    return zjs_ipm_send(msg->id, msg);
-}
-
+#ifdef BUILD_MODULE_AIO
 static uint32_t pin_read(uint8_t pin)
 {
     struct adc_seq_entry entry = {
@@ -104,6 +112,7 @@ static uint32_t pin_read(uint8_t pin)
 
     return raw_value;
 }
+#endif
 
 static void queue_message(struct zjs_ipm_message* incoming_msg)
 {
@@ -141,6 +150,7 @@ static void ipm_msg_receive_callback(void *context, uint32_t id, volatile void *
     }
 }
 
+#ifdef BUILD_MODULE_AIO
 static void handle_aio(struct zjs_ipm_message* msg)
 {
     uint32_t pin = msg->data.aio.pin;
@@ -175,7 +185,6 @@ static void handle_aio(struct zjs_ipm_message* msg)
         pin_send_updates[pin - ARC_AIO_MIN] = 0;
         pin_user_data[pin - ARC_AIO_MIN] = NULL;
         break;
-
     default:
         ZJS_PRINT("unsupported aio message type %lu\n", msg->type);
         error_code = ERROR_IPM_NOT_SUPPORTED;
@@ -191,6 +200,30 @@ static void handle_aio(struct zjs_ipm_message* msg)
     ipm_send_reply(msg);
 }
 
+static void process_aio_updates()
+{
+    for (int i=0; i<=5; i++) {
+        if (pin_send_updates[i]) {
+            pin_values[i] = pin_read(ARC_AIO_MIN + i);
+            if (pin_values[i] != pin_last_values[i]) {
+                // send updates only if value has changed
+                // so it doesn't flood the IPM channel
+                struct zjs_ipm_message msg;
+                msg.id = MSG_ID_AIO;
+                msg.type = TYPE_AIO_PIN_EVENT_VALUE_CHANGE;
+                msg.flags = 0;
+                msg.user_data = pin_user_data[i];
+                msg.data.aio.pin = ARC_AIO_MIN+i;
+                msg.data.aio.value = pin_values[i];
+                ipm_send_reply(&msg);
+            }
+            pin_last_values[i] = pin_values[i];
+        }
+    }
+}
+#endif
+
+#ifdef BUILD_MODULE_I2C
 static void handle_i2c(struct zjs_ipm_message* msg)
 {
     uint32_t error_code = ERROR_IPM_NONE;
@@ -289,7 +322,6 @@ static void handle_i2c(struct zjs_ipm_message* msg)
     case TYPE_I2C_TRANSFER:
         ZJS_PRINT("received TYPE_I2C_TRANSFER\n");
         break;
-
     default:
         ZJS_PRINT("unsupported i2c message type %lu\n", msg->type);
         error_code = ERROR_IPM_NOT_SUPPORTED;
@@ -302,7 +334,9 @@ static void handle_i2c(struct zjs_ipm_message* msg)
 
     ipm_send_reply(msg);
 }
+#endif
 
+#ifdef BUILD_MODULE_GROVE_LCD
 static void handle_glcd(struct zjs_ipm_message* msg)
 {
     char *buffer;
@@ -373,8 +407,6 @@ static void handle_glcd(struct zjs_ipm_message* msg)
     case TYPE_GLCD_GET_INPUT_STATE:
         msg->data.glcd.value = glcd_input_state_get(glcd);
         break;
-    break;
-
     default:
         ZJS_PRINT("unsupported grove lcd message type %lu\n", msg->type);
         error_code = ERROR_IPM_NOT_SUPPORTED;
@@ -387,6 +419,7 @@ static void handle_glcd(struct zjs_ipm_message* msg)
 
     ipm_send_reply(msg);
 }
+#endif
 
 static void process_messages()
 {
@@ -394,47 +427,31 @@ static void process_messages()
 
     while (msg && msg < end_of_queue_ptr) {
         // loop through all messages and process them
-        if (msg->id != MSG_ID_DONE) {
-            if (msg->id == MSG_ID_AIO) {
-                handle_aio(msg);
-            } else if (msg->id == MSG_ID_I2C) {
-                handle_i2c(msg);
-            } else if (msg->id == MSG_ID_GLCD) {
-                handle_glcd(msg);
-            } else {
-                ZJS_PRINT("unsupported ipm message id: %lu\n", msg->id);
-                ipm_send_error_reply(msg, ERROR_IPM_NOT_SUPPORTED);
-            }
-
-            // done processing, marking it done
-            msg->id = MSG_ID_DONE;
-       } else {
-            // no more messages
-            break;
+       switch(msg->id) {
+#ifdef BUILD_MODULE_AIO
+       case MSG_ID_AIO:
+           handle_aio(msg);
+           break;
+#endif
+#ifdef BUILD_MODULE_I2C
+       case MSG_ID_I2C:
+           handle_i2c(msg);
+           break;
+#endif
+#ifdef BUILD_MODULE_GROVE_LCD
+       case MSG_ID_GLCD:
+           handle_glcd(msg);
+           break;
+#endif
+       case MSG_ID_DONE:
+           return;
+       default:
+           ZJS_PRINT("unsupported ipm message id: %lu, check ARC modules\n", msg->id);
+           ipm_send_error_reply(msg, ERROR_IPM_NOT_SUPPORTED);
        }
-       msg++;
-    }
-}
 
-static void process_aio_updates()
-{
-    for (int i=0; i<=5; i++) {
-        if (pin_send_updates[i]) {
-            pin_values[i] = pin_read(ARC_AIO_MIN + i);
-            if (pin_values[i] != pin_last_values[i]) {
-                // send updates only if value has changed
-                // so it doesn't flood the IPM channel
-                struct zjs_ipm_message msg;
-                msg.id = MSG_ID_AIO;
-                msg.type = TYPE_AIO_PIN_EVENT_VALUE_CHANGE;
-                msg.flags = 0;
-                msg.user_data = pin_user_data[i];
-                msg.data.aio.pin = ARC_AIO_MIN+i;
-                msg.data.aio.value = pin_values[i];
-                ipm_send_updates(&msg);
-            }
-            pin_last_values[i] = pin_values[i];
-        }
+       msg->id = MSG_ID_DONE;
+       msg++;
     }
 }
 
@@ -450,21 +467,26 @@ void main(void)
     zjs_ipm_init();
     zjs_ipm_register_callback(-1, ipm_msg_receive_callback); // MSG_ID ignored
 
+#ifdef BUILD_MODULE_AIO
     adc_dev = device_get_binding(ADC_DEVICE_NAME);
     adc_enable(adc_dev);
 
     int tick_count = 0;
+#endif
+
     while (1) {
         process_messages();
-
-        tick_count += SLEEP_TICKS;
+#ifdef BUILD_MODULE_AIO
         if (tick_count >= UPDATE_INTERVAL) {
             process_aio_updates();
             tick_count = 0;
         }
-
+        tick_count += SLEEP_TICKS;
+#endif
         task_sleep(SLEEP_TICKS);
     }
 
+#ifdef BUILD_MODULE_AIO
     adc_disable(adc_dev);
+#endif
 }
