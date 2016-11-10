@@ -37,8 +37,10 @@ if which uglifyjs &> /dev/null; then
         echo Error: Minification failed!
         exit $ERR
     fi
+    UGLIFY=1
 else
     cat $INPUT > /tmp/gen.tmp
+    UGLIFY=0
 fi
 
 COUNT=0
@@ -73,6 +75,9 @@ do
         if [ "$char" = $'r' ] || [ "$char" = $'n' ]; then
             printf "\\\\$char" >> $OUTPUT
         fi
+    elif [ "$char" = $'\n' ] && [ $UGLIFY -eq 0 ]; then
+        # Handle new lines if uglify is not installed
+        printf "\\\n\"\n\"" >> $OUTPUT
     else
         printf "$char" >> $OUTPUT
     fi
