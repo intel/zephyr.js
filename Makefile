@@ -187,12 +187,12 @@ endif
 # Run debug server over JTAG
 .PHONY: debug
 debug:
-	make -f Makefile.zephyr BOARD=arduino_101 debugserver
+	make -f Makefile.zephyr BOARD=arduino_101 ARCH=x86 debugserver
 
 # Run gdb to connect to debug server for x86
 .PHONY: gdb
 gdb:
-	gdb outdir/zephyr.elf -ex "target remote :3333"
+	$$ZEPHYR_SDK_INSTALL_DIR/sysroots/i686-pokysdk-linux/usr/bin/iamcu-poky-elfiamcu/i586-poky-elfiamcu-gdb outdir/arduino_101/zephyr.elf -ex "target remote :3333"
 
 # Run gdb to connect to debug server for ARC
 .PHONY: arcgdb
