@@ -128,6 +128,9 @@ endif
 	@echo "" > .$(BOARD).last_build
 
 # Explicit clean
+# Update is here because on a fresh checkout, clean will fail. So we want to
+# initialize submodules first so clean will succeed in that case. We should find
+# a way to make clean work from the start, but for now this should be harmless.
 .PHONY: clean
 clean: update
 	@if [ -d $(ZEPHYR_SDK_INSTALL_DIR) ]; then \

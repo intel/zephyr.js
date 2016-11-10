@@ -333,7 +333,7 @@ static void handle_glcd(struct zjs_ipm_message* msg)
         buffer = msg->data.glcd.buffer;
         if (!buffer) {
             error_code = ERROR_IPM_INVALID_PARAMETER;
-            ZJS_PRINT("buffeZJS_PRINT found\n");
+            ZJS_PRINT("buffer not found\n");
         } else {
             snprintf(str, MAX_BUFFER_SIZE, "%s", buffer);
             glcd_print(glcd, str, strnlen(str, MAX_BUFFER_SIZE));
