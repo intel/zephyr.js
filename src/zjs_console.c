@@ -43,13 +43,13 @@ static jerry_value_t do_print(const jerry_value_t function_obj,
     int i;
     for (i = 0; i < argc; ++i) {
         if (jerry_value_is_string(argv[i])) {
-            jerry_size_t jlen = jerry_get_string_size(argv[0]);
+            jerry_size_t jlen = jerry_get_string_size(argv[i]);
             if (jlen > MAX_STR_LENGTH) {
                 ERR_PRINT("console string is too long, max length=%u\n", MAX_STR_LENGTH);
                 return ZJS_UNDEFINED;
             }
             char buffer[jlen + 1];
-            int wlen = jerry_string_to_char_buffer(argv[0], (jerry_char_t *)buffer, jlen);
+            int wlen = jerry_string_to_char_buffer(argv[i], (jerry_char_t *)buffer, jlen);
             buffer[wlen] = '\0';
             fprintf(out, "%s ", buffer);
         } else if (jerry_value_is_number(argv[i])) {
