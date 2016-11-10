@@ -32,9 +32,9 @@ zephyr: $(PRE_ACTION) analyze generate
 analyze:
 	@echo "% This is a generated file" > prj.mdef
 ifeq ($(DEV), ashell)
-	@cat prj.mdef.dev >> prj.mdef
+	@cat fragments/prj.mdef.dev >> prj.mdef
 else
-	@cat prj.mdef.base >> prj.mdef
+	@cat fragments/prj.mdef.base >> prj.mdef
 endif
 	@echo "# This is a generated file" > src/Makefile
 	@cat src/Makefile.base >> src/Makefile
@@ -47,10 +47,10 @@ endif
 		if [ "$(TRACE)" = "full" ]; then \
 			echo "ccflags-y += -DDUMP_MEM_STATS" >> src/Makefile; \
 		fi; \
-		cat prj.mdef.pool >> prj.mdef; \
+		cat fragments/prj.mdef.pool >> prj.mdef; \
 	else \
 		if [ "$(DEV)" != "ashell" ]; then \
-			cat prj.mdef.heap >> prj.mdef; \
+			cat fragments/prj.mdef.heap >> prj.mdef; \
 		fi; \
 	fi
 	@echo "ccflags-y += $(shell ./scripts/analyze.sh $(BOARD) $(JS))" >> src/Makefile
@@ -95,17 +95,17 @@ update:
 setup: update
 	@echo "# This is a generated file" > prj.conf
 ifeq ($(BOARD), qemu_x86)
-	@cat prj.conf.qemu_x86 >> prj.conf
+	@cat fragments/prj.conf.qemu_x86 >> prj.conf
 else
 ifeq ($(DEV), ashell)
-	@cat prj.conf.arduino_101_dev >> prj.conf
+	@cat fragments/prj.conf.arduino_101_dev >> prj.conf
 else
-	@cat prj.conf.base >> prj.conf
+	@cat fragments/prj.conf.base >> prj.conf
 endif
 ifeq ($(BOARD), arduino_101)
-	cat prj.conf.arduino_101 >> prj.conf
+	cat fragments/prj.conf.arduino_101 >> prj.conf
 ifeq ($(ZJS_PARTITION), 256)
-	@cat prj.conf.partition_256 >> prj.conf
+	@cat fragments/prj.conf.partition_256 >> prj.conf
 endif
 endif
 endif
@@ -178,9 +178,9 @@ qemu: $(PRE_ACTION) analyze generate
 .PHONY: arc
 arc:
 	@echo "# This is a generated file" > arc/prj.conf
-	@cat arc/prj.conf.base >> arc/prj.conf
+	@cat arc/fragments/prj.conf.base >> arc/prj.conf
 ifeq ($(ZJS_PARTITION), 256)
-	@cat arc/prj.conf.partition_256 >> arc/prj.conf
+	@cat arc/fragments/prj.conf.partition_256 >> arc/prj.conf
 endif
 	@cd arc; make BOARD=arduino_101_sss
 

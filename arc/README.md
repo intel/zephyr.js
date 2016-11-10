@@ -7,7 +7,11 @@ the X86 AIO module using IPM.
 
 To build and flash to the ARC on the Arduino 101:
 
-$ make BOARD=arduino_101_sss
+```bash
+$ make arc
+```
 
 (hit master reset to enter DFU mode on the Arduino)
-$ dfu-util -a sensor_core -D outdir/arduino_101_sss/zephyr.bin
+```bash
+$ make dfu-arc
+```
