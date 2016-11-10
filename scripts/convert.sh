@@ -77,9 +77,7 @@ do
         fi
     elif [ "$char" = $'\n' ] && [ $UGLIFY -eq 0 ]; then
         # Handle new lines if uglify is not installed
-        printf "\"" >> $OUTPUT
-        printf "\n" >> $OUTPUT
-        printf "\"" >> $OUTPUT
+        printf "\\\n\"\n\"" >> $OUTPUT
     else
         printf "$char" >> $OUTPUT
     fi
