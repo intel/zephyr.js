@@ -28,8 +28,13 @@ TARGET = $(MAKECMDGOALS)
 zephyr: $(PRE_ACTION) analyze generate
 	@make -f Makefile.zephyr BOARD=$(BOARD) KERNEL=$(KERNEL) VARIANT=$(VARIANT) MEM_STATS=$(MEM_STATS) CB_STATS=$(CB_STATS)
 
+# Give an error if we're asked to create the JS file
+$(JS):
+	$(error The file $(JS) does not exist.)
+
+# Find the modules the JS file depends on
 .PHONY: analyze
-analyze:
+analyze: $(JS)
 	@echo "% This is a generated file" > prj.mdef
 	@echo "# This is a generated file" > src/Makefile
 	@cat src/Makefile.base >> src/Makefile
@@ -163,7 +168,7 @@ dfu-all: dfu dfu-arc
 
 # Generate the script file from the JS variable
 .PHONY: generate
-generate: setup
+generate: $(JS) setup
 	@echo Creating C string from JS application...
 	@./scripts/convert.sh $(JS) src/zjs_script_gen.c
 
