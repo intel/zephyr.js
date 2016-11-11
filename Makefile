@@ -29,6 +29,9 @@ ifeq ($(TARGET), $(filter $(ZEPHYR_TARGETS),$(TARGET)))
 ifndef ZEPHYR_BASE
 $(error ZEPHYR_BASE not set. Source deps/zephyr/zephyr-env.sh)
 endif
+ifneq ($(shell pwd)/deps/zephyr, $(ZEPHYR_BASE))
+$(info Note: ZEPHYR_BASE is set outside the current ZJS tree ($(ZEPHYR_BASE)))
+endif
 endif
 
 # Build for zephyr, default target
