@@ -51,8 +51,9 @@ struct zjs_callback_t {
     uint8_t max_funcs;
     uint8_t num_funcs;
     union {
-        jerry_value_t* func_list;
-        zjs_c_callback_func function;
+        jerry_value_t js_func;          // Single JS function callback
+        jerry_value_t* func_list;       // JS callback list
+        zjs_c_callback_func function;   // C callback
     };
 };
 
@@ -251,12 +252,7 @@ zjs_callback_id add_callback(jerry_value_t js_func,
     new_cb->flags |= (CALLBACK_TYPE_JS << TYPE_BIT);
     new_cb->flags |= ((once) ? 1 : 0 << ONCE_BIT);
     new_cb->id = new_id();
-    // For a single callback, instead of allocating for just one function, we
-    // can use the pointer to hold the function since it will never grow
-    jerry_value_t func_val = jerry_acquire_value(js_func);
-    memcpy(&new_cb->func_list, &func_val, sizeof(jerry_value_t));
-    //new_cb->func_list = zjs_malloc(sizeof(jerry_value_t));
-    //new_cb->func_list[0] = jerry_acquire_value(js_func);
+    new_cb->js_func = jerry_acquire_value(js_func);
     new_cb->this = jerry_acquire_value(this);
     new_cb->post = post;
     new_cb->handle = handle;
@@ -385,11 +381,7 @@ void zjs_call_callback(zjs_callback_id id, void* data, uint32_t sz)
             jerry_value_t ret_val;
 
             if (GET_JS_TYPE(cb_map[id]->flags) == JS_TYPE_SINGLE) {
-                jerry_value_t func_val;
-                // for single functions, the value is stored in the pointers
-                // address space.
-                memcpy(&func_val, &cb_map[id]->func_list, sizeof(jerry_value_t));
-                ret_val = jerry_call_function(func_val, cb_map[id]->this, data, sz);
+                ret_val = jerry_call_function(cb_map[id]->js_func, cb_map[id]->this, data, sz);
                 if (jerry_value_has_error_flag(ret_val)) {
                     DBG_PRINT("callback %ld returned an error for function\n", id);
                 }
