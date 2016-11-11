@@ -30,6 +30,8 @@
 
 static struct k_sem ble_sem;
 
+typedef void (*ccc_cfg_changed_func)(const struct bt_gatt_attr *attr, uint16_t value);
+
 typedef struct ble_handle {
     zjs_callback_id id;
     jerry_value_t js_callback;
@@ -54,12 +56,14 @@ typedef struct zjs_ble_characteristic {
     jerry_value_t chrc_obj;
     struct bt_uuid *uuid;
     struct bt_gatt_attr *chrc_attr;
+    struct bt_gatt_attr *ccc_attr;
     jerry_value_t cud_value;
     ble_handle_t read_cb;
     ble_handle_t write_cb;
     ble_notify_handle_t subscribe_cb;
     ble_notify_handle_t unsubscribe_cb;
     ble_notify_handle_t notify_cb;
+    ccc_cfg_changed_func ccc_cfg_changed;
     struct zjs_ble_characteristic *next;
 } ble_characteristic_t;
 
@@ -68,6 +72,7 @@ typedef struct zjs_ble_service {
     struct bt_uuid *uuid;
     ble_characteristic_t *characteristics;
     struct zjs_ble_service *next;
+    struct bt_gatt_attr *attr_db;
 } ble_service_t;
 
 typedef struct zjs_ble_connection {
@@ -157,6 +162,8 @@ static void zjs_ble_free_services(ble_service_t *service)
             zjs_free(tmp->uuid);
         if (tmp->characteristics)
             zjs_ble_free_characteristics(tmp->characteristics);
+        if (tmp->attr_db)
+            zjs_free(tmp->attr_db);
 
         zjs_free(tmp);
     }
@@ -457,10 +464,37 @@ static void zjs_ble_notify_c_callback(void *handle, void* argv)
     jerry_release_value(rval);
 }
 
-// Port this to javascript
+static ble_characteristic_t* get_base_chrc(const struct bt_gatt_attr *attr)
+{
+    ble_service_t *service;
+    ble_characteristic_t *chrc;
+
+    for (service = ble_conn->services; service; service = service->next) {
+        for (chrc = service->characteristics; chrc; chrc = chrc->next) {
+            if (chrc->ccc_attr == attr) {
+                return chrc;
+            }
+        }
+    }
+
+    return NULL;
+}
+
 static void zjs_ble_blvl_ccc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
-    ble_conn->simulate_blvl = (value == BT_GATT_CCC_NOTIFY) ? 1 : 0;
+    ble_characteristic_t *base_chrc = get_base_chrc(attr);
+
+    if (base_chrc) {
+        if (base_chrc->subscribe_cb.id != -1 && value == 1) {
+            DBG_PRINT("client subscribed for notification\n");
+            zjs_signal_callback(base_chrc->subscribe_cb.id, NULL, 0);
+        } else if (base_chrc->unsubscribe_cb.id != -1 && value == 0) {
+            DBG_PRINT("client unsubscribed for notification\n");
+            zjs_signal_callback(base_chrc->unsubscribe_cb.id, NULL, 0);
+        }
+    } else {
+        ERR_PRINT("zjs_ble_blvl_ccc_cfg_changed: base characterstic not found\n");
+    }
 }
 
 static void zjs_ble_connected_c_callback(void *handle, void* argv)
@@ -840,8 +874,6 @@ static bool zjs_ble_parse_characteristic(ble_characteristic_t *chrc)
     if (jerry_value_is_function(v_func)) {
         chrc->subscribe_cb.js_callback = jerry_acquire_value(v_func);
         chrc->subscribe_cb.id = zjs_add_c_callback(chrc, zjs_ble_subscribe_c_callback);
-        // TODO: we need to monitor onSubscribe events from BLE driver eventually
-        zjs_signal_callback(chrc->subscribe_cb.id, NULL, 0);
     } else {
         chrc->subscribe_cb.id = -1;
     }
@@ -1043,6 +1075,9 @@ static bool zjs_ble_register_service(ble_service_t *service)
             bt_attrs[entry_index].read = bt_gatt_attr_read_ccc;
             bt_attrs[entry_index].write = bt_gatt_attr_write_ccc;
             bt_attrs[entry_index].user_data = ccc_user_data;
+
+            // keep reference to ccc attrb
+            ch->ccc_attr = &bt_attrs[entry_index];
             entry_index++;
         }
 
@@ -1055,7 +1090,9 @@ static bool zjs_ble_register_service(ble_service_t *service)
     }
 
     DBG_PRINT("Registered service: %d entries\n", entry_index);
-    bt_gatt_register(bt_attrs, entry_index);
+    // keep reference to the bt attributes so we can free it
+    service->attr_db = bt_attrs;
+    bt_gatt_register(service->attr_db, entry_index);
     return true;
 }
 
