@@ -41,7 +41,7 @@ struct gpio_handle {
     uint32_t pin;                   // Pin associated with this handle
     uint32_t devnum;
     uint32_t value;                 // Value of the pin
-    int16_t callbackId;             // ID for the C callback
+    zjs_callback_id callbackId;             // ID for the C callback
     jerry_value_t pin_obj;          // Pin object returned from open()
     jerry_value_t onchange_func;    // Function registered to onChange
     jerry_value_t* open_ret_args;

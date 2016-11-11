@@ -43,7 +43,7 @@
 #define GET_JS_TYPE(f)  (f & (1 << JS_TYPE_BIT))
 
 struct zjs_callback_t {
-    int16_t id;
+    zjs_callback_id id;
     void* handle;
     uint8_t flags;      // holds once and type bits
     zjs_post_callback_func post;
@@ -64,13 +64,13 @@ SYS_RING_BUF_DECLARE_POW2(ring_buffer, 10);
 #endif
 static uint8_t ring_buf_initialized = 1;
 
-static int16_t cb_limit = INITIAL_CALLBACK_SIZE;
-static int16_t cb_size = 0;
+static zjs_callback_id cb_limit = INITIAL_CALLBACK_SIZE;
+static zjs_callback_id cb_size = 0;
 static struct zjs_callback_t** cb_map = NULL;
 
-static int16_t new_id(void)
+static zjs_callback_id new_id(void)
 {
-    int16_t id = 0;
+    zjs_callback_id id = 0;
     if (cb_size >= cb_limit) {
         cb_limit += CB_CHUNK_SIZE;
         size_t size = sizeof(struct zjs_callback_t *) * cb_limit;
@@ -111,7 +111,7 @@ void zjs_init_callbacks(void)
     return;
 }
 
-void zjs_edit_js_func(int16_t id, jerry_value_t func)
+void zjs_edit_js_func(zjs_callback_id id, jerry_value_t func)
 {
     if (id != -1) {
         jerry_release_value(cb_map[id]->func_list[0]);
@@ -119,14 +119,14 @@ void zjs_edit_js_func(int16_t id, jerry_value_t func)
     }
 }
 
-void zjs_edit_callback_handle(int16_t id, void* handle)
+void zjs_edit_callback_handle(zjs_callback_id id, void* handle)
 {
     if (id != -1 && cb_map[id]) {
         cb_map[id]->handle = handle;
     }
 }
 
-bool zjs_remove_callback_list_func(int16_t id, jerry_value_t js_func)
+bool zjs_remove_callback_list_func(zjs_callback_id id, jerry_value_t js_func)
 {
     if (id != -1 && cb_map[id]) {
         int i;
@@ -146,7 +146,7 @@ bool zjs_remove_callback_list_func(int16_t id, jerry_value_t js_func)
     return false;
 }
 
-int zjs_get_num_callbacks(int16_t id)
+int zjs_get_num_callbacks(zjs_callback_id id)
 {
     if (id != -1 && cb_map[id]) {
         return cb_map[id]->num_funcs;
@@ -154,7 +154,7 @@ int zjs_get_num_callbacks(int16_t id)
     return 0;
 }
 
-jerry_value_t* zjs_get_callback_func_list(int16_t id, int* count)
+jerry_value_t* zjs_get_callback_func_list(zjs_callback_id id, int* count)
 {
     if (id != -1) {
         if (cb_map[id]) {
@@ -165,11 +165,11 @@ jerry_value_t* zjs_get_callback_func_list(int16_t id, int* count)
     return NULL;
 }
 
-int16_t zjs_add_callback_list(jerry_value_t js_func,
-                              jerry_value_t this,
-                              void* handle,
-                              zjs_post_callback_func post,
-                              int16_t id)
+zjs_callback_id zjs_add_callback_list(jerry_value_t js_func,
+                                      jerry_value_t this,
+                                      void* handle,
+                                      zjs_post_callback_func post,
+                                      zjs_callback_id id)
 {
     if (id != -1) {
         if (cb_map[id] && cb_map[id]->func_list) {
@@ -235,11 +235,11 @@ int16_t zjs_add_callback_list(jerry_value_t js_func,
     }
 }
 
-int16_t add_callback(jerry_value_t js_func,
-                     jerry_value_t this,
-                     void* handle,
-                     zjs_post_callback_func post,
-                     uint8_t once)
+zjs_callback_id add_callback(jerry_value_t js_func,
+                             jerry_value_t this,
+                             void* handle,
+                             zjs_post_callback_func post,
+                             uint8_t once)
 {
     struct zjs_callback_t* new_cb = zjs_malloc(sizeof(struct zjs_callback_t));
     if (!new_cb) {
@@ -275,23 +275,23 @@ int16_t add_callback(jerry_value_t js_func,
     return new_cb->id;
 }
 
-int16_t zjs_add_callback(jerry_value_t js_func,
-                         jerry_value_t this,
-                         void* handle,
-                         zjs_post_callback_func post)
+zjs_callback_id zjs_add_callback(jerry_value_t js_func,
+                                 jerry_value_t this,
+                                 void* handle,
+                                 zjs_post_callback_func post)
 {
     return add_callback(js_func, this, handle, post, 0);
 }
 
-int16_t zjs_add_callback_once(jerry_value_t js_func,
-                              jerry_value_t this,
-                              void* handle,
-                              zjs_post_callback_func post)
+zjs_callback_id zjs_add_callback_once(jerry_value_t js_func,
+                                      jerry_value_t this,
+                                      void* handle,
+                                      zjs_post_callback_func post)
 {
     return add_callback(js_func, this, handle, post, 1);
 }
 
-void zjs_remove_callback(int16_t id)
+void zjs_remove_callback(zjs_callback_id id)
 {
     if (id != -1 && cb_map[id]) {
         if (GET_TYPE(cb_map[id]->flags) == CALLBACK_TYPE_JS) {
@@ -310,7 +310,7 @@ void zjs_remove_callback(int16_t id)
     }
 }
 
-void zjs_signal_callback(int16_t id, void* args, uint32_t size)
+void zjs_signal_callback(zjs_callback_id id, void* args, uint32_t size)
 {
     DBG_PRINT("pushing item to ring buffer. id=%li, args=%p, size=%lu\n", id, args, size);
     int ret = zjs_port_ring_buf_put(&ring_buffer,
@@ -323,7 +323,7 @@ void zjs_signal_callback(int16_t id, void* args, uint32_t size)
     }
 }
 
-int16_t zjs_add_c_callback(void* handle, zjs_c_callback_func callback)
+zjs_callback_id zjs_add_c_callback(void* handle, zjs_c_callback_func callback)
 {
     struct zjs_callback_t* new_cb = zjs_malloc(sizeof(struct zjs_callback_t));
     if (!new_cb) {
@@ -376,7 +376,7 @@ void print_callbacks(void)
 #define print_callbacks() do {} while (0)
 #endif
 
-void zjs_call_callback(int16_t id, void* data, uint32_t sz)
+void zjs_call_callback(zjs_callback_id id, void* data, uint32_t sz)
 {
     if (id <= cb_size && cb_map[id]) {
         if (GET_TYPE(cb_map[id]->flags) == CALLBACK_TYPE_JS) {

@@ -9,10 +9,10 @@
 struct promise {
     uint8_t then_set;           // then() function has been set
     jerry_value_t then;         // Function registered from then()
-    int16_t then_id;            // Callback ID for then JS callback
+    zjs_callback_id then_id;    // Callback ID for then JS callback
     uint8_t catch_set;          // catch() function has been set
     jerry_value_t catch;        // Function registered from catch()
-    int16_t catch_id;           // Callback ID for catch JS callback
+    zjs_callback_id catch_id;   // Callback ID for catch JS callback
     jerry_value_t this;         // 'this' object for this promise
     void* user_handle;
     zjs_post_promise_func post;

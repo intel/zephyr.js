@@ -19,7 +19,7 @@ static struct nano_sem aio_sem;
 
 typedef struct aio_handle {
     jerry_value_t pin_obj;
-    int16_t callback_id;
+    zjs_callback_id callback_id;
     double value;
     jerry_value_t jvalue;
 } aio_handle_t;
