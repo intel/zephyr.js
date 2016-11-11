@@ -49,7 +49,7 @@ static struct device* uart_dev = NULL;
 // global ID but the UART API's do not let you add a "handle" that is
 // available when the ISR is called. For this reason we must make it global.
 // Other modules would include this handle when setting up the ISR e.g. GPIO
-static int32_t read_id = -1;
+static int16_t read_id = -1;
 // TX interrupt handled
 static volatile bool tx = false;
 // RX interrupt handled

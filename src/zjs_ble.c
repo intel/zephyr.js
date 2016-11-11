@@ -31,7 +31,7 @@
 struct nano_sem zjs_ble_nano_sem;
 
 typedef struct ble_handle {
-    int32_t id;
+    int16_t id;
     jerry_value_t js_callback;
     const void *buffer;
     uint16_t buffer_size;
@@ -40,12 +40,12 @@ typedef struct ble_handle {
 } ble_handle_t;
 
 typedef struct ble_notify_handle {
-    int32_t id;
+    int16_t id;
     jerry_value_t js_callback;
 } ble_notify_handle_t;
 
 typedef struct ble_event_handle {
-    int32_t id;
+    int16_t id;
     jerry_value_t arg;
 } ble_event_handle_t;
 

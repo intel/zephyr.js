@@ -47,7 +47,7 @@ void zjs_init_callbacks(void);
  *
  * @return              Number of functions in the callback list
  */
-int zjs_get_num_callbacks(int32_t id);
+int zjs_get_num_callbacks(int16_t id);
 
 /*
  * Get the list of callback functions in a callback list
@@ -57,7 +57,7 @@ int zjs_get_num_callbacks(int32_t id);
  *
  * @return              Array of functions
  */
-jerry_value_t* zjs_get_callback_func_list(int32_t id, int* count);
+jerry_value_t* zjs_get_callback_func_list(int16_t id, int* count);
 
 /*
  * Remove a function from a list of callbacks
@@ -67,7 +67,7 @@ jerry_value_t* zjs_get_callback_func_list(int32_t id, int* count);
  *
  * @return              True if function was removed, false if it did not exist
  */
-bool zjs_remove_callback_list_func(int32_t id, jerry_value_t js_func);
+bool zjs_remove_callback_list_func(int16_t id, jerry_value_t js_func);
 
 /*
  * Create/add a function to a callback list. If the 'id' parameter is -1, a new
@@ -81,11 +81,11 @@ bool zjs_remove_callback_list_func(int32_t id, jerry_value_t js_func);
  *
  * @return              New callback ID for this list (or existing ID)
  */
-int32_t zjs_add_callback_list(jerry_value_t js_func,
+int16_t zjs_add_callback_list(jerry_value_t js_func,
                               jerry_value_t this,
                               void* handle,
                               zjs_post_callback_func post,
-                              int32_t id);
+                              int16_t id);
 
 /*
  * Add/register a callback function
@@ -96,7 +96,7 @@ int32_t zjs_add_callback_list(jerry_value_t js_func,
  *
  * @return              ID associated with this callback, use this ID to reference this CB
  */
-int32_t zjs_add_callback(jerry_value_t js_func,
+int16_t zjs_add_callback(jerry_value_t js_func,
                          jerry_value_t this,
                          void* handle,
                          zjs_post_callback_func post);
@@ -111,7 +111,7 @@ int32_t zjs_add_callback(jerry_value_t js_func,
  *
  * @return              ID associated with this callback, use this ID to reference this CB
  */
-int32_t zjs_add_callback_once(jerry_value_t js_func,
+int16_t zjs_add_callback_once(jerry_value_t js_func,
                               jerry_value_t this,
                               void* handle,
                               zjs_post_callback_func post);
@@ -122,7 +122,7 @@ int32_t zjs_add_callback_once(jerry_value_t js_func,
  * @param id            ID of callback
  * @param func          New JS function
  */
-void zjs_edit_js_func(int32_t id, jerry_value_t func);
+void zjs_edit_js_func(int16_t id, jerry_value_t func);
 
 /*
  * Change a callback ID's native handle
@@ -130,7 +130,7 @@ void zjs_edit_js_func(int32_t id, jerry_value_t func);
  * @param id            ID of callback
  * @param handle        New callback handle
  */
-void zjs_edit_callback_handle(int32_t id, void* handle);
+void zjs_edit_callback_handle(int16_t id, void* handle);
 
 /*
  * Remove a function that was registered by zjs_add_callback(). If you remove a
@@ -139,7 +139,7 @@ void zjs_edit_callback_handle(int32_t id, void* handle);
  *
  * @param id            ID returned from zjs_add_callback
  */
-void zjs_remove_callback(int32_t id);
+void zjs_remove_callback(int16_t id);
 
 /*
  * Signal the system to make a callback. The callback will not be called
@@ -154,7 +154,7 @@ void zjs_remove_callback(int32_t id);
  * @param args          Arguments given to the JS/C callback
  * @param size          Size of arguments (in bytes)
  */
-void zjs_signal_callback(int32_t id, void* args, uint32_t size);
+void zjs_signal_callback(int16_t id, void* args, uint32_t size);
 
 /*
  * Add/register a C callback
@@ -164,7 +164,7 @@ void zjs_signal_callback(int32_t id, void* args, uint32_t size);
  *
  * @return              ID for the C callback
  */
-int32_t zjs_add_c_callback(void* handle, zjs_c_callback_func callback);
+int16_t zjs_add_c_callback(void* handle, zjs_c_callback_func callback);
 
 /*
  * Call a callback immediately. This should only be used when absolutely needed
@@ -176,7 +176,7 @@ int32_t zjs_add_c_callback(void* handle, zjs_c_callback_func callback);
  * @param data          Callback arguments
  * @param sz            Size of callback arguments in bytes
  */
-void zjs_call_callback(int32_t id, void* data, uint32_t sz);
+void zjs_call_callback(int16_t id, void* data, uint32_t sz);
 
 /*
  * Service the callback module. Any callback's that have been signaled will
