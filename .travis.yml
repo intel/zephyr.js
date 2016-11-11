@@ -70,7 +70,7 @@ script: >
   elif [ "$TARGET" == "git-check" ]; then
     # check for any new trailing whitespace since the first fetched commit
     banner "git check" &&
-    git diff --check HEAD~49
+    git diff --check $(git rev-list HEAD | tail -1)
   else
     banner "Test 1/1" &&
     make V=1 $TARGET;
