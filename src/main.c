@@ -23,7 +23,9 @@
 #include "zjs_console.h"
 #include "zjs_event.h"
 #include "zjs_modules.h"
+#ifdef BUILD_MODULE_SENSOR
 #include "zjs_sensor.h"
+#endif
 #include "zjs_timers.h"
 #include "zjs_util.h"
 #ifdef BUILD_MODULE_OCF

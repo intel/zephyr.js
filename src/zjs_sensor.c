@@ -53,7 +53,7 @@ static sensor_handle_t *zjs_sensor_alloc_handle(enum sensor_channel channel)
     else if (channel == SENSOR_CHAN_GYRO_ANY) {
         head = &gyro_handles;
     } else {
-        PRINT("zjs_sensor_alloc_handle: invalid channel\n");
+        ZJS_PRINT("zjs_sensor_alloc_handle: invalid channel\n");
         zjs_free(handle);
         return NULL;
     }
@@ -86,7 +86,7 @@ static bool zjs_sensor_ipm_send_sync(zjs_ipm_message_t* send,
     send->error_code = ERROR_IPM_NONE;
 
     if (zjs_ipm_send(MSG_ID_SENSOR, send) != 0) {
-        PRINT("zjs_sensor_ipm_send_sync: failed to send message\n");
+        ZJS_PRINT("zjs_sensor_ipm_send_sync: failed to send message\n");
         return false;
     }
 
@@ -94,7 +94,7 @@ static bool zjs_sensor_ipm_send_sync(zjs_ipm_message_t* send,
     // time out, if the ARC response comes back after it
     // times out, it could pollute the result on the stack
     if (!nano_sem_take(&sensor_sem, ZJS_SENSOR_TIMEOUT_TICKS)) {
-        PRINT("zjs_sensor_ipm_send_sync: FATAL ERROR, ipm timed out\n");
+        ZJS_PRINT("zjs_sensor_ipm_send_sync: FATAL ERROR, ipm timed out\n");
         return false;
     }
 
@@ -108,7 +108,7 @@ static int zjs_sensor_call_remote_function(zjs_ipm_message_t* send)
         return zjs_error("zjs_sensor_call_remote_function: ipm message failed or timed out!");
     }
     if (reply.error_code != ERROR_IPM_NONE) {
-        PRINT("zjs_sensor_call_remote_function: error code: %lu\n",
+        ZJS_PRINT("zjs_sensor_call_remote_function: error code: %lu\n",
               reply.error_code);
     }
     return reply.error_code;
@@ -129,7 +129,7 @@ static enum sensor_state zjs_sensor_get_state(jerry_value_t obj)
             return SENSOR_STATE_ERRORED;
     }
 
-    PRINT("zjs_sensor_get_state: state not set\n");
+    ZJS_PRINT("zjs_sensor_get_state: state not set\n");
     jerry_value_t state = jerry_create_string("errored");
     zjs_set_property(obj, "state", state);
     jerry_release_value(state);
@@ -166,7 +166,7 @@ static void zjs_sensor_set_state(jerry_value_t obj, enum sensor_state state)
         // if onstatechange exists, call it
         jerry_value_t rval = jerry_call_function(func, obj, &new_state, 1);
         if (jerry_value_has_error_flag(rval)) {
-            PRINT("zjs_sensor_set_state: error calling onstatechange\n");
+            ZJS_PRINT("zjs_sensor_set_state: error calling onstatechange\n");
         }
         jerry_release_value(rval);
     }
@@ -179,7 +179,7 @@ static void zjs_sensor_set_state(jerry_value_t obj, enum sensor_state state)
             // if onactivate exists, call it
             jerry_value_t rval = jerry_call_function(func, obj, NULL, 0);
             if (jerry_value_has_error_flag(rval)) {
-                PRINT("zjs_sensor_set_state: error calling onactivate\n");
+                ZJS_PRINT("zjs_sensor_set_state: error calling onactivate\n");
             }
             jerry_release_value(rval);
         }
@@ -214,7 +214,7 @@ static void zjs_sensor_update_reading(jerry_value_t obj,
         zjs_set_property(event, "reading", reading_obj);
         jerry_value_t rval = jerry_call_function(func, obj, &event, 1);
         if (jerry_value_has_error_flag(rval)) {
-            PRINT("zjs_sensor_update_reading: error calling onchange\n");
+            ZJS_PRINT("zjs_sensor_update_reading: error calling onchange\n");
         }
         jerry_release_value(rval);
         jerry_release_value(event);
@@ -240,7 +240,7 @@ static void zjs_sensor_trigger_error(jerry_value_t obj,
         zjs_set_property(event, "error", error_obj);
         jerry_value_t rval = jerry_call_function(func, obj, &event, 1);
         if (jerry_value_has_error_flag(rval)) {
-            PRINT("zjs_sensor_trigger_error: error calling onerrorhange\n");
+            ZJS_PRINT("zjs_sensor_trigger_error: error calling onerrorhange\n");
         }
         jerry_release_value(rval);
         jerry_release_value(name_val);
@@ -255,7 +255,7 @@ static void zjs_sensor_onchange_c_callback(void *h, void *argv)
 {
     sensor_handle_t *handle = (sensor_handle_t *)h;
     if (!handle) {
-        PRINT("zjs_sensor_onchange_c_callback: handle not found\n");
+        ZJS_PRINT("zjs_sensor_onchange_c_callback: handle not found\n");
         return;
     }
 
@@ -298,10 +298,10 @@ static void ipm_msg_receive_callback(void *context, uint32_t id, volatile void *
         else if (msg->data.sensor.channel == SENSOR_CHAN_GYRO_ANY) {
             zjs_sensor_signal_callbacks(gyro_handles, msg->data.sensor.reading);
         } else {
-            PRINT("ipm_msg_receive_callback: unsupported sensor type\n");
+            ZJS_PRINT("ipm_msg_receive_callback: unsupported sensor type\n");
         }
     } else {
-        PRINT("ipm_msg_receive_callback: unsupported message received\n");
+        ZJS_PRINT("ipm_msg_receive_callback: unsupported message received\n");
     }
 }
 
@@ -408,12 +408,12 @@ static jerry_value_t zjs_sensor_create(const jerry_value_t function_obj,
             // For now, frequency is ignored,  we just report new event
             // as soon as we detect a value change.
             if (option_freq <= 0) {
-                PRINT("zjs_sensor_create: invalid frequency, defaulting to 50hz\n");
+                ZJS_PRINT("zjs_sensor_create: invalid frequency, defaulting to 50hz\n");
             } else {
                 frequency = option_freq;
             }
         } else {
-            PRINT("zjs_sensor_create: frequency not found, defaulting to 50hz\n");
+            ZJS_PRINT("zjs_sensor_create: frequency not found, defaulting to 50hz\n");
         }
 
         if (channel == SENSOR_CHAN_ACCEL_ANY) {
@@ -421,7 +421,7 @@ static jerry_value_t zjs_sensor_create(const jerry_value_t function_obj,
             if (zjs_obj_get_boolean(options, "includeGravity", &option_gravity) &&
                 option_gravity) {
                 // TODO: find out if BMI160 can be configured to include gravity
-                PRINT("zjs_sensor_create: includeGravity is not supported\n");
+                ZJS_PRINT("zjs_sensor_create: includeGravity is not supported\n");
             }
         }
     }

@@ -61,12 +61,13 @@ static struct device *glcd = NULL;
 static char str[MAX_BUFFER_SIZE];
 #endif
 
-// BMI160 sensor
+#ifdef BUILD_MODULE_SENSOR
 static struct device *bmi160 = NULL;
 static bool accel_poll = false;
 static bool gyro_poll = false;
 static double accel_last_value[3];
 static double gyro_last_value[3];
+#endif
 
 // add strnlen() support for security since it is missing
 // in Zephyr's minimal libc implementation
@@ -523,7 +524,7 @@ static double convert_sensor_value(const struct sensor_value *val)
         result = val->dval;
         break;
     default:
-        PRINT("convert_sensor_value: invalid type %d\n", val->type);
+        ZJS_PRINT("convert_sensor_value: invalid type %d\n", val->type);
         return 0;
     }
 
@@ -536,7 +537,7 @@ static void process_accel_data(struct device *dev)
     double dval[3];
 
     if (sensor_channel_get(dev, SENSOR_CHAN_ACCEL_ANY, val) < 0) {
-        PRINT("Cannot read accelerometer channels.\n");
+        ZJS_PRINT("Cannot read accelerometer channels.\n");
         return;
     }
 
@@ -567,7 +568,7 @@ static void process_accel_data(struct device *dev)
     sensor_value_snprintf(buf_x, sizeof(buf_x), &val[0]);
     sensor_value_snprintf(buf_y, sizeof(buf_y), &val[1]);
     sensor_value_snprintf(buf_z, sizeof(buf_z), &val[2]);
-    PRINT("sending accel: X=%s, Y=%s, Z=%s\n", buf_x, buf_y, buf_z);
+    ZJS_PRINT("sending accel: X=%s, Y=%s, Z=%s\n", buf_x, buf_y, buf_z);
 #endif
 }
 
@@ -577,7 +578,7 @@ static void process_gyro_data(struct device *dev)
     double dval[3];
 
     if (sensor_channel_get(dev, SENSOR_CHAN_GYRO_ANY, val) < 0) {
-        PRINT("Cannot read gyroscope channels.\n");
+        ZJS_PRINT("Cannot read gyroscope channels.\n");
         return;
     }
 
@@ -601,13 +602,13 @@ static void process_gyro_data(struct device *dev)
     sensor_value_snprintf(buf_x, sizeof(buf_x), &val[0]);
     sensor_value_snprintf(buf_y, sizeof(buf_y), &val[1]);
     sensor_value_snprintf(buf_z, sizeof(buf_z), &val[2]);
-    PRINT("Sending gyro : X=%s, Y=%s, Z=%s\n", buf_x, buf_y, buf_z);
+    ZJS_PRINT("Sending gyro : X=%s, Y=%s, Z=%s\n", buf_x, buf_y, buf_z);
 #endif
 }
 
 static void fetch_sensor(struct device *dev) {
     if (sensor_sample_fetch(dev) < 0) {
-        PRINT("failed to fetch sensor data\n");
+        ZJS_PRINT("failed to fetch sensor data\n");
         return;
     }
 
@@ -656,7 +657,7 @@ static void handle_sensor(struct zjs_ipm_message* msg)
     uint32_t error_code = ERROR_IPM_NONE;
 
     if (msg->type != TYPE_SENSOR_INIT && !bmi160) {
-        PRINT("Grove LCD device not found.\n");
+        ZJS_PRINT("Grove LCD device not found.\n");
         ipm_send_error_reply(msg, ERROR_IPM_OPERATION_FAILED);
         return;
     }
@@ -668,10 +669,10 @@ static void handle_sensor(struct zjs_ipm_message* msg)
 
             if (!bmi160) {
                 error_code = ERROR_IPM_OPERATION_FAILED;
-                PRINT("failed to initialize BMI160 sensor\n");
+                ZJS_PRINT("failed to initialize BMI160 sensor\n");
             } else {
                 if (!auto_calibration(bmi160)) {
-                    PRINT("failed to perform auto calibration\n");
+                    ZJS_PRINT("failed to perform auto calibration\n");
                 }
 
                 accel_poll = gyro_poll = false;
@@ -685,7 +686,7 @@ static void handle_sensor(struct zjs_ipm_message* msg)
         } else if (msg->data.sensor.channel == SENSOR_CHAN_GYRO_ANY) {
             gyro_poll = true;
         } else {
-            PRINT("invalid sensor channel\n");
+            ZJS_PRINT("invalid sensor channel\n");
             error_code = ERROR_IPM_NOT_SUPPORTED;
         }
         break;
@@ -695,12 +696,12 @@ static void handle_sensor(struct zjs_ipm_message* msg)
         } else if (msg->data.sensor.channel == SENSOR_CHAN_GYRO_ANY) {
             gyro_poll = false;
         } else {
-            PRINT("invalid sensor channel\n");
+            ZJS_PRINT("invalid sensor channel\n");
             error_code = ERROR_IPM_NOT_SUPPORTED;
         }
         break;
     default:
-        PRINT("unsupported sensor message type %lu\n", msg->type);
+        ZJS_PRINT("unsupported sensor message type %lu\n", msg->type);
         error_code = ERROR_IPM_NOT_SUPPORTED;
     }
 

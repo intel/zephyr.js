@@ -2,9 +2,4 @@ ccflags-y += ${PROJECTINCLUDE} \
 	-I$(ZEPHYR_BASE)/drivers \
 	-I$(src)/../../src \
 
-ccflags-y += -DBUILD_MODULE_AIO
-ccflags-y += -DBUILD_MODULE_I2C
-ccflags-y += -DBUILD_MODULE_GROVE_LCD
-ccflags-y += -DBUILD_MODULE_SENSOR
-
 obj-y = main.o ../../src/zjs_ipm.o
