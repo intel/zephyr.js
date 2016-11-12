@@ -61,7 +61,7 @@ struct zjs_callback_map {
 static uint8_t args_buffer[ZJS_CALLBACK_BUF_SIZE];
 static struct zjs_port_ring_buf ring_buffer;
 #else
-SYS_RING_BUF_DECLARE_POW2(ring_buffer, 10);
+SYS_RING_BUF_DECLARE_POW2(ring_buffer, 5);
 #endif
 static uint8_t ring_buf_initialized = 1;
 
