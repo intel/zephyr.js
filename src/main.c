@@ -31,6 +31,9 @@
 #ifdef BUILD_MODULE_BLE
 #include "zjs_ble.h"
 #endif
+#ifdef ZJS_LINUX_BUILD
+#include "zjs_unit_tests.h"
+#endif
 
 #define ZJS_MAX_PRINT_SIZE      512
 
@@ -106,7 +109,13 @@ int main(int argc, char *argv[])
 
 #ifdef ZJS_LINUX_BUILD
     if (argc > 1) {
-        zjs_read_script(argv[1], &script, &len);
+        if (!strncmp(argv[1], "tests", 5)) {
+            // run unit tests
+            zjs_run_unit_tests();
+        }
+        else {
+            zjs_read_script(argv[1], &script, &len);
+        }
     } else
     // slightly tricky: reuse next section as else clause
 #endif
