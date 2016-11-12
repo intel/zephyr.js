@@ -109,7 +109,7 @@ int main(int argc, char *argv[])
 
 #ifdef ZJS_LINUX_BUILD
     if (argc > 1) {
-        if (!strncmp(argv[1], "tests", 5)) {
+        if (!strncmp(argv[1], "--unittest", 10)) {
             // run unit tests
             zjs_run_unit_tests();
         }
