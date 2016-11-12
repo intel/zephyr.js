@@ -24,7 +24,9 @@ int zjs_get_ms(void);
 
 #else
 #define DBG_PRINT(fmat ...) do {} while(0);
-#define ERR_PRINT(fmat ...) do {} while(0);
+#define ERR_PRINT \
+    ZJS_PRINT("[ERROR] %s:%d %s(): ", __FILE__, __LINE__, __func__); \
+    ZJS_PRINT
 #endif
 
 // TODO: We should instead have a macro that changes in debug vs. release build,
