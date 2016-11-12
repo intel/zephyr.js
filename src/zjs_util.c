@@ -204,6 +204,42 @@ void zjs_default_convert_pin(uint32_t orig, int *dev, int *pin) {
     }
 }
 
+// when accuracy isn't as important as space
+uint16_t zjs_compress_32_to_16(uint32_t num)
+{
+    int zeroes = __builtin_clzl(num);
+    if (sizeof(unsigned long) > 4) {
+        zeroes -= (sizeof(unsigned long) - 4) * 8;
+    }
+
+    if (zeroes >= 17)
+        return (uint16_t)num;
+
+    // take the top 16 bits
+    uint16_t compressed = (num << zeroes) >> 16;
+
+    // clear the bottom five bits to save leading zeroes
+    compressed &= 0xffe0;
+
+    // save the number of zeroes in bottom five bits
+    return compressed | (uint16_t)zeroes;
+}
+
+uint32_t zjs_uncompress_16_to_32(uint16_t num)
+{
+    if ((num & 0x8000) == 0)
+        return (uint32_t)num;
+
+    // take top 11 bits
+    uint32_t uncompressed = (num & 0xffe0) >> 5;
+
+    // recover the number of leading zeroes
+    int zeroes = num & 0x1f;
+
+    // shift back up to the right point
+    return uncompressed << (21 - zeroes);
+}
+
 jerry_value_t zjs_error(const char *error)
 {
     ZJS_PRINT("%s\n", error);
