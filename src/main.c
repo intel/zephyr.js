@@ -120,7 +120,10 @@ int main(int argc, char *argv[])
             zjs_run_unit_tests();
         }
         else {
-            zjs_read_script(argv[1], &script, &len);
+            if (zjs_read_script(argv[1], &script, &len)) {
+                ERR_PRINT("could not read script file %s\n", argv[1]);
+                return -1;
+            }
         }
     } else
     // slightly tricky: reuse next section as else clause
