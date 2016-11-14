@@ -23,6 +23,17 @@ CB_STATS ?= off
 # MAKECMDGOALS is a Make variable that is set to the target your building for.
 TARGET = $(MAKECMDGOALS)
 
+# If target is one of these, ensure ZEPHYR_BASE is set
+ZEPHYR_TARGETS = zephyr arc debug
+ifeq ($(TARGET), $(filter $(ZEPHYR_TARGETS),$(TARGET)))
+ifndef ZEPHYR_BASE
+$(error ZEPHYR_BASE not set. Source deps/zephyr/zephyr-env.sh)
+endif
+ifneq ($(shell pwd)/deps/zephyr, $(ZEPHYR_BASE))
+$(info Note: ZEPHYR_BASE is set outside the current ZJS tree ($(ZEPHYR_BASE)))
+endif
+endif
+
 # Build for zephyr, default target
 .PHONY: zephyr
 zephyr: $(PRE_ACTION) analyze generate
@@ -86,13 +97,6 @@ endif
 .PHONY: update
 update:
 	@git submodule update --init
-	@if ! env | grep -q ^ZEPHYR_BASE=; then \
-		echo; \
-		echo "ZEPHYR_BASE has not been set! It must be set to build"; \
-		echo "e.g. export ZEPHYR_BASE=$(ZJS_BASE)/deps/zephyr"; \
-		echo; \
-		exit 1; \
-	fi
 	@cd $(OCF_ROOT); git submodule update --init;
 
 # Sets up prj/last_build files
