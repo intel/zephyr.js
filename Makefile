@@ -82,13 +82,13 @@ all: zephyr arc
 # The linux target does not use the BOARD variable, so without this special
 # case, the linux target would clean every time.
 ifneq ($(TARGET), linux)
-# Building for Zephyr, check for .$(BOARD).last_build to see if clean is needed
-ifeq ("$(wildcard .$(BOARD).last_build)", "")
+# Building for Zephyr, check for .$(BOARD).$(VARIANT).last_build to see if clean is needed
+ifeq ("$(wildcard .$(BOARD).$(VARIANT).last_build)", "")
 PRE_ACTION=clean
 endif
 else
 # Building for Linux, check for .linux.last_build to see if a clean is needed
-ifeq ("$(wildcard .linux.last_build)", "")
+ifeq ("$(wildcard .linux.$(VARIANT).last_build)", "")
 PRE_ACTION=clean
 endif
 endif
@@ -124,7 +124,7 @@ endif
 	fi
 # Remove .last_build file
 	@rm -f .*.last_build
-	@echo "" > .$(BOARD).last_build
+	@echo "" > .$(BOARD).$(VARIANT).last_build
 
 # Explicit clean
 # Update is here because on a fresh checkout, clean will fail. So we want to
@@ -218,7 +218,7 @@ arcgdb:
 # Linux command line target, script can be specified on the command line
 linux: $(PRE_ACTION) generate
 	rm -f .*.last_build
-	echo "" > .linux.last_build
+	echo "" > .linux.$(VARIANT).last_build
 	make -f Makefile.linux JS=$(JS) VARIANT=$(VARIANT) CB_STATS=$(CB_STATS) V=$(V)
 
 .PHONY: help
