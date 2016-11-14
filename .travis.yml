@@ -71,7 +71,12 @@ script: >
     # check for any new trailing whitespace since the first fetched commit
     banner "git check" &&
     git diff --check $(git rev-list HEAD | tail -1)
+  elif [ "$TARGET" == "linux" ]; then
+    banner "make linux" &&
+    make V=1 linux &&
+    banner "unit tests" &&
+    ./jslinux --unittest
   else
     banner "Test 1/1" &&
-    make V=1 $TARGET;
+    make V=1 $TARGET
   fi
