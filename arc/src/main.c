@@ -81,10 +81,6 @@ size_t strnlen(const char *str, size_t max_len) {
     return len;
 }
 
-static int ipm_send_reply(struct zjs_ipm_message *msg) {
-    return zjs_ipm_send(msg->id, msg);
-}
-
 static int ipm_send_error_reply(struct zjs_ipm_message *msg, uint32_t error_code) {
     msg->flags |= MSG_ERROR_FLAG;
     msg->error_code = error_code;
@@ -208,7 +204,7 @@ static void handle_aio(struct zjs_ipm_message* msg)
 
     msg->data.aio.pin = pin;
     msg->data.aio.value = reply_value;
-    ipm_send_reply(msg);
+    zjs_ipm_send(msg->id, msg);
 }
 
 static void process_aio_updates()
@@ -226,7 +222,7 @@ static void process_aio_updates()
                 msg.user_data = pin_user_data[i];
                 msg.data.aio.pin = ARC_AIO_MIN+i;
                 msg.data.aio.value = pin_values[i];
-                ipm_send_reply(&msg);
+                zjs_ipm_send(msg.id, &msg);
             }
             pin_last_values[i] = pin_values[i];
         }
@@ -343,7 +339,7 @@ static void handle_i2c(struct zjs_ipm_message* msg)
         return;
     }
 
-    ipm_send_reply(msg);
+    zjs_ipm_send(msg->id, msg);
 }
 #endif
 
@@ -428,7 +424,7 @@ static void handle_glcd(struct zjs_ipm_message* msg)
         return;
     }
 
-    ipm_send_reply(msg);
+    zjs_ipm_send(msg->id, msg);
 }
 #endif
 
@@ -710,7 +706,7 @@ static void handle_sensor(struct zjs_ipm_message* msg)
         return;
     }
 
-    ipm_send_reply(msg);
+    zjs_ipm_send(msg->id, msg);
 }
 #endif
 
