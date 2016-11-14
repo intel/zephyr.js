@@ -4,6 +4,10 @@
 // ZJS includes
 #include "zjs_util.h"
 
+#ifdef ZJS_LINUX_BUILD
+#include <sys/time.h>
+#endif
+
 static jerry_value_t zjs_performance_now(const jerry_value_t function_obj,
                                          const jerry_value_t this,
                                          const jerry_value_t argv[],
