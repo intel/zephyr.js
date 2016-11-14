@@ -3,6 +3,13 @@ language: generic # setting language to C will override cross-compiler and fail
 sudo: required
 dist: trusty
 
+notifications:
+  irc:
+    channels:
+      - "irc://irc.freenode.net:8001/#zjs"
+    on_success: change
+    on_failure: always
+
 env:
   global:
     - ZEPHYR_GCC_VARIANT=zephyr
