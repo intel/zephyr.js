@@ -15,35 +15,35 @@ uint8_t zjs_read_script(char* name, const char** script, uint32_t* length)
         FILE* f = fopen(name, "r");
         if (!f) {
             ERR_PRINT("error opening file\n");
-            return 0;
+            return 1;
         }
         if (fseek(f, 0L, SEEK_END)) {
             ERR_PRINT("error seeking to end of file\n");
             fclose(f);
-            return 0;
+            return 1;
         }
         size = ftell(f);
         if (size == -1) {
             ERR_PRINT("ftell returned -1\n");
             fclose(f);
-            return 0;
+            return 1;
         }
         if (fseek(f, 0L, SEEK_SET)) {
             ERR_PRINT("error seeking to beginning of file\n");
             fclose(f);
-            return 0;
+            return 1;
         }
         s = (char*)zjs_malloc(size);
         if (!s) {
             ERR_PRINT("error allocating %u bytes, fatal\n", size);
             fclose(f);
-            return 0;
+            return 1;
         }
         if (fread(s, size, 1, f) != 1) {
             ERR_PRINT("error reading script file\n");
             fclose(f);
             zjs_free(s);
-            return 0;
+            return 1;
         }
 
         *script = s;
@@ -51,7 +51,7 @@ uint8_t zjs_read_script(char* name, const char** script, uint32_t* length)
         fclose(f);
     }
 
-    return 1;
+    return 0;
 }
 
 void zjs_free_script(const char* script)
