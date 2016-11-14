@@ -4,6 +4,7 @@
 #define __zjs_ipm_h__
 
 #include <ipm.h>
+#include <sensor.h>
 
 #define IPM_CHANNEL_X86_TO_ARC                             0x01
 #define IPM_CHANNEL_ARC_TO_X86                             0x02
@@ -13,6 +14,7 @@
 #define MSG_ID_AIO                                         0x01
 #define MSG_ID_I2C                                         0x02
 #define MSG_ID_GLCD                                        0x03
+#define MSG_ID_SENSOR                                      0x04
 
 // Message flags
 enum {
@@ -26,6 +28,7 @@ enum {
 #define ERROR_IPM_NOT_SUPPORTED                            0x0001
 #define ERROR_IPM_INVALID_PARAMETER                        0x0002
 #define ERROR_IPM_OPERATION_FAILED                         0x0003
+#define ERROR_IPM_OPERATION_NOT_ALLOWED                    0x0004
 
 // Message Types
 
@@ -60,6 +63,12 @@ enum {
 #define TYPE_GLCD_SET_INPUT_STATE                          0x002A
 #define TYPE_GLCD_GET_INPUT_STATE                          0x002B
 
+// SENSOR
+#define TYPE_SENSOR_INIT                                   0x0030
+#define TYPE_SENSOR_START                                  0x0031
+#define TYPE_SENSOR_STOP                                   0x0032
+#define TYPE_SENSOR_EVENT_STATE_CHANGE                     0x0033
+#define TYPE_SENSOR_EVENT_READING_CHANGE                   0x0034
 
 typedef struct zjs_ipm_message {
     uint32_t id;
@@ -95,6 +104,23 @@ typedef struct zjs_ipm_message {
             uint8_t color_b;
             void *buffer;
         } glcd;
+
+        // SENSOR
+        struct sensor_data {
+            enum sensor_channel channel;
+            uint32_t frequency;
+            double value[3];
+            union sensor_reading {
+                // x y z axis for Accelerometer and Gyroscope
+                struct {
+                    double x;
+                    double y;
+                    double z;
+                };
+                // single value sensors eg. ambient light
+                double dval;
+            } reading;
+        } sensor;
     } data;
 } zjs_ipm_message_t;
 

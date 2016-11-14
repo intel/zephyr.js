@@ -162,6 +162,19 @@ if [ $? -eq 0 ] && [[ $MODULE != *"BUILD_MODULE_BUFFER"* ]]; then
     >&2 echo Using module: Buffer
     MODULES+=" -DBUILD_MODULE_BUFFER"
 fi
+sensor=$(grep -E Accelerometer\|Gyroscope  $SCRIPT)
+if [ $? -eq 0 ]; then
+    >&2 echo Using module: Sensor
+    MODULES+=" -DBUILD_MODULE_SENSOR"
+    echo "CONFIG_SPI=y" >> arc/prj.conf.tmp
+    echo "CONFIG_SENSOR=y" >> arc/prj.conf.tmp
+    echo "CONFIG_BMI160=y" >> arc/prj.conf.tmp
+    echo "CONFIG_BMI160_INIT_PRIORITY=80" >> arc/prj.conf.tmp
+    echo "CONFIG_BMI160_NAME=\"bmi160\"" >> arc/prj.conf.tmp
+    echo "CONFIG_BMI160_SPI_PORT_NAME=\"SPI_1\"" >> arc/prj.conf.tmp
+    echo "CONFIG_BMI160_SLAVE=1" >> arc/prj.conf.tmp
+    echo "CONFIG_BMI160_SPI_BUS_FREQ=88" >> arc/prj.conf.tmp
+fi
 
 console=$(grep console $SCRIPT)
 if [ $? -eq 0 ] && [[ $MODULE != *"BUILD_MODULE_CONSOLE"* ]]; then
