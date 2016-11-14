@@ -190,10 +190,10 @@ bool zjs_hex_to_byte(char *buf, uint8_t *byte)
 }
 
 void zjs_default_convert_pin(uint32_t orig, int *dev, int *pin) {
-    // effects: reads top three bits of orig and writes them to dev and the
-    //            bottom five bits and writes them to pin; thus up to eight
-    //            devices are supported and up to 32 pins each; but if orig is
-    //            0xff, returns 0 for dev and -1 for pin
+    // effects: reads top three bits of the bottom byte of orig and writes them
+    //            to dev and the bottom five bits and writes them to pin; thus
+    //            up to eight devices are supported and up to 32 pins each; but
+    //            if orig is 0xff, returns 0 for dev and -1 for pin
     if (orig == 0xff) {
         *dev = 0;
         *pin = -1;
@@ -286,5 +286,6 @@ int zjs_get_ms(void)
     }
     return milli;
 }
+
 #endif // ZJS_LINUX_BUILD
 #endif // DEBUG_BUILD
