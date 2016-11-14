@@ -4,6 +4,11 @@
 #ifndef ZJS_LINUX_BUILD
 // Zephyr includes
 #include <zephyr.h>
+#ifdef BUILD_MODULE_SENSOR_TRIGGER
+#include <gpio.h>
+#include <ipm.h>
+#include <ipm/ipm_quark_se.h>
+#endif
 #endif
 
 #include <string.h>
@@ -13,6 +18,14 @@
 #include "zjs_callbacks.h"
 #include "zjs_ipm.h"
 #include "zjs_util.h"
+
+#ifdef BUILD_MODULE_SENSOR_TRIGGER
+QUARK_SE_IPM_DEFINE(bmi160_ipm, 0, QUARK_SE_IPM_OUTBOUND);
+#define BMI160_INTERRUPT_PIN 4
+
+struct device *trigger_ipm;
+struct gpio_callback cb;
+#endif
 
 #define ZJS_SENSOR_TIMEOUT_TICKS                      500
 
@@ -77,6 +90,15 @@ static void zjs_sensor_free_handles(sensor_handle_t *handle)
     }
 }
 
+#ifdef BUILD_MODULE_SENSOR_TRIGGER
+static void gpio_callback(struct device *port,
+                          struct gpio_callback *cb, uint32_t pins)
+{
+    // trigger interrupt over to the ARC
+    ipm_send(trigger_ipm, 0, 0, NULL, 0);
+}
+#endif
+
 static bool zjs_sensor_ipm_send_sync(zjs_ipm_message_t* send,
                                      zjs_ipm_message_t* result)
 {
@@ -105,11 +127,7 @@ static int zjs_sensor_call_remote_function(zjs_ipm_message_t* send)
 {
     zjs_ipm_message_t reply;
     if (!zjs_sensor_ipm_send_sync(send, &reply)) {
-        return zjs_error("zjs_sensor_call_remote_function: ipm message failed or timed out!");
-    }
-    if (reply.error_code != ERROR_IPM_NONE) {
-        ZJS_PRINT("zjs_sensor_call_remote_function: error code: %lu\n",
-              reply.error_code);
+        return ERROR_IPM_OPERATION_FAILED;
     }
     return reply.error_code;
 }
@@ -259,11 +277,9 @@ static void zjs_sensor_onchange_c_callback(void *h, void *argv)
         return;
     }
 
-    if (zjs_sensor_get_state(handle->sensor_obj) == SENSOR_STATE_ACTIVATED) {
-        zjs_sensor_update_reading(handle->sensor_obj,
-                                  handle->channel,
-                                  handle->reading);
-    }
+    zjs_sensor_update_reading(handle->sensor_obj,
+                              handle->channel,
+                              handle->reading);
 }
 
 static void zjs_sensor_signal_callbacks(sensor_handle_t *handle,
@@ -271,8 +287,10 @@ static void zjs_sensor_signal_callbacks(sensor_handle_t *handle,
 {
     // iterate all sensor instances to update readings and trigger event
     for (sensor_handle_t *h = handle; h; h = h->next) {
-        memcpy(&h->reading, &reading, sizeof(reading));
-        zjs_signal_callback(h->id, NULL, 0);
+        if (zjs_sensor_get_state(h->sensor_obj) == SENSOR_STATE_ACTIVATED) {
+            memcpy(&h->reading, &reading, sizeof(reading));
+            zjs_signal_callback(h->id, NULL, 0);
+        }
     }
 }
 
@@ -403,17 +421,15 @@ static jerry_value_t zjs_sensor_create(const jerry_value_t function_obj,
         double option_freq;
         if (zjs_obj_get_double(options, "frequency", &option_freq)) {
             // TODO: figure out a list of frequencies we can support
-            // and have Zephyr trigger value changes instead of
-            // polling on the ARC.
-            // For now, frequency is ignored,  we just report new event
-            // as soon as we detect a value change.
-            if (option_freq <= 0) {
-                ZJS_PRINT("zjs_sensor_create: invalid frequency, defaulting to 50hz\n");
+            // For now, frequency is always set to 50Hz,
+            // other frequency values are not supported
+            if (option_freq != 50) {
+                ZJS_PRINT("zjs_sensor_create: unsupported frequency, defaulting to 50Hz\n");
             } else {
                 frequency = option_freq;
             }
         } else {
-            ZJS_PRINT("zjs_sensor_create: frequency not found, defaulting to 50hz\n");
+            DBG_PRINT("zjs_sensor_create: frequency not found, defaulting to 50Hz\n");
         }
 
         if (channel == SENSOR_CHAN_ACCEL_ANY) {
@@ -428,9 +444,9 @@ static jerry_value_t zjs_sensor_create(const jerry_value_t function_obj,
 
     zjs_ipm_message_t send;
     send.type = TYPE_SENSOR_INIT;
-    jerry_value_t result = zjs_sensor_call_remote_function(&send);
-    if (jerry_value_has_error_flag(result)) {
-        return result;
+    int error = zjs_sensor_call_remote_function(&send);
+    if (error != ERROR_IPM_NONE) {
+        return zjs_error("zjs_sensor_create failed to init\n");
     }
 
     // initialize object and default values
@@ -498,6 +514,31 @@ void zjs_sensor_init()
 
     nano_sem_init(&sensor_sem);
 
+#ifdef BUILD_MODULE_SENSOR_TRIGGER
+    // setting up trigger interrupt
+    struct device *gpio = device_get_binding("GPIO_1");
+    if (!gpio) {
+        ZJS_PRINT("gpio device not found.\n");
+        return;
+    }
+
+    trigger_ipm = device_get_binding("bmi160_ipm");
+    if (!trigger_ipm) {
+        ZJS_PRINT("bmi160_ipm device not found.\n");
+        return;
+    }
+
+    gpio_init_callback(&cb, gpio_callback, BIT(BMI160_INTERRUPT_PIN));
+    gpio_add_callback(gpio, &cb);
+
+    gpio_pin_configure(gpio, BMI160_INTERRUPT_PIN,
+                       GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
+                       GPIO_INT_ACTIVE_LOW | GPIO_INT_DEBOUNCE);
+
+    gpio_pin_enable_callback(gpio, BMI160_INTERRUPT_PIN);
+#endif
+
+    // create global objects
     jerry_value_t global_obj = jerry_get_global_object();
     zjs_obj_add_function(global_obj, zjs_accel_create, "Accelerometer");
     zjs_obj_add_function(global_obj, zjs_gyro_create, "Gyroscope");
