@@ -183,7 +183,7 @@ generate: $(JS) setup
 # Run QEMU target
 .PHONY: qemu
 qemu: $(PRE_ACTION) analyze generate
-	make -f Makefile.zephyr BOARD=qemu_x86 KERNEL=$(KERNEL) MEM_STATS=$(MEM_STATS) CB_STATS=$(CB_STATS) qemu
+	make -f Makefile.zephyr KERNEL=$(KERNEL) MEM_STATS=$(MEM_STATS) CB_STATS=$(CB_STATS) qemu
 
 # Builds ARC binary
 .PHONY: arc
