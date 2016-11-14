@@ -131,16 +131,16 @@ $ source deps/zephyr/zephyr-env.sh
 
 ### Build and Flash
 #### x86 application image and ARC support image
-Now you're ready to build the support x86 and ARC images, the x86 image 
+Now you're ready to build the x86 and ARC images. The x86 image
 includes the JerryScript engine and the ZJS runtime support, along with
 your JavaScript application, and the ARC support image acts as a helper
-libary that channels some of the data needed from the ARC process to the
-x86 process.
+library that channels some of the data needed from the ARC processor to the
+x86 processor.
 
 **Note**, you'll need to build both the x86 and ARC images
 with the same JS file so the required sub-modules are enabled on both images.
 
-You can build both with a single command
+You can build both with a single command:
 
 ```bash
 $ make JS=samples/TrafficLight.js all
@@ -162,7 +162,7 @@ $ make dfu-all
 This will flash both the images to the device using the dfu-util program.
 
 If you get a permission error, make sure you followed the 'Join the plugdev
-group' instructions above for this user. You shoudn't need to run this command
+group' instructions above for this user. You shouldn't need to run this command
 with `sudo`.
 
 After this flashing completes successfully, reboot the device with the Master
@@ -176,31 +176,35 @@ you just need to repeat the steps the desired JavaScript filename.
 
 #### x86 application image only
 If you want to build the x86 and ARC images separately, or if you just want to
-build another .js sample that uses the same sub-modules, then you can  build x86
-only with
+build another .js sample that uses the same sub-modules, then you can build only
+the x86 image with:
 
 ```bash
-$ make JS=samples/xxx.js
-```
+$ make JS=path/to/filename.js
 
-```bash
 $ make dfu
 ```
 
 #### ARC support image only
-To build and flash the ARC support image only
+To build and flash only the ARC support image:
 
 ```bash
-$ make JS=samples/xxx.js arc
-```
+$ make JS=path/to/filename.js arc
 
-```bash
 $ make dfu-arc
 ```
 
 If you run a different .js sample that uses different sub-modules, for example,
 from AIO.js to I2C.js, then you'll need to repeat the last two steps to flash
 both images.
+
+If you forget to build and update the ARC image, or somehow you build the x86
+and ARC images, you'll see an error on your serial console (see below) similar
+to this:
+
+```bash
+ipm_console0: 'unsupported ipm message id: 1, check ARC modules'
+```
 
 ### Next steps
 
