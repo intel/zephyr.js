@@ -170,8 +170,11 @@ dfu-all: dfu dfu-arc
 .PHONY: generate
 generate: $(JS) setup
 	@echo Creating C string from JS application...
+ifeq ($(TARGET), linux)
+	@./scripts/convert.sh $(JS) src/zjs_script_gen.c
+else
 	@./scripts/convert.sh /tmp/zjs.js src/zjs_script_gen.c
-
+endif
 # Run QEMU target
 .PHONY: qemu
 qemu: $(PRE_ACTION) analyze generate

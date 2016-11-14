@@ -17,8 +17,11 @@
 console.log("Starting I2C demo using BMP280 and Grove LCD");
 
 /* Globals */
+
+// Import JavaScript modules from 'modules' folder
 var bmp280 = require("BMP280.js");
 var glcd = require("GroveLCD.js");
+
 var baseTemp = prevTemp = 25;
 var red = green = blue = 200;
 
