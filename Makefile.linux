@@ -5,8 +5,16 @@ endif
 JERRY_BASE ?= $(ZJS_BASE)/deps/jerryscript
 OCF_ROOT ?= deps/iotivity-constrained
 
+BUILD_DIR = $(ZJS_BASE)/outdir/linux/$(VARIANT)
+
 .PHONY: all
 all: linux
+
+.PHONY: setup
+setup:
+	@if [ ! -d $(ZJS_BASE)/outdir/linux/$(VARIANT) ]; then \
+		mkdir -p $(ZJS_BASE)/outdir/linux/$(VARIANT); \
+	fi
 
 include Makefile.ocf_linux
 
@@ -16,6 +24,7 @@ CORE_SRC +=	src/zjs_buffer.c \
 		src/zjs_event.c \
 		src/zjs_linux_ring_buffer.c \
 		src/zjs_linux_time.c \
+		src/main.c \
 		src/zjs_modules.c \
 		src/zjs_performance.c \
 		src/zjs_ocf_common.c \
@@ -32,9 +41,13 @@ CORE_OBJ =	$(CORE_SRC:%.c=%.o)
 LINUX_INCLUDES += 	-Isrc/ \
 			-I$(JERRY_BASE)/jerry-core \
 			-I$(OCF_ROOT)/deps/tinydtls \
+			-I$(OCF_ROOT)/deps/tinycbor/src \
 			-I$(OCF_ROOT) \
 			-I$(OCF_ROOT)/port/linux \
 			-I$(OCF_ROOT)/include \
+			-I$(OCF_ROOT)/util \
+			-I$(OCF_ROOT)/messaging/coap \
+			-I$(OCF_ROOT)/api \
 			-include $(OCF_ROOT)/port/linux/config.h
 
 JERRY_LIBS += 		-l jerry-core -lm
@@ -88,16 +101,22 @@ ifeq ($(V), 1)
 VERBOSE=-v
 endif
 
+BUILD_OBJ = $(CORE_OBJ:%.o=$(BUILD_DIR)/%.o)
+
+.PHONY: linux_copy
+linux_copy:
+	cp --parents $(CORE_SRC) $(BUILD_DIR)
+
 %.o:%.c
 	@echo "Building $@"
 	gcc -c -o $@ $< $(LINUX_INCLUDES) $(LINUX_DEFINES) $(LINUX_FLAGS)
 
 .PHONY: linux
-linux: $(CORE_OBJ)
-	@echo "Building for Linux $(CORE_OBJ)"
+linux: setup linux_copy $(BUILD_OBJ)
+	@echo "Building for Linux $(BUILD_OBJ)"
 	cd deps/jerryscript; python ./tools/build.py $(VERBOSE);
-	gcc $(LINUX_INCLUDES) $(JERRY_LIB_PATH) -static -o jslinux src/main.c $(CORE_OBJ) $(LINUX_FLAGS) $(CFLAGS) $(LINUX_DEFINES) $(LINUX_LIBS)
+	gcc $(LINUX_INCLUDES) $(JERRY_LIB_PATH) -static -o $(BUILD_DIR)/jslinux $(BUILD_OBJ) $(LINUX_FLAGS) $(CFLAGS) $(LINUX_DEFINES) $(LINUX_LIBS)
 
 .PHONY: clean
 clean:
-	rm -f $(CORE_OBJ)
+	rm -f $(BUILD_OBJ)
