@@ -9,7 +9,7 @@ function GroveLCD() {
     var i2c = require("i2c");
     groveLCDAPI.i2cDevice = i2c.open({ bus: 0, speed: 100 });
 
-    var glcd = {
+    groveLCDAPI.glcdAddrs = {
         DISPLAY_ADDR : 0x3E,
         BACKLIGHT_ADDR : 0x62,
         // Defines for the CMD_CURSOR_SHIFT
@@ -56,8 +56,8 @@ function GroveLCD() {
 
         if (col === undefined && row === undefined && numChar === undefined) {
             // Clear the display completely if no args passed.
-            groveLCDAPI.i2cDevice.write(glcd.DISPLAY_ADDR,
-                                        new Buffer([0, glcd.CMD_SCREEN_CLEAR]));
+            groveLCDAPI.i2cDevice.write(this.glcdAddrs.DISPLAY_ADDR,
+                                        new Buffer([0, this.glcdAddrs.CMD_SCREEN_CLEAR]));
             return;
         }
         else if (col === undefined || row === undefined || numChar === undefined) {
@@ -70,10 +70,10 @@ function GroveLCD() {
         this.resetCursor(col,row);
 
         // Create blank space
-        var blanks = ' ';
+        var blanks = " ";
 
         for (var i = 0; i < numChar - 1; i++) {
-            blanks = blanks + ' ';
+            blanks = blanks + " ";
         }
 
         // Write blank space to LCD
@@ -85,39 +85,49 @@ function GroveLCD() {
         row = row || 0;
         col = col || 0;
 
-        if (row == 0) {
+        if (row === 0) {
             // Put the cursor on the first row at col
             col |= 0x80;
-        } else {
+        } else if (row === 1) {
             // Put the cursor on the second row at col
             col |= 0xC0;
+        } else {
+            console.log("GroveLCD.resetCursor row must be 0 or 1");
+            return;
         }
 
-        this.i2cDevice.write(glcd.DISPLAY_ADDR,
-                             new Buffer([glcd.CMD_SET_DDRAM_ADDR, col]));
+        this.i2cDevice.write(this.glcdAddrs.DISPLAY_ADDR,
+                             new Buffer([this.glcdAddrs.CMD_SET_DDRAM_ADDR, col]));
     }
 
     groveLCDAPI.setColor = function(colorObj) {
         // Valid range for color is 0 - 255
         // Write new color values
         if (colorObj.blue && colorObj.blue > -1 && colorObj.blue < 256) {
-            this.i2cDevice.write(glcd.BACKLIGHT_ADDR,
-                                 new Buffer([glcd.REGISTER_B, blue]));
+            this.i2cDevice.write(this.glcdAddrs.BACKLIGHT_ADDR,
+                                 new Buffer([this.glcdAddrs.REGISTER_B, blue]));
         }
         if (colorObj.red && colorObj.red > -1 && colorObj.red < 256) {
-            this.i2cDevice.write(glcd.BACKLIGHT_ADDR,
-                                 new Buffer([glcd.REGISTER_R, red]));
+            this.i2cDevice.write(this.glcdAddrs.BACKLIGHT_ADDR,
+                                 new Buffer([this.glcdAddrs.REGISTER_R, red]));
         }
         if (colorObj.green && colorObj.green > -1 && colorObj.green < 256) {
-            this.i2cDevice.write(glcd.BACKLIGHT_ADDR,
-                                 new Buffer([glcd.REGISTER_G, green]));
+            this.i2cDevice.write(this.glcdAddrs.BACKLIGHT_ADDR,
+                                 new Buffer([this.glcdAddrs.REGISTER_G, green]));
         }
     }
 
 
     groveLCDAPI.writeText = function(word, col, row) {
 
-        if (col !== undefined && row !== undefined) {
+        if (typeof word !== "string" ||
+            (typeof col !== "number" && typeof col !== "undefined") ||
+            (typeof row !== "number" && typeof row !== "undefined")) {
+            console.log("GroveLCD.writeText invalid input type given.");
+            return;
+        }
+
+        if (typeof col === "number" && typeof row === "number") {
             // Move cursor to the specified location first
             this.resetCursor(col, row);
         }
@@ -126,37 +136,14 @@ function GroveLCD() {
 
         // The first byte in the buffer is for the register address,
         // which is where the word is going to be written to.
-        wordBuffer.writeUInt8(glcd.CMD_SET_CGRAM_ADDR, 0);
+        wordBuffer.writeUInt8(this.glcdAddrs.CMD_SET_CGRAM_ADDR, 0);
 
         // Append the text we want to print after that
         wordBuffer.write(word, 1);
 
         // Write the buffer to I2C
-        this.i2cDevice.write(glcd.DISPLAY_ADDR, wordBuffer);
+        this.i2cDevice.write(this.glcdAddrs.DISPLAY_ADDR, wordBuffer);
     }
-
-    function init() {
-
-        // Clear the screen
-        groveLCDAPI.clear();
-
-        // Set our preferences for the Grove LCD
-        groveLCDAPI.i2cDevice.write(glcd.DISPLAY_ADDR,
-                                    new Buffer([0, glcd.CMD_FUNCTION_SET |
-                                    glcd.FS_ROWS_2 |
-                                    glcd.FS_DOT_SIZE_LITTLE |
-                                    glcd.FS_8BIT_MODE]));
-
-        groveLCDAPI.i2cDevice.write(glcd.DISPLAY_ADDR,
-                                    new Buffer([0, glcd.CMD_DISPLAY_SWITCH |
-                                    glcd.DS_DISPLAY_ON |
-                                    glcd.DS_CURSOR_OFF |
-                                    glcd.DS_BLINK_OFF]));
-
-        groveLCDAPI.resetCursor(0, 0);
-    }
-
-    init();
 
     return groveLCDAPI;
 };

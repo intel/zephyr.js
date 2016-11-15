@@ -9,7 +9,7 @@ function BMP280() {
     var i2c = require("i2c");
     bmp280API.i2cDevice = i2c.open({ bus: 0, speed: 100 });
 
-    var bmp280 = {
+    bmp280API.bmp280Addrs = {
         ADDRESS: 0x77,
         NORMAL_MODE: 0x03,
         REGISTER_DIG_T1: 0x88, // Unsigned Short
@@ -40,8 +40,8 @@ function BMP280() {
     bmp280API.readCoefficients = function() {
         // These need to be read as a burst read in order to get accurate numbers,
         // so dig_TAll contains dig_T1 through dig_T3
-        var dig_TAll = this.i2cDevice.burstRead(bmp280.ADDRESS, 24,
-                                                bmp280.REGISTER_DIG_T1);
+        var dig_TAll = this.i2cDevice.burstRead(this.bmp280Addrs.ADDRESS, 24,
+                                                this.bmp280Addrs.REGISTER_DIG_T1);
         dig_T1 = dig_TAll.readUInt16LE();
         dig_T2 = dig_TAll.readUInt16LE(2);
         dig_T3 = dig_TAll.readUInt16LE(4);
@@ -54,8 +54,8 @@ function BMP280() {
 
     bmp280API.readTemperature = function() {
         // Read the raw temperature value.
-        var tempBuffer = this.i2cDevice.burstRead(bmp280.ADDRESS, 4,
-                                                  bmp280.REGISTER_TEMPDATA);
+        var tempBuffer = this.i2cDevice.burstRead(this.bmp280Addrs.ADDRESS, 4,
+                                                  this.bmp280Addrs.REGISTER_TEMPDATA);
         // Get the number from the buffer object
         var tempDec = tempBuffer.readUInt32BE();
 
@@ -74,31 +74,6 @@ function BMP280() {
         return T;
     }
 
-    function init() {
-        var reader = bmp280API.i2cDevice.read(bmp280.ADDRESS, 1,
-                                              bmp280.REGISTER_CHIPID);
-
-        // Check that we have a BMP280 on the I2C bus
-        if (reader.toString('hex') !== "58")
-            print("BMP280 not found! ChipId " + reader.toString('hex') !== "58");
-
-        // Setup BMP280 sensor
-        bmp280API.readCoefficients();
-
-        bmp280API.i2cDevice.write(bmp280.ADDRESS,
-                                  new Buffer([bmp280.REGISTER_CONTROL,
-                                  bmp280.PRESS_OVER |
-                                  bmp280.TEMP_OVER |
-                                  bmp280.NORMAL_MODE]));
-
-        bmp280API.i2cDevice.write(bmp280.ADDRESS,
-                                  new Buffer([bmp280.REGISTER_CONFIG,
-                                  bmp280.STANDBY |
-                                  bmp280.FILTER |
-                                  bmp280.SPI_3W_DISABLE]));
-    }
-
-    init();
     return bmp280API;
 };
 
