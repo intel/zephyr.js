@@ -56,10 +56,42 @@ static void test_default_convert_pin()
     zjs_assert(dev == 0 && pin == -1, "convert pin failure case");
 }
 
+// Test zjs_util int compression functions
+
+static int check_compress_reversible(uint32_t num)
+{
+    // checks whether uncompressing compressed value returns exact match
+    uint32_t reversed = zjs_uncompress_16_to_32(zjs_compress_32_to_16(num));
+    return num == reversed;
+}
+
+static int check_compress_close(uint32_t num)
+{
+    // checks whether uncompressing compressed value is within 0.05% of original
+    // 11-bit mantissa means 1/2048 ~= 0.05%
+    uint32_t reversed = zjs_uncompress_16_to_32(zjs_compress_32_to_16(num));
+    double ratio = reversed * 1.0 / num;
+    return ratio >= 0.9995 && ratio <= 1.0005;
+}
+
+static void test_compress_32()
+{
+    // expect these to be returned exactly
+    zjs_assert(check_compress_reversible(0), "compression of 0");
+    zjs_assert(check_compress_reversible(0x0cab), "compression of 0x0cab");
+    zjs_assert(check_compress_reversible(0x7fff), "compression of 0x7fff");
+
+    // these should be close
+    zjs_assert(check_compress_close(0x8000), "compression of 0x8000");
+    zjs_assert(check_compress_close(0xdeadbeef), "compression of 0xdeadbeef");
+    zjs_assert(check_compress_close(0xffffffff), "compression of 0xffffffff");
+}
+
 void zjs_run_unit_tests()
 {
     test_hex_to_byte();
     test_default_convert_pin();
+    test_compress_32();
 
     printf("TOTAL - %d of %d passed\n", passed, total);
     exit(!(passed == total));
