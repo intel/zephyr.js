@@ -12,10 +12,6 @@
 // JerryScript includes
 #include "jerry-api.h"
 
-#ifdef ZJS_POOL_CONFIG
-#include "zjs_pool.h"
-#endif
-
 // Platform agnostic modules/headers
 #include "zjs_buffer.h"
 #include "zjs_callbacks.h"

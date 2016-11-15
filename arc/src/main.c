@@ -33,7 +33,7 @@
 
 #define MAX_BUFFER_SIZE 256
 
-static struct nano_sem arc_sem;
+static struct k_sem arc_sem;
 static struct zjs_ipm_message msg_queue[QUEUE_SIZE];
 static struct zjs_ipm_message* end_of_queue_ptr = msg_queue + QUEUE_SIZE;
 
@@ -123,7 +123,7 @@ static void queue_message(struct zjs_ipm_message* incoming_msg)
         return;
     }
 
-    nano_isr_sem_take(&arc_sem, TICKS_UNLIMITED);
+    k_sem_take(&arc_sem, TICKS_UNLIMITED);
     while(msg && msg < end_of_queue_ptr) {
        if (msg->id == MSG_ID_DONE) {
            break;
@@ -138,7 +138,7 @@ static void queue_message(struct zjs_ipm_message* incoming_msg)
         // running out of spaces, disgard message
         ZJS_PRINT("skipping incoming message\n");
     }
-    nano_isr_sem_give(&arc_sem);
+    k_sem_give(&arc_sem);
 }
 
 static void ipm_msg_receive_callback(void *context, uint32_t id, volatile void *data)
@@ -873,8 +873,8 @@ void main(void)
 {
     ZJS_PRINT("Sensor core running ZJS ARC support image\n");
 
-    nano_sem_init(&arc_sem);
-    nano_sem_give(&arc_sem);
+    k_sem_init(&arc_sem, 0, 1);
+    k_sem_give(&arc_sem);
 
     memset(msg_queue, 0, sizeof(struct zjs_ipm_message) * QUEUE_SIZE);
 
@@ -897,7 +897,7 @@ void main(void)
         }
         tick_count += SLEEP_TICKS;
 #endif
-        task_sleep(SLEEP_TICKS);
+        k_sleep(SLEEP_TICKS);
     }
 
 #ifdef BUILD_MODULE_AIO

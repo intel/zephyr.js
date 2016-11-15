@@ -28,7 +28,7 @@
 
 #define ZJS_BLE_TIMEOUT_TICKS                       500
 
-struct nano_sem zjs_ble_nano_sem;
+static struct k_sem zjs_ble_nano_sem;
 
 typedef struct ble_handle {
     zjs_callback_id id;
@@ -170,7 +170,7 @@ static jerry_value_t zjs_ble_read_callback_function(const jerry_value_t function
     if (argc != 2 ||
         !jerry_value_is_number(argv[0]) ||
         !jerry_value_is_object(argv[1])) {
-        nano_task_sem_give(&zjs_ble_nano_sem);
+        k_sem_give(&zjs_ble_nano_sem);
         return zjs_error("zjs_ble_read_attr_call_function_return: invalid arguments");
     }
 
@@ -190,7 +190,7 @@ static jerry_value_t zjs_ble_read_callback_function(const jerry_value_t function
     }
 
     // unblock fiber
-    nano_task_sem_give(&zjs_ble_nano_sem);
+    k_sem_give(&zjs_ble_nano_sem);
     return ZJS_UNDEFINED;
 }
 
@@ -244,7 +244,7 @@ static ssize_t zjs_ble_read_attr_callback(struct bt_conn *conn,
         zjs_signal_callback(chrc->read_cb.id, NULL, 0);
 
         // block until result is ready
-        if (!nano_fiber_sem_take(&zjs_ble_nano_sem, ZJS_BLE_TIMEOUT_TICKS)) {
+        if (!k_sem_take(&zjs_ble_nano_sem, ZJS_BLE_TIMEOUT_TICKS)) {
             ERR_PRINT("zjs_ble_read_attr_callback: JS callback timed out\n");
             return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
         }
@@ -277,7 +277,7 @@ static jerry_value_t zjs_ble_write_callback_function(const jerry_value_t functio
 {
     if (argc != 1 ||
         !jerry_value_is_number(argv[0])) {
-        nano_task_sem_give(&zjs_ble_nano_sem);
+        k_sem_give(&zjs_ble_nano_sem);
         return zjs_error("zjs_ble_write_attr_call_function_return: invalid arguments");
     }
 
@@ -289,7 +289,7 @@ static jerry_value_t zjs_ble_write_callback_function(const jerry_value_t functio
     }
 
     // unblock fiber
-    nano_task_sem_give(&zjs_ble_nano_sem);
+    k_sem_give(&zjs_ble_nano_sem);
     return ZJS_UNDEFINED;
 }
 
@@ -360,7 +360,7 @@ static ssize_t zjs_ble_write_attr_callback(struct bt_conn *conn,
         zjs_signal_callback(chrc->write_cb.id, NULL, 0);
 
         // block until result is ready
-        if (!nano_fiber_sem_take(&zjs_ble_nano_sem, ZJS_BLE_TIMEOUT_TICKS)) {
+        if (!k_sem_take(&zjs_ble_nano_sem, ZJS_BLE_TIMEOUT_TICKS)) {
             ERR_PRINT("zjs_ble_write_attr_callback: JS callback timed out\n");
             return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
         }
@@ -1215,7 +1215,7 @@ static jerry_value_t zjs_ble_descriptor(const jerry_value_t function_obj,
 
 jerry_value_t zjs_ble_init()
 {
-    nano_sem_init(&zjs_ble_nano_sem);
+    k_sem_init(&zjs_ble_nano_sem, 0, 1);
 
     // create global BLE object
     jerry_value_t ble_obj = jerry_create_object();

@@ -82,7 +82,6 @@ LINUX_FLAGS += 	-fno-asynchronous-unwind-tables \
 		-fno-strict-overflow \
 		-Werror=implicit-int \
 		-Wall \
-		-Werror \
 		-std=gnu99 \
 		-flto \
 		-Wpointer-sign

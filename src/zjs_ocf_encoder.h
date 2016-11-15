@@ -10,7 +10,6 @@
 #include <config.h>
 #include "deps/tinycbor/src/cbor.h"
 #include "oc_helpers.h"
-#include "oc_constants.h"
 
 extern CborEncoder g_encoder, root_map, links_array;
 extern CborError g_err;

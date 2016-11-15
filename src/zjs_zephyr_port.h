@@ -5,13 +5,13 @@
 
 #include <zephyr.h>
 
-#define zjs_port_timer_t        struct nano_timer
-#define zjs_port_timer_init     nano_timer_init
-#define zjs_port_timer_start    nano_timer_start
-#define zjs_port_timer_stop     nano_task_timer_stop
-#define zjs_port_timer_test     nano_task_timer_test
-#define ZJS_TICKS_NONE          TICKS_NONE
-#define zjs_sleep               task_sleep
+#define zjs_port_timer_t                struct k_timer
+#define zjs_port_timer_init(t)          k_timer_init(t, NULL, NULL)
+#define zjs_port_timer_start(t, i)      k_timer_start(t, i, i)
+#define zjs_port_timer_stop             k_timer_stop
+#define zjs_port_timer_test             k_timer_status_get
+#define ZJS_TICKS_NONE                  TICKS_NONE
+#define zjs_sleep                       k_sleep
 
 #define zjs_port_ring_buf ring_buf
 #define zjs_port_ring_buf_init sys_ring_buf_init

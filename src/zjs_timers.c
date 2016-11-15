@@ -19,7 +19,6 @@
 
 typedef struct zjs_timer {
     zjs_port_timer_t timer;
-    void *timer_data;
     jerry_value_t* argv;
     uint32_t argc;
     uint32_t interval;
@@ -63,7 +62,7 @@ static zjs_timer_t* add_timer(uint32_t interval,
         return NULL;
     }
 
-    zjs_port_timer_init(&tm->timer, &tm->timer_data);
+    zjs_port_timer_init(&tm->timer);
     tm->interval = interval;
     tm->repeat = repeat;
     tm->completed = false;
@@ -139,8 +138,7 @@ static jerry_value_t add_timer_helper(const jerry_value_t function_obj,
             !jerry_value_is_number(argv[1]))
         return zjs_error("native_set_interval_handler: invalid arguments");
 
-    uint32_t interval = (uint32_t)(jerry_get_number_value(argv[1]) / 1000 *
-            CONFIG_SYS_CLOCK_TICKS_PER_SEC);
+    uint32_t interval = (uint32_t)(jerry_get_number_value(argv[1]));
     jerry_value_t callback = argv[0];
     jerry_value_t timer_obj = jerry_create_object();
 
@@ -214,7 +212,7 @@ void zjs_timers_process_events()
         if (tm->completed) {
             delete_timer(tm->callback_id);
         }
-        else if (zjs_port_timer_test(&tm->timer, ZJS_TICKS_NONE)) {
+        else if (zjs_port_timer_test(&tm->timer) > 0) {
             // timer has expired, signal the callback
             DBG_PRINT("signaling timer. id=%d, argv=%p, argc=%lu\n",
                     tm->callback_id, tm->argv, tm->argc);

@@ -24,7 +24,36 @@ static struct device *zjs_pwm_dev[PWM_DEV_COUNT];
 void (*zjs_pwm_convert_pin)(uint32_t orig, int *dev, int *pin) =
     zjs_default_convert_pin;
 
-static void zjs_pwm_set(jerry_value_t obj, double periodHW, double pulseWidthHW)
+static void zjs_pwm_set(jerry_value_t obj, double period, double pulseWidth)
+{
+    uint32_t orig_chan;
+    zjs_obj_get_uint32(obj, "channel", &orig_chan);
+
+    int devnum, channel;
+    zjs_pwm_convert_pin(orig_chan, &devnum, &channel);
+
+    if (pulseWidth > period) {
+        ERR_PRINT("zjs_pwm_set: pulseWidth was greater than period\n");
+        pulseWidth = period;
+    }
+
+    const int BUFLEN = 10;
+    char buffer[BUFLEN];
+    if (zjs_obj_get_string(obj, "polarity", buffer, BUFLEN)) {
+        if (!strcmp(buffer, ZJS_POLARITY_REVERSE)) {
+            if (period > pulseWidth) {
+                pulseWidth = 0;
+            } else {
+                pulseWidth = period - pulseWidth;
+            }
+        }
+    }
+
+    DBG_PRINT("Setting [uSec] channel=%u dev=%u, period=%lu, pulse=%lu\n", channel, devnum, (uint32_t)(period * 1000), (uint32_t)(pulseWidth * 1000));
+    pwm_pin_set_usec(zjs_pwm_dev[devnum], channel, (uint32_t)(period * 1000), (uint32_t)(pulseWidth * 1000));
+}
+
+static void zjs_pwm_set_cycles(jerry_value_t obj, uint32_t periodHW, uint32_t pulseWidthHW)
 {
     uint32_t orig_chan;
     zjs_obj_get_uint32(obj, "channel", &orig_chan);
@@ -40,16 +69,17 @@ static void zjs_pwm_set(jerry_value_t obj, double periodHW, double pulseWidthHW)
     const int BUFLEN = 10;
     char buffer[BUFLEN];
     if (zjs_obj_get_string(obj, "polarity", buffer, BUFLEN)) {
-        if (!strcmp(buffer, ZJS_POLARITY_REVERSE))
-            pulseWidthHW = periodHW - pulseWidthHW;
+        if (!strcmp(buffer, ZJS_POLARITY_REVERSE)) {
+            if (periodHW > pulseWidthHW) {
+                pulseWidthHW = 0;
+            } else {
+                pulseWidthHW = periodHW - pulseWidthHW;
+            }
+        }
     }
 
-    // convert to milliseconds
-    uint32_t period = periodHW / sys_clock_hw_cycles_per_sec * 1000;
-
-    // convert to microseconds
-    pwm_pin_set_period(zjs_pwm_dev[devnum], channel, (uint32_t)(period * 1000));
-    pwm_pin_set_values(zjs_pwm_dev[devnum], channel, 0, pulseWidthHW);
+    DBG_PRINT("Setting [cycles] channel=%u dev=%u, period=%lu, pulse=%lu\n", channel, devnum, (uint32_t)periodHW, (uint32_t)pulseWidthHW);
+    pwm_pin_set_cycles(zjs_pwm_dev[devnum], channel, periodHW, pulseWidthHW);
 }
 
 static void zjs_pwm_set_period_cycles(jerry_value_t obj, double periodHW)
@@ -65,7 +95,8 @@ static void zjs_pwm_set_period_cycles(jerry_value_t obj, double periodHW)
     zjs_obj_add_number(obj, period, "period");
 
     double pulseWidthHW = pulseWidth * sys_clock_hw_cycles_per_sec / 1000;
-    zjs_pwm_set(obj, periodHW, pulseWidthHW);
+
+    zjs_pwm_set_cycles(obj, periodHW, pulseWidthHW);
 }
 
 static jerry_value_t zjs_pwm_pin_set_period_cycles(const jerry_value_t function_obj,
@@ -99,11 +130,19 @@ static jerry_value_t zjs_pwm_pin_set_period(const jerry_value_t function_obj,
     if (argc < 1 || !jerry_value_is_number(argv[0]))
         return zjs_error("zjs_pwm_pin_set_period: invalid argument");
 
-    // convert to hardware cycles
-    double period = jerry_get_number_value(argv[0]);
-    double periodHW = period * sys_clock_hw_cycles_per_sec / 1000;
+    double pulseWidth;
+    if (!zjs_obj_get_double(this, "pulseWidth", &pulseWidth)) {
+        return zjs_error("zjs_pwm_pin_set_period: pulseWidth was not initialized");
+    }
 
-    zjs_pwm_set_period_cycles(this, periodHW);
+    double period = jerry_get_number_value(argv[0]);
+    // store the period in the pwm object
+    zjs_obj_add_number(this, period, "period");
+
+    ZJS_PRINT("set_period(): period: %lu, pulse: %lu\n", (uint32_t)period, (uint32_t)pulseWidth);
+
+    zjs_pwm_set(this, period, pulseWidth);
+
     return ZJS_UNDEFINED;
 }
 
@@ -121,7 +160,8 @@ static void zjs_pwm_set_pulse_width_cycles(jerry_value_t obj,
     zjs_obj_add_number(obj, pulseWidth, "pulseWidth");
 
     double periodHW = period * sys_clock_hw_cycles_per_sec / 1000;
-    zjs_pwm_set(obj, periodHW, pulseWidthHW);
+
+    zjs_pwm_set_cycles(obj, periodHW, pulseWidthHW);
 }
 
 static jerry_value_t zjs_pwm_pin_set_pulse_width_cycles(const jerry_value_t function_obj,
@@ -136,9 +176,11 @@ static jerry_value_t zjs_pwm_pin_set_pulse_width_cycles(const jerry_value_t func
     if (argc < 1 || !jerry_value_is_number(argv[0]))
         return zjs_error("zjs_pwm_pin_set_pulse_width_cycles: invalid argument");
 
-    double pulseWidthHW = jerry_get_number_value(argv[0]);
+    double pulseWidth = jerry_get_number_value(argv[0]);
+    // store the pulseWidth in the pwm object
+    zjs_obj_add_number(this, pulseWidth, "pulseWidth");
 
-    zjs_pwm_set_pulse_width_cycles(this, pulseWidthHW);
+    zjs_pwm_set_pulse_width_cycles(this, pulseWidth);
     return ZJS_UNDEFINED;
 }
 
@@ -153,11 +195,15 @@ static jerry_value_t zjs_pwm_pin_set_pulse_width(const jerry_value_t function_ob
     if (argc < 1 || !jerry_value_is_number(argv[0]))
         return zjs_error("zjs_pwm_pin_set_pulse_width: invalid argument");
 
-    // convert to hardware cycles
-    double pulseWidth = jerry_get_number_value(argv[0]);
-    double pulseWidthHW = pulseWidth * sys_clock_hw_cycles_per_sec / 1000;
+    double period;
+    zjs_obj_get_double(this, "period", &period);
 
-    zjs_pwm_set_pulse_width_cycles(this, pulseWidthHW);
+    double pulseWidth = jerry_get_number_value(argv[0]);
+    // store the pulseWidth in the pwm object
+    zjs_obj_add_number(this, pulseWidth, "pulseWidth");
+
+    zjs_pwm_set(this, period, pulseWidth);
+
     return ZJS_UNDEFINED;
 }
 
@@ -186,8 +232,12 @@ static jerry_value_t zjs_pwm_open(const jerry_value_t function_obj,
         return zjs_error("zjs_pwm_open: invalid channel");
 
     double period, pulseWidth;
-    zjs_obj_get_double(data, "period", &period);
-    zjs_obj_get_double(data, "pulseWidth", &pulseWidth);
+    if (!zjs_obj_get_double(data, "period", &period)) {
+        period = 0;
+    }
+    if (!zjs_obj_get_double(data, "pulseWidth", &pulseWidth)) {
+        pulseWidth = 0;
+    }
 
     const int BUFLEN = 10;
     char buffer[BUFLEN];
@@ -196,10 +246,6 @@ static jerry_value_t zjs_pwm_open(const jerry_value_t function_obj,
         if (!strcmp(buffer, ZJS_POLARITY_REVERSE))
             polarity = ZJS_POLARITY_REVERSE;
     }
-
-    // set the inital timing
-    uint32_t pulseWidthHW = pulseWidth * sys_clock_hw_cycles_per_sec / 1000;
-    uint32_t periodHW = period * sys_clock_hw_cycles_per_sec / 1000;
 
     // create the PWMPin object
     jerry_value_t pin_obj = jerry_create_object();
@@ -214,8 +260,7 @@ static jerry_value_t zjs_pwm_open(const jerry_value_t function_obj,
     zjs_obj_add_number(pin_obj, pulseWidth, "pulseWidth");
     zjs_obj_add_string(pin_obj, polarity, "polarity");
 
-    zjs_pwm_set_period_cycles(pin_obj, periodHW);
-    zjs_pwm_set_pulse_width_cycles(pin_obj, pulseWidthHW);
+    zjs_pwm_set(pin_obj, period, pulseWidth);
 
     // TODO: When we implement close, we should release the reference on this
     return pin_obj;

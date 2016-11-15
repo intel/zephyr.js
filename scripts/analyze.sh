@@ -72,20 +72,11 @@ if [ $? -eq 0 ]; then
     echo "CONFIG_NETWORKING_WITH_LOOPBACK=y" >> prj.conf.tmp
     echo "CONFIG_NETWORKING_UART=y" >> prj.conf.tmp
     echo "CONFIG_NETWORKING_DEBUG_UART=y" >> prj.conf.tmp
+    echo "CONFIG_NANO_TIMEOUTS=y" >> prj.conf.tmp
     echo "CONFIG_UDP_MAX_CONNECTIONS=30" >> prj.conf.tmp
-    echo "CONFIG_IP_BUF_RX_SIZE=8" >> prj.conf.tmp
-    echo "CONFIG_IP_BUF_TX_SIZE=2" >> prj.conf.tmp
+    echo "CONFIG_IP_BUF_RX_SIZE=5" >> prj.conf.tmp
+    echo "CONFIG_IP_BUF_TX_SIZE=5" >> prj.conf.tmp
     echo "CONFIG_NET_MAX_CONTEXTS=9" >> prj.conf.tmp
-    echo "CONFIG_NET_IPV6=y" >> prj.conf.tmp
-    echo "CONFIG_NET_IPV4=y" >> prj.conf.tmp
-    echo "CONFIG_NET_YAIP=y" >> prj.conf.tmp
-    echo "CONFIG_NET_UDP=y" >> prj.conf.tmp
-    echo "CONFIG_NET_LOG=y" >> prj.conf.tmp
-    echo "CONFIG_NET_SLIP=y" >> prj.conf.tmp
-    echo "CONFIG_SLIP_TAP=y" >> prj.conf.tmp
-    echo "CONFIG_SYS_LOG=y" >> prj.conf.tmp
-    echo "CONFIG_SYS_LOG_SHOW_COLOR=y" >> prj.conf.tmp
-    echo "CONFIG_TEST_RANDOM_GENERATOR=y" >> prj.conf.tmp
 fi
 check_for_require gpio
 if [ $? -eq 0 ]; then
@@ -109,20 +100,15 @@ check_for_require uart
 if [ $? -eq 0 ]; then
     >&2 echo Using module: UART
     if [ $BOARD = "arduino_101" ]; then
-        echo "CONFIG_EARLY_CONSOLE=y" >> prj.conf.tmp
-        echo "CONFIG_CONSOLE_HANDLER=y" >> prj.conf.tmp
-        echo "CONFIG_CONSOLE_HANDLER_SHELL=y" >> prj.conf.tmp
+        echo "CONFIG_GPIO=y" >> prj.conf.tmp
         echo "CONFIG_USB=y" >> prj.conf.tmp
         echo "CONFIG_USB_DW=y" >> prj.conf.tmp
         echo "CONFIG_USB_DEVICE_STACK=y" >> prj.conf.tmp
-        echo "CONFIG_USB_DW_DEBUG=n" >> prj.conf.tmp
+        echo "CONFIG_SYS_LOG_USB_DW_LEVEL=0" >> prj.conf.tmp
         echo "CONFIG_USB_CDC_ACM=y" >> prj.conf.tmp
-        echo "CONFIG_USB_DEBUG=n" >> prj.conf.tmp
+        echo "CONFIG_SYS_LOG_USB_LEVEL=0" >> prj.conf.tmp
         echo "CONFIG_SERIAL=y" >> prj.conf.tmp
         echo "CONFIG_UART_LINE_CTRL=y" >> prj.conf.tmp
-        echo "CONFIG_USB_CDC_ACM_DEBUG=n" >> prj.conf.tmp
-        echo "CONFIG_DEVICE_POWER_MANAGEMENT=y" >> prj.conf.tmp
-        echo "CONFIG_GPIO=y" >> prj.conf.tmp
     fi
     echo "CONFIG_UART_INTERRUPT_DRIVEN=y" >> prj.conf.tmp
     MODULES+=" -DBUILD_MODULE_UART"
@@ -201,16 +187,13 @@ if [ $? -eq 0 ]; then
         echo "CONFIG_GPIO_QMSI_1_NAME=\"GPIO_1\"" >> prj.conf.tmp
         echo "CONFIG_GPIO_QMSI_1_PRI=2" >> prj.conf.tmp
         echo "CONFIG_SPI=y" >> arc/prj.conf.tmp
-        echo "CONFIG_SPI_DW_ARC_AUX_REGS=y" >> arc/prj.conf.tmp
-        echo "CONFIG_SPI_DW_INTERRUPT_SEPARATED_LINES=y" >> arc/prj.conf.tmp
         echo "CONFIG_BMI160=y" >> arc/prj.conf.tmp
-        echo "CONFIG_BMI160_INIT_PRIORITY=80" >> arc/prj.conf.tmp
         echo "CONFIG_BMI160_NAME=\"bmi160\"" >> arc/prj.conf.tmp
         echo "CONFIG_BMI160_SPI_PORT_NAME=\"SPI_1\"" >> arc/prj.conf.tmp
         echo "CONFIG_BMI160_SLAVE=1" >> arc/prj.conf.tmp
         echo "CONFIG_BMI160_SPI_BUS_FREQ=88" >> arc/prj.conf.tmp
         echo "CONFIG_BMI160_TRIGGER=y" >> arc/prj.conf.tmp
-        echo "CONFIG_BMI160_TRIGGER_OWN_FIBER=y" >> arc/prj.conf.tmp
+        echo "CONFIG_BMI160_TRIGGER_OWN_THREAD=y" >> arc/prj.conf.tmp
     fi
 fi
 

@@ -13,13 +13,13 @@ typedef struct zjs_port_timer {
     void* data;
 } zjs_port_timer_t;
 
-void zjs_port_timer_init(zjs_port_timer_t* timer, void* data);
+#define zjs_port_timer_init(t) do {} while (0)
 
 void zjs_port_timer_start(zjs_port_timer_t* timer, uint32_t interval);
 
 void zjs_port_timer_stop(zjs_port_timer_t* timer);
 
-uint8_t zjs_port_timer_test(zjs_port_timer_t* timer, uint32_t ticks);
+uint8_t zjs_port_timer_test(zjs_port_timer_t* timer);
 
 #define ZJS_TICKS_NONE          0
 #define CONFIG_SYS_CLOCK_TICKS_PER_SEC 100

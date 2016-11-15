@@ -49,4 +49,5 @@ obj-y += ../$(OCF_ROOT)/deps/tinycbor/src/cborencoder_close_container_checked.o 
          ../$(OCF_ROOT)/port/zephyr/src/ipadapter.o \
          ../$(OCF_ROOT)/port/zephyr/src/random.o \
          ../$(OCF_ROOT)/port/zephyr/src/clock.o \
-         ../$(OCF_ROOT)/port/zephyr/src/abort.o
+         ../$(OCF_ROOT)/port/zephyr/src/abort.o \
+         ../$(OCF_ROOT)/port/zephyr/src/storage.o

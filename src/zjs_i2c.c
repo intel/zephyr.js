@@ -13,7 +13,7 @@
 
 #define ZJS_I2C_TIMEOUT_TICKS                      500
 
-static struct nano_sem i2c_sem;
+static struct k_sem i2c_sem;
 
 static bool zjs_i2c_ipm_send_sync(zjs_ipm_message_t* send,
                                   zjs_ipm_message_t* result) {
@@ -28,7 +28,7 @@ static bool zjs_i2c_ipm_send_sync(zjs_ipm_message_t* send,
     }
 
     // block until reply or timeout
-    if (!nano_sem_take(&i2c_sem, ZJS_I2C_TIMEOUT_TICKS)) {
+    if (!k_sem_take(&i2c_sem, ZJS_I2C_TIMEOUT_TICKS)) {
         ERR_PRINT("zjs_i2c_ipm_send_sync: ipm timed out\n");
         return false;
     }
@@ -50,7 +50,7 @@ static void ipm_msg_receive_callback(void *context, uint32_t id, volatile void *
             memcpy(result, msg, sizeof(zjs_ipm_message_t));
 
         // un-block sync api
-        nano_isr_sem_give(&i2c_sem);
+        k_sem_give(&i2c_sem);
     } else {
         // asynchronous ipm, should not get here
         ERR_PRINT("ipm_msg_receive_callback: async message received\n");
@@ -311,7 +311,7 @@ jerry_value_t zjs_i2c_init()
     zjs_ipm_init();
     zjs_ipm_register_callback(MSG_ID_I2C, ipm_msg_receive_callback);
 
-    nano_sem_init(&i2c_sem);
+    k_sem_init(&i2c_sem, 0, 1);
 
     // create global I2C object
     jerry_value_t i2c_obj = jerry_create_object();
