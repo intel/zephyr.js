@@ -181,7 +181,6 @@ the x86 image with:
 
 ```bash
 $ make JS=path/to/filename.js
-
 $ make dfu
 ```
 
@@ -190,7 +189,6 @@ To build and flash only the ARC support image:
 
 ```bash
 $ make JS=path/to/filename.js arc
-
 $ make dfu-arc
 ```
 
@@ -198,9 +196,8 @@ If you run a different .js sample that uses different sub-modules, for example,
 from AIO.js to I2C.js, then you'll need to repeat the last two steps to flash
 both images.
 
-If you forget to build and update the ARC image, or somehow you build the x86
-and ARC images, you'll see an error on your serial console (see below) similar
-to this:
+If you forget to update the ARC image when your module requirements have changed,
+you'll see an error in the serial console (setup steps below) similar to this:
 
 ```bash
 ipm_console0: 'unsupported ipm message id: 1, check ARC modules'
