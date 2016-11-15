@@ -20,65 +20,82 @@ env:
     - ZEPHYR_SDK_SETUP_BINARY=zephyr-sdk-$ZEPHYR_SDK_VERSION-i686-setup.run
     - ZEPHYR_SDK_DOWNLOAD_URL=$ZEPHYR_SDK_DOWNLOAD_FOLDER/$ZEPHYR_SDK_SETUP_BINARY
   matrix:
-    - TARGET="git-check" NOZEPHYR=y
     - TARGET="zephyr"
-    - TARGET="zephyr-large" PARTSIZE=256
-    - TARGET="BOARD=frdm_k64f"
-    - TARGET="arc"
-    - TARGET="linux" NOZEPHYR=y
+    - TARGET="linux"
     - TARGET="ashell"
 
 matrix:
-   allow_failures:
-   - env: TARGET="ashell"
+  allow_failures:
+    - env: TARGET="ashell"
 
 before_install:
   - sudo apt-get update -qq
   - sudo apt-get install make gcc g++ python3-ply ncurses-dev uglifyjs sysvbanner -qq
 
 install: >
-  if [ "$NOZEPHYR" != "y" ]; then
+  if [ "$TARGET" != "linux" ]; then
     wget $ZEPHYR_SDK_DOWNLOAD_URL &&
     chmod +x $ZEPHYR_SDK_SETUP_BINARY &&
     ./$ZEPHYR_SDK_SETUP_BINARY --quiet -- -y -d $ZEPHYR_SDK_INSTALL_DIR > /dev/null;
   fi
 
 before_script: >
-  if [ "$NOZEPHYR" != "y" ]; then
-    source zjs-env.sh $PARTSIZE &&
+  source zjs-env.sh &&
+  if [ "$TARGET" != "linux" ]; then
     make update &&
     source deps/zephyr/zephyr-env.sh
-  else
-    source zjs-env.sh
   fi
 
 script: >
   if [ "$TARGET" == "zephyr" ]; then
-    banner "Test 1/7" &&
+    # run spanning set of A101 build tests
+    banner helloworld &&
     make V=1 &&
-    banner "Test 2/7" &&
+    banner "traffic" &&
     make V=1 JS=samples/TrafficLight.js &&
-    banner "Test 3/7" &&
+    banner "pwm" &&
     make V=1 JS=samples/PWM.js &&
-    banner "Test 4/7" &&
+    banner "i2c" &&
     make V=1 JS=samples/I2C.js &&
-    banner "Test 5/7" &&
+    banner "uart" &&
     make V=1 JS=samples/UART.js &&
-    banner "Test 6/7" &&
+    banner "events" &&
     make V=1 JS=samples/tests/Events.js &&
-    banner "Test 7/7" &&
-    make V=1 JS=tests/test-performance.js
-  elif [ "$TARGET" == "zephyr-large" ]; then
-    banner "Test 1/1" &&
+    banner "perf" &&
+    make V=1 JS=tests/test-performance.js &&
+
+    # run k64f hello world build test (should expand)
+    git clean -dfx &&
+    banner "k64f hello" &&
+    make V=1 BOARD=frdm_k64f &&
+
+    # test arc build
+    git clean -dfx &&
+    banner "arc" &&
+    make V=1 arc &&
+
+    # test large partition A101 x86 build
+    git clean -dfx &&
+    source zjs-env.sh 256 &&
+    banner "btgrove" &&
     make V=1 JS=samples/WebBluetoothGroveLcdDemo.js
-  elif [ "$TARGET" == "ashell" ]; then
-    banner "ashell" &&
-    make V=1 DEV=ashell
-  elif [ "$TARGET" == "git-check" ]; then
+
+  elif [ "$TARGET" == "linux" ]; then
     # check for any new trailing whitespace since the first fetched commit
     banner "git check" &&
-    git diff --check $(git rev-list HEAD | tail -1)
-  else
-    banner "Test 1/1" &&
-    make V=1 $TARGET;
+    git diff --check $(git rev-list HEAD | tail -1) &&
+
+    # run linux build test
+    banner "linux" &&
+    make V=1 linux &&
+
+    # run linux unit tests
+    banner "unit tests" &&
+    ./jslinux --unittest
+
+  elif [ "$TARGET" == "ashell" ]; then
+    # test ashell build
+    git clean -dfx &&
+    banner "ashell" &&
+    make V=1 DEV=ashell
   fi
