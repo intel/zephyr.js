@@ -13,7 +13,7 @@
 
 #define ZJS_AIO_TIMEOUT_TICKS                      500
 
-static struct nano_sem aio_sem;
+static struct k_sem aio_sem;
 
 #define MAX_TYPE_LEN 20
 
@@ -79,7 +79,7 @@ static bool zjs_aio_ipm_send_sync(zjs_ipm_message_t* send,
     // block until reply or timeout, we shouldn't see the ARC
     // time out, if the ARC response comes back after it
     // times out, it could pollute the result on the stack
-    if (!nano_sem_take(&aio_sem, ZJS_AIO_TIMEOUT_TICKS)) {
+    if (!k_sem_take(&aio_sem, ZJS_AIO_TIMEOUT_TICKS)) {
         ERR_PRINT("zjs_aio_ipm_send_sync: FATAL ERROR, ipm timed out\n");
         return false;
     }
@@ -132,7 +132,7 @@ static void ipm_msg_receive_callback(void *context, uint32_t id,
             memcpy(result, msg, sizeof(zjs_ipm_message_t));
 
         // un-block sync api
-        nano_isr_sem_give(&aio_sem);
+        k_sem_give(&aio_sem);
     } else {
         // asynchronous ipm
         aio_handle_t *handle = (aio_handle_t *)msg->user_data;
@@ -341,7 +341,7 @@ jerry_value_t zjs_aio_init()
     zjs_ipm_init();
     zjs_ipm_register_callback(MSG_ID_AIO, ipm_msg_receive_callback);
 
-    nano_sem_init(&aio_sem);
+    k_sem_init(&aio_sem, 0, 1);
 
     // create global AIO object
     jerry_value_t aio_obj = jerry_create_object();

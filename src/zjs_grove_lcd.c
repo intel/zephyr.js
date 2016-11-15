@@ -17,7 +17,7 @@
 
 #define ZJS_GLCD_TIMEOUT_TICKS                      500
 
-static struct nano_sem glcd_sem;
+static struct k_sem glcd_sem;
 
 static bool zjs_glcd_ipm_send_sync(zjs_ipm_message_t* send,
                                    zjs_ipm_message_t* result) {
@@ -34,7 +34,7 @@ static bool zjs_glcd_ipm_send_sync(zjs_ipm_message_t* send,
     // block until reply or timeout, we shouldn't see the ARC
     // time out, if the ARC response comes back after it
     // times out, it could pollute the result on the stack
-    if (!nano_sem_take(&glcd_sem, ZJS_GLCD_TIMEOUT_TICKS)) {
+    if (!k_sem_take(&glcd_sem, ZJS_GLCD_TIMEOUT_TICKS)) {
         ERR_PRINT("zjs_glcd_ipm_send_sync: FATAL ERROR, ipm timed out\n");
         return false;
     }
@@ -79,7 +79,7 @@ static void ipm_msg_receive_callback(void *context, uint32_t id, volatile void *
             memcpy(result, msg, sizeof(zjs_ipm_message_t));
 
         // un-block sync api
-        nano_isr_sem_give(&glcd_sem);
+        k_sem_give(&glcd_sem);
     } else {
         // asynchronous ipm, should not get here
         ERR_PRINT("ipm_msg_receive_callback: async message received\n");
@@ -332,7 +332,7 @@ jerry_value_t zjs_grove_lcd_init()
     zjs_ipm_init();
     zjs_ipm_register_callback(MSG_ID_GLCD, ipm_msg_receive_callback);
 
-    nano_sem_init(&glcd_sem);
+    k_sem_init(&glcd_sem, 0, 1);
 
     // create global grove_lcd object
     jerry_value_t glcd_obj = jerry_create_object();

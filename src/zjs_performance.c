@@ -20,7 +20,7 @@ static jerry_value_t zjs_performance_now(const jerry_value_t function_obj,
     gettimeofday(&tv, NULL);
     uint64_t useconds = (uint64_t)tv.tv_sec * 1000000 + tv.tv_usec;
 #else
-    uint64_t useconds = (uint64_t)sys_tick_get() * (unsigned)sys_clock_us_per_tick;
+    uint64_t useconds = (uint64_t)k_uptime_get() * 1000;
 #endif
     return jerry_create_number((double)useconds / 1000);
 }

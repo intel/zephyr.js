@@ -1,5 +1,4 @@
 MDEF_FILE = prj.mdef
-KERNEL_TYPE = $(KERNEL)
 BOARD ?= arduino_101
 CONF_FILE ?= prj.conf
 

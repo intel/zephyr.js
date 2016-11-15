@@ -288,37 +288,38 @@ int zjs_get_ms(void)
 }
 #else
 
-// Timer granularity
-#define MS_PER_TICK    1000 / CONFIG_SYS_CLOCK_TICKS_PER_SEC
-static struct nano_timer print_timer;
+#include "zjs_zephyr_port.h"
+
+static zjs_port_timer_t print_timer;
 // Millisecond counter to increment
 static uint32_t milli = 0;
-// Dummy user handle so nano_task_timer_test() works
-static void* dummy = (void*)0xFFFFFFFF;
 
 void update_print_timer(void)
 {
     if (!init) {
-        nano_timer_init(&print_timer, dummy);
-        nano_timer_start(&print_timer, MS_PER_TICK);
+        zjs_port_timer_init(&print_timer);
+        zjs_port_timer_start(&print_timer, 1);
         init = 1;
     }
-    if (nano_task_timer_test(&print_timer, TICKS_NONE)) {
+    if (zjs_port_timer_test(&print_timer)) {
         if (milli >= 100) {
             milli = 0;
             seconds++;
         } else {
-            milli += MS_PER_TICK;
+            // TODO: Find out why incrementing by 1 results in timer being
+            //       ~50% too slow. Increasing by 2 works as it did before the
+            //       unified kernel.
+            milli += 2;
         }
-        nano_timer_start(&print_timer, MS_PER_TICK);
+        zjs_port_timer_start(&print_timer, 1);
     }
 }
 
 int zjs_get_sec(void)
 {
     if (!init) {
-        nano_timer_init(&print_timer, dummy);
-        nano_timer_start(&print_timer, MS_PER_TICK);
+        zjs_port_timer_init(&print_timer);
+        zjs_port_timer_start(&print_timer, 1);
         init = 1;
     }
     return seconds;
@@ -327,8 +328,8 @@ int zjs_get_sec(void)
 int zjs_get_ms(void)
 {
     if (!init) {
-        nano_timer_init(&print_timer, dummy);
-        nano_timer_start(&print_timer, MS_PER_TICK);
+        zjs_port_timer_init(&print_timer);
+        zjs_port_timer_start(&print_timer, 1);
         init = 1;
     }
     return milli;

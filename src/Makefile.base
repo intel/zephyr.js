@@ -1,7 +1,10 @@
 JERRY_BASE ?= $(ZJS_BASE)/deps/jerryscript
 OCF_ROOT ?= deps/iotivity-constrained
 
-ccflags-y += -Wall -Werror
+# TODO: iotivity-constrained uses legacy functions so the -Werror flag has to
+#       be removed in order for it to compile. Once iotivity-constrained has
+#       been updated to use the unified kernel API's -Werror can be added back
+ccflags-y += -Wall
 
 # Select extended ANSI C/POSIX function set in recent Newlib versions
 ccflags-y += -D_XOPEN_SOURCE=700

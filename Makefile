@@ -1,5 +1,4 @@
 BOARD ?= arduino_101
-KERNEL ?= micro
 UPDATE ?= exit
 
 # pass TRACE=y to trace malloc/free in the ZJS API
@@ -15,8 +14,6 @@ JS ?= samples/HelloWorld.js
 VARIANT ?= release
 # Dump memory information: on = print allocs, full = print allocs + dump pools
 TRACE ?= off
-# Specify pool malloc or heap malloc
-MALLOC ?= pool
 # Print callback statistics during runtime
 CB_STATS ?= off
 # Print floats (uses -u _printf_float flag). This is a workaround on the A101
@@ -41,7 +38,6 @@ endif
 .PHONY: zephyr
 zephyr: $(PRE_ACTION) analyze generate
 	@make -f Makefile.zephyr	BOARD=$(BOARD) \
-					KERNEL=$(KERNEL) \
 					VARIANT=$(VARIANT) \
 					MEM_STATS=$(MEM_STATS) \
 					CB_STATS=$(CB_STATS) \
@@ -66,16 +62,7 @@ ifeq ($(DEV), ashell)
 	@cat fragments/prj.mdef.dev >> prj.mdef
 else
 	@cat fragments/prj.mdef.base >> prj.mdef
-	@if [ $(MALLOC) = "pool" ]; then \
-		echo "obj-y += zjs_pool.o" >> src/Makefile; \
-		echo "ccflags-y += -DZJS_POOL_CONFIG" >> src/Makefile; \
-		if [ "$(TRACE)" = "full" ]; then \
-			echo "ccflags-y += -DDUMP_MEM_STATS" >> src/Makefile; \
-		fi; \
-		cat fragments/prj.mdef.pool >> prj.mdef; \
-	else \
-		cat fragments/prj.mdef.heap >> prj.mdef; \
-	fi
+	@cat fragments/prj.mdef.heap >> prj.mdef
 endif
 	@echo "ccflags-y += $(shell ./scripts/analyze.sh $(BOARD) $(JS))" | tee -a src/Makefile arc/src/Makefile
 	@# Add the include for the OCF Makefile only if the script is using OCF
@@ -194,7 +181,7 @@ endif
 # Run QEMU target
 .PHONY: qemu
 qemu: $(PRE_ACTION) analyze generate
-	make -f Makefile.zephyr KERNEL=$(KERNEL) MEM_STATS=$(MEM_STATS) CB_STATS=$(CB_STATS) qemu
+	make -f Makefile.zephyr MEM_STATS=$(MEM_STATS) CB_STATS=$(CB_STATS) qemu
 
 # Builds ARC binary
 .PHONY: arc
@@ -253,5 +240,4 @@ help:
 	@echo "Build options:"
 	@echo "    BOARD=     Specify a Zephyr board to build for"
 	@echo "    JS=        Specify a JS script to compile into the binary"
-	@echo "    KERNEL=    Specify the kernel to use (micro or nano)"
 	@echo

@@ -8,6 +8,11 @@
 
 #include "string.h"
 
+#ifndef ZJS_LINUX_BUILD
+#include "zjs_zephyr_port.h"
+#else
+#include "zjs_linux_port.h"
+#endif
 #include "zjs_common.h"
 #include "zjs_util.h"
 #include "zjs_promise.h"
@@ -292,7 +297,7 @@ static jerry_value_t uart_init(const jerry_value_t function_obj,
     }
 
     /* Wait 1 sec for the host to do all settings */
-    sys_thread_busy_wait(1000000);
+    zjs_sleep(1000);
 
     ret = uart_line_ctrl_set(uart_dev, LINE_CTRL_BAUD_RATE, baud);
     if (ret) {

@@ -29,7 +29,7 @@ struct gpio_callback cb;
 
 #define ZJS_SENSOR_TIMEOUT_TICKS                      500
 
-static struct nano_sem sensor_sem;
+static struct k_sem sensor_sem;
 
 enum sensor_state {
     SENSOR_STATE_IDLE,
@@ -115,7 +115,7 @@ static bool zjs_sensor_ipm_send_sync(zjs_ipm_message_t* send,
     // block until reply or timeout, we shouldn't see the ARC
     // time out, if the ARC response comes back after it
     // times out, it could pollute the result on the stack
-    if (!nano_sem_take(&sensor_sem, ZJS_SENSOR_TIMEOUT_TICKS)) {
+    if (!k_sem_take(&sensor_sem, ZJS_SENSOR_TIMEOUT_TICKS)) {
         ZJS_PRINT("zjs_sensor_ipm_send_sync: FATAL ERROR, ipm timed out\n");
         return false;
     }
@@ -307,7 +307,7 @@ static void ipm_msg_receive_callback(void *context, uint32_t id, volatile void *
             memcpy(result, msg, sizeof(zjs_ipm_message_t));
         }
         // un-block sync api
-        nano_isr_sem_give(&sensor_sem);
+        k_sem_give(&sensor_sem);
     } else if (msg->type == TYPE_SENSOR_EVENT_READING_CHANGE) {
         // value change event, copy the data, and signal event callback
         if (msg->data.sensor.channel == SENSOR_CHAN_ACCEL_ANY) {
@@ -512,7 +512,7 @@ void zjs_sensor_init()
     zjs_ipm_init();
     zjs_ipm_register_callback(MSG_ID_SENSOR, ipm_msg_receive_callback);
 
-    nano_sem_init(&sensor_sem);
+    k_sem_init(&sensor_sem, 0, 1);
 
 #ifdef BUILD_MODULE_SENSOR_TRIGGER
     // setting up trigger interrupt
