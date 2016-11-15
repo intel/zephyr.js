@@ -130,37 +130,20 @@ $ source deps/zephyr/zephyr-env.sh
 ```
 
 ### Build and Flash
-#### ARC support image
-Now you're ready to build the support image for the ARC core with this command:
+#### x86 application image and ARC support image
+Now you're ready to build the x86 and ARC images. The x86 image
+includes the JerryScript engine and the ZJS runtime support, along with
+your JavaScript application, and the ARC support image acts as a helper
+library that channels some of the data needed from the ARC processor to the
+x86 processor.
+
+**Note**, you'll need to build both the x86 and ARC images
+with the same JS file so the required sub-modules are enabled on both images.
+
+You can build both with a single command:
 
 ```bash
-$ make arc
-```
-
-Then connect the Arduino 101 to your host with a USB A/B cable. Press the
-Master Reset button on the Arduino 101 and after a few seconds type:
-
-```bash
-$ make dfu-arc
-```
-
-This will flash the ARC image to the device using the dfu-util program.
-(Note, this is not running the JavaScript engine and application yet, that will
-occur on the x86 side below.)
-
-If you get a permission error, make sure you followed the 'Join the plugdev
-group' instructions above for this user. You shoudn't need to run this command
-with `sudo`.
-
-(The ARC image doesn't change very often so you won't need to do this again
-unless you pull updates to the source tree, and usually not even then.)
-
-#### x86 application image
-Next, build the x86 image which includes the JerryScript engine and the
-ZJS runtime support, along with your JavaScript application:
-
-```bash
-$ make JS=samples/TrafficLight.js
+$ make JS=samples/TrafficLight.js all
 ```
 
 The JS= argument lets you provide the path to your application. The TrafficLight
@@ -169,13 +152,18 @@ hardware. It just blinks onboard LEDs on your Arduino 101. Also, for many of
 the samples you will want to hook up the serial console (see below), but for
 this one it's not really needed.
 
-Finally, you're ready to install and run your application. If you just flashed
-the ARC image as above, your Arduino 101 will already be waiting for more DFU
-commands. If not, press the Master Reset button, and either way do:
+Then connect the Arduino 101 to your host with a USB A/B cable. Press the
+Master Reset button on the Arduino 101 and after a few seconds type:
 
 ```bash
-$ make dfu
+$ make dfu-all
 ```
+
+This will flash both the images to the device using the dfu-util program.
+
+If you get a permission error, make sure you followed the 'Join the plugdev
+group' instructions above for this user. You shouldn't need to run this command
+with `sudo`.
 
 After this flashing completes successfully, reboot the device with the Master
 Reset button to start the application. After a few seconds the onboard LEDs
@@ -184,7 +172,36 @@ should start cycling.
 You have built and run your first ZJS application!
 
 If you want to make changes to the application, or run a different .js sample,
-you just need to repeat the last two steps with the desired JavaScript filename.
+you just need to repeat the steps the desired JavaScript filename.
+
+#### x86 application image only
+If you want to build the x86 and ARC images separately, or if you just want to
+build another .js sample that uses the same sub-modules, then you can build only
+the x86 image with:
+
+```bash
+$ make JS=path/to/filename.js
+$ make dfu
+```
+
+#### ARC support image only
+To build and flash only the ARC support image:
+
+```bash
+$ make JS=path/to/filename.js arc
+$ make dfu-arc
+```
+
+If you run a different .js sample that uses different sub-modules, for example,
+from AIO.js to I2C.js, then you'll need to repeat the last two steps to flash
+both images.
+
+If you forget to update the ARC image when your module requirements have changed,
+you'll see an error in the serial console (setup steps below) similar to this:
+
+```bash
+ipm_console0: 'unsupported ipm message id: 1, check ARC modules'
+```
 
 ### Next steps
 
