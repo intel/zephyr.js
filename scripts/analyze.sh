@@ -24,6 +24,7 @@ MODULES=''
 BOARD=$1
 SCRIPT=$2
 CONFIG=$3
+DEV=$4
 
 echo "# Modules found in $SCRIPT:" > prj.conf.tmp
 echo "# Modules found in $SCRIPT:" > arc/prj.conf.tmp
@@ -145,7 +146,9 @@ if check_for_require uart || check_config_file ZJS_UART; then
         echo "CONFIG_USB_DW=y" >> prj.conf.tmp
         echo "CONFIG_USB_DEVICE_STACK=y" >> prj.conf.tmp
         echo "CONFIG_SYS_LOG_USB_DW_LEVEL=0" >> prj.conf.tmp
-        echo "CONFIG_USB_CDC_ACM=y" >> prj.conf.tmp
+        if [ "$DEV" != "ashell" ]; then
+            echo "CONFIG_USB_CDC_ACM=y" >> prj.conf.tmp
+        fi
         echo "CONFIG_SYS_LOG_USB_LEVEL=0" >> prj.conf.tmp
         echo "CONFIG_SERIAL=y" >> prj.conf.tmp
         echo "CONFIG_UART_LINE_CTRL=y" >> prj.conf.tmp

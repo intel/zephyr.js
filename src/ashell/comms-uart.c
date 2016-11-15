@@ -42,6 +42,10 @@
 #include "comms-shell.h"
 #include "shell-state.h"
 
+#ifndef CONFIG_USB_CDC_ACM
+#include "webusb-handler.h"
+#endif
+
 #include "ihex/kk_ihex_read.h"
 
 #define FIVE_SECONDS    (5 * sys_clock_ticks_per_sec)
@@ -514,34 +518,32 @@ void acm()
     main_development_shell();
 #endif
 
+#ifdef CONFIG_USB_CDC_ACM
     dev_upload = device_get_binding(CONFIG_CDC_ACM_PORT_NAME);
+#else
+    dev_upload = device_get_binding(WEBUSB_SERIAL_PORT_NAME);
+#endif
 
     if (!dev_upload) {
-        printf("CDC [%s] ACM device not found\n", CONFIG_CDC_ACM_PORT_NAME);
+        printf("Compatible USB device not found\n");
         return;
     }
+
+#ifndef CONFIG_USB_CDC_ACM
+    webusb_register_handlers();
+#endif
 
     k_fifo_init(&data_queue);
     k_fifo_init(&avail_queue);
 
 #ifdef CONFIG_UART_LINE_CTRL
     uint32_t dtr = 0;
-    int ret;
 
     while (1) {
         uart_line_ctrl_get(dev_upload, LINE_CTRL_DTR, &dtr);
         if (dtr)
             break;
     }
-
-    /* They are optional, we use them to test the interrupt endpoint */
-    ret = uart_line_ctrl_set(dev_upload, LINE_CTRL_DCD, 1);
-    if (ret)
-        printf("DCD Failed %d\n", ret);
-
-    ret = uart_line_ctrl_set(dev_upload, LINE_CTRL_DSR, 1);
-    if (ret)
-        printf("DSR Failed %d\n", ret);
 
     /* 1000 msec = 1 sec */
     k_sleep(1000);
