@@ -13,15 +13,20 @@ env:
     - ZEPHYR_SDK_SETUP_BINARY=zephyr-sdk-$ZEPHYR_SDK_VERSION-i686-setup.run
     - ZEPHYR_SDK_DOWNLOAD_URL=$ZEPHYR_SDK_DOWNLOAD_FOLDER/$ZEPHYR_SDK_SETUP_BINARY
   matrix:
-    - TARGET="linux" NOZEPHYR=y
     - TARGET="zephyr"
+    - TARGET="linux"
+    - TARGET="ashell"
+
+matrix:
+  allow_failures:
+    - env: TARGET="ashell"
 
 before_install:
   - sudo apt-get update -qq
   - sudo apt-get install make gcc g++ python3-ply ncurses-dev uglifyjs sysvbanner -qq
 
 install: >
-  if [ "$TARGET" == "zephyr" ]; then
+  if [ "$TARGET" != "linux" ]; then
     wget $ZEPHYR_SDK_DOWNLOAD_URL &&
     chmod +x $ZEPHYR_SDK_SETUP_BINARY &&
     ./$ZEPHYR_SDK_SETUP_BINARY --quiet -- -y -d $ZEPHYR_SDK_INSTALL_DIR > /dev/null;
@@ -29,7 +34,7 @@ install: >
 
 before_script: >
   source zjs-env.sh &&
-  if [ "$TARGET" == "zephyr" ]; then
+  if [ "$TARGET" != "linux" ]; then
     make update &&
     source deps/zephyr/zephyr-env.sh
   fi
@@ -62,11 +67,6 @@ script: >
     banner "arc" &&
     make V=1 arc &&
 
-    # test ashell build
-    git clean -dfx &&
-    banner "ashell" &&
-    make V=1 DEV=ashell &&
-
     # test large partition A101 x86 build
     git clean -dfx &&
     source zjs-env.sh 256 &&
@@ -85,4 +85,10 @@ script: >
     # run linux unit tests
     banner "unit tests" &&
     ./jslinux --unittest
+
+  elif [ "$TARGET" == "ashell" ]; then
+    # test ashell build
+    git clean -dfx &&
+    banner "ashell" &&
+    make V=1 DEV=ashell
   fi
