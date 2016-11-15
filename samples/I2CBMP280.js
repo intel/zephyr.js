@@ -30,8 +30,8 @@ function bmp280Init() {
                                           bmp280.bmp280Addrs.REGISTER_CHIPID);
 
     // Check that we have a BMP280 on the I2C bus
-    if (reader.toString('hex') !== "58")
-        print("BMP280 not found! ChipId " + reader.toString('hex') !== "58");
+    if (reader.toString("hex") !== "58")
+        print("BMP280 not found! ChipId " + reader.toString("hex") !== "58");
 
     // Setup BMP280 sensor
     bmp280.readCoefficients();
@@ -89,7 +89,7 @@ function setColorFromTemperature(newTemp) {
     }
 
     prevTemp = newTemp;
-    glcd.setColor({'red' : red, 'green' : green, 'blue' : blue});
+    glcd.setColor({"red" : red, "green" : green, "blue" : blue});
 }
 
 function readTemperature() {
@@ -97,7 +97,7 @@ function readTemperature() {
     var whole = T | 0;
     var dec = (T * 10) | 0;
     dec = dec - whole * 10;
-    var tempStr = whole  + '.' + dec + "C";
+    var tempStr = whole  + "." + dec + "C";
 
     // Draw icon for direction temp has changed
     if (prevTemp < T) {
