@@ -3,3 +3,5 @@ ccflags-y += ${PROJECTINCLUDE} \
 	-I$(src)/../../src \
 
 obj-y = main.o ../../src/zjs_ipm.o
+
+ccflags-y += -Wall -Werror
