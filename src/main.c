@@ -106,6 +106,14 @@ int main(int argc, char *argv[])
 #endif
     zjs_init_callbacks();
 
+    // Add module.exports to global namespace
+    jerry_value_t global_obj = jerry_get_global_object();
+    jerry_value_t modules_obj = jerry_create_object();
+    jerry_value_t exports_obj = jerry_create_object();
+
+    zjs_set_property(modules_obj, "exports", exports_obj);
+    zjs_set_property(global_obj, "module", modules_obj);
+
     // initialize modules
     zjs_modules_init();
 
@@ -137,8 +145,6 @@ int main(int argc, char *argv[])
         }
     }
 
-    jerry_value_t global_obj = jerry_get_global_object();
-
     // Todo: find a better solution to disable eval() in JerryScript.
     // For now, just inject our eval() function in the global space
     zjs_obj_add_function(global_obj, native_eval_handler, "eval");
@@ -163,6 +169,8 @@ int main(int argc, char *argv[])
     }
 
     jerry_release_value(global_obj);
+    jerry_release_value(modules_obj);
+    jerry_release_value(exports_obj);
     jerry_release_value(code_eval);
     jerry_release_value(result);
 

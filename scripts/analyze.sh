@@ -15,12 +15,34 @@ if [ ! -e $2 ]; then
     exit
 fi
 
+if [ -f "/tmp/zjs.js" ]; then
+    rm /tmp/zjs.js
+fi
+
+
 MODULES=''
 BOARD=$1
 SCRIPT=$2
 
 echo "# Modules found in $SCRIPT:" > prj.conf.tmp
 echo "# Modules found in $SCRIPT:" > arc/prj.conf.tmp
+
+function check_for_js_require()
+{
+
+    js_files=$(grep "require *( *['\"].*\.js['\"] *)" $SCRIPT | grep -o "['\"].*\.js['\"]" | tr -d \'\")
+
+    for file in $js_files
+    do
+         >&2 echo "Javascript module included : $file"
+         # Add the module JS to the temporary JS file
+         cat "$ZJS_BASE/modules/$file" >> /tmp/zjs.js
+    done
+
+    # Add the primary JS file to the temporary JS file
+    cat "$SCRIPT" >> /tmp/zjs.js
+    SCRIPT=/tmp/zjs.js
+}
 
 function check_for_require()
 {
@@ -30,6 +52,8 @@ function check_for_require()
     rval=$(grep "require *( *['\"]$1['\"] *)" $SCRIPT)
     return $?
 }
+
+check_for_js_require
 
 check_for_require events
 if [ $? -eq 0 ]; then
@@ -143,6 +167,7 @@ if [ $? -eq 0 ]; then
     >&2 echo Using module: A101 Pins
     MODULES+=" -DBUILD_MODULE_A101"
 fi
+
 interval=$(grep setInterval $SCRIPT)
 if [ $? -eq 0 ]; then
     MODULES+=" -DBUILD_MODULE_TIMER"

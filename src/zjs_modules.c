@@ -123,8 +123,40 @@ static jerry_value_t native_require_handler(const jerry_value_t function_obj,
             return mod->instance;
         }
     }
+    ZJS_PRINT("Native module not found, searching for JavaScript module %s\n", module);
+    jerry_value_t global_obj = jerry_get_global_object();
+    jerry_value_t modules_obj = zjs_get_property(global_obj, "module");
+    if (!jerry_value_is_object(modules_obj)) {
+        jerry_release_value(global_obj);
+        jerry_release_value(modules_obj);
+        return zjs_error("native_require_handler: modules object not found");
+    }
+    jerry_value_t exports_obj = zjs_get_property(modules_obj, "exports");
+    if (!jerry_value_is_object(exports_obj)) {
+        jerry_release_value(global_obj);
+        jerry_release_value(modules_obj);
+        jerry_release_value(exports_obj);
+        return zjs_error("native_require_handler: exports object not found");
+    }
 
-    ZJS_PRINT("MODULE: `%s'\n", module);
+    for (int i = 0; i < 4; i++) {
+        // Strip the ".js"
+        module[len-i] = '\0';
+    }
+
+    jerry_value_t found_obj = zjs_get_property(exports_obj, module);
+
+    if (jerry_value_is_object(found_obj)) {
+        ZJS_PRINT("JavaScript module %s loaded\n", module);
+        jerry_release_value(global_obj);
+        jerry_release_value(modules_obj);
+        jerry_release_value(exports_obj);
+        return found_obj;
+    }
+
+    jerry_release_value(global_obj);
+    jerry_release_value(modules_obj);
+    jerry_release_value(exports_obj);
     return zjs_error("native_require_handler: module not found");
 }
 
