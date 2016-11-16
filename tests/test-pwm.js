@@ -37,7 +37,7 @@ pinB = gpio.open({ pin: pins.IO2, direction: 'in' });
 
 // PWMPins open
 pinA = pwm.open({ channel: pins.IO3 });
-assert(pinA != null && typeof pinA == "object",
+assert(pinA !== null && typeof pinA === "object",
       "open: defined pin and default argument");
 
 expectThrow("open: undefined pin", function () {
@@ -55,7 +55,7 @@ expectThrow("pwmpin: set pulseWidth without period", function () {
 });
 
 pinA = pwm.open({ channel: pins.IO3, period: 3, pulseWidth: 1 });
-assert(pinA != null && typeof pinA == "object",
+assert(pinA !== null && typeof pinA === "object",
        "open: with period and pulseWidth");
 
 pinA.setPeriod(1000);
@@ -77,7 +77,7 @@ msTimer = setInterval(function () {
 }, 50);
 
 setTimeout(function () {
-    assert(msTrue == 6 && msFalse == 14 && msCount == 20,
+    assert(msTrue === 6 && msFalse === 14 && msCount === 20,
            "pwmpin: set period and pulseWidth");
     clearInterval(msTimer);
 
@@ -98,7 +98,7 @@ setTimeout(function () {
     var Flag = false;
     var oldFlag = false;
     pinA = pwm.open({ channel: pins.IO3, polarity: "reverse" });
-    assert(pinA != null && typeof pinA == "object", "open: reverse polarity");
+    assert(pinA !== null && typeof pinA === "object", "open: reverse polarity");
 
     pinA.setPeriodCycles(10000000);
     pinA.setPulseWidthCycles(3000000);
@@ -106,7 +106,7 @@ setTimeout(function () {
     cycleTimer = setInterval(function () {
        Flag = pinB.read();
 
-       if (Flag == oldFlag) {
+       if (Flag === oldFlag) {
            cyclesCount = cyclesCount + 1;
        } else {
            if (oldFlag) {
@@ -118,11 +118,11 @@ setTimeout(function () {
            oldFlag = Flag;
            cyclesCount = 0;
 
-           if (Flag == false) {
+           if (Flag === false) {
                periodCount = periodCount + 1;
            }
 
-           if (periodCount == 3) {
+           if (periodCount === 3) {
                assert((25 < cyclesFlase) && (cyclesFlase < 29) &&
                       (60 < cyclesTrue) && (cyclesTrue < 64),
                       "pwmpin: set periodCycles and pulseWidthCycles");
