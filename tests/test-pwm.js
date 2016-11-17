@@ -33,15 +33,15 @@ var gpio = require("gpio");
 var pins = require("arduino101_pins");
 var pinA, pinB, msTimer, cycleTimer;
 
-pinB = gpio.open({pin: pins.IO2, direction: 'in'});
+pinB = gpio.open({ pin: pins.IO2, direction: 'in' });
 
 // PWMPins open
-pinA = pwm.open({channel: pins.IO3});
-assert(pinA != null && typeof pinA == "object",
+pinA = pwm.open({ channel: pins.IO3 });
+assert(pinA !== null && typeof pinA === "object",
       "open: defined pin and default argument");
 
 expectThrow("open: undefined pin", function () {
-    pinA = pwm.open({channel: 1024});
+    pinA = pwm.open({ channel: 1024 });
 });
 
 // set Period and PulseWidth with ms
@@ -54,8 +54,8 @@ expectThrow("pwmpin: set pulseWidth without period", function () {
     pinA.setPulseWidth(300);
 });
 
-pinA = pwm.open({channel: pins.IO3, period: 3, pulseWidth: 1});
-assert(pinA != null && typeof pinA == "object",
+pinA = pwm.open({ channel: pins.IO3, period: 3, pulseWidth: 1 });
+assert(pinA !== null && typeof pinA === "object",
        "open: with period and pulseWidth");
 
 pinA.setPeriod(1000);
@@ -76,8 +76,8 @@ msTimer = setInterval(function () {
     msCount = msCount + 1;
 }, 50);
 
-setTimeout(function() {
-    assert(msTrue == 6 && msFalse == 14 && msCount == 20,
+setTimeout(function () {
+    assert(msTrue === 6 && msFalse === 14 && msCount === 20,
            "pwmpin: set period and pulseWidth");
     clearInterval(msTimer);
 
@@ -97,8 +97,8 @@ setTimeout(function() {
     var periodCount = 0;
     var Flag = false;
     var oldFlag = false;
-    pinA = pwm.open({channel: pins.IO3, polarity: "reverse"});
-    assert(pinA != null && typeof pinA == "object", "open: reverse polarity");
+    pinA = pwm.open({ channel: pins.IO3, polarity: "reverse" });
+    assert(pinA !== null && typeof pinA === "object", "open: reverse polarity");
 
     pinA.setPeriodCycles(10000000);
     pinA.setPulseWidthCycles(3000000);
@@ -106,7 +106,7 @@ setTimeout(function() {
     cycleTimer = setInterval(function () {
        Flag = pinB.read();
 
-       if(Flag == oldFlag){
+       if (Flag === oldFlag) {
            cyclesCount = cyclesCount + 1;
        } else {
            if (oldFlag) {
@@ -118,11 +118,11 @@ setTimeout(function() {
            oldFlag = Flag;
            cyclesCount = 0;
 
-           if (Flag == false) {
+           if (Flag === false) {
                periodCount = periodCount + 1;
            }
 
-           if (periodCount == 3) {
+           if (periodCount === 3) {
                assert((25 < cyclesFlase) && (cyclesFlase < 29) &&
                       (60 < cyclesTrue) && (cyclesTrue < 64),
                       "pwmpin: set periodCycles and pulseWidthCycles");
@@ -132,7 +132,7 @@ setTimeout(function() {
            }
        }
     }, 10);
-}, 1000);
+}, 1040);
 
 expectThrow("pwmpin: set periodCycles with invalid value", function () {
     pinA.setPeriodCycles("Value");
