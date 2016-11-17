@@ -1,13 +1,13 @@
 // Copyright (c) 2016, Intel Corporation.
 
 // Sample to test UART module. This can be run on the Arduino 101 or QEMU. It
-// will print out hello world to the console, then echo back any characters
+// will print out 'UART write succeeded, echoing input.' to the console, then echo back any characters
 // that are typed and store the string. If enter is pressed, it will print
 // out the saved string and clear it.
 
 // On the Arduino 101, this sample can be used by opening /dev/ttyACMX using
 // screen or minicom:
-//   $ screen /devttyACM0 115200
+//   $ screen /dev/ttyACM0 115200
 //   $ minicom --device /dev/ttyACM0,
 
 // The ACM port just uses the Arduino 101's USB port, so the only wiring needed
