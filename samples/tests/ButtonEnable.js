@@ -6,7 +6,7 @@
 // This version tests freeing a callback by changing the callback of btn2
 // dynamically in response to btn1 state. Btn2 will only work to control its
 // LED while btn1 is down.
-// 
+//
 // Note: If you use a Grove touch sensor as one of the buttons, wire it to IO4:
 // it doesn't work the other way and I haven't figured out why yet. It may
 // relate to IO5 being connected to both the X86 and ARC processors.
@@ -25,19 +25,18 @@ var btn2 = gpio.open({ pin: pins.IO4, direction: 'in', edge: 'any' });
 // turn off LED #2 initially
 led2.write(false);
 
-btn1.on('change', function () {
+btn1.onchange = function (event) {
     var value = btn1.read();
     led1.write(value);
 
     if (value) {
-        // set up btn2 to toggle led2 while btn1 is down
-        btn2.on('change', function () {
+    // set up btn2 to toggle led2 while btn1 is down
+        btn2.onchange = function (event) {
             var value = btn2.read();
             led2.write(value);
-        });
-    }
-    else {
+        };
+    } else {
         // disable btn2 again
-        btn2.on('change', null);
+        btn2.onchange = null;
     }
-});
+};
