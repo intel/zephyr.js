@@ -30,7 +30,7 @@ btn1.onchange = function (event) {
     led1.write(value);
 
     if (value) {
-    // set up btn2 to toggle led2 while btn1 is down
+        // set up btn2 to toggle led2 while btn1 is down
         btn2.onchange = function (event) {
             var value = btn2.read();
             led2.write(value);
