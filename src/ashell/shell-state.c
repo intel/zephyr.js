@@ -29,12 +29,12 @@
 #include <misc/reboot.h>
 #include <ctype.h>
 #include <jerry-port.h>
+#include "file-utils.h"
 
 #include "acm-uart.h"
 #include "acm-shell.h"
 #include "shell-state.h"
 
-#include "file-wrapper.h"
 #include "ihex-handler.h"
 #include "jerry-code.h"
 
@@ -47,7 +47,7 @@
  * Contains the pointer to the memory where the code will be uploaded
  * using the stub interface at file_code.c
  */
-static ZFILE *file_code = NULL;
+static fs_file_t *file_code = NULL;
 
 /* Configuration of the callbacks to be called */
 static struct shell_state_config shell = {
@@ -144,14 +144,14 @@ int32_t ashell_disk_usage(char *buf)
         return RET_ERROR;
     }
 
-    ZFILE *file = csopen(filename, "r");
+    fs_file_t *file = fs_open_alloc(filename, "r");
     if (file == NULL) {
         acm_println(ERROR_FILE_NOT_FOUND);
         return RET_ERROR;
     }
 
-    ssize_t size = cssize(file);
-    csclose(file);
+    ssize_t size = fs_size(file);
+    fs_close(file);
 
     printf("%5ld %s\n", size, filename);
     return RET_OK;
@@ -159,7 +159,7 @@ int32_t ashell_disk_usage(char *buf)
 
 int32_t ashell_rename(char *buf)
 {
-    static struct zfs_dirent entry;
+    static struct fs_dirent entry;
     char path_org[MAX_FILENAME_SIZE];
     char path_dest[MAX_FILENAME_SIZE];
 
@@ -215,15 +215,15 @@ int32_t ashell_reboot(char *buf)
 int32_t ashell_list_dir(char *buf)
 {
     char filename[MAX_FILENAME_SIZE];
-    static struct zfs_dirent entry;
+    static struct fs_dirent entry;
     int32_t res;
-    ZDIR dp;
+    fs_dir_t dp;
 
     *filename = '\0';
     if (ashell_get_filename_buffer(buf, filename) > 0) {
         /* Check if file or directory */
         if (!fs_stat(filename, &entry)) {
-            if (entry.type == DIR_ENTRY_FILE) {
+            if (entry.type == FS_DIR_ENTRY_DIR) {
                 ashell_disk_usage(filename);
                 return RET_OK;
             }
@@ -250,7 +250,7 @@ int32_t ashell_list_dir(char *buf)
         if (res || entry.name[0] == 0) {
             break;
         }
-        if (entry.type == DIR_ENTRY_DIR) {
+        if (entry.type == FS_DIR_ENTRY_DIR) {
             printf(ANSI_FG_LIGHT_BLUE "%s\n" ANSI_FG_RESTORE, entry.name);
         } else {
             char *p = entry.name;
@@ -270,7 +270,7 @@ int32_t ashell_print_file(char *buf)
 {
     char filename[MAX_FILENAME_SIZE];
     char data[READ_BUFFER_SIZE];
-    ZFILE *file;
+    fs_file_t *file;
     size_t count;
     size_t line = 1;
 
@@ -287,13 +287,13 @@ int32_t ashell_print_file(char *buf)
         return RET_ERROR;
     }
 
-    if (!csexist(filename)) {
+    if (!fs_exist(filename)) {
         printf(ERROR_FILE_NOT_FOUND);
         return RET_ERROR;
     }
 
     printk("Open [%s]\n", filename);
-    file = csopen(filename, "r");
+    file = fs_open_alloc(filename, "r");
 
     /* Error getting an id for our data storage */
     if (!file) {
@@ -301,19 +301,19 @@ int32_t ashell_print_file(char *buf)
         return RET_ERROR;
     }
 
-    ssize_t size = cssize(file);
+    ssize_t size = fs_size(file);
     if (size == 0) {
         acm_println("Empty file");
-        csclose(file);
+        fs_close_alloc(file);
         return RET_OK;
     }
 
-    csseek(file, 0, SEEK_SET);
+    fs_seek(file, 0, SEEK_SET);
     if (lines)
         acm_printf("%5d  ", line++);
 
     do {
-        count = csread(data, 4, 1, file);
+        count = fs_read(file, data, 4);
         for (int t = 0; t < count; t++) {
             uint8_t byte = data[t];
             if (byte == '\n' || byte == '\r') {
@@ -331,7 +331,7 @@ int32_t ashell_print_file(char *buf)
     } while (count > 0);
 
     acm_write("\r\n", 2);
-    csclose(file);
+    fs_close(file);
     return RET_OK;
 }
 
@@ -367,7 +367,7 @@ int32_t ashell_run_javascript(char *buf)
 
 int32_t ashell_start_raw_capture(char *filename)
 {
-    file_code = csopen(filename, "w+");
+    file_code = fs_open_alloc(filename, "w+");
 
     /* Error getting an id for our data storage */
     if (!file_code) {
@@ -378,12 +378,12 @@ int32_t ashell_start_raw_capture(char *filename)
 
 int32_t ashell_close_capture()
 {
-    return csclose(file_code);
+    return fs_close(file_code);
 }
 
 int32_t ashell_discard_capture()
 {
-    csclose(file_code);
+    fs_close(file_code);
 
     //TODO ashell_remove_file(file_code);
     return RET_OK;
@@ -445,7 +445,7 @@ int32_t ashell_raw_capture(const char *buf, uint32_t len)
                 printf("%c", byte);
             }
         } else {
-            size_t written = cswrite(&byte, 1, 1, file_code);
+            size_t written = fs_write(file_code, &byte, 1);
             if (written == 0) {
                 return RET_ERROR;
             }
@@ -454,7 +454,7 @@ int32_t ashell_raw_capture(const char *buf, uint32_t len)
         len--;
     }
 
-    cswrite(&eol, 1, 1, file_code);
+    fs_write(file_code, &eol, 1);
     return RET_OK_NO_RET;
 }
 

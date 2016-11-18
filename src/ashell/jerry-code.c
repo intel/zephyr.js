@@ -31,10 +31,18 @@
 #include "jerry-api.h"
 #include "jerry-port.h"
 
+#include "file-utils.h"
+
+/* Zephyr.js init everything */
+#include "../zjs_timers.h"
+#include "../zjs_buffer.h"
+#include "../zjs_callbacks.h"
+#include "../zjs_modules.h"
+#include "../zjs_ipm.h"
+
 void jerry_port_default_set_log_level(jerry_log_level_t level); /** Inside jerry-port-default.h */
 
 #include "acm-uart.h"
-#include "file-wrapper.h"
 
 static jerry_value_t parsed_code = 0;
 
@@ -152,7 +160,7 @@ void javascript_stop()
     /* Cleanup engine */
     zjs_timers_cleanup();
     zjs_ipm_free_callbacks();
-    zjs_buffer_cleanup()
+    zjs_buffer_cleanup();
     jerry_cleanup();
 
     restore_zjs_api();
@@ -163,14 +171,14 @@ int javascript_parse_code(const char *file_name, bool show_lines)
     int ret = -1;
     javascript_stop();
     jerry_port_default_set_log_level(JERRY_LOG_LEVEL_TRACE);
-
-    ZFILE *fp = csopen(file_name, "r");
     char *buf = NULL;
+
+    fs_file_t *fp = fs_open_alloc(file_name, "r");
 
     if (fp == NULL)
         return ret;
 
-    ssize_t size = cssize(fp);
+    ssize_t size = fs_size(fp);
     if (size == 0) {
         acm_printf("[ERR] Empty file (%s)\n", file_name);
         goto cleanup;
@@ -182,12 +190,9 @@ int javascript_parse_code(const char *file_name, bool show_lines)
         goto cleanup;
     }
 
-    ssize_t brw = 0;
-    for (ssize_t t = 0; t < size; t++) {
-        brw += csread(&buf[t], 1, 1, fp);
-    }
+    ssize_t brw = fs_read(fp, buf, size);
 
-    if (brw == 0) {
+    if (brw != size) {
         acm_printf("[ERR] Failed loading code %s\n", file_name);
         goto cleanup;
     }
@@ -225,7 +230,7 @@ int javascript_parse_code(const char *file_name, bool show_lines)
     }
 
 cleanup:
-    csclose(fp);
+    fs_close_alloc(fp);
     free(buf);
     return ret;
 }

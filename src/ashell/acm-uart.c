@@ -49,7 +49,7 @@
 
 #include <misc/printk.h>
 
-#include "file-wrapper.h"
+#include <fs.h>
 #include "jerry-code.h"
 
 #include "acm-uart.h"

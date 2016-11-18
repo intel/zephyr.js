@@ -129,4 +129,6 @@ int zjs_ipm_send(uint32_t id, zjs_ipm_message_t *data);
 
 void zjs_ipm_register_callback(uint32_t msg_id, ipm_callback_t cb);
 
+void zjs_ipm_free_callbacks();
+
 #endif  // __zjs_ipm_h__

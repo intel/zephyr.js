@@ -17,19 +17,16 @@
 #ifndef __file_wrapper_h__
 #define __file_wrapper_h__
 
-#define MAX_FILENAME_SIZE 13
-
 #include <fs/fs_interface.h>
 #include <ff.h>
 #include <fs/fat_fs.h>
 #include <fs.h>
 
-ZFILE *csopen(const char *filename, const char *mode);
-int csexist(const char *path);
-int csseek(ZFILE *stream, long int offset, int whence);
-ssize_t cswrite(const char *ptr, size_t size, size_t count, ZFILE *stream);
-ssize_t csread(char *ptr, size_t size, size_t count, ZFILE *stream);
-int csclose(ZFILE * stream);
-ssize_t cssize(ZFILE *file);
+#define MAX_FILENAME_SIZE MAX_FILE_NAME + 1
+
+fs_file_t *fs_open_alloc(const char *filename, const char *mode);
+int fs_close_alloc(fs_file_t * fp);
+int fs_exist(const char *path);
+ssize_t fs_size(fs_file_t *file);
 
 #endif // __file_wrapper_h__
