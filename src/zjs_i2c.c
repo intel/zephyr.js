@@ -28,7 +28,7 @@ static bool zjs_i2c_ipm_send_sync(zjs_ipm_message_t* send,
     }
 
     // block until reply or timeout
-    if (!k_sem_take(&i2c_sem, ZJS_I2C_TIMEOUT_TICKS)) {
+    if (k_sem_take(&i2c_sem, ZJS_I2C_TIMEOUT_TICKS)) {
         ERR_PRINT("zjs_i2c_ipm_send_sync: ipm timed out\n");
         return false;
     }
