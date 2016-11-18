@@ -119,7 +119,8 @@ if [ $? -eq 0 ]; then
     >&2 echo Using module: BLE
     MODULES+=" -DBUILD_MODULE_BLE"
     echo "CONFIG_BLUETOOTH=y" >> prj.conf.tmp
-    echo "CONFIG_BLUETOOTH_LE=y" >> prj.conf.tmp
+    echo "CONFIG_BLUETOOTH_STACK_NBLE=y" >> prj.conf.tmp
+    echo "CONFIG_NBLE=y" >> prj.conf.tmp
     echo "CONFIG_BLUETOOTH_SMP=y" >> prj.conf.tmp
     echo "CONFIG_BLUETOOTH_PERIPHERAL=y" >> prj.conf.tmp
     echo "CONFIG_BLUETOOTH_GATT_DYNAMIC_DB=y" >> prj.conf.tmp
