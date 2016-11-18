@@ -28,12 +28,13 @@
 #include <malloc.h>
 #include <misc/printk.h>
 
-#include "file-wrapper.h"
 #include "jerry-code.h"
 
 #include "acm-uart.h"
 #include "acm-shell.h"
 #include "ihex/kk_ihex_read.h"
+
+#include "file-utils.h"
 
 #ifndef CONFIG_IHEX_UPLOADER_DEBUG
 #define DBG(...) { ; }
@@ -45,7 +46,7 @@
  * Contains the pointer to the memory where the code will be uploaded
  * using the stub interface at zfile.c
  */
-static ZFILE *zfile = NULL;
+static fs_file_t *zfile = NULL;
 
 const char TEMPORAL_FILENAME[] = "temp.dat";
 
@@ -81,9 +82,9 @@ ihex_bool_t ihex_data_read(struct ihex_state *ihex,
         acm_write("[ACK]", 5);
         acm_write("\n", 1);
 
-        csseek(zfile, address, SEEK_SET);
-        size_t written = cswrite(ihex->data, ihex->length, 1, zfile);
-        if (written == 0) {
+        fs_seek(zfile, address, SEEK_SET);
+        size_t written = fs_write(zfile, ihex->data, ihex->length);
+        if (written == 0 || written != ihex->length) {
             printf("Failed writting into file \n");
             upload_state = UPLOAD_ERROR;
             return false;
@@ -114,7 +115,7 @@ uint32_t ihex_process_init()
     acm_print("[RDY]\n");
 
     ihex_begin_read(&ihex);
-    zfile = csopen(TEMPORAL_FILENAME, "w+");
+    zfile = fs_open_alloc(TEMPORAL_FILENAME, "w+");
 
     /* Error getting an id for our data storage */
     if (!zfile) {
@@ -165,7 +166,7 @@ uint32_t ihex_process_finish()
 {
     if (upload_state == UPLOAD_ERROR) {
         printf("[Error] Callback handle error \n");
-        csclose(zfile);
+        fs_close(zfile);
 
         ashell_process_start();
         return 1;
@@ -174,7 +175,7 @@ uint32_t ihex_process_finish()
     if (upload_state != UPLOAD_FINISHED)
         return 1;
 
-    csclose(zfile);
+    fs_close(zfile);
     ihex_end_read(&ihex);
     acm_print("[EOF]\n");
 

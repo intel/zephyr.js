@@ -22,9 +22,9 @@ ZEPHYRINCLUDE += -I$(JERRY_INCLUDE) -I$(DEPS_BASE)
 
 obj-y += main-zephyr.o
 
+obj-y += file-utils.o
 obj-y += jerry-code.o
 
-obj-y += file-wrapper.o
 obj-y += ihex-handler.o
 
 obj-y += acm-uart.o

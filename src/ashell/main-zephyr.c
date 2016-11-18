@@ -127,5 +127,5 @@ void main(void)
 void main_development_shell(void)
 #endif
 {
-    shell_init(system_get_prompt(), commands);
+    SHELL_REGISTER(system_get_prompt(), commands);
 }
