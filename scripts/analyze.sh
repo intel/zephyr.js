@@ -74,6 +74,7 @@ function check_config_file()
             return 1
         fi
     fi
+    return 1;
 }
 
 check_for_js_require
