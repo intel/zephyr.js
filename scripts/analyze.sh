@@ -82,7 +82,7 @@ check_for_js_require
 if check_for_require events || check_config_file ZJS_EVENTS; then
     >&2 echo Using module: Events
     MODULES+=" -DBUILD_MODULE_EVENTS"
-    echo "export ZJS_EVENTS=y" >> prj.conf.tmp
+    echo "export ZJS_EVENTS=y" >> zjs.conf.tmp
 fi
 
 if check_for_require ocf || check_config_file ZJS_OCF; then
@@ -140,6 +140,8 @@ if check_for_require uart || check_config_file ZJS_UART; then
     echo "CONFIG_UART_INTERRUPT_DRIVEN=y" >> prj.conf.tmp
     MODULES+=" -DBUILD_MODULE_UART"
     MODULES+=" -DBUILD_MODULE_BUFFER"
+    MODULES+=" -DBUILD_MODULE_EVENTS"
+    echo "export ZJS_EVENTS=y" >> zjs.conf.tmp
     echo "export ZJS_UART=y" >> zjs.conf.tmp
 fi
 
