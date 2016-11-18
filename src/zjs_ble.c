@@ -244,7 +244,7 @@ static ssize_t zjs_ble_read_attr_callback(struct bt_conn *conn,
         zjs_signal_callback(chrc->read_cb.id, NULL, 0);
 
         // block until result is ready
-        if (!k_sem_take(&ble_sem, ZJS_BLE_TIMEOUT_TICKS)) {
+        if (k_sem_take(&ble_sem, ZJS_BLE_TIMEOUT_TICKS)) {
             ERR_PRINT("zjs_ble_read_attr_callback: JS callback timed out\n");
             return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
         }
@@ -360,7 +360,7 @@ static ssize_t zjs_ble_write_attr_callback(struct bt_conn *conn,
         zjs_signal_callback(chrc->write_cb.id, NULL, 0);
 
         // block until result is ready
-        if (!k_sem_take(&ble_sem, ZJS_BLE_TIMEOUT_TICKS)) {
+        if (k_sem_take(&ble_sem, ZJS_BLE_TIMEOUT_TICKS)) {
             ERR_PRINT("zjs_ble_write_attr_callback: JS callback timed out\n");
             return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
         }
