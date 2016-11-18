@@ -12,6 +12,12 @@ OCF_ROOT ?= deps/iotivity-constrained
 JERRY_BASE ?= $(ZJS_BASE)/deps/jerryscript
 JS ?= samples/HelloWorld.js
 VARIANT ?= release
+
+# if no config file passed use the ashell default
+ifeq ($(DEV), ashell)
+	CONFIG ?= fragments/zjs.conf.dev
+endif
+
 # Dump memory information: on = print allocs, full = print allocs + dump pools
 TRACE ?= off
 # Print callback statistics during runtime
