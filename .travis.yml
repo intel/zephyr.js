@@ -91,7 +91,7 @@ script: >
 
     # run linux unit tests
     banner "unit tests" &&
-    ./jslinux --unittest
+    ./outdir/linux/release/jslinux --unittest
 
   elif [ "$TARGET" == "ashell" ]; then
     # test ashell build
