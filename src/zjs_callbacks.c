@@ -27,20 +27,28 @@
 
 #define INITIAL_CALLBACK_SIZE  16
 #define CB_CHUNK_SIZE          16
-
-#define CALLBACK_TYPE_JS    0
-#define CALLBACK_TYPE_C     1
-#define JS_TYPE_SINGLE      0
-#define JS_TYPE_LIST        1
-
 #define CB_LIST_MULTIPLIER  4
 
+// flag bit value for JS callback
+#define CALLBACK_TYPE_JS    0
+// flag bit value for C callback
+#define CALLBACK_TYPE_C     1
+// flag bit value for single JS callback
+#define JS_TYPE_SINGLE      0
+// flag bit value for list JS callback
+#define JS_TYPE_LIST        1
+// Bits in flags for once, type (C or JS), and JS type (single or list)
 #define ONCE_BIT    0
 #define TYPE_BIT    1
 #define JS_TYPE_BIT 2
-#define GET_ONCE(f)     (f & (1 << ONCE_BIT))
-#define GET_TYPE(f)     (f & (1 << TYPE_BIT))
-#define GET_JS_TYPE(f)  (f & (1 << JS_TYPE_BIT))
+// Macros to set the bits in flags
+#define SET_ONCE(f, b)      f |= (b << ONCE_BIT)
+#define SET_TYPE(f, b)      f |= (b << TYPE_BIT)
+#define SET_JS_TYPE(f, b)   f |= (b << JS_TYPE_BIT)
+// Macros to get the bits in flags
+#define GET_ONCE(f)         (f & (1 << ONCE_BIT))
+#define GET_TYPE(f)         (f & (1 << TYPE_BIT))
+#define GET_JS_TYPE(f)      (f & (1 << JS_TYPE_BIT))
 
 struct zjs_callback_t {
     zjs_callback_id id;
@@ -215,7 +223,9 @@ zjs_callback_id zjs_add_callback_list(jerry_value_t js_func,
         }
         memset(new_cb, 0, sizeof(struct zjs_callback_t));
 
-        new_cb->flags |= (CALLBACK_TYPE_JS << TYPE_BIT);
+        SET_ONCE(new_cb->flags, 0);
+        SET_TYPE(new_cb->flags, CALLBACK_TYPE_JS);
+        SET_JS_TYPE(new_cb->flags, JS_TYPE_LIST);
         new_cb->id = new_id();
         new_cb->this = jerry_acquire_value(this);
         new_cb->post = post;
@@ -249,8 +259,9 @@ zjs_callback_id add_callback(jerry_value_t js_func,
     }
     memset(new_cb, 0, sizeof(struct zjs_callback_t));
 
-    new_cb->flags |= (CALLBACK_TYPE_JS << TYPE_BIT);
-    new_cb->flags |= ((once) ? 1 : 0 << ONCE_BIT);
+    SET_ONCE(new_cb->flags, (once) ? 1 : 0);
+    SET_TYPE(new_cb->flags, CALLBACK_TYPE_JS);
+    SET_JS_TYPE(new_cb->flags, JS_TYPE_SINGLE);
     new_cb->id = new_id();
     new_cb->js_func = jerry_acquire_value(js_func);
     new_cb->this = jerry_acquire_value(this);
@@ -291,7 +302,9 @@ void zjs_remove_callback(zjs_callback_id id)
 {
     if (id != -1 && cb_map[id]) {
         if (GET_TYPE(cb_map[id]->flags) == CALLBACK_TYPE_JS) {
-            if (cb_map[id]->func_list) {
+            if (GET_JS_TYPE(cb_map[id]->flags) == JS_TYPE_SINGLE) {
+                jerry_release_value(cb_map[id]->js_func);
+            } else if (GET_JS_TYPE(cb_map[id]->flags) == JS_TYPE_LIST && cb_map[id]->func_list) {
                 int i;
                 for (i = 0; i < cb_map[id]->num_funcs; ++i) {
                     jerry_release_value(cb_map[id]->func_list[i]);
@@ -328,8 +341,8 @@ zjs_callback_id zjs_add_c_callback(void* handle, zjs_c_callback_func callback)
     }
     memset(new_cb, 0, sizeof(struct zjs_callback_t));
 
-    new_cb->flags |= (CALLBACK_TYPE_C << TYPE_BIT);
-    new_cb->flags |= (0 << ONCE_BIT);
+    SET_ONCE(new_cb->flags, 0);
+    SET_TYPE(new_cb->flags, CALLBACK_TYPE_C);
     new_cb->id = new_id();
     new_cb->function = callback;
     new_cb->handle = handle;
@@ -379,13 +392,12 @@ void zjs_call_callback(zjs_callback_id id, void* data, uint32_t sz)
             // Function list callback
             int i;
             jerry_value_t ret_val;
-
             if (GET_JS_TYPE(cb_map[id]->flags) == JS_TYPE_SINGLE) {
                 ret_val = jerry_call_function(cb_map[id]->js_func, cb_map[id]->this, data, sz);
                 if (jerry_value_has_error_flag(ret_val)) {
                     DBG_PRINT("callback %ld returned an error for function\n", id);
                 }
-            } else {
+            } else if (GET_JS_TYPE(cb_map[id]->flags) == JS_TYPE_LIST) {
                 for (i = 0; i < cb_map[id]->num_funcs; ++i) {
                     ret_val = jerry_call_function(cb_map[id]->func_list[i], cb_map[id]->this, data, sz);
                     if (jerry_value_has_error_flag(ret_val)) {
@@ -403,7 +415,7 @@ void zjs_call_callback(zjs_callback_id id, void* data, uint32_t sz)
             cb_map[id]->function(cb_map[id]->handle, data);
         }
     } else {
-        ERR_PRINT("callback does not exist: %ld\n", id);
+        ERR_PRINT("callback does not exist: %d\n", id);
     }
 }
 
