@@ -1,8 +1,6 @@
 JERRY_BASE ?= $(ZJS_BASE)/deps/jerryscript
 OCF_ROOT ?= deps/iotivity-constrained
 
-export LDFLAGS += -u _printf_float
-
 ccflags-y += -Wall -Werror
 
 # Select extended ANSI C/POSIX function set in recent Newlib versions
@@ -23,6 +21,11 @@ endif
 
 ifeq ($(CB_STATS), on)
 ccflags-y += -DZJS_PRINT_CALLBACK_STATS
+endif
+
+ifeq ($(PRINT_FLOAT), on)
+export LDFLAGS += -u _printf_float
+ccflags-y += -DZJS_PRINT_FLOATS
 endif
 
 obj-y += main.o \

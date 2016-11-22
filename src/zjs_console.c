@@ -55,8 +55,13 @@ static jerry_value_t do_print(const jerry_value_t function_obj,
         } else if (jerry_value_is_number(argv[i])) {
             int type = is_int(argv[i]);
             if (type == IS_NUMBER) {
+#ifdef ZJS_PRINT_FLOATS
                 double num = jerry_get_number_value(argv[i]);
                 fprintf(out, "%f ", num);
+#else
+                int32_t num = (int32_t)jerry_get_number_value(argv[i]);
+                fprintf(out, "[Float ~%li] ", num);
+#endif
             } else if (type == IS_UINT) {
                 uint32_t num = (uint32_t)jerry_get_number_value(argv[i]);
                 fprintf(out, "%lu ", num);
