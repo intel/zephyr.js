@@ -40,7 +40,9 @@ function GroveLCD() {
         REGISTER_POWER : 0x08,
         REGISTER_R : 0x04,
         REGISTER_G : 0x03,
-        REGISTER_B : 0x02
+        REGISTER_B : 0x02,
+        REG_MODE1 : 0x00,
+        REG_MODE2 : 0x01
     };
 
     groveLCDAPI.clear = function(col, row, numChar) {

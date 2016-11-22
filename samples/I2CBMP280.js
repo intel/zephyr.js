@@ -27,7 +27,7 @@ var red = green = blue = 200;
 
 function bmp280Init() {
     var reader = bmp280.i2cDevice.read(bmp280.bmp280Addrs.ADDRESS, 1,
-                                          bmp280.bmp280Addrs.REGISTER_CHIPID);
+                                       bmp280.bmp280Addrs.REGISTER_CHIPID);
 
     // Check that we have a BMP280 on the I2C bus
     if (reader.toString("hex") !== "58")
@@ -37,16 +37,16 @@ function bmp280Init() {
     bmp280.readCoefficients();
 
     bmp280.i2cDevice.write(bmp280.bmp280Addrs.ADDRESS,
-                              new Buffer([bmp280.bmp280Addrs.REGISTER_CONTROL,
-                              bmp280.bmp280Addrs.PRESS_OVER |
-                              bmp280.bmp280Addrs.TEMP_OVER |
-                              bmp280.bmp280Addrs.NORMAL_MODE]));
+                           new Buffer([bmp280.bmp280Addrs.REGISTER_CONTROL,
+                           bmp280.bmp280Addrs.PRESS_OVER |
+                           bmp280.bmp280Addrs.TEMP_OVER |
+                           bmp280.bmp280Addrs.NORMAL_MODE]));
 
     bmp280.i2cDevice.write(bmp280.bmp280Addrs.ADDRESS,
-                              new Buffer([bmp280.bmp280Addrs.REGISTER_CONFIG,
-                              bmp280.bmp280Addrs.STANDBY |
-                              bmp280.bmp280Addrs.FILTER |
-                              bmp280.bmp280Addrs.SPI_3W_DISABLE]));
+                           new Buffer([bmp280.bmp280Addrs.REGISTER_CONFIG,
+                           bmp280.bmp280Addrs.STANDBY |
+                           bmp280.bmp280Addrs.FILTER |
+                           bmp280.bmp280Addrs.SPI_3W_DISABLE]));
 }
 
 function glcdInit() {
@@ -56,16 +56,26 @@ function glcdInit() {
 
     // Set our preferences for the Grove LCD
     glcd.i2cDevice.write(glcd.glcdAddrs.DISPLAY_ADDR,
-                                new Buffer([0, glcd.glcdAddrs.CMD_FUNCTION_SET |
-                                glcd.glcdAddrs.FS_ROWS_2 |
-                                glcd.glcdAddrs.FS_DOT_SIZE_LITTLE |
-                                glcd.glcdAddrs.FS_8BIT_MODE]));
+                         new Buffer([0, glcd.glcdAddrs.CMD_FUNCTION_SET |
+                         glcd.glcdAddrs.FS_ROWS_2 |
+                         glcd.glcdAddrs.FS_DOT_SIZE_LITTLE |
+                         glcd.glcdAddrs.FS_8BIT_MODE]));
 
     glcd.i2cDevice.write(glcd.glcdAddrs.DISPLAY_ADDR,
-                                new Buffer([0, glcd.glcdAddrs.CMD_DISPLAY_SWITCH |
-                                glcd.glcdAddrs.DS_DISPLAY_ON |
-                                glcd.glcdAddrs.DS_CURSOR_OFF |
-                                glcd.glcdAddrs.DS_BLINK_OFF]));
+                         new Buffer([0, glcd.glcdAddrs.CMD_DISPLAY_SWITCH |
+                         glcd.glcdAddrs.DS_DISPLAY_ON |
+                         glcd.glcdAddrs.DS_CURSOR_OFF |
+                         glcd.glcdAddrs.DS_BLINK_OFF]));
+
+    // Init backlight
+    glcd.i2cDevice.write(glcd.glcdAddrs.BACKLIGHT_ADDR,
+                         new Buffer([glcd.glcdAddrs.REG_MODE1, 0x00]));
+
+    glcd.i2cDevice.write(glcd.glcdAddrs.BACKLIGHT_ADDR,
+                         new Buffer([glcd.glcdAddrs.REG_MODE2, 0x05]));
+
+    glcd.i2cDevice.write(glcd.glcdAddrs.BACKLIGHT_ADDR,
+                         new Buffer([glcd.glcdAddrs.REGISTER_POWER, 0xFF]));
 
     // Init the screen with text
     glcd.writeText("Temperature is ", 0, 0);
