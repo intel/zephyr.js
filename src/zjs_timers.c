@@ -23,7 +23,7 @@ typedef struct zjs_timer {
     jerry_value_t* argv;
     uint32_t argc;
     uint32_t interval;
-    int32_t callback_id;
+    zjs_callback_id callback_id;
     bool repeat;
     bool completed;
     struct zjs_timer *next;
