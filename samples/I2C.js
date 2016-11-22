@@ -120,7 +120,7 @@ function changeRGB(red, green, blue) {
 }
 
 function writeWord() {
-    resetCursor();
+    clear();
     var wordBuffer = new Buffer(7);
         // The first byte in the buffer is for the register address,
         // which is where the word is going to be written to.
