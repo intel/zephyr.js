@@ -563,7 +563,7 @@ static void process_gyro_data(struct device *dev)
     double dval[3];
 
     if (sensor_channel_get(dev, SENSOR_CHAN_GYRO_ANY, val) < 0) {
-        ZJS_PRINT("failed to read gyroscope channels.\n");
+        ZJS_PRINT("failed to read gyroscope channels\n");
         return;
     }
 
@@ -587,7 +587,7 @@ static void process_gyro_data(struct device *dev)
     sensor_value_snprintf(buf_x, sizeof(buf_x), &val[0]);
     sensor_value_snprintf(buf_y, sizeof(buf_y), &val[1]);
     sensor_value_snprintf(buf_z, sizeof(buf_z), &val[2]);
-    ZJS_PRINT("sending gyro : X=%s, Y=%s, Z=%s\n", buf_x, buf_y, buf_z);
+    ZJS_PRINT("sending gyro: X=%s, Y=%s, Z=%s\n", buf_x, buf_y, buf_z);
 #endif
 }
 
@@ -781,7 +781,7 @@ static void handle_sensor(struct zjs_ipm_message* msg)
                 error_code = ERROR_IPM_OPERATION_FAILED;
                 ZJS_PRINT("failed to initialize BMI160 sensor\n");
             } else {
-                if (auto_calibration(bmi160) != 0) {
+                if (auto_calibration(bmi160)) {
                     ZJS_PRINT("failed to perform auto calibration\n");
                 }
                 DBG_PRINT("BMI160 sensor initialized\n");
