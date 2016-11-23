@@ -136,6 +136,7 @@ function writeWord() {
     }
 
     hello = !hello;
+    resetCursor();
     i2cDevice.write(GROVE_LCD_DISPLAY_ADDR, wordBuffer);
 }
 
