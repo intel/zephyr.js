@@ -1,0 +1,90 @@
+ifndef ZJS_BASE
+$(error ZJS_BASE not defined)
+endif
+
+JERRY_BASE ?= $(ZJS_BASE)/deps/jerryscript
+
+JERRY_FLAGS ?= --snapshot-save=on
+
+BUILD_DIR = $(ZJS_BASE)/outdir/snapshot/$(VARIANT)
+
+UNAME := $(shell uname)
+ifeq ($(UNAME),Darwin)
+COPY=rsync -R
+else
+COPY=cp --parents
+endif
+
+.PHONY: all
+all: snapshot
+
+.PHONY: setup
+setup:
+	@if [ ! -d $(ZJS_BASE)/outdir/snapshot/$(VARIANT) ]; then \
+		mkdir -p $(ZJS_BASE)/outdir/snapshot/$(VARIANT); \
+	fi
+
+CORE_SRC +=		src/snapshot.c \
+			src/zjs_script.c
+
+CORE_OBJ =		$(CORE_SRC:%.c=%.o)
+
+SNAPSHOT_INCLUDES += 	-Isrc/ \
+			-I$(JERRY_BASE)/jerry-core
+
+JERRY_LIBS += 		-l jerry-core -lm
+
+JERRY_LIB_PATH += 	-L $(JERRY_BASE)/build/lib/
+
+SNAPSHOT_LIBS += $(JERRY_LIBS) -pthread
+
+SNAPSHOT_DEFINES +=	-DZJS_LINUX_BUILD \
+			-DZJS_PRINT_FLOATS
+
+SNAPSHOT_FLAGS += 	-fno-asynchronous-unwind-tables \
+			-fno-omit-frame-pointer \
+			-Wno-format-zero-length \
+			-Wno-main \
+			-ffreestanding \
+			-Os \
+			-fno-stack-protector \
+			-ffunction-sections \
+			-fdata-sections \
+			-Wno-unused-but-set-variable \
+			-fno-reorder-functions \
+			-fno-defer-pop \
+			-Wno-pointer-sign \
+			-fno-strict-overflow \
+			-Werror=implicit-int \
+			-Wall \
+			-std=gnu99 \
+			-flto \
+			-Wpointer-sign
+
+ifeq ($(VARIANT), debug)
+SNAPSHOT_DEFINES +=	-DDEBUG_BUILD
+SNAPSHOT_FLAGS +=	-g
+DEBUG=1
+else
+DEBUG=0
+endif
+
+BUILD_OBJ = $(CORE_OBJ:%.o=$(BUILD_DIR)/%.o)
+
+.PHONY: snapshot_copy
+snapshot_copy:
+	$(COPY) $(CORE_SRC) $(BUILD_DIR)
+
+%.o:%.c
+	@echo "Building $@"
+	gcc -c -o $@ $< $(SNAPSHOT_INCLUDES) $(SNAPSHOT_DEFINES) $(SNAPSHOT_FLAGS)
+
+.PHONY: snapshot
+snapshot: setup snapshot_copy $(BUILD_OBJ)
+	@echo "Building for snapshot $(BUILD_OBJ)"
+	cd deps/jerryscript; python ./tools/build.py $(JERRY_FLAGS) $(VERBOSE);
+	gcc $(SNAPSHOT_INCLUDES) $(JERRY_LIB_PATH) -static -o $(BUILD_DIR)/snapshot $(BUILD_OBJ) $(SNAPSHOT_FLAGS) $(CFLAGS) $(SNAPSHOT_DEFINES) $(SNAPSHOT_LIBS)
+
+.PHONY: clean
+clean:
+	rm -f $(BUILD_OBJ)

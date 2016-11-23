@@ -32,10 +32,15 @@ CORE_SRC +=	src/zjs_buffer.c \
 		src/zjs_ocf_server.c \
 		src/zjs_promise.c \
 		src/zjs_script.c \
-		src/zjs_script_gen.c \
 		src/zjs_timers.c \
 		src/zjs_unit_tests.c \
 		src/zjs_util.c
+
+ifdef ZJS_SNAPSHOT_BUILD
+CORE_SRC +=	src/zjs_snapshot_gen.c
+else
+CORE_SRC +=	src/zjs_script_gen.c
+endif
 
 CORE_OBJ =	$(CORE_SRC:%.c=%.o)
 
