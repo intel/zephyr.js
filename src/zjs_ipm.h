@@ -109,7 +109,6 @@ typedef struct zjs_ipm_message {
         struct sensor_data {
             enum sensor_channel channel;
             uint32_t frequency;
-            double value[3];
             union sensor_reading {
                 // x y z axis for Accelerometer and Gyroscope
                 struct {

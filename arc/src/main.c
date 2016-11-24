@@ -26,18 +26,12 @@
 #define SLEEP_TICKS       1  // 10ms sleep time in cpu ticks
 #define UPDATE_INTERVAL 200  // 2sec interval in between notifications
 
-#ifdef BUILD_MODULE_AIO
 #define ADC_DEVICE_NAME "ADC_0"
 #define ADC_BUFFER_SIZE 2
-#endif
 
-#ifdef BUILD_MODULE_I2C
 #define MAX_I2C_BUS 1
-#endif
 
-#ifdef BUILD_MODULE_GROVE_LCD
 #define MAX_BUFFER_SIZE 256
-#endif
 
 static struct nano_sem arc_sem;
 static struct zjs_ipm_message msg_queue[QUEUE_SIZE];
@@ -63,8 +57,8 @@ static char str[MAX_BUFFER_SIZE];
 
 #ifdef BUILD_MODULE_SENSOR
 static struct device *bmi160 = NULL;
-static bool accel_poll = false;
-static bool gyro_poll = false;
+static bool accel_trigger = false;
+static bool gyro_trigger = false;
 static double accel_last_value[3];
 static double gyro_last_value[3];
 #endif
@@ -428,7 +422,7 @@ static void handle_glcd(struct zjs_ipm_message* msg)
 }
 #endif
 
-#ifdef	BUILD_MODULE_SENSOR
+#ifdef BUILD_MODULE_SENSOR
 #ifdef DEBUG_BUILD
 static inline int sensor_value_snprintf(char *buf, size_t len,
                                         const struct sensor_value *val)
@@ -533,18 +527,13 @@ static void process_accel_data(struct device *dev)
     double dval[3];
 
     if (sensor_channel_get(dev, SENSOR_CHAN_ACCEL_ANY, val) < 0) {
-        ZJS_PRINT("Cannot read accelerometer channels.\n");
+        ZJS_PRINT("failed to read accelerometer channels\n");
         return;
     }
 
     dval[0] = convert_sensor_value(&val[0]);
     dval[1] = convert_sensor_value(&val[1]);
     dval[2] = convert_sensor_value(&val[2]);
-
-    if (dval[0] == 0 && dval[1] == 0 && dval[2] == 0) {
-        // FIXME: BUG? why sometimes it reports 0, 0, 0 on all axes
-        return;
-    }
 
     // set slope threshold to 0.1G (0.1 * 9.80665 = 4.903325 m/s^2)
     double threshold = 0.980665;
@@ -574,7 +563,7 @@ static void process_gyro_data(struct device *dev)
     double dval[3];
 
     if (sensor_channel_get(dev, SENSOR_CHAN_GYRO_ANY, val) < 0) {
-        ZJS_PRINT("Cannot read gyroscope channels.\n");
+        ZJS_PRINT("failed to read gyroscope channels\n");
         return;
     }
 
@@ -598,20 +587,26 @@ static void process_gyro_data(struct device *dev)
     sensor_value_snprintf(buf_x, sizeof(buf_x), &val[0]);
     sensor_value_snprintf(buf_y, sizeof(buf_y), &val[1]);
     sensor_value_snprintf(buf_z, sizeof(buf_z), &val[2]);
-    ZJS_PRINT("Sending gyro : X=%s, Y=%s, Z=%s\n", buf_x, buf_y, buf_z);
+    ZJS_PRINT("sending gyro: X=%s, Y=%s, Z=%s\n", buf_x, buf_y, buf_z);
 #endif
 }
 
-static void fetch_sensor(struct device *dev) {
+static void trigger_hdlr(struct device *dev,
+                         struct sensor_trigger *trigger)
+{
+    if (trigger->type != SENSOR_TRIG_DELTA &&
+        trigger->type != SENSOR_TRIG_DATA_READY) {
+        return;
+    }
+
     if (sensor_sample_fetch(dev) < 0) {
         ZJS_PRINT("failed to fetch sensor data\n");
         return;
     }
 
-    if (accel_poll) {
+    if (trigger->chan == SENSOR_CHAN_ACCEL_ANY) {
         process_accel_data(dev);
-    }
-    if (gyro_poll) {
+    } else if (trigger->chan == SENSOR_CHAN_GYRO_ANY) {
         process_gyro_data(dev);
     }
 }
@@ -627,12 +622,12 @@ struct sensor_value acc_calib[] = {
     {SENSOR_VALUE_TYPE_INT_PLUS_MICRO, { {9, 806650} } }, /* Z */
 };
 
-static bool auto_calibration(struct device *dev)
+static int auto_calibration(struct device *dev)
 {
     /* calibrate accelerometer */
     if (sensor_attr_set(dev, SENSOR_CHAN_ACCEL_ANY,
                         SENSOR_ATTR_CALIB_TARGET, acc_calib) < 0) {
-        return false;
+        return -1;
     }
 
     /*
@@ -642,10 +637,129 @@ static bool auto_calibration(struct device *dev)
      */
     if (sensor_attr_set(dev, SENSOR_CHAN_GYRO_ANY,
                         SENSOR_ATTR_CALIB_TARGET, NULL) < 0) {
-        return false;
+        return -1;
     }
 
-    return true;
+    return 0;
+}
+
+static int start_accel_trigger(struct device *dev)
+{
+    struct sensor_value attr;
+    struct sensor_trigger trig;
+
+    // set accelerometer range to +/- 16G. Since the sensor API needs SI
+    // units, convert the range to m/s^2.
+    sensor_g_to_ms2(16, &attr);
+
+    if (sensor_attr_set(dev, SENSOR_CHAN_ACCEL_ANY,
+                        SENSOR_ATTR_FULL_SCALE, &attr) < 0) {
+        ZJS_PRINT("failed to set accelerometer range\n");
+        return -1;
+    }
+
+    // set sampling frequency to 50Hz for accelerometer
+    attr.type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
+    attr.val1 = 50;
+    attr.val2 = 0;
+
+    if (sensor_attr_set(dev, SENSOR_CHAN_ACCEL_ANY,
+                        SENSOR_ATTR_SAMPLING_FREQUENCY, &attr) < 0) {
+        ZJS_PRINT("failed to set accelerometer sampling frequency\n");
+        return -1;
+    }
+
+    // set slope threshold to 0.1G (0.1 * 9.80665 = 4.903325 m/s^2).
+    attr.type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
+    attr.val1 = 0;
+    attr.val2 = 980665;
+    if (sensor_attr_set(dev, SENSOR_CHAN_ACCEL_ANY,
+                        SENSOR_ATTR_SLOPE_TH, &attr) < 0) {
+        ZJS_PRINT("failed set slope threshold\n");
+        return -1;
+    }
+
+    // set slope duration to 2 consecutive samples
+    attr.type = SENSOR_VALUE_TYPE_INT;
+    attr.val1 = 2;
+    if (sensor_attr_set(dev, SENSOR_CHAN_ACCEL_ANY,
+                        SENSOR_ATTR_SLOPE_DUR, &attr) < 0) {
+        ZJS_PRINT("failed to set slope duration\n");
+        return -1;
+    }
+
+    // set data ready trigger handler
+    trig.type = SENSOR_TRIG_DATA_READY;
+    trig.chan = SENSOR_CHAN_ACCEL_ANY;
+
+    if (sensor_trigger_set(dev, &trig, trigger_hdlr) < 0) {
+        ZJS_PRINT("failed to enable accelerometer trigger\n");
+        return -1;
+    }
+
+    accel_trigger = true;
+    return 0;
+}
+
+static int stop_accel_trigger(struct device *dev)
+{
+    struct sensor_trigger trig;
+
+    trig.type = SENSOR_TRIG_DATA_READY;
+    trig.chan = SENSOR_CHAN_ACCEL_ANY;
+
+    if (sensor_trigger_set(bmi160, &trig, NULL) < 0) {
+        ZJS_PRINT("failed to disable accelerometer trigger\n");
+        return -1;
+    }
+
+    accel_trigger = false;
+    return 0;
+}
+
+static int start_gyro_trigger(struct device *dev)
+{
+    struct sensor_value attr;
+    struct sensor_trigger trig;
+
+    // set sampling frequency to 50Hz for gyroscope
+    attr.type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
+    attr.val1 = 50;
+    attr.val2 = 0;
+
+    if (sensor_attr_set(bmi160, SENSOR_CHAN_GYRO_ANY,
+                        SENSOR_ATTR_SAMPLING_FREQUENCY, &attr) < 0) {
+        ZJS_PRINT("failed to set sampling frequency for gyroscope.\n");
+        return -1;
+    }
+
+    // set data ready trigger handler
+    trig.type = SENSOR_TRIG_DATA_READY;
+    trig.chan = SENSOR_CHAN_GYRO_ANY;
+
+    if (sensor_trigger_set(bmi160, &trig, trigger_hdlr) < 0) {
+        ZJS_PRINT("failed to enable gyroscope trigger.\n");
+        return -1;
+    }
+
+    gyro_trigger = true;
+    return 0;
+}
+
+static int stop_gyro_trigger(struct device *dev)
+{
+    struct sensor_trigger trig;
+
+    trig.type = SENSOR_TRIG_DATA_READY;
+    trig.chan = SENSOR_CHAN_GYRO_ANY;
+
+    if (sensor_trigger_set(bmi160, &trig, NULL) < 0) {
+        ZJS_PRINT("failed to disable gyroscope trigger\n");
+        return -1;
+    }
+
+    gyro_trigger = false;
+    return 0;
 }
 
 static void handle_sensor(struct zjs_ipm_message* msg)
@@ -653,7 +767,7 @@ static void handle_sensor(struct zjs_ipm_message* msg)
     uint32_t error_code = ERROR_IPM_NONE;
 
     if (msg->type != TYPE_SENSOR_INIT && !bmi160) {
-        ZJS_PRINT("Grove LCD device not found.\n");
+        ZJS_PRINT("BMI160 sensor not found.\n");
         ipm_send_error_reply(msg, ERROR_IPM_OPERATION_FAILED);
         return;
     }
@@ -667,20 +781,22 @@ static void handle_sensor(struct zjs_ipm_message* msg)
                 error_code = ERROR_IPM_OPERATION_FAILED;
                 ZJS_PRINT("failed to initialize BMI160 sensor\n");
             } else {
-                if (!auto_calibration(bmi160)) {
+                if (auto_calibration(bmi160)) {
                     ZJS_PRINT("failed to perform auto calibration\n");
                 }
-
-                accel_poll = gyro_poll = false;
                 DBG_PRINT("BMI160 sensor initialized\n");
             }
         }
         break;
     case TYPE_SENSOR_START:
         if (msg->data.sensor.channel == SENSOR_CHAN_ACCEL_ANY) {
-            accel_poll = true;
+            if (!accel_trigger && start_accel_trigger(bmi160) != 0) {
+                error_code = ERROR_IPM_OPERATION_FAILED;
+            }
         } else if (msg->data.sensor.channel == SENSOR_CHAN_GYRO_ANY) {
-            gyro_poll = true;
+            if (!gyro_trigger && start_gyro_trigger(bmi160) != 0) {
+                error_code = ERROR_IPM_OPERATION_FAILED;
+            }
         } else {
             ZJS_PRINT("invalid sensor channel\n");
             error_code = ERROR_IPM_NOT_SUPPORTED;
@@ -688,9 +804,13 @@ static void handle_sensor(struct zjs_ipm_message* msg)
         break;
     case TYPE_SENSOR_STOP:
         if (msg->data.sensor.channel == SENSOR_CHAN_ACCEL_ANY) {
-            accel_poll = false;
+            if (accel_trigger && stop_accel_trigger(bmi160) != 0) {
+                error_code = ERROR_IPM_OPERATION_FAILED;
+            }
         } else if (msg->data.sensor.channel == SENSOR_CHAN_GYRO_ANY) {
-            gyro_poll = false;
+            if (gyro_trigger && stop_gyro_trigger(bmi160) != 0) {
+                error_code = ERROR_IPM_OPERATION_FAILED;
+            }
         } else {
             ZJS_PRINT("invalid sensor channel\n");
             error_code = ERROR_IPM_NOT_SUPPORTED;
@@ -776,11 +896,6 @@ void main(void)
             tick_count = 0;
         }
         tick_count += SLEEP_TICKS;
-#endif
-#ifdef BUILD_MODULE_SENSOR
-        if (accel_poll || gyro_poll) {
-            fetch_sensor(bmi160);
-        }
 #endif
         task_sleep(SLEEP_TICKS);
     }
