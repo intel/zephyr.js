@@ -15,6 +15,7 @@
 #include "zjs_buffer.h"
 
 static zjs_buffer_t *zjs_buffers = NULL;
+static jerry_value_t zjs_buffer_prototype;
 
 // TODO: this could probably be replaced more efficiently now that there is a
 //   get_native_handle API
@@ -367,19 +368,8 @@ jerry_value_t zjs_buffer_create(uint32_t size)
     buf_item->next = zjs_buffers;
     zjs_buffers = buf_item;
 
+    jerry_set_prototype(buf_obj, zjs_buffer_prototype);
     zjs_obj_add_number(buf_obj, size, "length");
-    zjs_obj_add_function(buf_obj, zjs_buffer_read_uint8, "readUInt8");
-    zjs_obj_add_function(buf_obj, zjs_buffer_write_uint8, "writeUInt8");
-    zjs_obj_add_function(buf_obj, zjs_buffer_read_uint16_be, "readUInt16BE");
-    zjs_obj_add_function(buf_obj, zjs_buffer_write_uint16_be, "writeUInt16BE");
-    zjs_obj_add_function(buf_obj, zjs_buffer_read_uint16_le, "readUInt16LE");
-    zjs_obj_add_function(buf_obj, zjs_buffer_write_uint16_le, "writeUInt16LE");
-    zjs_obj_add_function(buf_obj, zjs_buffer_read_uint32_be, "readUInt32BE");
-    zjs_obj_add_function(buf_obj, zjs_buffer_write_uint32_be, "writeUInt32BE");
-    zjs_obj_add_function(buf_obj, zjs_buffer_read_uint32_le, "readUInt32LE");
-    zjs_obj_add_function(buf_obj, zjs_buffer_write_uint32_le, "writeUInt32LE");
-    zjs_obj_add_function(buf_obj, zjs_buffer_to_string, "toString");
-    zjs_obj_add_function(buf_obj, zjs_buffer_write_string, "write");
 
     // TODO: sign up to get callback when the object is freed, then free the
     //   buffer and remove it from the list
@@ -457,5 +447,28 @@ void zjs_buffer_init()
     jerry_value_t global_obj = jerry_get_global_object();
     zjs_obj_add_function(global_obj, zjs_buffer, "Buffer");
     jerry_release_value(global_obj);
+
+    zjs_native_func_t array[] = {
+        { zjs_buffer_read_uint8, "readUInt8" },
+        { zjs_buffer_write_uint8, "writeUInt8" },
+        { zjs_buffer_read_uint16_be, "readUInt16BE" },
+        { zjs_buffer_write_uint16_be, "writeUInt16BE" },
+        { zjs_buffer_read_uint16_le, "readUInt16LE" },
+        { zjs_buffer_write_uint16_le, "writeUInt16LE" },
+        { zjs_buffer_read_uint32_be, "readUInt32BE" },
+        { zjs_buffer_write_uint32_be, "writeUInt32BE" },
+        { zjs_buffer_read_uint32_le, "readUInt32LE" },
+        { zjs_buffer_write_uint32_le, "writeUInt32LE" },
+        { zjs_buffer_to_string, "toString" },
+        { zjs_buffer_write_string, "write" },
+        { NULL, NULL }
+    };
+    zjs_buffer_prototype = jerry_create_object();
+    zjs_obj_add_functions(zjs_buffer_prototype, array);
+}
+
+void zjs_buffer_cleanup()
+{
+    jerry_release_value(zjs_buffer_prototype);
 }
 #endif // BUILD_MODULE_BUFFER

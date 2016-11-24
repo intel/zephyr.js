@@ -43,6 +43,18 @@ void zjs_set_property(const jerry_value_t obj, const char *str,
                       const jerry_value_t prop);
 jerry_value_t zjs_get_property (const jerry_value_t obj, const char *str);
 
+typedef struct zjs_native_func {
+    void *function;
+    const char *name;
+} zjs_native_func_t;
+
+/**
+ * Add a series of functions described in array funcs to obj
+ * @param obj    JerryScript object to add the functions to
+ * @param funcs  Array of zjs_native_func_t, terminated with {NULL, NULL}
+ */
+void zjs_obj_add_functions(jerry_value_t obj, zjs_native_func_t *funcs);
+
 void zjs_obj_add_boolean(jerry_value_t obj, bool flag, const char *name);
 void zjs_obj_add_function(jerry_value_t obj, void *function, const char *name);
 void zjs_obj_add_object(jerry_value_t parent, jerry_value_t child,
