@@ -154,7 +154,7 @@ void zjs_fulfill_promise(jerry_value_t obj, jerry_value_t argv[], uint32_t argc)
 
         zjs_signal_callback(handle->then_id, argv, argc * sizeof(jerry_value_t));
 
-        DBG_PRINT("fulfilling promise, obj=%lu, then_id=%lu, argv=%p, nargs=%lu\n",
+        DBG_PRINT("fulfilling promise, obj=%lu, then_id=%d, argv=%p, nargs=%lu\n",
                   obj, handle->then_id, argv, argc);
     } else {
         ERR_PRINT("native handle not found\n");
@@ -188,7 +188,7 @@ void zjs_reject_promise(jerry_value_t obj, jerry_value_t argv[], uint32_t argc)
 
         zjs_signal_callback(handle->catch_id, argv, argc * sizeof(jerry_value_t));
 
-        DBG_PRINT("rejecting promise, obj=%lu, catch_id=%ld, argv=%p, nargs=%lu\n",
+        DBG_PRINT("rejecting promise, obj=%lu, catch_id=%d, argv=%p, nargs=%lu\n",
                   obj, handle->catch_id, argv, argc);
     } else {
         ERR_PRINT("native handle not found\n");
