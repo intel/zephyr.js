@@ -156,6 +156,7 @@ clean: update
 	@rm -f prj.conf
 	@rm -f prj.conf.tmp
 	@rm -f prj.mdef
+	@rm -f zjs.conf.tmp
 
 .PHONY: pristine
 pristine:
