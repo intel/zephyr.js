@@ -63,16 +63,12 @@ function check_for_require()
 
 function check_config_file()
 {
-    # effects: checks $1 for uncommented module to inclue from #CONFIG
-    #          If found, it will be put in zjs.conf.tmp and appended to src/Makefile
+    # effects: checks $1 for uncommented module to include from #CONFIG
+    #          If found, it will be put in zjs.conf.tmp and inserted into src/Makefile
 
     if [ -n "$CONFIG" ]; then
-        rval=$(grep -v '^#' < $CONFIG | grep $1='y\|m' | xargs)
-        if [ "$rval" ]; then
-            return 0
-        else
-            return 1
-        fi
+       grep -v '^#' < $CONFIG | grep $1='y\|m' >> /dev/null
+        return $?
     fi
     return 1;
 }
