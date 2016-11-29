@@ -33,7 +33,7 @@ if [ $? -eq 0 ]; then
     echo "$divider" >> /tmp/memorystats_output.txt
     echo "Results for ARC" >> /tmp/memorystats_output.txt
     echo "$divider" >> /tmp/memorystats_output.txt
-    deps/zephyr/scripts/sanitycheck -z arc/outdir/zephyr.elf >> /tmp/memorystats_output.txt 2> /dev/null
+    deps/zephyr/scripts/sanitycheck -z arc/outdir/arduino_101_sss/zephyr.elf >> /tmp/memorystats_output.txt 2> /dev/null
     str=$(tail -2 /tmp/memorystats_output.txt | head -1 | sed -e 's/Totals: //g')
     results="${results}$str\tARC\n"
 else
@@ -50,7 +50,7 @@ do
         echo "$divider" >> /tmp/memorystats_output.txt
         echo "Results for $f" >> /tmp/memorystats_output.txt
         echo "$divider" >> /tmp/memorystats_output.txt
-        deps/zephyr/scripts/sanitycheck -z outdir/zephyr.elf >> /tmp/memorystats_output.txt 2> /dev/null
+        deps/zephyr/scripts/sanitycheck -z outdir/arduino_101/zephyr.elf >> /tmp/memorystats_output.txt 2> /dev/null
         str=$(tail -2 /tmp/memorystats_output.txt | head -1 | sed -e 's/Totals: //g')
         results="${results}$str\t$filename\n"
     else
