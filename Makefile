@@ -19,6 +19,9 @@ TRACE ?= off
 MALLOC ?= pool
 # Print callback statistics during runtime
 CB_STATS ?= off
+# Print floats (uses -u _printf_float flag). This is a workaround on the A101
+# otherwise floats will not print correctly. It does use ~11k extra ROM though
+PRINT_FLOAT ?= off
 # Make target (linux or zephyr)
 # MAKECMDGOALS is a Make variable that is set to the target your building for.
 TARGET = $(MAKECMDGOALS)
@@ -37,7 +40,12 @@ endif
 # Build for zephyr, default target
 .PHONY: zephyr
 zephyr: $(PRE_ACTION) analyze generate
-	@make -f Makefile.zephyr BOARD=$(BOARD) KERNEL=$(KERNEL) VARIANT=$(VARIANT) MEM_STATS=$(MEM_STATS) CB_STATS=$(CB_STATS)
+	@make -f Makefile.zephyr	BOARD=$(BOARD) \
+					KERNEL=$(KERNEL) \
+					VARIANT=$(VARIANT) \
+					MEM_STATS=$(MEM_STATS) \
+					CB_STATS=$(CB_STATS) \
+					PRINT_FLOAT=$(PRINT_FLOAT)
 
 # Give an error if we're asked to create the JS file
 $(JS):
