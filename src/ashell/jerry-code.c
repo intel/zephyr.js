@@ -150,9 +150,10 @@ void javascript_stop()
     parsed_code = 0;
 
     /* Cleanup engine */
-    jerry_cleanup();
-    zjs_ipm_free_callbacks();
     zjs_timers_cleanup();
+    zjs_ipm_free_callbacks();
+    zjs_buffer_cleanup()
+    jerry_cleanup();
 
     restore_zjs_api();
 }

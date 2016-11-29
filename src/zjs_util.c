@@ -24,6 +24,17 @@ jerry_value_t zjs_get_property(const jerry_value_t obj, const char *name)
     return rval;
 }
 
+void zjs_obj_add_functions(jerry_value_t obj, zjs_native_func_t *funcs)
+{
+    // requires: obj is an existing JS object
+    //           funcs is an array of zjs_native_func_t structs, terminated by a
+    //             struct with a NULL function field
+    //  effects: adds all of the described functions to obj with given names
+    for (zjs_native_func_t *map = funcs; map->function; map++) {
+        zjs_obj_add_function(obj, map->function, map->name);
+    }
+}
+
 void zjs_obj_add_boolean(jerry_value_t obj, bool flag, const char *name)
 {
     // requires: obj is an existing JS object

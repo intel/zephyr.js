@@ -5,7 +5,11 @@
 
 #include "jerry-api.h"
 
+/** Initialize the buffer module, or reinitialize after cleanup */
 void zjs_buffer_init();
+
+/** Release resources held by the buffer module */
+void zjs_buffer_cleanup();
 
 typedef struct zjs_buffer {
     jerry_value_t obj;
