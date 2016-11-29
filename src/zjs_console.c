@@ -65,10 +65,10 @@ static void print_value(const jerry_value_t value, FILE *out, bool deep,
         int type = is_int(value);
         if (type == IS_NUMBER) {
 #ifdef ZJS_PRINT_FLOATS
-            double num = jerry_get_number_value(argv[i]);
+            double num = jerry_get_number_value(value);
             fprintf(out, "%f", num);
 #else
-            int32_t num = (int32_t)jerry_get_number_value(argv[i]);
+            int32_t num = (int32_t)jerry_get_number_value(value);
             fprintf(out, "[Float ~%li]", num);
 #endif
         } else if (type == IS_UINT) {
