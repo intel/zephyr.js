@@ -30,9 +30,9 @@ function expectThrow(description, func) {
 }
 
 var deviceName, bufferData, pinA, pinB, disconnectClient,
-    readValue, acceptClient, rssiValue, writeTmp;
+    readValue, acceptClient, rssiValue, tmpValue;
 var writeValue = true;
-var PoweredonFlag = false;
+var poweredOnFlag = false;
 var advertisingFlag = false;
 var writeFlag = true;
 var readFlag = true;
@@ -72,7 +72,7 @@ writeCharacteristic.onWriteRequest = function(data, offset, withoutResponse,
     } else if (data.toString('hex') === "00") {
         writeValue = false;
     } else {
-        writeTmp = writeValue;
+        tmpValue = writeValue;
         writeValue = null;
     }
 
@@ -92,7 +92,7 @@ writeCharacteristic.onWriteRequest = function(data, offset, withoutResponse,
             assert(true, "result: RESULT_UNLIKELY_ERROR");
         }
 
-        writeValue = writeTmp;
+        writeValue = tmpValue;
         callback(this.RESULT_UNLIKELY_ERROR);
         return;
     }
@@ -118,7 +118,7 @@ writeCharacteristic.onWriteRequest = function(data, offset, withoutResponse,
 
     if (writeFlag) {
         assert(pinB.read() === writeValue,
-               "characteristic: respond write request");
+               "characteristic: respond to write request");
 
         writeFlag = false;
     }
@@ -141,19 +141,19 @@ readCharacteristic.onReadRequest = function(offset, callback) {
 
     if (readFlag) {
         assert(pinB.read() === writeValue,
-               "characteristic: respond read request");
+               "characteristic: respond to read request");
 
         readFlag = false;
     }
 };
 
-readCharacteristic.onSubscribe = function(maxValueSize, Callback) {
+readCharacteristic.onSubscribe = function(maxValueSize, callback) {
     readValue = pinB.read();
-    Callback(bufferData);
+    callback(bufferData);
 
     if (notifyFlag) {
         assert(readValue === writeValue,
-               "characteristic: respond subscribe request");
+               "characteristic: respond to subscribe request");
 
         notifyFlag = false;
     }
@@ -162,7 +162,7 @@ readCharacteristic.onSubscribe = function(maxValueSize, Callback) {
 ble.on('stateChange', function (state) {
     if (state === 'poweredOn') {
         assert(true, "start-up: powered on");
-        PoweredonFlag = true;
+        poweredOnFlag = true;
         deviceName = "BLE SERVICE is very good and so cool";
 
         expectThrow("advertising: invalid deviceName and UUID", function () {
@@ -257,7 +257,7 @@ ble.on('rssiUpdate', function (rssi) {
 });
 
 setTimeout(function () {
-    if (!PoweredonFlag) {
+    if (!poweredOnFlag) {
         assert(false, "start-up: powered on");
     }
 }, 1000);
