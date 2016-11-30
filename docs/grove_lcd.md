@@ -116,7 +116,7 @@ GroveLCD.GROVE_RGB_RED
 
 GroveLCD.GROVE_RGB_GREEN
 
-GroveLCD.long GROVE_RGB_BLUE
+GroveLCD.GROVE_RGB_BLUE
 
 ### GroveLCDDevice.setColor
 
