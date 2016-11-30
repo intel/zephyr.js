@@ -56,55 +56,54 @@ var GLCD_DS_BLINK_OFF     = 0 << 0;
  *  RGB FUNCTIONS
  *******************************************/
 
-var REGISTER_POWER  = 0x08
-var REGISTER_R      = 0x04
-var REGISTER_G      = 0x03
-var REGISTER_B      = 0x02
+var REGISTER_POWER  = 0x08;
+var REGISTER_R      = 0x04;
+var REGISTER_G      = 0x03;
+var REGISTER_B      = 0x02;
+var REG_MODE1       = 0x00;
+var REG_MODE2       = 0x01;
 
 console.log("I2C sample...");
 
-var setupData = new Buffer(2);
-
-// GLCD_CMD_SET_CGRAM_ADDR is equal to 64, which is @ in ascii code.
-// GLCD_CMD_SET_CGRAM_ADDR is only needed if you are starting at the first
-// position of the line.  If you have an offset it isn't necessary.
-// TODO: Configure jerryscript to build with support for String.fromCharCode()
-// This will allow this to be written like this instead
-// var msgData = new Buffer(String.fromCharCode(GLCD_CMD_SET_CGRAM_ADDR) + "HELLO!");
-
-var msgData = new Buffer("@HELLO!");
-
-var hello = false;
+var hello = true;
 
 // Open the connection to the I2C bus
 var i2cDevice = i2c.open({ bus: 0, speed: 100 });
 
 function clear() {
-    var clearData = new Buffer([0, GLCD_CMD_SCREEN_CLEAR]);
-    i2cDevice.write(GROVE_LCD_DISPLAY_ADDR, clearData);
+    i2cDevice.write(GROVE_LCD_DISPLAY_ADDR,
+                    new Buffer([0, GLCD_CMD_SCREEN_CLEAR]));
 }
 
 function init() {
     clear();
 
     // Set our preferences for the Grove LCD
-    var setup = GLCD_CMD_FUNCTION_SET | (GLCD_FS_ROWS_2 | GLCD_FS_DOT_SIZE_LITTLE | GLCD_FS_8BIT_MODE);
-    setupData.writeUInt8(0, 0);
-    setupData.writeUInt8(setup, 1);
-    i2cDevice.write(GROVE_LCD_DISPLAY_ADDR, setupData);
+    i2cDevice.write(GROVE_LCD_DISPLAY_ADDR,
+                    new Buffer([0, GLCD_CMD_FUNCTION_SET |
+                    GLCD_FS_ROWS_2 | GLCD_FS_DOT_SIZE_LITTLE |
+                    GLCD_FS_8BIT_MODE]));
 
-    setup = GLCD_CMD_DISPLAY_SWITCH | (GLCD_DS_DISPLAY_ON | GLCD_DS_CURSOR_ON | GLCD_DS_BLINK_ON);
-    setupData.writeUInt8(setup, 1);
-    i2cDevice.write(GROVE_LCD_DISPLAY_ADDR, setupData);
+    i2cDevice.write(GROVE_LCD_DISPLAY_ADDR,
+                    new Buffer([0, GLCD_CMD_DISPLAY_SWITCH |
+                    GLCD_DS_DISPLAY_ON | GLCD_DS_CURSOR_OFF |
+                    GLCD_DS_BLINK_OFF]));
+
+    // Init the backlight
+    i2cDevice.write(GROVE_RGB_BACKLIGHT_ADDR,
+                    new Buffer([REG_MODE1, 0x00]));
+
+    i2cDevice.write(GROVE_RGB_BACKLIGHT_ADDR,
+                    new Buffer([REG_MODE2, 0x05]));
+
+    i2cDevice.write(GROVE_RGB_BACKLIGHT_ADDR,
+                    new Buffer([REGISTER_POWER, 0xFF]));
 }
 
 function resetCursor() {
     // Reset the cursor position
-    var col = 0x80;
-
-    setupData.writeUInt8(GLCD_CMD_SET_DDRAM_ADDR, 0);
-    setupData.writeUInt8(col, 1);
-    i2cDevice.write(GROVE_LCD_DISPLAY_ADDR, setupData);
+    i2cDevice.write(GROVE_LCD_DISPLAY_ADDR,
+                    new Buffer([GLCD_CMD_SET_DDRAM_ADDR, 0x80]));
 }
 
 function changeRGB(red, green, blue) {
@@ -121,27 +120,29 @@ function changeRGB(red, green, blue) {
 }
 
 function writeWord() {
-    resetCursor();
-
+    clear();
+    var wordBuffer = new Buffer(7);
+        // The first byte in the buffer is for the register address,
+        // which is where the word is going to be written to.
+        wordBuffer.writeUInt8(GLCD_CMD_SET_CGRAM_ADDR, 0);
     if (hello) {
-        msgData.write("@HELLO!");
+        // Append the text we want to print after that
+        wordBuffer.write("HELLO!", 1);
         changeRGB(207, 83, 0);
     }
     else {
-        msgData.write("@WORLD!");
+        wordBuffer.write("WORLD!", 1);
         changeRGB(64, 224, 228);
     }
 
     hello = !hello;
-    i2cDevice.write(GROVE_LCD_DISPLAY_ADDR, msgData);
+    resetCursor();
+    i2cDevice.write(GROVE_LCD_DISPLAY_ADDR, wordBuffer);
 }
 
 // Main function
 
 init();
-
-// Write HELLO! immediately
-i2cDevice.write(GROVE_LCD_DISPLAY_ADDR, msgData);
 
 // Alternate writing HELLO! and WORLD! forever
 setInterval(writeWord, 2000);
