@@ -77,10 +77,10 @@ for (var i = 0; i < speeds.length; i++) {
 }
 
 // Define various Grove LCD addresses
-var GROVE_RGB_BACKLIGHT_ADDR = 0x62
+var GROVE_RGB_BACKLIGHT_ADDR = 0x62;
 
 // RGB FUNCTIONS
-var REGISTER_B = 0x02
+var REGISTER_B = 0x02;
 
 function write(regAddr, color) {
     // Valid range for color is 0 - 255
