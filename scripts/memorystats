@@ -40,7 +40,11 @@ divider="--------------------------------------------------------------------"
 
 function runTests() {
 
-    # Run test on the arc side
+    # Make sure things are clean
+    make pristine > /dev/null 2>&1
+    make clean > /dev/null 2>&1
+    echo $(git log | grep commit | head -1)
+    # Run test on the arc side    
     echo "Testing with ARC..."
     make arc >& /dev/null
     if [ $? -eq 0 ]; then
@@ -111,9 +115,15 @@ if [ -n "$numComp" ]; then
     OUTNAME=$(git log | grep commit | head -$numComp | tail -1 | cut -d' ' -f2)
     echo -e "Comparing current branch with $OUTNAME\n"
     git checkout "$OUTNAME" > /dev/null 2>&1
+    make update
+    source zjs-env.sh 256
+    source deps/zephyr/zephyr-env.sh
     runTests
     compare "$OUTNAME"
     git checkout - > /dev/null 2>&1
+    make update
+    source zjs-env.sh 256
+    source deps/zephyr/zephyr-env.sh
 fi
 
 if [ -n "$nameComp" ]; then
@@ -121,7 +131,13 @@ if [ -n "$nameComp" ]; then
     OUTNAME=$nameComp
     echo -e "Comparing current branch with $OUTNAME\n"
     git checkout "$OUTNAME" > /dev/null 2>&1
+    make update
+    source zjs-env.sh 256
+    source deps/zephyr/zephyr-env.sh
     runTests
     compare "$OUTNAME"
     git checkout - > /dev/null 2>&1
+    make update
+    source zjs-env.sh 256
+    source deps/zephyr/zephyr-env.sh
 fi
