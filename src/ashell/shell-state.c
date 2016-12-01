@@ -31,8 +31,8 @@
 #include <jerry-port.h>
 #include "file-utils.h"
 
-#include "acm-uart.h"
-#include "acm-shell.h"
+#include "comms-uart.h"
+#include "comms-shell.h"
 #include "shell-state.h"
 
 #include "ihex-handler.h"
@@ -103,7 +103,7 @@ int32_t ashell_get_filename_buffer(const char *buf, char *destination)
 
     if (arg_len == 0) {
         *destination = '\0';
-        acm_printf(ERROR_NOT_ENOUGH_ARGUMENTS);
+        comms_printf(ERROR_NOT_ENOUGH_ARGUMENTS);
         return RET_ERROR;
     }
 
@@ -146,7 +146,7 @@ int32_t ashell_disk_usage(char *buf)
 
     fs_file_t *file = fs_open_alloc(filename, "r");
     if (file == NULL) {
-        acm_println(ERROR_FILE_NOT_FOUND);
+        comms_println(ERROR_FILE_NOT_FOUND);
         return RET_ERROR;
     }
 
@@ -166,7 +166,7 @@ int32_t ashell_rename(char *buf)
     if (ashell_get_filename_buffer(buf, path_org) > 0) {
         /* Check if file or directory */
         if (fs_stat(path_org, &entry)) {
-            acm_printf("mv: cannot access '%s' no such file or directory\n", path_org);
+            comms_printf("mv: cannot access '%s' no such file or directory\n", path_org);
             return RET_ERROR;
         }
     }
@@ -175,7 +175,7 @@ int32_t ashell_rename(char *buf)
     char *next = ashell_get_token_arg(buf);
 
     if (next == NULL) {
-        acm_println(ERROR_NOT_ENOUGH_ARGUMENTS);
+        comms_println(ERROR_NOT_ENOUGH_ARGUMENTS);
         return RET_ERROR;
     }
 
@@ -184,7 +184,7 @@ int32_t ashell_rename(char *buf)
     if (ashell_get_filename_buffer(next, path_dest) > 0) {
         /* Check if file or directory */
         if (!fs_stat(path_dest, &entry)) {
-            acm_printf("mv: cannot access '%s' file already exists\n", path_dest);
+            comms_printf("mv: cannot access '%s' file already exists\n", path_dest);
             return RET_ERROR;
         }
     }
@@ -202,7 +202,7 @@ int32_t ashell_error(char *buf)
 
 int32_t ashell_reboot(char *buf)
 {
-    acm_println("Rebooting now!");
+    comms_println("Rebooting now!");
 
 #ifdef CONFIG_REBOOT
     //TODO Waiting for patch https://gerrit.zephyrproject.org/r/#/c/3161/
@@ -292,45 +292,44 @@ int32_t ashell_print_file(char *buf)
         return RET_ERROR;
     }
 
-    printk("Open [%s]\n", filename);
     file = fs_open_alloc(filename, "r");
 
     /* Error getting an id for our data storage */
     if (!file) {
-        acm_println(ERROR_FILE_NOT_FOUND);
+        comms_println(ERROR_FILE_NOT_FOUND);
         return RET_ERROR;
     }
 
     ssize_t size = fs_size(file);
     if (size == 0) {
-        acm_println("Empty file");
+        comms_println("Empty file");
         fs_close_alloc(file);
         return RET_OK;
     }
 
     fs_seek(file, 0, SEEK_SET);
     if (lines)
-        acm_printf("%5d  ", line++);
+        comms_printf("%5d  ", line++);
 
     do {
         count = fs_read(file, data, 4);
         for (int t = 0; t < count; t++) {
             uint8_t byte = data[t];
             if (byte == '\n' || byte == '\r') {
-                acm_write("\r\n", 2);
+                comms_write_buf("\r\n", 2);
                 if (lines)
-                    acm_printf("%5d  ", line++);
+                    comms_printf("%5d  ", line++);
 
             } else {
                 if (hidden && !isprint(byte)) {
-                    acm_printf("(%x)", byte);
+                    comms_printf("(%x)", byte);
                 } else
-                    acm_writec(byte);
+                    comms_writec(byte);
             }
         }
     } while (count > 0);
 
-    acm_write("\r\n", 2);
+    comms_write_buf("\r\n", 2);
     fs_close(file);
     return RET_OK;
 }
@@ -355,10 +354,8 @@ int32_t ashell_run_javascript(char *buf)
         return RET_ERROR;
     }
 
-    printk("[RUN][%s]\r\n", filename);
-
     if (shell.state_flags & kShellTransferIhex) {
-        acm_print("[RUN]\n");
+        comms_print("[RUN]\n");
     }
 
     javascript_run_code(filename);
@@ -401,9 +398,9 @@ int32_t ashell_eval_javascript(const char *buf, uint32_t len)
             case ASCII_SUBSTITUTE:
             case ASCII_END_OF_TEXT:
             case ASCII_CANCEL:
-                acm_println(MSG_EXIT);
+                comms_println(MSG_EXIT);
                 shell.state_flags &= ~kShellEvalJavascript;
-                acm_set_prompt(NULL);
+                comms_set_prompt(NULL);
                 return RET_OK;
             }
         }
@@ -424,22 +421,22 @@ int32_t ashell_raw_capture(const char *buf, uint32_t len)
             switch (byte) {
             case ASCII_END_OF_TRANS:
             case ASCII_SUBSTITUTE:
-                acm_println(MSG_FILE_SAVED);
+                comms_println(MSG_FILE_SAVED);
                 shell.state_flags &= ~kShellCaptureRaw;
-                acm_set_prompt(NULL);
+                comms_set_prompt(NULL);
                 ashell_close_capture();
                 return RET_OK;
                 break;
             case ASCII_END_OF_TEXT:
             case ASCII_CANCEL:
-                acm_println(MSG_FILE_ABORTED);
+                comms_println(MSG_FILE_ABORTED);
                 shell.state_flags &= ~kShellCaptureRaw;
-                acm_set_prompt(NULL);
+                comms_set_prompt(NULL);
                 ashell_discard_capture();
                 return RET_OK;
             case ASCII_CR:
             case ASCII_IF:
-                acm_println("");
+                comms_println("");
                 break;
             default:
                 printf("%c", byte);
@@ -466,10 +463,10 @@ int32_t ashell_read_data(char *buf)
             return RET_ERROR;
         }
 
-        acm_println(ANSI_CLEAR);
-        acm_printf("Saving to '%s' \r\n", filename);
-        acm_println(READY_FOR_RAW_DATA);
-        acm_set_prompt(raw_prompt);
+        comms_println(ANSI_CLEAR);
+        comms_printf("Saving to '%s'\r\n", filename);
+        comms_println(READY_FOR_RAW_DATA);
+        comms_set_prompt(raw_prompt);
         shell.state_flags |= kShellCaptureRaw;
         ashell_start_raw_capture(filename);
     }
@@ -483,9 +480,9 @@ int32_t ashell_read_data(char *buf)
 int32_t ashell_js_immediate_mode(char *buf)
 {
     shell.state_flags |= kShellEvalJavascript;
-    acm_print(ANSI_CLEAR);
-    acm_println(MSG_IMMEDIATE_MODE);
-    acm_set_prompt(eval_prompt);
+    comms_print(ANSI_CLEAR);
+    comms_println(MSG_IMMEDIATE_MODE);
+    comms_set_prompt(eval_prompt);
     return RET_OK;
 }
 
@@ -493,21 +490,21 @@ int32_t ashell_set_transfer_state(char *buf)
 {
     char *next;
     if (buf == 0) {
-        acm_println(ERROR_NOT_ENOUGH_ARGUMENTS);
+        comms_println(ERROR_NOT_ENOUGH_ARGUMENTS);
         return RET_ERROR;
     }
     next = ashell_get_token_arg(buf);
-    acm_println(buf);
+    comms_println(buf);
 
     if (!strcmp("raw", buf)) {
-        acm_set_prompt(NULL);
+        comms_set_prompt(NULL);
         shell.state_flags |= kShellTransferRaw;
         shell.state_flags &= ~kShellTransferIhex;
         return RET_OK;
     }
 
     if (!strcmp("ihex", buf)) {
-        acm_set_prompt(hex_prompt);
+        comms_set_prompt(hex_prompt);
         shell.state_flags |= kShellTransferIhex;
         shell.state_flags &= ~kShellTransferRaw;
         return RET_OK;
@@ -518,7 +515,7 @@ int32_t ashell_set_transfer_state(char *buf)
 int32_t ashell_set_state(char *buf)
 {
     if (buf == 0) {
-        acm_println(ERROR_NOT_ENOUGH_ARGUMENTS);
+        comms_println(ERROR_NOT_ENOUGH_ARGUMENTS);
         return RET_ERROR;
     }
 
@@ -533,7 +530,7 @@ int32_t ashell_set_state(char *buf)
 int32_t ashell_get_state(char *buf)
 {
     if (buf == 0) {
-        acm_println(ERROR_NOT_ENOUGH_ARGUMENTS);
+        comms_println(ERROR_NOT_ENOUGH_ARGUMENTS);
         return RET_ERROR;
     }
 
@@ -542,10 +539,10 @@ int32_t ashell_get_state(char *buf)
         DBG("Flags %lu\n", shell.state_flags);
 
         if (shell.state_flags & kShellTransferRaw)
-            acm_println("Raw");
+            comms_println("Raw");
 
         if (shell.state_flags & kShellTransferIhex)
-            acm_println("Ihex");
+            comms_println("Ihex");
 
         return RET_OK;
     }
@@ -554,25 +551,25 @@ int32_t ashell_get_state(char *buf)
 
 int32_t ashell_at(char *buf)
 {
-    acm_println("OK\r\n");
+    comms_println("OK\r\n");
     return RET_OK;
 }
 
 int32_t ashell_test(char *buf)
 {
-    acm_println("TEST OK\r\n");
+    comms_println("TEST OK\r\n");
     return RET_OK;
 }
 
 int32_t ashell_ping(char *buf)
 {
-    acm_println("[PONG]\r\n");
+    comms_println("[PONG]\r\n");
     return RET_OK;
 }
 
 int32_t ashell_clear(char *buf)
 {
-    acm_print(ANSI_CLEAR);
+    comms_print(ANSI_CLEAR);
     return RET_OK;
 }
 
@@ -636,13 +633,13 @@ static const struct ashell_cmd commands[] =
 
 int32_t ashell_help(char *buf)
 {
-    acm_println("'A Shell' bash\r\n");
-    acm_println("Commands list:");
+    comms_println("'A Shell' bash\r\n");
+    comms_println("Commands list:");
     for (uint32_t t = 0; t < ASHELL_COMMANDS_COUNT; t++) {
-        acm_printf("%8s %s\r\n", commands[t].cmd_name, commands[t].syntax);
+        comms_printf("%8s %s\r\n", commands[t].cmd_name, commands[t].syntax);
     }
 
-    //acm_println("TODO: Read help file per command!");
+    //comms_println("TODO: Read help file per command!");
     return RET_OK;
 }
 
@@ -679,7 +676,7 @@ int32_t ashell_main_state(char *buf, uint32_t len)
 
     /* Begin command */
     if (shell.state_flags & kShellTransferIhex) {
-        acm_print("[BCMD]\n");
+        comms_print("[BCMD]\n");
     }
 
     for (uint8_t t = 0; t < ASHELL_COMMANDS_COUNT; t++) {
@@ -687,7 +684,7 @@ int32_t ashell_main_state(char *buf, uint32_t len)
             int32_t res = commands[t].cb(next);
             /* End command */
             if (shell.state_flags & kShellTransferIhex) {
-                acm_print("[ECMD]\n");
+                comms_print("[ECMD]\n");
             }
             return res;
         }
@@ -695,10 +692,10 @@ int32_t ashell_main_state(char *buf, uint32_t len)
 
     /* Shell didn't recognize the command */
     if (shell.state_flags & kShellTransferIhex) {
-        acm_print("[ERRCMD]\n");
+        comms_print("[ERRCMD]\n");
     } else {
-        acm_printf("%s: command not found. \r\n", buf);
-        acm_println("Type 'help' for available commands.");
+        comms_printf("%s: command not found. \r\n", buf);
+        comms_println("Type 'help' for available commands.");
     }
     return RET_UNKNOWN;
 }

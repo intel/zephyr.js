@@ -30,8 +30,8 @@
 
 #include "jerry-code.h"
 
-#include "acm-uart.h"
-#include "acm-shell.h"
+#include "comms-uart.h"
+#include "comms-shell.h"
 #include "ihex/kk_ihex_read.h"
 
 #include "file-utils.h"
@@ -69,7 +69,7 @@ ihex_bool_t ihex_data_read(struct ihex_state *ihex,
 
     if (checksum_error) {
         upload_state = UPLOAD_ERROR;
-        acm_println("[ERR] Checksum_error");
+        comms_println("[ERR] Checksum_error");
         return false;
     };
 
@@ -79,8 +79,8 @@ ihex_bool_t ihex_data_read(struct ihex_state *ihex,
         ihex->data[ihex->length] = 0;
 
         DBG("%d::%d:: \n%s \n", (int)address, ihex->length, ihex->data);
-        acm_write("[ACK]", 5);
-        acm_write("\n", 1);
+        comms_write_buf("[ACK]", 5);
+        comms_write_buf("\n", 1);
 
         fs_seek(zfile, address, SEEK_SET);
         size_t written = fs_write(zfile, ihex->data, ihex->length);
@@ -111,8 +111,8 @@ uint32_t ihex_process_init()
 {
     upload_state = UPLOAD_START;
     printk("[READY]\n");
-    acm_print("\n");
-    acm_print("[RDY]\n");
+    comms_print("\n");
+    comms_print("[RDY]\n");
 
     ihex_begin_read(&ihex);
     zfile = fs_open_alloc(TEMPORAL_FILENAME, "w+");
@@ -132,7 +132,7 @@ uint32_t ihex_process_data(const char *buf, uint32_t len)
         processed++;
         char byte = *buf++;
 #ifdef CONFIG_IHEX_UPLOADER_DEBUG
-        acm_write(&byte, 1);
+        comms_write_buf(&byte, 1);
 #endif
         if (marker) {
             ihex_read_byte(&ihex, byte);
@@ -177,7 +177,7 @@ uint32_t ihex_process_finish()
 
     fs_close(zfile);
     ihex_end_read(&ihex);
-    acm_print("[EOF]\n");
+    comms_print("[EOF]\n");
 
     printf("Saved file '%s'\n", TEMPORAL_FILENAME);
 
@@ -191,7 +191,7 @@ void ihex_print_status()
 
 void ihex_process_start()
 {
-    struct acm_cfg_data cfg;
+    struct comms_cfg_data cfg;
 
     cfg.cb_status = NULL;
     cfg.interface.init_cb = ihex_process_init;
@@ -201,5 +201,5 @@ void ihex_process_start()
     cfg.interface.process_cb = ihex_process_data;
     cfg.print_state = ihex_print_status;
 
-    acm_set_config(&cfg);
+    comms_uart_set_config(&cfg);
 }

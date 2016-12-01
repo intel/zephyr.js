@@ -47,7 +47,6 @@ int fs_exist(const char *path)
 
 fs_file_t *fs_open_alloc(const char * filename, const char * mode)
 {
-    printk("[OPEN] %s\n", filename);
     int res;
 
     /* Delete file if exists */
@@ -83,7 +82,6 @@ ssize_t fs_size(fs_file_t *file)
 
 int fs_close_alloc(fs_file_t * fp)
 {
-    printk("[CLOSE]\n");
     int res = fs_close(fp);
     free(fp);
     return res;

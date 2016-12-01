@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-#ifndef __acm_shell_h__
-#define __acm_shell_h__
+#ifndef __comms_shell_h__
+#define __comms_shell_h__
 
-void acm_set_prompt(const char *prompt);
-const char *acm_get_prompt();
+void comms_set_prompt(const char *prompt);
+const char *comms_get_prompt();
 
 /**
  * Callback function when a line arrives
@@ -37,4 +37,4 @@ bool ashell_check_parameter(const char *buf, const char parameter);
 uint32_t ashell_get_argc(const char *str, uint32_t nsize);
 const char *ashell_get_next_arg_s(const char *str, uint32_t nsize, char *str_arg, uint32_t max_arg_size, uint32_t *length);
 
-#endif  // __acm_shell_h__
+#endif  // __comms_shell_h__

@@ -29,25 +29,25 @@
 #include <fs.h>
 #include <ctype.h>
 
-#include "acm-uart.h"
-#include "acm-shell.h"
+#include "comms-uart.h"
+#include "comms-shell.h"
 #include "shell-state.h"
 
 #include "ihex-handler.h"
 
-static const char acm_default_prompt[] = ANSI_FG_YELLOW "acm> " ANSI_FG_RESTORE;
-static const char *acm_prompt = NULL;
+static const char comms_default_prompt[] = ANSI_FG_YELLOW "acm> " ANSI_FG_RESTORE;
+static const char *comms_prompt = NULL;
 
-void acm_set_prompt(const char *prompt)
+void comms_set_prompt(const char *prompt)
 {
-    acm_prompt = prompt;
+    comms_prompt = prompt;
 }
 
-const char *acm_get_prompt()
+const char *comms_get_prompt()
 {
-    if (acm_prompt == NULL)
-        return acm_default_prompt;
-    return acm_prompt;
+    if (comms_prompt == NULL)
+        return comms_default_prompt;
+    return comms_prompt;
 }
 
 //#define CONFIG_SHELL_UPLOADER_DEBUG
@@ -69,23 +69,23 @@ static bool ashell_is_done = false;
 static inline void cursor_forward(unsigned int count)
 {
     for (int t = 0; t < count; t++)
-        acm_print("\x1b[1C");
+        comms_print("\x1b[1C");
 }
 
 static inline void cursor_backward(unsigned int count)
 {
     for (int t = 0; t < count; t++)
-        acm_print("\x1b[1D");
+        comms_print("\x1b[1D");
 }
 
 static inline void cursor_save(void)
 {
-    acm_print("\x1b[s");
+    comms_print("\x1b[s");
 }
 
 static inline void cursor_restore(void)
 {
-    acm_print("\x1b[u");
+    comms_print("\x1b[u");
 }
 
 static void insert_char(char *pos, char c, uint8_t end)
@@ -93,7 +93,7 @@ static void insert_char(char *pos, char c, uint8_t end)
     char tmp;
 
     /* Echo back to console */
-    acm_writec(c);
+    comms_writec(c);
 
     if (end == 0) {
         *pos = c;
@@ -106,7 +106,7 @@ static void insert_char(char *pos, char c, uint8_t end)
     cursor_save();
 
     while (end-- > 0) {
-        acm_writec(tmp);
+        comms_writec(tmp);
         c = *pos;
         *(pos++) = tmp;
         tmp = c;
@@ -118,11 +118,11 @@ static void insert_char(char *pos, char c, uint8_t end)
 
 static void del_char(char *pos, uint8_t end)
 {
-    acm_writec('\b');
+    comms_writec('\b');
 
     if (end == 0) {
-        acm_writec(' ');
-        acm_writec('\b');
+        comms_writec(' ');
+        comms_writec('\b');
         return;
     }
 
@@ -130,10 +130,10 @@ static void del_char(char *pos, uint8_t end)
 
     while (end-- > 0) {
         *pos = *(pos + 1);
-        acm_writec(*(pos++));
+        comms_writec(*(pos++));
     }
 
-    acm_writec(' ');
+    comms_writec(' ');
 
     /* Move cursor back to right place */
     cursor_restore();
@@ -401,8 +401,8 @@ char *ashell_get_token_arg(char *str)
 uint32_t ashell_process_init()
 {
     DBG("[SHELL] Init\n");
-    acm_println("");
-    acm_print(acm_get_prompt());
+    comms_println("");
+    comms_print(comms_get_prompt());
     return 0;
 }
 
@@ -413,7 +413,7 @@ void ashell_process_line(const char *buf, uint32_t len)
 #else
     printk("\n%s", system_get_prompt());
 #endif
-    acm_print(acm_get_prompt());
+    comms_print(comms_get_prompt());
 }
 
 uint32_t ashell_process_data(const char *buf, uint32_t len)
@@ -475,7 +475,7 @@ uint32_t ashell_process_data(const char *buf, uint32_t len)
                 flush_line = true;
                 break;
             case ASCII_TAB:
-                acm_writec('\t');
+                comms_writec('\t');
                 break;
             case ASCII_IF:
                 flush_line = true;
@@ -492,7 +492,7 @@ uint32_t ashell_process_data(const char *buf, uint32_t len)
         if (flush_line) {
             DBG("Line %u %u \n", cur, end);
             shell_line[cur + end] = '\0';
-            acm_write("\r\n", 2);
+            comms_write_buf("\r\n", 2);
 
             uint32_t length = strnlen(shell_line, MAX_LINE);
             int32_t ret = 0;
@@ -565,7 +565,7 @@ void ashell_process_close()
 
 void ashell_process_start()
 {
-    struct acm_cfg_data cfg;
+    struct comms_cfg_data cfg;
 
     ashell_is_done = false;
     cfg.cb_status = NULL;
@@ -576,7 +576,7 @@ void ashell_process_start()
     cfg.interface.process_cb = ashell_process_data;
     cfg.print_state = ashell_print_status;
 
-    acm_set_config(&cfg);
+    comms_uart_set_config(&cfg);
 
     ashell_register_app_line_handler(ashell_main_state);
 }
