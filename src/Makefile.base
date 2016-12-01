@@ -32,31 +32,32 @@ ccflags-y += -DZJS_PRINT_FLOATS
 endif
 
 obj-y += main.o \
-         zjs_ble.o \
          zjs_buffer.o \
          zjs_callbacks.o \
          zjs_console.o \
-         zjs_event.o \
-         zjs_gpio.o \
          zjs_modules.o \
-         zjs_performance.o \
-         zjs_ocf_client.o \
-         zjs_ocf_server.o \
-         zjs_ocf_common.o \
          zjs_promise.o \
-         zjs_pwm.o \
          zjs_script.o \
          zjs_script_gen.o \
          zjs_timers.o \
-         zjs_uart.o \
          zjs_util.o
+
+obj-$(ZJS_EVENTS) += zjs_event.o
+obj-$(ZJS_GPIO) += zjs_gpio.o
+obj-$(ZJS_BLE) += zjs_ble.o
+obj-$(ZJS_PWM) += zjs_pwm.o
+obj-$(ZJS_PERFORMANCE) += zjs_performance.o
+obj-$(ZJS_UART) += zjs_uart.o
+obj-$(ZJS_OCF) += zjs_ocf_client.o \
+                  zjs_ocf_server.o \
+                  zjs_ocf_common.o
 
 # skip for now for frdm_k64f
 ifneq ($(BOARD), frdm_k64f)
-obj-y += zjs_aio.o \
-         zjs_grove_lcd.o \
-         zjs_i2c.o \
-         zjs_sensor.o
+	obj-$(ZJS_AIO) += zjs_aio.o
+	obj-$(ZJS_GROVE_LCD) += zjs_grove_lcd.o
+	obj-$(ZJS_I2C) += zjs_i2c.o
+	obj-$(ZJS_SENSOR) += zjs_sensor.o
 endif
 
 obj-$(CONFIG_BOARD_ARDUINO_101) += \
@@ -68,11 +69,6 @@ obj-$(CONFIG_BOARD_FRDM_K64F) += \
 
 ifeq ($(DEV), ashell)
 $(info Insecure Mode (development))
-ccflags-y += -DBUILD_MODULE_GPIO -DBUILD_MODULE_PWM -DBUILD_MODULE_UART
-ccflags-y += -DBUILD_MODULE_AIO -DBUILD_MODULE_A101
-ccflags-y += -DBUILD_MODULE_TIMER -DBUILD_MODULE_BUFFER
-ccflags-y += -DBUILD_MODULE_GROVE_LCD -DBUILD_MODULE_I2C
-ccflags-y += -DBUILD_MODULE_SENSOR
 export JERRY_INCLUDE = $(JERRY_BASE)/jerry-core/
 obj-y += ashell/
 endif

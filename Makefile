@@ -12,6 +12,12 @@ OCF_ROOT ?= deps/iotivity-constrained
 JERRY_BASE ?= $(ZJS_BASE)/deps/jerryscript
 JS ?= samples/HelloWorld.js
 VARIANT ?= release
+
+# if no config file passed use the ashell default
+ifeq ($(DEV), ashell)
+	CONFIG ?= fragments/zjs.conf.dev
+endif
+
 # Dump memory information: on = print allocs, full = print allocs + dump pools
 TRACE ?= off
 # Print callback statistics during runtime
@@ -64,11 +70,14 @@ else
 	@cat fragments/prj.mdef.base >> prj.mdef
 	@cat fragments/prj.mdef.heap >> prj.mdef
 endif
-	@echo "ccflags-y += $(shell ./scripts/analyze.sh $(BOARD) $(JS))" | tee -a src/Makefile arc/src/Makefile
+
+	@echo "ccflags-y += $(shell ./scripts/analyze.sh $(BOARD) $(JS) $(CONFIG))" | tee -a src/Makefile arc/src/Makefile
+
 	@# Add the include for the OCF Makefile only if the script is using OCF
 	@if grep BUILD_MODULE_OCF src/Makefile; then \
 		echo "include \$$(ZJS_BASE)/Makefile.ocf_zephyr" >> src/Makefile; \
 	fi
+	@sed -i '/This is a generated file/r./zjs.conf.tmp' src/Makefile
 
 .PHONY: all
 all: zephyr arc
@@ -147,6 +156,7 @@ clean: update
 	@rm -f prj.conf
 	@rm -f prj.conf.tmp
 	@rm -f prj.mdef
+	@rm -f zjs.conf.tmp
 
 .PHONY: pristine
 pristine:

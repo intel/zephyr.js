@@ -23,9 +23,17 @@ fi
 MODULES=''
 BOARD=$1
 SCRIPT=$2
+CONFIG=$3
 
 echo "# Modules found in $SCRIPT:" > prj.conf.tmp
 echo "# Modules found in $SCRIPT:" > arc/prj.conf.tmp
+tmpstr="# ZJS flags set by analyze.js"
+
+if [ -n "$CONFIG" ]; then
+    tmpstr+=" and $CONFIG"
+fi
+
+echo $tmpstr > zjs.conf.tmp
 
 function check_for_js_require()
 {
@@ -53,15 +61,27 @@ function check_for_require()
     return $?
 }
 
+function check_config_file()
+{
+    # effects: checks $1 for uncommented module to include from #CONFIG
+    #          If found, it will be put in zjs.conf.tmp and inserted into src/Makefile
+
+    if [ -n "$CONFIG" ]; then
+       grep -v '^#' < $CONFIG | grep $1='y\|m' >> /dev/null
+        return $?
+    fi
+    return 1;
+}
+
 check_for_js_require
 
-check_for_require events
-if [ $? -eq 0 ]; then
+if check_for_require events || check_config_file ZJS_EVENTS; then
     >&2 echo Using module: Events
     MODULES+=" -DBUILD_MODULE_EVENTS"
+    echo "export ZJS_EVENTS=y" >> zjs.conf.tmp
 fi
-check_for_require ocf
-if [ $? -eq 0 ]; then
+
+if check_for_require ocf || check_config_file ZJS_OCF; then
     >&2 echo Using module: OCF
     MODULES+=" -DBUILD_MODULE_OCF"
     echo "CONFIG_NETWORKING_WITH_IPV6=y" >> prj.conf.tmp
@@ -77,27 +97,30 @@ if [ $? -eq 0 ]; then
     echo "CONFIG_IP_BUF_RX_SIZE=5" >> prj.conf.tmp
     echo "CONFIG_IP_BUF_TX_SIZE=5" >> prj.conf.tmp
     echo "CONFIG_NET_MAX_CONTEXTS=9" >> prj.conf.tmp
+    echo "export ZJS_OCF=y" >> zjs.conf.tmp
 fi
-check_for_require gpio
-if [ $? -eq 0 ]; then
-    >&2 echo Using module: GPIO
+
+if check_for_require gpio || check_config_file ZJS_GPIO; then
     MODULES+=" -DBUILD_MODULE_GPIO"
     echo "CONFIG_GPIO=y" >> prj.conf.tmp
+    echo "export ZJS_GPIO=y" >> zjs.conf.tmp
 fi
-check_for_require performance
-if [ $? -eq 0 ]; then
+
+if check_for_require performance || check_config_file ZJS_PERFORMANCE; then
     >&2 echo Using module: Performance
     MODULES+=" -DBUILD_MODULE_PERFORMANCE"
+    echo "export ZJS_PERFORMANCE=y" >> zjs.conf.tmp
 fi
-check_for_require pwm
-if [ $? -eq 0 ]; then
+
+if check_for_require pwm || check_config_file ZJS_PWM; then
     >&2 echo Using module: PWM
     MODULES+=" -DBUILD_MODULE_PWM"
     echo "CONFIG_PWM=y" >> prj.conf.tmp
     echo "CONFIG_PWM_QMSI_NUM_PORTS=4" >> prj.conf.tmp
+    echo "export ZJS_PWM=y" >> zjs.conf.tmp
 fi
-check_for_require uart
-if [ $? -eq 0 ]; then
+
+if check_for_require uart || check_config_file ZJS_UART; then
     >&2 echo Using module: UART
     if [ $BOARD = "arduino_101" ]; then
         echo "CONFIG_GPIO=y" >> prj.conf.tmp
@@ -113,9 +136,12 @@ if [ $? -eq 0 ]; then
     echo "CONFIG_UART_INTERRUPT_DRIVEN=y" >> prj.conf.tmp
     MODULES+=" -DBUILD_MODULE_UART"
     MODULES+=" -DBUILD_MODULE_BUFFER"
+    MODULES+=" -DBUILD_MODULE_EVENTS"
+    echo "export ZJS_EVENTS=y" >> zjs.conf.tmp
+    echo "export ZJS_UART=y" >> zjs.conf.tmp
 fi
-check_for_require ble
-if [ $? -eq 0 ]; then
+
+if check_for_require ble || check_config_file ZJS_BLE; then
     >&2 echo Using module: BLE
     MODULES+=" -DBUILD_MODULE_BLE"
     echo "CONFIG_BLUETOOTH=y" >> prj.conf.tmp
@@ -124,35 +150,42 @@ if [ $? -eq 0 ]; then
     echo "CONFIG_BLUETOOTH_SMP=y" >> prj.conf.tmp
     echo "CONFIG_BLUETOOTH_PERIPHERAL=y" >> prj.conf.tmp
     echo "CONFIG_BLUETOOTH_GATT_DYNAMIC_DB=y" >> prj.conf.tmp
+    MODULES+=" -DBUILD_MODULE_EVENTS"
+    echo "export ZJS_EVENTS=y" >> zjs.conf.tmp
+    echo "export ZJS_BLE=y" >> zjs.conf.tmp
 fi
-check_for_require aio
-if [ $? -eq 0 ]; then
+
+if check_for_require aio || check_config_file ZJS_AIO; then
     >&2 echo Using module: AIO
     MODULES+=" -DBUILD_MODULE_AIO"
     echo "CONFIG_ADC=y" >> arc/prj.conf.tmp
     echo "CONFIG_ADC_DEBUG=y" >> arc/prj.conf.tmp
+    echo "export ZJS_AIO=y" >> zjs.conf.tmp
 fi
-check_for_require i2c
-if [ $? -eq 0 ]; then
+
+if check_for_require i2c || check_config_file ZJS_I2C; then
     >&2 echo Using module: I2C
     MODULES+=" -DBUILD_MODULE_I2C"
     >&2 echo Using module: Buffer
     MODULES+=" -DBUILD_MODULE_BUFFER"
     echo "CONFIG_I2C=y" >> arc/prj.conf.tmp
+    echo "export ZJS_I2C=y" >> zjs.conf.tmp
 fi
-check_for_require grove_lcd
-if [ $? -eq 0 ]; then
+
+if check_for_require grove_lcd || check_config_file ZJS_GROVE_LCD; then
     >&2 echo Using module: Grove LCD
     MODULES+=" -DBUILD_MODULE_GROVE_LCD"
     echo "CONFIG_I2C=y" >> arc/prj.conf.tmp
     echo "CONFIG_GROVE=y" >> arc/prj.conf.tmp
     echo "CONFIG_GROVE_LCD_RGB=y" >> arc/prj.conf.tmp
     echo "CONFIG_GROVE_LCD_RGB_INIT_PRIORITY=90" >> arc/prj.conf.tmp
+    echo "export ZJS_GROVE_LCD=y" >> zjs.conf.tmp
 fi
-check_for_require arduino101_pins
-if [ $? -eq 0 ]; then
+
+if check_for_require arduino101_pins || check_config_file ZJS_ARDUINO101_PINS; then
     >&2 echo Using module: A101 Pins
     MODULES+=" -DBUILD_MODULE_A101"
+    echo "export ZJS_ARDUINO101_PINS=y" >> zjs.conf.tmp
 fi
 
 interval=$(grep setInterval $SCRIPT)
@@ -173,6 +206,7 @@ buffer=$(grep Buffer\([0-9]*\) $SCRIPT)
 if [ $? -eq 0 ] && [[ $MODULE != *"BUILD_MODULE_BUFFER"* ]]; then
     >&2 echo Using module: Buffer
     MODULES+=" -DBUILD_MODULE_BUFFER"
+    echo "export ZJS_BUFFER=y" >> zjs.conf.tmp
 fi
 sensor=$(grep -E Accelerometer\|Gyroscope $SCRIPT)
 if [ $? -eq 0 ]; then
@@ -195,6 +229,7 @@ if [ $? -eq 0 ]; then
         echo "CONFIG_BMI160_SPI_BUS_FREQ=88" >> arc/prj.conf.tmp
         echo "CONFIG_BMI160_TRIGGER=y" >> arc/prj.conf.tmp
         echo "CONFIG_BMI160_TRIGGER_OWN_THREAD=y" >> arc/prj.conf.tmp
+	echo "export ZJS_SENSOR=y" >> zjs.conf.tmp
     fi
 fi
 
@@ -202,6 +237,8 @@ console=$(grep console $SCRIPT)
 if [ $? -eq 0 ] && [[ $MODULE != *"BUILD_MODULE_CONSOLE"* ]]; then
     >&2 echo Using module: Console
     MODULES+=" -DBUILD_MODULE_CONSOLE"
+    echo "export ZJS_CONSOLE=y" >> zjs.conf.tmp
 fi
 
+echo "# ---------------------------" >> zjs.conf.tmp
 echo $MODULES

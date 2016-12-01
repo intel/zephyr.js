@@ -1,0 +1,17 @@
+# To force inclusion of a module remove the # in front of it
+
+ZJS_AIO=y
+ZJS_ARDUINO101_PINS=y
+ZJS_BLE=y
+ZJS_BUFFER=y
+ZJS_CONSOLE=y
+ZJS_EVENTS=y
+ZJS_GPIO=y
+#ZJS_GROVE_LCD=y
+ZJS_I2C=y
+#ZJS_OCF=y
+#ZJS_PERFORMANCE=y
+ZJS_PWM=y
+#ZJS_SENSOR=y
+ZJS_TIMERS=y
+ZJS_UART=y
