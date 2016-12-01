@@ -4,7 +4,29 @@
 # Author: Brian Jones <brian.j.jones@intel.com>
 
 # memorystats - Get the ROM and RAM usages for ZJS based on the javascript it
-#   has loaded.
+# has loaded.
+
+
+# Usage instructions:
+
+# Flags:
+# -f = file to use for testing. If not given it will use all of the files in ./samples
+# -c = commit id to compare your current branch against
+# -n = number of commits ago you want to compare your current branch to?
+
+# Examples:
+
+# Get the memory stats of your current branch using all the samples
+# memorystats
+
+# Use samples/I2C.js instead of all the samples
+# memorystats -f samples/I2C.js
+
+# Compare current branch to 5331702
+# memorystats -f samples/I2C.js -c 5331702
+
+# Compare current branch to 10 commits ago
+# memorystats -f samples/I2C.js -n 10
 
 if [ ! -d $ZJS_BASE ]; then
     echo "Couldn't find the samples folder, make sure and source zjs-env.sh and deps/zephyr/zephyr-env.sh"
@@ -18,47 +40,126 @@ if [ ! -f "deps/zephyr/scripts/sanitycheck" ]; then
     exit
 fi
 
-if [ -f "/tmp/memorystats_output.txt" ]; then
-    rm /tmp/memorystats_output.txt
-fi
+rm -f /tmp/memorystats_*
 
-FILES=$ZJS_BASE/samples/*.js
-
-divider="--------------------------------------------------------------------"
-
-# Run test on the arc side
-echo "Testing with ARC..."
-make arc >& /dev/null
-if [ $? -eq 0 ]; then
-    echo "$divider" >> /tmp/memorystats_output.txt
-    echo "Results for ARC" >> /tmp/memorystats_output.txt
-    echo "$divider" >> /tmp/memorystats_output.txt
-    deps/zephyr/scripts/sanitycheck -z arc/outdir/arduino_101_sss/zephyr.elf >> /tmp/memorystats_output.txt 2> /dev/null
-    str=$(tail -2 /tmp/memorystats_output.txt | head -1 | sed -e 's/Totals: //g')
-    results="${results}$str\tARC\n"
-else
-    echo "make failed for ARC, skipping it"
-fi
-# Run test on all the examples
-for f in $FILES
-do
-    #filename="${f/samples\//}"
-    filename="${f##*/}"
-    echo "Testing with $filename..."
-    make JS=$f >& /dev/null
-    if [ $? -eq 0 ]; then
-        echo "$divider" >> /tmp/memorystats_output.txt
-        echo "Results for $f" >> /tmp/memorystats_output.txt
-        echo "$divider" >> /tmp/memorystats_output.txt
-        deps/zephyr/scripts/sanitycheck -z outdir/arduino_101/zephyr.elf >> /tmp/memorystats_output.txt 2> /dev/null
-        str=$(tail -2 /tmp/memorystats_output.txt | head -1 | sed -e 's/Totals: //g')
-        results="${results}$str\t$filename\n"
-    else
-        echo "make failed for $f, skipping it"
-    fi
+while getopts 'n:c:f:' flag; do
+  case "${flag}" in
+    n) numComp="${OPTARG}" ;;
+    c) nameComp="${OPTARG}" ;;
+    f) files="${OPTARG}" ;;
+    *) error "Unexpected option ${flag}" ;;
+  esac
 done
 
-# Output the truncated results
-echo ""
-sed -i "1s/^/-= Total values for all demos =-\n$divider\n${results}\n-= Full reports =-\n/" /tmp/memorystats_output.txt
-sed '/Full/Q' /tmp/memorystats_output.txt
+if [ -n "$files" ]; then
+    FILES=$files
+else
+    FILES=$ZJS_BASE/samples/*.js
+fi
+
+OUTNAME="current"
+divider="--------------------------------------------------------------------"
+
+function runTests()
+{
+    # Make sure things are clean
+    make pristine > /dev/null 2>&1
+    make clean > /dev/null 2>&1
+    echo $(git log | grep commit | head -1)
+    # Run test on the arc side
+    echo "Testing with ARC..."
+    make arc >& /dev/null
+    if [ $? -eq 0 ]; then
+        echo "$divider" >> "/tmp/memorystats_$OUTNAME.txt"
+        echo "Results for ARC" >> "/tmp/memorystats_$OUTNAME.txt"
+        echo "$divider" >> "/tmp/memorystats_$OUTNAME.txt"
+        deps/zephyr/scripts/sanitycheck -z arc/outdir/arduino_101_sss/zephyr.elf >> "/tmp/memorystats_$OUTNAME.txt" 2> /dev/null
+        str=$(tail -2 "/tmp/memorystats_$OUTNAME.txt" | head -1 | sed -e 's/Totals: //g')
+        results="${results}$str\tARC\n"
+    else
+        echo "make failed for ARC, skipping it"
+    fi
+    # Run test on all the examples
+    for f in $FILES
+    do
+        #filename="${f/samples\//}"
+        filename="${f##*/}"
+        #touch "/tmp/memorystats_$filename"
+        echo "Testing with $filename..."
+        make JS=$f >& /dev/null
+        if [ $? -eq 0 ]; then
+            echo "$divider" >> "/tmp/memorystats_$OUTNAME.txt"
+            echo "Results for $f" >> "/tmp/memorystats_$OUTNAME.txt"
+            echo "$divider" >> "/tmp/memorystats_$OUTNAME.txt"
+            deps/zephyr/scripts/sanitycheck -z outdir/arduino_101/zephyr.elf >> "/tmp/memorystats_$OUTNAME.txt" 2> /dev/null
+            str=$(tail -2 "/tmp/memorystats_$OUTNAME.txt" | head -1 | sed -e 's/Totals: //g')
+            results="${results}$str\t$filename\n"
+        else
+            echo "make failed for $f, skipping it"
+        fi
+    done
+
+    # Output the truncated results
+    echo ""
+    sed -i "1s/^/-= Total values for all demos =-\n$divider\n${results}\n-= Full reports =-\n/" "/tmp/memorystats_$OUTNAME.txt"
+    #sed '/Full/Q' "/tmp/memorystats_$OUTNAME.txt"
+}
+
+function compare()
+{
+    echo "-= Changes in values since $1 =-"
+    echo "$divider"
+    filenames=$(grep 'js\|ARC' /tmp/memorystats_current.txt | grep bytes | cut -d' ' -f6 | cut -d$'\t' -f2)
+    for file in $filenames
+    do
+        currRom=$(grep $file /tmp/memorystats_current.txt | grep bytes | cut -d' ' -f1)
+        currRam=$(grep $file /tmp/memorystats_current.txt | grep bytes | cut -d' ' -f4)
+        compRom=$(grep $file /tmp/memorystats_$1.txt | grep bytes | cut -d' ' -f1)
+        compRam=$(grep $file /tmp/memorystats_$1.txt | grep bytes | cut -d' ' -f4)
+        currRom="$((currRom - compRom))"
+        currRam="$((currRam - compRam))"
+        echo "ROM use changed $currRom bytes for $file"
+        echo "RAM use changed $currRam bytes for $file"
+        echo "$divider"
+    done
+}
+
+runTests
+
+# If we are not comparing commits, print the current results
+if [[ -z "$numComp" && -z "$nameComp" ]]; then
+    sed '/Full/Q' "/tmp/memorystats_$OUTNAME.txt"
+fi
+
+# If we are comparing results, find the changes and print them
+if [ -n "$numComp" ]; then
+    results=""
+    OUTNAME=$(git log | grep commit | head -$numComp | tail -1 | cut -d' ' -f2)
+    echo -e "Comparing current branch with $OUTNAME\n"
+    git checkout "$OUTNAME" > /dev/null 2>&1
+    make update > /dev/null 2>&1
+    source zjs-env.sh 256 > /dev/null 2>&1
+    source deps/zephyr/zephyr-env.sh > /dev/null 2>&1
+    runTests
+    compare "$OUTNAME"
+    git checkout - > /dev/null 2>&1
+    make update > /dev/null 2>&1
+    source zjs-env.sh 256 > /dev/null 2>&1
+    source deps/zephyr/zephyr-env.sh > /dev/null 2>&1
+fi
+
+if [ -n "$nameComp" ]; then
+    results=""
+    OUTNAME=$nameComp
+    echo -e "Comparing current branch with $OUTNAME\n"
+    git checkout "$OUTNAME" > /dev/null 2>&1
+    make update
+    source zjs-env.sh 256
+    source deps/zephyr/zephyr-env.sh
+    runTests
+    compare "$OUTNAME"
+    git checkout - > /dev/null 2>&1
+    make update > /dev/null 2>&1
+    source zjs-env.sh 256 > /dev/null 2>&1
+    source deps/zephyr/zephyr-env.sh > /dev/null 2>&1
+fi
