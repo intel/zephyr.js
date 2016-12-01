@@ -4,7 +4,29 @@
 # Author: Brian Jones <brian.j.jones@intel.com>
 
 # memorystats - Get the ROM and RAM usages for ZJS based on the javascript it
-#   has loaded.
+# has loaded.
+
+
+# Usage instructions:
+
+# Flags:
+# -f = file to use for testing. If not given it will use all of the files in ./samples
+# -c = commit id to compare your current branch against
+# -n = number of commits ago you want to compare your current branch to?
+
+# Examples:
+
+# Get the memory stats of your current branch using all the samples
+# memorystats
+
+# Use samples/I2C.js instead of all the samples
+# memorystats -f samples/I2C.js
+
+# Compare current branch to 5331702
+# memorystats -f samples/I2C.js -c 5331702
+
+# Compare current branch to 10 commits ago
+# memorystats -f samples/I2C.js -n 10
 
 if [ ! -d $ZJS_BASE ]; then
     echo "Couldn't find the samples folder, make sure and source zjs-env.sh and deps/zephyr/zephyr-env.sh"
@@ -38,8 +60,8 @@ fi
 OUTNAME="current"
 divider="--------------------------------------------------------------------"
 
-function runTests() {
-
+function runTests()
+{
     # Make sure things are clean
     make pristine > /dev/null 2>&1
     make clean > /dev/null 2>&1
