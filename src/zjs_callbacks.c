@@ -123,8 +123,8 @@ void zjs_init_callbacks(void)
 void zjs_edit_js_func(zjs_callback_id id, jerry_value_t func)
 {
     if (id != -1) {
-        jerry_release_value(cb_map[id]->func_list[0]);
-        cb_map[id]->func_list[0] = jerry_acquire_value(func);
+        jerry_release_value(cb_map[id]->js_func);
+        cb_map[id]->js_func = jerry_acquire_value(func);
     }
 }
 
