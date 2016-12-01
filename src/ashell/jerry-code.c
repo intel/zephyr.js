@@ -42,7 +42,7 @@
 
 void jerry_port_default_set_log_level(jerry_log_level_t level); /** Inside jerry-port-default.h */
 
-#include "acm-uart.h"
+#include "comms-uart.h"
 
 static jerry_value_t parsed_code = 0;
 
@@ -180,43 +180,43 @@ int javascript_parse_code(const char *file_name, bool show_lines)
 
     ssize_t size = fs_size(fp);
     if (size == 0) {
-        acm_printf("[ERR] Empty file (%s)\n", file_name);
+        comms_printf("[ERR] Empty file (%s)\n", file_name);
         goto cleanup;
     }
 
     buf = (char *)malloc(size);
     if (buf == NULL) {
-        acm_printf("[ERR] Not enough memory for (%s)\n", file_name);
+        comms_printf("[ERR] Not enough memory for (%s)\n", file_name);
         goto cleanup;
     }
 
     ssize_t brw = fs_read(fp, buf, size);
 
     if (brw != size) {
-        acm_printf("[ERR] Failed loading code %s\n", file_name);
+        comms_printf("[ERR] Failed loading code %s\n", file_name);
         goto cleanup;
     }
 
     if (show_lines) {
-        acm_printf("[READ] %d\n", (int)brw);
+        comms_printf("[READ] %d\n", (int)brw);
 
         // Print buffer test
         int line = 0;
-        acm_println("[START]");
-        acm_printf("%5d  ", line++);
+        comms_println("[START]");
+        comms_printf("%5d  ", line++);
         for (int t = 0; t < brw; t++) {
             uint8_t byte = buf[t];
             if (byte == '\n' || byte == '\r') {
-                acm_write("\r\n", 2);
-                acm_printf("%5d  ", line++);
+                comms_write_buf("\r\n", 2);
+                comms_printf("%5d  ", line++);
             } else {
                 if (!isprint(byte)) {
-                    acm_printf("(%x)", byte);
+                    comms_printf("(%x)", byte);
                 } else
-                    acm_writec(byte);
+                    comms_writec(byte);
             }
         }
-        acm_println("[END]");
+        comms_println("[END]");
     }
 
     /* Setup Global scope code */

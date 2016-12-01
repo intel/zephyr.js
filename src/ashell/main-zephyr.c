@@ -23,7 +23,7 @@
 #include <drivers/console/uart_console.h>
 
 #include "jerry-api.h"
-#include "acm-uart.h"
+#include "comms-uart.h"
 
 #include "shell-state.h"
 
@@ -40,13 +40,13 @@ static int shell_cmd_version(int argc, char *argv[])
 static int shell_clear(int argc, char *argv[])
 {
     printk(ANSI_CLEAR);
-    acm_clear();
+    comms_clear();
     return 0;
 }
 
 static int shell_status(int argc, char *argv[])
 {
-    acm_print_status();
+    comms_print_status();
     return 0;
 }
 

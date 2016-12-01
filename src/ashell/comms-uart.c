@@ -52,8 +52,8 @@
 #include <fs.h>
 #include "jerry-code.h"
 
-#include "acm-uart.h"
-#include "acm-shell.h"
+#include "comms-uart.h"
+#include "comms-shell.h"
 #include "shell-state.h"
 
 #include "ihex/kk_ihex_read.h"
@@ -69,7 +69,7 @@
 
 extern void __stdout_hook_install(int(*fn)(int));
 
-static const char banner[] = "Zephyr.js DEV MODE " __DATE__ " " __TIME__ "\n";
+static const char banner[] = "Zephyr.js DEV MODE " __DATE__ " " __TIME__ "\r\n";
 
 const char WRONG_TERMINAL_WARNING[] = "\n" \
     "Warning: The JavaScript terminal is in a different interface.\n" \
@@ -91,7 +91,7 @@ const char *system_get_prompt()
 #define FIFO_CACHE 2
 
 /* Configuration of the callbacks to be called */
-static struct acm_cfg_data acm_config = {
+static struct comms_cfg_data comms_config = {
     /* Callback to be notified on connection status change */
     .cb_status = NULL,
     .interface = {
@@ -104,14 +104,14 @@ static struct acm_cfg_data acm_config = {
     .print_state = NULL
 };
 
-struct acm_input
+struct comms_input
 {
     int _unused;
     char line[MAX_LINE_LEN + 1];
 };
 
-static struct nano_fifo avail_queue;
-static struct nano_fifo data_queue;
+static struct k_fifo avail_queue;
+static struct k_fifo data_queue;
 static bool uart_process_done = false;
 static uint8_t fifo_size = 0;
 static uint8_t max_fifo_size = 0;
@@ -121,32 +121,31 @@ atomic_t data_queue_count = 0;
 uint32_t alloc_count = 0;
 uint32_t free_count = 0;
 
-static struct acm_input *isr_data = NULL;
+static struct comms_input *isr_data = NULL;
 static uint32_t tail = 0;
 static char *buf;
 
-struct acm_input *fifo_get_isr_buffer()
+struct comms_input *fifo_get_isr_buffer()
 {
-    void *data = nano_isr_fifo_get(&avail_queue, TICKS_NONE);
+    void *data = k_fifo_get(&avail_queue, K_NO_WAIT);
     if (!data) {
-        data = (void *)malloc(sizeof(struct acm_input));
-        memset(data, '*', sizeof(struct acm_input));
+        data = (void *)malloc(sizeof(struct comms_input));
+        memset(data, '*', sizeof(struct comms_input));
         alloc_count++;
         fifo_size++;
         if (fifo_size > max_fifo_size)
             max_fifo_size = fifo_size;
     }
-    return (struct acm_input *) data;
+    return (struct comms_input *) data;
 }
 
 void fifo_cache_clear()
 {
     while(fifo_size > 0) {
-        void *data = nano_isr_fifo_get(&avail_queue, TICKS_NONE);
+        void *data = k_fifo_get(&avail_queue, K_NO_WAIT);
         if (!data)
             return;
 
-        printk("Clear buf %d\n", fifo_size);
         free(data);
         fifo_size--;
         free_count++;
@@ -156,7 +155,7 @@ void fifo_cache_clear()
     isr_data = NULL;
 }
 
-void fifo_recycle_buffer(struct acm_input *data)
+void fifo_recycle_buffer(struct comms_input *data)
 {
     if (fifo_size > 1) {
         free(data);
@@ -164,22 +163,22 @@ void fifo_recycle_buffer(struct acm_input *data)
         free_count++;
         return;
     }
-    nano_task_fifo_put(&avail_queue, data);
+    k_fifo_put(&avail_queue, data);
 }
 
-void acm_clear(void)
+void comms_clear(void)
 {
     void *data = NULL;
     do {
         if (data != NULL)
             free(data);
-        data = nano_fifo_get(&avail_queue, TICKS_NONE);
+        data = k_fifo_get(&avail_queue, K_NO_WAIT);
     } while (data);
 
     do {
         if (data != NULL)
             free(data);
-        data = nano_fifo_get(&data_queue, TICKS_NONE);
+        data = k_fifo_get(&data_queue, K_NO_WAIT);
     } while (data);
 }
 
@@ -221,7 +220,7 @@ enum
 
 int process_state = 0;
 
-static void acm_interrupt_handler(struct device *dev)
+static void comms_interrupt_handler(struct device *dev)
 {
     char byte;
 
@@ -275,7 +274,6 @@ static void acm_interrupt_handler(struct device *dev)
                 uart_process_done) {
                 flush = true;
                 uart_process_done = false;
-                DBG("+");
             } else {
                 /* Check for line ends, to flush the data. The decoder / shell will probably
                  * sit for a bit in the data so it is better if we finish this buffer and send it.
@@ -287,7 +285,6 @@ static void acm_interrupt_handler(struct device *dev)
                     if (byte == '\r' || byte == '\n' ||
                         (byte >= CTRL_START && byte <= CTRL_END)) {
                         flush = true;
-                        DBG("&");
                         break;
                     }
                 }
@@ -297,11 +294,10 @@ static void acm_interrupt_handler(struct device *dev)
 
             /* Happy to flush the data into the queue for processing */
             if (flush) {
-                DBG("-");
                 isr_data->line[tail] = 0;
                 tail = 0;
                 atomic_inc(&data_queue_count);
-                nano_isr_fifo_put(&data_queue, isr_data);
+                k_fifo_put(&data_queue, isr_data);
                 isr_data = NULL;
             }
         }
@@ -323,9 +319,9 @@ static void acm_interrupt_handler(struct device *dev)
 * @return success
 */
 
-static int acm_out(int c)
+static int comms_out(int c)
 {
-    acm_writec((char)c);
+    comms_writec((char)c);
     return 1;
 }
 
@@ -339,7 +335,7 @@ static int acm_out(int c)
 * will probably rewrite it later with a line queue
 */
 
-void acm_write(const char *buf, int len)
+void comms_write_buf(const char *buf, int len)
 {
     if (len == 0)
         return;
@@ -355,26 +351,26 @@ void acm_write(const char *buf, int len)
     uart_irq_tx_disable(dev);
 }
 
-void acm_writec(char byte)
+void comms_writec(char byte)
 {
-    acm_write(&byte, 1);
+    comms_write_buf(&byte, 1);
 }
 
-void acm_print(const char *buf)
+void comms_print(const char *buf)
 {
-    acm_write(buf, strnlen(buf, MAX_LINE_LEN * 4));
+    comms_write_buf(buf, strnlen(buf, MAX_LINE_LEN * 4));
 }
 
-void acm_println(const char *buf)
+void comms_println(const char *buf)
 {
-    acm_write(buf, strnlen(buf, MAX_LINE_LEN));
-    acm_write("\r\n", 2);
+    comms_write_buf(buf, strnlen(buf, MAX_LINE_LEN));
+    comms_write_buf("\r\n", 2);
 }
 
 /**
 * Provide console message implementation for the engine.
 */
-void acm_printf(const char *format, ...)
+void comms_printf(const char *format, ...)
 {
     va_list args;
     va_start(args, format);
@@ -383,7 +379,7 @@ void acm_printf(const char *format, ...)
 }
 
 #ifdef CONFIG_UART_LINE_CTRL
-uint32_t acm_get_baudrate(void)
+uint32_t comms_get_baudrate(void)
 {
     uint32_t baudrate;
 
@@ -397,17 +393,17 @@ uint32_t acm_get_baudrate(void)
 }
 #endif
 
-void acm_print_status()
+void comms_print_status()
 {
     printk("******* SYSTEM STATE ********\n");
     if (atomic_get(&uart_state) == UART_INIT)
         printk(ANSI_FG_RED "JavaScript terminal not connected\n" ANSI_FG_RESTORE);
 
-    if (acm_config.print_state != NULL)
-        acm_config.print_state();
+    if (comms_config.print_state != NULL)
+        comms_config.print_state();
 
 #ifdef CONFIG_UART_LINE_CTRL
-    acm_get_baudrate();
+    comms_get_baudrate();
 #endif
 
     if (!data_transmitted)
@@ -418,20 +414,20 @@ void acm_print_status()
 
     printk("[Mem] Fifo %d Max Fifo %d Alloc %d Free %d \n",
         (int)fifo_size, (int)max_fifo_size, (int)alloc_count, (int)free_count);
-    printk("[Usage] Max fifo usage %d bytes\n", (int)(max_fifo_size * sizeof(struct acm_input)));
+    printk("[Usage] Max fifo usage %d bytes\n", (int)(max_fifo_size * sizeof(struct comms_input)));
     printk("[Queue size] %d\n", (int)data_queue_count);
     printk("[Data] Received %d Processed %d \n",
         (int)bytes_received, (int)bytes_processed);
 }
 
-void acm_runner()
+void comms_runner()
 {
-    static struct acm_input *data = NULL;
+    static struct comms_input *data = NULL;
     char *buf = NULL;
     uint32_t len = 0;
 
     DBG("[Listening]\n");
-    __stdout_hook_install(acm_out);
+    __stdout_hook_install(comms_out);
 
     // Disable buffering on stdout since some parts write directly to uart fifo
     setbuf(stdout, NULL);
@@ -442,18 +438,18 @@ void acm_runner()
 
     while (1) {
         atomic_set(&uart_state, UART_INIT);
-        if (acm_config.interface.init_cb != NULL) {
+        if (comms_config.interface.init_cb != NULL) {
             DBG("[Init]\n");
-            acm_config.interface.init_cb();
+            comms_config.interface.init_cb();
         }
 
-        while (!acm_config.interface.is_done()) {
+        while (!comms_config.interface.is_done()) {
             atomic_set(&uart_state, UART_WAITING);
             process_state = 10;
 
             while (data == NULL) {
                 DBG("[Wait]\n");
-                data = nano_task_fifo_get(&data_queue, FIVE_SECONDS);
+                data = k_fifo_get(&data_queue, FIVE_SECONDS);
                 if (data) {
                     atomic_dec(&data_queue_count);
                     buf = data->line;
@@ -482,12 +478,12 @@ void acm_runner()
             }
 
             process_state = 30;
-            uint32_t processed = acm_config.interface.process_cb(buf, len);
+            uint32_t processed = comms_config.interface.process_cb(buf, len);
 
             bytes_processed += processed;
 
             process_state = 40;
-            if (acm_config.interface.is_done()) {
+            if (comms_config.interface.is_done()) {
                 len -= processed;
                 // Moving the remaining data to be processed by the new callback
                 memmove(buf, buf + processed, len);
@@ -504,8 +500,8 @@ void acm_runner()
 
         process_state = 50;
         atomic_set(&uart_state, UART_CLOSE);
-        if (acm_config.interface.close_cb != NULL)
-            acm_config.interface.close_cb();
+        if (comms_config.interface.close_cb != NULL)
+            comms_config.interface.close_cb();
     }
 
     // Not possible
@@ -539,8 +535,8 @@ void acm()
         return;
     }
 
-    nano_fifo_init(&data_queue);
-    nano_fifo_init(&avail_queue);
+    k_fifo_init(&data_queue);
+    k_fifo_init(&avail_queue);
 
 #ifdef CONFIG_UART_LINE_CTRL
     uint32_t dtr = 0;
@@ -561,26 +557,26 @@ void acm()
     if (ret)
         printf("DSR Failed %d\n", ret);
 
-    /* Wait 1 sec for the host to do all settings */
-    sys_thread_busy_wait(1000000);
+    /* 1000 msec = 1 sec */
+    k_sleep(1000);
 
 #endif
 
     uart_irq_rx_disable(dev_upload);
     uart_irq_tx_disable(dev_upload);
 
-    uart_irq_callback_set(dev_upload, acm_interrupt_handler);
-    acm_write(banner, sizeof(banner));
+    uart_irq_callback_set(dev_upload, comms_interrupt_handler);
+    comms_write_buf(banner, sizeof(banner));
 
     /* Enable rx interrupts */
     uart_irq_rx_enable(dev_upload);
 
-    acm_runner();
+    comms_runner();
 }
 
 /**************************** DEVICE **********************************/
 
-void acm_set_config(struct acm_cfg_data *config)
+void comms_uart_set_config(struct comms_cfg_data *config)
 {
-    memcpy(&acm_config, config, sizeof(struct acm_cfg_data));
+    memcpy(&comms_config, config, sizeof(struct comms_cfg_data));
 }

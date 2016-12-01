@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef __acm_uart_h__
-#define __acm_uart_h__
+#ifndef __comms_uart_h__
+#define __comms_uart_h__
 
 /* Control characters */
 /* http://www.physics.udel.edu/~watson/scen103/ascii.html */
@@ -122,7 +122,7 @@ typedef void(*process_status_callback_t)(enum process_status_code status_code);
 /*
  * @brief Interfaces for the different uploaders and process handlers
  */
-struct acm_interface_cfg_data
+struct comms_interface_cfg_data
 {
     process_init_callback_t init_cb;
     process_close_callback_t close_cb;
@@ -135,31 +135,31 @@ struct acm_interface_cfg_data
  * @brief UART process data configuration
  *
  * The Application instantiates this with given parameters added
- * using the "acm_set_config" function.
+ * using the "comms_uart_set_config" function.
  *
  * This function can be called to swap between different states of the
  * data transactions.
  */
 
-struct acm_cfg_data
+struct comms_cfg_data
 {
     /* Callback to be notified on connection status change */
     process_status_callback_t cb_status;
-    struct acm_interface_cfg_data interface;
+    struct comms_interface_cfg_data interface;
 
     /* Callback to print debug data or state to the user */
     process_print_state_t print_state;
 };
 
-void acm_set_config(struct acm_cfg_data *config);
+void comms_uart_set_config(struct comms_cfg_data *config);
 
-void acm_print_status();
-void acm_clear();
+void comms_print_status();
+void comms_clear();
 
-void acm_println(const char *buf);
-void acm_write(const char *buf, int len);
-void acm_writec(char byte);
-void acm_print(const char *buf);
-void acm_printf(const char *format, ...);
+void comms_println(const char *buf);
+void comms_write_buf(const char *buf, int len);
+void comms_writec(char byte);
+void comms_print(const char *buf);
+void comms_printf(const char *format, ...);
 
-#endif  // __acm_uart_h__
+#endif  // __comms_uart_h__
