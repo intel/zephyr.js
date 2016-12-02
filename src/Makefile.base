@@ -32,9 +32,7 @@ ccflags-y += -DZJS_PRINT_FLOATS
 endif
 
 obj-y += main.o \
-         zjs_buffer.o \
          zjs_callbacks.o \
-         zjs_console.o \
          zjs_modules.o \
          zjs_promise.o \
          zjs_script.o \
@@ -42,6 +40,8 @@ obj-y += main.o \
          zjs_timers.o \
          zjs_util.o
 
+obj-$(ZJS_BUFFER) += zjs_buffer.o
+obj-$(ZJS_CONSOLE) += zjs_console.o
 obj-$(ZJS_EVENTS) += zjs_event.o
 obj-$(ZJS_GPIO) += zjs_gpio.o
 obj-$(ZJS_BLE) += zjs_ble.o
