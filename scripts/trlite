@@ -4,6 +4,9 @@
 # Author: Geoff Gustafson <geoff@linux.intel.com>
 
 # trlite - a local version of the tests we run in Travis
+#   trlite [-v] [vmname]
+#
+#   -v turns on verbose output
 #   by default, runs all tests
 #   trlite 1 or trlite zephyr runs just VM #1 "zephyr" tests
 #   trlite 2 or trlite linux  runs just VM #2 "linux"  tests
@@ -15,6 +18,12 @@ if [ ! -d "$ZJS_BASE" ]; then
 fi
 
 TRLDIR=$ZJS_BASE/.trlite
+
+VERBOSE=
+if [ "$1" == "-v" ]; then
+   VERBOSE=V=1
+   shift
+fi
 
 # flags for running tests from the different VMs
 VM1=y
@@ -44,7 +53,7 @@ function try_command()
 {
     LABEL=$1
     shift
-    banner $LABEL
+    banner "$LABEL"
     if ! $*; then
         echo Error: Failed in $1!
         exit $?
@@ -58,26 +67,26 @@ function try_command()
 
 if [ "$VM1" == "y" ]; then
     # A101 build tests spanning all modules
-    try_command "helloworld" make V=1
-    try_command "traffic" make V=1 JS=samples/TrafficLight.js
-    try_command "pwm" make V=1 JS=samples/PWM.js
-    try_command "i2c" make V=1 JS=samples/I2C.js
-    try_command "uart" make V=1 JS=samples/UART.js
-    try_command "events" make V=1 JS=samples/tests/Events.js
-    try_command "perf" make V=1 JS=tests/test-performance.js
+    try_command "helloworld" make $VERBOSE
+    try_command "traffic" make $VERBOSE JS=samples/TrafficLight.js
+    try_command "pwm" make $VERBOSE JS=samples/PWM.js
+    try_command "i2c" make $VERBOSE JS=samples/I2C.js
+    try_command "uart" make $VERBOSE JS=samples/UART.js
+    try_command "events" make $VERBOSE JS=samples/tests/Events.js
+    try_command "perf" make $VERBOSE JS=tests/test-performance.js
 
     # k64f build tests
     git clean -dfx
-    try_command "k64f hello" make V=1 BOARD=frdm_k64f
+    try_command "k64f hello" make $VERBOSE BOARD=frdm_k64f
 
     # arc build tests
     git clean -dfx
-    try_command "arc" make V=1 arc
+    try_command "arc" make $VERBOSE arc
 
     # 256KB partition build tests
     git clean -dfx
     source zjs-env.sh 256
-    try_command "btgrove" make V=1 JS=samples/WebBluetoothGroveLcdDemo.js
+    try_command "btgrove" make $VERBOSE JS=samples/WebBluetoothGroveLcdDemo.js
 fi
 
 #
@@ -89,7 +98,7 @@ if [ "$VM2" == "y" ]; then
     try_command "git check" git diff --check $(git rev-list HEAD | tail -1)
 
     # linux build tests
-    try_command "linux" make V=1 linux
+    try_command "linux" make $VERBOSE linux
 
     # linux unit tests
     try_command "unit tests" ./outdir/linux/release/jslinux --unittest
@@ -102,7 +111,7 @@ fi
 if [ "$VM3" == "y" ]; then
     # ashell tests
     git clean -dfx
-    try_command "ashell" make V=1 DEV=ashell
+    try_command "ashell" make $VERBOSE DEV=ashell
 fi
 
 # clean up on success
