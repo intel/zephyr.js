@@ -165,6 +165,7 @@ if check_for_require ble || check_config_file ZJS_BLE; then
     MODULES+=" -DBUILD_MODULE_EVENTS"
     echo "export ZJS_EVENTS=y" >> zjs.conf.tmp
     echo "export ZJS_BLE=y" >> zjs.conf.tmp
+    buffer=true;
 fi
 
 if check_for_require aio || check_config_file ZJS_AIO; then
