@@ -32,9 +32,13 @@
 #endif
 #endif
 
+typedef jerry_value_t (*initcb_t)();
+typedef void (*cleanupcb_t)();
+
 typedef struct module {
     const char *name;
     initcb_t init;
+    cleanupcb_t cleanup;
     jerry_value_t instance;
 } module_t;
 
@@ -43,7 +47,7 @@ module_t zjs_modules_array[] = {
 #ifndef QEMU_BUILD
 #ifndef CONFIG_BOARD_FRDM_K64F
 #ifdef BUILD_MODULE_AIO
-    { "aio", zjs_aio_init },
+    { "aio", zjs_aio_init, zjs_aio_cleanup },
 #endif
 #endif
 #ifdef BUILD_MODULE_BLE
@@ -116,7 +120,7 @@ static jerry_value_t native_require_handler(const jerry_value_t function_obj,
     for (int i = 0; i < modcount; i++) {
         module_t *mod = &zjs_modules_array[i];
         if (!strcmp(mod->name, module)) {
-            // We only want one intance of each module at a time
+            // We only want one instance of each module at a time
             if (mod->instance == 0) {
                 mod->instance = jerry_acquire_value(mod->init());
             }
@@ -162,18 +166,25 @@ static jerry_value_t native_require_handler(const jerry_value_t function_obj,
 
 void zjs_modules_init()
 {
-    int modcount = sizeof(zjs_modules_array) / sizeof(module_t);
-
-    for (int i = 0; i < modcount; i++) {
-        module_t *mod = &zjs_modules_array[i];
-        mod->instance = 0;
-    }
-
     jerry_value_t global_obj = jerry_get_global_object();
 
     // create the C handler for require JS call
     zjs_obj_add_function(global_obj, native_require_handler, "require");
     jerry_release_value(global_obj);
+}
+
+void zjs_modules_cleanup()
+{
+    int modcount = sizeof(zjs_modules_array) / sizeof(module_t);
+
+    for (int i = 0; i < modcount; i++) {
+        module_t *mod = &zjs_modules_array[i];
+        if (mod->instance) {
+            mod->cleanup();
+            jerry_release_value(mod->instance);
+            mod->instance = 0;
+        }
+    }
 }
 
 void zjs_register_service_routine(void* handle, zjs_service_routine func)

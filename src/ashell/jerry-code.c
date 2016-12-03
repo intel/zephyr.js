@@ -130,7 +130,6 @@ void javascript_eval_code(const char *source_buffer)
     jerry_release_value(ret_val);
 }
 
-
 void restore_zjs_api() {
 #ifdef ZJS_POOL_CONFIG
     zjs_init_mem_pools();
@@ -161,6 +160,7 @@ void javascript_stop()
     zjs_timers_cleanup();
     zjs_ipm_free_callbacks();
     zjs_buffer_cleanup();
+    zjs_modules_cleanup();
     jerry_cleanup();
 
     restore_zjs_api();
