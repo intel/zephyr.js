@@ -25,7 +25,7 @@ BOARD=$1
 SCRIPT=$2
 CONFIG=$3
 
-echo "# Modules found in $SCRIPT:" > prj.conf.tmpq
+echo "# Modules found in $SCRIPT:" > prj.conf.tmp
 echo "# Modules found in $SCRIPT:" > arc/prj.conf.tmp
 tmpstr="# ZJS flags set by analyze.js"
 
@@ -200,24 +200,11 @@ if check_for_require arduino101_pins || check_config_file ZJS_ARDUINO101_PINS; t
     echo "export ZJS_ARDUINO101_PINS=y" >> zjs.conf.tmp
 fi
 
-interval=$(grep setInterval $SCRIPT)
+interval=$(grep "setInterval\|setTimeout\|setImmediate" $SCRIPT)
 if [ $? -eq 0 ] || check_config_file ZJS_TIMERS; then
     MODULES+=" -DBUILD_MODULE_TIMER"
     echo "export ZJS_TIMERS=y" >> zjs.conf.tmp
-else
-    timeout=$(grep setTimeout $SCRIPT)
-    if [ $? -eq 0 ]; then
-        MODULES+=" -DBUILD_MODULE_TIMER"
-        echo "export ZJS_TIMERS=y" >> zjs.conf.tmp
-    else
-        immediate=$(grep setImmediate $SCRIPT)
-        if [ $? -eq 0 ]; then
-            MODULES+=" -DBUILD_MODULE_TIMER"
-            echo "export ZJS_TIMERS=y" >> zjs.conf.tmp
-        fi
-    fi
 fi
-
 
 if $buffer && [[ $MODULE != *"BUILD_MODULE_BUFFER"* ]]; then
     >&2 echo Using module: Buffer
