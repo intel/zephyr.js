@@ -42,6 +42,7 @@ typedef struct module {
     jerry_value_t instance;
 } module_t;
 
+// init function is required, cleanup is optional in these entries
 module_t zjs_modules_array[] = {
 #ifndef ZJS_LINUX_BUILD
 #ifndef QEMU_BUILD
@@ -180,7 +181,9 @@ void zjs_modules_cleanup()
     for (int i = 0; i < modcount; i++) {
         module_t *mod = &zjs_modules_array[i];
         if (mod->instance) {
-            mod->cleanup();
+            if (mod->cleanup) {
+                mod->cleanup();
+            }
             jerry_release_value(mod->instance);
             mod->instance = 0;
         }
