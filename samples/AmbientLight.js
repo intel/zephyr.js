@@ -2,7 +2,6 @@
 
 // Test code to use the AmbientLightSensor (subclass of Generic Sensor) API
 // to communicate with the Grove Light sensor on the Arduino 101
-//
 
 // Hardware Requirements:
 //   - A Grove Light sensor

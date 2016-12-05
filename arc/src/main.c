@@ -775,7 +775,7 @@ static double cube_root_recursive(double num, double low, double high) {
     double mid = (low + high) / 2.0;
     double mid3 = mid * mid * mid;
     double diff = mid3 - num;
-    if (diff < margin || (diff * -1.0) > margin)
+    if (ABS(diff) < margin)
         return mid;
     else if (mid3 > num)
         return cube_root_recursive(num, low, mid);
@@ -810,7 +810,7 @@ static void process_light_updates()
                     reading.dval = 10000.0;
                 }
                 else {
-                    resistance = (1023.1 - analog_val) * 10.0 / analog_val;
+                    resistance = (1023.0 - analog_val) * 10.0 / analog_val;
                     base = resistance * 15.0;
                     reading.dval = 10000.0 / cube_root(base * base * base * base);
                 }
