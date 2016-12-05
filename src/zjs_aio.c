@@ -14,6 +14,7 @@
 #define ZJS_AIO_TIMEOUT_TICKS                      500
 
 static struct k_sem aio_sem;
+static jerry_value_t zjs_aio_prototype;
 
 #define MAX_TYPE_LEN 20
 
@@ -324,10 +325,7 @@ static jerry_value_t zjs_aio_open(const jerry_value_t function_obj,
 
     // create the AIOPin object
     jerry_value_t pinobj = jerry_create_object();
-    zjs_obj_add_function(pinobj, zjs_aio_pin_read, "read");
-    zjs_obj_add_function(pinobj, zjs_aio_pin_read_async, "readAsync");
-    zjs_obj_add_function(pinobj, zjs_aio_pin_close, "close");
-    zjs_obj_add_function(pinobj, zjs_aio_pin_on, "on");
+    jerry_set_prototype(pinobj, zjs_aio_prototype);
     zjs_obj_add_string(pinobj, name, "name");
     zjs_obj_add_number(pinobj, device, "device");
     zjs_obj_add_number(pinobj, pin, "pin");
@@ -343,10 +341,25 @@ jerry_value_t zjs_aio_init()
 
     k_sem_init(&aio_sem, 0, 1);
 
+    zjs_native_func_t array[] = {
+        { zjs_aio_pin_read, "read" },
+        { zjs_aio_pin_read_async, "readAsync" },
+        { zjs_aio_pin_close, "close" },
+        { zjs_aio_pin_on, "on" },
+        { NULL, NULL }
+    };
+    zjs_aio_prototype = jerry_create_object();
+    zjs_obj_add_functions(zjs_aio_prototype, array);
+
     // create global AIO object
     jerry_value_t aio_obj = jerry_create_object();
     zjs_obj_add_function(aio_obj, zjs_aio_open, "open");
     return aio_obj;
+}
+
+void zjs_aio_cleanup()
+{
+    jerry_release_value(zjs_aio_prototype);
 }
 
 #endif // QEMU_BUILD
