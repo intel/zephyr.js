@@ -67,14 +67,26 @@ function check_config_file()
     #          If found, it will be put in zjs.conf.tmp and inserted into src/Makefile
 
     if [ -n "$CONFIG" ]; then
-       grep -v '^#' < $CONFIG | grep $1='y\|m' >> /dev/null
+        grep -v '^#' < $CONFIG | grep $1='y\|m' >> /dev/null
         return $?
     fi
     return 1;
 }
 
+# Check if buffer module required in the JS or config file
+$(grep Buffer\([0-9]*\) $SCRIPT)
+if [ $? -eq 0 ] || check_config_file ZJS_BUFFER; then
+    buffer=true;
+else
+    buffer=false;
+fi
+
+# Check for javascript modules
+# Note this has to be done first in order to catch the reqirements
+# of the imported JS files
 check_for_js_require
 
+# Check for native modules
 if check_for_require events || check_config_file ZJS_EVENTS; then
     >&2 echo Using module: Events
     MODULES+=" -DBUILD_MODULE_EVENTS"
@@ -135,10 +147,10 @@ if check_for_require uart || check_config_file ZJS_UART; then
     fi
     echo "CONFIG_UART_INTERRUPT_DRIVEN=y" >> prj.conf.tmp
     MODULES+=" -DBUILD_MODULE_UART"
-    MODULES+=" -DBUILD_MODULE_BUFFER"
     MODULES+=" -DBUILD_MODULE_EVENTS"
     echo "export ZJS_EVENTS=y" >> zjs.conf.tmp
     echo "export ZJS_UART=y" >> zjs.conf.tmp
+    buffer=true;
 fi
 
 if check_for_require ble || check_config_file ZJS_BLE; then
@@ -153,6 +165,7 @@ if check_for_require ble || check_config_file ZJS_BLE; then
     MODULES+=" -DBUILD_MODULE_EVENTS"
     echo "export ZJS_EVENTS=y" >> zjs.conf.tmp
     echo "export ZJS_BLE=y" >> zjs.conf.tmp
+    buffer=true;
 fi
 
 if check_for_require aio || check_config_file ZJS_AIO; then
@@ -166,10 +179,9 @@ fi
 if check_for_require i2c || check_config_file ZJS_I2C; then
     >&2 echo Using module: I2C
     MODULES+=" -DBUILD_MODULE_I2C"
-    >&2 echo Using module: Buffer
-    MODULES+=" -DBUILD_MODULE_BUFFER"
     echo "CONFIG_I2C=y" >> arc/prj.conf.tmp
     echo "export ZJS_I2C=y" >> zjs.conf.tmp
+    buffer=true;
 fi
 
 if check_for_require grove_lcd || check_config_file ZJS_GROVE_LCD; then
@@ -188,28 +200,20 @@ if check_for_require arduino101_pins || check_config_file ZJS_ARDUINO101_PINS; t
     echo "export ZJS_ARDUINO101_PINS=y" >> zjs.conf.tmp
 fi
 
-interval=$(grep setInterval $SCRIPT)
-if [ $? -eq 0 ]; then
+interval=$(grep "setInterval\|setTimeout\|setImmediate" $SCRIPT)
+if [ $? -eq 0 ] || check_config_file ZJS_TIMERS; then
     MODULES+=" -DBUILD_MODULE_TIMER"
-else
-    timeout=$(grep setTimeout $SCRIPT)
-    if [ $? -eq 0 ]; then
-        MODULES+=" -DBUILD_MODULE_TIMER"
-    else
-        immediate=$(grep setImmediate $SCRIPT)
-        if [ $? -eq 0 ]; then
-            MODULES+=" -DBUILD_MODULE_TIMER"
-        fi
-    fi
+    echo "export ZJS_TIMERS=y" >> zjs.conf.tmp
 fi
-buffer=$(grep Buffer\([0-9]*\) $SCRIPT)
-if [ $? -eq 0 ] && [[ $MODULE != *"BUILD_MODULE_BUFFER"* ]]; then
+
+if $buffer && [[ $MODULE != *"BUILD_MODULE_BUFFER"* ]]; then
     >&2 echo Using module: Buffer
     MODULES+=" -DBUILD_MODULE_BUFFER"
     echo "export ZJS_BUFFER=y" >> zjs.conf.tmp
 fi
+
 sensor=$(grep -E Accelerometer\|Gyroscope $SCRIPT)
-if [ $? -eq 0 ]; then
+if [ $? -eq 0 ] || check_config_file ZJS_SENSOR; then
     >&2 echo Using module: Sensor
     MODULES+=" -DBUILD_MODULE_SENSOR"
     if [ $BOARD = "arduino_101" ]; then
@@ -229,12 +233,12 @@ if [ $? -eq 0 ]; then
         echo "CONFIG_BMI160_SPI_BUS_FREQ=88" >> arc/prj.conf.tmp
         echo "CONFIG_BMI160_TRIGGER=y" >> arc/prj.conf.tmp
         echo "CONFIG_BMI160_TRIGGER_OWN_THREAD=y" >> arc/prj.conf.tmp
-	echo "export ZJS_SENSOR=y" >> zjs.conf.tmp
+        echo "export ZJS_SENSOR=y" >> zjs.conf.tmp
     fi
 fi
 
 console=$(grep console $SCRIPT)
-if [ $? -eq 0 ] && [[ $MODULE != *"BUILD_MODULE_CONSOLE"* ]]; then
+if [ $? -eq 0 ] || check_config_file ZJS_CONSOLE && [[ $MODULE != *"BUILD_MODULE_CONSOLE"* ]]; then
     >&2 echo Using module: Console
     MODULES+=" -DBUILD_MODULE_CONSOLE"
     echo "export ZJS_CONSOLE=y" >> zjs.conf.tmp
