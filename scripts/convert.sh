@@ -13,7 +13,7 @@ percent()
 {
 	percent=$((200*$1/$2 % 2 + 100*$1/$2))
 	printf "\r%i%% 0x%02x " $((percent)) $3
-	len=$(($((80*$1)) / $2))
+	len=$(($((70*$1)) / $2))
 	# Add a . if the % has progressed
 	if [ $((len)) -gt ${#progress} ]; then
 		progress="$progress."
@@ -79,7 +79,7 @@ do
         # Handle new lines if uglify is not installed
         printf "\\\n\"\n\"" >> $OUTPUT
     else
-        printf "$char" >> $OUTPUT
+        echo -n "$char" >> $OUTPUT
     fi
     last_char=$char
     COUNT=$((COUNT+1))
