@@ -19,6 +19,6 @@ setTimeout(function() {
     var after = performance.now();
     var diff = after - before;
     // Allow for some jitter, especially on Linux
-    assert(diff >= 989 && diff <= 1011, "performance.now() result over known delay");
+    assert(diff >= 979 && diff <= 1021, "performance.now() result over known delay");
     console.log("TOTAL: " + passed + " of " + total + " passed");
 }, 1000);
