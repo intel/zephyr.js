@@ -6,7 +6,7 @@
 #include <string.h>
 #include <device.h>
 #include <init.h>
-#ifdef BUILD_MODULE_AIO
+#if defined(BUILD_MODULE_AIO) || defined(BUILD_MODULE_SENSOR_LIGHT)
 #include <adc.h>
 #endif
 #ifdef BUILD_MODULE_I2C
@@ -22,9 +22,10 @@
 #include "zjs_common.h"
 #include "zjs_ipm.h"
 
-#define QUEUE_SIZE       10  // max incoming message can handle
-#define SLEEP_TICKS       1  // 10ms sleep time in cpu ticks
-#define UPDATE_INTERVAL 200  // 2sec interval in between notifications
+#define QUEUE_SIZE            10  // max incoming message can handle
+#define SLEEP_TICKS            1  // 10ms sleep time in cpu ticks
+#define AIO_UPDATE_INTERVAL  200  // 2sec interval in between notifications
+#define LIGHT_UPDATE_INTERVAL 10  // 0.1sec interval for light or 10Hz
 
 #define ADC_DEVICE_NAME "ADC_0"
 #define ADC_BUFFER_SIZE 2
@@ -37,13 +38,18 @@ static struct k_sem arc_sem;
 static struct zjs_ipm_message msg_queue[QUEUE_SIZE];
 static struct zjs_ipm_message* end_of_queue_ptr = msg_queue + QUEUE_SIZE;
 
-#ifdef BUILD_MODULE_AIO
+#if defined(BUILD_MODULE_AIO) || defined(BUILD_MODULE_SENSOR_LIGHT)
 static struct device* adc_dev = NULL;
 static uint32_t pin_values[ARC_AIO_LEN] = {};
 static uint32_t pin_last_values[ARC_AIO_LEN] = {};
+static uint8_t seq_buffer[ADC_BUFFER_SIZE];
+#ifdef BUILD_MODULE_AIO
 static void *pin_user_data[ARC_AIO_LEN] = {};
 static uint8_t pin_send_updates[ARC_AIO_LEN] = {};
-static uint8_t seq_buffer[ADC_BUFFER_SIZE];
+#endif
+#ifdef BUILD_MODULE_SENSOR_LIGHT
+static uint8_t light_send_updates[ARC_AIO_LEN] = {};
+#endif
 #endif
 
 #ifdef BUILD_MODULE_I2C
@@ -82,7 +88,7 @@ static int ipm_send_error_reply(struct zjs_ipm_message *msg, uint32_t error_code
     return zjs_ipm_send(msg->id, msg);
 }
 
-#ifdef BUILD_MODULE_AIO
+#if defined(BUILD_MODULE_AIO) || defined(BUILD_MODULE_SENSOR_LIGHT)
 static uint32_t pin_read(uint8_t pin)
 {
     struct adc_seq_entry entry = {
@@ -460,7 +466,7 @@ static inline int sensor_value_snprintf(char *buf, size_t len,
         return 0;
     }
 }
-#endif
+#endif // DEBUG_BUILD
 
 static void send_sensor_data(enum sensor_channel channel,
                              union sensor_reading reading)
@@ -762,41 +768,105 @@ static int stop_gyro_trigger(struct device *dev)
     return 0;
 }
 
+#ifdef BUILD_MODULE_SENSOR_LIGHT
+static double cube_root_recursive(double num, double low, double high) {
+    // calculate approximated cube root value of a number recursively
+    double margin = 0.0001;
+    double mid = (low + high) / 2.0;
+    double mid3 = mid * mid * mid;
+    double diff = mid3 - num;
+    if (ABS(diff) < margin)
+        return mid;
+    else if (mid3 > num)
+        return cube_root_recursive(num, low, mid);
+    else
+        return cube_root_recursive(num, mid, high);
+}
+
+static double cube_root(double num) {
+    return cube_root_recursive(num, 0, num);
+}
+
+static void process_light_updates()
+{
+    for (int i=0; i<=5; i++) {
+        if (light_send_updates[i]) {
+            pin_values[i] = pin_read(ARC_AIO_MIN + i);
+            if (pin_values[i] != pin_last_values[i]) {
+                // The formula for converting the analog value to lux is taken from
+                // the UPM project:
+                //   https://github.com/intel-iot-devkit/upm/blob/master/src/grove/grove.cxx#L161
+                // v = 10000.0/pow(((1023.0-a)*10.0/a)*15.0,4.0/3.0)
+                // since pow() is not supported due to missing <math.h>
+                // we can calculate using conversion where
+                // x^(4/3) is cube root of x^4, where we can
+                // multiply base 4 times and take the cube root
+                double resistance, base;
+                union sensor_reading reading;
+                // rescale sample from 12bit (Zephyr) to 10bit (Grove)
+                uint16_t analog_val = pin_values[i] >> 2;
+                if (analog_val > 1015) {
+                    // any thing over 1015 will be considered maximum brightness
+                    reading.dval = 10000.0;
+                }
+                else {
+                    resistance = (1023.0 - analog_val) * 10.0 / analog_val;
+                    base = resistance * 15.0;
+                    reading.dval = 10000.0 / cube_root(base * base * base * base);
+                }
+                send_sensor_data(SENSOR_CHAN_LIGHT, reading);
+            }
+            pin_last_values[i] = pin_values[i];
+        }
+    }
+}
+#endif // BUILD_MODULE_SENSOR_LIGHT
+
 static void handle_sensor(struct zjs_ipm_message* msg)
 {
     uint32_t error_code = ERROR_IPM_NONE;
 
-    if (msg->type != TYPE_SENSOR_INIT && !bmi160) {
-        ZJS_PRINT("BMI160 sensor not found.\n");
-        ipm_send_error_reply(msg, ERROR_IPM_OPERATION_FAILED);
-        return;
-    }
-
     switch(msg->type) {
     case TYPE_SENSOR_INIT:
-        if (!bmi160) {
-            bmi160 = device_get_binding("bmi160");
-
+        if (msg->data.sensor.channel == SENSOR_CHAN_ACCEL_ANY ||
+            msg->data.sensor.channel == SENSOR_CHAN_GYRO_ANY) {
             if (!bmi160) {
-                error_code = ERROR_IPM_OPERATION_FAILED;
-                ZJS_PRINT("failed to initialize BMI160 sensor\n");
-            } else {
-                if (auto_calibration(bmi160)) {
-                    ZJS_PRINT("failed to perform auto calibration\n");
+                bmi160 = device_get_binding("bmi160");
+
+                if (!bmi160) {
+                    error_code = ERROR_IPM_OPERATION_FAILED;
+                    ZJS_PRINT("failed to initialize BMI160 sensor\n");
+                } else {
+                    if (auto_calibration(bmi160) != 0) {
+                        ZJS_PRINT("failed to perform auto calibration\n");
+                    }
+                    DBG_PRINT("BMI160 sensor initialized\n");
                 }
-                DBG_PRINT("BMI160 sensor initialized\n");
             }
         }
         break;
     case TYPE_SENSOR_START:
         if (msg->data.sensor.channel == SENSOR_CHAN_ACCEL_ANY) {
-            if (!accel_trigger && start_accel_trigger(bmi160) != 0) {
+            if (!bmi160 || (!accel_trigger &&
+                             start_accel_trigger(bmi160) != 0)) {
                 error_code = ERROR_IPM_OPERATION_FAILED;
             }
         } else if (msg->data.sensor.channel == SENSOR_CHAN_GYRO_ANY) {
-            if (!gyro_trigger && start_gyro_trigger(bmi160) != 0) {
+            if (!bmi160 || (!gyro_trigger &&
+                             start_gyro_trigger(bmi160) != 0)) {
                 error_code = ERROR_IPM_OPERATION_FAILED;
             }
+#ifdef BUILD_MODULE_SENSOR_LIGHT
+        } else if (msg->data.sensor.channel == SENSOR_CHAN_LIGHT) {
+            uint32_t pin = msg->data.sensor.pin;
+            if (pin < ARC_AIO_MIN || pin > ARC_AIO_MAX) {
+                ZJS_PRINT("pin #%lu out of range\n", pin);
+                error_code = ERROR_IPM_OPERATION_FAILED;
+            } else {
+                ZJS_PRINT("start ambient light %lu\n", msg->data.sensor.pin);
+                light_send_updates[pin - ARC_AIO_MIN] = 1;
+            }
+#endif
         } else {
             ZJS_PRINT("invalid sensor channel\n");
             error_code = ERROR_IPM_NOT_SUPPORTED;
@@ -804,13 +874,26 @@ static void handle_sensor(struct zjs_ipm_message* msg)
         break;
     case TYPE_SENSOR_STOP:
         if (msg->data.sensor.channel == SENSOR_CHAN_ACCEL_ANY) {
-            if (accel_trigger && stop_accel_trigger(bmi160) != 0) {
+            if (!bmi160 || (accel_trigger &&
+                            stop_accel_trigger(bmi160) != 0)) {
                 error_code = ERROR_IPM_OPERATION_FAILED;
             }
         } else if (msg->data.sensor.channel == SENSOR_CHAN_GYRO_ANY) {
-            if (gyro_trigger && stop_gyro_trigger(bmi160) != 0) {
+            if (!bmi160 || (gyro_trigger &&
+                            stop_gyro_trigger(bmi160) != 0)) {
                 error_code = ERROR_IPM_OPERATION_FAILED;
             }
+#ifdef BUILD_MODULE_SENSOR_LIGHT
+        } else if (msg->data.sensor.channel == SENSOR_CHAN_LIGHT) {
+            uint32_t pin = msg->data.sensor.pin;
+            if (pin < ARC_AIO_MIN || pin > ARC_AIO_MAX) {
+                ZJS_PRINT("pin #%lu out of range\n", pin);
+                error_code = ERROR_IPM_OPERATION_FAILED;
+            } else {
+                ZJS_PRINT("stop ambient light %lu\n", msg->data.sensor.pin);
+                light_send_updates[pin - ARC_AIO_MIN] = 0;
+            }
+#endif
         } else {
             ZJS_PRINT("invalid sensor channel\n");
             error_code = ERROR_IPM_NOT_SUPPORTED;
@@ -828,7 +911,7 @@ static void handle_sensor(struct zjs_ipm_message* msg)
 
     zjs_ipm_send(msg->id, msg);
 }
-#endif
+#endif // BUILD_MODULE_SENSOR
 
 static void process_messages()
 {
@@ -881,26 +964,29 @@ void main(void)
     zjs_ipm_init();
     zjs_ipm_register_callback(-1, ipm_msg_receive_callback); // MSG_ID ignored
 
-#ifdef BUILD_MODULE_AIO
+#if defined(BUILD_MODULE_AIO) || defined(BUILD_MODULE_SENSOR_LIGHT)
     adc_dev = device_get_binding(ADC_DEVICE_NAME);
     adc_enable(adc_dev);
-
-    int tick_count = 0;
 #endif
 
+    int tick_count = 0;
     while (1) {
         process_messages();
 #ifdef BUILD_MODULE_AIO
-        if (tick_count >= UPDATE_INTERVAL) {
+        if (tick_count % AIO_UPDATE_INTERVAL == 0) {
             process_aio_updates();
-            tick_count = 0;
         }
-        tick_count += SLEEP_TICKS;
 #endif
+#ifdef BUILD_MODULE_SENSOR_LIGHT
+        if (tick_count % LIGHT_UPDATE_INTERVAL == 0) {
+            process_light_updates();
+        }
+#endif
+        tick_count += SLEEP_TICKS;
         k_sleep(SLEEP_TICKS);
     }
 
-#ifdef BUILD_MODULE_AIO
+#if defined(BUILD_MODULE_AIO) || defined(BUILD_MODULE_SENSOR_LIGHT)
     adc_disable(adc_dev);
 #endif
 }

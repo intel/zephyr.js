@@ -39,7 +39,7 @@ enum sensor_state {
 };
 
 typedef struct sensor_handle {
-    int32_t id;
+    zjs_callback_id id;
     enum sensor_channel channel;
     enum sensor_state state;
     union sensor_reading reading;
@@ -49,6 +49,7 @@ typedef struct sensor_handle {
 
 static sensor_handle_t *accel_handles = NULL;
 static sensor_handle_t *gyro_handles = NULL;
+static sensor_handle_t *light_handles = NULL;
 
 static sensor_handle_t *zjs_sensor_alloc_handle(enum sensor_channel channel)
 {
@@ -62,9 +63,10 @@ static sensor_handle_t *zjs_sensor_alloc_handle(enum sensor_channel channel)
     sensor_handle_t **head = NULL;
     if (channel == SENSOR_CHAN_ACCEL_ANY) {
         head = &accel_handles;
-    }
-    else if (channel == SENSOR_CHAN_GYRO_ANY) {
+    } else if (channel == SENSOR_CHAN_GYRO_ANY) {
         head = &gyro_handles;
+    } else if (channel == SENSOR_CHAN_LIGHT) {
+        head = &light_handles;
     } else {
         ZJS_PRINT("zjs_sensor_alloc_handle: invalid channel\n");
         zjs_free(handle);
@@ -223,6 +225,10 @@ static void zjs_sensor_update_reading(jerry_value_t obj,
         jerry_release_value(x_val);
         jerry_release_value(y_val);
         jerry_release_value(z_val);
+    } else if (channel == SENSOR_CHAN_LIGHT) {
+        jerry_value_t d_val = jerry_create_number(reading.dval);
+        zjs_set_property(reading_obj, "illuminance", d_val);
+        jerry_release_value(d_val);
     }
     zjs_set_property(obj, "reading", reading_obj);
     jerry_value_t func = zjs_get_property(obj, "onchange");
@@ -312,9 +318,10 @@ static void ipm_msg_receive_callback(void *context, uint32_t id, volatile void *
         // value change event, copy the data, and signal event callback
         if (msg->data.sensor.channel == SENSOR_CHAN_ACCEL_ANY) {
             zjs_sensor_signal_callbacks(accel_handles, msg->data.sensor.reading);
-        }
-        else if (msg->data.sensor.channel == SENSOR_CHAN_GYRO_ANY) {
+        } else if (msg->data.sensor.channel == SENSOR_CHAN_GYRO_ANY) {
             zjs_sensor_signal_callbacks(gyro_handles, msg->data.sensor.reading);
+        } else if (msg->data.sensor.channel == SENSOR_CHAN_LIGHT) {
+            zjs_sensor_signal_callbacks(light_handles, msg->data.sensor.reading);
         } else {
             ZJS_PRINT("ipm_msg_receive_callback: unsupported sensor type\n");
         }
@@ -353,6 +360,14 @@ static jerry_value_t zjs_sensor_start(const jerry_value_t function_obj,
     zjs_ipm_message_t send;
     send.type = TYPE_SENSOR_START;
     send.data.sensor.channel = handle->channel;
+    if (handle->channel == SENSOR_CHAN_LIGHT) {
+        // AmbientLightSensor needs provide AIO pin value
+        uint32_t pin;
+        if (!zjs_obj_get_uint32(this, "pin", &pin)) {
+            return zjs_error("zjs_sensor_start: pin not found");
+        }
+        send.data.sensor.pin = pin;
+    }
     int error = zjs_sensor_call_remote_function(&send);
     if (error != ERROR_IPM_NONE) {
         if (error == ERROR_IPM_OPERATION_NOT_ALLOWED) {
@@ -412,6 +427,13 @@ static jerry_value_t zjs_sensor_create(const jerry_value_t function_obj,
                                        enum sensor_channel channel)
 {
     double frequency = 50; // default frequency
+    uint32_t pin;
+
+    if (argc < 1 && channel == SENSOR_CHAN_LIGHT) {
+        // AmbientLightSensor requires ADC pin object
+        return zjs_error("zjs_sensor_create: invalid argument\n");
+    }
+
     if (argc >= 1) {
         if (!jerry_value_is_object(argv[0]))
             return zjs_error("zjs_sensor_create: invalid argument");
@@ -440,10 +462,17 @@ static jerry_value_t zjs_sensor_create(const jerry_value_t function_obj,
                 ZJS_PRINT("zjs_sensor_create: includeGravity is not supported\n");
             }
         }
+
+        if (channel == SENSOR_CHAN_LIGHT) {
+            if (!zjs_obj_get_uint32(options, "pin", &pin)) {
+                return zjs_error("zjs_sensor_create: missing required field (pin)");
+            }
+        }
     }
 
     zjs_ipm_message_t send;
     send.type = TYPE_SENSOR_INIT;
+    send.data.sensor.channel = channel;
     int error = zjs_sensor_call_remote_function(&send);
     if (error != ERROR_IPM_NONE) {
         return zjs_error("zjs_sensor_create failed to init\n");
@@ -451,15 +480,15 @@ static jerry_value_t zjs_sensor_create(const jerry_value_t function_obj,
 
     // initialize object and default values
     jerry_value_t sensor_obj = jerry_create_object();
-    jerry_value_t frequency_val = jerry_create_number(frequency);
-    jerry_value_t state_val = jerry_create_string("idle");
     jerry_value_t reading_val = jerry_create_null();
-    zjs_set_property(sensor_obj, "frequency", frequency_val);
-    zjs_set_property(sensor_obj, "state", state_val);
+    zjs_obj_add_number(sensor_obj, frequency, "frequency");
+    zjs_obj_add_string(sensor_obj, "idle", "state");
     zjs_set_property(sensor_obj, "reading", reading_val);
-    jerry_release_value(frequency_val);
-    jerry_release_value(state_val);
     jerry_release_value(reading_val);
+
+    if (channel == SENSOR_CHAN_LIGHT) {
+        zjs_obj_add_number(sensor_obj, pin, "pin");
+    }
 
     zjs_obj_add_function(sensor_obj, zjs_sensor_start, "start");
     zjs_obj_add_function(sensor_obj, zjs_sensor_stop, "stop");
@@ -507,6 +536,21 @@ static jerry_value_t zjs_gyro_create(const jerry_value_t function_obj,
                              SENSOR_CHAN_GYRO_ANY);
 }
 
+static jerry_value_t zjs_light_create(const jerry_value_t function_obj,
+                                      const jerry_value_t this,
+                                      const jerry_value_t argv[],
+                                      const jerry_length_t argc)
+{
+    // requires: arg 0 is an object containing sensor options:
+    //             frequency (double) - sampling frequency, default to 50
+    //  effects: Creates a AmbientLightSensor object to the local sensor
+    return zjs_sensor_create(function_obj,
+                             this,
+                             argv,
+                             argc,
+                             SENSOR_CHAN_LIGHT);
+}
+
 void zjs_sensor_init()
 {
     zjs_ipm_init();
@@ -542,6 +586,7 @@ void zjs_sensor_init()
     jerry_value_t global_obj = jerry_get_global_object();
     zjs_obj_add_function(global_obj, zjs_accel_create, "Accelerometer");
     zjs_obj_add_function(global_obj, zjs_gyro_create, "Gyroscope");
+    zjs_obj_add_function(global_obj, zjs_light_create, "AmbientLightSensor");
     jerry_release_value(global_obj);
 }
 
@@ -552,6 +597,9 @@ void zjs_sensor_cleanup()
     }
     if (gyro_handles) {
         zjs_sensor_free_handles(gyro_handles);
+    }
+    if (light_handles) {
+        zjs_sensor_free_handles(light_handles);
     }
 }
 
