@@ -21,10 +21,23 @@ fi
 TRLDIR=$ZJS_BASE/.trlite
 TRLPATCH=$TRLDIR/patch
 
+if [ "$1" == "-h" -o "$1" == "-?" ]; then
+    echo usage: trlite [-h] [-v] [vmname] [testnum]
+    echo
+    echo positional arguments:
+    echo "  vmname   vm number 1/2/3 or name zephyr/linux/ashell (default: all)"
+    echo "  testnum  subtest to start with (default: 1)"
+    echo
+    echo optional arguments:
+    echo "  -h, -?   show this help message and exit"
+    echo "  -v       turn on verbose build output"
+    exit 1
+fi
+
 VERBOSE=
 if [ "$1" == "-v" ]; then
-   VERBOSE=V=1
-   shift
+    VERBOSE=V=1
+    shift
 fi
 
 # flags for running tests from the different VMs
