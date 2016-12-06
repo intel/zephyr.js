@@ -18,6 +18,7 @@ if [ ! -d "$ZJS_BASE" ]; then
 fi
 
 TRLDIR=$ZJS_BASE/.trlite
+TRLPATCH=$TRLDIR/patch
 
 VERBOSE=
 if [ "$1" == "-v" ]; then
@@ -35,13 +36,32 @@ if [ "$1" == "2" -o "$1" == "linux" ]; then VM1=n; VM3=n; fi
 if [ "$1" == "3" -o "$1" == "ashell" ]; then VM1=n; VM2=n; fi
 
 rm -rf $TRLDIR
-git clone -l $ZJS_BASE $TRLDIR
+
+echo Building ZJS tree: "$ZJS_BASE"
+echo Cloning git tree...
+git clone -l $ZJS_BASE $TRLDIR > /dev/null 2>&1
+
+echo Cloning git submodules...
 cd $TRLDIR/deps
 for i in */; do
-    git clone -l ../../deps/$i/.git $i
+    git clone -l ../../deps/$i/.git $i > /dev/null 2>&1
 done
-cd ..
+
+echo Preserving uncommitted changes:
+cd $ZJS_BASE
+git diff --stat
+git diff > $TRLPATCH
+cd $TRLDIR
+patch -p1 < patch > /dev/null
+
+# pause to allow consideration of diffs being applied
+sleep 3
+
+echo Updating submodules...
 make update
+
+echo
+echo Running tests...
 
 source zjs-env.sh
 source deps/zephyr/zephyr-env.sh
