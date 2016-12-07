@@ -44,14 +44,6 @@ assert(glcd !== null && typeof glcd === "object",
 // set cursor
 glcd.setCursorPos(0, 0);
 
-expectThrow("cursor: set col as '16'", function () {
-    glcd.setCursorPos(16, 0);
-});
-
-expectThrow("cursor: set row as '2'", function () {
-    glcd.setCursorPos(0, 2);
-});
-
 expectThrow("cursor: set col as 'value'", function () {
     glcd.setCursorPos("value", 0);
 });
@@ -78,14 +70,6 @@ for (var i = 0; i < colorKey.length; i++) {
 
 // set LCD color as num
 glcd.setColor(0, 0, 0);
-
-expectThrow("color: set invalid value as '256'", function () {
-    glcd.setColor(256, 0, 0);
-});
-
-expectThrow("color: set invalid value as '-1'", function () {
-    glcd.setColor(-1, 0, 0);
-});
 
 expectThrow("color: set invalid value as 'value'", function () {
     glcd.setColor("value", 0, 0);
