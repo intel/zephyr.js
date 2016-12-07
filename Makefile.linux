@@ -7,6 +7,13 @@ OCF_ROOT ?= deps/iotivity-constrained
 
 BUILD_DIR = $(ZJS_BASE)/outdir/linux/$(VARIANT)
 
+UNAME := $(shell uname)
+ifeq ($(UNAME),Darwin)
+COPY=rsync -R
+else
+COPY=cp --parents
+endif
+
 .PHONY: all
 all: linux
 
@@ -106,7 +113,7 @@ BUILD_OBJ = $(CORE_OBJ:%.o=$(BUILD_DIR)/%.o)
 
 .PHONY: linux_copy
 linux_copy:
-	cp --parents $(CORE_SRC) $(BUILD_DIR)
+	$(COPY) $(CORE_SRC) $(BUILD_DIR)
 
 %.o:%.c
 	@echo "Building $@"
