@@ -2,7 +2,7 @@
 
 // Testing UART APIs
 
-print("UART APIs test.");
+console.log("UART APIs test.");
 
 var board = require('uart');
 var assert = require('Assert.js');
@@ -42,13 +42,13 @@ board.init({ port: "tty0", baud: 115200 }).then(function (uart) {
         if (data.toString("ascii") === "\n" ||
             data.toString("ascii") === "\r") {
             if (helloFlag === true) {
-                print("please send 'hello'");
+                console.log("please send 'hello'");
                 helloFlag = false;
             }
 
             if (currentData === "hello") {
                 if (worldFlag === true) {
-                    print("please send 'world'");
+                    console.log("please send 'world'");
                     worldFlag = false;
                 }
 
