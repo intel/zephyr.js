@@ -9,9 +9,14 @@ $(error ZJS_BASE not defined. You need to source zjs-env.sh)
 endif
 
 OCF_ROOT ?= deps/iotivity-constrained
-JERRY_BASE ?= $(ZJS_BASE)/deps/jerryscript
 JS ?= samples/HelloWorld.js
 VARIANT ?= release
+# JerryScript options
+JERRY_BASE ?= $(ZJS_BASE)/deps/jerryscript
+EXT_JERRY_FLAGS ?= -DENABLE_ALL_IN_ONE=ON
+ifneq ($(BOARD), frdm_k64f)
+EXT_JERRY_FLAGS += -DENABLE_LTO=ON
+endif
 
 # if no config file passed use the ashell default
 ifeq ($(DEV), ashell)
@@ -42,12 +47,19 @@ endif
 
 # Build for zephyr, default target
 .PHONY: zephyr
-zephyr: $(PRE_ACTION) analyze generate
+zephyr: $(PRE_ACTION) analyze generate jerryscript
 	@make -f Makefile.zephyr	BOARD=$(BOARD) \
 					VARIANT=$(VARIANT) \
 					MEM_STATS=$(MEM_STATS) \
 					CB_STATS=$(CB_STATS) \
 					PRINT_FLOAT=$(PRINT_FLOAT)
+
+# Build JerryScript as a library (libjerry-core.a)
+jerryscript:
+	@echo "Building" $@
+	$(MAKE) -C $(JERRY_BASE) -f targets/zephyr/Makefile.zephyr BOARD=$(BOARD) EXT_JERRY_FLAGS="$(EXT_JERRY_FLAGS)" jerry
+	mkdir -p outdir/$(BOARD)/
+	cp $(JERRY_BASE)/build/$(BOARD)/obj-$(BOARD)/lib/libjerry-core.a outdir/$(BOARD)/
 
 # Give an error if we're asked to create the JS file
 $(JS):
@@ -190,7 +202,7 @@ else
 endif
 # Run QEMU target
 .PHONY: qemu
-qemu: $(PRE_ACTION) analyze generate
+qemu: zephyr
 	make -f Makefile.zephyr MEM_STATS=$(MEM_STATS) CB_STATS=$(CB_STATS) qemu
 
 # Builds ARC binary
