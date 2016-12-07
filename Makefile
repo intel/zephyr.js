@@ -21,7 +21,7 @@ ifeq ($(SNAPSHOT), on)
 # change this to -DFEATURE_PARSER_DISABLE=ON instead
 EXT_JERRY_FLAGS += -DFEATURE_SNAPSHOT_EXEC=ON
 endif
-ifeq ($(BOARD), adrduino_101)
+ifeq ($(BOARD), arduino_101)
 EXT_JERRY_FLAGS += -DENABLE_LTO=ON
 endif
 
