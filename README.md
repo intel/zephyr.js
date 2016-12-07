@@ -22,6 +22,10 @@ application on Arduino 101\*.
 github.com and http working to zephyrproject.org.
 
 ### Initial Setup
+***Windows and OSX users***: These instructions are for Ubuntu 16.04. Be sure to
+also consult Zephyr Project's [Getting Started](https://www.zephyrproject.org/doc/getting_started/getting_started.html)
+documentation for [Windows](https://www.zephyrproject.org/doc/getting_started/installation_win.html)
+or [OSX](https://www.zephyrproject.org/doc/getting_started/installation_mac.html).
 
 #### Install dependencies
 First, install these packages that you will need beyond those installed by
