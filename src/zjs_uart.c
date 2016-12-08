@@ -342,7 +342,7 @@ static jerry_value_t uart_init(const jerry_value_t function_obj,
     return promise;
 }
 
-jerry_value_t zjs_init_uart(void)
+jerry_value_t zjs_uart_init(void)
 {
     jerry_value_t uart_obj = jerry_create_object();
 
