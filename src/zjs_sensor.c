@@ -27,9 +27,11 @@ struct device *trigger_ipm;
 struct gpio_callback cb;
 #endif
 
-#define ZJS_SENSOR_TIMEOUT_TICKS                      500
+#define ZJS_SENSOR_TIMEOUT_TICKS 500
 
 static struct k_sem sensor_sem;
+
+static jerry_value_t zjs_sensor_prototype;
 
 enum sensor_state {
     SENSOR_STATE_IDLE,
@@ -490,8 +492,7 @@ static jerry_value_t zjs_sensor_create(const jerry_value_t function_obj,
         zjs_obj_add_number(sensor_obj, pin, "pin");
     }
 
-    zjs_obj_add_function(sensor_obj, zjs_sensor_start, "start");
-    zjs_obj_add_function(sensor_obj, zjs_sensor_stop, "stop");
+    jerry_set_prototype(sensor_obj, zjs_sensor_prototype);
 
     sensor_handle_t* handle = zjs_sensor_alloc_handle(channel);
     handle->id = zjs_add_c_callback(handle, zjs_sensor_onchange_c_callback);
@@ -558,6 +559,14 @@ void zjs_sensor_init()
 
     k_sem_init(&sensor_sem, 0, 1);
 
+    zjs_native_func_t array[] = {
+        { zjs_sensor_start, "start" },
+        { zjs_sensor_stop, "stop" },
+        { NULL, NULL }
+    };
+    zjs_sensor_prototype = jerry_create_object();
+    zjs_obj_add_functions(zjs_sensor_prototype, array);
+
 #ifdef BUILD_MODULE_SENSOR_TRIGGER
     // setting up trigger interrupt
     struct device *gpio = device_get_binding("GPIO_1");
@@ -601,6 +610,8 @@ void zjs_sensor_cleanup()
     if (light_handles) {
         zjs_sensor_free_handles(light_handles);
     }
+
+    jerry_release_value(zjs_sensor_prototype);
 }
 
 #endif // QEMU_BUILD

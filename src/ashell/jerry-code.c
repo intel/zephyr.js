@@ -34,11 +34,12 @@
 #include "file-utils.h"
 
 /* Zephyr.js init everything */
-#include "../zjs_timers.h"
 #include "../zjs_buffer.h"
 #include "../zjs_callbacks.h"
 #include "../zjs_modules.h"
 #include "../zjs_ipm.h"
+#include "../zjs_sensor.h"
+#include "../zjs_timers.h"
 
 void jerry_port_default_set_log_level(jerry_log_level_t level); /** Inside jerry-port-default.h */
 
@@ -142,7 +143,12 @@ void restore_zjs_api() {
 #ifdef BUILD_MODULE_CONSOLE
     zjs_console_init();
 #endif
+#ifdef BUILD_MODULE_BUFFER
     zjs_buffer_init();
+#endif
+#ifdef BUILD_MODULE_SENSOR
+    zjs_sensor_init();
+#endif
     zjs_init_callbacks();
     zjs_modules_init();
 }
@@ -159,7 +165,12 @@ void javascript_stop()
     /* Cleanup engine */
     zjs_timers_cleanup();
     zjs_ipm_free_callbacks();
+#ifdef BUILD_MODULE_BUFFER
     zjs_buffer_cleanup();
+#endif
+#ifdef BUILD_MODULE_SENSOR
+    zjs_sensor_cleanup();
+#endif
     zjs_modules_cleanup();
     jerry_cleanup();
 

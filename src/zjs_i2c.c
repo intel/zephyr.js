@@ -1,6 +1,7 @@
 // Copyright (c) 2016, Intel Corporation.
 #ifdef BUILD_MODULE_I2C
 #ifndef QEMU_BUILD
+
 // Zephyr includes
 #include <i2c.h>
 #include <string.h>
@@ -11,9 +12,11 @@
 #include "zjs_util.h"
 #include "zjs_buffer.h"
 
-#define ZJS_I2C_TIMEOUT_TICKS                      500
+#define ZJS_I2C_TIMEOUT_TICKS 500
 
 static struct k_sem i2c_sem;
+
+static jerry_value_t zjs_i2c_prototype;
 
 static bool zjs_i2c_ipm_send_sync(zjs_ipm_message_t* send,
                                   zjs_ipm_message_t* result) {
@@ -295,11 +298,8 @@ static jerry_value_t zjs_i2c_open(const jerry_value_t function_obj,
 
     // create the I2C object
     jerry_value_t i2c_obj = jerry_create_object();
-    zjs_obj_add_function(i2c_obj, zjs_i2c_read, "read");
-    zjs_obj_add_function(i2c_obj, zjs_i2c_burst_read, "burstRead");
-    zjs_obj_add_function(i2c_obj, zjs_i2c_write, "write");
-    zjs_obj_add_function(i2c_obj, zjs_i2c_abort, "abort");
-    zjs_obj_add_function(i2c_obj, zjs_i2c_close, "close");
+    jerry_set_prototype(i2c_obj, zjs_i2c_prototype);
+
     zjs_obj_add_number(i2c_obj, bus, "bus");
     zjs_obj_add_number(i2c_obj, speed, "speed");
 
@@ -313,10 +313,26 @@ jerry_value_t zjs_i2c_init()
 
     k_sem_init(&i2c_sem, 0, 1);
 
+    zjs_native_func_t array[] = {
+        { zjs_i2c_read, "read" },
+        { zjs_i2c_burst_read, "burstRead" },
+        { zjs_i2c_write, "write" },
+        { zjs_i2c_abort, "abort" },
+        { zjs_i2c_close, "close" },
+        { NULL, NULL }
+    };
+    zjs_i2c_prototype = jerry_create_object();
+    zjs_obj_add_functions(zjs_i2c_prototype, array);
+
     // create global I2C object
     jerry_value_t i2c_obj = jerry_create_object();
     zjs_obj_add_function(i2c_obj, zjs_i2c_open, "open");
     return i2c_obj;
+}
+
+void zjs_i2c_cleanup()
+{
+    jerry_release_value(zjs_i2c_prototype);
 }
 
 #endif // QEMU_BUILD

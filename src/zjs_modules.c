@@ -55,10 +55,10 @@ module_t zjs_modules_array[] = {
     { "ble", zjs_ble_init },
 #endif
 #ifdef BUILD_MODULE_GPIO
-    { "gpio", zjs_gpio_init },
+    { "gpio", zjs_gpio_init, zjs_gpio_cleanup },
 #endif
 #ifdef BUILD_MODULE_GROVE_LCD
-    { "grove_lcd", zjs_grove_lcd_init },
+    { "grove_lcd", zjs_grove_lcd_init, zjs_grove_lcd_cleanup },
 #endif
 #ifdef BUILD_MODULE_PWM
     { "pwm", zjs_pwm_init },
@@ -76,11 +76,11 @@ module_t zjs_modules_array[] = {
 #endif
 #endif // QEMU_BUILD
 #ifdef BUILD_MODULE_UART
-    { "uart", zjs_init_uart },
+    { "uart", zjs_uart_init },
 #endif
 #endif // ZJS_LINUX_BUILD
 #ifdef BUILD_MODULE_EVENTS
-    { "events", zjs_event_init },
+    { "events", zjs_event_init, zjs_event_cleanup },
 #endif
 #ifdef BUILD_MODULE_PERFORMANCE
     { "performance", zjs_performance_init },
