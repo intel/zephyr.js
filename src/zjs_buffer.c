@@ -269,11 +269,7 @@ static void zjs_buffer_callback_free(uintptr_t handle)
             zjs_free((void *)handle);
             return;
         }
-        if ((*pItem) != NULL) {
-            pItem = &(*pItem)->next;
-        }
-        else
-            return;
+        pItem = &(*pItem)->next;
     }
 }
 
