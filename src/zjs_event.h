@@ -3,14 +3,14 @@
 
 #include "zjs_util.h"
 
-/*
+/**
  * Callback prototype for after an event is triggered
  *
  * @param handle        Handle given to zjs_trigger_event()
  */
 typedef void (*zjs_post_event)(void* handle);
 
-/*
+/**
  * Turn an object into an event object. After this call the object will have
  * all the event functions like addListener(), on(), etc. This object can also
  * be used to trigger events in C.
@@ -19,7 +19,7 @@ typedef void (*zjs_post_event)(void* handle);
  */
 void zjs_make_event(jerry_value_t obj);
 
-/*
+/**
  * Add a new event listener to an event object.
  *
  * @param obj           Object to add listener to
@@ -28,7 +28,7 @@ void zjs_make_event(jerry_value_t obj);
  */
 void zjs_add_event_listener(jerry_value_t obj, const char* event, jerry_value_t listener);
 
-/*
+/**
  * Trigger an event
  *
  * @param obj           Object that contains the event to be triggered
@@ -47,7 +47,7 @@ bool zjs_trigger_event(jerry_value_t obj,
                        zjs_post_event post,
                        void* handle);
 
-/*
+/**
  * Call any registered event listeners immediately
  *
  * @param obj           Object that contains the event to be triggered
@@ -66,12 +66,14 @@ bool zjs_trigger_event_now(jerry_value_t obj,
                            zjs_post_event post,
                            void* h);
 
-/*
+/**
  * Initialize the event module
  *
  * @return              Event constructor
  */
 jerry_value_t zjs_event_init();
 
+/** Release resources held by the event module */
+void zjs_event_cleanup();
 
 #endif

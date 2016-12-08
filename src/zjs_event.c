@@ -9,6 +9,8 @@
 #define HIDDEN_PROP(n) "\377" n
 #endif
 
+static jerry_value_t zjs_event_emitter_prototype;
+
 struct event {
     int num_events;
     jerry_value_t map;
@@ -535,16 +537,7 @@ void zjs_make_event(jerry_value_t obj)
     ev->num_events = 0;
     ev->map = jerry_create_object();
 
-    zjs_obj_add_function(obj, add_listener, "on");
-    zjs_obj_add_function(obj, add_listener, "addListener");
-    zjs_obj_add_function(obj, emit_event, "emit");
-    zjs_obj_add_function(obj, remove_listener, "removeListener");
-    zjs_obj_add_function(obj, remove_all_listeners, "removeAllListeners");
-    zjs_obj_add_function(obj, get_event_names, "eventNames");
-    zjs_obj_add_function(obj, get_max_listeners, "getMaxListeners");
-    zjs_obj_add_function(obj, get_listener_count, "listenerCount");
-    zjs_obj_add_function(obj, get_listeners, "listeners");
-    zjs_obj_add_function(obj, set_max_listeners, "setMaxListeners");
+    jerry_set_prototype(obj, zjs_event_emitter_prototype);
 
     jerry_set_object_native_handle(event_obj, (uintptr_t)ev, destroy_event);
 
@@ -564,5 +557,26 @@ static jerry_value_t event_constructor(const jerry_value_t function_obj,
 
 jerry_value_t zjs_event_init()
 {
+    zjs_native_func_t array[] = {
+        { add_listener, "on" },
+        { add_listener, "addListener" },
+        { emit_event, "emit" },
+        { remove_listener, "removeListener" },
+        { remove_all_listeners, "removeAllListeners" },
+        { get_event_names, "eventNames" },
+        { get_max_listeners, "getMaxListeners" },
+        { get_listener_count, "listenerCount" },
+        { get_listeners, "listeners" },
+        { set_max_listeners, "setMaxListeners" },
+        { NULL, NULL }
+    };
+    zjs_event_emitter_prototype = jerry_create_object();
+    zjs_obj_add_functions(zjs_event_emitter_prototype, array);
+
     return jerry_create_external_function(event_constructor);
+}
+
+void zjs_event_cleanup()
+{
+    jerry_release_value(zjs_event_emitter_prototype);
 }

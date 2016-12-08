@@ -33,6 +33,8 @@ static const char *ZJS_PULL_DOWN = "down";
 
 static struct device *zjs_gpio_dev[GPIO_DEV_COUNT];
 
+static jerry_value_t zjs_gpio_pin_prototype;
+
 void (*zjs_gpio_convert_pin)(uint32_t orig, int *dev, int *pin) =
     zjs_default_convert_pin;
 
@@ -358,9 +360,8 @@ static jerry_value_t zjs_gpio_open(const jerry_value_t function_obj,
 
     // create the GPIOPin object
     jerry_value_t pinobj = jerry_create_object();
-    zjs_obj_add_function(pinobj, zjs_gpio_pin_read, "read");
-    zjs_obj_add_function(pinobj, zjs_gpio_pin_write, "write");
-    zjs_obj_add_function(pinobj, zjs_gpio_pin_close, "close");
+    jerry_set_prototype(pinobj, zjs_gpio_pin_prototype);
+
     zjs_obj_add_string(pinobj, dirOut ? ZJS_DIR_OUT : ZJS_DIR_IN, "direction");
     zjs_obj_add_boolean(pinobj, activeLow, "activeLow");
     zjs_obj_add_string(pinobj, edge, "edge");
@@ -454,10 +455,26 @@ jerry_value_t zjs_gpio_init()
         }
     }
 
+    // create GPIO pin prototype object
+    zjs_native_func_t array[] = {
+        { zjs_gpio_pin_read, "read" },
+        { zjs_gpio_pin_write, "write" },
+        { zjs_gpio_pin_close, "close" },
+        { NULL, NULL }
+    };
+    zjs_gpio_pin_prototype = jerry_create_object();
+    zjs_obj_add_functions(zjs_gpio_pin_prototype, array);
+
     // create GPIO object
     jerry_value_t gpio_obj = jerry_create_object();
     zjs_obj_add_function(gpio_obj, zjs_gpio_open_sync, "open");
     zjs_obj_add_function(gpio_obj, zjs_gpio_open_async, "openAsync");
     return gpio_obj;
 }
+
+void zjs_gpio_cleanup()
+{
+    jerry_release_value(zjs_gpio_pin_prototype);
+}
+
 #endif // BUILD_MODULE_GPIO

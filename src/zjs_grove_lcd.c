@@ -19,6 +19,8 @@
 
 static struct k_sem glcd_sem;
 
+static jerry_value_t zjs_glcd_prototype;
+
 static bool zjs_glcd_ipm_send_sync(zjs_ipm_message_t* send,
                                    zjs_ipm_message_t* result) {
     send->id = MSG_ID_GLCD;
@@ -311,20 +313,9 @@ static jerry_value_t zjs_glcd_init(const jerry_value_t function_obj,
     }
 
     // create the Grove LCD device object
-    jerry_value_t devObj = jerry_create_object();
-    zjs_obj_add_function(devObj, zjs_glcd_print, "print");
-    zjs_obj_add_function(devObj, zjs_glcd_clear, "clear");
-    zjs_obj_add_function(devObj, zjs_glcd_set_cursor_pos, "setCursorPos");
-    zjs_obj_add_function(devObj, zjs_glcd_select_color, "selectColor");
-    zjs_obj_add_function(devObj, zjs_glcd_set_color, "setColor");
-    zjs_obj_add_function(devObj, zjs_glcd_set_function, "setFunction");
-    zjs_obj_add_function(devObj, zjs_glcd_get_function, "getFunction");
-    zjs_obj_add_function(devObj, zjs_glcd_set_display_state, "setDisplayState");
-    zjs_obj_add_function(devObj, zjs_glcd_get_display_state, "getDisplayState");
-    zjs_obj_add_function(devObj, zjs_glcd_set_input_state, "setInputState");
-    zjs_obj_add_function(devObj, zjs_glcd_get_input_state, "getInputState");
-
-    return devObj;
+    jerry_value_t dev_obj = jerry_create_object();
+    jerry_set_prototype(dev_obj, zjs_glcd_prototype);
+    return dev_obj;
 }
 
 jerry_value_t zjs_grove_lcd_init()
@@ -333,6 +324,23 @@ jerry_value_t zjs_grove_lcd_init()
     zjs_ipm_register_callback(MSG_ID_GLCD, ipm_msg_receive_callback);
 
     k_sem_init(&glcd_sem, 0, 1);
+
+    zjs_native_func_t array[] = {
+        { zjs_glcd_print, "print" },
+        { zjs_glcd_clear, "clear" },
+        { zjs_glcd_set_cursor_pos, "setCursorPos" },
+        { zjs_glcd_select_color, "selectColor" },
+        { zjs_glcd_set_color, "setColor" },
+        { zjs_glcd_set_function, "setFunction" },
+        { zjs_glcd_get_function, "getFunction" },
+        { zjs_glcd_set_display_state, "setDisplayState" },
+        { zjs_glcd_get_display_state, "getDisplayState" },
+        { zjs_glcd_set_input_state, "setInputState" },
+        { zjs_glcd_get_input_state, "getInputState" },
+        { NULL, NULL }
+    };
+    zjs_glcd_prototype = jerry_create_object();
+    zjs_obj_add_functions(zjs_glcd_prototype, array);
 
     // create global grove_lcd object
     jerry_value_t glcd_obj = jerry_create_object();
@@ -422,6 +430,11 @@ jerry_value_t zjs_grove_lcd_init()
     jerry_release_value(val);
 
     return glcd_obj;
+}
+
+void zjs_grove_lcd_cleanup()
+{
+    jerry_release_value(zjs_glcd_prototype);
 }
 
 #endif // QEMU_BUILD
