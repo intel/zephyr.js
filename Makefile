@@ -1,8 +1,10 @@
 BOARD ?= arduino_101
 UPDATE ?= exit
 
-# pass TRACE=y to trace malloc/free in the ZJS API
-TRACE ?= n
+# Dump memory information: on = print allocs, full = print allocs + dump pools
+TRACE ?= off
+# Generate and run snapshot as byte code instead of running JS directly
+SNAPSHOT ?= off
 
 ifndef ZJS_BASE
 $(error ZJS_BASE not defined. You need to source zjs-env.sh)
@@ -14,7 +16,12 @@ VARIANT ?= release
 # JerryScript options
 JERRY_BASE ?= $(ZJS_BASE)/deps/jerryscript
 EXT_JERRY_FLAGS ?= -DENABLE_ALL_IN_ONE=ON
-ifneq ($(BOARD), frdm_k64f)
+ifeq ($(SNAPSHOT), on)
+# ToDo - When Sergio's patch to JerryScript is merged,
+# change this to -DFEATURE_PARSER_DISABLE=ON instead
+EXT_JERRY_FLAGS += -DFEATURE_SNAPSHOT_EXEC=ON
+endif
+ifeq ($(BOARD), arduino_101)
 EXT_JERRY_FLAGS += -DENABLE_LTO=ON
 endif
 
@@ -23,8 +30,6 @@ ifeq ($(DEV), ashell)
 	CONFIG ?= fragments/zjs.conf.dev
 endif
 
-# Dump memory information: on = print allocs, full = print allocs + dump pools
-TRACE ?= off
 # Print callback statistics during runtime
 CB_STATS ?= off
 # Print floats (uses -u _printf_float flag). This is a workaround on the A101
@@ -75,6 +80,9 @@ analyze: $(JS)
 	@cat arc/src/Makefile.base >> arc/src/Makefile
 	@if [ "$(TRACE)" = "on" ] || [ "$(TRACE)" = "full" ]; then \
 		echo "ccflags-y += -DZJS_TRACE_MALLOC" >> src/Makefile; \
+	fi
+	@if [ "$(SNAPSHOT)" = "on" ]; then \
+		echo "ccflags-y += -DZJS_SNAPSHOT_BUILD" >> src/Makefile; \
 	fi
 ifeq ($(DEV), ashell)
 	@cat fragments/prj.mdef.dev >> prj.mdef
@@ -161,6 +169,8 @@ clean: update
 	fi
 	make -f Makefile.linux clean
 	@rm -f src/*.o
+	@rm -f src/zjs_script_gen.c
+	@rm -f src/zjs_snapshot_gen.c
 	@rm -f src/Makefile
 	@rm -f arc/prj.conf
 	@rm -f arc/prj.conf.tmp
@@ -194,12 +204,22 @@ dfu-all: dfu dfu-arc
 # Generate the script file from the JS variable
 .PHONY: generate
 generate: $(JS) setup
+ifeq ($(SNAPSHOT), on)
+	@echo Building snapshot generator...
+	@if ! [ -e outdir/snapshot/snapshot ]; then \
+		make -f Makefile.snapshot; \
+	fi
+	@echo Creating snapshot byte code from JS application...
+	@outdir/snapshot/snapshot $(JS) src/zjs_snapshot_gen.c
+else
 	@echo Creating C string from JS application...
 ifeq ($(TARGET), linux)
 	@./scripts/convert.sh $(JS) src/zjs_script_gen.c
 else
 	@./scripts/convert.sh /tmp/zjs.js src/zjs_script_gen.c
 endif
+endif
+
 # Run QEMU target
 .PHONY: qemu
 qemu: zephyr

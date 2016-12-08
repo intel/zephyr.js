@@ -36,7 +36,12 @@
 
 #define ZJS_MAX_PRINT_SIZE      512
 
+#ifdef ZJS_SNAPSHOT_BUILD
+extern const uint8_t snapshot_bytecode[];
+extern const int snapshot_len;
+#else
 extern const char *script_gen;
+#endif
 
 // native eval handler
 static jerry_value_t native_eval_handler(const jerry_value_t function_obj,
@@ -72,10 +77,12 @@ void main(void)
 int main(int argc, char *argv[])
 #endif
 {
+#ifndef ZJS_SNAPSHOT_BUILD
     const char *script = NULL;
     jerry_value_t code_eval;
-    jerry_value_t result;
     uint32_t len;
+#endif
+    jerry_value_t result;
 
     // print newline here to make it easier to find
     // the beginning of the program
@@ -117,6 +124,7 @@ int main(int argc, char *argv[])
     zjs_register_service_routine(NULL, main_poll_routine);
 #endif
 
+#ifndef ZJS_SNAPSHOT_BUILD
 #ifdef ZJS_LINUX_BUILD
     if (argc > 1) {
         if (!strncmp(argv[1], "--unittest", 10)) {
@@ -140,17 +148,20 @@ int main(int argc, char *argv[])
             goto error;
         }
     }
+#endif
 
     // Todo: find a better solution to disable eval() in JerryScript.
     // For now, just inject our eval() function in the global space
     zjs_obj_add_function(global_obj, native_eval_handler, "eval");
     zjs_obj_add_function(global_obj, native_print_handler, "print");
 
+#ifndef ZJS_SNAPSHOT_BUILD
     code_eval = jerry_parse((jerry_char_t *)script, len, false);
     if (jerry_value_has_error_flag(code_eval)) {
         ZJS_PRINT("JerryScript: cannot parse javascript\n");
         goto error;
     }
+#endif
 
 #ifdef ZJS_LINUX_BUILD
     if (argc > 1) {
@@ -158,16 +169,25 @@ int main(int argc, char *argv[])
     }
 #endif
 
+#ifdef ZJS_SNAPSHOT_BUILD
+    result = jerry_exec_snapshot(snapshot_bytecode,
+                                 snapshot_len,
+                                 false);
+#else
     result = jerry_run(code_eval);
+#endif
+
     if (jerry_value_has_error_flag(result)) {
         ZJS_PRINT("JerryScript: cannot run javascript\n");
         goto error;
     }
 
+#ifndef ZJS_SNAPSHOT_BUILD
+    jerry_release_value(code_eval);
+#endif
     jerry_release_value(global_obj);
     jerry_release_value(modules_obj);
     jerry_release_value(exports_obj);
-    jerry_release_value(code_eval);
     jerry_release_value(result);
 
 #ifndef ZJS_LINUX_BUILD
