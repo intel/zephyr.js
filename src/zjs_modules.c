@@ -76,7 +76,7 @@ module_t zjs_modules_array[] = {
 #endif
 #endif // QEMU_BUILD
 #ifdef BUILD_MODULE_UART
-    { "uart", zjs_uart_init },
+    { "uart", zjs_uart_init, zjs_uart_cleanup },
 #endif
 #endif // ZJS_LINUX_BUILD
 #ifdef BUILD_MODULE_EVENTS

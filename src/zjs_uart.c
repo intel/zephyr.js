@@ -20,6 +20,8 @@
 #include "zjs_event.h"
 #include "zjs_buffer.h"
 
+static jerry_value_t zjs_uart_prototype;
+
 typedef struct {
     const char* name;
     const char* port;
@@ -330,10 +332,7 @@ static jerry_value_t uart_init(const jerry_value_t function_obj,
 
     handle->uart_obj = jerry_create_object();
 
-    zjs_make_event(handle->uart_obj);
-
-    zjs_obj_add_function(handle->uart_obj, uart_write, "write");
-    zjs_obj_add_function(handle->uart_obj, uart_set_read_range, "setReadRange");
+    zjs_make_event(handle->uart_obj, zjs_uart_prototype);
 
     zjs_fulfill_promise(promise, &handle->uart_obj, 1);
 
@@ -342,13 +341,24 @@ static jerry_value_t uart_init(const jerry_value_t function_obj,
     return promise;
 }
 
-jerry_value_t zjs_uart_init(void)
+jerry_value_t zjs_uart_init()
 {
+    zjs_native_func_t array[] = {
+        { uart_write, "write" },
+        { uart_set_read_range, "setReadRange" },
+        { NULL, NULL }
+    };
+    zjs_uart_prototype = jerry_create_object();
+    zjs_obj_add_functions(zjs_uart_prototype, array);
+
     jerry_value_t uart_obj = jerry_create_object();
-
     zjs_obj_add_function(uart_obj, uart_init, "init");
-
     return uart_obj;
+}
+
+void zjs_uart_cleanup()
+{
+    jerry_release_value(zjs_uart_prototype);
 }
 
 #endif // BUILD_MODULE_UART

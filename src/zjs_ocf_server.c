@@ -504,7 +504,7 @@ jerry_value_t zjs_ocf_server_init()
     zjs_obj_add_function(server, ocf_respond, "respond");
     zjs_obj_add_function(server, ocf_notify, "notify");
 
-    zjs_make_event(server);
+    zjs_make_event(server, ZJS_UNDEFINED);
 
     return server;
 }
