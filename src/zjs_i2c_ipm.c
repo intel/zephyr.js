@@ -1,19 +1,60 @@
 // Copyright (c) 2016, Intel Corporation.
 #ifndef QEMU_BUILD
-
 // Zephyr includes
 #include <i2c.h>
 #include <string.h>
 
 // ZJS includes
 #include "zjs_i2c.h"
+#include "zjs_ipm.h"
 #include "zjs_util.h"
 #include "zjs_buffer.h"
 
-#define ZJS_I2C_TIMEOUT_TICKS 500
+#define ZJS_I2C_TIMEOUT_TICKS                      500
 
 static struct k_sem i2c_sem;
-static struct device *i2c_device[MAX_I2C_BUS];
+
+static bool zjs_i2c_ipm_send_sync(zjs_ipm_message_t* send,
+                                  zjs_ipm_message_t* result) {
+    send->id = MSG_ID_I2C;
+    send->flags = 0 | MSG_SYNC_FLAG;
+    send->user_data = (void *)result;
+    send->error_code = ERROR_IPM_NONE;
+
+    if (zjs_ipm_send(MSG_ID_I2C, send) != 0) {
+        ERR_PRINT("zjs_i2c_ipm_send_sync: failed to send message\n");
+        return false;
+    }
+
+    // block until reply or timeout
+    if (k_sem_take(&i2c_sem, ZJS_I2C_TIMEOUT_TICKS)) {
+        ERR_PRINT("zjs_i2c_ipm_send_sync: ipm timed out\n");
+        return false;
+    }
+
+    return true;
+}
+
+static void ipm_msg_receive_callback(void *context, uint32_t id, volatile void *data)
+{
+    if (id != MSG_ID_I2C)
+        return;
+
+    zjs_ipm_message_t *msg = (zjs_ipm_message_t*)(*(uintptr_t *)data);
+
+    if (msg->flags & MSG_SYNC_FLAG) {
+         zjs_ipm_message_t *result = (zjs_ipm_message_t*)msg->user_data;
+        // synchronous ipm, copy the results
+        if (result)
+            memcpy(result, msg, sizeof(zjs_ipm_message_t));
+
+        // un-block sync api
+        k_sem_give(&i2c_sem);
+    } else {
+        // asynchronous ipm, should not get here
+        ERR_PRINT("ipm_msg_receive_callback: async message received\n");
+    }
+}
 
 static jerry_value_t zjs_i2c_read_base(const jerry_value_t this,
                                        const jerry_value_t argv[],
@@ -68,43 +109,25 @@ static jerry_value_t zjs_i2c_read_base(const jerry_value_t this,
         return zjs_error("zjs_i2c_read_base: buffer creation failed");
     }
 
+    zjs_ipm_message_t send;
+    zjs_ipm_message_t reply;
+
     if (!burst) {
-        if (bus < MAX_I2C_BUS) {
-            // read has to come after an Open I2C message
-            if (i2c_device[bus]) {
-                int reply = i2c_read(i2c_device[bus],
-                                     buf->buffer,
-                                     size,
-                                     (uint16_t)address);
-
-                if (reply < 0) {
-                    ZJS_PRINT("I2C Read failed with error : %i\n", reply);
-                }
-            }
-            else {
-                ZJS_PRINT("No I2C device is ready yet\n");
-            }
-        }
-
+        send.type = TYPE_I2C_READ;
     } else {
-        if (bus < MAX_I2C_BUS) {
-            // burst read has to come after an Open I2C message
-            if (i2c_device[bus]) {
-               int reply = i2c_burst_read(i2c_device[bus],
-                                          (uint16_t)address,
-                                          register_addr,
-                                          buf->buffer,
-                                          size);
+        send.type = TYPE_I2C_BURST_READ;
+    }
 
-                if (reply < 0) {
-                    ZJS_PRINT("I2C Burst Read failed with error : %i\n", reply);
-                }
-            }
-            else {
-                ZJS_PRINT("No I2C device is ready yet\n");
-            }
-        }
+    send.data.i2c.bus = (uint8_t)bus;
+    send.data.i2c.data = buf->buffer;
+    send.data.i2c.address = (uint16_t)address;
+    send.data.i2c.register_addr = register_addr;
+    send.data.i2c.length = size;
 
+    bool success = zjs_i2c_ipm_send_sync(&send, &reply);
+
+    if (!success) {
+        return zjs_error("zjs_i2c_read_base: ipm message failed or timed out!");
     }
 
     return buf_obj;
@@ -169,12 +192,10 @@ static jerry_value_t zjs_i2c_write(const jerry_value_t function_obj,
 
     uint32_t register_addr = 0;
 
-    if (argc >= 3) {
-        if (!jerry_value_is_number(argv[2])) {
-            return zjs_error("zjs_i2c_read: register is not a number");
-        } else {
-            register_addr = (uint32_t)jerry_get_number_value(argv[2]);
-        }
+    if (argc >= 3 && !jerry_value_is_number(argv[2])) {
+        return zjs_error("zjs_i2c_read: register is not a number");
+    } else {
+        register_addr = (uint32_t)jerry_get_number_value(argv[2]);
     }
 
     uint32_t bus;
@@ -193,19 +214,21 @@ static jerry_value_t zjs_i2c_write(const jerry_value_t function_obj,
 
     uint32_t address = (uint32_t)jerry_get_number_value(argv[0]);
 
-    if (bus < MAX_I2C_BUS && i2c_device[bus]) {
-        // Write has to come after an Open I2C message
-        int reply = i2c_write(i2c_device[bus],
-                              dataBuf->buffer,
-                              dataBuf->bufsize,
-                              (uint16_t)address);
+    // send IPM message to the ARC side
+    zjs_ipm_message_t send;
+    zjs_ipm_message_t reply;
 
-        if (reply < 0) {
-            ZJS_PRINT("I2C Write failed with error : %i\n", reply);
-        }
-    }
-    else {
-        ZJS_PRINT("no I2C device is ready yet\n");
+    send.type = TYPE_I2C_WRITE;
+    send.data.i2c.bus = (uint8_t)bus;
+    send.data.i2c.data = dataBuf->buffer;
+    send.data.i2c.register_addr = register_addr;
+    send.data.i2c.address = (uint16_t)address;
+    send.data.i2c.length = dataBuf->bufsize;
+
+    bool success = zjs_i2c_ipm_send_sync(&send, &reply);
+
+    if (!success) {
+        return zjs_error("zjs_i2c_write: ipm message failed or timed out!");
     }
 
     return ZJS_UNDEFINED;
@@ -255,32 +278,27 @@ static jerry_value_t zjs_i2c_open(const jerry_value_t function_obj,
         return zjs_error("zjs_i2c_open: missing required field (speed)");
     }
 
-    if (bus < MAX_I2C_BUS && i2c_device[bus]) {
-        char i2c_bus[6];
-        snprintf(i2c_bus, 6, "I2C_%i", (uint8_t)bus);
-        i2c_device[bus] = device_get_binding(i2c_bus);
+    // send IPM message to the ARC side
+    zjs_ipm_message_t send;
+    zjs_ipm_message_t reply;
 
-        /* TODO remove these hard coded numbers
-         * once the config API is made */
-        union dev_config cfg;
-        cfg.raw = 0;
-        cfg.bits.use_10_bit_addr = 0;
-        cfg.bits.speed = I2C_SPEED_STANDARD;
-        cfg.bits.is_master_device = 1;
+    send.type = TYPE_I2C_OPEN;
+    send.data.i2c.bus = (uint8_t)bus;
+    send.data.i2c.speed = (uint8_t)speed;
 
-        int reply = i2c_configure(i2c_device[bus], cfg.raw);
+    bool success = zjs_i2c_ipm_send_sync(&send, &reply);
 
-        if (reply < 0) {
-            ZJS_PRINT("I2C bus %s configure failed with error : %i\n", i2c_bus, reply);
-        }
-    } else {
-        ZJS_PRINT("I2C bus I2C_%i is not a valid I2C bus.\n", (uint8_t)bus);
+    if (!success) {
+        return zjs_error("zjs_i2c_write: ipm message failed or timed out!");
     }
 
     // create the I2C object
     jerry_value_t i2c_obj = jerry_create_object();
-    jerry_set_prototype(i2c_obj, zjs_i2c_prototype);
-
+    zjs_obj_add_function(i2c_obj, zjs_i2c_read, "read");
+    zjs_obj_add_function(i2c_obj, zjs_i2c_burst_read, "burstRead");
+    zjs_obj_add_function(i2c_obj, zjs_i2c_write, "write");
+    zjs_obj_add_function(i2c_obj, zjs_i2c_abort, "abort");
+    zjs_obj_add_function(i2c_obj, zjs_i2c_close, "close");
     zjs_obj_add_number(i2c_obj, bus, "bus");
     zjs_obj_add_number(i2c_obj, speed, "speed");
 
@@ -289,28 +307,15 @@ static jerry_value_t zjs_i2c_open(const jerry_value_t function_obj,
 
 jerry_value_t zjs_i2c_init()
 {
-    k_sem_init(&i2c_sem, 0, 1);
+    zjs_ipm_init();
+    zjs_ipm_register_callback(MSG_ID_I2C, ipm_msg_receive_callback);
 
-    zjs_native_func_t array[] = {
-        { zjs_i2c_read, "read" },
-        { zjs_i2c_burst_read, "burstRead" },
-        { zjs_i2c_write, "write" },
-        { zjs_i2c_abort, "abort" },
-        { zjs_i2c_close, "close" },
-        { NULL, NULL }
-    };
-    zjs_i2c_prototype = jerry_create_object();
-    zjs_obj_add_functions(zjs_i2c_prototype, array);
+    k_sem_init(&i2c_sem, 0, 1);
 
     // create global I2C object
     jerry_value_t i2c_obj = jerry_create_object();
     zjs_obj_add_function(i2c_obj, zjs_i2c_open, "open");
     return i2c_obj;
-}
-
-void zjs_i2c_cleanup()
-{
-    jerry_release_value(zjs_i2c_prototype);
 }
 
 #endif // QEMU_BUILD
