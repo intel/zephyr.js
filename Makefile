@@ -158,6 +158,7 @@ endif
 clean: update
 	@if [ -d $(ZEPHYR_SDK_INSTALL_DIR) ]; then \
 		rm -rf $(JERRY_BASE)/build/$(BOARD)/; \
+		rm -f outdir/$(BOARD)/libjerry-core.a; \
 		make -f Makefile.zephyr clean BOARD=$(BOARD); \
 		cd arc/; make clean; \
 	fi
