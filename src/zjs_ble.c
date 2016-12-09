@@ -1231,7 +1231,7 @@ jerry_value_t zjs_ble_init()
     zjs_obj_add_function(ble_obj, zjs_ble_descriptor, "Descriptor");
 
     // make it an event object
-    zjs_make_event(ble_obj);
+    zjs_make_event(ble_obj, ZJS_UNDEFINED);
 
     // bt events are called from the FIBER context, since we can't call
     // zjs_trigger_event() directly, we need to register a c callback which
