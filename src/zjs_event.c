@@ -524,7 +524,7 @@ static void destroy_event(const uintptr_t pointer)
     }
 }
 
-void zjs_make_event(jerry_value_t obj)
+void zjs_make_event(jerry_value_t obj, jerry_value_t prototype)
 {
     jerry_value_t event_obj = jerry_create_object();
     struct event* ev = zjs_malloc(sizeof(struct event));
@@ -537,7 +537,12 @@ void zjs_make_event(jerry_value_t obj)
     ev->num_events = 0;
     ev->map = jerry_create_object();
 
-    jerry_set_prototype(obj, zjs_event_emitter_prototype);
+    jerry_value_t proto = zjs_event_emitter_prototype;
+    if (jerry_value_is_object(prototype)) {
+        jerry_set_prototype(prototype, proto);
+        proto = prototype;
+    }
+    jerry_set_prototype(obj, proto);
 
     jerry_set_object_native_handle(event_obj, (uintptr_t)ev, destroy_event);
 
@@ -551,7 +556,7 @@ static jerry_value_t event_constructor(const jerry_value_t function_obj,
                                        const jerry_length_t argc)
 {
     jerry_value_t new_emitter = jerry_create_object();
-    zjs_make_event(new_emitter);
+    zjs_make_event(new_emitter, ZJS_UNDEFINED);
     return new_emitter;
 }
 

@@ -1027,7 +1027,7 @@ jerry_value_t zjs_ocf_client_init()
 {
     jerry_value_t ocf_client = jerry_create_object();
 
-    zjs_make_event(ocf_client);
+    zjs_make_event(ocf_client, ZJS_UNDEFINED);
 
     zjs_obj_add_function(ocf_client, ocf_find_resources, "findResources");
     zjs_obj_add_function(ocf_client, ocf_retrieve, "retrieve");

@@ -13,11 +13,15 @@ typedef void (*zjs_post_event)(void* handle);
 /**
  * Turn an object into an event object. After this call the object will have
  * all the event functions like addListener(), on(), etc. This object can also
- * be used to trigger events in C.
+ * be used to trigger events in C. If the object needs no other prototype, pass
+ * undefined and the event emitter prototype will be used. If a prototype is
+ * given, it will be used as the object's prototype but its prototype in turn
+ * will be set to the event emitter prototype.
  *
  * @param obj           Object to turn into an event object
+ * @param prototype     Object to decorate and use as prototype, or undefined
  */
-void zjs_make_event(jerry_value_t obj);
+void zjs_make_event(jerry_value_t obj, jerry_value_t prototype);
 
 /**
  * Add a new event listener to an event object.
