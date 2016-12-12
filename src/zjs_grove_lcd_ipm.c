@@ -12,15 +12,81 @@
 
 // ZJS includes
 #include "zjs_grove_lcd.h"
+#include "zjs_ipm.h"
 #include "zjs_util.h"
 
 #define ZJS_GLCD_TIMEOUT_TICKS 500
-#define MAX_BUFFER_SIZE 256
 
-static struct device *glcd = NULL;
-static char str[MAX_BUFFER_SIZE];
+static struct k_sem glcd_sem;
 
 static jerry_value_t zjs_glcd_prototype;
+
+static bool zjs_glcd_ipm_send_sync(zjs_ipm_message_t* send,
+                                   zjs_ipm_message_t* result) {
+    send->id = MSG_ID_GLCD;
+    send->flags = 0 | MSG_SYNC_FLAG;
+    send->user_data = (void *)result;
+    send->error_code = ERROR_IPM_NONE;
+
+    if (zjs_ipm_send(MSG_ID_GLCD, send) != 0) {
+        ERR_PRINT("zjs_glcd_ipm_send_sync: failed to send message\n");
+        return false;
+    }
+
+    // block until reply or timeout, we shouldn't see the ARC
+    // time out, if the ARC response comes back after it
+    // times out, it could pollute the result on the stack
+    if (k_sem_take(&glcd_sem, ZJS_GLCD_TIMEOUT_TICKS)) {
+        ERR_PRINT("zjs_glcd_ipm_send_sync: FATAL ERROR, ipm timed out\n");
+        return false;
+    }
+
+    return true;
+}
+
+static jerry_value_t zjs_glcd_call_remote_function(zjs_ipm_message_t* send)
+{
+    if (!send)
+        return zjs_error("zjs_glcd_call_remote_function: invalid send message");
+
+    zjs_ipm_message_t reply;
+
+    bool success = zjs_glcd_ipm_send_sync(send, &reply);
+
+    if (!success) {
+        return zjs_error("zjs_glcd_call_remote_function: ipm message failed or timed out!");
+    }
+
+    if (reply.error_code != ERROR_IPM_NONE) {
+        ERR_PRINT("error code: %lu\n", reply.error_code);
+        return zjs_error("zjs_glcd_call_remote_function: error received");
+    }
+
+    uint8_t value = reply.data.glcd.value;
+
+    return jerry_create_number(value);
+}
+
+static void ipm_msg_receive_callback(void *context, uint32_t id, volatile void *data)
+{
+    if (id != MSG_ID_GLCD)
+        return;
+
+    zjs_ipm_message_t *msg = (zjs_ipm_message_t*)(*(uintptr_t *)data);
+
+    if ((msg->flags & MSG_SYNC_FLAG) == MSG_SYNC_FLAG) {
+         zjs_ipm_message_t *result = (zjs_ipm_message_t*)msg->user_data;
+        // synchrounus ipm, copy the results
+        if (result)
+            memcpy(result, msg, sizeof(zjs_ipm_message_t));
+
+        // un-block sync api
+        k_sem_give(&glcd_sem);
+    } else {
+        // asynchronous ipm, should not get here
+        ERR_PRINT("ipm_msg_receive_callback: async message received\n");
+    }
+}
 
 static jerry_value_t zjs_glcd_print(const jerry_value_t function_obj,
                                     const jerry_value_t this,
@@ -29,10 +95,6 @@ static jerry_value_t zjs_glcd_print(const jerry_value_t function_obj,
 {
     if (argc < 1 || !jerry_value_is_string(argv[0])) {
         return zjs_error("zjs_glcd_print: invalid argument");
-    }
-
-    if (!glcd) {
-        return zjs_error("Grove LCD device not found");
     }
 
     jerry_size_t sz = jerry_get_string_size(argv[0]);
@@ -47,12 +109,15 @@ static jerry_value_t zjs_glcd_print(const jerry_value_t function_obj,
                                           sz);
     buffer[len] = '\0';
 
-    snprintf(str, MAX_BUFFER_SIZE, "%s", buffer);
-    glcd_print(glcd, str, strnlen(str, MAX_BUFFER_SIZE));
-    DBG_PRINT("Grove LCD print: %s\n", str);
+    // send IPM message to the ARC side
+    zjs_ipm_message_t send;
+    send.type = TYPE_GLCD_PRINT;
+    send.data.glcd.buffer = buffer;
+
+    jerry_value_t result = zjs_glcd_call_remote_function(&send);
     zjs_free(buffer);
 
-    return ZJS_UNDEFINED;
+    return jerry_value_has_error_flag(result) ? result : ZJS_UNDEFINED;
 }
 
 static jerry_value_t zjs_glcd_clear(const jerry_value_t function_obj,
@@ -60,13 +125,14 @@ static jerry_value_t zjs_glcd_clear(const jerry_value_t function_obj,
                                     const jerry_value_t argv[],
                                     const jerry_length_t argc)
 {
-    if (!glcd) {
-        return zjs_error("Grove LCD device not found");
-    }
+    // send IPM message to the ARC side
+    zjs_ipm_message_t send;
+    // no input parameter to set
+    send.type = TYPE_GLCD_CLEAR;
 
-    glcd_clear(glcd);
+    jerry_value_t result = zjs_glcd_call_remote_function(&send);
 
-    return ZJS_UNDEFINED;
+    return jerry_value_has_error_flag(result) ? result : ZJS_UNDEFINED;
 }
 
 static jerry_value_t zjs_glcd_set_cursor_pos(const jerry_value_t function_obj,
@@ -77,18 +143,18 @@ static jerry_value_t zjs_glcd_set_cursor_pos(const jerry_value_t function_obj,
     if (argc != 2 ||
         !jerry_value_is_number(argv[0]) ||
         !jerry_value_is_number(argv[1])) {
-        return zjs_error("invalid argument");
+        return zjs_error("zjs_glcd_set_cursor_pos: invalid argument");
     }
 
-    if (!glcd) {
-        return zjs_error("Grove LCD device not found");
-    }
+    // send IPM message to the ARC side
+    zjs_ipm_message_t send;
+    send.type = TYPE_GLCD_SET_CURSOR_POS;
+    send.data.glcd.col = (uint8_t)jerry_get_number_value(argv[0]);
+    send.data.glcd.row = (uint8_t)jerry_get_number_value(argv[1]);
 
-    uint8_t col = (uint8_t)jerry_get_number_value(argv[0]);
-    uint8_t row = (uint8_t)jerry_get_number_value(argv[1]);
-    glcd_cursor_pos_set(glcd, col, row);
+    jerry_value_t result = zjs_glcd_call_remote_function(&send);
 
-    return ZJS_UNDEFINED;
+    return jerry_value_has_error_flag(result) ? result : ZJS_UNDEFINED;
 }
 
 static jerry_value_t zjs_glcd_select_color(const jerry_value_t function_obj,
@@ -100,14 +166,14 @@ static jerry_value_t zjs_glcd_select_color(const jerry_value_t function_obj,
         return zjs_error("zjs_glcd_select_color: invalid argument");
     }
 
-    if (!glcd) {
-        return zjs_error("Grove LCD device not found");
-    }
+    // send IPM message to the ARC side
+    zjs_ipm_message_t send;
+    send.type = TYPE_GLCD_SELECT_COLOR;
+    send.data.glcd.value = (uint8_t)jerry_get_number_value(argv[0]);
 
-    uint8_t value = (uint8_t)jerry_get_number_value(argv[0]);
-    glcd_color_select(glcd, value);
+    jerry_value_t result = zjs_glcd_call_remote_function(&send);
 
-    return ZJS_UNDEFINED;
+    return jerry_value_has_error_flag(result) ? result : ZJS_UNDEFINED;
 }
 
 static jerry_value_t zjs_glcd_set_color(const jerry_value_t function_obj,
@@ -122,16 +188,16 @@ static jerry_value_t zjs_glcd_set_color(const jerry_value_t function_obj,
         return zjs_error("zjs_glcd_set_color: invalid argument");
     }
 
-    if (!glcd) {
-        return zjs_error("Grove LCD device not found");
-    }
+    // send IPM message to the ARC side
+    zjs_ipm_message_t send;
+    send.type = TYPE_GLCD_SET_COLOR;
+    send.data.glcd.color_r = (uint8_t)jerry_get_number_value(argv[0]);
+    send.data.glcd.color_g = (uint8_t)jerry_get_number_value(argv[1]);
+    send.data.glcd.color_b = (uint8_t)jerry_get_number_value(argv[2]);
 
-    uint8_t r = (uint8_t)jerry_get_number_value(argv[0]);
-    uint8_t g = (uint8_t)jerry_get_number_value(argv[1]);
-    uint8_t b = (uint8_t)jerry_get_number_value(argv[2]);
-    glcd_color_set(glcd, r, g, b);
+    jerry_value_t result = zjs_glcd_call_remote_function(&send);
 
-    return ZJS_UNDEFINED;
+    return jerry_value_has_error_flag(result) ? result : ZJS_UNDEFINED;
 }
 
 static jerry_value_t zjs_glcd_set_function(const jerry_value_t function_obj,
@@ -143,14 +209,14 @@ static jerry_value_t zjs_glcd_set_function(const jerry_value_t function_obj,
         return zjs_error("zjs_glcd_set_function: invalid argument");
     }
 
-    if (!glcd) {
-        return zjs_error("Grove LCD device not found");
-    }
+    // send IPM message to the ARC side
+    zjs_ipm_message_t send;
+    send.type = TYPE_GLCD_SET_FUNCTION;
+    send.data.glcd.value = (uint8_t)jerry_get_number_value(argv[0]);
 
-    uint8_t value = (uint8_t)jerry_get_number_value(argv[0]);
-    glcd_function_set(glcd, value);
+    jerry_value_t result = zjs_glcd_call_remote_function(&send);
 
-    return ZJS_UNDEFINED;
+    return jerry_value_has_error_flag(result) ? result : ZJS_UNDEFINED;
 }
 
 static jerry_value_t zjs_glcd_get_function(const jerry_value_t function_obj,
@@ -158,13 +224,12 @@ static jerry_value_t zjs_glcd_get_function(const jerry_value_t function_obj,
                                            const jerry_value_t argv[],
                                            const jerry_length_t argc)
 {
-    if (!glcd) {
-        return zjs_error("Grove LCD device not found");
-    }
+    // send IPM message to the ARC side
+    zjs_ipm_message_t send;
+    // no input parameter to set
+    send.type = TYPE_GLCD_GET_FUNCTION;
 
-    uint8_t value = glcd_function_get(glcd);
-
-    return jerry_create_number(value);
+    return zjs_glcd_call_remote_function(&send);
 }
 
 static jerry_value_t zjs_glcd_set_display_state(const jerry_value_t function_obj,
@@ -176,14 +241,14 @@ static jerry_value_t zjs_glcd_set_display_state(const jerry_value_t function_obj
         return zjs_error("zjs_glcd_set_display_state: invalid argument");
     }
 
-    if (!glcd) {
-        return zjs_error("Grove LCD device not found");
-    }
+    // send IPM message to the ARC side
+    zjs_ipm_message_t send;
+    send.type = TYPE_GLCD_SET_DISPLAY_STATE;
+    send.data.glcd.value = (uint8_t)jerry_get_number_value(argv[0]);
 
-    uint8_t value = (uint8_t)jerry_get_number_value(argv[0]);
-    glcd_display_state_set(glcd, value);
+    jerry_value_t result = zjs_glcd_call_remote_function(&send);
 
-    return ZJS_UNDEFINED;
+    return jerry_value_has_error_flag(result) ? result : ZJS_UNDEFINED;
 }
 
 static jerry_value_t zjs_glcd_get_display_state(const jerry_value_t function_obj,
@@ -191,13 +256,12 @@ static jerry_value_t zjs_glcd_get_display_state(const jerry_value_t function_obj
                                                 const jerry_value_t argv[],
                                                 const jerry_length_t argc)
 {
-    if (!glcd) {
-        return zjs_error("Grove LCD device not found");
-    }
+    // send IPM message to the ARC side
+    zjs_ipm_message_t send;
+    // no input parameter to set
+    send.type = TYPE_GLCD_GET_DISPLAY_STATE;
 
-    uint8_t value = glcd_display_state_get(glcd);
-
-    return jerry_create_number(value);
+    return zjs_glcd_call_remote_function(&send);
 }
 
 static jerry_value_t zjs_glcd_set_input_state(const jerry_value_t function_obj,
@@ -209,14 +273,14 @@ static jerry_value_t zjs_glcd_set_input_state(const jerry_value_t function_obj,
         return zjs_error("zjs_glcd_set_input_state: invalid argument");
     }
 
-    if (!glcd) {
-        return zjs_error("Grove LCD device not found");
-    }
+    // send IPM message to the ARC side
+    zjs_ipm_message_t send;
+    send.type = TYPE_GLCD_SET_INPUT_STATE;
+    send.data.glcd.value = (uint8_t)jerry_get_number_value(argv[0]);
 
-    uint8_t value = (uint8_t)jerry_get_number_value(argv[0]);
-    glcd_input_state_set(glcd, value);
+    jerry_value_t result = zjs_glcd_call_remote_function(&send);
 
-    return ZJS_UNDEFINED;
+    return jerry_value_has_error_flag(result) ? result : ZJS_UNDEFINED;
 }
 
 static jerry_value_t zjs_glcd_get_input_state(const jerry_value_t function_obj,
@@ -224,13 +288,12 @@ static jerry_value_t zjs_glcd_get_input_state(const jerry_value_t function_obj,
                                               const jerry_value_t argv[],
                                               const jerry_length_t argc)
 {
-    if (!glcd) {
-        return zjs_error("Grove LCD not initialized");
-    }
+    // send IPM message to the ARC side
+    zjs_ipm_message_t send;
+    // no input parameter to set
+    send.type = TYPE_GLCD_GET_INPUT_STATE;
 
-    uint8_t value = glcd_input_state_get(glcd);
-
-    return jerry_create_number(value);
+    return zjs_glcd_call_remote_function(&send);
 }
 
 static jerry_value_t zjs_glcd_init(const jerry_value_t function_obj,
@@ -238,15 +301,15 @@ static jerry_value_t zjs_glcd_init(const jerry_value_t function_obj,
                                    const jerry_value_t argv[],
                                    const jerry_length_t argc)
 {
-    if (!glcd) {
-        /* Initialize the Grove LCD */
-        glcd = device_get_binding(GROVE_LCD_NAME);
+    // send IPM message to the ARC side
+    zjs_ipm_message_t send;
+    // no input parameter to set
+    send.type = TYPE_GLCD_INIT;
 
-        if (!glcd) {
-            return zjs_error("failed to initialize Grove LCD");
-        } else {
-            DBG_PRINT("Grove LCD initialized\n");
-        }
+    jerry_value_t result = zjs_glcd_call_remote_function(&send);
+
+    if (jerry_value_has_error_flag(result)) {
+        return result;
     }
 
     // create the Grove LCD device object
@@ -257,6 +320,11 @@ static jerry_value_t zjs_glcd_init(const jerry_value_t function_obj,
 
 jerry_value_t zjs_grove_lcd_init()
 {
+    zjs_ipm_init();
+    zjs_ipm_register_callback(MSG_ID_GLCD, ipm_msg_receive_callback);
+
+    k_sem_init(&glcd_sem, 0, 1);
+
     zjs_native_func_t array[] = {
         { zjs_glcd_print, "print" },
         { zjs_glcd_clear, "clear" },
