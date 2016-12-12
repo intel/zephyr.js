@@ -493,7 +493,7 @@ static void zjs_ble_blvl_ccc_cfg_changed(const struct bt_gatt_attr *attr, uint16
             zjs_signal_callback(base_chrc->unsubscribe_cb.id, NULL, 0);
         }
     } else {
-        ERR_PRINT("zjs_ble_blvl_ccc_cfg_changed: base characterstic not found\n");
+        ERR_PRINT("base characterstic not found\n");
     }
 }
 
