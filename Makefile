@@ -117,7 +117,7 @@ PRE_ACTION=clean
 endif
 endif
 
-# Update dependency repos using deps/repos.txt
+# Update dependency repos
 .PHONY: update
 update:
 	@git submodule update --init
@@ -157,15 +157,9 @@ endif
 .PHONY: clean
 clean: update
 	@if [ -d $(ZEPHYR_SDK_INSTALL_DIR) ]; then \
-		if [ -d deps/jerryscript ]; then \
-			make -C $(JERRY_BASE) -f targets/zephyr/Makefile clean BOARD=$(BOARD); \
-			rm -rf deps/jerryscript/build/$(BOARD)/; \
-			rm -rf deps/jerryscript/build/lib; \
-		fi; \
-		if [ -d deps/zephyr ] && [ -e src/Makefile ]; then \
-			cd deps/zephyr; make clean BOARD=$(BOARD); \
-			cd arc/; make clean; \
-		fi; \
+		rm -rf $(JERRY_BASE)/build/$(BOARD)/; \
+		make -f Makefile.zephyr clean BOARD=$(BOARD); \
+		cd arc/; make clean; \
 	fi
 	make -f Makefile.linux clean
 	@rm -f src/*.o
@@ -182,10 +176,8 @@ clean: update
 
 .PHONY: pristine
 pristine:
-	@if [ -d deps/zephyr ] && [ -e outdir ]; then \
-		make -f Makefile.zephyr pristine; \
-		cd arc; make pristine; \
-	fi
+	make -f Makefile.zephyr pristine; \
+	cd arc; make pristine; \
 
 # Flash Arduino 101 x86 image
 .PHONY: dfu
