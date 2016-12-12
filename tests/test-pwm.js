@@ -58,13 +58,13 @@ pinA = pwm.open({ channel: pins.IO3, period: 3, pulseWidth: 1 });
 assert(pinA !== null && typeof pinA === "object",
        "open: with period and pulseWidth");
 
-pinA.setPeriod(1000);
+pinA.setPeriod(3000);
 
 expectThrow("pwmpin: set pulseWidth greater than period", function () {
     pinA.setPulseWidth(3000);
 });
 
-pinA.setPulseWidth(300);
+pinA.setPulseWidth(1000);
 
 msTimer = setInterval(function () {
     if (pinB.read()) {
@@ -74,10 +74,11 @@ msTimer = setInterval(function () {
     }
 
     msCount = msCount + 1;
+    // set 50 ms but 60 ms actually and time precision 20 ms for zephyr 1.6
 }, 50);
 
 setTimeout(function () {
-    assert(msTrue === 6 && msFalse === 14 && msCount === 20,
+    assert(msTrue === 16 && msFalse === 34 && msCount === 50,
            "pwmpin: set period and pulseWidth");
     clearInterval(msTimer);
 
@@ -132,7 +133,7 @@ setTimeout(function () {
            }
        }
     }, 10);
-}, 1040);
+}, 3040);
 
 expectThrow("pwmpin: set periodCycles with invalid value", function () {
     pinA.setPeriodCycles("Value");
