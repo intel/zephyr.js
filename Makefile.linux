@@ -43,7 +43,7 @@ CORE_SRC +=	src/zjs_buffer.c \
 		src/zjs_unit_tests.c \
 		src/zjs_util.c
 
-ifdef ZJS_SNAPSHOT_BUILD
+ifeq ($(SNAPSHOT), on)
 CORE_SRC +=	src/zjs_snapshot_gen.c
 else
 CORE_SRC +=	src/zjs_script_gen.c
