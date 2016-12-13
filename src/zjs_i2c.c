@@ -209,8 +209,9 @@ static jerry_value_t zjs_i2c_write(const jerry_value_t function_obj,
     else {
         ZJS_PRINT("no I2C device is ready yet\n");
     }
-    return (jerry_value_t)reply;
-    //return ZJS_UNDEFINED;
+
+    return jerry_create_number(reply);
+
 }
 
 static jerry_value_t zjs_i2c_abort(const jerry_value_t function_obj,
@@ -257,7 +258,7 @@ static jerry_value_t zjs_i2c_open(const jerry_value_t function_obj,
         return zjs_error("zjs_i2c_open: missing required field (speed)");
     }
 
-    if (bus < MAX_I2C_BUS && i2c_device[bus]) {
+    if (bus < MAX_I2C_BUS) {
         char i2c_bus[6];
         snprintf(i2c_bus, 6, "I2C_%i", (uint8_t)bus);
         i2c_device[bus] = device_get_binding(i2c_bus);
