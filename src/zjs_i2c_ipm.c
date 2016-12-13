@@ -1,4 +1,9 @@
 // Copyright (c) 2016, Intel Corporation.
+
+// This is the implementation of I2C used by boards
+// with a ARC core, which requires IPM messages
+// to access certain pins from the X86 core.
+
 #ifndef QEMU_BUILD
 // Zephyr includes
 #include <i2c.h>

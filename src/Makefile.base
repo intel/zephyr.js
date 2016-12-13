@@ -58,7 +58,7 @@ obj-y += zjs_script_gen.o
 endif
 
 # skip for now for frdm_k64f
-ifneq ($(BOARD), frdm_k64f)
+ifeq ($(BOARD), arduino_101)
 	obj-$(ZJS_AIO) += zjs_aio.o
 	obj-$(ZJS_GROVE_LCD) += zjs_grove_lcd.o
 	obj-$(ZJS_I2C) += zjs_i2c_ipm.o
