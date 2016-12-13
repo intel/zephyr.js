@@ -16,18 +16,46 @@ echo "}"            >> $TEMPLATE
 
 SOURCE=/tmp/zjs_source.c
 
-ERRCOUNT=0
+PASSCOUNT=0
+TOTAL=0
 
+CFLAGS="-o /tmp/zjs_source -m32 -DCONFIG_X86 -DCONFIG_NUM_COOP_PRIORITIES=2 -I. -I../deps/jerryscript/jerry-core -I../deps/zephyr/include -I../deps/iotivity-constrained/include -I../deps/iotivity-constrained"
+FAILURES=
+
+# collect list of files with failures on first pass
 for i in *.h; do
-    echo Checking $i...
     echo "#include \"$i\"" > $SOURCE
     cat $TEMPLATE >> $SOURCE
-    gcc -o /tmp/zjs_source -m32 -DCONFIG_X86 -I. -I../deps/jerryscript/jerry-core -I../deps/zephyr/include $SOURCE
-    ERRCOUNT=$(($ERRCOUNT + $?))
+    gcc $CFLAGS $SOURCE > /dev/null 2>&1
+    if [ $? -eq 0 ]; then
+        PASSCOUNT=$(($PASSCOUNT + 1))
+    else
+        FAILURES="$FAILURES $i"
+    fi
+    TOTAL=$(($TOTAL + 1))
 done
 
-if [ $ERRCOUNT -eq "0" ]; then
-   echo Passed!
-else
-   echo Failed!
+echo Failures detected in $FAILURES
+echo Use checkheaders -v to see details
+
+if [ "$1" == "-v" ] && [ $PASSCOUNT -ne $TOTAL ]; then
+    # print failure output on second pass
+    for i in $FAILURES; do
+        STR="Failures in $i"
+        LEN=$((${#STR} + 2))
+        printf "%${LEN}s\n" | tr ' ' '='
+        echo " $STR"
+        printf "%${LEN}s\n" | tr ' ' '='
+        echo "#include \"$i\"" > $SOURCE
+        cat $TEMPLATE >> $SOURCE
+        gcc $CFLAGS $SOURCE
+    done
 fi
+
+echo RESULTS: $PASSCOUNT/$TOTAL passed
+
+if [ $PASSCOUNT -ne $TOTAL ]; then
+    exit 1
+fi
+
+exit 0
