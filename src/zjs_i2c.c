@@ -13,6 +13,8 @@
 #define ZJS_I2C_TIMEOUT_TICKS 500
 
 static struct k_sem i2c_sem;
+static jerry_value_t zjs_i2c_prototype;
+
 static struct device *i2c_device[MAX_I2C_BUS];
 
 static jerry_value_t zjs_i2c_read_base(const jerry_value_t this,
@@ -190,12 +192,12 @@ static jerry_value_t zjs_i2c_write(const jerry_value_t function_obj,
     } else {
         return zjs_error("zjs_i2c_write:  missing data buffer");
     }
-
+    int reply;
     uint32_t address = (uint32_t)jerry_get_number_value(argv[0]);
 
     if (bus < MAX_I2C_BUS && i2c_device[bus]) {
         // Write has to come after an Open I2C message
-        int reply = i2c_write(i2c_device[bus],
+        reply = i2c_write(i2c_device[bus],
                               dataBuf->buffer,
                               dataBuf->bufsize,
                               (uint16_t)address);
@@ -207,8 +209,8 @@ static jerry_value_t zjs_i2c_write(const jerry_value_t function_obj,
     else {
         ZJS_PRINT("no I2C device is ready yet\n");
     }
-
-    return ZJS_UNDEFINED;
+    return (jerry_value_t)reply;
+    //return ZJS_UNDEFINED;
 }
 
 static jerry_value_t zjs_i2c_abort(const jerry_value_t function_obj,
