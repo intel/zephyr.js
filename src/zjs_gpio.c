@@ -450,8 +450,7 @@ jerry_value_t zjs_gpio_init()
         snprintf(devname, 8, "GPIO_%d", i);
         zjs_gpio_dev[i] = device_get_binding(devname);
         if (!zjs_gpio_dev[i]) {
-            ERR_PRINT("DEVICE: %s\n", devname);
-            return zjs_error("zjs_gpio_init: cannot find GPIO device");
+            ERR_PRINT("zjs_gpio_init: cannot find GPIO device '%s'\n", devname);
         }
     }
 
