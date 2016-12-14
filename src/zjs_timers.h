@@ -3,7 +3,7 @@
 #ifndef __zjs_timers_h__
 #define __zjs_timers_h__
 
-/*
+/**
  * Service the timer module.
  *
  * @return          1 if any timers were serviced

@@ -11,7 +11,7 @@
 
 #define NUM_SERVICE_ROUTINES 3
 
-/*
+/**
  * Service routine function type
  *
  * @param handle        Handle that was registered
