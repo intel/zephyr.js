@@ -69,8 +69,8 @@ done
 
 echo Preserving uncommitted changes:
 cd $ZJS_BASE
-git diff --stat
-git diff > $TRLPATCH
+git diff --cached --stat
+git diff --cached > $TRLPATCH
 cd $TRLDIR
 patch -p1 < patch > /dev/null
 
