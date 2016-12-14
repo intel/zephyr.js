@@ -12,6 +12,26 @@ ifeq ($(UNAME),Darwin)
 COPY=rsync -R
 else
 COPY=cp --parents
+# Only build OCF on linux, until iotivity-constrained is fixed on Mac
+CORE_SRC +=	src/zjs_ocf_common.c \
+		src/zjs_ocf_client.c \
+		src/zjs_ocf_server.c
+
+LINUX_INCLUDES += 	-I$(OCF_ROOT)/deps/tinydtls \
+			-I$(OCF_ROOT)/deps/tinycbor/src \
+			-I$(OCF_ROOT) \
+			-I$(OCF_ROOT)/port/linux \
+			-I$(OCF_ROOT)/include \
+			-I$(OCF_ROOT)/util \
+			-I$(OCF_ROOT)/messaging/coap \
+			-I$(OCF_ROOT)/api \
+			-include $(OCF_ROOT)/port/linux/config.h
+
+include Makefile.ocf_linux
+
+LINUX_DEFINES +=	-DOC_CLIENT \
+			-DOC_SERVER \
+			-DBUILD_MODULE_OCF
 endif
 
 .PHONY: all
@@ -23,8 +43,6 @@ setup:
 		mkdir -p $(ZJS_BASE)/outdir/linux/$(VARIANT); \
 	fi
 
-include Makefile.ocf_linux
-
 CORE_SRC +=	src/zjs_buffer.c \
 		src/zjs_callbacks.c \
 		src/zjs_console.c \
@@ -34,9 +52,6 @@ CORE_SRC +=	src/zjs_buffer.c \
 		src/main.c \
 		src/zjs_modules.c \
 		src/zjs_performance.c \
-		src/zjs_ocf_common.c \
-		src/zjs_ocf_client.c \
-		src/zjs_ocf_server.c \
 		src/zjs_promise.c \
 		src/zjs_script.c \
 		src/zjs_timers.c \
@@ -52,16 +67,7 @@ endif
 CORE_OBJ =	$(CORE_SRC:%.c=%.o)
 
 LINUX_INCLUDES += 	-Isrc/ \
-			-I$(JERRY_BASE)/jerry-core \
-			-I$(OCF_ROOT)/deps/tinydtls \
-			-I$(OCF_ROOT)/deps/tinycbor/src \
-			-I$(OCF_ROOT) \
-			-I$(OCF_ROOT)/port/linux \
-			-I$(OCF_ROOT)/include \
-			-I$(OCF_ROOT)/util \
-			-I$(OCF_ROOT)/messaging/coap \
-			-I$(OCF_ROOT)/api \
-			-include $(OCF_ROOT)/port/linux/config.h
+			-I$(JERRY_BASE)/jerry-core
 
 JERRY_LIBS += 		-l jerry-core -lm
 
@@ -70,9 +76,6 @@ JERRY_LIB_PATH += 	-L $(JERRY_BASE)/build/lib/
 LINUX_LIBS += $(JERRY_LIBS) -pthread
 
 LINUX_DEFINES +=	-DZJS_LINUX_BUILD \
-			-DOC_CLIENT \
-			-DOC_SERVER \
-			-DBUILD_MODULE_OCF \
 			-DBUILD_MODULE_EVENTS \
 			-DBUILD_MODULE_PERFORMANCE \
 			-DBUILD_MODULE_CONSOLE \
