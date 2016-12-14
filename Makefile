@@ -17,9 +17,7 @@ VARIANT ?= release
 JERRY_BASE ?= $(ZJS_BASE)/deps/jerryscript
 EXT_JERRY_FLAGS ?= -DENABLE_ALL_IN_ONE=ON
 ifeq ($(SNAPSHOT), on)
-# ToDo - When Sergio's patch to JerryScript is merged,
-# change this to -DFEATURE_PARSER_DISABLE=ON instead
-EXT_JERRY_FLAGS += -DFEATURE_SNAPSHOT_EXEC=ON
+EXT_JERRY_FLAGS += -DFEATURE_JS_PARSER=OFF
 endif
 ifeq ($(BOARD), arduino_101)
 EXT_JERRY_FLAGS += -DENABLE_LTO=ON
@@ -57,7 +55,8 @@ zephyr: $(PRE_ACTION) analyze generate jerryscript
 					VARIANT=$(VARIANT) \
 					MEM_STATS=$(MEM_STATS) \
 					CB_STATS=$(CB_STATS) \
-					PRINT_FLOAT=$(PRINT_FLOAT)
+					PRINT_FLOAT=$(PRINT_FLOAT) \
+					SNAPSHOT=$(SNAPSHOT)
 
 # Build JerryScript as a library (libjerry-core.a)
 jerryscript:
@@ -216,7 +215,7 @@ endif
 # Run QEMU target
 .PHONY: qemu
 qemu: zephyr
-	make -f Makefile.zephyr MEM_STATS=$(MEM_STATS) CB_STATS=$(CB_STATS) qemu
+	make -f Makefile.zephyr MEM_STATS=$(MEM_STATS) CB_STATS=$(CB_STATS) SNAPSHOT=$(SNAPSHOT) qemu
 
 # Builds ARC binary
 .PHONY: arc
@@ -252,7 +251,7 @@ arcgdb:
 linux: $(PRE_ACTION) generate
 	rm -f .*.last_build
 	echo "" > .linux.$(VARIANT).last_build
-	make -f Makefile.linux JS=$(JS) VARIANT=$(VARIANT) CB_STATS=$(CB_STATS) V=$(V)
+	make -f Makefile.linux JS=$(JS) VARIANT=$(VARIANT) CB_STATS=$(CB_STATS) V=$(V) SNAPSHOT=$(SNAPSHOT)
 
 .PHONY: help
 help:
