@@ -108,7 +108,6 @@ function resetCursor() {
 
 function changeRGB(red, green, blue) {
     // Valid range for color is 0 - 255
-    console.log("RGB = " + red + " : " + green + " : " + blue);
     var redData = new Buffer([REGISTER_R, red]);
     var greenData = new Buffer([REGISTER_G, green]);
     var blueData = new Buffer([REGISTER_B, blue]);
@@ -120,7 +119,6 @@ function changeRGB(red, green, blue) {
 }
 
 function writeWord() {
-    clear();
     var wordBuffer = new Buffer(7);
         // The first byte in the buffer is for the register address,
         // which is where the word is going to be written to.
@@ -137,7 +135,11 @@ function writeWord() {
 
     hello = !hello;
     resetCursor();
-    i2cDevice.write(GROVE_LCD_DISPLAY_ADDR, wordBuffer);
+    var reply = i2cDevice.write(GROVE_LCD_DISPLAY_ADDR, wordBuffer);
+    while (reply !== 0) {
+        console.log("I2C write failed, trying again: " + reply);
+        reply = i2cDevice.write(GROVE_LCD_DISPLAY_ADDR, wordBuffer);
+    }
 }
 
 // Main function
@@ -145,4 +147,4 @@ function writeWord() {
 init();
 
 // Alternate writing HELLO! and WORLD! forever
-setInterval(writeWord, 2000);
+setInterval(writeWord, 1000);
