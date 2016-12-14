@@ -236,7 +236,7 @@ static jerry_value_t zjs_i2c_write(const jerry_value_t function_obj,
         return zjs_error("zjs_i2c_write: ipm message failed or timed out!");
     }
 
-    return ZJS_UNDEFINED;
+    return jerry_create_number(reply.error_code);
 }
 
 static jerry_value_t zjs_i2c_abort(const jerry_value_t function_obj,
