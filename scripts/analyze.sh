@@ -190,10 +190,17 @@ fi
 if check_for_require grove_lcd || check_config_file ZJS_GROVE_LCD; then
     >&2 echo Using module: Grove LCD
     MODULES+=" -DBUILD_MODULE_GROVE_LCD"
-    echo "CONFIG_I2C=y" >> arc/prj.conf.tmp
-    echo "CONFIG_GROVE=y" >> arc/prj.conf.tmp
-    echo "CONFIG_GROVE_LCD_RGB=y" >> arc/prj.conf.tmp
-    echo "CONFIG_GROVE_LCD_RGB_INIT_PRIORITY=90" >> arc/prj.conf.tmp
+    if [ $BOARD = "arduino_101" ]; then
+        echo "CONFIG_I2C=y" >> arc/prj.conf.tmp
+        echo "CONFIG_GROVE=y" >> arc/prj.conf.tmp
+        echo "CONFIG_GROVE_LCD_RGB=y" >> arc/prj.conf.tmp
+        echo "CONFIG_GROVE_LCD_RGB_INIT_PRIORITY=90" >> arc/prj.conf.tmp
+    else
+        echo "CONFIG_I2C=y" >> prj.conf.tmp
+        echo "CONFIG_GROVE=y" >> prj.conf.tmp
+        echo "CONFIG_GROVE_LCD_RGB=y" >> prj.conf.tmp
+        echo "CONFIG_GROVE_LCD_RGB_INIT_PRIORITY=90" >> prj.conf.tmp
+    fi
     echo "export ZJS_GROVE_LCD=y" >> zjs.conf.tmp
 fi
 
