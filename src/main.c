@@ -13,17 +13,12 @@
 #include "jerry-api.h"
 
 // Platform agnostic modules/headers
-#include "zjs_buffer.h"
 #include "zjs_callbacks.h"
-#include "zjs_common.h"
-#include "zjs_console.h"
-#include "zjs_event.h"
 #include "zjs_modules.h"
 #ifdef BUILD_MODULE_SENSOR
 #include "zjs_sensor.h"
 #endif
 #include "zjs_timers.h"
-#include "zjs_util.h"
 #ifdef BUILD_MODULE_OCF
 #include "zjs_ocf_common.h"
 #endif
@@ -97,16 +92,6 @@ int main(int argc, char *argv[])
 
     jerry_init(JERRY_INIT_EMPTY);
 
-    zjs_timers_init();
-#ifdef BUILD_MODULE_CONSOLE
-    zjs_console_init();
-#endif
-#ifdef BUILD_MODULE_BUFFER
-    zjs_buffer_init();
-#endif
-#ifdef BUILD_MODULE_SENSOR
-    zjs_sensor_init();
-#endif
     zjs_init_callbacks();
 
     // Add module.exports to global namespace
