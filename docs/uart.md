@@ -53,7 +53,7 @@ API Documentation
 `void init(UARTOptions options);`
 
 The `options` object lets you choose the UART device/port you would like to
-initialize. This can either be "tty0" or "tty1".
+initialize. The Arduino 101, for example, should be "tty0".
 
 ### UART.write
 
