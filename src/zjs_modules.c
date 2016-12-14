@@ -10,7 +10,6 @@
 
 // ZJS includes
 #include "zjs_console.h"
-#include "zjs_error.h"
 #include "zjs_event.h"
 #include "zjs_modules.h"
 #include "zjs_performance.h"
