@@ -200,8 +200,9 @@ static jerry_value_t native_clear_interval_handler(const jerry_value_t function_
     return jerry_create_undefined();
 }
 
-void zjs_timers_process_events()
+uint8_t zjs_timers_process_events()
 {
+    uint8_t serviced = 0;
 #ifdef DEBUG_BUILD
 #ifndef ZJS_LINUX_BUILD
     extern void update_print_timer(void);
@@ -209,6 +210,7 @@ void zjs_timers_process_events()
 #endif
 #endif
     for (zjs_timer_t *tm = zjs_timers; tm; tm = tm->next) {
+        serviced = 1;
         if (tm->completed) {
             delete_timer(tm->callback_id);
         }
@@ -227,6 +229,7 @@ void zjs_timers_process_events()
             }
         }
     }
+    return serviced;
 }
 
 void zjs_timers_init()

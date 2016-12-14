@@ -68,8 +68,10 @@ void zjs_ocf_free_props(void* h);
 
 /*
  * Routine to call into iotivity-constrained
+ *
+ * @return              iotivity-constrained's polling functions return value
  */
-void main_poll_routine(void* handle);
+uint8_t main_poll_routine(void* handle);
 
 /*
  * Object returned from require('ocf')

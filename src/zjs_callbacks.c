@@ -420,8 +420,9 @@ void zjs_call_callback(zjs_callback_id id, void* data, uint32_t sz)
     }
 }
 
-void zjs_service_callbacks(void)
+uint8_t zjs_service_callbacks(void)
 {
+    uint8_t serviced = 0;
     if (ring_buf_initialized) {
 #ifdef ZJS_PRINT_CALLBACK_STATS
         uint8_t header_printed = 0;
@@ -440,6 +441,7 @@ void zjs_service_callbacks(void)
                                         NULL,
                                         &size);
             if (ret == -EMSGSIZE || ret == 0) {
+                serviced = 1;
                 // item in ring buffer with size > 0, has args
                 // pull from ring buffer
                 uint8_t sz = size;
@@ -487,4 +489,5 @@ void zjs_service_callbacks(void)
         }
 #endif
     }
+    return serviced;
 }

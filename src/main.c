@@ -71,6 +71,41 @@ static jerry_value_t native_print_handler(const jerry_value_t function_obj,
     return ZJS_UNDEFINED;
 }
 
+#ifdef ZJS_LINUX_BUILD
+// enabled if --autoexit is passed to jslinux
+static uint8_t auto_exit = 0;
+// if > 0, jslinux will exit after this many milliseconds
+static uint32_t exit_after = 0;
+static struct timespec exit_timer;
+
+uint8_t process_cmd_line(int argc, char *argv[])
+{
+    int i;
+    for (i = 0; i < argc; ++i) {
+        if (!strncmp(argv[i], "--unittest", 10)) {
+            // run unit tests
+            zjs_run_unit_tests();
+        }
+        else if (!strncmp(argv[i], "--autoexit", 10)) {
+            auto_exit = 1;
+        }
+        else if (!strncmp(argv[i], "-t", 2)) {
+            if (i == argc - 1) {
+                // no time argument, return error
+                ERR_PRINT("no time argument given after '-t'\n");
+                return 0;
+            } else {
+                char* str_time = argv[i + 1];
+                exit_after = atoi(str_time);
+                ZJS_PRINT("jslinux will terminate after %lu milliseconds\n", exit_after);
+                clock_gettime(CLOCK_MONOTONIC, &exit_timer);
+            }
+        }
+    }
+    return 1;
+}
+#endif
+
 #ifndef ZJS_LINUX_BUILD
 void main(void)
 #else
@@ -127,15 +162,13 @@ int main(int argc, char *argv[])
 #ifndef ZJS_SNAPSHOT_BUILD
 #ifdef ZJS_LINUX_BUILD
     if (argc > 1) {
-        if (!strncmp(argv[1], "--unittest", 10)) {
-            // run unit tests
-            zjs_run_unit_tests();
+        if (process_cmd_line(argc - 1, argv + 1) == 0) {
+            ERR_PRINT("command line options error\n");
+            goto error;
         }
-        else {
-            if (zjs_read_script(argv[1], &script, &len)) {
-                ERR_PRINT("could not read script file %s\n", argv[1]);
-                return -1;
-            }
+        if (zjs_read_script(argv[1], &script, &len)) {
+            ERR_PRINT("could not read script file %s\n", argv[1]);
+            return -1;
         }
     } else
     // slightly tricky: reuse next section as else clause
@@ -198,13 +231,47 @@ int main(int argc, char *argv[])
 #endif
 #endif // ZJS_LINUX_BUILD
 
+#ifdef ZJS_LINUX_BUILD
+    uint8_t last_serviced = 1;
+#endif
+
     while (1) {
-        zjs_timers_process_events();
-        zjs_service_callbacks();
-        zjs_service_routines();
+        uint8_t serviced = 0;
+
+        if (zjs_timers_process_events()) {
+            serviced = 1;
+        }
+        if (zjs_service_callbacks()) {
+            serviced = 1;
+        }
+        if (zjs_service_routines()) {
+            serviced = 1;
+        }
         // not sure if this is okay, but it seems better to sleep than
         //   busy wait
         zjs_sleep(1);
+#ifdef ZJS_LINUX_BUILD
+        if (auto_exit) {
+            // if the last and current loop had no pending "events" (timers or
+            // callbacks) and --autoexit is enabled the program will terminate
+            if (last_serviced == 0 && serviced == 0) {
+                ZJS_PRINT("no timers or callbacks were processed, exiting!\n");
+                goto error;
+            }
+        }
+        if (exit_after != 0) {
+            // an exit timeout was passed in
+            struct timespec now;
+            clock_gettime(CLOCK_MONOTONIC, &now);
+            uint32_t elapsed = (1000 * (now.tv_sec - exit_timer.tv_sec)) +
+                    ((now.tv_nsec / 1000000) - (exit_timer.tv_nsec / 1000000));
+            if (elapsed >= exit_after) {
+                ZJS_PRINT("%lu milliseconds have passed, exiting!\n", elapsed);
+                goto error;
+            }
+        }
+        last_serviced = serviced;
+#endif
     }
 
 error:

@@ -187,7 +187,10 @@ void zjs_call_callback(zjs_callback_id id, void* data, uint32_t sz);
 /*
  * Service the callback module. Any callback's that have been signaled will
  * be serviced and the signal flag will be unset.
+ *
+ * @return              1 if any callbacks were processed
+ *                      0 if no callbacks were processed
  */
-void zjs_service_callbacks(void);
+uint8_t zjs_service_callbacks(void);
 
 #endif /* SRC_ZJS_CALLBACKS_H_ */
