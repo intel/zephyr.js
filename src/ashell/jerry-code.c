@@ -163,14 +163,7 @@ void javascript_stop()
     parsed_code = 0;
 
     /* Cleanup engine */
-    zjs_timers_cleanup();
     zjs_ipm_free_callbacks();
-#ifdef BUILD_MODULE_BUFFER
-    zjs_buffer_cleanup();
-#endif
-#ifdef BUILD_MODULE_SENSOR
-    zjs_sensor_cleanup();
-#endif
     zjs_modules_cleanup();
     jerry_cleanup();
 

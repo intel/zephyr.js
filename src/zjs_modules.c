@@ -4,13 +4,17 @@
 // Zephyr includes
 #include <zephyr.h>
 #endif
+
 #include <string.h>
 #include <stdlib.h>
 
 // ZJS includes
+#include "zjs_console.h"
+#include "zjs_error.h"
 #include "zjs_event.h"
 #include "zjs_modules.h"
 #include "zjs_performance.h"
+#include "zjs_timers.h"
 #include "zjs_util.h"
 #ifdef BUILD_MODULE_OCF
 #include "zjs_ocf_common.h"
@@ -21,8 +25,8 @@
 #include "zjs_ble.h"
 #include "zjs_gpio.h"
 #include "zjs_grove_lcd.h"
-#include "zjs_pwm.h"
 #include "zjs_i2c.h"
+#include "zjs_pwm.h"
 #include "zjs_uart.h"
 #ifdef CONFIG_BOARD_ARDUINO_101
 #include "zjs_a101_pins.h"
@@ -185,6 +189,18 @@ void zjs_modules_init()
             break;
         }
     }
+
+    // initialize fixed modules
+    zjs_timers_init();
+#ifdef BUILD_MODULE_CONSOLE
+    zjs_console_init();
+#endif
+#ifdef BUILD_MODULE_BUFFER
+    zjs_buffer_init();
+#endif
+#ifdef BUILD_MODULE_SENSOR
+    zjs_sensor_init();
+#endif
 }
 
 void zjs_modules_cleanup()
@@ -200,6 +216,15 @@ void zjs_modules_cleanup()
             mod->instance = 0;
         }
     }
+
+    // clean up fixed modules
+    zjs_timers_cleanup();
+#ifdef BUILD_MODULE_BUFFER
+    zjs_buffer_cleanup();
+#endif
+#ifdef BUILD_MODULE_SENSOR
+    zjs_sensor_cleanup();
+#endif
 }
 
 void zjs_register_service_routine(void* handle, zjs_service_routine func)
