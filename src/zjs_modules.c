@@ -238,10 +238,14 @@ void zjs_register_service_routine(void* handle, zjs_service_routine func)
     return;
 }
 
-void zjs_service_routines(void)
+uint8_t zjs_service_routines(void)
 {
+    uint8_t serviced = 0;
     int i;
     for (i = 0; i < num_routines; ++i) {
-        svc_routine_map[i].func(svc_routine_map[i].handle);
+        if (svc_routine_map[i].func(svc_routine_map[i].handle)) {
+            serviced = 1;
+        }
     }
+    return serviced;
 }

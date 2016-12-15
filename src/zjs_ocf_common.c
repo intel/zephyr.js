@@ -203,9 +203,12 @@ static void app_init(void)
     oc_add_device("/oic/d", "oic.d.zephyrjs", "Zephyr.js Device", "1.0", "1.0", NULL, NULL);
 }
 
-void main_poll_routine(void* handle)
+uint8_t main_poll_routine(void* handle)
 {
-    oc_main_poll();
+    if (oc_main_poll()) {
+        return 1;
+    }
+    return 0;
 }
 
 static const oc_handler_t handler = { .init = app_init,
