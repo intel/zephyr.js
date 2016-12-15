@@ -29,7 +29,7 @@ uint8_t zjs_port_timer_test(zjs_port_timer_t* timer)
     elapsed = (1000 * (now.tv_sec - timer->sec)) + ((now.tv_nsec / 1000000) - timer->milli);
 
     if (elapsed >= timer->interval) {
-        return 1;
+        return elapsed;
     }
     return 0;
 }

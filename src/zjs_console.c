@@ -3,6 +3,11 @@
 
 #include "zjs_common.h"
 #include "zjs_util.h"
+#ifdef ZJS_LINUX_BUILD
+#include "zjs_linux_port.h"
+#else
+#include "zjs_zephyr_port.h"
+#endif
 
 #define MAX_STR_LENGTH   256
 
@@ -17,6 +22,8 @@
 #define IS_NUMBER 0
 #define IS_INT    1
 #define IS_UINT   2
+
+static jerry_value_t gbl_time_obj;
 
 static int is_int(jerry_value_t val) {
     int ret = 0;
@@ -149,6 +156,82 @@ static jerry_value_t console_error(const jerry_value_t function_obj,
     return do_print(function_obj, this, argv, argc, stderr);
 }
 
+static jerry_value_t console_time(const jerry_value_t function_obj,
+                                  const jerry_value_t this,
+                                  const jerry_value_t argv[],
+                                  const jerry_length_t argc)
+{
+    if (!jerry_value_is_string(argv[0])) {
+        ERR_PRINT("invalid parameters\n");
+        return ZJS_UNDEFINED;
+    }
+    int sz = jerry_get_string_size(argv[0]);
+    char label[sz + 1];
+    int len = jerry_string_to_char_buffer(argv[0], (jerry_char_t *)label, sz);
+    if (sz != len) {
+        ERR_PRINT("size mismatch\n");
+        return ZJS_UNDEFINED;
+    }
+    label[len] = '\0';
+
+    jerry_value_t new_timer_obj = jerry_create_object();
+    zjs_port_timer_t* timer = zjs_malloc(sizeof(zjs_port_timer_t));
+    if (!timer) {
+        ERR_PRINT("could not allocate timer object\n");
+        return ZJS_UNDEFINED;
+    }
+    zjs_port_timer_init(timer);
+    // set timer to go off every millisecond (this is the best accuracy we can get)
+    zjs_port_timer_start(timer, 1);
+
+    jerry_set_object_native_handle(new_timer_obj, (uintptr_t)timer, NULL);
+    // add the new timer to the global timer object
+    zjs_set_property(gbl_time_obj, label, new_timer_obj);
+
+    return ZJS_UNDEFINED;
+}
+
+static jerry_value_t console_time_end(const jerry_value_t function_obj,
+                                      const jerry_value_t this,
+                                      const jerry_value_t argv[],
+                                      const jerry_length_t argc)
+{
+    if (!jerry_value_is_string(argv[0])) {
+        ERR_PRINT("invalid parameters\n");
+        return ZJS_UNDEFINED;
+    }
+    int sz = jerry_get_string_size(argv[0]);
+    char label[sz + 1];
+    int len = jerry_string_to_char_buffer(argv[0], (jerry_char_t *)label, sz);
+    if (sz != len) {
+        ERR_PRINT("size mismatch\n");
+        return ZJS_UNDEFINED;
+    }
+    label[len] = '\0';
+
+    jerry_value_t timer_obj = zjs_get_property(gbl_time_obj, label);
+    if (!jerry_value_is_object(timer_obj)) {
+        ERR_PRINT("timer %s not found\n", label);
+        return ZJS_UNDEFINED;
+    }
+
+    zjs_port_timer_t* timer;
+
+    if (!jerry_get_object_native_handle(timer_obj, (uintptr_t*)&timer)) {
+        ERR_PRINT("native timer handle not found\n");
+        return ZJS_UNDEFINED;
+    }
+
+    uint32_t milli = zjs_port_timer_test(timer) * 10;
+    zjs_port_timer_stop(timer);
+
+    zjs_free(timer);
+
+    fprintf(stdout, "%s:%lums\n", label, milli);
+
+    return ZJS_UNDEFINED;
+}
+
 void zjs_console_init(void)
 {
     jerry_value_t global_obj = jerry_get_global_object();
@@ -158,9 +241,14 @@ void zjs_console_init(void)
     zjs_obj_add_function(console, console_log, "info");
     zjs_obj_add_function(console, console_error, "error");
     zjs_obj_add_function(console, console_error, "warn");
+    zjs_obj_add_function(console, console_time, "time");
+    zjs_obj_add_function(console, console_time_end, "timeEnd");
 
     zjs_set_property(global_obj, "console", console);
     jerry_release_value(global_obj);
+
+    // initialize the time object
+    gbl_time_obj = jerry_create_object();
 }
 
 #endif
