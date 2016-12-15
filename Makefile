@@ -1,5 +1,4 @@
 BOARD ?= arduino_101
-UPDATE ?= exit
 
 # Dump memory information: on = print allocs, full = print allocs + dump pools
 TRACE ?= off
@@ -50,7 +49,7 @@ endif
 
 # Build for zephyr, default target
 .PHONY: zephyr
-zephyr: $(PRE_ACTION) analyze generate jerryscript
+zephyr: analyze generate jerryscript
 	@make -f Makefile.zephyr	BOARD=$(BOARD) \
 					VARIANT=$(VARIANT) \
 					MEM_STATS=$(MEM_STATS) \
@@ -101,30 +100,15 @@ endif
 .PHONY: all
 all: zephyr arc
 
-# This is how we can check if we are building for linux and if clean is needed.
-# The linux target does not use the BOARD variable, so without this special
-# case, the linux target would clean every time.
-ifneq ($(TARGET), linux)
-# Building for Zephyr, check for .$(BOARD).$(VARIANT).last_build to see if clean is needed
-ifeq ("$(wildcard .$(BOARD).$(VARIANT).last_build)", "")
-PRE_ACTION=clean
-endif
-else
-# Building for Linux, check for .linux.last_build to see if a clean is needed
-ifeq ("$(wildcard .linux.$(VARIANT).last_build)", "")
-PRE_ACTION=clean
-endif
-endif
-
 # Update dependency repos
 .PHONY: update
 update:
 	@git submodule update --init
 	@cd $(OCF_ROOT); git submodule update --init;
 
-# Sets up prj/last_build files
-.PHONY: setup
-setup: update
+# set up prj.conf file
+-.PHONY: setup
+setup:
 	@echo "# This is a generated file" > prj.conf
 ifeq ($(BOARD), qemu_x86)
 	@cat fragments/prj.conf.qemu_x86 >> prj.conf
@@ -145,16 +129,10 @@ endif
 	@if [ -e prj.conf.tmp ]; then \
 		cat prj.conf.tmp >> prj.conf; \
 	fi
-# Remove .last_build file
-	@rm -f .*.last_build
-	@echo "" > .$(BOARD).$(VARIANT).last_build
 
 # Explicit clean
-# Update is here because on a fresh checkout, clean will fail. So we want to
-# initialize submodules first so clean will succeed in that case. We should find
-# a way to make clean work from the start, but for now this should be harmless.
 .PHONY: clean
-clean: update
+clean:
 	@if [ -d $(ZEPHYR_SDK_INSTALL_DIR) ]; then \
 		rm -rf $(JERRY_BASE)/build/$(BOARD)/; \
 		rm -f outdir/$(BOARD)/libjerry-core.a; \
@@ -201,7 +179,7 @@ ifeq ($(SNAPSHOT), on)
 	@if ! [ -e outdir/snapshot/snapshot ]; then \
 		make -f Makefile.snapshot; \
 	fi
-	@echo Creating snapshot byte code from JS application...
+	@echo Creating snapshot bytecode from JS application...
 	@outdir/snapshot/snapshot $(JS) src/zjs_snapshot_gen.c
 else
 	@echo Creating C string from JS application...
@@ -219,7 +197,7 @@ qemu: zephyr
 
 # Builds ARC binary
 .PHONY: arc
-arc: $(PRE_ACTION) analyze
+arc: analyze
 	@echo "# This is a generated file" > arc/prj.conf
 	@cat arc/fragments/prj.conf.base >> arc/prj.conf
 	@if [ -e arc/prj.conf.tmp ]; then \
@@ -248,9 +226,7 @@ arcgdb:
 # Linux target
 .PHONY: linux
 # Linux command line target, script can be specified on the command line
-linux: $(PRE_ACTION) generate
-	rm -f .*.last_build
-	echo "" > .linux.$(VARIANT).last_build
+linux: generate
 	make -f Makefile.linux JS=$(JS) VARIANT=$(VARIANT) CB_STATS=$(CB_STATS) V=$(V) SNAPSHOT=$(SNAPSHOT)
 
 .PHONY: help
