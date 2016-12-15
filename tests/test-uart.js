@@ -15,12 +15,6 @@ board.init({ port: "value", baud: 115200 }).then(function () {
     assert.true(true, "uart: set port as value");
 });
 
-board.init({ port: "tty1", baud: 115200 }).then(function () {
-    assert.true(true, "uart: set port as tty1");
-}).catch(function (error) {
-    assert.true(false, "uart: set port as tty1");
-});
-
 board.init({ port: "tty0", baud: 9600 }).then(function () {
     assert.true(true, "uart: set baud as 9600");
 }).catch(function (error) {
