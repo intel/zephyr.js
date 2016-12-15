@@ -232,17 +232,75 @@ static jerry_value_t console_time_end(const jerry_value_t function_obj,
     return ZJS_UNDEFINED;
 }
 
+static jerry_value_t get_console_obj(const jerry_value_t function_obj,
+                                     const jerry_value_t this,
+                                     const jerry_value_t argv[],
+                                     const jerry_length_t argc)
+{
+    jerry_value_t global_obj = jerry_get_global_object();
+    jerry_value_t console = zjs_get_property(global_obj, "console");
+    if (!jerry_value_is_object(console)) {
+        ERR_PRINT("console not initialized\n");
+        return ZJS_UNDEFINED;
+    }
+    return console;
+}
+
+static jerry_value_t console_assert(const jerry_value_t function_obj,
+                                    const jerry_value_t this,
+                                    const jerry_value_t argv[],
+                                    const jerry_length_t argc)
+{
+    char message[128];
+    uint8_t has_message = 0;
+    if (!jerry_value_is_boolean(argv[0])) {
+        ERR_PRINT("invalid parameters\n");
+        return ZJS_UNDEFINED;
+    }
+    bool b = jerry_get_boolean_value(argv[0]);
+    if (!b) {
+        if (argc > 1) {
+            if (!jerry_value_is_string(argv[1])) {
+                ERR_PRINT("message parameter must be a string\n");
+                return ZJS_UNDEFINED;
+            } else {
+                int sz = jerry_get_string_size(argv[1]);
+                if (sz > 128) {
+                    ERR_PRINT("error message too long\n");
+                    return ZJS_UNDEFINED;
+                }
+                int len = jerry_string_to_char_buffer(argv[1], (jerry_char_t *)message, sz);
+                if (sz != len) {
+                    ERR_PRINT("size mismatch\n");
+                    return ZJS_UNDEFINED;
+                }
+                message[len] = '\0';
+                has_message = 1;
+            }
+        }
+        if (has_message) {
+            return zjs_error(message);
+        } else {
+            return zjs_error("console.assert() error");
+        }
+    }
+    return ZJS_UNDEFINED;
+}
+
 void zjs_console_init(void)
 {
     jerry_value_t global_obj = jerry_get_global_object();
 
     jerry_value_t console = jerry_create_object();
+
+    zjs_obj_add_function(global_obj, get_console_obj, "Console");
     zjs_obj_add_function(console, console_log, "log");
     zjs_obj_add_function(console, console_log, "info");
     zjs_obj_add_function(console, console_error, "error");
     zjs_obj_add_function(console, console_error, "warn");
     zjs_obj_add_function(console, console_time, "time");
     zjs_obj_add_function(console, console_time_end, "timeEnd");
+    zjs_obj_add_function(console, console_assert, "assert");
 
     zjs_set_property(global_obj, "console", console);
     jerry_release_value(global_obj);
