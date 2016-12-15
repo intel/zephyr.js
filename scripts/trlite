@@ -19,7 +19,6 @@ if [ ! -d "$ZJS_BASE" ]; then
 fi
 
 TRLDIR=$ZJS_BASE/.trlite
-TRLPATCH=$TRLDIR/patch
 
 if [ "$1" == "-h" -o "$1" == "-?" ]; then
     echo usage: trlite [-h] [-v] [vmname] [testnum]
@@ -69,10 +68,10 @@ done
 
 echo Preserving uncommitted changes:
 cd $ZJS_BASE
-git diff --cached --stat
-git diff --cached > $TRLPATCH
+git diff HEAD --stat
+git diff HEAD > $TRLDIR/uncommitted.patch
 cd $TRLDIR
-patch -p1 < patch > /dev/null
+patch -p1 < uncommitted.patch > /dev/null
 
 # pause to allow consideration of diffs being applied
 sleep 3
