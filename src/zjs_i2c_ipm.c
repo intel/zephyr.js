@@ -294,20 +294,24 @@ static jerry_value_t zjs_i2c_open(const jerry_value_t function_obj,
     bool success = zjs_i2c_ipm_send_sync(&send, &reply);
 
     if (!success) {
-        return zjs_error("zjs_i2c_write: ipm message failed or timed out!");
+        return zjs_error("zjs_i2c_open: ipm message failed or timed out!");
     }
 
-    // create the I2C object
-    jerry_value_t i2c_obj = jerry_create_object();
-    zjs_obj_add_function(i2c_obj, zjs_i2c_read, "read");
-    zjs_obj_add_function(i2c_obj, zjs_i2c_burst_read, "burstRead");
-    zjs_obj_add_function(i2c_obj, zjs_i2c_write, "write");
-    zjs_obj_add_function(i2c_obj, zjs_i2c_abort, "abort");
-    zjs_obj_add_function(i2c_obj, zjs_i2c_close, "close");
-    zjs_obj_add_number(i2c_obj, bus, "bus");
-    zjs_obj_add_number(i2c_obj, speed, "speed");
-
-    return i2c_obj;
+    if (reply.error_code == 0) {
+        // create the I2C object
+        jerry_value_t i2c_obj = jerry_create_object();
+        zjs_obj_add_function(i2c_obj, zjs_i2c_read, "read");
+        zjs_obj_add_function(i2c_obj, zjs_i2c_burst_read, "burstRead");
+        zjs_obj_add_function(i2c_obj, zjs_i2c_write, "write");
+        zjs_obj_add_function(i2c_obj, zjs_i2c_abort, "abort");
+        zjs_obj_add_function(i2c_obj, zjs_i2c_close, "close");
+        zjs_obj_add_number(i2c_obj, bus, "bus");
+        zjs_obj_add_number(i2c_obj, speed, "speed");
+        return i2c_obj;
+    }
+    else {
+        return zjs_error("zjs_i2c_open: Failed to open I2C bus");
+    }
 }
 
 jerry_value_t zjs_i2c_init()
