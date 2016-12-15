@@ -24,6 +24,7 @@
 #define IS_UINT   2
 
 static jerry_value_t gbl_time_obj;
+static jerry_value_t console_prototype_obj;
 
 static int is_int(jerry_value_t val) {
     int ret = 0;
@@ -237,12 +238,13 @@ static jerry_value_t get_console_obj(const jerry_value_t function_obj,
                                      const jerry_value_t argv[],
                                      const jerry_length_t argc)
 {
-    jerry_value_t global_obj = jerry_get_global_object();
-    jerry_value_t console = zjs_get_property(global_obj, "console");
-    if (!jerry_value_is_object(console)) {
+    if (!jerry_value_is_object(console_prototype_obj)) {
         ERR_PRINT("console not initialized\n");
         return ZJS_UNDEFINED;
     }
+    jerry_value_t console = jerry_create_object();
+    jerry_set_prototype(console, console_prototype_obj);
+
     return console;
 }
 
@@ -294,13 +296,22 @@ void zjs_console_init(void)
     jerry_value_t console = jerry_create_object();
 
     zjs_obj_add_function(global_obj, get_console_obj, "Console");
-    zjs_obj_add_function(console, console_log, "log");
-    zjs_obj_add_function(console, console_log, "info");
-    zjs_obj_add_function(console, console_error, "error");
-    zjs_obj_add_function(console, console_error, "warn");
-    zjs_obj_add_function(console, console_time, "time");
-    zjs_obj_add_function(console, console_time_end, "timeEnd");
-    zjs_obj_add_function(console, console_assert, "assert");
+
+    zjs_native_func_t array[] = {
+        { console_log, "log" },
+        { console_log, "info" },
+        { console_error, "error" },
+        { console_error, "warn" },
+        { console_time, "time" },
+        { console_time_end, "timeEnd" },
+        { console_assert, "assert" },
+        { NULL, NULL }
+    };
+
+    console_prototype_obj = jerry_create_object();
+    zjs_obj_add_functions(console_prototype_obj, array);
+
+    jerry_set_prototype(console, console_prototype_obj);
 
     zjs_set_property(global_obj, "console", console);
     jerry_release_value(global_obj);
