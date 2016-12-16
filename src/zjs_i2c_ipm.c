@@ -15,7 +15,7 @@
 #include "zjs_util.h"
 #include "zjs_buffer.h"
 
-#define ZJS_I2C_TIMEOUT_TICKS                      500
+#define ZJS_I2C_TIMEOUT_TICKS                      5000
 
 static struct k_sem i2c_sem;
 

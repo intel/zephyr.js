@@ -15,7 +15,7 @@
 #include "zjs_ipm.h"
 #include "zjs_util.h"
 
-#define ZJS_GLCD_TIMEOUT_TICKS 500
+#define ZJS_GLCD_TIMEOUT_TICKS 5000
 
 static struct k_sem glcd_sem;
 

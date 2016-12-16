@@ -27,7 +27,7 @@ struct device *trigger_ipm;
 struct gpio_callback cb;
 #endif
 
-#define ZJS_SENSOR_TIMEOUT_TICKS 500
+#define ZJS_SENSOR_TIMEOUT_TICKS 5000
 
 static struct k_sem sensor_sem;
 

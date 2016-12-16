@@ -11,7 +11,7 @@
 #include "zjs_ipm.h"
 #include "zjs_util.h"
 
-#define ZJS_AIO_TIMEOUT_TICKS                      500
+#define ZJS_AIO_TIMEOUT_TICKS                      5000
 
 static struct k_sem aio_sem;
 static jerry_value_t zjs_aio_prototype;
