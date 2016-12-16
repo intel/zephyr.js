@@ -26,7 +26,7 @@
 #define ZJS_BLE_RESULT_INVALID_ATTRIBUTE_LENGTH     BT_ATT_ERR_INVALID_ATTRIBUTE_LEN
 #define ZJS_BLE_RESULT_UNLIKELY_ERROR               BT_ATT_ERR_UNLIKELY
 
-#define ZJS_BLE_TIMEOUT_TICKS                       500
+#define ZJS_BLE_TIMEOUT_TICKS                       5000
 
 static struct k_sem ble_sem;
 

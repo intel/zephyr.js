@@ -14,7 +14,6 @@
 #include "zjs_grove_lcd.h"
 #include "zjs_util.h"
 
-#define ZJS_GLCD_TIMEOUT_TICKS 500
 #define MAX_BUFFER_SIZE 256
 
 static struct device *glcd = NULL;
