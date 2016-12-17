@@ -44,7 +44,7 @@ static jerry_value_t native_eval_handler(const jerry_value_t function_obj,
                                          const jerry_value_t argv[],
                                          const jerry_length_t argc)
 {
-    return zjs_error("native_eval_handler: eval not supported");
+    return zjs_error("eval not supported");
 }
 
 // native print handler
@@ -53,16 +53,16 @@ static jerry_value_t native_print_handler(const jerry_value_t function_obj,
                                           const jerry_value_t argv[],
                                           const jerry_length_t argc)
 {
-    jerry_size_t jlen = jerry_get_string_size(argv[0]);
-    if (jlen > ZJS_MAX_PRINT_SIZE) {
-        ERR_PRINT("maximum print string length exceeded\n");
-        return ZJS_UNDEFINED;
-    }
-    char buffer[jlen + 1];
-    int wlen = jerry_string_to_char_buffer(argv[0], (jerry_char_t *)buffer, jlen);
-    buffer[wlen] = '\0';
+    if (argc < 1 || !jerry_value_is_string(argv[0]))
+        return zjs_error("print: missing string argument");
 
-    ZJS_PRINT("%s\n", buffer);
+    jerry_size_t size = 0;
+    char *str = zjs_alloc_from_jstring(argv[0], &size);
+    if (!str)
+        return zjs_error("print: out of memory");
+
+    ZJS_PRINT("%s\n", str);
+    zjs_free(str);
     return ZJS_UNDEFINED;
 }
 

@@ -81,7 +81,7 @@ static zjs_timer_t* add_timer(uint32_t interval,
     zjs_timers = tm;
 
     DBG_PRINT("adding timer. id=%d, interval=%lu, repeat=%u, argv=%p, argc=%lu\n",
-            tm->callback_id, interval, repeat, argv, argc);
+              tm->callback_id, interval, repeat, argv, argc);
     zjs_port_timer_start(&tm->timer, interval);
     return tm;
 }

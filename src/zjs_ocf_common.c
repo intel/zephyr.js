@@ -35,12 +35,12 @@ int zjs_ocf_is_int(jerry_value_t val) {
 }
 
 static bool ocf_foreach_prop(const jerry_value_t prop_name,
-                          const jerry_value_t prop_value,
-                          void *data)
+                             const jerry_value_t prop_value,
+                             void *data)
 {
     struct props_handle* handle = (struct props_handle*)data;
 
-    ZJS_GET_STRING(prop_name, name);
+    ZJS_GET_STRING(prop_name, name, OCF_MAX_PROP_NAME_LEN);
 
     // Skip id/resourcePath/resourceType because that is not a resource property that is sent out
     if ((strcmp(name, "deviceId") != 0) &&
@@ -131,7 +131,7 @@ void* zjs_ocf_props_setup(jerry_value_t props_object,
             zjs_rep_set_boolean(enc, h->names_array[i], boolean);
             DBG_PRINT("Encoding boolean: %d\n", boolean);
         } else if (jerry_value_is_string(prop)) {
-            ZJS_GET_STRING(prop, str);
+            ZJS_GET_STRING(prop, str, OCF_MAX_PROP_NAME_LEN);
             zjs_rep_set_text_string(enc, h->names_array[i], str);
             DBG_PRINT("Encoding string: %s\n", str);
         } else if (jerry_value_is_object(prop) && !jerry_value_is_array(prop)) {

@@ -83,30 +83,23 @@ static jerry_value_t add_listener(const jerry_value_t function_obj,
                                   const jerry_value_t argv[],
                                   const jerry_length_t argc)
 {
-    if (!jerry_value_is_string(argv[0])) {
-        ERR_PRINT("first parameter must be event string\n");
-        return jerry_acquire_value(this);
+    jerry_value_t rval = jerry_acquire_value(this);
+    if (!jerry_value_is_string(argv[0]) ||
+        !jerry_value_is_function(argv[1])) {
+        ERR_PRINT("invalid argument");
+        return rval;
     }
-    if (!jerry_value_is_function(argv[1])) {
-        ERR_PRINT("second parameter must be a listener function\n");
-        return jerry_acquire_value(this);
-    }
-    int sz = jerry_get_string_size(argv[0]);
-    if (sz > ZJS_MAX_EVENT_NAME_SIZE) {
+
+    jerry_size_t size = ZJS_MAX_EVENT_NAME_SIZE;
+    char name[size];
+    zjs_copy_jstring(argv[0], name, &size);
+    if (!size) {
         ERR_PRINT("event name is too long\n");
-        return jerry_acquire_value(this);
+        return rval;
     }
-    char name[sz];
-    int len = jerry_string_to_char_buffer(argv[0], (jerry_char_t *)name, sz);
-    if (len != sz) {
-        ERR_PRINT("size mismatch\n");
-        return jerry_acquire_value(this);
-    }
-    name[len] = '\0';
 
     zjs_add_event_listener(this, name, argv[1]);
-
-    return jerry_acquire_value(this);
+    return rval;
 }
 
 static jerry_value_t emit_event(const jerry_value_t function_obj,
@@ -118,14 +111,14 @@ static jerry_value_t emit_event(const jerry_value_t function_obj,
         ERR_PRINT("parameter is not a string\n");
         return jerry_create_boolean(false);
     }
-    int sz = jerry_get_string_size(argv[0]);
-    char event[sz];
-    int len = jerry_string_to_char_buffer(argv[0], (jerry_char_t *)event, sz);
-    if (len != sz) {
-        ERR_PRINT("size mismatch\n");
-        return jerry_create_boolean(false);
+
+    jerry_size_t size = ZJS_MAX_EVENT_NAME_SIZE;
+    char event[size];
+    zjs_copy_jstring(argv[0], event, &size);
+    if (!size) {
+        ERR_PRINT("event name is too long\n");
+        return jerry_acquire_value(this);
     }
-    event[len] = '\0';
 
     return jerry_create_boolean(zjs_trigger_event(this,
                                                   event,
@@ -155,14 +148,14 @@ static jerry_value_t remove_listener(const jerry_value_t function_obj,
         ERR_PRINT("event listener must be second parameter\n");
         return jerry_acquire_value(this);
     }
-    int sz = jerry_get_string_size(argv[0]);
-    char event[sz];
-    int len = jerry_string_to_char_buffer(argv[0], (jerry_char_t *)event, sz);
-    if (len != sz) {
-        ERR_PRINT("size mismatch\n");
+
+    jerry_size_t size = ZJS_MAX_EVENT_NAME_SIZE;
+    char event[size];
+    zjs_copy_jstring(argv[0], event, &size);
+    if (!size) {
+        ERR_PRINT("event name is too long\n");
         return jerry_acquire_value(this);
     }
-    event[len] = '\0';
 
     // Event object to hold callback ID and eventually listener arguments
     jerry_value_t event_obj = zjs_get_property(ev->map, event);
@@ -202,14 +195,14 @@ static jerry_value_t remove_all_listeners(const jerry_value_t function_obj,
         ERR_PRINT("event name must be first parameter\n");
         return jerry_acquire_value(this);
     }
-    int sz = jerry_get_string_size(argv[0]);
-    char event[sz];
-    int len = jerry_string_to_char_buffer(argv[0], (jerry_char_t *)event, sz);
-    if (len != sz) {
-        ERR_PRINT("size mismatch\n");
+
+    jerry_size_t size = ZJS_MAX_EVENT_NAME_SIZE;
+    char event[size];
+    zjs_copy_jstring(argv[0], event, &size);
+    if (!size) {
+        ERR_PRINT("event name is too long\n");
         return jerry_acquire_value(this);
     }
-    event[len] = '\0';
 
     // Event object to hold callback ID and eventually listener arguments
     jerry_value_t event_obj = zjs_get_property(ev->map, event);
@@ -334,14 +327,14 @@ static jerry_value_t get_listener_count(const jerry_value_t function_obj,
         ERR_PRINT("event name must be first parameter\n");
         return jerry_create_number(0);
     }
-    int sz = jerry_get_string_size(argv[0]);
-    char event[sz];
-    int len = jerry_string_to_char_buffer(argv[0], (jerry_char_t *)event, sz);
-    if (len != sz) {
-        ERR_PRINT("size mismatch\n");
-        return jerry_create_number(0);
+
+    jerry_size_t size = ZJS_MAX_EVENT_NAME_SIZE;
+    char event[size];
+    zjs_copy_jstring(argv[0], event, &size);
+    if (!size) {
+        ERR_PRINT("event name is too long\n");
+        return jerry_acquire_value(this);
     }
-    event[len] = '\0';
 
     // Event object to hold callback ID and eventually listener arguments
     jerry_value_t event_obj = zjs_get_property(ev->map, event);
@@ -379,14 +372,14 @@ static jerry_value_t get_listeners(const jerry_value_t function_obj,
         ERR_PRINT("event name must be first parameter\n");
         return ZJS_UNDEFINED;
     }
-    int sz = jerry_get_string_size(argv[0]);
-    char event[sz];
-    int len = jerry_string_to_char_buffer(argv[0], (jerry_char_t *)event, sz);
-    if (len != sz) {
-        ERR_PRINT("size mismatch\n");
-        return ZJS_UNDEFINED;
+
+    jerry_size_t size = ZJS_MAX_EVENT_NAME_SIZE;
+    char event[size];
+    zjs_copy_jstring(argv[0], event, &size);
+    if (!size) {
+        ERR_PRINT("event name is too long\n");
+        return jerry_acquire_value(this);
     }
-    event[len] = '\0';
 
     // Event object to hold callback ID and eventually listener arguments
     jerry_value_t event_obj = zjs_get_property(ev->map, event);

@@ -16,6 +16,7 @@
 #include "zjs_util.h"
 
 #define ZJS_GLCD_TIMEOUT_TICKS 5000
+#define MAX_BUFFER_SIZE 256
 
 static struct k_sem glcd_sem;
 
@@ -97,17 +98,11 @@ static jerry_value_t zjs_glcd_print(const jerry_value_t function_obj,
         return zjs_error("zjs_glcd_print: invalid argument");
     }
 
-    jerry_size_t sz = jerry_get_string_size(argv[0]);
-
-    char *buffer = zjs_malloc(sz+1);
+    jerry_size_t size = MAX_BUFFER_SIZE;
+    char *buffer = zjs_alloc_from_jstring(argv[0], &size);
     if (!buffer) {
         return zjs_error("zjs_glcd_print: cannot allocate buffer");
     }
-
-    int len = jerry_string_to_char_buffer(argv[0],
-                                          (jerry_char_t *)buffer,
-                                          sz);
-    buffer[len] = '\0';
 
     // send IPM message to the ARC side
     zjs_ipm_message_t send;
