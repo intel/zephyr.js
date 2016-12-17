@@ -9,17 +9,25 @@
 #include <stdlib.h>
 
 // ZJS includes
+#ifdef BUILD_MODULE_BUFFER
+#include "zjs_buffer.h"
+#endif
+#ifdef BUILD_MODULE_CONSOLE
 #include "zjs_console.h"
+#endif
 #include "zjs_event.h"
 #include "zjs_modules.h"
 #include "zjs_performance.h"
+#ifdef BUILD_MODULE_SENSOR
+#include "zjs_sensor.h"
+#endif
 #include "zjs_timers.h"
 #include "zjs_util.h"
 #ifdef BUILD_MODULE_OCF
 #include "zjs_ocf_common.h"
 #endif
+
 #ifndef ZJS_LINUX_BUILD
-// ZJS includes
 #include "zjs_aio.h"
 #include "zjs_ble.h"
 #include "zjs_gpio.h"
@@ -29,11 +37,11 @@
 #include "zjs_uart.h"
 #ifdef CONFIG_BOARD_ARDUINO_101
 #include "zjs_a101_pins.h"
-#endif // ZJS_LINUX_BUILD
+#endif
 #ifdef CONFIG_BOARD_FRDM_K64F
 #include "zjs_k64f_pins.h"
 #endif
-#endif
+#endif // ZJS_LINUX_BUILD
 
 typedef jerry_value_t (*initcb_t)();
 typedef void (*cleanupcb_t)();
