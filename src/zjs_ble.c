@@ -605,10 +605,19 @@ static int zjs_encode_url_frame(jerry_value_t url, uint8_t **frame, int *size)
     //             zjs_free
     //  returns: 0 for success, 1 for URL too long, 2 for out of memory, 3 for
     //             invalid url scheme/syntax (only http:// or https:// allowed)
-    jerry_size_t sz = jerry_get_string_size(url);
-    char buf[sz + 1];
-    int len = jerry_string_to_char_buffer(url, (jerry_char_t *)buf, sz);
-    buf[len] = '\0';
+
+    // FIXME: this needs unit tests; there could easily be a bug especially
+    //   regarding whether a final null terminator on the URL fits in the 17
+    //   bytes or not; spec seems unclear on whether it's required
+
+    // max len is https://www. and .info/ encoded in 2 bytes + 15 raw = 33
+    const int MAX_URL_LENGTH = 33;
+
+    jerry_size_t len = MAX_URL_LENGTH;
+    char buf[len];
+    zjs_copy_jstring(url, buf, &len);
+    if (!len)
+        return ZJS_URL_TOO_LONG;
 
     // make sure it starts with http
     int offset = 0;
@@ -664,8 +673,6 @@ static jerry_value_t zjs_ble_start_advertising(const jerry_value_t function_obj,
     // arg 0 should be the device name to advertise, e.g. "Arduino101"
     // arg 1 should be an array of UUIDs (short, 4 hex chars)
     // arg 2 should be a short URL (typically registered with Google, I think)
-    char name[80];
-
     if (argc < 2 ||
         !jerry_value_is_string(argv[0]) ||
         !jerry_value_is_object(argv[1]) ||
@@ -678,14 +685,15 @@ static jerry_value_t zjs_ble_start_advertising(const jerry_value_t function_obj,
         return zjs_error("zjs_ble_adv_start: expected array");
     }
 
-    jerry_size_t sz = jerry_get_string_size(argv[0]);
-    int len_name = jerry_string_to_char_buffer(argv[0],
-                                               (jerry_char_t *) name,
-                                               sz);
-    name[len_name] = '\0';
+    const int MAX_NAME_LENGTH = 80;
+    jerry_size_t size = MAX_NAME_LENGTH;
+    char name[size];
+    zjs_copy_jstring(argv[0], name, &size);
+    if (!size)
+        return zjs_error("zjs_ble_adv_start: name too long");
 
     struct bt_data sd[] = {
-        BT_DATA(BT_DATA_NAME_COMPLETE, name, len_name),
+        BT_DATA(BT_DATA_NAME_COMPLETE, name, size),
     };
 
     /*
@@ -735,17 +743,17 @@ static jerry_value_t zjs_ble_start_advertising(const jerry_value_t function_obj,
             return zjs_error("zjs_ble_adv_start: invalid uuid argument type");
         }
 
-        jerry_size_t size = jerry_get_string_size(uuid);
-        if (size != 4) {
-            return zjs_error("zjs_ble_adv_start: unexpected uuid string length");
-        }
+        const int MAX_UUID_LENGTH = 4;
+        jerry_size_t size = MAX_UUID_LENGTH + 1;
+        char ubuf[size];
+        zjs_copy_jstring(uuid, ubuf, &size);
+        if (size != MAX_UUID_LENGTH)
+            return zjs_error("zjs_ble_adv_start: unexpected uuid length");
 
-        char ubuf[4];
         uint8_t bytes[2];
-        jerry_string_to_char_buffer(uuid, (jerry_char_t *)ubuf, 4);
         if (!zjs_hex_to_byte(ubuf + 2, &bytes[0]) ||
             !zjs_hex_to_byte(ubuf, &bytes[1])) {
-            return zjs_error("zjs_ble_adv_start: invalid character in uuid string");
+            return zjs_error("zjs_ble_adv_start: invalid char in uuid");
         }
 
         ad[index].type = BT_DATA_UUID16_ALL;
@@ -803,13 +811,10 @@ static bool zjs_ble_parse_characteristic(ble_characteristic_t *chrc)
             return false;
         }
 
-        char name[20];
-        jerry_size_t sz;
-        sz = jerry_get_string_size(v_property);
-        int len = jerry_string_to_char_buffer(v_property,
-                                              (jerry_char_t *) name,
-                                              sz);
-        name[len] = '\0';
+        const int MAX_NAME_LENGTH = 20;
+        jerry_size_t size = MAX_NAME_LENGTH;
+        char name[MAX_NAME_LENGTH];
+        zjs_copy_jstring(v_property, name, &size);
 
         if (!strcmp(name, "read")) {
             chrc->flags |= BT_GATT_CHRC_READ;
@@ -1039,16 +1044,18 @@ static bool zjs_ble_register_service(ble_service_t *service)
 
         // CUD
         if (ch->cud_value) {
-            jerry_size_t sz = jerry_get_string_size(ch->cud_value);
-            char *cud_buffer = zjs_malloc(sz+1);
+            // FIXME: not sure what this value should be
+            const int MAX_CUD_LENGTH = 64;
+            jerry_size_t size = MAX_CUD_LENGTH;
+            char *cud_buffer = zjs_alloc_from_jstring(ch->cud_value, &size);
             if (!cud_buffer) {
-                ERR_PRINT("zjs_ble_register_service: out of memory allocating cud buffer\n");
+                ERR_PRINT("out of memory allocating cud buffer\n");
                 return false;
             }
 
-            memset(cud_buffer, 0, sz+1);
+            // FIXME: cud_buffer should be freed later if no longer needed, but
+            //   doesn't seem to be
 
-            jerry_string_to_char_buffer(ch->cud_value, (jerry_char_t *)cud_buffer, sz);
             bt_attrs[entry_index].uuid = gatt_cud_uuid;
             bt_attrs[entry_index].perm = BT_GATT_PERM_READ;
             bt_attrs[entry_index].read = bt_gatt_attr_read_cud;

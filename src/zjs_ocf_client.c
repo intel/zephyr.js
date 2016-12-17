@@ -291,7 +291,7 @@ static void add_resource(char* id, char* type, char* path, jerry_value_t client,
         memcpy(new->resource_type, type, strlen(type));
         new->resource_type[strlen(type)] = '\0';
     }
-    if (id) {
+    if (path) {
         new->resource_path = zjs_malloc(strlen(path) + 1);
         memcpy(new->resource_path, path, strlen(path));
         new->resource_path[strlen(path)] = '\0';
@@ -449,28 +449,22 @@ static jerry_value_t ocf_find_resources(const jerry_value_t function_val,
         jerry_value_t res_path_val = zjs_get_property(argv[0], "resourcePath");
 
         if (jerry_value_is_string(device_id_val)) {
-            int sz = jerry_get_string_size(device_id_val);
-            device_id = zjs_malloc(sz + 1);
-            int len = jerry_string_to_char_buffer(device_id_val, (jerry_char_t *)device_id, sz);
-            device_id[len] = '\0';
-
-            DBG_PRINT("deviceId: %s\n", device_id);
+            jerry_size_t size = OCF_MAX_DEVICE_ID_LEN;
+            device_id = zjs_alloc_from_jstring(device_id_val, &size);
+            if (device_id)
+                DBG_PRINT("deviceId: %s\n", device_id);
         }
         if (jerry_value_is_string(res_type_val)) {
-            int sz = jerry_get_string_size(res_type_val);
-            resource_type = zjs_malloc(sz + 1);
-            int len = jerry_string_to_char_buffer(res_type_val, (jerry_char_t *)resource_type, sz);
-            resource_type[len] = '\0';
-
-            DBG_PRINT("resourceType: %s\n", resource_type);
+            jerry_size_t size = OCF_MAX_RES_TYPE_LEN;
+            resource_type = zjs_alloc_from_jstring(res_type_val, &size);
+            if (resource_type)
+                DBG_PRINT("resourceType: %s\n", resource_type);
         }
         if (jerry_value_is_string(res_path_val)) {
-            int sz = jerry_get_string_size(res_path_val);
-            resource_path = zjs_malloc(sz + 1);
-            int len = jerry_string_to_char_buffer(res_path_val, (jerry_char_t *)resource_path, sz);
-            resource_path[len] = '\0';
-
-            DBG_PRINT("resourcePath: %s\n", resource_path);
+            jerry_size_t size = OCF_MAX_RES_PATH_LEN;
+            resource_path = zjs_alloc_from_jstring(res_path_val, &size);
+            if (resource_path)
+                DBG_PRINT("resourcePath: %s\n", resource_path);
         }
     }
 
@@ -557,7 +551,7 @@ static jerry_value_t ocf_retrieve(const jerry_value_t function_val,
         return promise;
     }
 
-    ZJS_GET_STRING(argv[0], device_id);
+    ZJS_GET_STRING(argv[0], device_id, OCF_MAX_DEVICE_ID_LEN + 1);
 
     struct client_resource* resource = find_resource_by_id(device_id);
     if (!resource) {
@@ -680,7 +674,7 @@ static jerry_value_t ocf_update(const jerry_value_t function_val,
     // Get device ID property from resource
     jerry_value_t device_id_val = zjs_get_property(argv[0], "deviceId");
 
-    ZJS_GET_STRING(device_id_val, device_id);
+    ZJS_GET_STRING(device_id_val, device_id, OCF_MAX_DEVICE_ID_LEN + 1);
 
     jerry_release_value(device_id_val);
 
@@ -761,7 +755,7 @@ static jerry_value_t ocf_delete(const jerry_value_t function_val,
         return promise;
     }
 
-    ZJS_GET_STRING(argv[0], uri);
+    ZJS_GET_STRING(argv[0], uri, OCF_MAX_URI_LEN);
 
     DBG_PRINT("DELETE call, uri=%s\n", uri);
 
@@ -866,7 +860,7 @@ static jerry_value_t ocf_get_platform_info(const jerry_value_t function_val,
         return promise;
     }
 
-    ZJS_GET_STRING(argv[0], device_id);
+    ZJS_GET_STRING(argv[0], device_id, OCF_MAX_DEVICE_ID_LEN + 1);
 
     struct client_resource* resource = find_resource_by_id(device_id);
     if (!resource) {
@@ -972,7 +966,7 @@ static jerry_value_t ocf_get_device_info(const jerry_value_t function_val,
         return promise;
     }
 
-    ZJS_GET_STRING(argv[0], device_id);
+    ZJS_GET_STRING(argv[0], device_id, OCF_MAX_DEVICE_ID_LEN + 1);
 
     struct client_resource* resource = find_resource_by_id(device_id);
     if (!resource) {

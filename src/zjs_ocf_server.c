@@ -411,7 +411,7 @@ static jerry_value_t ocf_register(const jerry_value_t function_val,
         REJECT(promise, "TypeMismatchError", "resourcePath not found", h);
         return promise;
     }
-    ZJS_GET_STRING(resource_path_val, resource_path);
+    ZJS_GET_STRING(resource_path_val, resource_path, OCF_MAX_RES_PATH_LEN);
 
     jerry_value_t res_type_array = zjs_get_property(argv[0], "resourceTypes");
     if (!jerry_value_is_array(res_type_array)) {
@@ -454,7 +454,7 @@ static jerry_value_t ocf_register(const jerry_value_t function_val,
 
     for (i = 0; i < num_types; ++i) {
         jerry_value_t type_val = jerry_get_property_by_index(res_type_array, i);
-        ZJS_GET_STRING(type_val, type_name);
+        ZJS_GET_STRING(type_val, type_name, OCF_MAX_RES_TYPE_LEN);
         oc_resource_bind_resource_type(resource->res, type_name);
     }
     oc_resource_bind_resource_interface(resource->res, OC_IF_RW);

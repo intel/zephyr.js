@@ -2,10 +2,9 @@
 
 #include "jerry-api.h"
 
-#include "zjs_util.h"
 #include "zjs_common.h"
-
 #include "zjs_ocf_client.h"
+#include "zjs_util.h"
 
 #include "oc_api.h"
 #include <stdio.h>
@@ -24,12 +23,17 @@ struct props_handle {
 #define TYPE_IS_INT    1
 #define TYPE_IS_UINT   2
 
+#define OCF_MAX_DEVICE_ID_LEN 36
+#define OCF_MAX_RES_TYPE_LEN  16
+#define OCF_MAX_RES_PATH_LEN  64
+#define OCF_MAX_URI_LEN       64
+#define OCF_MAX_PROP_NAME_LEN 16
+
 // Helper to get the string from a jerry_value_t
-#define ZJS_GET_STRING(jval, name) \
-    int name##_sz = jerry_get_string_size(jval); \
-    char name[name##_sz]; \
-    int name##_len = jerry_string_to_char_buffer(jval, (jerry_char_t *)name, name##_sz); \
-    name[name##_len] = '\0';
+#define ZJS_GET_STRING(jval, name, maxlen)       \
+    jerry_size_t name##_size = maxlen; \
+    char name[name##_size]; \
+    zjs_copy_jstring(jval, name, &name##_size);
 
 #define REJECT(promise, err_name, err_msg, handler) \
     handler = new_ocf_handler(NULL); \

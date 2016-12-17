@@ -126,19 +126,16 @@ bool zjs_obj_get_string(jerry_value_t obj, const char *name, char *buffer,
     if (jerry_value_has_error_flag(value))
         return false;
 
-    if (!jerry_value_is_string(value))
-        return false;
-
-    jerry_size_t jlen = jerry_get_string_size(value);
-    if (jlen >= len)
-        return false;
-
-    int wlen = jerry_string_to_char_buffer(value, (jerry_char_t *)buffer, jlen);
-    buffer[wlen] = '\0';
+    bool rval = false;
+    if (jerry_value_is_string(value)) {
+        jerry_size_t size = len;
+        zjs_copy_jstring(value, buffer, &size);
+        if (size)
+            rval = true;
+    }
 
     jerry_release_value(value);
-
-    return true;
+    return rval;
 }
 
 bool zjs_obj_get_double(jerry_value_t obj, const char *name, double *num)
@@ -178,6 +175,41 @@ bool zjs_obj_get_int32(jerry_value_t obj, const char *name, int32_t *num)
     *num = (int32_t)jerry_get_number_value(value);
     jerry_release_value(value);
     return true;
+}
+
+void zjs_copy_jstring(jerry_value_t jstr, char *buffer, jerry_size_t *maxlen)
+{
+    jerry_size_t size = jerry_get_string_size(jstr);
+    jerry_size_t len = 0;
+    if (*maxlen > size)
+        len = jerry_string_to_char_buffer(jstr, (jerry_char_t *)buffer, size);
+    buffer[len] = '\0';
+}
+
+char *zjs_alloc_from_jstring(jerry_value_t jstr, jerry_size_t *maxlen)
+{
+    jerry_size_t size = jerry_get_string_size(jstr);
+    char *buffer = zjs_malloc(size + 1);
+    if (!buffer) {
+        ERR_PRINT("allocation failed (%lu bytes)\n", size + 1);
+        return NULL;
+    }
+
+    jerry_size_t len;
+    len = jerry_string_to_char_buffer(jstr, (jerry_char_t *)buffer, size);
+    buffer[len] = '\0';
+
+    if (maxlen) {
+        if (*maxlen && *maxlen < len) {
+            DBG_PRINT("string limited to %lu bytes\n", *maxlen);
+            buffer[*maxlen] = '\0';
+        }
+        else {
+            *maxlen = len;
+        }
+    }
+
+    return buffer;
 }
 
 bool zjs_hex_to_byte(char *buf, uint8_t *byte)

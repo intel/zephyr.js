@@ -13,10 +13,10 @@
 
 #define ZJS_AIO_TIMEOUT_TICKS                      5000
 
+const int MAX_TYPE_LEN = 20;
+
 static struct k_sem aio_sem;
 static jerry_value_t zjs_aio_prototype;
-
-#define MAX_TYPE_LEN 20
 
 typedef struct aio_handle {
     jerry_value_t pin_obj;
@@ -220,14 +220,9 @@ static jerry_value_t zjs_aio_pin_on(const jerry_value_t function_obj,
     uint32_t pin;
     zjs_obj_get_uint32(this, "pin", &pin);
 
-    char event[MAX_TYPE_LEN];
-    jerry_value_t arg = argv[0];
-    jerry_size_t sz = jerry_get_string_size(arg);
-    if (sz >= MAX_TYPE_LEN)
-        return zjs_error("zjs_aio_pin_on: event string too long");
-    int len = jerry_string_to_char_buffer(arg, (jerry_char_t *)event, sz);
-    event[len] = '\0';
-
+    jerry_size_t size = MAX_TYPE_LEN;
+    char event[size];
+    zjs_copy_jstring(argv[0], event, &size);
     if (strcmp(event, "change"))
         return zjs_error("zjs_aio_pin_on: unsupported event type");
 

@@ -18,11 +18,15 @@ console.error("  Objects:", {}, {foo: 'bar'});
 console.error("  Strings:", '', "", 'abc', "def");  // expect: "  abc def"
 console.error("     Misc:", null, undefined);
 
-console.log("\nTesting long string...");
-var toolong =
+console.log("\nTesting a long string...");
+var longstr =
     "123456789012345678901234567890123456789012345678901234567890" +
     "123456789012345678901234567890123456789012345678901234567890" +
     "123456789012345678901234567890123456789012345678901234567890" +
     "123456789012345678901234567890123456789012345678901234567890" +
-    "12345678901234567";  // length 257
-console.log(toolong);
+    "123456789012345";  // length 255
+console.log(longstr);
+
+console.log("\nTesting a string too long...");
+longstr += '6';  // length 256
+console.log(longstr);
