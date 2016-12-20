@@ -10,6 +10,7 @@
 #define zjs_port_timer_start(t, i)      k_timer_start(t, i, i)
 #define zjs_port_timer_stop             k_timer_stop
 #define zjs_port_timer_test             k_timer_status_get
+#define zjs_port_timer_get_uptime       k_uptime_get_32
 #define ZJS_TICKS_NONE                  TICKS_NONE
 #define zjs_sleep                       k_sleep
 

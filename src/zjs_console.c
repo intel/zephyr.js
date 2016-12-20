@@ -23,8 +23,24 @@
 #define IS_INT    1
 #define IS_UINT   2
 
+typedef struct {
+    uint32_t start;
+} console_timer;
+
 static jerry_value_t gbl_time_obj;
-static jerry_value_t console_prototype_obj;
+
+static console_timer* create_timer(void)
+{
+    console_timer* timer = zjs_malloc(sizeof(console_timer));
+
+    if (!timer) {
+        ERR_PRINT("error allocating timer struct\n");
+        return NULL;
+    }
+    timer->start = zjs_port_timer_get_uptime();
+
+    return timer;
+}
 
 static int is_int(jerry_value_t val) {
     int ret = 0;
@@ -167,6 +183,10 @@ static jerry_value_t console_time(const jerry_value_t function_obj,
         return ZJS_UNDEFINED;
     }
     int sz = jerry_get_string_size(argv[0]);
+    if (sz > MAX_STR_LENGTH) {
+        ERR_PRINT("label sting too long\n");
+        return ZJS_UNDEFINED;
+    }
     char label[sz + 1];
     int len = jerry_string_to_char_buffer(argv[0], (jerry_char_t *)label, sz);
     if (sz != len) {
@@ -176,16 +196,14 @@ static jerry_value_t console_time(const jerry_value_t function_obj,
     label[len] = '\0';
 
     jerry_value_t new_timer_obj = jerry_create_object();
-    zjs_port_timer_t* timer = zjs_malloc(sizeof(zjs_port_timer_t));
-    if (!timer) {
-        ERR_PRINT("could not allocate timer object\n");
+
+    console_timer* timer_handle = create_timer();
+    if (!timer_handle) {
+        ERR_PRINT("could not allocate timer handle\n");
         return ZJS_UNDEFINED;
     }
-    zjs_port_timer_init(timer);
-    // set timer to go off every millisecond (this is the best accuracy we can get)
-    zjs_port_timer_start(timer, 1);
 
-    jerry_set_object_native_handle(new_timer_obj, (uintptr_t)timer, NULL);
+    jerry_set_object_native_handle(new_timer_obj, (uintptr_t)timer_handle, NULL);
     // add the new timer to the global timer object
     zjs_set_property(gbl_time_obj, label, new_timer_obj);
 
@@ -202,6 +220,10 @@ static jerry_value_t console_time_end(const jerry_value_t function_obj,
         return ZJS_UNDEFINED;
     }
     int sz = jerry_get_string_size(argv[0]);
+    if (sz > MAX_STR_LENGTH) {
+        ERR_PRINT("label sting too long\n");
+        return ZJS_UNDEFINED;
+    }
     char label[sz + 1];
     int len = jerry_string_to_char_buffer(argv[0], (jerry_char_t *)label, sz);
     if (sz != len) {
@@ -216,36 +238,21 @@ static jerry_value_t console_time_end(const jerry_value_t function_obj,
         return ZJS_UNDEFINED;
     }
 
-    zjs_port_timer_t* timer;
+    console_timer* timer_handle;
 
-    if (!jerry_get_object_native_handle(timer_obj, (uintptr_t*)&timer)) {
+    if (!jerry_get_object_native_handle(timer_obj, (uintptr_t*)&timer_handle)) {
         ERR_PRINT("native timer handle not found\n");
         return ZJS_UNDEFINED;
     }
 
-    uint32_t milli = zjs_port_timer_test(timer) * 10;
-    zjs_port_timer_stop(timer);
+    uint32_t milli_now = zjs_port_timer_get_uptime();
+    uint32_t milli = milli_now - timer_handle->start;
 
-    zjs_free(timer);
+    zjs_free(timer_handle);
 
     fprintf(stdout, "%s:%lums\n", label, milli);
 
     return ZJS_UNDEFINED;
-}
-
-static jerry_value_t get_console_obj(const jerry_value_t function_obj,
-                                     const jerry_value_t this,
-                                     const jerry_value_t argv[],
-                                     const jerry_length_t argc)
-{
-    if (!jerry_value_is_object(console_prototype_obj)) {
-        ERR_PRINT("console not initialized\n");
-        return ZJS_UNDEFINED;
-    }
-    jerry_value_t console = jerry_create_object();
-    jerry_set_prototype(console, console_prototype_obj);
-
-    return console;
 }
 
 static jerry_value_t console_assert(const jerry_value_t function_obj,
@@ -295,23 +302,13 @@ void zjs_console_init(void)
 
     jerry_value_t console = jerry_create_object();
 
-    zjs_obj_add_function(global_obj, get_console_obj, "Console");
-
-    zjs_native_func_t array[] = {
-        { console_log, "log" },
-        { console_log, "info" },
-        { console_error, "error" },
-        { console_error, "warn" },
-        { console_time, "time" },
-        { console_time_end, "timeEnd" },
-        { console_assert, "assert" },
-        { NULL, NULL }
-    };
-
-    console_prototype_obj = jerry_create_object();
-    zjs_obj_add_functions(console_prototype_obj, array);
-
-    jerry_set_prototype(console, console_prototype_obj);
+    zjs_obj_add_function(console, console_log, "log");
+    zjs_obj_add_function(console, console_log, "info");
+    zjs_obj_add_function(console, console_error, "error");
+    zjs_obj_add_function(console, console_error, "warn");
+    zjs_obj_add_function(console, console_time, "time");
+    zjs_obj_add_function(console, console_time_end, "timeEnd");
+    zjs_obj_add_function(console, console_assert, "assert");
 
     zjs_set_property(global_obj, "console", console);
     jerry_release_value(global_obj);
