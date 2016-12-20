@@ -90,8 +90,6 @@ LINUX_FLAGS += 	-fno-asynchronous-unwind-tables \
 		-fno-stack-protector \
 		-ffunction-sections \
 		-fdata-sections \
-		-Wno-unused-but-set-variable \
-		-fno-reorder-functions \
 		-fno-defer-pop \
 		-Wno-pointer-sign \
 		-fno-strict-overflow \
@@ -131,7 +129,7 @@ linux_copy:
 linux: setup linux_copy $(BUILD_OBJ)
 	@echo "Building for Linux $(BUILD_OBJ)"
 	cd deps/jerryscript; python ./tools/build.py $(VERBOSE);
-	gcc $(LINUX_INCLUDES) $(JERRY_LIB_PATH) -static -o $(BUILD_DIR)/jslinux $(BUILD_OBJ) $(LINUX_FLAGS) $(CFLAGS) $(LINUX_DEFINES) $(LINUX_LIBS)
+	gcc $(LINUX_INCLUDES) $(JERRY_LIB_PATH) -o $(BUILD_DIR)/jslinux $(BUILD_OBJ) $(LINUX_FLAGS) $(CFLAGS) $(LINUX_DEFINES) $(LINUX_LIBS)
 
 .PHONY: clean
 clean:
