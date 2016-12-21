@@ -488,9 +488,6 @@ static jerry_value_t ocf_find_resources(const jerry_value_t function_val,
 
     add_resource(device_id, resource_type, resource_path, this, listener);
 
-    //if (resource_type) {
-    //    zjs_free(resource_type);
-    //}
     if (device_id) {
         zjs_free(device_id);
     }
@@ -504,6 +501,10 @@ static jerry_value_t ocf_find_resources(const jerry_value_t function_val,
     zjs_make_promise(promise, post_ocf_promise, h);
 
     oc_do_ip_discovery(resource_type, &discovery, h);
+
+    if (resource_type) {
+        zjs_free(resource_type);
+    }
 
     return promise;
 }
