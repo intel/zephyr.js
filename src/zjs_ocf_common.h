@@ -1,3 +1,5 @@
+// Copyright (c) 2016, Intel Corporation.
+
 #include "jerry-api.h"
 
 #include "zjs_util.h"

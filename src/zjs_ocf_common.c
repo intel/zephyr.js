@@ -1,3 +1,5 @@
+// Copyright (c) 2016, Intel Corporation.
+
 #ifdef BUILD_MODULE_OCF
 
 #include "jerry-api.h"

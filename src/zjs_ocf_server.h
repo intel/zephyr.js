@@ -1,3 +1,5 @@
+// Copyright (c) 2016, Intel Corporation.
+
 #include "zjs_util.h"
 #include "zjs_common.h"
 

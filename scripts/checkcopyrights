@@ -1,0 +1,24 @@
+#!/bin/bash
+
+# Copyright (c) 2016, Intel Corporation.
+
+# This script makes sure that all the source files in src/ have a copyright
+# header on the first line.
+
+cd $ZJS_BASE/src
+
+SRCFILES=$(find . -name "*.[ch]")
+RVAL=0
+
+for file in $SRCFILES; do
+    if ! head -1 $file | grep -q Copyright; then
+        echo Missing copyright: $file
+        RVAL=1
+    fi
+done
+
+if [ $RVAL -eq 0 ]; then
+    echo All copyright headers found!
+fi
+
+exit $RVAL

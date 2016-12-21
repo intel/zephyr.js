@@ -1,3 +1,5 @@
+// Copyright (c) 2016, Intel Corporation.
+
 #include "zjs_event.h"
 #include "zjs_callbacks.h"
 
