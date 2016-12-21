@@ -24,10 +24,6 @@ env:
     - TARGET="linux"
     - TARGET="ashell"
 
-matrix:
-  allow_failures:
-    - env: TARGET="ashell"
-
 before_install:
   - sudo apt-get update -qq
   - sudo apt-get install make gcc g++ python3-ply ncurses-dev uglifyjs sysvbanner -qq
