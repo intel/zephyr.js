@@ -110,6 +110,8 @@ if check_for_require ocf || check_config_file ZJS_OCF; then
     echo "CONFIG_IP_BUF_TX_SIZE=5" >> prj.conf.tmp
     echo "CONFIG_NET_MAX_CONTEXTS=9" >> prj.conf.tmp
     echo "export ZJS_OCF=y" >> zjs.conf.tmp
+    MODULES+=" -DBUILD_MODULE_EVENTS"
+    echo "export ZJS_EVENTS=y" >> zjs.conf.tmp
 fi
 
 if check_for_require gpio || check_config_file ZJS_GPIO; then
