@@ -9,23 +9,32 @@
 
 #define ZJS_PRINT printf
 
+/**
+ * Return a pointer to the filename portion of a string plus one parent dir
+ *
+ * @param filepath  A valid null-terminated string
+ * @returns A pointer to a substring of filepath, namely the character right
+ *   after the second to last slash, or filepath itself if not found.
+ */
+char *zjs_shorten_filepath(char *filepath);
+
 #ifdef DEBUG_BUILD
 
 int zjs_get_sec(void);
 int zjs_get_ms(void);
 
 #define DBG_PRINT \
-    ZJS_PRINT("[%u.%3.3u][INFO] %s:%d %s(): ", zjs_get_sec(), zjs_get_ms(), __FILE__, __LINE__, __func__); \
+    ZJS_PRINT("\n%u.%3.3u %s:%d %s():\n[INFO] ", zjs_get_sec(), zjs_get_ms(), zjs_shorten_filepath(__FILE__), __LINE__, __func__); \
     ZJS_PRINT
 
 #define ERR_PRINT \
-    ZJS_PRINT("[%u.%3.3u][ERROR] %s:%d %s(): ", zjs_get_sec(), zjs_get_ms(), __FILE__, __LINE__, __func__); \
+    ZJS_PRINT("\n%u.%3.3u %s:%d %s():\n[ERROR] ", zjs_get_sec(), zjs_get_ms(), zjs_shorten_filepath(__FILE__), __LINE__, __func__); \
     ZJS_PRINT
 
 #else
 #define DBG_PRINT(fmat ...) do {} while(0);
 #define ERR_PRINT \
-    ZJS_PRINT("[ERROR] %s:%d %s(): ", __FILE__, __LINE__, __func__); \
+    ZJS_PRINT("\n%s:%d %s():\n[ERROR] ", zjs_shorten_filepath(__FILE__), __LINE__, __func__); \
     ZJS_PRINT
 #endif
 
