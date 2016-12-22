@@ -197,10 +197,12 @@ static jerry_value_t zjs_i2c_write(const jerry_value_t function_obj,
 
     uint32_t register_addr = 0;
 
-    if (argc >= 3 && !jerry_value_is_number(argv[2])) {
-        return zjs_error("zjs_i2c_read: register is not a number");
-    } else {
-        register_addr = (uint32_t)jerry_get_number_value(argv[2]);
+    if (argc >= 3) {
+        if (!jerry_value_is_number(argv[2])) {
+            return zjs_error("zjs_i2c_read: register is not a number");
+        } else {
+            register_addr = (uint32_t)jerry_get_number_value(argv[2]);
+        }
     }
 
     uint32_t bus;
