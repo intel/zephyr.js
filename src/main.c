@@ -92,7 +92,8 @@ uint8_t process_cmd_line(int argc, char *argv[])
             } else {
                 char* str_time = argv[i + 1];
                 exit_after = atoi(str_time);
-                ZJS_PRINT("jslinux will terminate after %lu milliseconds\n", exit_after);
+                ZJS_PRINT("jslinux will terminate after %lu milliseconds\n",
+                          exit_after);
                 clock_gettime(CLOCK_MONOTONIC, &exit_timer);
             }
         }
@@ -162,7 +163,7 @@ int main(int argc, char *argv[])
         script = script_gen;
         len = strnlen(script_gen, MAX_SCRIPT_SIZE);
         if (len == MAX_SCRIPT_SIZE) {
-            ZJS_PRINT("Error: Script size too large! Increase MAX_SCRIPT_SIZE.\n");
+            ERR_PRINT("Script size too large! Increase MAX_SCRIPT_SIZE.\n");
             goto error;
         }
     }
@@ -176,7 +177,7 @@ int main(int argc, char *argv[])
 #ifndef ZJS_SNAPSHOT_BUILD
     code_eval = jerry_parse((jerry_char_t *)script, len, false);
     if (jerry_value_has_error_flag(code_eval)) {
-        ZJS_PRINT("JerryScript: cannot parse javascript\n");
+        ERR_PRINT("JerryScript: cannot parse javascript\n");
         goto error;
     }
 #endif
@@ -196,7 +197,7 @@ int main(int argc, char *argv[])
 #endif
 
     if (jerry_value_has_error_flag(result)) {
-        ZJS_PRINT("JerryScript: cannot run javascript\n");
+        ERR_PRINT("JerryScript: cannot run javascript\n");
         goto error;
     }
 

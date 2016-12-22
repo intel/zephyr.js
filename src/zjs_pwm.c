@@ -139,7 +139,8 @@ static jerry_value_t zjs_pwm_pin_set_period(const jerry_value_t function_obj,
     // store the period in the pwm object
     zjs_obj_add_number(this, period, "period");
 
-    ZJS_PRINT("set_period(): period: %lu, pulse: %lu\n", (uint32_t)period, (uint32_t)pulseWidth);
+    DBG_PRINT("period: %lu, pulse: %lu\n", (uint32_t)period,
+              (uint32_t)pulseWidth);
 
     zjs_pwm_set(this, period, pulseWidth);
 

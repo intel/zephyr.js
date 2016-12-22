@@ -453,7 +453,7 @@ uint8_t zjs_service_callbacks(void)
                                                 (uint32_t*)data,
                                                 &sz);
                     if (ret != 0) {
-                        ERR_PRINT("error pulling from ring buffer: ret = %u\n", ret);
+                        ERR_PRINT("pulling from ring buffer: ret = %u\n", ret);
                         break;
                     }
                     DBG_PRINT("calling callback with args. id=%u, args=%p, sz=%u, ret=%i\n", id, data, sz, ret);
@@ -483,8 +483,10 @@ uint8_t zjs_service_callbacks(void)
         }
 #ifdef ZJS_PRINT_CALLBACK_STATS
         if (num_callbacks) {
-            PRINT("[cb stats] Number of Callbacks (this service): %lu\n", num_callbacks);
-            PRINT("[cb stats] Max Callbacks Per Service: %u\n", ZJS_MAX_CB_LOOP_ITERATION);
+            PRINT("[cb stats] Number of Callbacks (this service): %lu\n",
+                  num_callbacks);
+            PRINT("[cb stats] Max Callbacks Per Service: %u\n",
+                  ZJS_MAX_CB_LOOP_ITERATION);
             PRINT("------------- End ----------------\n");
         }
 #endif

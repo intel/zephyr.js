@@ -58,7 +58,7 @@ static zjs_timer_t* add_timer(uint32_t interval,
 
     tm = zjs_malloc(sizeof(zjs_timer_t));
     if (!tm) {
-        ZJS_PRINT("add_timer: out of memory allocating timer struct\n");
+        ERR_PRINT("out of memory allocating timer struct\n");
         return NULL;
     }
 
@@ -186,7 +186,7 @@ static jerry_value_t native_clear_interval_handler(const jerry_value_t function_
     zjs_timer_t* handle;
 
     if (!jerry_value_is_object(argv[0])) {
-        ZJS_PRINT ("native_clear_interval_handler: invalid arguments\n");
+        ERR_PRINT("invalid arguments\n");
         return jerry_create_undefined();
     }
 
