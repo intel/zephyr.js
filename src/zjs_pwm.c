@@ -33,7 +33,7 @@ static void zjs_pwm_set(jerry_value_t obj, double period, double pulseWidth)
     zjs_pwm_convert_pin(orig_chan, &devnum, &channel);
 
     if (pulseWidth > period) {
-        ERR_PRINT("zjs_pwm_set: pulseWidth was greater than period\n");
+        ERR_PRINT("pulseWidth was greater than period\n");
         pulseWidth = period;
     }
 
@@ -62,7 +62,7 @@ static void zjs_pwm_set_cycles(jerry_value_t obj, uint32_t periodHW, uint32_t pu
     zjs_pwm_convert_pin(orig_chan, &devnum, &channel);
 
     if (pulseWidthHW > periodHW) {
-        ERR_PRINT("zjs_pwm_set: pulseWidth was greater than period\n");
+        ERR_PRINT("pulseWidth was greater than period\n");
         pulseWidthHW = periodHW;
     }
 
