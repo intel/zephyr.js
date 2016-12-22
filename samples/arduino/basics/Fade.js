@@ -1,13 +1,14 @@
 // Copyright (c) 2016, Intel Corporation.
 
 // Reimplementation of Arduino - Basics - Fade example
-//   - Fades an LED in and out using PWM
+//   - Fades LEDs in and out using PWM
+//   - IO3 uses normal polarity, IO5 uses reverse polarity, so they alternate
 
 // Hardware Requirements:
-//   - An LED and a resistor
+//   - One or two LEDs with resistors
 // Wiring:
-//   For an external LED:
-//     - Wire its long lead to the PWM pin you choose below
+//   For each external LED:
+//     - Wire its long lead to the PWM pin you choose below (IO3/IO5 default)
 //     - Wire its short lead to one end of a resistor
 //     - Wire the other end of the resistor to ground
 // Note: For a completely safe resistor size, find the LED's actual forward
@@ -27,15 +28,21 @@ var delay = 30;  // time between adjustments (in ms)
 var pwm = require("pwm");
 var pins = require("arduino101_pins");
 
-var led = pwm.open({
-    channel: pins.IO3,
+var led1 = pwm.open({
+    channel: pins.IO3
+});
+led1.setPeriodCycles(256);
+
+var led2 = pwm.open({
+    channel: pins.IO5,
     polarity: "reverse"
 });
-led.setPeriodCycles(256);
+led2.setPeriodCycles(256);
 
 // update the brightness every 30ms
 setInterval(function () {
-    led.setPulseWidthCycles(brightness);
+    led1.setPulseWidthCycles(brightness);
+    led2.setPulseWidthCycles(brightness);
 
     // adjust the brightness for next time
     brightness += fadeAmount;

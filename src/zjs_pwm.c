@@ -41,20 +41,21 @@ static void zjs_pwm_set(jerry_value_t obj, double period, double pulseWidth)
     char buffer[BUFLEN];
     if (zjs_obj_get_string(obj, "polarity", buffer, BUFLEN)) {
         if (!strcmp(buffer, ZJS_POLARITY_REVERSE)) {
-            if (period > pulseWidth) {
-                pulseWidth = 0;
-            } else {
-                pulseWidth = period - pulseWidth;
-            }
+            pulseWidth = period - pulseWidth;
         }
     }
 
-    DBG_PRINT("Setting [uSec] channel=%u dev=%u, period=%lu, pulse=%lu\n", channel, devnum, (uint32_t)(period * 1000), (uint32_t)(pulseWidth * 1000));
-    pwm_pin_set_usec(zjs_pwm_dev[devnum], channel, (uint32_t)(period * 1000), (uint32_t)(pulseWidth * 1000));
+    DBG_PRINT("Setting [uSec] channel=%u dev=%u, period=%lu, pulse=%lu\n",
+              channel, devnum, (uint32_t)(period * 1000),
+              (uint32_t)(pulseWidth * 1000));
+    pwm_pin_set_usec(zjs_pwm_dev[devnum], channel, (uint32_t)(period * 1000),
+                     (uint32_t)(pulseWidth * 1000));
 }
 
-static void zjs_pwm_set_cycles(jerry_value_t obj, uint32_t periodHW, uint32_t pulseWidthHW)
+static void zjs_pwm_set_cycles(jerry_value_t obj, uint32_t periodHW,
+                               uint32_t pulseWidthHW)
 {
+    DBG_PRINT("periodHW: %lu, pulseWidthHW: %lu\n", periodHW, pulseWidthHW);
     uint32_t orig_chan;
     zjs_obj_get_uint32(obj, "channel", &orig_chan);
 
@@ -70,15 +71,12 @@ static void zjs_pwm_set_cycles(jerry_value_t obj, uint32_t periodHW, uint32_t pu
     char buffer[BUFLEN];
     if (zjs_obj_get_string(obj, "polarity", buffer, BUFLEN)) {
         if (!strcmp(buffer, ZJS_POLARITY_REVERSE)) {
-            if (periodHW > pulseWidthHW) {
-                pulseWidthHW = 0;
-            } else {
-                pulseWidthHW = periodHW - pulseWidthHW;
-            }
+            pulseWidthHW = periodHW - pulseWidthHW;
         }
     }
 
-    DBG_PRINT("Setting [cycles] channel=%u dev=%u, period=%lu, pulse=%lu\n", channel, devnum, (uint32_t)periodHW, (uint32_t)pulseWidthHW);
+    DBG_PRINT("Setting [cycles] channel=%u dev=%u, period=%lu, pulse=%lu\n",
+              channel, devnum, (uint32_t)periodHW, (uint32_t)pulseWidthHW);
     pwm_pin_set_cycles(zjs_pwm_dev[devnum], channel, periodHW, pulseWidthHW);
 }
 
