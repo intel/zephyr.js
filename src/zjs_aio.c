@@ -58,7 +58,7 @@ static bool zjs_aio_ipm_send_async(uint32_t type, uint32_t pin, void *data) {
 
     int success = zjs_ipm_send(MSG_ID_AIO, &msg);
     if (success != 0) {
-        ERR_PRINT("zjs_aio_ipm_send: failed to send message\n");
+        ERR_PRINT("failed to send message\n");
         return false;
     }
 
@@ -73,7 +73,7 @@ static bool zjs_aio_ipm_send_sync(zjs_ipm_message_t* send,
     send->error_code = ERROR_IPM_NONE;
 
     if (zjs_ipm_send(MSG_ID_AIO, send) != 0) {
-        ERR_PRINT("zjs_aio_ipm_send_sync: failed to send message\n");
+        ERR_PRINT("failed to send message\n");
         return false;
     }
 
@@ -81,7 +81,7 @@ static bool zjs_aio_ipm_send_sync(zjs_ipm_message_t* send,
     // time out, if the ARC response comes back after it
     // times out, it could pollute the result on the stack
     if (k_sem_take(&aio_sem, ZJS_AIO_TIMEOUT_TICKS)) {
-        ERR_PRINT("zjs_aio_ipm_send_sync: FATAL ERROR, ipm timed out\n");
+        ERR_PRINT("FATAL ERROR, ipm timed out\n");
         return false;
     }
 
@@ -150,14 +150,14 @@ static void ipm_msg_receive_callback(void *context, uint32_t id,
             zjs_signal_callback(handle->callback_id, &ret_val, sizeof(jerry_value_t));
             break;
         case TYPE_AIO_PIN_SUBSCRIBE:
-            DBG_PRINT("ipm_msg_receive_callback: subscribed to events on pin %lu\n", pin);
+            DBG_PRINT("subscribed to events on pin %lu\n", pin);
             break;
         case TYPE_AIO_PIN_UNSUBSCRIBE:
-            DBG_PRINT("ipm_msg_receive_callback: unsubscribed to events on pin %lu\n", pin);
+            DBG_PRINT("unsubscribed to events on pin %lu\n", pin);
             break;
 
         default:
-            ERR_PRINT("ipm_msg_receive_callback: IPM message not handled %lu\n", msg->type);
+            ERR_PRINT("IPM message not handled %lu\n", msg->type);
         }
     }
 }
