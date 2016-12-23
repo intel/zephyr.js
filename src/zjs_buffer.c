@@ -371,7 +371,7 @@ jerry_value_t zjs_buffer_create(uint32_t size)
     zjs_buffers = buf_item;
 
     jerry_set_prototype(buf_obj, zjs_buffer_prototype);
-    zjs_obj_add_number(buf_obj, size, "length");
+    zjs_obj_add_readonly_number(buf_obj, size, "length");
 
     // TODO: sign up to get callback when the object is freed, then free the
     //   buffer and remove it from the list
@@ -389,8 +389,8 @@ static jerry_value_t zjs_buffer(const jerry_value_t function_obj,
                                 const jerry_value_t argv[],
                                 const jerry_length_t argc)
 {
-    // requires: single argument can be a numeric size in bytes, an array of uint8,
-    //           or a string.
+    // requires: single argument can be a numeric size in bytes, an array of
+    //             uint8, or a string
     //  effects: constructs a new JS Buffer object, and an associated buffer
     //             tied to it through a zjs_buffer_t struct stored in a global
     //             list

@@ -48,6 +48,8 @@ void zjs_obj_add_object(jerry_value_t parent, jerry_value_t child,
                         const char *name);
 void zjs_obj_add_string(jerry_value_t obj, const char *str, const char *name);
 void zjs_obj_add_number(jerry_value_t obj, double num, const char *name);
+void zjs_obj_add_readonly_number(jerry_value_t obj, double num,
+                                 const char *name);
 
 bool zjs_obj_get_boolean(jerry_value_t obj, const char *name, bool *flag);
 bool zjs_obj_get_string(jerry_value_t obj, const char *name, char *buffer,
