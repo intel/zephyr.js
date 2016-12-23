@@ -300,17 +300,16 @@ static jerry_value_t zjs_i2c_open(const jerry_value_t function_obj,
         return zjs_error("zjs_i2c_open: ipm message failed or timed out!");
     }
 
-    if (reply.error_code == 0) {
-        // create the I2C object
-        jerry_value_t i2c_obj = jerry_create_object();
-        jerry_set_prototype(i2c_obj, zjs_i2c_prototype);
-        zjs_obj_add_number(i2c_obj, bus, "bus");
-        zjs_obj_add_number(i2c_obj, speed, "speed");
-        return i2c_obj;
-    }
-    else {
+    if (reply.error_code) {
         return zjs_error("zjs_i2c_open: Failed to open I2C bus");
     }
+
+    // create the I2C object
+    jerry_value_t i2c_obj = jerry_create_object();
+    jerry_set_prototype(i2c_obj, zjs_i2c_prototype);
+    zjs_obj_add_readonly_number(i2c_obj, bus, "bus");
+    zjs_obj_add_readonly_number(i2c_obj, speed, "speed");
+    return i2c_obj;
 }
 
 jerry_value_t zjs_i2c_init()
