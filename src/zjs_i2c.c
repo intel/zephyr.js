@@ -287,8 +287,8 @@ static jerry_value_t zjs_i2c_open(const jerry_value_t function_obj,
     jerry_value_t i2c_obj = jerry_create_object();
     jerry_set_prototype(i2c_obj, zjs_i2c_prototype);
 
-    zjs_obj_add_number(i2c_obj, bus, "bus");
-    zjs_obj_add_number(i2c_obj, speed, "speed");
+    zjs_obj_add_readonly_number(i2c_obj, bus, "bus");
+    zjs_obj_add_readonly_number(i2c_obj, speed, "speed");
 
     return i2c_obj;
 }
