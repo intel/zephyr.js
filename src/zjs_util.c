@@ -96,6 +96,22 @@ void zjs_obj_add_number(jerry_value_t obj, double num, const char *name)
     jerry_release_value(jnum);
 }
 
+void zjs_obj_add_readonly_number(jerry_value_t obj, double num,
+                                 const char *name)
+{
+    // requires: obj is an existing JS object
+    //  effects: creates a new readonly field in parent named name, set to nval
+    jerry_value_t jname = jerry_create_string((const jerry_char_t *)name);
+    jerry_property_descriptor_t pd;
+    jerry_init_property_descriptor_fields(&pd);
+    pd.is_writable = false;
+    pd.is_value_defined = true;
+    pd.value = jerry_create_number(num);
+    jerry_define_own_property(obj, jname, &pd);
+    jerry_free_property_descriptor_fields(&pd);
+    jerry_release_value(jname);
+}
+
 bool zjs_obj_get_boolean(jerry_value_t obj, const char *name, bool *flag)
 {
     // requires: obj is an existing JS object, value name should exist as
