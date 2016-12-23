@@ -48,11 +48,13 @@ struct gpio_handle {
     jerry_value_t pin_obj;          // Pin object returned from open()
     jerry_value_t onchange_func;    // Function registered to onChange
     jerry_value_t* open_ret_args;
-    uint8_t edge_both;
     uint32_t last;
+    uint8_t edge_both;
+    bool closed;
 };
 
-static jerry_value_t lookup_pin(const jerry_value_t pin_obj, struct device **port, int *pin)
+static jerry_value_t lookup_pin(const jerry_value_t pin_obj,
+                                struct device **port, int *pin)
 {
     char pin_id[32];
     int newpin;
@@ -99,9 +101,13 @@ static jerry_value_t lookup_pin(const jerry_value_t pin_obj, struct device **por
 }
 
 // C callback to be called after a GPIO input ISR fires
-static void gpio_c_callback(void* h, void* args)
+static void gpio_c_callback(void *h, void *args)
 {
     struct gpio_handle *handle = (struct gpio_handle*)h;
+    if (handle->closed) {
+        ERR_PRINT("unexpected callback after close");
+        return;
+    }
     jerry_value_t onchange_func = zjs_get_property(handle->pin_obj, "onchange");
 
     // If pin.onChange exists, call it
@@ -112,7 +118,7 @@ static void gpio_c_callback(void* h, void* args)
         // Put the boolean GPIO trigger value in the object
         zjs_obj_add_boolean(event, val, "value");
 
-        // Only aquire once, once we have it just keep using it.
+        // Only acquire once, once we have it just keep using it.
         // It will be released in close()
         if (!handle->onchange_func) {
             handle->onchange_func = jerry_acquire_value(onchange_func);
@@ -160,6 +166,14 @@ static jerry_value_t zjs_gpio_pin_read(const jerry_value_t function_obj,
 {
     // requires: this is a GPIOPin object from zjs_gpio_open, takes no args
     //  effects: reads a logical value from the pin and returns it in ret_val_p
+    uintptr_t ptr;
+    if (jerry_get_object_native_handle(this, &ptr)) {
+        struct gpio_handle *handle = (struct gpio_handle*)ptr;
+        if (handle->closed) {
+            return zjs_error("zjs_gpio_pin_read: pin closed");
+        }
+    }
+
     int newpin;
     struct device *gpiodev;
     jerry_value_t status = lookup_pin(this, &gpiodev, &newpin);
@@ -192,6 +206,14 @@ static jerry_value_t zjs_gpio_pin_write(const jerry_value_t function_obj,
     // requires: this is a GPIOPin object from zjs_gpio_open, takes one arg,
     //             the logical boolean value to set to the pin (true = active)
     //  effects: writes the logical value to the pin
+    uintptr_t ptr;
+    if (jerry_get_object_native_handle(this, &ptr)) {
+        struct gpio_handle *handle = (struct gpio_handle*)ptr;
+        if (handle->closed) {
+            return zjs_error("zjs_gpio_pin_write: pin closed");
+        }
+    }
+
     if (argc < 1 || !jerry_value_is_boolean(argv[0]))
         return zjs_error("zjs_gpio_pin_write: invalid argument");
 
@@ -226,37 +248,35 @@ static jerry_value_t zjs_gpio_pin_close(const jerry_value_t function_obj,
 {
     uintptr_t ptr;
     if (jerry_get_object_native_handle(this, &ptr)) {
-        struct gpio_handle* handle = (struct gpio_handle*)ptr;
-        if (handle) {
-            zjs_remove_callback(handle->callbackId);
-            if (handle->onchange_func) {
-                jerry_release_value(handle->onchange_func);
-            }
-
-            int newpin;
-            struct device *gpiodev;
-            jerry_value_t status = lookup_pin(this, &gpiodev, &newpin);
-            if (status != ZJS_UNDEFINED) {
-                return status;
-            }
-
-            gpio_remove_callback(gpiodev, &handle->callback);
-            zjs_free(handle);
+        struct gpio_handle *handle = (struct gpio_handle *)ptr;
+        if (handle->closed) {
+            return zjs_error("zjs_gpio_pin_close: already closed");
         }
+
+        zjs_remove_callback(handle->callbackId);
+        if (handle->onchange_func) {
+            jerry_release_value(handle->onchange_func);
+        }
+
+        gpio_remove_callback(handle->port, &handle->callback);
+        handle->closed = true;
+        return ZJS_UNDEFINED;
     }
 
-    return ZJS_UNDEFINED;
+    return zjs_error("zjs_gpio_pin_close: no native handle");
 }
 
 static void zjs_gpio_free_cb(const uintptr_t native)
 {
-    struct gpio_handle* handle = (struct gpio_handle*)native;
-    zjs_remove_callback(handle->callbackId);
-    if (handle->onchange_func) {
-        jerry_release_value(handle->onchange_func);
+    struct gpio_handle *handle = (struct gpio_handle *)native;
+    if (!handle->closed) {
+        zjs_remove_callback(handle->callbackId);
+        if (handle->onchange_func) {
+            jerry_release_value(handle->onchange_func);
+        }
+        gpio_remove_callback(handle->port, &handle->callback);
     }
 
-    gpio_remove_callback(handle->port, &handle->callback);
     zjs_free(handle);
 }
 
@@ -369,23 +389,23 @@ static jerry_value_t zjs_gpio_open(const jerry_value_t function_obj,
     jerry_value_t pin = zjs_get_property(data, "pin");
     zjs_set_property(pinobj, "pin", pin);
     jerry_release_value(pin);
-    // TODO: When we implement close, we should release the reference on this
 
     struct gpio_handle* handle = NULL;
-    if (async || !dirOut)
-        handle = new_gpio_handle();
+    handle = new_gpio_handle();
+    handle->pin = newpin;
+    handle->pin_obj = async ? jerry_acquire_value(pinobj) : pinobj;
+    handle->port = gpiodev;
+    handle->callbackId = -1;
 
-    // Only need the handle if this pin is an input
+    // Set the native handle so we can free it when close() is called
+    jerry_set_object_native_handle(pinobj, (uintptr_t)handle, zjs_gpio_free_cb);
+
     if (!dirOut) {
         // Zephyr ISR callback init
         gpio_init_callback(&handle->callback, gpio_zephyr_callback,
                            BIT(newpin));
         gpio_add_callback(gpiodev, &handle->callback);
         gpio_pin_enable_callback(gpiodev, newpin);
-
-        handle->pin = newpin;
-        handle->pin_obj = async ? jerry_acquire_value(pinobj) : pinobj;
-        handle->port = gpiodev;
 
         // Register a C callback (will be called after the ISR is called)
         handle->callbackId = zjs_add_c_callback(handle, gpio_c_callback);
@@ -395,9 +415,6 @@ static jerry_value_t zjs_gpio_open(const jerry_value_t function_obj,
         } else {
             handle->edge_both = 0;
         }
-
-        // Set the native handle so we can free it when close() is called
-        jerry_set_object_native_handle(pinobj, (uintptr_t)handle, zjs_gpio_free_cb);
     }
 
     if (async) {

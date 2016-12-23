@@ -285,6 +285,6 @@ uint32_t zjs_uncompress_16_to_32(uint16_t num)
 
 jerry_value_t zjs_error(const char *error)
 {
-    ZJS_PRINT("%s\n", error);
+    ZJS_PRINT("[ERROR] %s\n", error);
     return jerry_create_error(JERRY_ERROR_TYPE, (jerry_char_t *)error);
 }
