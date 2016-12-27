@@ -182,18 +182,14 @@ static jerry_value_t console_time(const jerry_value_t function_obj,
         ERR_PRINT("invalid parameters\n");
         return ZJS_UNDEFINED;
     }
-    int sz = jerry_get_string_size(argv[0]);
-    if (sz > MAX_STR_LENGTH) {
-        ERR_PRINT("label sting too long\n");
+
+    jerry_size_t sz = MAX_STR_LENGTH;
+    char label[sz];
+    zjs_copy_jstring(argv[0], label, &sz);
+    if (!sz) {
+        ERR_PRINT("string is too long\n");
         return ZJS_UNDEFINED;
     }
-    char label[sz + 1];
-    int len = jerry_string_to_char_buffer(argv[0], (jerry_char_t *)label, sz);
-    if (sz != len) {
-        ERR_PRINT("size mismatch\n");
-        return ZJS_UNDEFINED;
-    }
-    label[len] = '\0';
 
     jerry_value_t new_timer_obj = jerry_create_object();
 
@@ -219,18 +215,14 @@ static jerry_value_t console_time_end(const jerry_value_t function_obj,
         ERR_PRINT("invalid parameters\n");
         return ZJS_UNDEFINED;
     }
-    int sz = jerry_get_string_size(argv[0]);
-    if (sz > MAX_STR_LENGTH) {
-        ERR_PRINT("label sting too long\n");
+
+    jerry_size_t sz = MAX_STR_LENGTH;
+    char label[sz];
+    zjs_copy_jstring(argv[0], label, &sz);
+    if (!sz) {
+        ERR_PRINT("string is too long\n");
         return ZJS_UNDEFINED;
     }
-    char label[sz + 1];
-    int len = jerry_string_to_char_buffer(argv[0], (jerry_char_t *)label, sz);
-    if (sz != len) {
-        ERR_PRINT("size mismatch\n");
-        return ZJS_UNDEFINED;
-    }
-    label[len] = '\0';
 
     jerry_value_t timer_obj = zjs_get_property(gbl_time_obj, label);
     if (!jerry_value_is_object(timer_obj)) {
@@ -260,7 +252,7 @@ static jerry_value_t console_assert(const jerry_value_t function_obj,
                                     const jerry_value_t argv[],
                                     const jerry_length_t argc)
 {
-    char message[128];
+    char message[MAX_STR_LENGTH];
     uint8_t has_message = 0;
     if (!jerry_value_is_boolean(argv[0])) {
         ERR_PRINT("invalid parameters\n");
@@ -273,17 +265,12 @@ static jerry_value_t console_assert(const jerry_value_t function_obj,
                 ERR_PRINT("message parameter must be a string\n");
                 return ZJS_UNDEFINED;
             } else {
-                int sz = jerry_get_string_size(argv[1]);
-                if (sz > 128) {
-                    ERR_PRINT("error message too long\n");
+                jerry_size_t sz = MAX_STR_LENGTH;
+                zjs_copy_jstring(argv[0], message, &sz);
+                if (!sz) {
+                    ERR_PRINT("string is too long\n");
                     return ZJS_UNDEFINED;
                 }
-                int len = jerry_string_to_char_buffer(argv[1], (jerry_char_t *)message, sz);
-                if (sz != len) {
-                    ERR_PRINT("size mismatch\n");
-                    return ZJS_UNDEFINED;
-                }
-                message[len] = '\0';
                 has_message = 1;
             }
         }
