@@ -278,11 +278,12 @@ static jerry_value_t zjs_i2c_open(const jerry_value_t function_obj,
         int reply = i2c_configure(i2c_device[bus], cfg.raw);
 
         if (reply < 0) {
-            ZJS_PRINT("I2C bus %s configure failed with error : %i\n", i2c_bus, reply);
+            ERR_PRINT("I2C bus %s configure failed with error: %i\n", i2c_bus,
+                      reply);
         }
 
     } else {
-        ZJS_PRINT("I2C bus I2C_%i is not a valid I2C bus.\n", (uint8_t)bus);
+        ERR_PRINT("I2C bus %i is not a valid I2C bus\n", (uint8_t)bus);
         return zjs_error("I2C bus not found");
     }
 
