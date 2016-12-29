@@ -261,7 +261,7 @@ static void handle_i2c(struct zjs_ipm_message* msg)
                 }
             }
         } else {
-            ZJS_PRINT("I2C bus I2C_%i is not a valid I2C bus.\n", msg_bus);
+            ERR_PRINT("I2C bus %i is not a valid I2C bus\n", msg_bus);
             error_code = ERROR_IPM_OPERATION_FAILED;
         }
         break;
