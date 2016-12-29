@@ -45,10 +45,9 @@ expectThrow("open: undefined pin", function () {
 });
 
 // set Period and PulseWidth with ms
-// duty cycle: 30%
+// duty cycle: 33%
 var msTrue = 0;
 var msFalse = 0;
-var msCount = 0;
 
 expectThrow("pwmpin: set pulseWidth without period", function () {
     pinA.setPulseWidth(300);
@@ -72,13 +71,12 @@ msTimer = setInterval(function () {
     } else {
         msFalse = msFalse + 1;
     }
-
-    msCount = msCount + 1;
     // set 50 ms but 60 ms actually and time precision 20 ms for zephyr 1.6
 }, 50);
 
 setTimeout(function () {
-    assert(msTrue === 16 && msFalse === 34 && msCount === 50,
+    // 16 = 0.33 < 0.3333 < 0.34 = 17
+    assert((15 < msTrue) && (msTrue < 18) && (32 < msFalse) && (msFalse < 35),
            "pwmpin: set period and pulseWidth");
     clearInterval(msTimer);
 
@@ -124,14 +122,15 @@ setTimeout(function () {
            }
 
            if (periodCount === 3) {
-               assert((25 < cyclesFlase) && (cyclesFlase < 29) &&
-                      (60 < cyclesTrue) && (cyclesTrue < 64),
+               assert((10 < cyclesFlase) && (cyclesFlase < 14) &&
+                      (28 < cyclesTrue) && (cyclesTrue < 32),
                       "pwmpin: set periodCycles and pulseWidthCycles");
 
                console.log("TOTAL: " + passed + " of " + total + " passed");
                clearInterval(cycleTimer);
            }
        }
+    // set 10 ms but 20 ms actually
     }, 10);
 }, 3040);
 
