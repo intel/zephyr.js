@@ -406,7 +406,7 @@ void zjs_call_callback(zjs_callback_id id, void* data, uint32_t sz)
                     }
                 }
             }
-            // the callback may have been deleted at by the previous calls, if so return
+            // the callback may have been deleted by the previous calls, if so return
             if (cb_map[id] == NULL) {
                 return;
             }
