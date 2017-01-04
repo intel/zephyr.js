@@ -26,7 +26,7 @@
 #define ZJS_BLE_RESULT_INVALID_ATTRIBUTE_LENGTH     BT_ATT_ERR_INVALID_ATTRIBUTE_LEN
 #define ZJS_BLE_RESULT_UNLIKELY_ERROR               BT_ATT_ERR_UNLIKELY
 
-#define ZJS_BLE_TIMEOUT_TICKS                       500
+#define ZJS_BLE_TIMEOUT_TICKS                       5000
 
 static struct k_sem ble_sem;
 
@@ -102,7 +102,7 @@ static struct bt_uuid *gatt_ccc_uuid = BT_UUID_DECLARE_16(BT_UUID_GATT_CCC_VAL);
 struct bt_uuid* zjs_ble_new_uuid_16(uint16_t value) {
     struct bt_uuid_16 *uuid = zjs_malloc(sizeof(struct bt_uuid_16));
     if (!uuid) {
-        ERR_PRINT("zjs_ble_new_uuid_16: out of memory allocating struct bt_uuid_16\n");
+        ERR_PRINT("out of memory allocating struct bt_uuid_16\n");
         return NULL;
     }
 
@@ -192,7 +192,7 @@ static jerry_value_t zjs_ble_read_callback_function(const jerry_value_t function
             chrc->read_cb.buffer = buf->buffer;
             chrc->read_cb.buffer_size = buf->bufsize;
         } else {
-            ERR_PRINT("zjs_ble_read_attr_call_function_return: buffer not found\n");
+            ERR_PRINT("buffer not found\n");
         }
     }
 
@@ -217,7 +217,7 @@ static void zjs_ble_read_c_callback(void *handle, void* argv)
 
     rval = jerry_call_function(cb->js_callback, chrc->chrc_obj, args, 2);
     if (jerry_value_has_error_flag(rval)) {
-        DBG_PRINT("zjs_ble_read_c_callback: failed to call onReadRequest function\n");
+        DBG_PRINT("failed to call onReadRequest function\n");
     }
 
     jerry_release_value(args[0]);
@@ -237,7 +237,7 @@ static ssize_t zjs_ble_read_attr_callback(struct bt_conn *conn,
     ble_characteristic_t *chrc = attr->user_data;
 
     if (!chrc) {
-        ERR_PRINT("zjs_ble_read_attr_callback: characteristic not found\n");
+        ERR_PRINT("characteristic not found\n");
         return BT_GATT_ERR(BT_ATT_ERR_INVALID_HANDLE);
     }
 
@@ -252,7 +252,7 @@ static ssize_t zjs_ble_read_attr_callback(struct bt_conn *conn,
 
         // block until result is ready
         if (k_sem_take(&ble_sem, ZJS_BLE_TIMEOUT_TICKS)) {
-            ERR_PRINT("zjs_ble_read_attr_callback: JS callback timed out\n");
+            ERR_PRINT("JS callback timed out\n");
             return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
         }
 
@@ -264,16 +264,16 @@ static ssize_t zjs_ble_read_attr_callback(struct bt_conn *conn,
                 return chrc->read_cb.buffer_size;
             }
 
-            ERR_PRINT("zjs_ble_read_attr_callback: buffer is empty\n");
+            ERR_PRINT("buffer is empty\n");
             return BT_GATT_ERR(BT_ATT_ERR_NOT_SUPPORTED);
         } else {
-            ERR_PRINT("zjs_ble_read_attr_callback: on read attr error %lu\n",
+            ERR_PRINT("on read attr error %lu\n",
                   chrc->read_cb.error_code);
             return BT_GATT_ERR(chrc->read_cb.error_code);
         }
     }
 
-    DBG_PRINT("zjs_ble_read_attr_callback: js callback not available\n");
+    DBG_PRINT("js callback not available\n");
     return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
 }
 
@@ -335,7 +335,7 @@ static void zjs_ble_write_c_callback(void *handle, void* argv)
 
     rval = jerry_call_function(cb->js_callback, chrc->chrc_obj, args, 4);
     if (jerry_value_has_error_flag(rval)) {
-        DBG_PRINT("zjs_ble_write_c_callback: failed to call onWriteRequest function\n");
+        DBG_PRINT("failed to call onWriteRequest function\n");
     }
 
     jerry_release_value(args[0]);
@@ -353,7 +353,7 @@ static ssize_t zjs_ble_write_attr_callback(struct bt_conn *conn,
     ble_characteristic_t *chrc = attr->user_data;
 
     if (!chrc) {
-        ERR_PRINT("zjs_ble_write_attr_callback: characteristic not found\n");
+        ERR_PRINT("characteristic not found\n");
         return BT_GATT_ERR(BT_ATT_ERR_INVALID_HANDLE);
     }
 
@@ -368,7 +368,7 @@ static ssize_t zjs_ble_write_attr_callback(struct bt_conn *conn,
 
         // block until result is ready
         if (k_sem_take(&ble_sem, ZJS_BLE_TIMEOUT_TICKS)) {
-            ERR_PRINT("zjs_ble_write_attr_callback: JS callback timed out\n");
+            ERR_PRINT("JS callback timed out\n");
             return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
         }
 
@@ -379,7 +379,7 @@ static ssize_t zjs_ble_write_attr_callback(struct bt_conn *conn,
         }
     }
 
-    DBG_PRINT("zjs_ble_write_attr_callback: js callback not available\n");
+    DBG_PRINT("js callback not available\n");
     return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
 }
 
@@ -426,7 +426,7 @@ static void zjs_ble_subscribe_c_callback(void *handle, void* argv)
     args[1] = jerry_create_external_function(zjs_ble_update_value_callback_function);
     rval = jerry_call_function(cb->js_callback, chrc->chrc_obj, args, 2);
     if (jerry_value_has_error_flag(rval)) {
-        DBG_PRINT("zjs_ble_subscribe_c_callback: failed to call onSubscribe function\n");
+        DBG_PRINT("failed to call onSubscribe function\n");
     }
 
     jerry_release_value(args[0]);
@@ -443,7 +443,7 @@ static void zjs_ble_unsubscribe_c_callback(void *handle, void* argv)
 
     rval = jerry_call_function(cb->js_callback, chrc->chrc_obj, NULL, 0);
     if (jerry_value_has_error_flag(rval)) {
-        DBG_PRINT("zjs_ble_unsubscribe_c_callback: failed to call onUnsubscribe function\n");
+        DBG_PRINT("failed to call onUnsubscribe function\n");
     }
 
     jerry_release_value(rval);
@@ -458,7 +458,7 @@ static void zjs_ble_notify_c_callback(void *handle, void* argv)
 
     rval = jerry_call_function(cb->js_callback, chrc->chrc_obj, NULL, 0);
     if (jerry_value_has_error_flag(rval)) {
-        DBG_PRINT("zjs_ble_notify_c_callback: failed to call onNotify function\n");
+        DBG_PRINT("failed to call onNotify function\n");
     }
 
     jerry_release_value(rval);
@@ -508,7 +508,7 @@ static void zjs_ble_connected_c_callback(void *handle, void* argv)
 static void zjs_ble_connected(struct bt_conn *conn, uint8_t err)
 {
     if (err) {
-        DBG_PRINT("zjs_ble_connected: Connection failed (err %u)\n", err);
+        DBG_PRINT("Connection failed (err %u)\n", err);
     } else {
         DBG_PRINT("========== connected ==========\n");
         ble_conn->default_conn = bt_conn_ref(conn);
@@ -605,10 +605,19 @@ static int zjs_encode_url_frame(jerry_value_t url, uint8_t **frame, int *size)
     //             zjs_free
     //  returns: 0 for success, 1 for URL too long, 2 for out of memory, 3 for
     //             invalid url scheme/syntax (only http:// or https:// allowed)
-    jerry_size_t sz = jerry_get_string_size(url);
-    char buf[sz + 1];
-    int len = jerry_string_to_char_buffer(url, (jerry_char_t *)buf, sz);
-    buf[len] = '\0';
+
+    // FIXME: this needs unit tests; there could easily be a bug especially
+    //   regarding whether a final null terminator on the URL fits in the 17
+    //   bytes or not; spec seems unclear on whether it's required
+
+    // max len is https://www. and .info/ encoded in 2 bytes + 15 raw = 33
+    const int MAX_URL_LENGTH = 33;
+
+    jerry_size_t len = MAX_URL_LENGTH;
+    char buf[len];
+    zjs_copy_jstring(url, buf, &len);
+    if (!len)
+        return ZJS_URL_TOO_LONG;
 
     // make sure it starts with http
     int offset = 0;
@@ -664,8 +673,6 @@ static jerry_value_t zjs_ble_start_advertising(const jerry_value_t function_obj,
     // arg 0 should be the device name to advertise, e.g. "Arduino101"
     // arg 1 should be an array of UUIDs (short, 4 hex chars)
     // arg 2 should be a short URL (typically registered with Google, I think)
-    char name[80];
-
     if (argc < 2 ||
         !jerry_value_is_string(argv[0]) ||
         !jerry_value_is_object(argv[1]) ||
@@ -678,14 +685,15 @@ static jerry_value_t zjs_ble_start_advertising(const jerry_value_t function_obj,
         return zjs_error("zjs_ble_adv_start: expected array");
     }
 
-    jerry_size_t sz = jerry_get_string_size(argv[0]);
-    int len_name = jerry_string_to_char_buffer(argv[0],
-                                               (jerry_char_t *) name,
-                                               sz);
-    name[len_name] = '\0';
+    const int MAX_NAME_LENGTH = 80;
+    jerry_size_t size = MAX_NAME_LENGTH;
+    char name[size];
+    zjs_copy_jstring(argv[0], name, &size);
+    if (!size)
+        return zjs_error("zjs_ble_adv_start: name too long");
 
     struct bt_data sd[] = {
-        BT_DATA(BT_DATA_NAME_COMPLETE, name, len_name),
+        BT_DATA(BT_DATA_NAME_COMPLETE, name, size),
     };
 
     /*
@@ -697,7 +705,7 @@ static jerry_value_t zjs_ble_start_advertising(const jerry_value_t function_obj,
     int frame_size;
     if (argc >= 3) {
         if (zjs_encode_url_frame(argv[2], &url_frame, &frame_size)) {
-            DBG_PRINT("zjs_ble_start_advertising: error encoding url frame, won't be advertised\n");
+            DBG_PRINT("error encoding url frame, won't be advertised\n");
 
             // TODO: Make use of error values and turn them into exceptions
         }
@@ -735,17 +743,17 @@ static jerry_value_t zjs_ble_start_advertising(const jerry_value_t function_obj,
             return zjs_error("zjs_ble_adv_start: invalid uuid argument type");
         }
 
-        jerry_size_t size = jerry_get_string_size(uuid);
-        if (size != 4) {
-            return zjs_error("zjs_ble_adv_start: unexpected uuid string length");
-        }
+        const int MAX_UUID_LENGTH = 4;
+        jerry_size_t size = MAX_UUID_LENGTH + 1;
+        char ubuf[size];
+        zjs_copy_jstring(uuid, ubuf, &size);
+        if (size != MAX_UUID_LENGTH)
+            return zjs_error("zjs_ble_adv_start: unexpected uuid length");
 
-        char ubuf[4];
         uint8_t bytes[2];
-        jerry_string_to_char_buffer(uuid, (jerry_char_t *)ubuf, 4);
         if (!zjs_hex_to_byte(ubuf + 2, &bytes[0]) ||
             !zjs_hex_to_byte(ubuf, &bytes[1])) {
-            return zjs_error("zjs_ble_adv_start: invalid character in uuid string");
+            return zjs_error("zjs_ble_adv_start: invalid char in uuid");
         }
 
         ad[index].type = BT_DATA_UUID16_ALL;
@@ -771,7 +779,7 @@ static jerry_value_t zjs_ble_stop_advertising(const jerry_value_t function_obj,
                                               const jerry_value_t argv[],
                                               const jerry_length_t argc)
 {
-    DBG_PRINT("zjs_ble_stop_advertising: stopAdvertising has been called\n");
+    DBG_PRINT("stopAdvertising has been called\n");
     return ZJS_UNDEFINED;
 }
 
@@ -783,7 +791,7 @@ static bool zjs_ble_parse_characteristic(ble_characteristic_t *chrc)
 
     jerry_value_t chrc_obj = chrc->chrc_obj;
     if (!zjs_obj_get_string(chrc_obj, "uuid", uuid, ZJS_BLE_UUID_LEN)) {
-        ERR_PRINT("zjs_ble_parse_characteristic: characteristic uuid doesn't exist\n");
+        ERR_PRINT("characteristic uuid doesn't exist\n");
         return false;
     }
 
@@ -791,7 +799,7 @@ static bool zjs_ble_parse_characteristic(ble_characteristic_t *chrc)
 
     jerry_value_t v_array = zjs_get_property(chrc_obj, "properties");
     if (!jerry_value_is_array(v_array)) {
-        ERR_PRINT("zjs_ble_parse_characteristic: properties is empty or not array\n");
+        ERR_PRINT("properties is empty or not array\n");
         return false;
     }
 
@@ -799,17 +807,14 @@ static bool zjs_ble_parse_characteristic(ble_characteristic_t *chrc)
         jerry_value_t v_property = jerry_get_property_by_index(v_array, i);
 
         if (!jerry_value_is_string(v_property)) {
-            ERR_PRINT("zjs_ble_parse_characteristic: property is not string\n");
+            ERR_PRINT("property is not string\n");
             return false;
         }
 
-        char name[20];
-        jerry_size_t sz;
-        sz = jerry_get_string_size(v_property);
-        int len = jerry_string_to_char_buffer(v_property,
-                                              (jerry_char_t *) name,
-                                              sz);
-        name[len] = '\0';
+        const int MAX_NAME_LENGTH = 20;
+        jerry_size_t size = MAX_NAME_LENGTH;
+        char name[MAX_NAME_LENGTH];
+        zjs_copy_jstring(v_property, name, &size);
 
         if (!strcmp(name, "read")) {
             chrc->flags |= BT_GATT_CHRC_READ;
@@ -825,7 +830,7 @@ static bool zjs_ble_parse_characteristic(ble_characteristic_t *chrc)
     if (!jerry_value_is_undefined(v_array) &&
         !jerry_value_is_null(v_array) &&
         !jerry_value_is_array(v_array)) {
-        ERR_PRINT("zjs_ble_parse_characteristic: descriptors is not array\n");
+        ERR_PRINT("descriptors is not array\n");
         return false;
     }
 
@@ -833,13 +838,13 @@ static bool zjs_ble_parse_characteristic(ble_characteristic_t *chrc)
         jerry_value_t v_desc = jerry_get_property_by_index(v_array, i);
 
         if (!jerry_value_is_object(v_desc)) {
-            ERR_PRINT("zjs_ble_parse_characteristic: not valid descriptor object\n");
+            ERR_PRINT("not valid descriptor object\n");
             return false;
         }
 
         char desc_uuid[ZJS_BLE_UUID_LEN];
         if (!zjs_obj_get_string(v_desc, "uuid", desc_uuid, ZJS_BLE_UUID_LEN)) {
-            ERR_PRINT("zjs_ble_parse_service: descriptor uuid doesn't exist\n");
+            ERR_PRINT("descriptor uuid doesn't exist\n");
             return false;
         }
 
@@ -905,14 +910,14 @@ static bool zjs_ble_parse_service(ble_service_t *service)
 
     jerry_value_t service_obj = service->service_obj;
     if (!zjs_obj_get_string(service_obj, "uuid", uuid, ZJS_BLE_UUID_LEN)) {
-        ERR_PRINT("zjs_ble_parse_service: service uuid doesn't exist\n");
+        ERR_PRINT("service uuid doesn't exist\n");
         return false;
     }
     service->uuid = zjs_ble_new_uuid_16(strtoul(uuid, NULL, 16));
 
     jerry_value_t v_array = zjs_get_property(service_obj, "characteristics");
     if (!jerry_value_is_array(v_array)) {
-        ERR_PRINT("zjs_ble_parse_service: characteristics is empty or not array\n");
+        ERR_PRINT("characteristics is empty or not array\n");
         return false;
     }
 
@@ -921,13 +926,13 @@ static bool zjs_ble_parse_service(ble_service_t *service)
         jerry_value_t v_chrc = jerry_get_property_by_index(v_array, i);
 
         if (!jerry_value_is_object(v_chrc)) {
-            ERR_PRINT("zjs_ble_parse_characteristic: characteristic is not object\n");
+            ERR_PRINT("characteristic is not object\n");
             return false;
         }
 
         ble_characteristic_t *chrc = zjs_malloc(sizeof(ble_characteristic_t));
         if (!chrc) {
-            ERR_PRINT("zjs_ble_parse_service: out of memory allocating ble_characteristic_t\n");
+            ERR_PRINT("out of memory allocating ble_characteristic_t\n");
             return false;
         }
 
@@ -962,7 +967,7 @@ static bool zjs_ble_parse_service(ble_service_t *service)
 static bool zjs_ble_register_service(ble_service_t *service)
 {
     if (!service) {
-        ERR_PRINT("zjs_ble_register_service: invalid ble_service\n");
+        ERR_PRINT("invalid ble_service\n");
         return false;
     }
 
@@ -987,7 +992,7 @@ static bool zjs_ble_register_service(ble_service_t *service)
 
    struct bt_gatt_attr *bt_attrs = zjs_malloc(sizeof(struct bt_gatt_attr) * num_of_entries);
     if (!bt_attrs) {
-        ERR_PRINT("zjs_ble_register_service: out of memory allocating struct bt_gatt_attr\n");
+        ERR_PRINT("out of memory allocating struct bt_gatt_attr\n");
         return false;
     }
 
@@ -1006,7 +1011,7 @@ static bool zjs_ble_register_service(ble_service_t *service)
         // GATT Characteristic
         struct bt_gatt_chrc *chrc_user_data = zjs_malloc(sizeof(struct bt_gatt_chrc));
         if (!chrc_user_data) {
-            ERR_PRINT("zjs_ble_register_service: out of memory allocating struct bt_gatt_chrc\n");
+            ERR_PRINT("out of memory allocating struct bt_gatt_chrc\n");
             return false;
         }
 
@@ -1039,16 +1044,18 @@ static bool zjs_ble_register_service(ble_service_t *service)
 
         // CUD
         if (ch->cud_value) {
-            jerry_size_t sz = jerry_get_string_size(ch->cud_value);
-            char *cud_buffer = zjs_malloc(sz+1);
+            // FIXME: not sure what this value should be
+            const int MAX_CUD_LENGTH = 64;
+            jerry_size_t size = MAX_CUD_LENGTH;
+            char *cud_buffer = zjs_alloc_from_jstring(ch->cud_value, &size);
             if (!cud_buffer) {
-                ERR_PRINT("zjs_ble_register_service: out of memory allocating cud buffer\n");
+                ERR_PRINT("out of memory allocating cud buffer\n");
                 return false;
             }
 
-            memset(cud_buffer, 0, sz+1);
+            // FIXME: cud_buffer should be freed later if no longer needed, but
+            //   doesn't seem to be
 
-            jerry_string_to_char_buffer(ch->cud_value, (jerry_char_t *)cud_buffer, sz);
             bt_attrs[entry_index].uuid = gatt_cud_uuid;
             bt_attrs[entry_index].perm = BT_GATT_PERM_READ;
             bt_attrs[entry_index].read = bt_gatt_attr_read_cud;
@@ -1061,7 +1068,7 @@ static bool zjs_ble_register_service(ble_service_t *service)
             // add CCC only if notify flag is set
             struct _bt_gatt_ccc *ccc_user_data = zjs_malloc(sizeof(struct _bt_gatt_ccc));
             if (!ccc_user_data) {
-                ERR_PRINT("zjs_ble_register_service: out of memory allocating struct bt_gatt_ccc\n");
+                ERR_PRINT("out of memory allocating struct bt_gatt_ccc\n");
                 return false;
             }
 
@@ -1085,7 +1092,7 @@ static bool zjs_ble_register_service(ble_service_t *service)
     }
 
     if (entry_index != num_of_entries) {
-        ERR_PRINT("zjs_ble_register_service: number of entries didn't match\n");
+        ERR_PRINT("number of entries didn't match\n");
         return false;
     }
 
@@ -1169,7 +1176,7 @@ static jerry_value_t zjs_ble_set_services(const jerry_value_t function_obj,
               jerry_create_string((jerry_char_t *)"failed to register services");
         jerry_value_t rval = jerry_call_function(argv[1], ZJS_UNDEFINED, &arg, 1);
         if (jerry_value_has_error_flag(rval)) {
-            DBG_PRINT("zjs_ble_set_services: failed to call callback function\n");
+            DBG_PRINT("failed to call callback function\n");
         }
     }
 

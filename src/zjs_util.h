@@ -56,6 +56,37 @@ bool zjs_obj_get_double(jerry_value_t obj, const char *name, double *num);
 bool zjs_obj_get_uint32(jerry_value_t obj, const char *name, uint32_t *num);
 bool zjs_obj_get_int32(jerry_value_t obj, const char *name, int32_t *num);
 
+/**
+ * Copy a JerryScript string into a supplied char * buffer.
+ *
+ * @param jstr    A JerryScript string value.
+ * @param buffer  A char * buffer with at least *maxlen bytes.
+ * @param maxlen  Pointer to a maximum size to be written to the buffer. If the
+ *                  string size with a null terminator would exceed *maxlen,
+ *                  only a null terminator will be written to the buffer and
+ *                  *maxlen will be set to 0. If the string is successfully
+ *                  copied, *maxlen will be set to the bytes copied (not
+ *                  counting the null terminator). If *maxlen is 0, behavior is
+ *                  undefined.
+ */
+void zjs_copy_jstring(jerry_value_t jstr, char *buffer, jerry_size_t *maxlen);
+
+/**
+ * Allocate a char * buffer on the heap and copy the JerryScript string to it.
+ *
+ * @param jstr    A JerryScript string value.
+ * @param maxlen  Pointer to a maximum size for the returned string. If NULL or
+ *                  pointing to 0, there is no limit to the string size
+ *                  returned. If not NULL, the actual length of the string will
+ *                  be written to *maxlen. If the call succeeds, the buffer
+ *                  returned will be truncated to the given maxlen with a null
+ *                  terminator. You can use zjs_copy_jstring if you'd rather
+ *                  fail than truncate on error.
+ * @return A new null-terminated string (which must be freed with zjs_free) or
+ *          NULL on failure.
+ */
+char *zjs_alloc_from_jstring(jerry_value_t jstr, jerry_size_t *maxlen);
+
 bool zjs_hex_to_byte(char *buf, uint8_t *byte);
 
 void zjs_default_convert_pin(uint32_t orig, int *dev, int *pin);

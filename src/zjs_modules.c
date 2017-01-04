@@ -9,17 +9,25 @@
 #include <stdlib.h>
 
 // ZJS includes
+#ifdef BUILD_MODULE_BUFFER
+#include "zjs_buffer.h"
+#endif
+#ifdef BUILD_MODULE_CONSOLE
 #include "zjs_console.h"
+#endif
 #include "zjs_event.h"
 #include "zjs_modules.h"
 #include "zjs_performance.h"
+#ifdef BUILD_MODULE_SENSOR
+#include "zjs_sensor.h"
+#endif
 #include "zjs_timers.h"
 #include "zjs_util.h"
 #ifdef BUILD_MODULE_OCF
 #include "zjs_ocf_common.h"
 #endif
+
 #ifndef ZJS_LINUX_BUILD
-// ZJS includes
 #include "zjs_aio.h"
 #include "zjs_ble.h"
 #include "zjs_gpio.h"
@@ -29,11 +37,11 @@
 #include "zjs_uart.h"
 #ifdef CONFIG_BOARD_ARDUINO_101
 #include "zjs_a101_pins.h"
-#endif // ZJS_LINUX_BUILD
+#endif
 #ifdef CONFIG_BOARD_FRDM_K64F
 #include "zjs_k64f_pins.h"
 #endif
-#endif
+#endif // ZJS_LINUX_BUILD
 
 typedef jerry_value_t (*initcb_t)();
 typedef void (*cleanupcb_t)();
@@ -106,19 +114,17 @@ static jerry_value_t native_require_handler(const jerry_value_t function_obj,
                                             const jerry_value_t argv[],
                                             const jerry_length_t argc)
 {
-    jerry_value_t arg = argv[0];
-    if (!jerry_value_is_string(arg)) {
+    if (!jerry_value_is_string(argv[0])) {
         return zjs_error("native_require_handler: invalid argument");
     }
 
-    const int maxlen = 32;
-    char module[maxlen];
-    jerry_size_t sz = jerry_get_string_size(arg);
-    if (sz >= maxlen) {
+    const int MAX_MODULE_LEN = 32;
+    jerry_size_t size = MAX_MODULE_LEN;
+    char module[size];
+    zjs_copy_jstring(argv[0], module, &size);
+    if (!size) {
         return zjs_error("native_require_handler: argument too long");
     }
-    int len = jerry_string_to_char_buffer(arg, (jerry_char_t *)module, sz);
-    module[len] = '\0';
 
     int modcount = sizeof(zjs_modules_array) / sizeof(module_t);
     for (int i = 0; i < modcount; i++) {
@@ -131,7 +137,8 @@ static jerry_value_t native_require_handler(const jerry_value_t function_obj,
             return mod->instance;
         }
     }
-    ZJS_PRINT("Native module not found, searching for JavaScript module %s\n", module);
+    DBG_PRINT("Native module not found, searching for JavaScript module %s\n",
+              module);
     jerry_value_t global_obj = jerry_get_global_object();
     jerry_value_t modules_obj = zjs_get_property(global_obj, "module");
     if (!jerry_value_is_object(modules_obj)) {
@@ -149,13 +156,13 @@ static jerry_value_t native_require_handler(const jerry_value_t function_obj,
 
     for (int i = 0; i < 4; i++) {
         // Strip the ".js"
-        module[len-i] = '\0';
+        module[size-i] = '\0';
     }
 
     jerry_value_t found_obj = zjs_get_property(exports_obj, module);
 
     if (jerry_value_is_object(found_obj)) {
-        ZJS_PRINT("JavaScript module %s loaded\n", module);
+        DBG_PRINT("JavaScript module %s loaded\n", module);
         jerry_release_value(global_obj);
         jerry_release_value(modules_obj);
         jerry_release_value(exports_obj);

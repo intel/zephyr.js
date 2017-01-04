@@ -10,8 +10,6 @@
 #include "zjs_util.h"
 #include "zjs_buffer.h"
 
-#define ZJS_I2C_TIMEOUT_TICKS 500
-
 static struct k_sem i2c_sem;
 static jerry_value_t zjs_i2c_prototype;
 
@@ -70,21 +68,23 @@ static jerry_value_t zjs_i2c_read_base(const jerry_value_t this,
         return zjs_error("zjs_i2c_read_base: buffer creation failed");
     }
 
+    // FIXME: This section has duplicated code that could be simplified; also
+    //   bus >= MAX_I2C_BUS appears to be an error that should be caught?
+    //   Also, MAX_I2C_BUS (=1) is treated as an invalid bus number; is that
+    //   right? Because I2C_1 is set to 1 in zjs_i2c.h
     if (!burst) {
         if (bus < MAX_I2C_BUS) {
             // read has to come after an Open I2C message
             if (i2c_device[bus]) {
-                int reply = i2c_read(i2c_device[bus],
-                                     buf->buffer,
-                                     size,
+                int reply = i2c_read(i2c_device[bus], buf->buffer, size,
                                      (uint16_t)address);
 
                 if (reply < 0) {
-                    ZJS_PRINT("I2C Read failed with error : %i\n", reply);
+                    ERR_PRINT("I2C Read failed with error: %i\n", reply);
                 }
             }
             else {
-                ZJS_PRINT("No I2C device is ready yet\n");
+                ERR_PRINT("No I2C device is ready yet\n");
             }
         }
 
@@ -92,21 +92,17 @@ static jerry_value_t zjs_i2c_read_base(const jerry_value_t this,
         if (bus < MAX_I2C_BUS) {
             // burst read has to come after an Open I2C message
             if (i2c_device[bus]) {
-               int reply = i2c_burst_read(i2c_device[bus],
-                                          (uint16_t)address,
-                                          register_addr,
-                                          buf->buffer,
-                                          size);
+               int reply = i2c_burst_read(i2c_device[bus], (uint16_t)address,
+                                          register_addr, buf->buffer, size);
 
                 if (reply < 0) {
-                    ZJS_PRINT("I2C Burst Read failed with error : %i\n", reply);
+                    ERR_PRINT("I2C Burst Read failed with error: %i\n", reply);
                 }
             }
             else {
-                ZJS_PRINT("No I2C device is ready yet\n");
+                ERR_PRINT("No I2C device is ready yet\n");
             }
         }
-
     }
 
     return buf_obj;
@@ -190,7 +186,7 @@ static jerry_value_t zjs_i2c_write(const jerry_value_t function_obj,
             dataBuf->buffer[0] = (uint8_t)register_addr;
         }
     } else {
-        return zjs_error("zjs_i2c_write:  missing data buffer");
+        return zjs_error("zjs_i2c_write: missing data buffer");
     }
     int reply;
     uint32_t address = (uint32_t)jerry_get_number_value(argv[0]);
@@ -203,11 +199,11 @@ static jerry_value_t zjs_i2c_write(const jerry_value_t function_obj,
                               (uint16_t)address);
 
         if (reply < 0) {
-            ZJS_PRINT("I2C Write failed with error : %i\n", reply);
+            ERR_PRINT("I2C Write failed with error: %i\n", reply);
         }
     }
     else {
-        ZJS_PRINT("no I2C device is ready yet\n");
+        ERR_PRINT("No I2C device is ready yet\n");
     }
 
     return jerry_create_number(reply);

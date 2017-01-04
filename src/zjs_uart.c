@@ -236,8 +236,12 @@ static jerry_value_t uart_init(const jerry_value_t function_obj,
 
     jerry_value_t port_val = zjs_get_property(argv[0], "port");
 
-    int sz = jerry_get_string_size(port_val);
-    if (sz > 16) {
+    const int MAX_PORT_LENGTH = 16;
+    jerry_size_t size = MAX_PORT_LENGTH;
+    char port[size];
+
+    zjs_copy_jstring(port_val, port, &size);
+    if (!size) {
         DBG_PRINT("port length is too long\n");
         jerry_value_t error = make_uart_error("TypeMismatchError",
                 "port length is too long");
@@ -245,19 +249,7 @@ static jerry_value_t uart_init(const jerry_value_t function_obj,
         return promise;
     }
 
-    char port[sz + 1];
-    int len = jerry_string_to_char_buffer(port_val, (jerry_char_t *)port, sz);
-    port[len] = '\0';
-
     jerry_release_value(port_val);
-
-    if (sz != len) {
-        DBG_PRINT("size mismatch, sz=%u, len=%u\n", sz, len);
-        jerry_value_t error = make_uart_error("TypeMismatchError",
-                "size mismatch");
-        zjs_reject_promise(promise, &error, 1);
-        return promise;
-    }
 
     jerry_value_t baud_val = zjs_get_property(argv[0], "baud");
 
@@ -265,6 +257,7 @@ static jerry_value_t uart_init(const jerry_value_t function_obj,
         baud = (int)jerry_get_number_value(baud_val);
     }
     for (i = 0; i < (sizeof(device_map) / sizeof(device_map[0])); ++i) {
+        // FIXME: we allowed 16-char string above but are only looking at 4?
         if (strncmp(device_map[0].port, port, 4) == 0) {
             uart_dev = device_get_binding((char*)device_map[0].name);
             break;

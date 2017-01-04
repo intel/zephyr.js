@@ -110,6 +110,8 @@ if check_for_require ocf || check_config_file ZJS_OCF; then
     echo "CONFIG_IP_BUF_TX_SIZE=5" >> prj.conf.tmp
     echo "CONFIG_NET_MAX_CONTEXTS=9" >> prj.conf.tmp
     echo "export ZJS_OCF=y" >> zjs.conf.tmp
+    MODULES+=" -DBUILD_MODULE_EVENTS"
+    echo "export ZJS_EVENTS=y" >> zjs.conf.tmp
 fi
 
 if check_for_require gpio || check_config_file ZJS_GPIO; then
@@ -230,16 +232,16 @@ if [ $? -eq 0 ] || check_config_file ZJS_SENSOR; then
         bmi160=$(grep -E Accelerometer\|Gyroscope $SCRIPT)
         if [ $? -eq 0 ]; then
             MODULES+=" -DBUILD_MODULE_SENSOR_TRIGGER"
-            echo "CONFIG_SENSOR=y" >> arc/prj.conf.tmp
             echo "CONFIG_GPIO=y" >> prj.conf.tmp
             echo "CONFIG_GPIO_QMSI=y" >> prj.conf.tmp
             echo "CONFIG_GPIO_QMSI_0_PRI=2" >> prj.conf.tmp
             echo "CONFIG_GPIO_QMSI_1=y" >> prj.conf.tmp
             echo "CONFIG_GPIO_QMSI_1_NAME=\"GPIO_1\"" >> prj.conf.tmp
             echo "CONFIG_GPIO_QMSI_1_PRI=2" >> prj.conf.tmp
+            echo "CONFIG_SENSOR=y" >> arc/prj.conf.tmp
+            echo "CONFIG_GPIO=y" >> arc/prj.conf.tmp
             echo "CONFIG_SPI=y" >> arc/prj.conf.tmp
             echo "CONFIG_BMI160=y" >> arc/prj.conf.tmp
-            echo "CONFIG_BMI160_INIT_PRIORITY=80" >> arc/prj.conf.tmp
             echo "CONFIG_BMI160_NAME=\"bmi160\"" >> arc/prj.conf.tmp
             echo "CONFIG_BMI160_SPI_PORT_NAME=\"SPI_1\"" >> arc/prj.conf.tmp
             echo "CONFIG_BMI160_SLAVE=1" >> arc/prj.conf.tmp

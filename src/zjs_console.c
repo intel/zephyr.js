@@ -92,16 +92,13 @@ static void print_value(const jerry_value_t value, FILE *out, bool deep,
         fprintf(out, "[Object]");
     }
     else if (jerry_value_is_string(value)) {
-        jerry_size_t jlen = jerry_get_string_size(value);
-        if (jlen > MAX_STR_LENGTH) {
-            fprintf(out, "[String - length %lu]", jlen);
+        jerry_size_t size = jerry_get_string_size(value);
+        if (size >= MAX_STR_LENGTH) {
+            fprintf(out, "[String - length %lu]", size);
         }
         else {
-            char buffer[jlen + 1];
-            int wlen = jerry_string_to_char_buffer(value,
-                                                   (jerry_char_t *)buffer,
-                                                   jlen);
-            buffer[wlen] = '\0';
+            char buffer[++size];
+            zjs_copy_jstring(value, buffer, &size);
             if (quotes) {
                 fprintf(out, "\"%s\"", buffer);
             }

@@ -33,7 +33,7 @@ static void zjs_pwm_set(jerry_value_t obj, double period, double pulseWidth)
     zjs_pwm_convert_pin(orig_chan, &devnum, &channel);
 
     if (pulseWidth > period) {
-        ERR_PRINT("zjs_pwm_set: pulseWidth was greater than period\n");
+        ERR_PRINT("pulseWidth was greater than period\n");
         pulseWidth = period;
     }
 
@@ -41,20 +41,21 @@ static void zjs_pwm_set(jerry_value_t obj, double period, double pulseWidth)
     char buffer[BUFLEN];
     if (zjs_obj_get_string(obj, "polarity", buffer, BUFLEN)) {
         if (!strcmp(buffer, ZJS_POLARITY_REVERSE)) {
-            if (period > pulseWidth) {
-                pulseWidth = 0;
-            } else {
-                pulseWidth = period - pulseWidth;
-            }
+            pulseWidth = period - pulseWidth;
         }
     }
 
-    DBG_PRINT("Setting [uSec] channel=%u dev=%u, period=%lu, pulse=%lu\n", channel, devnum, (uint32_t)(period * 1000), (uint32_t)(pulseWidth * 1000));
-    pwm_pin_set_usec(zjs_pwm_dev[devnum], channel, (uint32_t)(period * 1000), (uint32_t)(pulseWidth * 1000));
+    DBG_PRINT("Setting [uSec] channel=%u dev=%u, period=%lu, pulse=%lu\n",
+              channel, devnum, (uint32_t)(period * 1000),
+              (uint32_t)(pulseWidth * 1000));
+    pwm_pin_set_usec(zjs_pwm_dev[devnum], channel, (uint32_t)(period * 1000),
+                     (uint32_t)(pulseWidth * 1000));
 }
 
-static void zjs_pwm_set_cycles(jerry_value_t obj, uint32_t periodHW, uint32_t pulseWidthHW)
+static void zjs_pwm_set_cycles(jerry_value_t obj, uint32_t periodHW,
+                               uint32_t pulseWidthHW)
 {
+    DBG_PRINT("periodHW: %lu, pulseWidthHW: %lu\n", periodHW, pulseWidthHW);
     uint32_t orig_chan;
     zjs_obj_get_uint32(obj, "channel", &orig_chan);
 
@@ -62,7 +63,7 @@ static void zjs_pwm_set_cycles(jerry_value_t obj, uint32_t periodHW, uint32_t pu
     zjs_pwm_convert_pin(orig_chan, &devnum, &channel);
 
     if (pulseWidthHW > periodHW) {
-        ERR_PRINT("zjs_pwm_set: pulseWidth was greater than period\n");
+        ERR_PRINT("pulseWidth was greater than period\n");
         pulseWidthHW = periodHW;
     }
 
@@ -70,15 +71,12 @@ static void zjs_pwm_set_cycles(jerry_value_t obj, uint32_t periodHW, uint32_t pu
     char buffer[BUFLEN];
     if (zjs_obj_get_string(obj, "polarity", buffer, BUFLEN)) {
         if (!strcmp(buffer, ZJS_POLARITY_REVERSE)) {
-            if (periodHW > pulseWidthHW) {
-                pulseWidthHW = 0;
-            } else {
-                pulseWidthHW = periodHW - pulseWidthHW;
-            }
+            pulseWidthHW = periodHW - pulseWidthHW;
         }
     }
 
-    DBG_PRINT("Setting [cycles] channel=%u dev=%u, period=%lu, pulse=%lu\n", channel, devnum, (uint32_t)periodHW, (uint32_t)pulseWidthHW);
+    DBG_PRINT("Setting [cycles] channel=%u dev=%u, period=%lu, pulse=%lu\n",
+              channel, devnum, (uint32_t)periodHW, (uint32_t)pulseWidthHW);
     pwm_pin_set_cycles(zjs_pwm_dev[devnum], channel, periodHW, pulseWidthHW);
 }
 
@@ -139,7 +137,8 @@ static jerry_value_t zjs_pwm_pin_set_period(const jerry_value_t function_obj,
     // store the period in the pwm object
     zjs_obj_add_number(this, period, "period");
 
-    ZJS_PRINT("set_period(): period: %lu, pulse: %lu\n", (uint32_t)period, (uint32_t)pulseWidth);
+    DBG_PRINT("period: %lu, pulse: %lu\n", (uint32_t)period,
+              (uint32_t)pulseWidth);
 
     zjs_pwm_set(this, period, pulseWidth);
 

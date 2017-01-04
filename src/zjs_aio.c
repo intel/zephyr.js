@@ -11,12 +11,12 @@
 #include "zjs_ipm.h"
 #include "zjs_util.h"
 
-#define ZJS_AIO_TIMEOUT_TICKS                      500
+#define ZJS_AIO_TIMEOUT_TICKS                      5000
+
+const int MAX_TYPE_LEN = 20;
 
 static struct k_sem aio_sem;
 static jerry_value_t zjs_aio_prototype;
-
-#define MAX_TYPE_LEN 20
 
 typedef struct aio_handle {
     jerry_value_t pin_obj;
@@ -58,7 +58,7 @@ static bool zjs_aio_ipm_send_async(uint32_t type, uint32_t pin, void *data) {
 
     int success = zjs_ipm_send(MSG_ID_AIO, &msg);
     if (success != 0) {
-        ERR_PRINT("zjs_aio_ipm_send: failed to send message\n");
+        ERR_PRINT("failed to send message\n");
         return false;
     }
 
@@ -73,7 +73,7 @@ static bool zjs_aio_ipm_send_sync(zjs_ipm_message_t* send,
     send->error_code = ERROR_IPM_NONE;
 
     if (zjs_ipm_send(MSG_ID_AIO, send) != 0) {
-        ERR_PRINT("zjs_aio_ipm_send_sync: failed to send message\n");
+        ERR_PRINT("failed to send message\n");
         return false;
     }
 
@@ -81,7 +81,7 @@ static bool zjs_aio_ipm_send_sync(zjs_ipm_message_t* send,
     // time out, if the ARC response comes back after it
     // times out, it could pollute the result on the stack
     if (k_sem_take(&aio_sem, ZJS_AIO_TIMEOUT_TICKS)) {
-        ERR_PRINT("zjs_aio_ipm_send_sync: FATAL ERROR, ipm timed out\n");
+        ERR_PRINT("FATAL ERROR, ipm timed out\n");
         return false;
     }
 
@@ -150,14 +150,14 @@ static void ipm_msg_receive_callback(void *context, uint32_t id,
             zjs_signal_callback(handle->callback_id, &ret_val, sizeof(jerry_value_t));
             break;
         case TYPE_AIO_PIN_SUBSCRIBE:
-            DBG_PRINT("ipm_msg_receive_callback: subscribed to events on pin %lu\n", pin);
+            DBG_PRINT("subscribed to events on pin %lu\n", pin);
             break;
         case TYPE_AIO_PIN_UNSUBSCRIBE:
-            DBG_PRINT("ipm_msg_receive_callback: unsubscribed to events on pin %lu\n", pin);
+            DBG_PRINT("unsubscribed to events on pin %lu\n", pin);
             break;
 
         default:
-            ERR_PRINT("ipm_msg_receive_callback: IPM message not handled %lu\n", msg->type);
+            ERR_PRINT("IPM message not handled %lu\n", msg->type);
         }
     }
 }
@@ -220,14 +220,9 @@ static jerry_value_t zjs_aio_pin_on(const jerry_value_t function_obj,
     uint32_t pin;
     zjs_obj_get_uint32(this, "pin", &pin);
 
-    char event[MAX_TYPE_LEN];
-    jerry_value_t arg = argv[0];
-    jerry_size_t sz = jerry_get_string_size(arg);
-    if (sz >= MAX_TYPE_LEN)
-        return zjs_error("zjs_aio_pin_on: event string too long");
-    int len = jerry_string_to_char_buffer(arg, (jerry_char_t *)event, sz);
-    event[len] = '\0';
-
+    jerry_size_t size = MAX_TYPE_LEN;
+    char event[size];
+    zjs_copy_jstring(argv[0], event, &size);
     if (strcmp(event, "change"))
         return zjs_error("zjs_aio_pin_on: unsupported event type");
 

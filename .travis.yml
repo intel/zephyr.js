@@ -24,10 +24,6 @@ env:
     - TARGET="linux"
     - TARGET="ashell"
 
-matrix:
-  allow_failures:
-    - env: TARGET="ashell"
-
 before_install:
   - sudo apt-get update -qq
   - sudo apt-get install make gcc g++ python3-ply ncurses-dev uglifyjs sysvbanner -qq
@@ -84,6 +80,16 @@ script: >
     # check for any new trailing whitespace since the first fetched commit
     banner "git check" &&
     git diff --check $(git rev-list HEAD | tail -1) &&
+
+    # ensure only two uses of jerry_string_to_char_buffer in zjs_util.c
+    banner jstring1 &&
+    CALLCOUNT=$(grep jerry_string_to_char_buffer src/zjs_util.c | wc -l) &&
+    if [ "$CALLCOUNT" != "2" ]; then exit 1; fi &&
+
+    # ensure no other source file uses jerry-string_to_char_buffer
+    banner jstring2 &&
+    SRCFILES=$(find src -name "*.[ch]" | grep -v zjs_util.c) &&
+    if grep jerry_string_to_char_buffer $SRCFILES; then exit 1; fi &&
 
     # run linux build test
     banner "linux" &&

@@ -81,10 +81,12 @@ size_t strnlen(const char *str, size_t max_len) {
     return len;
 }
 
-static int ipm_send_error_reply(struct zjs_ipm_message *msg, uint32_t error_code) {
+static int ipm_send_error_reply(struct zjs_ipm_message *msg,
+                                uint32_t error_code)
+{
     msg->flags |= MSG_ERROR_FLAG;
     msg->error_code = error_code;
-    ZJS_PRINT("send error %lu\n", msg->error_code);
+    DBG_PRINT("send error %lu\n", msg->error_code);
     return zjs_ipm_send(msg->id, msg);
 }
 
@@ -104,12 +106,12 @@ static uint32_t pin_read(uint8_t pin)
     };
 
     if (!adc_dev) {
-       ZJS_PRINT("ADC device not found\n");
+       ERR_PRINT("ADC device not found\n");
        return 0;
     }
 
     if (adc_read(adc_dev, &entry_table) != 0) {
-        ZJS_PRINT("couldn't read from pin %d\n", pin);
+        ERR_PRINT("couldn't read from pin %d\n", pin);
         return 0;
     }
 
@@ -141,8 +143,8 @@ static void queue_message(struct zjs_ipm_message* incoming_msg)
         // copy the message into our queue to be process in the mainloop
         memcpy(msg, incoming_msg, sizeof(struct zjs_ipm_message));
     } else {
-        // running out of spaces, disgard message
-        ZJS_PRINT("skipping incoming message\n");
+        // running out of space, disregard message
+        ERR_PRINT("skipping incoming message\n");
     }
     k_sem_give(&arc_sem);
 }
@@ -153,7 +155,7 @@ static void ipm_msg_receive_callback(void *context, uint32_t id, volatile void *
     if (incoming_msg) {
         queue_message(incoming_msg);
     } else {
-        ZJS_PRINT("error: message is NULL\n");
+        ERR_PRINT("message is NULL\n");
     }
 }
 
@@ -165,7 +167,7 @@ static void handle_aio(struct zjs_ipm_message* msg)
     uint32_t error_code = ERROR_IPM_NONE;
 
     if (pin < ARC_AIO_MIN || pin > ARC_AIO_MAX) {
-        ZJS_PRINT("pin #%lu out of range\n", pin);
+        ERR_PRINT("pin #%lu out of range\n", pin);
         ipm_send_error_reply(msg, ERROR_IPM_INVALID_PARAMETER);
         return;
     }
@@ -193,7 +195,7 @@ static void handle_aio(struct zjs_ipm_message* msg)
         pin_user_data[pin - ARC_AIO_MIN] = NULL;
         break;
     default:
-        ZJS_PRINT("unsupported aio message type %lu\n", msg->type);
+        ERR_PRINT("unsupported aio message type %lu\n", msg->type);
         error_code = ERROR_IPM_NOT_SUPPORTED;
     }
 
@@ -244,7 +246,7 @@ static void handle_i2c(struct zjs_ipm_message* msg)
             i2c_device[msg_bus] = device_get_binding(bus);
 
             if (!i2c_device[msg_bus]) {
-                ZJS_PRINT("I2C bus %s not found.\n", bus);
+                ERR_PRINT("I2C bus %s not found\n", bus);
                 error_code = ERROR_IPM_OPERATION_FAILED;
             } else {
                 /* TODO remove these hard coded numbers
@@ -256,11 +258,12 @@ static void handle_i2c(struct zjs_ipm_message* msg)
                 cfg.bits.is_master_device = 1;
 
                 if (i2c_configure(i2c_device[msg_bus], cfg.raw) != 0) {
-                    ZJS_PRINT("I2C bus %s configure failed.\n", bus);
+                    ERR_PRINT("I2C bus %s configure failed\n", bus);
                     error_code = ERROR_IPM_OPERATION_FAILED;
                 }
             }
         } else {
+
             ERR_PRINT("I2C bus %i is not a valid I2C bus\n", msg_bus);
             error_code = ERROR_IPM_OPERATION_FAILED;
         }
@@ -273,18 +276,20 @@ static void handle_i2c(struct zjs_ipm_message* msg)
                               msg->data.i2c.data,
                               msg->data.i2c.length,
                               msg->data.i2c.address) != 0) {
-                    ZJS_PRINT("i2c_write failed!\n");
+                    ERR_PRINT("i2c_write failed!\n");
                     error_code = ERROR_IPM_OPERATION_FAILED;
                 }
             }
             else {
-                ZJS_PRINT("no I2C device is ready yet\n");
+                // FIXME: this error is repeated several times, probably the
+                //   check could be moved up and this done once?
+                ERR_PRINT("No I2C device is ready yet\n");
                 error_code = ERROR_IPM_OPERATION_FAILED;
             }
         }
         break;
     case TYPE_I2C_WRITE_BIT:
-        ZJS_PRINT("received TYPE_I2C_WRITE_BIT\n");
+        DBG_PRINT("received TYPE_I2C_WRITE_BIT\n");
         break;
     case TYPE_I2C_READ:
         if (msg_bus < MAX_I2C_BUS) {
@@ -301,7 +306,7 @@ static void handle_i2c(struct zjs_ipm_message* msg)
                 }
             }
             else {
-                ZJS_PRINT("No I2C device is ready yet\n");
+                ERR_PRINT("No I2C device is ready yet\n");
                 error_code = ERROR_IPM_OPERATION_FAILED;
             }
         }
@@ -321,16 +326,16 @@ static void handle_i2c(struct zjs_ipm_message* msg)
                 }
             }
             else {
-                ZJS_PRINT("No I2C device is ready yet\n");
+                ERR_PRINT("No I2C device is ready yet\n");
                 error_code = ERROR_IPM_OPERATION_FAILED;
             }
         }
         break;
     case TYPE_I2C_TRANSFER:
-        ZJS_PRINT("received TYPE_I2C_TRANSFER\n");
+        DBG_PRINT("received TYPE_I2C_TRANSFER\n");
         break;
     default:
-        ZJS_PRINT("unsupported i2c message type %lu\n", msg->type);
+        ERR_PRINT("unsupported i2c message type %lu\n", msg->type);
         error_code = ERROR_IPM_NOT_SUPPORTED;
     }
 
@@ -351,7 +356,7 @@ static void handle_glcd(struct zjs_ipm_message* msg)
     uint32_t error_code = ERROR_IPM_NONE;
 
     if (msg->type != TYPE_GLCD_INIT && !glcd) {
-        ZJS_PRINT("Grove LCD device not found.\n");
+        ERR_PRINT("Grove LCD device not found\n");
         ipm_send_error_reply(msg, ERROR_IPM_OPERATION_FAILED);
         return;
     }
@@ -374,7 +379,7 @@ static void handle_glcd(struct zjs_ipm_message* msg)
         buffer = msg->data.glcd.buffer;
         if (!buffer) {
             error_code = ERROR_IPM_INVALID_PARAMETER;
-            ZJS_PRINT("buffer not found\n");
+            ERR_PRINT("buffer not found\n");
         } else {
             snprintf(str, MAX_BUFFER_SIZE, "%s", buffer);
             glcd_print(glcd, str, strnlen(str, MAX_BUFFER_SIZE));
@@ -415,7 +420,7 @@ static void handle_glcd(struct zjs_ipm_message* msg)
         msg->data.glcd.value = glcd_input_state_get(glcd);
         break;
     default:
-        ZJS_PRINT("unsupported grove lcd message type %lu\n", msg->type);
+        ERR_PRINT("unsupported grove lcd message type %lu\n", msg->type);
         error_code = ERROR_IPM_NOT_SUPPORTED;
     }
 
@@ -520,7 +525,7 @@ static double convert_sensor_value(const struct sensor_value *val)
         result = val->dval;
         break;
     default:
-        ZJS_PRINT("convert_sensor_value: invalid type %d\n", val->type);
+        ERR_PRINT("invalid type %d\n", val->type);
         return 0;
     }
 
@@ -533,7 +538,7 @@ static void process_accel_data(struct device *dev)
     double dval[3];
 
     if (sensor_channel_get(dev, SENSOR_CHAN_ACCEL_ANY, val) < 0) {
-        ZJS_PRINT("failed to read accelerometer channels\n");
+        ERR_PRINT("failed to read accelerometer channels\n");
         return;
     }
 
@@ -559,7 +564,7 @@ static void process_accel_data(struct device *dev)
     sensor_value_snprintf(buf_x, sizeof(buf_x), &val[0]);
     sensor_value_snprintf(buf_y, sizeof(buf_y), &val[1]);
     sensor_value_snprintf(buf_z, sizeof(buf_z), &val[2]);
-    ZJS_PRINT("sending accel: X=%s, Y=%s, Z=%s\n", buf_x, buf_y, buf_z);
+    DBG_PRINT("sending accel: X=%s, Y=%s, Z=%s\n", buf_x, buf_y, buf_z);
 #endif
 }
 
@@ -569,7 +574,7 @@ static void process_gyro_data(struct device *dev)
     double dval[3];
 
     if (sensor_channel_get(dev, SENSOR_CHAN_GYRO_ANY, val) < 0) {
-        ZJS_PRINT("failed to read gyroscope channels\n");
+        ERR_PRINT("failed to read gyroscope channels\n");
         return;
     }
 
@@ -593,7 +598,7 @@ static void process_gyro_data(struct device *dev)
     sensor_value_snprintf(buf_x, sizeof(buf_x), &val[0]);
     sensor_value_snprintf(buf_y, sizeof(buf_y), &val[1]);
     sensor_value_snprintf(buf_z, sizeof(buf_z), &val[2]);
-    ZJS_PRINT("sending gyro: X=%s, Y=%s, Z=%s\n", buf_x, buf_y, buf_z);
+    DBG_PRINT("sending gyro: X=%s, Y=%s, Z=%s\n", buf_x, buf_y, buf_z);
 #endif
 }
 
@@ -606,7 +611,7 @@ static void trigger_hdlr(struct device *dev,
     }
 
     if (sensor_sample_fetch(dev) < 0) {
-        ZJS_PRINT("failed to fetch sensor data\n");
+        ERR_PRINT("failed to fetch sensor data\n");
         return;
     }
 
@@ -660,7 +665,7 @@ static int start_accel_trigger(struct device *dev)
 
     if (sensor_attr_set(dev, SENSOR_CHAN_ACCEL_ANY,
                         SENSOR_ATTR_FULL_SCALE, &attr) < 0) {
-        ZJS_PRINT("failed to set accelerometer range\n");
+        ERR_PRINT("failed to set accelerometer range\n");
         return -1;
     }
 
@@ -671,7 +676,7 @@ static int start_accel_trigger(struct device *dev)
 
     if (sensor_attr_set(dev, SENSOR_CHAN_ACCEL_ANY,
                         SENSOR_ATTR_SAMPLING_FREQUENCY, &attr) < 0) {
-        ZJS_PRINT("failed to set accelerometer sampling frequency\n");
+        ERR_PRINT("failed to set accelerometer sampling frequency\n");
         return -1;
     }
 
@@ -681,7 +686,7 @@ static int start_accel_trigger(struct device *dev)
     attr.val2 = 980665;
     if (sensor_attr_set(dev, SENSOR_CHAN_ACCEL_ANY,
                         SENSOR_ATTR_SLOPE_TH, &attr) < 0) {
-        ZJS_PRINT("failed set slope threshold\n");
+        ERR_PRINT("failed set slope threshold\n");
         return -1;
     }
 
@@ -690,7 +695,7 @@ static int start_accel_trigger(struct device *dev)
     attr.val1 = 2;
     if (sensor_attr_set(dev, SENSOR_CHAN_ACCEL_ANY,
                         SENSOR_ATTR_SLOPE_DUR, &attr) < 0) {
-        ZJS_PRINT("failed to set slope duration\n");
+        ERR_PRINT("failed to set slope duration\n");
         return -1;
     }
 
@@ -699,7 +704,7 @@ static int start_accel_trigger(struct device *dev)
     trig.chan = SENSOR_CHAN_ACCEL_ANY;
 
     if (sensor_trigger_set(dev, &trig, trigger_hdlr) < 0) {
-        ZJS_PRINT("failed to enable accelerometer trigger\n");
+        ERR_PRINT("failed to enable accelerometer trigger\n");
         return -1;
     }
 
@@ -715,7 +720,7 @@ static int stop_accel_trigger(struct device *dev)
     trig.chan = SENSOR_CHAN_ACCEL_ANY;
 
     if (sensor_trigger_set(bmi160, &trig, NULL) < 0) {
-        ZJS_PRINT("failed to disable accelerometer trigger\n");
+        ERR_PRINT("failed to disable accelerometer trigger\n");
         return -1;
     }
 
@@ -735,7 +740,7 @@ static int start_gyro_trigger(struct device *dev)
 
     if (sensor_attr_set(bmi160, SENSOR_CHAN_GYRO_ANY,
                         SENSOR_ATTR_SAMPLING_FREQUENCY, &attr) < 0) {
-        ZJS_PRINT("failed to set sampling frequency for gyroscope.\n");
+        ERR_PRINT("failed to set sampling frequency for gyroscope\n");
         return -1;
     }
 
@@ -744,7 +749,7 @@ static int start_gyro_trigger(struct device *dev)
     trig.chan = SENSOR_CHAN_GYRO_ANY;
 
     if (sensor_trigger_set(bmi160, &trig, trigger_hdlr) < 0) {
-        ZJS_PRINT("failed to enable gyroscope trigger.\n");
+        ERR_PRINT("failed to enable gyroscope trigger\n");
         return -1;
     }
 
@@ -760,7 +765,7 @@ static int stop_gyro_trigger(struct device *dev)
     trig.chan = SENSOR_CHAN_GYRO_ANY;
 
     if (sensor_trigger_set(bmi160, &trig, NULL) < 0) {
-        ZJS_PRINT("failed to disable gyroscope trigger\n");
+        ERR_PRINT("failed to disable gyroscope trigger\n");
         return -1;
     }
 
@@ -835,10 +840,10 @@ static void handle_sensor(struct zjs_ipm_message* msg)
 
                 if (!bmi160) {
                     error_code = ERROR_IPM_OPERATION_FAILED;
-                    ZJS_PRINT("failed to initialize BMI160 sensor\n");
+                    ERR_PRINT("failed to initialize BMI160 sensor\n");
                 } else {
                     if (auto_calibration(bmi160) != 0) {
-                        ZJS_PRINT("failed to perform auto calibration\n");
+                        ERR_PRINT("failed to perform auto calibration\n");
                     }
                     DBG_PRINT("BMI160 sensor initialized\n");
                 }
@@ -860,15 +865,15 @@ static void handle_sensor(struct zjs_ipm_message* msg)
         } else if (msg->data.sensor.channel == SENSOR_CHAN_LIGHT) {
             uint32_t pin = msg->data.sensor.pin;
             if (pin < ARC_AIO_MIN || pin > ARC_AIO_MAX) {
-                ZJS_PRINT("pin #%lu out of range\n", pin);
+                ERR_PRINT("pin #%lu out of range\n", pin);
                 error_code = ERROR_IPM_OPERATION_FAILED;
             } else {
-                ZJS_PRINT("start ambient light %lu\n", msg->data.sensor.pin);
+                DBG_PRINT("start ambient light %lu\n", msg->data.sensor.pin);
                 light_send_updates[pin - ARC_AIO_MIN] = 1;
             }
 #endif
         } else {
-            ZJS_PRINT("invalid sensor channel\n");
+            ERR_PRINT("invalid sensor channel\n");
             error_code = ERROR_IPM_NOT_SUPPORTED;
         }
         break;
@@ -887,20 +892,20 @@ static void handle_sensor(struct zjs_ipm_message* msg)
         } else if (msg->data.sensor.channel == SENSOR_CHAN_LIGHT) {
             uint32_t pin = msg->data.sensor.pin;
             if (pin < ARC_AIO_MIN || pin > ARC_AIO_MAX) {
-                ZJS_PRINT("pin #%lu out of range\n", pin);
+                ERR_PRINT("pin #%lu out of range\n", pin);
                 error_code = ERROR_IPM_OPERATION_FAILED;
             } else {
-                ZJS_PRINT("stop ambient light %lu\n", msg->data.sensor.pin);
+                DBG_PRINT("stop ambient light %lu\n", msg->data.sensor.pin);
                 light_send_updates[pin - ARC_AIO_MIN] = 0;
             }
 #endif
         } else {
-            ZJS_PRINT("invalid sensor channel\n");
+            ERR_PRINT("invalid sensor channel\n");
             error_code = ERROR_IPM_NOT_SUPPORTED;
         }
         break;
     default:
-        ZJS_PRINT("unsupported sensor message type %lu\n", msg->type);
+        ERR_PRINT("unsupported sensor message type %lu\n", msg->type);
         error_code = ERROR_IPM_NOT_SUPPORTED;
     }
 
@@ -943,7 +948,8 @@ static void process_messages()
        case MSG_ID_DONE:
            return;
        default:
-           ZJS_PRINT("unsupported ipm message id: %lu, check ARC modules\n", msg->id);
+           ERR_PRINT("unsupported ipm message id: %lu, check ARC modules\n",
+                     msg->id);
            ipm_send_error_reply(msg, ERROR_IPM_NOT_SUPPORTED);
        }
 

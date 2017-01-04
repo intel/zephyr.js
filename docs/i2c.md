@@ -35,6 +35,8 @@ dictionary I2CInit {
 interface I2CBus {
     // has all the properties of I2CInit as read-only attributes
     write(octet device, Buffer data);
+    read(octet device, unsigned int size, octet registerAddress);
+    burstRead(octet device, unsigned int size, octet registerAddress);
 };
 ```
 
@@ -58,14 +60,14 @@ to device.
 
 ### I2CBus.read
 
-`void read(octet device, unsigned int size, octet registerAddress);`
+`Buffer read(octet device, unsigned int size, octet registerAddress);`
 
 Reads 'size' bytes of data from the device at the registerAddress. The default
 value of registerAdress is 0x00;
 
 ### I2CBus.burstRead
 
-`void burstRead(octet device, unsigned int size, octet registerAddress);`
+`Buffer burstRead(octet device, unsigned int size, octet registerAddress);`
 
 Reads 'size' bytes of data from the device across multiple addresses starting
 at the registerAddress. The default value of registerAdress is 0x00;
@@ -73,3 +75,4 @@ at the registerAddress. The default value of registerAdress is 0x00;
 Sample Apps
 -----------
 * [I2C sample](../samples/I2C.js)
+* [BMP280 temp](../samples/I2CBMP280.js)

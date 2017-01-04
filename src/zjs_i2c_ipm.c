@@ -15,7 +15,7 @@
 #include "zjs_util.h"
 #include "zjs_buffer.h"
 
-#define ZJS_I2C_TIMEOUT_TICKS                      500
+#define ZJS_I2C_TIMEOUT_TICKS                      5000
 
 static struct k_sem i2c_sem;
 static jerry_value_t zjs_i2c_prototype;
@@ -28,13 +28,13 @@ static bool zjs_i2c_ipm_send_sync(zjs_ipm_message_t* send,
     send->error_code = ERROR_IPM_NONE;
 
     if (zjs_ipm_send(MSG_ID_I2C, send) != 0) {
-        ERR_PRINT("zjs_i2c_ipm_send_sync: failed to send message\n");
+        ERR_PRINT("failed to send message\n");
         return false;
     }
 
     // block until reply or timeout
     if (k_sem_take(&i2c_sem, ZJS_I2C_TIMEOUT_TICKS)) {
-        ERR_PRINT("zjs_i2c_ipm_send_sync: ipm timed out\n");
+        ERR_PRINT("ipm timed out\n");
         return false;
     }
 
@@ -58,7 +58,7 @@ static void ipm_msg_receive_callback(void *context, uint32_t id, volatile void *
         k_sem_give(&i2c_sem);
     } else {
         // asynchronous ipm, should not get here
-        ERR_PRINT("ipm_msg_receive_callback: async message received\n");
+        ERR_PRINT("async message received\n");
     }
 }
 

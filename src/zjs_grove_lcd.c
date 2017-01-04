@@ -14,11 +14,9 @@
 #include "zjs_grove_lcd.h"
 #include "zjs_util.h"
 
-#define ZJS_GLCD_TIMEOUT_TICKS 500
 #define MAX_BUFFER_SIZE 256
 
 static struct device *glcd = NULL;
-static char str[MAX_BUFFER_SIZE];
 
 static jerry_value_t zjs_glcd_prototype;
 
@@ -35,21 +33,14 @@ static jerry_value_t zjs_glcd_print(const jerry_value_t function_obj,
         return zjs_error("Grove LCD device not found");
     }
 
-    jerry_size_t sz = jerry_get_string_size(argv[0]);
-
-    char *buffer = zjs_malloc(sz+1);
+    jerry_size_t size = MAX_BUFFER_SIZE;
+    char *buffer = zjs_alloc_from_jstring(argv[0], &size);
     if (!buffer) {
         return zjs_error("zjs_glcd_print: cannot allocate buffer");
     }
 
-    int len = jerry_string_to_char_buffer(argv[0],
-                                          (jerry_char_t *)buffer,
-                                          sz);
-    buffer[len] = '\0';
-
-    snprintf(str, MAX_BUFFER_SIZE, "%s", buffer);
-    glcd_print(glcd, str, strnlen(str, MAX_BUFFER_SIZE));
-    DBG_PRINT("Grove LCD print: %s\n", str);
+    glcd_print(glcd, buffer, size);
+    DBG_PRINT("Grove LCD print: %s\n", buffer);
     zjs_free(buffer);
 
     return ZJS_UNDEFINED;

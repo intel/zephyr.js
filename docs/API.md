@@ -36,3 +36,5 @@ General
 [Performance](./performance.md)
 
 [Timers](./timers.md)
+
+[Events](./events.md)

@@ -414,3 +414,50 @@ Using the same procedure as above, once you hit Reset you should see
 "Hello World!" within a second on your serial console.
 
 Zephyr is a trademark of the Linux Foundation. *Other names and brands may be claimed as the property of others.
+
+## Building and running on Linux/Mac OSX
+In addition to Zephyr there is a "linux" target which does not use Zephyr at all
+and instead uses the host OS. This can be build on Linux or Mac OSX using the
+command:
+
+```bash
+make linux
+```
+
+The executable will be outputted to `outdir/linux/<variant>/jslinux`. Where
+`<variant>` is either `debug` or `release`. This is specified the same as the
+Zephyr target by passing in `VARIANT=` when running `make`. The default is
+release.
+
+What makes the linux target convenient is that a JS script does not have to be
+bundled with the final executable. By default `samples/HelloWorld.js` will be
+bundled but you can always just pass in a script on the command line when running
+jslinux e.g.:
+
+```bash
+./outdir/linux/release/jslinux samples/Timers.js
+```
+
+If a script is passed in on the command line it will take the priority over any
+script bundled with the executable (using `JS=`).
+
+By default jslinux will run forever (as Zephyr does) but if this is not desired,
+there are two flags which can be used to cause jslinux to exit under certain
+conditions. The first is the `--autoexit` flag. If this flag is used, jslinux
+will continually check to see if there are any pending events, like timers,
+callbacks or service functions. If there have no been any events processed on the
+last and most current loop cycle it will exit. The second flag (`-t`) will cause
+jslinux to exit after a specified timeout in milliseconds. This flag can be used like:
+
+```bash
+./jslinux -t <ms>
+```
+
+The `--autoexit` and `-t <ms>` flags can be used together, which will cause
+jslinux to exit on whichever condition is met first.
+
+It should be noted that the Linux target has only very partial support to hardware
+compared to Zephyr. This target runs the core code, but most modules do not run
+on it, specifically the hardware modules (AIO, I2C, GPIO etc.). There are some
+modules which can be used though like Events, Promises, Performance and OCF. This
+list may grow if other modules are ported to the Linux target.

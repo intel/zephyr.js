@@ -19,7 +19,6 @@ if [ ! -d "$ZJS_BASE" ]; then
 fi
 
 TRLDIR=$ZJS_BASE/.trlite
-TRLPATCH=$TRLDIR/patch
 
 if [ "$1" == "-h" -o "$1" == "-?" ]; then
     echo usage: trlite [-h] [-v] [vmname] [testnum]
@@ -45,9 +44,10 @@ VM1=y
 VM2=y
 VM3=y
 
-if [ "$1" == "1" -o "$1" == "zephyr" ]; then VM2=n; VM3=n; shift; fi
-if [ "$1" == "2" -o "$1" == "linux" ]; then VM1=n; VM3=n; shift; fi
-if [ "$1" == "3" -o "$1" == "ashell" ]; then VM1=n; VM2=n; shift; fi
+if [ "$1" == "1" -o "$1" == "zephyr" ]; then VM2=n; VM3=n; fi
+if [ "$1" == "2" -o "$1" == "linux" ]; then VM1=n; VM3=n; fi
+if [ "$1" == "3" -o "$1" == "ashell" ]; then VM1=n; VM2=n; fi
+shift
 
 START=1
 if [[ "$1" =~ ^[0-9]+$ ]]; then
@@ -65,14 +65,23 @@ echo Cloning git submodules...
 cd $TRLDIR/deps
 for i in */; do
     git clone -l ../../deps/$i/.git $i > /dev/null 2>&1
+
+    # clone submodules of submodules
+    if [ -d $i/deps/ ]; then
+        cd $i/deps
+        for j in */; do
+            git clone -l ../../../../deps/$i/deps/$j/.git $j > /dev/null 2>&1
+        done
+        cd ../..
+    fi
 done
 
 echo Preserving uncommitted changes:
 cd $ZJS_BASE
-git diff --cached --stat
-git diff --cached > $TRLPATCH
+git diff HEAD --stat
+git diff HEAD > $TRLDIR/uncommitted.patch
 cd $TRLDIR
-patch -p1 < patch > /dev/null
+patch -p1 < uncommitted.patch > /dev/null
 
 # pause to allow consideration of diffs being applied
 sleep 3
@@ -88,7 +97,7 @@ source deps/zephyr/zephyr-env.sh
 
 # requires: first arg is a <=10-char label, second arg is command
 #  effects: runs banner with label, then runs the command; if it fails, prints
-#             label on the command line before exiting
+#             label before exiting
 function try_command()
 {
     TESTNUM=$((TESTNUM + 1))
@@ -101,10 +110,31 @@ function try_command()
     shift
     banner "$LABEL"
     if ! $*; then
-        echo Error: Failed in $1!
-        exit $?
+        CODE=$?
+        echo Error: Failed in $LABEL!
+        exit $CODE
     fi
     echo Success: $LABEL
+}
+
+# requires: first arg is a <=10-char label, second arg is function to run
+#  effects: runs banner with label, then runs the function; if it fails, prints
+#             label before exiting
+function try_func()
+{
+    TESTNUM=$((TESTNUM + 1))
+    if [ "$TESTNUM" -lt "$START" ]; then
+        echo "Skipping test #$TESTNUM"
+        return
+    fi
+
+    banner $1
+    if ! $2; then
+        CODE=$?
+        echo Error: Failed in $1!
+        exit $CODE
+    fi
+    echo Success: $1
 }
 
 #
@@ -141,11 +171,40 @@ fi
 # Tests from VM #2
 #
 
+function check_jstring_util() {
+    CALLCOUNT=$(grep jerry_string_to_char_buffer src/zjs_util.c | wc -l)
+
+    # make sure there are exactly two calls to the function
+    if [ "$CALLCOUNT" != "2" ]; then
+        echo "Error: Expected two calls to jerry_string_to_char_buffer in zjs_util.c!"
+        echo "Use zjs_copy_jstring and zjs_alloc_from_jstring instead."
+        return 1;
+    fi
+}
+
+function check_jstring_others() {
+    SRCFILES=$(find src -name "*.[ch]" | grep -v zjs_util.c)
+
+    # make sure there are no other calls to the function
+    if grep jerry_string_to_char_buffer $SRCFILES; then
+        echo
+        echo "Error: Found calls to jerry_string_to_char_buffer outside zjs_util.c!"
+        echo "Use zjs_copy_jstring and zjs_alloc_from_jstring instead."
+        return 1;
+    fi
+}
+
 if [ "$VM2" == "y" ]; then
     TESTNUM=0
 
     # git check
     try_command "git check" git diff --check $(git rev-list HEAD | tail -1)
+
+    # ensure only two uses of jerry_string_to_char_buffer in zjs_util.c
+    try_func "jstring1" check_jstring_util
+
+    # ensure no other source file uses jerry-string_to_char_buffer
+    try_func "jstring2" check_jstring_others
 
     # linux build tests
     try_command "linux" make $VERBOSE linux

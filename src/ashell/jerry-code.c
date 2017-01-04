@@ -1,18 +1,4 @@
-/*
- * Copyright 2015 Intel Corporation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// Copyright (c) 2016, Intel Corporation.
 
 /**
  * @file
@@ -36,10 +22,11 @@
 /* Zephyr.js init everything */
 #include "../zjs_buffer.h"
 #include "../zjs_callbacks.h"
-#include "../zjs_modules.h"
 #include "../zjs_ipm.h"
+#include "../zjs_modules.h"
 #include "../zjs_sensor.h"
 #include "../zjs_timers.h"
+#include "../zjs_util.h"
 
 void jerry_port_default_set_log_level(jerry_log_level_t level); /** Inside jerry-port-default.h */
 
@@ -71,13 +58,15 @@ static void javascript_print_value(const jerry_value_t value)
     /* String value */
     else if (jerry_value_is_string(value)) {
         /* Determining required buffer size */
-        jerry_size_t req_sz = jerry_get_string_size(value);
-        jerry_char_t str_buf_p[req_sz];
-
-        jerry_string_to_char_buffer(value, str_buf_p, req_sz);
-        str_buf_p[req_sz] = '\0';
-
-        jerry_port_console("%s", (const char *)str_buf_p);
+        jerry_size_t size = 0;
+        char *str = zjs_alloc_from_jstring(value, &size);
+        if (str) {
+            jerry_port_console("%s", str);
+            zjs_free(str);
+        }
+        else {
+            jerry_port_console("[String too long]");
+        }
     }
     /* Object reference */
     else if (jerry_value_is_object(value)) {
@@ -94,20 +83,17 @@ static void javascript_print_error(jerry_value_t error_value)
 
     jerry_value_clear_error_flag(&error_value);
     jerry_value_t err_str_val = jerry_value_to_string(error_value);
-    jerry_size_t err_str_size = jerry_get_string_size(err_str_val);
-    jerry_char_t err_str_buf[256];
 
-    if (err_str_size >= 256) {
-        const char msg[] = "[Error message too long]";
-        err_str_size = sizeof(msg) / sizeof(char) - 1;
-        memcpy(err_str_buf, msg, err_str_size);
-    } else {
-        jerry_string_to_char_buffer(err_str_val, err_str_buf, err_str_size);
+    jerry_size_t size = 0;
+    char *msg = zjs_alloc_from_jstring(err_str_val, &size);
+    const char *err_str = msg;
+    if (!msg) {
+        err_str = "[Error message too long]";
     }
-    err_str_buf[err_str_size] = 0;
 
-    jerry_port_log(JERRY_LOG_LEVEL_ERROR, err_str_buf);
+    jerry_port_log(JERRY_LOG_LEVEL_ERROR, err_str);
     jerry_port_log(JERRY_LOG_LEVEL_ERROR, "\n");
+    zjs_free(msg);
     jerry_release_value(err_str_val);
 }
 

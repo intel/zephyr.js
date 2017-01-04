@@ -225,15 +225,13 @@ static jerry_value_t zjs_buffer_to_string(const jerry_value_t function_obj,
         return jerry_create_string((jerry_char_t *)"[Buffer Object]");
     }
 
-    const int maxlen = 16;
-    char encoding[maxlen];
-    jerry_size_t sz = jerry_get_string_size(argv[0]);
-    if (sz >= maxlen) {
+    const int MAX_ENCODING_LEN = 16;
+    jerry_size_t size = MAX_ENCODING_LEN;
+    char encoding[size];
+    zjs_copy_jstring(argv[0], encoding, &size);
+    if (!size) {
         return zjs_error("zjs_buffer_to_string: encoding argument too long");
     }
-    int len = jerry_string_to_char_buffer(argv[0], (jerry_char_t *)encoding,
-                                          sz);
-    encoding[len] = '\0';
 
     if (strcmp(encoding, "ascii") == 0) {
         buf->buffer[buf->bufsize] = '\0';
@@ -281,9 +279,10 @@ static jerry_value_t zjs_buffer_write_string(const jerry_value_t function_obj_va
     // requires: string - what will be written to buf
     //           offset - where to start writing (Default: 0)
     //           length - how many bytes to write (Default: buf.length -offset)
-    //           encoding - the character encoding of string. Currently only supports
-    //           the default of utf8
-    // effects: writes string to buf at offset according to the character encoding in encoding.
+    //           encoding - the character encoding of string. Currently only
+    //             supports the default of utf8
+    //  effects: writes string to buf at offset according to the character
+    //             encoding in encoding.
 
     if (argc < 1 || !jerry_value_is_string(argv[0]) ||
         (argc > 1 && !jerry_value_is_number(argv[1])) ||
@@ -310,36 +309,38 @@ static jerry_value_t zjs_buffer_write_string(const jerry_value_t function_obj_va
         }
     }
 
-    uint32_t offset = 0;
-    jerry_value_t arg = argv[0];
-    jerry_size_t sz = jerry_get_string_size(arg);
+    jerry_size_t size = 0;
+    char *str = zjs_alloc_from_jstring(argv[0], &size);
+    if (!str) {
+        return zjs_error("zjs_buffer_write_string: string too long");
+    }
+
     zjs_buffer_t *buf = zjs_buffer_find(this);
-
-    if (sz > 4096) {
-        return zjs_error("zjs_buffer_write_string: string is too long for the buffer");
-    }
-
-    char str[sz];
-
     if (!buf) {
-        return zjs_error("zjs_buffer_write_string: buffer pointer not found");
+        zjs_free(str);
+        return zjs_error("zjs_buffer_write_string: buffer not found");
     }
 
+    uint32_t offset = 0;
     if (argc > 1)
         offset = (uint32_t)jerry_get_number_value(argv[1]);
 
     uint32_t length = buf->bufsize - offset;
-
     if (argc > 2)
         length = (uint32_t)jerry_get_number_value(argv[2]);
 
-    if (offset + length > buf->bufsize) {
-        return zjs_error("zjs_buffer_write_string: string + offset is larger than the buffer");
+    if (length > size) {
+        zjs_free(str);
+        return zjs_error("zjs_buffer_write_string: requested length larger than string");
     }
 
-    jerry_string_to_char_buffer(arg, str, sz);
+    if (offset + length > buf->bufsize) {
+        zjs_free(str);
+        return zjs_error("zjs_buffer_write_string: string + offset larger than buffer");
+    }
 
-    memcpy(&buf->buffer[offset], &str[0], length);
+    memcpy(buf->buffer + offset, str, length);
+    zjs_free(str);
 
     return jerry_create_number(length);
 }
@@ -356,7 +357,7 @@ jerry_value_t zjs_buffer_create(uint32_t size)
         (zjs_buffer_t *)zjs_malloc(sizeof(zjs_buffer_t));
 
     if (!buf_obj || !buf || !buf_item) {
-        ERR_PRINT("zjs_buffer_create: unable to allocate buffer\n");
+        ERR_PRINT("unable to allocate buffer\n");
         jerry_release_value(buf_obj);
         zjs_free(buf);
         zjs_free(buf_item);
@@ -407,8 +408,8 @@ static jerry_value_t zjs_buffer(const jerry_value_t function_obj,
         // If passed an array, allocate the memory and fill it with the array value
         jerry_value_t array = argv[0];
         uint32_t arr_size = jerry_get_array_length(array);
-        jerry_value_t new_buf_obj = zjs_buffer_create(arr_size);
-        zjs_buffer_t *buf = zjs_buffer_find(new_buf_obj);
+        jerry_value_t new_buf = zjs_buffer_create(arr_size);
+        zjs_buffer_t *buf = zjs_buffer_find(new_buf);
         jerry_value_t array_item;
 
         if (buf) {
@@ -425,21 +426,22 @@ static jerry_value_t zjs_buffer(const jerry_value_t function_obj,
                 }
             }
         }
-        return new_buf_obj;
+        return new_buf;
     } else {
-        // If passed a string, convert it into a char array and copy it to the buffer.
-        jerry_value_t arg = argv[0];
-        jerry_size_t sz = jerry_get_string_size(arg);
-        jerry_value_t new_buf_obj = zjs_buffer_create(sz);
-        zjs_buffer_t *buf = zjs_buffer_find(new_buf_obj);
-
-        if (buf) {
-            jerry_string_to_char_buffer(arg, (char*)buf->buffer, sz);
-        } else {
-            return zjs_error("zjs_buffer: unable to find string buffer");
+        // if passed string, convert to char array and copy to buffer
+        jerry_size_t size = 0;
+        char *str = zjs_alloc_from_jstring(argv[0], &size);
+        if (!str) {
+            return zjs_error("zjs_buffer: could not allocate string");
         }
 
-        return new_buf_obj;
+        jerry_value_t new_buf = zjs_buffer_create(size);
+        zjs_buffer_t *buf = zjs_buffer_find(new_buf);
+
+        memcpy(buf->buffer, str, size);
+        zjs_free(str);
+
+        return new_buf;
     }
 }
 

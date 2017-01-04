@@ -1,3 +1,5 @@
+// Copyright (c) 2016, Intel Corporation.
+
 #ifndef __zjs_ocf_client__
 #define __zjs_ocf_client__
 
