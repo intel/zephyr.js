@@ -259,6 +259,10 @@ static jerry_value_t zjs_i2c_open(const jerry_value_t function_obj,
         snprintf(i2c_bus, 6, "I2C_%i", (uint8_t)bus);
         i2c_device[bus] = device_get_binding(i2c_bus);
 
+        if (!i2c_device[bus]) {
+            return zjs_error("I2C bus not found");
+        }
+
         /* TODO remove these hard coded numbers
          * once the config API is made */
         union dev_config cfg;
@@ -276,6 +280,7 @@ static jerry_value_t zjs_i2c_open(const jerry_value_t function_obj,
 
     } else {
         ERR_PRINT("I2C bus %i is not a valid I2C bus\n", (uint8_t)bus);
+        return zjs_error("I2C bus not found");
     }
 
     // create the I2C object

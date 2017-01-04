@@ -30,7 +30,7 @@
 #define ADC_DEVICE_NAME "ADC_0"
 #define ADC_BUFFER_SIZE 2
 
-#define MAX_I2C_BUS 1
+#define MAX_I2C_BUS 2
 
 #define MAX_BUFFER_SIZE 256
 
@@ -263,7 +263,7 @@ static void handle_i2c(struct zjs_ipm_message* msg)
                 }
             }
         } else {
-            ERR_PRINT("I2C bus %s is not a valid I2C bus\n", msg_bus);
+            ERR_PRINT("I2C bus %i is not a valid I2C bus\n", msg_bus);
             error_code = ERROR_IPM_OPERATION_FAILED;
         }
         break;
