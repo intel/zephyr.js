@@ -184,6 +184,7 @@ void zjs_copy_jstring(jerry_value_t jstr, char *buffer, jerry_size_t *maxlen)
     if (*maxlen > size)
         len = jerry_string_to_char_buffer(jstr, (jerry_char_t *)buffer, size);
     buffer[len] = '\0';
+    *maxlen = len;
 }
 
 char *zjs_alloc_from_jstring(jerry_value_t jstr, jerry_size_t *maxlen)
