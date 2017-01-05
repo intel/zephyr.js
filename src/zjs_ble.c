@@ -747,8 +747,10 @@ static jerry_value_t zjs_ble_start_advertising(const jerry_value_t function_obj,
         jerry_size_t size = MAX_UUID_LENGTH + 1;
         char ubuf[size];
         zjs_copy_jstring(uuid, ubuf, &size);
-        if (size != MAX_UUID_LENGTH)
+        if (size != MAX_UUID_LENGTH) {
+            ERR_PRINT("SIZE: %lu\n", size);
             return zjs_error("zjs_ble_adv_start: unexpected uuid length");
+        }
 
         uint8_t bytes[2];
         if (!zjs_hex_to_byte(ubuf + 2, &bytes[0]) ||

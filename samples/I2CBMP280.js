@@ -31,7 +31,7 @@ function bmp280Init() {
 
     // Check that we have a BMP280 on the I2C bus
     if (reader.toString("hex") !== "58")
-        print("BMP280 not found! ChipId " + reader.toString("hex") !== "58");
+        print("BMP280 not found! ChipId " + reader.toString("hex") + " != 58");
 
     // Setup BMP280 sensor
     bmp280.readCoefficients();
