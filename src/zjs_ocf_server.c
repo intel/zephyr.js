@@ -168,6 +168,8 @@ static jerry_value_t create_resource(const char* path, jerry_value_t resource_in
 
     DBG_PRINT("path=%s, obj number=%lu\n", path, res);
 
+    jerry_release_value(properties);
+
     return res;
 }
 
@@ -191,6 +193,9 @@ static jerry_value_t create_request(struct server_resource* resource, oc_method_
     zjs_set_property(object, "target", target);
 
     jerry_set_object_native_handle(object, (uintptr_t)handler, NULL);
+
+    jerry_release_value(target);
+    jerry_release_value(source);
 
     return object;
 }
@@ -311,7 +316,9 @@ static void ocf_get_handler(oc_request_t *request, oc_interface_mask_t interface
 
     DBG_PRINT("sent GET response, code=OK\n");
 
+    jerry_release_value(h->argv[0]);
     zjs_free(h->argv);
+    zjs_free(h->resp);
     zjs_free(h);
 }
 
@@ -346,6 +353,7 @@ static void ocf_put_handler(oc_request_t *request, oc_interface_mask_t interface
     jerry_release_value(resource_val);
     jerry_release_value(request_val);
     zjs_free(h->argv);
+    zjs_free(h->resp);
     zjs_free(h);
 }
 
@@ -412,6 +420,7 @@ static jerry_value_t ocf_register(const jerry_value_t function_val,
         return promise;
     }
     ZJS_GET_STRING(resource_path_val, resource_path, OCF_MAX_RES_PATH_LEN);
+    jerry_release_value(resource_path_val);
 
     jerry_value_t res_type_array = zjs_get_property(argv[0], "resourceTypes");
     if (!jerry_value_is_array(res_type_array)) {
@@ -429,24 +438,31 @@ static jerry_value_t ocf_register(const jerry_value_t function_val,
             flags |= FLAG_OBSERVE;
         }
     }
+    jerry_release_value(observable_val);
+
     jerry_value_t discoverable_val = zjs_get_property(argv[0], "discoverable");
     if (jerry_value_is_boolean(discoverable_val)) {
         if (jerry_get_boolean_value(discoverable_val)) {
             flags |= FLAG_DISCOVERABLE;
         }
     }
+    jerry_release_value(discoverable_val);
+
     jerry_value_t slow_val = zjs_get_property(argv[0], "slow");
     if (jerry_value_is_boolean(slow_val)) {
         if (jerry_get_boolean_value(slow_val)) {
             flags |= FLAG_SLOW;
         }
     }
+    jerry_release_value(slow_val);
+
     jerry_value_t secure_val = zjs_get_property(argv[0], "secure");
     if (jerry_value_is_boolean(secure_val)) {
         if (jerry_get_boolean_value(secure_val)) {
             flags |= FLAG_SECURE;
         }
     }
+    jerry_release_value(secure_val);
 
     resource = new_server_resource(resource_path);
 
@@ -456,6 +472,7 @@ static jerry_value_t ocf_register(const jerry_value_t function_val,
         jerry_value_t type_val = jerry_get_property_by_index(res_type_array, i);
         ZJS_GET_STRING(type_val, type_name, OCF_MAX_RES_TYPE_LEN);
         oc_resource_bind_resource_type(resource->res, type_name);
+        jerry_release_value(type_val);
     }
     oc_resource_bind_resource_interface(resource->res, OC_IF_RW);
     oc_resource_set_default_interface(resource->res, OC_IF_RW);
@@ -484,6 +501,8 @@ static jerry_value_t ocf_register(const jerry_value_t function_val,
     jerry_set_object_native_handle(h->argv[0], (uintptr_t)resource, NULL);
 
     DBG_PRINT("registered resource, path=%s\n", resource_path);
+
+    jerry_release_value(res_type_array);
 
     return promise;
 }

@@ -49,7 +49,8 @@ static bool ocf_foreach_prop(const jerry_value_t prop_name,
         handle->names_array[handle->size] = zjs_malloc(jerry_get_string_size(prop_name) + 1);
         memcpy(handle->names_array[handle->size], name, strlen(name));
         handle->names_array[handle->size][strlen(name)] = '\0';
-        jerry_set_property_by_index(handle->props_array, handle->size++, prop_value);
+        jerry_value_t ret = jerry_set_property_by_index(handle->props_array, handle->size++, prop_value);
+        jerry_release_value(ret);
     }
 
     return true;
@@ -234,6 +235,9 @@ jerry_value_t zjs_ocf_init()
 
     zjs_set_property(ocf, "client", client);
     zjs_set_property(ocf, "server", server);
+
+    jerry_release_value(client);
+    jerry_release_value(server);
 
     return ocf;
 }

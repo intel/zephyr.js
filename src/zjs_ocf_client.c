@@ -312,7 +312,7 @@ static void post_ocf_promise(void* handle)
     struct ocf_handler* h = (struct ocf_handler*)handle;
     if (h) {
         if (h->argv) {
-            //jerry_release_value(h->argv[0]);
+            jerry_release_value(h->argv[0]);
             zjs_free(h->argv);
         }
         jerry_release_value(h->promise_obj);
@@ -454,18 +454,24 @@ static jerry_value_t ocf_find_resources(const jerry_value_t function_val,
             if (device_id)
                 DBG_PRINT("deviceId: %s\n", device_id);
         }
+        jerry_release_value(device_id_val);
+
         if (jerry_value_is_string(res_type_val)) {
             jerry_size_t size = OCF_MAX_RES_TYPE_LEN;
             resource_type = zjs_alloc_from_jstring(res_type_val, &size);
             if (resource_type)
                 DBG_PRINT("resourceType: %s\n", resource_type);
         }
+        jerry_release_value(res_type_val);
+
         if (jerry_value_is_string(res_path_val)) {
             jerry_size_t size = OCF_MAX_RES_PATH_LEN;
             resource_path = zjs_alloc_from_jstring(res_path_val, &size);
             if (resource_path)
                 DBG_PRINT("resourcePath: %s\n", resource_path);
         }
+        jerry_release_value(res_path_val);
+
     }
 
     if (jerry_value_is_function(argv[0])) {
@@ -514,6 +520,8 @@ static void ocf_get_handler(oc_client_response_t *data)
                 jerry_value_t properties_val = get_props_from_response(data);
 
                 zjs_set_property(resource_val, "properties", properties_val);
+
+                jerry_release_value(properties_val);
 
                 zjs_trigger_event(resource->client, "update", &resource_val, 1, NULL, NULL);
 
@@ -585,6 +593,8 @@ static jerry_value_t ocf_retrieve(const jerry_value_t function_val,
                 resource->flags |= FLAG_OBSERVE;
             }
         }
+        jerry_release_value(observe_flag);
+
         jerry_value_t discover_flag = zjs_get_property(options, "discoverable");
         if (jerry_value_is_boolean(discover_flag)) {
             bool val = jerry_get_boolean_value(discover_flag);
@@ -592,6 +602,8 @@ static jerry_value_t ocf_retrieve(const jerry_value_t function_val,
                 resource->flags |= FLAG_DISCOVERABLE;
             }
         }
+        jerry_release_value(discover_flag);
+
         jerry_value_t secure_flag = zjs_get_property(options, "secure");
         if (jerry_value_is_boolean(secure_flag)) {
             bool val = jerry_get_boolean_value(secure_flag);
@@ -599,6 +611,8 @@ static jerry_value_t ocf_retrieve(const jerry_value_t function_val,
                 resource->flags |= FLAG_SECURE;
             }
         }
+        jerry_release_value(secure_flag);
+
         jerry_value_t slow_flag = zjs_get_property(options, "slow");
         if (jerry_value_is_boolean(slow_flag)) {
             bool val = jerry_get_boolean_value(slow_flag);
@@ -606,6 +620,7 @@ static jerry_value_t ocf_retrieve(const jerry_value_t function_val,
                 resource->flags |= FLAG_SLOW;
             }
         }
+        jerry_release_value(slow_flag);
     }
 
     if (resource->flags & FLAG_OBSERVE) {

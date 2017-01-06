@@ -46,13 +46,6 @@ static void post_promise(void* h, jerry_value_t* ret_val)
         jerry_release_value(handle->then);
         jerry_release_value(handle->catch);
         jerry_release_value(handle->this);
-    }
-}
-
-static void promise_free(const uintptr_t native)
-{
-    struct promise* handle = (struct promise*)native;
-    if (handle) {
         zjs_free(handle);
     }
 }
@@ -113,7 +106,7 @@ void zjs_make_promise(jerry_value_t obj, zjs_post_promise_func post,
 
     zjs_obj_add_function(obj, promise_then, "then");
     zjs_obj_add_function(obj, promise_catch, "catch");
-    jerry_set_object_native_handle(promise_obj, (uintptr_t)new, promise_free);
+    jerry_set_object_native_handle(promise_obj, (uintptr_t)new, NULL);
 
     new->user_handle = handle;
     new->post = post;
