@@ -5,6 +5,7 @@
 
 #include "zjs_util.h"
 #include <unistd.h>
+#include <time.h>
 
 typedef struct zjs_port_timer {
     uint32_t sec;
