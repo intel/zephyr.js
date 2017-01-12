@@ -34,6 +34,7 @@ endif
 obj-y += main.o \
          zjs_callbacks.o \
          zjs_common.o \
+         zjs_error.o \
          zjs_modules.o \
          zjs_promise.o \
          zjs_script.o \

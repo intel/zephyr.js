@@ -14,6 +14,7 @@
 
 // Platform agnostic modules/headers
 #include "zjs_callbacks.h"
+#include "zjs_error.h"
 #include "zjs_modules.h"
 #ifdef BUILD_MODULE_SENSOR
 #include "zjs_sensor.h"
@@ -140,6 +141,8 @@ int main(int argc, char *argv[])
 
     // initialize modules
     zjs_modules_init();
+
+    zjs_error_init();
 
 #ifdef BUILD_MODULE_OCF
     zjs_register_service_routine(NULL, main_poll_routine);
