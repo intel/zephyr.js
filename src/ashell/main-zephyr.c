@@ -2,7 +2,7 @@
 
 #include <zephyr.h>
 #include <string.h>
-#include <misc/shell.h>
+#include <shell/shell.h>
 #include <misc/printk.h>
 
 #include <uart.h>
