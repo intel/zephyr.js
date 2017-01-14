@@ -1,4 +1,5 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
+
 #ifdef BUILD_MODULE_AIO
 #ifndef QEMU_BUILD
 // Zephyr includes
@@ -11,7 +12,7 @@
 #include "zjs_ipm.h"
 #include "zjs_util.h"
 
-#define ZJS_AIO_TIMEOUT_TICKS                      5000
+#define ZJS_AIO_TIMEOUT_TICKS 5000
 
 const int MAX_TYPE_LEN = 20;
 
@@ -19,10 +20,8 @@ static struct k_sem aio_sem;
 static jerry_value_t zjs_aio_prototype;
 
 typedef struct aio_handle {
-    jerry_value_t pin_obj;
     zjs_callback_id callback_id;
     double value;
-    jerry_value_t jvalue;
 } aio_handle_t;
 
 static aio_handle_t *zjs_aio_alloc_handle()
@@ -35,16 +34,21 @@ static aio_handle_t *zjs_aio_alloc_handle()
     return handle;
 }
 
-static void zjs_aio_free_cb(uintptr_t handle)
+static void zjs_aio_free_cb(uintptr_t ptr)
 {
-    aio_handle_t *free_handle = (aio_handle_t *)handle;
-    zjs_remove_callback(free_handle->callback_id);
-    zjs_free(free_handle);
+    aio_handle_t *handle = (aio_handle_t *)ptr;
+    zjs_remove_callback(handle->callback_id);
+    zjs_free(handle);
 }
 
-static void zjs_aio_free_handle(aio_handle_t *handle)
+static void zjs_aio_free_callback(void *ptr, uint32_t *rval)
 {
-    zjs_free(handle);
+    // FIXME: rval is never written to in these post callbacks, so it doesn't
+    // need to be a pointer, and it's actually never used at all currently so
+    // it could be removed entirely. The ptr arg could be changed to uintptr_t
+    // in zjs_callbacks.c to match the JrS usage as above, and this duplicate
+    // function wouldn't be needed.
+    zjs_aio_free_cb((uintptr_t)ptr);
 }
 
 static bool zjs_aio_ipm_send_async(uint32_t type, uint32_t pin, void *data) {
@@ -108,14 +112,6 @@ static jerry_value_t zjs_aio_call_remote_function(zjs_ipm_message_t* send)
 
     uint32_t value = reply.data.aio.value;
     return jerry_create_number(value);
-}
-
-static void zjs_aio_free_callback(void *h, jerry_value_t *ret_val)
-{
-    // effects: post-callback handler to free up one-shot callback and handle
-    aio_handle_t *handle = (aio_handle_t *)h;
-    zjs_remove_callback(handle->callback_id);
-    zjs_aio_free_handle(handle);
 }
 
 static void ipm_msg_receive_callback(void *context, uint32_t id,
@@ -199,7 +195,7 @@ static jerry_value_t zjs_aio_pin_close(const jerry_value_t function_obj,
         zjs_aio_ipm_send_async(TYPE_AIO_PIN_UNSUBSCRIBE, pin, handle);
         zjs_remove_callback(handle->callback_id);
         jerry_set_object_native_handle(this, 0, NULL);
-        zjs_aio_free_handle(handle);
+        zjs_free(handle);
     }
 
     return ZJS_UNDEFINED;
@@ -233,7 +229,7 @@ static jerry_value_t zjs_aio_pin_on(const jerry_value_t function_obj,
             zjs_aio_ipm_send_async(TYPE_AIO_PIN_UNSUBSCRIBE, pin, handle);
             zjs_remove_callback(handle->callback_id);
             jerry_set_object_native_handle(this, 0, NULL);
-            zjs_aio_free_handle(handle);
+            zjs_free(handle);
         } else {
             // switch to new change function
             zjs_edit_js_func(handle->callback_id, argv[1]);
@@ -244,8 +240,8 @@ static jerry_value_t zjs_aio_pin_on(const jerry_value_t function_obj,
         if (!handle)
             return zjs_error("zjs_aio_pin_on: could not allocate handle");
 
-        handle->pin_obj = this;
-        jerry_set_object_native_handle(this, (uintptr_t)handle, zjs_aio_free_cb);
+        jerry_set_object_native_handle(this, (uintptr_t)handle,
+                                       zjs_aio_free_cb);
         handle->callback_id = zjs_add_callback(argv[1], this, handle, NULL);
         zjs_aio_ipm_send_async(TYPE_AIO_PIN_SUBSCRIBE, pin, handle);
     }
@@ -270,8 +266,8 @@ static jerry_value_t zjs_aio_pin_read_async(const jerry_value_t function_obj,
     if (!handle)
         return zjs_error("zjs_aio_pin_read_async: could not allocate handle");
 
-    handle->pin_obj = this;
-    handle->callback_id = zjs_add_callback(argv[0], this, handle, zjs_aio_free_callback);
+    handle->callback_id = zjs_add_callback(argv[0], this, handle,
+                                           zjs_aio_free_callback);
 
     jerry_set_object_native_handle(this, (uintptr_t)handle, zjs_aio_free_cb);
 
