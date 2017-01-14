@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2017, Intel Corporation.
 
 // Types defined here: https://github.com/zolkis/iot-js-api/tree/master/api
 

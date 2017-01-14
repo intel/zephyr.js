@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2017, Intel Corporation.
 
 // ZJS includes
 #include "zjs_util.h"

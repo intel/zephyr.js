@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2017, Intel Corporation.
 
 #ifndef __zjs_error_h__
 #define __zjs_error_h__
