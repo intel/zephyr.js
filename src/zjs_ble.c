@@ -18,19 +18,20 @@
 #include "zjs_event.h"
 #include "zjs_util.h"
 
-#define ZJS_BLE_UUID_LEN                            36
+#define ZJS_BLE_UUID_LEN                       36
 
-#define ZJS_BLE_RESULT_SUCCESS                      0x00
-#define ZJS_BLE_RESULT_INVALID_OFFSET               BT_ATT_ERR_INVALID_OFFSET
-#define ZJS_BLE_RESULT_ATTR_NOT_LONG                BT_ATT_ERR_ATTRIBUTE_NOT_LONG
-#define ZJS_BLE_RESULT_INVALID_ATTRIBUTE_LENGTH     BT_ATT_ERR_INVALID_ATTRIBUTE_LEN
-#define ZJS_BLE_RESULT_UNLIKELY_ERROR               BT_ATT_ERR_UNLIKELY
+#define ZJS_BLE_RESULT_SUCCESS                 0x00
+#define ZJS_BLE_RESULT_INVALID_OFFSET          BT_ATT_ERR_INVALID_OFFSET
+#define ZJS_BLE_RESULT_ATTR_NOT_LONG           BT_ATT_ERR_ATTRIBUTE_NOT_LONG
+#define ZJS_BLE_RESULT_INVALID_ATTRIBUTE_LEN   BT_ATT_ERR_INVALID_ATTRIBUTE_LEN
+#define ZJS_BLE_RESULT_UNLIKELY_ERROR          BT_ATT_ERR_UNLIKELY
 
-#define ZJS_BLE_TIMEOUT_TICKS                       5000
+#define ZJS_BLE_TIMEOUT_TICKS                  5000
 
 static struct k_sem ble_sem;
 
-typedef void (*ccc_cfg_changed_func)(const struct bt_gatt_attr *attr, uint16_t value);
+typedef void (*ccc_cfg_changed_func)(const struct bt_gatt_attr *attr,
+                                     uint16_t value);
 
 typedef struct ble_handle {
     zjs_callback_id id;
@@ -45,11 +46,6 @@ typedef struct ble_notify_handle {
     zjs_callback_id id;
     jerry_value_t js_callback;
 } ble_notify_handle_t;
-
-typedef struct ble_event_handle {
-    zjs_callback_id id;
-    jerry_value_t arg;
-} ble_event_handle_t;
 
 typedef struct zjs_ble_characteristic {
     int flags;
@@ -81,13 +77,13 @@ typedef struct zjs_ble_connection {
     struct bt_gatt_ccc_cfg blvl_ccc_cfg[CONFIG_BLUETOOTH_MAX_PAIRED];
     uint8_t simulate_blvl;
     ble_service_t *services;
-    ble_event_handle_t ready_cb;
-    ble_event_handle_t connected_cb;
-    ble_event_handle_t disconnected_cb;
+    zjs_callback_id ready_cb_id;
+    zjs_callback_id connected_cb_id;
+    zjs_callback_id disconnected_cb_id;
 } ble_connection_t;
 
 // global connection object
-static struct zjs_ble_connection *ble_conn = &(struct zjs_ble_connection) {
+static struct zjs_ble_connection ble_conn = {
     .default_conn = NULL,
     .blvl_ccc_cfg = {},
     .simulate_blvl = 0,
@@ -397,12 +393,12 @@ static jerry_value_t zjs_ble_update_value_callback_function(const jerry_value_t 
     zjs_buffer_t *buf = zjs_buffer_find(argv[0]);
 
     if (buf) {
-        if (ble_conn->default_conn) {
+        if (ble_conn.default_conn) {
             uintptr_t ptr;
             if (jerry_get_object_native_handle(this, &ptr)) {
                ble_characteristic_t *chrc = (ble_characteristic_t *)ptr;
                if (chrc->chrc_attr) {
-                   bt_gatt_notify(ble_conn->default_conn, chrc->chrc_attr,
+                   bt_gatt_notify(ble_conn.default_conn, chrc->chrc_attr,
                                   buf->buffer, buf->bufsize);
                }
             }
@@ -469,7 +465,7 @@ static ble_characteristic_t* get_base_chrc(const struct bt_gatt_attr *attr)
     ble_service_t *service;
     ble_characteristic_t *chrc;
 
-    for (service = ble_conn->services; service; service = service->next) {
+    for (service = ble_conn.services; service; service = service->next) {
         for (chrc = service->characteristics; chrc; chrc = chrc->next) {
             if (chrc->ccc_attr == attr) {
                 return chrc;
@@ -501,7 +497,7 @@ static void zjs_ble_connected_c_callback(void *handle, void* argv)
 {
     // FIXME: get real bluetooth address
     jerry_value_t arg = jerry_create_string((jerry_char_t *)"AB:CD:DF:AB:CD:EF");
-    zjs_trigger_event(ble_conn->ble_obj, "accept", &arg, 1, NULL, NULL);
+    zjs_trigger_event(ble_conn.ble_obj, "accept", &arg, 1, NULL, NULL);
     DBG_PRINT("BLE event: accept\n");
 }
 
@@ -511,8 +507,8 @@ static void zjs_ble_connected(struct bt_conn *conn, uint8_t err)
         DBG_PRINT("Connection failed (err %u)\n", err);
     } else {
         DBG_PRINT("========== connected ==========\n");
-        ble_conn->default_conn = bt_conn_ref(conn);
-        zjs_signal_callback(ble_conn->connected_cb.id, NULL, 0);
+        ble_conn.default_conn = bt_conn_ref(conn);
+        zjs_signal_callback(ble_conn.connected_cb_id, NULL, 0);
     }
 }
 
@@ -520,17 +516,17 @@ static void zjs_ble_disconnected_c_callback(void *handle, void* argv)
 {
     // FIXME: get real bluetooth address
     jerry_value_t arg = jerry_create_string((jerry_char_t *)"AB:CD:DF:AB:CD:EF");
-    zjs_trigger_event(ble_conn->ble_obj, "disconnect", &arg, 1, NULL, NULL);
+    zjs_trigger_event(ble_conn.ble_obj, "disconnect", &arg, 1, NULL, NULL);
     DBG_PRINT("BLE event: disconnect\n");
 }
 
 static void zjs_ble_disconnected(struct bt_conn *conn, uint8_t reason)
 {
     DBG_PRINT("========== Disconnected (reason %u) ==========\n", reason);
-    if (ble_conn->default_conn) {
-        bt_conn_unref(ble_conn->default_conn);
-        ble_conn->default_conn = NULL;
-        zjs_signal_callback(ble_conn->disconnected_cb.id, NULL, 0);
+    if (ble_conn.default_conn) {
+        bt_conn_unref(ble_conn.default_conn);
+        ble_conn.default_conn = NULL;
+        zjs_signal_callback(ble_conn.disconnected_cb_id, NULL, 0);
     }
 }
 
@@ -555,14 +551,14 @@ static struct bt_conn_auth_cb zjs_ble_auth_cb_display = {
 static void zjs_ble_ready_c_callback(void *handle, void* argv)
 {
     jerry_value_t arg = jerry_create_string((jerry_char_t *)"poweredOn");
-    zjs_trigger_event(ble_conn->ble_obj, "stateChange", &arg, 1, NULL, NULL);
+    zjs_trigger_event(ble_conn.ble_obj, "stateChange", &arg, 1, NULL, NULL);
     DBG_PRINT("BLE event: stateChange - poweredOn");
 }
 
 static void zjs_ble_bt_ready(int err)
 {
     DBG_PRINT("bt_ready() is called [err %d]\n", err);
-    zjs_signal_callback(ble_conn->ready_cb.id, NULL, 0);
+    zjs_signal_callback(ble_conn.ready_cb_id, NULL, 0);
 }
 
 void zjs_ble_enable() {
@@ -578,8 +574,8 @@ static jerry_value_t zjs_ble_disconnect(const jerry_value_t function_obj,
                                         const jerry_value_t argv[],
                                         const jerry_length_t argc)
 {
-    if (ble_conn->default_conn) {
-        int error = bt_conn_disconnect(ble_conn->default_conn,
+    if (ble_conn.default_conn) {
+        int error = bt_conn_disconnect(ble_conn.default_conn,
                                        BT_HCI_ERR_REMOTE_USER_TERM_CONN);
         if (error) {
             return zjs_error("zjs_ble_disconnect: disconnect failed");
@@ -769,7 +765,7 @@ static jerry_value_t zjs_ble_start_advertising(const jerry_value_t function_obj,
     jerry_value_t error = err ? zjs_error("advertising failed") :
                                 jerry_create_null();
 
-    zjs_trigger_event(ble_conn->ble_obj, "advertisingStart", &error, 1, NULL, NULL);
+    zjs_trigger_event(ble_conn.ble_obj, "advertisingStart", &error, 1, NULL, NULL);
     DBG_PRINT("BLE event: adveristingStart\n");
 
     zjs_free(url_frame);
@@ -1076,8 +1072,8 @@ static bool zjs_ble_register_service(ble_service_t *service)
 
             memset(ccc_user_data, 0, sizeof(struct _bt_gatt_ccc));
 
-            ccc_user_data->cfg = ble_conn->blvl_ccc_cfg;
-            ccc_user_data->cfg_len = ARRAY_SIZE(ble_conn->blvl_ccc_cfg);
+            ccc_user_data->cfg = ble_conn.blvl_ccc_cfg;
+            ccc_user_data->cfg_len = ARRAY_SIZE(ble_conn.blvl_ccc_cfg);
             ccc_user_data->cfg_changed = zjs_ble_blvl_ccc_cfg_changed;
             bt_attrs[entry_index].uuid = gatt_ccc_uuid;
             bt_attrs[entry_index].perm = BT_GATT_PERM_READ | BT_GATT_PERM_WRITE;
@@ -1128,9 +1124,9 @@ static jerry_value_t zjs_ble_set_services(const jerry_value_t function_obj,
     }
 
     // free existing services
-    if (ble_conn->services) {
-        zjs_ble_free_services(ble_conn->services);
-        ble_conn->services = NULL;
+    if (ble_conn.services) {
+        zjs_ble_free_services(ble_conn.services);
+        ble_conn.services = NULL;
     }
 
     bool success = true;
@@ -1163,8 +1159,8 @@ static jerry_value_t zjs_ble_set_services(const jerry_value_t function_obj,
         }
 
         // append to the list
-        if (!ble_conn->services) {
-            ble_conn->services = service;
+        if (!ble_conn.services) {
+            ble_conn.services = service;
             previous = service;
         }
         else {
@@ -1192,7 +1188,7 @@ static jerry_value_t zjs_ble_update_rssi(const jerry_value_t function_obj,
 {
     // Todo: get actual RSSI value from Zephyr Bluetooth driver
     jerry_value_t arg = jerry_create_number(-50);
-    zjs_trigger_event(ble_conn->ble_obj, "rssiUpdate", &arg, 1, NULL, NULL);
+    zjs_trigger_event(ble_conn.ble_obj, "rssiUpdate", &arg, 1, NULL, NULL);
     return ZJS_UNDEFINED;
 }
 
@@ -1235,7 +1231,7 @@ static jerry_value_t zjs_ble_characteristic(const jerry_value_t function_obj,
     zjs_set_property(obj, "RESULT_ATTR_NOT_LONG", val);
     jerry_release_value(val);
 
-    val = jerry_create_number(ZJS_BLE_RESULT_INVALID_ATTRIBUTE_LENGTH);
+    val = jerry_create_number(ZJS_BLE_RESULT_INVALID_ATTRIBUTE_LEN);
     zjs_set_property(obj, "RESULT_INVALID_ATTRIBUTE_LENGTH", val);
     jerry_release_value(val);
 
@@ -1282,10 +1278,12 @@ jerry_value_t zjs_ble_init()
     // bt events are called from the FIBER context, since we can't call
     // zjs_trigger_event() directly, we need to register a c callback which
     // the C callback will call zjs_trigger_event()
-    ble_conn->ready_cb.id = zjs_add_c_callback(ble_conn, zjs_ble_ready_c_callback);
-    ble_conn->connected_cb.id = zjs_add_c_callback(ble_conn, zjs_ble_connected_c_callback);
-    ble_conn->disconnected_cb.id = zjs_add_c_callback(ble_conn, zjs_ble_disconnected_c_callback);
-    ble_conn->ble_obj = ble_obj;
+    ble_conn.ready_cb_id = zjs_add_c_callback(&ble_conn,
+                                              zjs_ble_ready_c_callback);
+    ble_conn.connected_cb_id = zjs_add_c_callback(&ble_conn,
+                                                  zjs_ble_connected_c_callback);
+    ble_conn.disconnected_cb_id = zjs_add_c_callback(&ble_conn, zjs_ble_disconnected_c_callback);
+    ble_conn.ble_obj = ble_obj;
 
     return ble_obj;
 }
