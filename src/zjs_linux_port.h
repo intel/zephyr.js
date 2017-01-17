@@ -22,6 +22,8 @@ void zjs_port_timer_stop(zjs_port_timer_t* timer);
 
 uint8_t zjs_port_timer_test(zjs_port_timer_t* timer);
 
+uint32_t zjs_port_timer_get_uptime(void);
+
 #define ZJS_TICKS_NONE          0
 #define CONFIG_SYS_CLOCK_TICKS_PER_SEC 100
 #define zjs_sleep usleep
