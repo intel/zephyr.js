@@ -53,7 +53,7 @@ static uint8_t light_send_updates[ARC_AIO_LEN] = {};
 #endif
 
 #ifdef BUILD_MODULE_I2C
-static struct device *i2c_device[MAX_I2C_BUS];
+#include "zjs_i2c_handler.h"
 #endif
 
 #ifdef BUILD_MODULE_GROVE_LCD
@@ -240,95 +240,29 @@ static void handle_i2c(struct zjs_ipm_message* msg)
 
     switch(msg->type) {
     case TYPE_I2C_OPEN:
-        if (msg_bus < MAX_I2C_BUS) {
-            char bus[6];
-            snprintf(bus, 6, "I2C_%i", msg_bus);
-            i2c_device[msg_bus] = device_get_binding(bus);
-
-            if (!i2c_device[msg_bus]) {
-                ERR_PRINT("I2C bus %s not found\n", bus);
-                error_code = ERROR_IPM_OPERATION_FAILED;
-            } else {
-                /* TODO remove these hard coded numbers
-                 * once the config API is made */
-                union dev_config cfg;
-                cfg.raw = 0;
-                cfg.bits.use_10_bit_addr = 0;
-                cfg.bits.speed = I2C_SPEED_STANDARD;
-                cfg.bits.is_master_device = 1;
-
-                if (i2c_configure(i2c_device[msg_bus], cfg.raw) != 0) {
-                    ERR_PRINT("I2C bus %s configure failed\n", bus);
-                    error_code = ERROR_IPM_OPERATION_FAILED;
-                }
-            }
-        } else {
-            ERR_PRINT("I2C bus %i is not a valid I2C bus\n", msg_bus);
-            error_code = ERROR_IPM_OPERATION_FAILED;
-        }
+        error_code = zjs_i2c_handle_open(msg_bus);
         break;
     case TYPE_I2C_WRITE:
-        if (msg_bus < MAX_I2C_BUS) {
-            // Write has to come after an Open I2C message
-            if (i2c_device[msg_bus]) {
-                if (i2c_write(i2c_device[msg_bus],
-                              msg->data.i2c.data,
-                              msg->data.i2c.length,
-                              msg->data.i2c.address) != 0) {
-                    ERR_PRINT("i2c_write failed!\n");
-                    error_code = ERROR_IPM_OPERATION_FAILED;
-                }
-            }
-            else {
-                // FIXME: this error is repeated several times, probably the
-                //   check could be moved up and this done once?
-                ERR_PRINT("No I2C device is ready yet\n");
-                error_code = ERROR_IPM_OPERATION_FAILED;
-            }
-        }
+        error_code = zjs_i2c_handle_write(msg_bus,
+                                          msg->data.i2c.data,
+                                          msg->data.i2c.length,
+                                          msg->data.i2c.address);
         break;
     case TYPE_I2C_WRITE_BIT:
         DBG_PRINT("received TYPE_I2C_WRITE_BIT\n");
         break;
     case TYPE_I2C_READ:
-        if (msg_bus < MAX_I2C_BUS) {
-            // Read has to come after an Open I2C message
-            if (i2c_device[msg_bus]) {
-
-                int reply = i2c_read(i2c_device[msg_bus],
-                                     msg->data.i2c.data,
-                                     msg->data.i2c.length,
-                                     msg->data.i2c.address);
-
-                if (reply < 0) {
-                    error_code = ERROR_IPM_OPERATION_FAILED;
-                }
-            }
-            else {
-                ERR_PRINT("No I2C device is ready yet\n");
-                error_code = ERROR_IPM_OPERATION_FAILED;
-            }
-        }
+        error_code = zjs_i2c_handle_read(msg_bus,
+                                         msg->data.i2c.data,
+                                         msg->data.i2c.length,
+                                         msg->data.i2c.address);
         break;
     case TYPE_I2C_BURST_READ:
-        if (msg_bus < MAX_I2C_BUS) {
-            // Burst read has to come after an Open I2C message
-            if (i2c_device[msg_bus]) {
-               int reply = i2c_burst_read(i2c_device[msg_bus],
-                                          msg->data.i2c.address,
-                                          msg->data.i2c.register_addr,
-                                          msg->data.i2c.data,
-                                          msg->data.i2c.length);
-
-                if (reply < 0) {
-                    error_code = ERROR_IPM_OPERATION_FAILED;
-                }
-            }
-            else {
-                ERR_PRINT("No I2C device is ready yet\n");
-                error_code = ERROR_IPM_OPERATION_FAILED;
-            }
-        }
+        error_code = zjs_i2c_handle_burst_read(msg_bus,
+                                               msg->data.i2c.data,
+                                               msg->data.i2c.length,
+                                               msg->data.i2c.address,
+                                               msg->data.i2c.register_addr);
         break;
     case TYPE_I2C_TRANSFER:
         DBG_PRINT("received TYPE_I2C_TRANSFER\n");
@@ -343,6 +277,7 @@ static void handle_i2c(struct zjs_ipm_message* msg)
         return;
     }
 
+    msg->error_code = error_code;
     zjs_ipm_send(msg->id, msg);
 }
 #endif

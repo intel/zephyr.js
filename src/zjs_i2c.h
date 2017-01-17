@@ -5,10 +5,6 @@
 
 #include "jerry-api.h"
 
-#define I2C_0 0
-#define I2C_1 1
-#define MAX_I2C_BUS 2
-
 /**
  * Initialize the i2c module, or reinitialize after cleanup
  *

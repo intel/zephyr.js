@@ -4,6 +4,7 @@ ccflags-y += ${PROJECTINCLUDE} \
 
 obj-y = main.o \
       ../../src/zjs_common.o \
-      ../../src/zjs_ipm.o
+      ../../src/zjs_ipm.o \
+      ../../src/zjs_i2c_handler.o
 
 ccflags-y += -Wall -Werror
