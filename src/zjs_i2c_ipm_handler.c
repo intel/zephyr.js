@@ -135,4 +135,3 @@ uint8_t zjs_i2c_handle_burst_read (uint8_t msg_bus, uint8_t *data, uint32_t leng
     }
     return error_code;
 }
-
