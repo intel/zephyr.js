@@ -1,15 +1,13 @@
 // Copyright (c) 2016, Intel Corporation.
 
-// AIO tests
-// Sample simulates an analog voltage output by control GPIO pin:IO2.
+// Testing AIO APIs
 
-// Hardware Requirements:
-//   - Arduino 101
-// Wiring:
-//   - Wire IO2 to A0
+console.log("Wire IO4 to A0!");
 
-console.log("Testing AIO APIs...");
-console.log("NOTE: Make sure IO2 is connected to A0!");
+// Pre-conditions
+var aio = require("aio");
+var gpio = require("gpio");
+var pins = require("arduino101_pins");
 
 var total = 0;
 var passed = 0;
@@ -26,124 +24,107 @@ function assert(actual, description) {
     console.log(label + " - " + description);
 }
 
-// import aio and gpio module
-var aio = require("aio");
-var gpio = require("gpio");
-var pins = require("arduino101_pins");
-
-
-// Interface: AIOPin open(AIOInit init);
-var test_open_true = "Use valid argument in function open(AIOInit).";
-var test_open_false = "Use invalid argument in function open(AIOInit).";
-// use valid argument
-try {
-    var A0 = aio.open({ pin: pins.A0 });
-    assert(true, test_open_true);
-} catch(e) {
-    assert(false, test_open_true);
-}
-// use invalid argument
-try {
-    var A1 = aio.open({ pin: A1 });
-    assert(false, test_open_false);
-} catch(e) {
-    assert(true, test_open_false + " and the error logs are as above");
-}
-
-// Function: unsigned long read()
-var toggle = false;
-var i = 0, times = 10, count = 0;
-var IO2 = gpio.open({ pin: pins.IO2, direction: 'out' });
-
-for (; i < times; i++) {
-    toggle = !toggle;
-    IO2.write(toggle);
-    rawValue = A0.read();
-
-    if (toggle) {
-        if (rawValue >= 4000) {
-            count ++;
-        }
-    } else {
-        if (rawValue <= 100) {
-            count ++;
-        }
+function expectThrow(description, func) {
+    var threw = false;
+    try {
+        func();
     }
+    catch (err) {
+        threw = true;
+    }
+    assert(threw, description);
 }
 
-assert(count == times, "read() function");
-
-count = 0;
-i = 0;
-
-// Function: void on(string eventType, ReadCallback callback);
-// Registe ReadCallback
-var onCount = 0, oldOnCount = 0;
-A0.on('change', function() {
-    onCount ++;
+// test AIO open
+expectThrow("open: undefined pin", function () {
+    aio.open({ pin: 1024 });
 });
 
-// Function: unsigned long readAsync()
-var test_readAsync = setInterval(function () {
-    i ++;
-    toggle = !toggle;
-    IO2.write(toggle);
+var pinA = aio.open({ pin: pins.A0 });
+assert(pinA !== null && typeof pinA === "object", "open: defined pin");
 
-    A0.readAsync(function(rawValue) {
-        console.log("...");
-        if (toggle) {
+var readFlag = false;
+var readAsyncflag = false;
+var waveFlag = false;
+var OldwaveFlag = true;
+var readTimes = 0;
+var readCount = 0;
+var readValue = 0;
+
+var pinB = gpio.open({ pin: pins.IO4, direction: 'out' });
+pinB.write(true);
+
+// test AIOPin on
+pinA.on("change", function () {
+    readValue = pinA.read();
+
+    if (readValue <= 100) {
+        waveFlag = false;
+    }
+
+    if (readValue >= 4000) {
+        waveFlag = true;
+    }
+
+    if (waveFlag !== OldwaveFlag) {
+        console.log("aio: '" + waveFlag + "' change to '" + OldwaveFlag + "'");
+
+        OldwaveFlag = waveFlag;
+        readCount++;
+    }
+});
+
+// test AIOPin read
+var onInterval = setInterval(function () {
+    pinB.write(readFlag);
+    readFlag = !readFlag;
+    readTimes++;
+
+    if (readTimes === 4) {
+        assert(readCount === readTimes - 1, "aiopin: event type as 'change'");
+    }
+
+    if (readTimes === 5) {
+        assert(readCount === 4, "aiopin: read value");
+        pinA.close();
+    }
+
+    // test AIOPin close
+    if (readTimes === 6) {
+        assert(readCount === 4, "aiopin: be closed");
+
+        // test AIOPin callback as 'null'
+        readCount = 0;
+
+        pinA.on("change", function () {
+            readCount++;
+        });
+
+        pinA.on("change", null);
+    }
+
+    if (readTimes === 8) {
+        assert(readCount === 0,
+               "aiopin: callback as 'null' and be discarded");
+    }
+
+    // test AIOPin readAsync
+    if (readTimes === 10) {
+        pinA.readAsync(function (rawValue) {
             if (rawValue >= 4000) {
-                count ++;
+                readAsyncflag = true;
             }
-        } else {
+
             if (rawValue <= 100) {
-                count ++;
+                readAsyncflag = false;
             }
-        }
 
-        // Discard ReadCallback
-        if (i == 6) {
-            oldOnCount = onCount;
-            if (onCount == 5) {
-                assert(true, "Function void on(string eventType, ReadCallback callback) works fine");
-            } else if (onCount < 5) {
-                assert(false, "Read too fast and the ReadCallback failed to be called.");
-            } else {
-                assert(false, "Gets called periodically even when AIO hasn't changed.");
-            }
-            A0.on('change', null);
-        }
+            assert(readAsyncflag !== readFlag,
+                   "aiopin: read by asynchronously");
 
-        if (i == times) {
-            clearInterval(test_readAsync);
-            assert(count == times, "readAsync() function");
-            count = 0;
-        }
-    });
+            console.log("TOTAL: " + passed + " of " + total + " passed");
+        });
 
-}, 1000);
-
-setTimeout(function() {
-    assert(onCount == oldOnCount, "on(string eventType, null) function");
-    onCount = 0;
-
-    IO2.write(true);
-    A0.read();
-
-    A0.on('change', function() {
-        onCount ++;
-    });
-
-    // Function: void close()
-    A0.close();
-}, 12000);
-
-setTimeout(function() {
-    IO2.write(false);
-    A0.read();
-
-    assert(onCount == 0, "close() function");
-
-    console.log("TOTAL: " + passed + " of " + total + " passed");
-
-}, 15000);
+        clearInterval(onInterval);
+    }
+}, 5000);
