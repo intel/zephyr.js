@@ -19,6 +19,14 @@ endif
 # Adding path for jerry script APIs
 DEPS_BASE ?= $(ZJS_BASE)/deps
 ZEPHYRINCLUDE += -I$(JERRY_INCLUDE) -I$(DEPS_BASE)
+ifneq ($(CONFIG_USB_CDC_ACM),y)
+ZEPHYRINCLUDE += -I$(ZEPHYR_BASE)/samples/usb/webusb/src \
+                 -I${ZEPHYR_BASE}/include/drivers/usb \
+                 -I${ZEPHYR_BASE}/subsys/usb/class \
+                 -I$(ZEPHYR_BASE)/include/usb
+obj-y += ../../deps/zephyr/samples/usb/webusb/src/webusb_serial.o
+obj-y += webusb-handler.o
+endif
 
 obj-y += main-zephyr.o
 

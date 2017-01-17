@@ -3,6 +3,7 @@
 
 * [Introduction](#introduction)
 * [Compilation](#compilation)
+* [Connect](#connect)
 * [Commands](#commands)
 
 Introduction
@@ -24,15 +25,40 @@ Dev mode will append all the functionality from ZJS, so it might not fit in ROM.
 Connect
 -------
 
-Use this command to connect to ashell from a terminal
+WebUSB support was added to the ashell to allow the user to upload JS code
+directly from the browser IDE to Zephyr.js device for execution. Follow the
+below instructions to connect to the device from the browser IDE directly.
 
-```bash
-$ screen /dev/ttyACM0 115200
-```
+1. Start Google Chrome 54 or later on the host PC.
+2. Enable "WebUSB" support and "Experimental Web Platform Features"
+   flags in chrome://flags/.
+3. On Ubuntu:
+  * Create a new udev rule to allow Chrome to open a USB device by adding
+    the following line in /etc/udev/rules.d/99-arduino-101.rules
 
-Note: It will take about 30 seconds for it to be up and running after you boot.
-Until then you will see screen terminate immediately.  If you see this, just
-try again in a few seconds.
+     `SUBSYSTEM=="usb", ATTR{idVendor}=="8086", MODE="0664", GROUP="plugdev"`
+
+     Then run this command:
+     ```bash
+     $ sudo udevadm control --reload-rules
+     ```
+  * Disable ModemManager to stop interfering when the browser accessing the device.
+
+     ```bash
+     $ sudo service modemmanager stop
+     ```
+4. On Windows:
+  * WebUSB compatible device is not appearing with the official WinUSB driver on
+    Windows for some reason, so try installing different version of WinUSB driver
+    with the Zadig utility. Also, note that the landing page detection is disabled
+    on Windows on Chrome startup so you don't see a notification when the device is
+    connected to the host, but the WebUSB will continue to work.
+
+5. Connect the device to the host PC using a USB cable.
+6. A notification from Chrome will appear with an URL of the IDE.
+7. Click on the notification to open IDE in the browser.
+8. Click on connect button and grant an access to the device.
+9. Try uploading JS code to the device.
 
 Commands
 --------
@@ -166,6 +192,25 @@ Move the temporary file to a destination file
 HEX> mv temp.dat test.js
 HEX> run test.js
 ```
+
+Connect using serial console
+----------------------------
+If you want to interact with the ashell using serial console instead of
+browser IDE, you just need to enable USB CDC ACM device class driver
+and rebuild the image.
+
+* Set 'CONFIG_USB_CDC_ACM=y' in fragments/prj.conf.arduino_101_dev to
+enable USB CDC ACM device class driver.
+
+* Use the following command to connect to the ashell from a terminal
+
+  ```bash
+  $ screen /dev/ttyACM0 115200
+  ```
+
+Note: It will take about 30 seconds for it to be up and running after you boot.
+Until then you will see screen terminate immediately.  If you see this, just
+try again in a few seconds.
 
 Problems and known issues
 ========================
