@@ -80,10 +80,10 @@ typedef struct zjs_ble_connection {
     zjs_callback_id ready_cb_id;
     zjs_callback_id connected_cb_id;
     zjs_callback_id disconnected_cb_id;
-} ble_connection_t;
+} zjs_ble_connection_t;
 
 // global connection object
-static struct zjs_ble_connection ble_conn = {
+static zjs_ble_connection_t ble_conn = {
     .default_conn = NULL,
     .blvl_ccc_cfg = {},
     .simulate_blvl = 0,
@@ -1278,10 +1278,8 @@ jerry_value_t zjs_ble_init()
     // bt events are called from the FIBER context, since we can't call
     // zjs_trigger_event() directly, we need to register a c callback which
     // the C callback will call zjs_trigger_event()
-    ble_conn.ready_cb_id = zjs_add_c_callback(&ble_conn,
-                                              zjs_ble_ready_c_callback);
-    ble_conn.connected_cb_id = zjs_add_c_callback(&ble_conn,
-                                                  zjs_ble_connected_c_callback);
+    ble_conn.ready_cb_id = zjs_add_c_callback(&ble_conn, zjs_ble_ready_c_callback);
+    ble_conn.connected_cb_id = zjs_add_c_callback(&ble_conn, zjs_ble_connected_c_callback);
     ble_conn.disconnected_cb_id = zjs_add_c_callback(&ble_conn, zjs_ble_disconnected_c_callback);
     ble_conn.ble_obj = ble_obj;
 
