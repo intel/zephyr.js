@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 #ifndef ZJS_LINUX_BUILD
 // Zephyr includes
@@ -115,7 +115,7 @@ static jerry_value_t native_require_handler(const jerry_value_t function_obj,
                                             const jerry_length_t argc)
 {
     if (!jerry_value_is_string(argv[0])) {
-        return zjs_error("native_require_handler: invalid argument");
+        return TYPE_ERROR("native_require_handler: string expected");
     }
 
     const int MAX_MODULE_LEN = 32;
@@ -123,7 +123,7 @@ static jerry_value_t native_require_handler(const jerry_value_t function_obj,
     char module[size];
     zjs_copy_jstring(argv[0], module, &size);
     if (!size) {
-        return zjs_error("native_require_handler: argument too long");
+        return RANGE_ERROR("native_require_handler: argument too long");
     }
 
     int modcount = sizeof(zjs_modules_array) / sizeof(module_t);
@@ -144,14 +144,14 @@ static jerry_value_t native_require_handler(const jerry_value_t function_obj,
     if (!jerry_value_is_object(modules_obj)) {
         jerry_release_value(global_obj);
         jerry_release_value(modules_obj);
-        return zjs_error("native_require_handler: modules object not found");
+        return SYSTEM_ERROR("native_require_handler: modules object not found");
     }
     jerry_value_t exports_obj = zjs_get_property(modules_obj, "exports");
     if (!jerry_value_is_object(exports_obj)) {
         jerry_release_value(global_obj);
         jerry_release_value(modules_obj);
         jerry_release_value(exports_obj);
-        return zjs_error("native_require_handler: exports object not found");
+        return SYSTEM_ERROR("native_require_handler: exports object not found");
     }
 
     for (int i = 0; i < 4; i++) {
@@ -172,7 +172,7 @@ static jerry_value_t native_require_handler(const jerry_value_t function_obj,
     jerry_release_value(global_obj);
     jerry_release_value(modules_obj);
     jerry_release_value(exports_obj);
-    return zjs_error("native_require_handler: module not found");
+    return NOTSUPPORTED_ERROR("native_require_handler: module not found");
 }
 
 void zjs_modules_init()
@@ -197,6 +197,7 @@ void zjs_modules_init()
     }
 
     // initialize fixed modules
+    zjs_error_init();
     zjs_timers_init();
 #ifdef BUILD_MODULE_CONSOLE
     zjs_console_init();
@@ -224,6 +225,7 @@ void zjs_modules_cleanup()
     }
 
     // clean up fixed modules
+    zjs_error_cleanup();
     zjs_timers_cleanup();
 #ifdef BUILD_MODULE_BUFFER
     zjs_buffer_cleanup();

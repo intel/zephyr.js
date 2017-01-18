@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 #include <string.h>
 
@@ -298,10 +298,4 @@ uint32_t zjs_uncompress_16_to_32(uint16_t num)
 
     // shift back up to the right point
     return uncompressed << (21 - zeroes);
-}
-
-jerry_value_t zjs_error(const char *error)
-{
-    ZJS_PRINT("[ERROR] %s\n", error);
-    return jerry_create_error(JERRY_ERROR_TYPE, (jerry_char_t *)error);
 }
