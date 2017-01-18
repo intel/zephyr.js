@@ -68,6 +68,7 @@ static jerry_value_t zjs_i2c_read_base(const jerry_value_t this,
         }
     }
     else {
+        jerry_release_value(buf_obj);
         return zjs_error("zjs_i2c_read_base: buffer creation failed");
     }
 

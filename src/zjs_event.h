@@ -37,18 +37,24 @@ void zjs_add_event_listener(jerry_value_t obj, const char* event, jerry_value_t 
 /**
  * Trigger an event
  *
+ * FIXME: We need to describe how the ownership of args values works; it appears
+ *        maybe the caller needs to keep them live (acquired) and then release
+ *        them in post; or could we simplify this by acquiring them ourselves
+ *        here and releasing our copies later? Then the caller would just
+ *        release theirs immediately after the zjs_trigger_event call.
+ *
  * @param obj           Object that contains the event to be triggered
  * @param event         Name of event
  * @param args          Arguments to give to the event listener as parameters
  * @param args_cnt      Number of arguments
  * @param post          Function to be called after the event is triggered
- * @param handle        A handle that is accessable in the 'post' call
+ * @param handle        A handle that is accessible in the 'post' call
  *
  * @return              True if there were listeners
  */
 bool zjs_trigger_event(jerry_value_t obj,
                        const char* event,
-                       jerry_value_t args[],
+                       const jerry_value_t *args,
                        uint32_t args_cnt,
                        zjs_post_event post,
                        void* handle);

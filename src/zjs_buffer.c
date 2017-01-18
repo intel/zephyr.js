@@ -338,13 +338,13 @@ jerry_value_t zjs_buffer_create(uint32_t size)
     // requires: size is size of desired buffer, in bytes
     //  effects: allocates a JS Buffer object, an underlying C buffer, and a
     //             list item to track it; if any of these fail, free them all
-    //             and return NULL, otherwise return the JS object
+    //             and return undefined, otherwise return the JS object
     jerry_value_t buf_obj = jerry_create_object();
     void *buf = zjs_malloc(size);
     zjs_buffer_t *buf_item =
         (zjs_buffer_t *)zjs_malloc(sizeof(zjs_buffer_t));
 
-    if (!buf_obj || !buf || !buf_item) {
+    if (!buf || !buf_item) {
         ERR_PRINT("unable to allocate buffer\n");
         jerry_release_value(buf_obj);
         zjs_free(buf);

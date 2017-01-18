@@ -56,6 +56,7 @@ static void print_value(const jerry_value_t value, FILE *out, bool deep,
                 }
                 jerry_value_t element = jerry_get_property_by_index(value, i);
                 print_value(element, out, false, true);
+                jerry_release_value(element);
             }
             fprintf(out, "]");
         }
@@ -245,10 +246,7 @@ static jerry_value_t console_assert(const jerry_value_t function_obj,
 
 void zjs_console_init(void)
 {
-    jerry_value_t global_obj = jerry_get_global_object();
-
     jerry_value_t console = jerry_create_object();
-
     zjs_obj_add_function(console, console_log, "log");
     zjs_obj_add_function(console, console_log, "info");
     zjs_obj_add_function(console, console_error, "error");
@@ -257,7 +255,10 @@ void zjs_console_init(void)
     zjs_obj_add_function(console, console_time_end, "timeEnd");
     zjs_obj_add_function(console, console_assert, "assert");
 
+    jerry_value_t global_obj = jerry_get_global_object();
     zjs_set_property(global_obj, "console", console);
+
+    jerry_release_value(console);
     jerry_release_value(global_obj);
 
     // initialize the time object
@@ -269,4 +270,4 @@ void zjs_console_cleanup()
     jerry_release_value(gbl_time_obj);
 }
 
-#endif
+#endif  // BUILD_MODULE_CONSOLE

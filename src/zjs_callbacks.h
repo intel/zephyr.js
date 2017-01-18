@@ -159,7 +159,7 @@ void zjs_remove_callback(zjs_callback_id id);
  * @param args          Arguments given to the JS/C callback
  * @param size          Size of arguments (in bytes)
  */
-void zjs_signal_callback(zjs_callback_id id, void* args, uint32_t size);
+void zjs_signal_callback(zjs_callback_id id, const void *args, uint32_t size);
 
 /*
  * Add/register a C callback
