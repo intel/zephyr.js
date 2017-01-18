@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 #ifndef ZJS_LINUX_BUILD
 #include <zephyr.h>
@@ -50,6 +50,7 @@
 #define GET_TYPE(f)         (f & (1 << TYPE_BIT)) >> TYPE_BIT
 #define GET_JS_TYPE(f)      (f & (1 << JS_TYPE_BIT)) >> JS_TYPE_BIT
 
+// FIXME: func_list is really an array :)
 struct zjs_callback_t {
     zjs_callback_id id;
     void* handle;
@@ -80,6 +81,9 @@ static struct zjs_callback_t** cb_map = NULL;
 static zjs_callback_id new_id(void)
 {
     zjs_callback_id id = 0;
+    // NOTE: We could wait until after we check for a NULL callback slot in
+    //   the map before we increase allocation; or else store a count that
+    //   can be less than cb_size when callbacks are removed.
     if (cb_size >= cb_limit) {
         cb_limit += CB_CHUNK_SIZE;
         size_t size = sizeof(struct zjs_callback_t *) * cb_limit;
@@ -114,7 +118,8 @@ void zjs_init_callbacks(void)
         memset(cb_map, 0, size);
     }
 #ifdef ZJS_LINUX_BUILD
-    zjs_port_ring_buf_init(&ring_buffer, ZJS_CALLBACK_BUF_SIZE, (uint32_t*)args_buffer);
+    zjs_port_ring_buf_init(&ring_buffer, ZJS_CALLBACK_BUF_SIZE,
+                           (uint32_t*)args_buffer);
 #endif
     ring_buf_initialized = 1;
     return;
@@ -325,6 +330,15 @@ void zjs_signal_callback(zjs_callback_id id, const void *args, uint32_t size)
 {
     DBG_PRINT("pushing item to ring buffer. id=%d, args=%p, size=%lu\n", id,
               args, size);
+
+    if (GET_TYPE(cb_map[id]->flags) == CALLBACK_TYPE_JS) {
+        // for JS, acquire values and release them after servicing callback
+        int argc = size / sizeof(jerry_value_t);
+        jerry_value_t *values = (jerry_value_t *)args;
+        for (int i=0; i<argc; i++) {
+            jerry_acquire_value(values[i]);
+        }
+    }
     int ret = zjs_port_ring_buf_put(&ring_buffer,
                                     (uint16_t)id,
                                     0,
@@ -441,35 +455,49 @@ void zjs_call_callback(zjs_callback_id id, void* data, uint32_t sz)
         if (GET_TYPE(cb_map[id]->flags) == CALLBACK_TYPE_JS) {
             // Function list callback
             int i;
+            jerry_value_t *values = (jerry_value_t *)data;
             jerry_value_t ret_val;
             if (GET_JS_TYPE(cb_map[id]->flags) == JS_TYPE_SINGLE) {
-                ret_val = jerry_call_function(cb_map[id]->js_func, cb_map[id]->this, data, sz);
+                ret_val = jerry_call_function(cb_map[id]->js_func,
+                                              cb_map[id]->this, values, sz);
                 if (jerry_value_has_error_flag(ret_val)) {
                     print_error_message(ret_val);
                 }
             } else if (GET_JS_TYPE(cb_map[id]->flags) == JS_TYPE_LIST) {
                 for (i = 0; i < cb_map[id]->num_funcs; ++i) {
-                    ret_val = jerry_call_function(cb_map[id]->func_list[i], cb_map[id]->this, data, sz);
+                    ret_val = jerry_call_function(cb_map[id]->func_list[i],
+                                                  cb_map[id]->this, values, sz);
                     if (jerry_value_has_error_flag(ret_val)) {
                         print_error_message(ret_val);
                     }
                 }
             }
-            // the callback may have been deleted by the previous calls, if so return
-            if (cb_map[id] == NULL) {
-                return;
+
+            // ensure the callback wasn't deleted by the previous calls
+            if (cb_map[id]) {
+                if (cb_map[id]->post) {
+                    cb_map[id]->post(cb_map[id]->handle, &ret_val);
+                }
+                if (GET_ONCE(cb_map[id]->flags)) {
+                    zjs_remove_callback(id);
+                }
             }
-            if (cb_map[id]->post) {
-                cb_map[id]->post(cb_map[id]->handle, &ret_val);
-            }
-            if (GET_ONCE(cb_map[id]->flags)) {
-                zjs_remove_callback(id);
-            }
+
             jerry_release_value(ret_val);
-        } else if (GET_TYPE(cb_map[id]->flags) == CALLBACK_TYPE_C && cb_map[id]->function) {
+        } else if (GET_TYPE(cb_map[id]->flags) == CALLBACK_TYPE_C &&
+                   cb_map[id]->function) {
             cb_map[id]->function(cb_map[id]->handle, data);
         }
     } else {
+        // NOTE: This can happen if a callback is removed while one is pending,
+        //   and that's not really an error.
+        // FIXME: But... new_id() could assign the same callback ID out again
+        //   in the meantime, in which case we might call the new callback
+        //   handler above, possibly disastrously expecting a different number
+        //   of arguments. One solution might be to always increase new_id but
+        //   map it to a slot id. (This would be a contender for my recent idea
+        //   about storing key/value map type data within a JS object to keep
+        //   from using malloc for that.)
         ERR_PRINT("callback does not exist: %d\n", id);
     }
 }
@@ -488,7 +516,8 @@ uint8_t zjs_service_callbacks(void)
             uint16_t id;
             uint8_t value;
             uint8_t size = 0;
-            // setting size = 0 will check if there is an item in the ring buffer
+
+            // set size = 0 to check if there is an item in the ring buffer
             ret = zjs_port_ring_buf_get(&ring_buffer,
                                         &id,
                                         &value,
@@ -499,19 +528,30 @@ uint8_t zjs_service_callbacks(void)
                 // item in ring buffer with size > 0, has args
                 // pull from ring buffer
                 uint8_t sz = size;
-                jerry_value_t data[sz];
+                uint32_t data[sz];
                 if (ret == -EMSGSIZE) {
                     ret = zjs_port_ring_buf_get(&ring_buffer,
                                                 &id,
                                                 &value,
-                                                (uint32_t*)data,
+                                                data,
                                                 &sz);
                     if (ret != 0) {
                         ERR_PRINT("pulling from ring buffer: ret = %u\n", ret);
                         break;
                     }
                     DBG_PRINT("calling callback with args. id=%u, args=%p, sz=%u, ret=%i\n", id, data, sz, ret);
+                    jerry_value_t *values = NULL;
+                    if (GET_TYPE(cb_map[id]->flags) == CALLBACK_TYPE_JS) {
+                        // record values for JS case
+                        values = (jerry_value_t *)data;
+                    }
                     zjs_call_callback(id, data, sz);
+                    if (values) {
+                        // free values from the ring buffer
+                        for (int i = 0; i < sz; i++) {
+                            jerry_release_value(values[i]);
+                        }
+                    }
                 } else if (ret == 0) {
                     // item in ring buffer with size == 0, no args
                     DBG_PRINT("calling callback with no args, original vals id=%u, size=%u, ret=%i\n", id, size, ret);

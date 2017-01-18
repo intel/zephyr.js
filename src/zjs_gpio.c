@@ -1,4 +1,5 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
+
 #ifdef BUILD_MODULE_GPIO
 // Zephyr includes
 #include <zephyr.h>
@@ -147,7 +148,8 @@ static void gpio_zephyr_callback(struct device *port,
     if ((handle->edge_both && handle->value != handle->last) ||
         !handle->edge_both) {
         // Signal the C callback, where we call the JS callback
-        zjs_signal_callback(handle->callbackId, &handle->value, 4);
+        zjs_signal_callback(handle->callbackId, &handle->value,
+                            sizeof(uint32_t));
         handle->last = handle->value;
     }
 }

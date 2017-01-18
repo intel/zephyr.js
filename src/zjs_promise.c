@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 #include <string.h>
 #include "zjs_util.h"
@@ -150,7 +150,8 @@ void zjs_fulfill_promise(jerry_value_t obj, jerry_value_t argv[], uint32_t argc)
                                                 handle,
                                                 post_promise);
 
-        zjs_signal_callback(handle->then_id, argv, argc * sizeof(jerry_value_t));
+        zjs_signal_callback(handle->then_id, argv,
+                            argc * sizeof(jerry_value_t));
 
         DBG_PRINT("fulfilling promise, obj=%lu, then_id=%d, argv=%p, nargs=%lu\n",
                   obj, handle->then_id, argv, argc);
@@ -186,7 +187,8 @@ void zjs_reject_promise(jerry_value_t obj, jerry_value_t argv[], uint32_t argc)
                                                  handle,
                                                  post_promise);
 
-        zjs_signal_callback(handle->catch_id, argv, argc * sizeof(jerry_value_t));
+        zjs_signal_callback(handle->catch_id, argv,
+                            argc * sizeof(jerry_value_t));
 
         DBG_PRINT("rejecting promise, obj=%lu, catch_id=%d, argv=%p, nargs=%lu\n",
                   obj, handle->catch_id, argv, argc);
