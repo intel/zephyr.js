@@ -3,7 +3,7 @@
 // Testing GPIO APIs
 
 // Pre-conditions
-console.log("Wire IO2 to IO4");
+console.log("Wire IO7 to IO8");
 
 var gpio = require("gpio");
 var pins = require("arduino101_pins");
@@ -46,10 +46,10 @@ var mark = 0;
 
 var edgeInterval = setInterval(function () {
     var count = 0;
-    pinA = gpio.open({ pin: pins.IO2 });
+    pinA = gpio.open({ pin: pins.IO7 });
     pinA.write(changes[mark][2]);
     pinB = gpio.open({
-        pin: pins.IO4,
+        pin: pins.IO8,
         direction: "in",
         edge: changes[mark][0]
     });
@@ -81,8 +81,8 @@ var edgeInterval = setInterval(function () {
 }, 2000);
 
 // test GPIO open
-pinA = gpio.open({ pin: pins.IO2 });
-pinB = gpio.open({ pin: pins.IO4, direction: "in" });
+pinA = gpio.open({ pin: pins.IO7 });
+pinB = gpio.open({ pin: pins.IO8, direction: "in" });
 
 assert(pinA != null && typeof pinA == "object",
       "open: defined pin and default as 'out' direction");
@@ -111,16 +111,16 @@ expectThrow("gpiopin: write invalid argument", function () {
 });
 
 // test activeLow
-pinB = gpio.open({ pin: pins.IO4, activeLow:true, direction: "in" });
+pinB = gpio.open({ pin: pins.IO8, activeLow:true, direction: "in" });
 pinA.write(false);
 bValue = pinB.read();
 assert(bValue, "activeLow: true");
 
 // test GPIO openAsync
-gpio.openAsync({ pin: pins.IO2 }).then(function (pin2) {
+gpio.openAsync({ pin: pins.IO7 }).then(function (pin2) {
     assert(pin2 != null && typeof pin2 == "object",
           "openAsync: defined pin and default as 'out' direction");
-    gpio.openAsync({ pin: pins.IO4, direction: "in", edge: "any" })
+    gpio.openAsync({ pin: pins.IO8, direction: "in", edge: "any" })
         .then(function (pin4) {
             pin4.onchange = function (event) {
                 assert(true, "gpiopin: onchange in openAsync");

@@ -44,8 +44,8 @@ var advertiseFlag = true;
 var totalFlag = false;
 var stopFlag = true;
 
-pinA = gpio.open({ pin: pins.IO2 });
-pinB = gpio.open({ pin: pins.IO4, direction: "in" });
+pinA = gpio.open({ pin: pins.IO7 });
+pinB = gpio.open({ pin: pins.IO8, direction: "in" });
 pinA.write(writeValue);
 readValue = pinB.read();
 
