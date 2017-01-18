@@ -26,6 +26,9 @@ var aio = require("aio");
 var ble = require("ble");
 var grove_lcd = require("grove_lcd");
 var pins = require("arduino101_pins");
+var perf = require("performance");
+
+console.log("Boot timestamp:", perf.now(), "\n");
 
 var DEVICE_NAME = 'Arduino101';
 
@@ -40,7 +43,7 @@ var displayStateConfig = grove_lcd.GLCD_DS_DISPLAY_ON;
 glcd.setDisplayState(displayStateConfig);
 
 glcd.clear();
-glcd.print("Web BLE Demo");
+glcd.print("Web BLE Demo...");
 
 var TemperatureCharacteristic = new ble.Characteristic({
     uuid: 'fc0a',
