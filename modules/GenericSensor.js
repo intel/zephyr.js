@@ -1,8 +1,8 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 // JavaScript library for the tests sensor case
 
-function GenericSensor () {
+function GenericSensor() {
 
     // API object
     var genericSensor = {};
@@ -10,7 +10,7 @@ function GenericSensor () {
     var total = 0;
     var pass = 0;
 
-    function assert (actual, description) {
+    function assert(actual, description) {
         if (typeof actual !== "boolean" ||
             typeof description !== "string") {
             console.log("AssertionError: invalid input type given");
@@ -29,7 +29,7 @@ function GenericSensor () {
         console.log(label + " - " + description);
     }
 
-    function throws (description, func) {
+    function throws(description, func) {
         if (typeof description !== "string" ||
             typeof func !== "function") {
             console.log("AssertionError: invalid input type given");
@@ -49,7 +49,7 @@ function GenericSensor () {
         assert(booleanValue, description);
     }
 
-    function result () {
+    function result() {
         console.log("TOTAL: " + pass + " of "
                     + total + " passed");
     }
@@ -60,7 +60,7 @@ function GenericSensor () {
     var errorFlag = true;
     var defaultState, startState, stopState, middleState, middleNum;
 
-    genericSensor.test = function (sensor, sensorType) {
+    genericSensor.test = function(sensor, sensorType) {
         assert(typeof sensor === "object" && sensor !== null,
                "sensor: be defined");
 
@@ -72,7 +72,7 @@ function GenericSensor () {
         assert(sensor.state === middleState,
                "sensor: state is readonly property");
 
-        sensor.onstatechange = function (event) {
+        sensor.onstatechange = function(event) {
             if (StatechangeFlag === true) {
                 assert(typeof event === "string" && event !== null,
                        "sensor: callback value for 'onstatechange'");
@@ -93,7 +93,7 @@ function GenericSensor () {
             if (event === "activated") changeFlag = true;
         };
 
-        sensor.onchange = function (event) {
+        sensor.onchange = function(event) {
             if (changeFlag === true) {
                 assert(typeof event === "object" && event !== null,
                        "sensor: callback value for 'onchange'");
@@ -134,7 +134,7 @@ function GenericSensor () {
             }
         };
 
-        sensor.onerror = function (event) {
+        sensor.onerror = function(event) {
             if (errorFlag === true) {
                 assert(typeof event.error === "object",
                        "sensor: callback value for 'onerror'");
@@ -150,7 +150,7 @@ function GenericSensor () {
 
         sensor.start();
 
-        setTimeout(function () {
+        setTimeout(function() {
             startState = sensor.state;
             assert(defaultState !== startState &&
                    defaultState === "idle" &&
@@ -158,7 +158,7 @@ function GenericSensor () {
                    "sensor: be started");
         }, 1000);
 
-        setTimeout(function () {
+        setTimeout(function() {
             sensor.stop();
 
             stopState = sensor.state;
