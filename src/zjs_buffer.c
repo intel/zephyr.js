@@ -14,20 +14,19 @@
 #include "zjs_util.h"
 #include "zjs_buffer.h"
 
-static zjs_buffer_t *zjs_buffers = NULL;
 static jerry_value_t zjs_buffer_prototype;
 
-// TODO: this could probably be replaced more efficiently now that there is a
-//   get_native_handle API
+// TODO: Call sites could be replaced with get_object_native_handle directly
 zjs_buffer_t *zjs_buffer_find(const jerry_value_t obj)
 {
     // requires: obj should be the JS object associated with a buffer, created
     //             in zjs_buffer
     //  effects: looks up obj in our list of known buffer objects and returns
-    //             the associated list item struct
-    for (zjs_buffer_t *buf = zjs_buffers; buf; buf = buf->next)
-        if (buf->obj == obj)
-            return buf;
+    //             the associated list item struct, or NULL if not found
+    uintptr_t handle;
+    if (jerry_get_object_native_handle(obj, &handle)) {
+        return (zjs_buffer_t *)handle;
+    }
     return NULL;
 }
 
@@ -258,17 +257,10 @@ static void zjs_buffer_callback_free(uintptr_t handle)
 {
     // requires: handle is the native pointer we registered with
     //             jerry_set_object_native_handle
-    //  effects: frees the callback list item for the given pin object
-    zjs_buffer_t **pItem = &zjs_buffers;
-    while (*pItem) {
-        if ((uintptr_t)*pItem == handle) {
-            zjs_free((*pItem)->buffer);
-            *pItem = (*pItem)->next;
-            zjs_free((void *)handle);
-            return;
-        }
-        pItem = &(*pItem)->next;
-    }
+    //  effects: frees the buffer item
+    zjs_buffer_t *item = (zjs_buffer_t *)handle;
+    zjs_free(item->buffer);
+    zjs_free(item);
 }
 
 static jerry_value_t zjs_buffer_write_string(const jerry_value_t function_obj_val,
@@ -367,14 +359,9 @@ jerry_value_t zjs_buffer_create(uint32_t size)
     buf_item->obj = buf_obj;
     buf_item->buffer = buf;
     buf_item->bufsize = size;
-    buf_item->next = zjs_buffers;
-    zjs_buffers = buf_item;
 
     jerry_set_prototype(buf_obj, zjs_buffer_prototype);
     zjs_obj_add_readonly_number(buf_obj, size, "length");
-
-    // TODO: sign up to get callback when the object is freed, then free the
-    //   buffer and remove it from the list
 
     // watch for the object getting garbage collected, and clean up
     jerry_set_object_native_handle(buf_obj, (uintptr_t)buf_item,
