@@ -46,7 +46,6 @@ ifneq ($(shell pwd)/deps/zephyr, $(ZEPHYR_BASE))
 $(info Note: ZEPHYR_BASE is set outside the current ZJS tree ($(ZEPHYR_BASE)))
 endif
 endif
-
 # Build for zephyr, default target
 .PHONY: zephyr
 zephyr: analyze generate jerryscript
@@ -190,10 +189,16 @@ else
 endif
 endif
 
+NET_BUILD=$(shell grep -q BUILD_MODULE_OCF src/Makefile && echo y)
+
 # Run QEMU target
 .PHONY: qemu
 qemu: zephyr
-	make -f Makefile.zephyr MEM_STATS=$(MEM_STATS) CB_STATS=$(CB_STATS) SNAPSHOT=$(SNAPSHOT) qemu
+	make -f Makefile.zephyr qemu \
+		MEM_STATS=$(MEM_STATS) \
+		CB_STATS=$(CB_STATS) \
+		SNAPSHOT=$(SNAPSHOT) \
+		NETWORK_BUILD=$(NET_BUILD)
 
 # Builds ARC binary
 .PHONY: arc
