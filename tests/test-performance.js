@@ -1,3 +1,5 @@
+// Copyright (c) 2016, Linaro Limited.
+
 var performance = require("performance");
 
 var total = 0;

@@ -18,6 +18,9 @@
 
 // import i2c module
 var i2c = require("i2c");
+var perf = require("performance");
+
+console.log("Boot timestamp:", perf.now(), "\n");
 
 // Define various Grove LCD addresses
 var GROVE_LCD_DISPLAY_ADDR = 0x3E
