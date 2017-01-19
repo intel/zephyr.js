@@ -73,7 +73,9 @@ static jerry_value_t stop_js_handler(const jerry_value_t function_obj,
                                      const jerry_value_t argv[],
                                      const jerry_length_t argc)
 {
+    #ifdef CONFIG_BOARD_ARDUINO_101
     zjs_ipm_free_callbacks();
+    #endif
     zjs_modules_cleanup();
     jerry_cleanup();
     return ZJS_UNDEFINED;

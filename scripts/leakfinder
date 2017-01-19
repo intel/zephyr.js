@@ -28,7 +28,7 @@ do
             matched=false
             matchAlloc=$(grep -E allocating  screenlog.0 | grep $line | head -1)
             matchFree=$(grep -E freeing screenlog.0 | grep $line | head -1)
-            
+
             if [ -n "$matchFree" ]; then
                 sed -i "0,/$matchAlloc/{/$matchAlloc/d;}" screenlog.0
                 sed -i "0,/$matchFree/{/$matchFree/d;}" screenlog.0
@@ -36,7 +36,7 @@ do
         fi
     done <<< "$created"
 
-    lines=$(grep -c  'allocating'  screenlog.0)    
+    lines=$(grep -c  'allocating'  screenlog.0)
     lines2=$(grep -c  'freeing'  screenlog.0)
     clear
     echo "$lines memory allocations remain"
@@ -49,6 +49,6 @@ do
     else
         clear
         echo "Waiting for Zephyr program to start..."
-    fi 
+    fi
     sleep 1
 done
