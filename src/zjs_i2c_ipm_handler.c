@@ -26,8 +26,7 @@ static bool zjs_i2c_ipm_send_sync(zjs_ipm_message_t* send,
     return true;
 }
 
-static void ipm_msg_receive_callback(void *context,
-                                     uint32_t id,
+static void ipm_msg_receive_callback(void *context, uint32_t id,
                                      volatile void *data)
 {
     if (id != MSG_ID_I2C)
@@ -55,10 +54,9 @@ void zjs_i2c_ipm_init() {
     k_sem_init(&i2c_sem, 0, 1);
 }
 
-uint8_t zjs_i2c_handle_write (uint8_t msg_bus,
-                              uint8_t *data,
-                              uint32_t length,
-                              uint16_t address) {
+uint8_t zjs_i2c_handle_write (uint8_t msg_bus, uint8_t *data, uint32_t length,
+                              uint16_t address)
+{
     uint8_t error_code = 0;
     zjs_ipm_message_t send;
     zjs_ipm_message_t reply;
@@ -80,7 +78,8 @@ uint8_t zjs_i2c_handle_write (uint8_t msg_bus,
     return send.error_code;
 }
 
-uint8_t zjs_i2c_handle_open (uint8_t msg_bus) {
+uint8_t zjs_i2c_handle_open (uint8_t msg_bus)
+{
     uint8_t error_code = 0;
     // send IPM message to the ARC side
     zjs_ipm_message_t send;
@@ -103,10 +102,9 @@ uint8_t zjs_i2c_handle_open (uint8_t msg_bus) {
     return error_code;
 }
 
-uint8_t zjs_i2c_handle_read (uint8_t msg_bus,
-                             uint8_t *data,
-                             uint32_t length,
-                             uint16_t address) {
+uint8_t zjs_i2c_handle_read (uint8_t msg_bus, uint8_t *data, uint32_t length,
+                             uint16_t address)
+{
     uint8_t error_code = 0;
     zjs_ipm_message_t send;
     zjs_ipm_message_t reply;
@@ -125,11 +123,10 @@ uint8_t zjs_i2c_handle_read (uint8_t msg_bus,
     return error_code;
 }
 
-uint8_t zjs_i2c_handle_burst_read (uint8_t msg_bus,
-                                   uint8_t *data,
-                                   uint32_t length,
-                                   uint16_t address,
-                                   uint16_t register_addr) {
+uint8_t zjs_i2c_handle_burst_read (uint8_t msg_bus, uint8_t *data,
+                                   uint32_t length, uint16_t address,
+                                   uint16_t register_addr)
+{
     uint8_t error_code = 0;
     zjs_ipm_message_t send;
     zjs_ipm_message_t reply;
