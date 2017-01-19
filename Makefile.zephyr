@@ -9,6 +9,7 @@ obj-y += src/
 export KBUILD_ZEPHYR_APP BOARD
 
 include ${ZEPHYR_BASE}/Makefile.inc
-ifeq ($(BOARD), qemu_x86)
+
+ifeq ($(NETWORK_BUILD), y)
 include $(ZEPHYR_BASE)/samples/net/common/Makefile.ipstack
 endif
