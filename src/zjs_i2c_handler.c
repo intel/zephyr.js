@@ -1,3 +1,4 @@
+// Copyright (c) 2016-2017, Intel Corporation.
 #include "zjs_i2c_handler.h"
 #include "zjs_common.h"
 
@@ -7,7 +8,7 @@
 
 static struct device *i2c_device[MAX_I2C_BUS];
 
-uint8_t zjs_i2c_handle_open (uint8_t msg_bus) {
+uint8_t zjs_i2c_handle_open(uint8_t msg_bus) {
     uint8_t error_code = 0;
     if (msg_bus < MAX_I2C_BUS) {
         char bus[6];
@@ -38,7 +39,10 @@ uint8_t zjs_i2c_handle_open (uint8_t msg_bus) {
     return error_code;
 }
 
-uint8_t zjs_i2c_handle_write (uint8_t msg_bus, uint8_t *data, uint32_t length, uint16_t address) {
+uint8_t zjs_i2c_handle_write(uint8_t msg_bus,
+                             uint8_t *data,
+                             uint32_t length,
+                             uint16_t address) {
     uint8_t error_code = 0;
     if (msg_bus < MAX_I2C_BUS) {
         // Write has to come after an Open I2C message
@@ -59,7 +63,10 @@ uint8_t zjs_i2c_handle_write (uint8_t msg_bus, uint8_t *data, uint32_t length, u
     return error_code;
 }
 
-uint8_t zjs_i2c_handle_read (uint8_t msg_bus, uint8_t *data, uint32_t length, uint16_t address) {
+uint8_t zjs_i2c_handle_read(uint8_t msg_bus,
+                            uint8_t *data,
+                            uint32_t length,
+                            uint16_t address) {
     uint8_t error_code = 0;
     if (msg_bus < MAX_I2C_BUS) {
         // Read has to come after an Open I2C message
@@ -82,7 +89,11 @@ uint8_t zjs_i2c_handle_read (uint8_t msg_bus, uint8_t *data, uint32_t length, ui
     return error_code;
 }
 
-uint8_t zjs_i2c_handle_burst_read (uint8_t msg_bus, uint8_t *data, uint32_t length, uint16_t address, uint16_t register_addr) {
+uint8_t zjs_i2c_handle_burst_read(uint8_t msg_bus,
+                                  uint8_t *data,
+                                  uint32_t length,
+                                  uint16_t address,
+                                  uint16_t register_addr) {
     uint8_t error_code = 0;
     if (msg_bus < MAX_I2C_BUS) {
         // Burst read has to come after an Open I2C message
