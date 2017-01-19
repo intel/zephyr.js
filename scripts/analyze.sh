@@ -75,7 +75,7 @@ function check_config_file()
 }
 
 # Check if buffer module required in the JS or config file
-grep Buffer\([0-9]*\) $SCRIPT > /dev/null
+grep Buffer\(.*\) $SCRIPT > /dev/null
 if [ $? -eq 0 ] || check_config_file ZJS_BUFFER; then
     buffer=true;
 else
