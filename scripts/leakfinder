@@ -8,6 +8,7 @@
 # NOTE: You must call stopJS somewhere in your JavaScript, otherwise you won't get an accurate reading.
 # For example you can add this line to your script to run it for 10 seconds
 # var timeout = setTimeout(stopJS, 10000);
+# You must also build with TRACE=on.
 
 if [ ! -d $ZJS_BASE ]; then
     echo "Couldn't find the samples folder, make sure and source zjs-env.sh and deps/zephyr/zephyr-env.sh"
