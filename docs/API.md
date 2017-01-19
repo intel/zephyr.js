@@ -38,3 +38,5 @@ General
 [Timers](./timers.md)
 
 [Events](./events.md)
+
+[Console](./console.md)
