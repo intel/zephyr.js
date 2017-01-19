@@ -227,6 +227,9 @@ void zjs_modules_cleanup()
     // clean up fixed modules
     zjs_error_cleanup();
     zjs_timers_cleanup();
+#ifdef BUILD_MODULE_CONSOLE
+    zjs_console_cleanup();
+#endif
 #ifdef BUILD_MODULE_BUFFER
     zjs_buffer_cleanup();
 #endif

@@ -1,7 +1,9 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
+
 #ifdef BUILD_MODULE_CONSOLE
 
 #include "zjs_common.h"
+#include "zjs_error.h"
 #include "zjs_util.h"
 #ifdef ZJS_LINUX_BUILD
 #include "zjs_linux_port.h"
@@ -23,24 +25,7 @@
 #define IS_INT    1
 #define IS_UINT   2
 
-typedef struct {
-    uint32_t start;
-} console_timer;
-
 static jerry_value_t gbl_time_obj;
-
-static console_timer* create_timer(void)
-{
-    console_timer* timer = zjs_malloc(sizeof(console_timer));
-
-    if (!timer) {
-        ERR_PRINT("error allocating timer struct\n");
-        return NULL;
-    }
-    timer->start = zjs_port_timer_get_uptime();
-
-    return timer;
-}
 
 static int is_int(jerry_value_t val) {
     int ret = 0;
@@ -178,31 +163,15 @@ static jerry_value_t console_time(const jerry_value_t function_obj,
                                   const jerry_value_t argv[],
                                   const jerry_length_t argc)
 {
-    if (!jerry_value_is_string(argv[0])) {
-        ERR_PRINT("invalid parameters\n");
-        return ZJS_UNDEFINED;
+    if (argc < 1 || !jerry_value_is_string(argv[0])) {
+        return TYPE_ERROR("invalid argument");
     }
 
-    jerry_size_t sz = MAX_STR_LENGTH;
-    char label[sz];
-    zjs_copy_jstring(argv[0], label, &sz);
-    if (!sz) {
-        ERR_PRINT("string is too long\n");
-        return ZJS_UNDEFINED;
-    }
+    uint32_t start = zjs_port_timer_get_uptime();
 
-    jerry_value_t new_timer_obj = jerry_create_object();
-
-    console_timer* timer_handle = create_timer();
-    if (!timer_handle) {
-        ERR_PRINT("could not allocate timer handle\n");
-        return ZJS_UNDEFINED;
-    }
-
-    jerry_set_object_native_handle(new_timer_obj, (uintptr_t)timer_handle, NULL);
-    // add the new timer to the global timer object
-    zjs_set_property(gbl_time_obj, label, new_timer_obj);
-
+    jerry_value_t num = jerry_create_number(start);
+    jerry_set_property(gbl_time_obj, argv[0], num);
+    jerry_release_value(num);
     return ZJS_UNDEFINED;
 }
 
@@ -211,39 +180,30 @@ static jerry_value_t console_time_end(const jerry_value_t function_obj,
                                       const jerry_value_t argv[],
                                       const jerry_length_t argc)
 {
-    if (!jerry_value_is_string(argv[0])) {
-        ERR_PRINT("invalid parameters\n");
-        return ZJS_UNDEFINED;
+    if (argc < 1 || !jerry_value_is_string(argv[0])) {
+        return TYPE_ERROR("invalid argument");
     }
 
-    jerry_size_t sz = MAX_STR_LENGTH;
-    char label[sz];
-    zjs_copy_jstring(argv[0], label, &sz);
-    if (!sz) {
-        ERR_PRINT("string is too long\n");
-        return ZJS_UNDEFINED;
+    jerry_value_t num = jerry_get_property(gbl_time_obj, argv[0]);
+    jerry_delete_property(gbl_time_obj, argv[0]);
+
+    if (!jerry_value_is_number(num)) {
+        jerry_release_value(num);
+        return TYPE_ERROR("unexpected value");
     }
 
-    jerry_value_t timer_obj = zjs_get_property(gbl_time_obj, label);
-    if (!jerry_value_is_object(timer_obj)) {
-        ERR_PRINT("timer %s not found\n", label);
-        return ZJS_UNDEFINED;
+    uint32_t start = (uint32_t)jerry_get_number_value(num);
+    uint32_t milli = zjs_port_timer_get_uptime() - start;
+    jerry_release_value(num);
+
+    char *label = zjs_alloc_from_jstring(argv[0], NULL);
+    const char *const_label = "unknown";
+    if (label) {
+        const_label = label;
     }
 
-    console_timer* timer_handle;
-
-    if (!jerry_get_object_native_handle(timer_obj, (uintptr_t*)&timer_handle)) {
-        ERR_PRINT("native timer handle not found\n");
-        return ZJS_UNDEFINED;
-    }
-
-    uint32_t milli_now = zjs_port_timer_get_uptime();
-    uint32_t milli = milli_now - timer_handle->start;
-
-    zjs_free(timer_handle);
-
-    fprintf(stdout, "%s:%lums\n", label, milli);
-
+    ZJS_PRINT("%s: %lums\n", const_label, milli);
+    zjs_free(label);
     return ZJS_UNDEFINED;
 }
 
@@ -302,6 +262,11 @@ void zjs_console_init(void)
 
     // initialize the time object
     gbl_time_obj = jerry_create_object();
+}
+
+void zjs_console_cleanup()
+{
+    jerry_release_value(gbl_time_obj);
 }
 
 #endif
