@@ -213,33 +213,36 @@ static jerry_value_t console_assert(const jerry_value_t function_obj,
                                     const jerry_length_t argc)
 {
     char message[MAX_STR_LENGTH];
-    uint8_t has_message = 0;
     if (!jerry_value_is_boolean(argv[0])) {
         ERR_PRINT("invalid parameters\n");
         return ZJS_UNDEFINED;
     }
-    bool b = jerry_get_boolean_value(argv[0]);
-    if (!b) {
+    if (argv[1]) {
         if (argc > 1) {
             if (!jerry_value_is_string(argv[1])) {
                 ERR_PRINT("message parameter must be a string\n");
                 return ZJS_UNDEFINED;
             } else {
                 jerry_size_t sz = MAX_STR_LENGTH;
-                zjs_copy_jstring(argv[0], message, &sz);
+                zjs_copy_jstring(argv[1], message, &sz);
                 if (!sz) {
                     ERR_PRINT("string is too long\n");
                     return ZJS_UNDEFINED;
                 }
-                has_message = 1;
             }
         }
-        if (has_message) {
-            return zjs_error(message);
-        } else {
-            return zjs_error("console.assert() error");
-        }
     }
+    for (int i = 0; i < argc; i++) {
+        if (i) {
+            // insert spaces between arguments
+            fprintf(stdout, " ");
+        }
+        if (i == 1) {
+            fprintf(stdout, "- ");
+        }
+        print_value(argv[i], stdout, true, false);
+    }
+    fprintf(stdout, "\n");
     return ZJS_UNDEFINED;
 }
 
