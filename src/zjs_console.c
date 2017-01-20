@@ -226,7 +226,7 @@ static jerry_value_t console_assert(const jerry_value_t function_obj,
                 return ZJS_UNDEFINED;
             } else {
                 jerry_size_t sz = MAX_STR_LENGTH;
-                zjs_copy_jstring(argv[0], message, &sz);
+                zjs_copy_jstring(argv[1], message, &sz);
                 if (!sz) {
                     ERR_PRINT("string is too long\n");
                     return ZJS_UNDEFINED;
@@ -235,9 +235,9 @@ static jerry_value_t console_assert(const jerry_value_t function_obj,
             }
         }
         if (has_message) {
-            return zjs_error(message);
+            return ASSERTION_ERROR(message);
         } else {
-            return zjs_error("console.assert() error");
+            return ASSERTION_ERROR("console.assert() error");
         }
     }
     return ZJS_UNDEFINED;
