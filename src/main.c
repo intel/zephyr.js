@@ -68,6 +68,19 @@ static jerry_value_t native_print_handler(const jerry_value_t function_obj,
     return ZJS_UNDEFINED;
 }
 
+static jerry_value_t stop_js_handler(const jerry_value_t function_obj,
+                                     const jerry_value_t this,
+                                     const jerry_value_t argv[],
+                                     const jerry_length_t argc)
+{
+    #ifdef CONFIG_BOARD_ARDUINO_101
+    zjs_ipm_free_callbacks();
+    #endif
+    zjs_modules_cleanup();
+    jerry_cleanup();
+    return ZJS_UNDEFINED;
+}
+
 #ifdef ZJS_LINUX_BUILD
 // enabled if --autoexit is passed to jslinux
 static uint8_t auto_exit = 0;
@@ -177,7 +190,7 @@ int main(int argc, char *argv[])
     // For now, just inject our eval() function in the global space
     zjs_obj_add_function(global_obj, native_eval_handler, "eval");
     zjs_obj_add_function(global_obj, native_print_handler, "print");
-
+    zjs_obj_add_function(global_obj, stop_js_handler, "stopJS");
 #ifndef ZJS_SNAPSHOT_BUILD
     code_eval = jerry_parse((jerry_char_t *)script, len, false);
     if (jerry_value_has_error_flag(code_eval)) {

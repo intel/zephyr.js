@@ -1,0 +1,55 @@
+#!/bin/bash
+
+# Copyright (c) 2017, Intel Corporation.
+# Author: Brian Jones <brian.j.jones@intel.com>
+
+# leakfinder - Find memory leaks in ZJS
+
+# NOTE: You must call stopJS somewhere in your JavaScript, otherwise you won't get an accurate reading.
+# For example you can add this line to your script to run it for 10 seconds
+# var timeout = setTimeout(stopJS, 10000);
+# You must also build with TRACE=on.
+
+if [ ! -d $ZJS_BASE ]; then
+    echo "Couldn't find the samples folder, make sure and source zjs-env.sh and deps/zephyr/zephyr-env.sh"
+    exit
+fi
+
+cd $ZJS_BASE
+
+x-terminal-emulator -e "screen -L /dev/ttyUSB0 115200"
+rm -f screenlog.0
+while true
+do
+    if [ -f screenlog.0 ]; then
+    created=$(grep -E 'allocating' screenlog.0 | grep -o '0x.*)' | tr -d \))
+
+    while read -r line; do
+        if [ -n "$line" ]; then
+            matched=false
+            matchAlloc=$(grep -E allocating  screenlog.0 | grep $line | head -1)
+            matchFree=$(grep -E freeing screenlog.0 | grep $line | head -1)
+
+            if [ -n "$matchFree" ]; then
+                sed -i "0,/$matchAlloc/{/$matchAlloc/d;}" screenlog.0
+                sed -i "0,/$matchFree/{/$matchFree/d;}" screenlog.0
+            fi
+        fi
+    done <<< "$created"
+
+    lines=$(grep -c  'allocating'  screenlog.0)
+    lines2=$(grep -c  'freeing'  screenlog.0)
+    clear
+    echo "$lines memory allocations remain"
+    echo "------------------------------------"
+    grep 'allocating'  screenlog.0
+    echo "------------------------------------"
+    echo "$lines2 repeated freeing of memory"
+    echo "------------------------------------"
+    grep 'freeing' screenlog.0
+    else
+        clear
+        echo "Waiting for Zephyr program to start..."
+    fi
+    sleep 1
+done

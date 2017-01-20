@@ -105,7 +105,6 @@ void zjs_ipm_free_callbacks() {
         zjs_free(*pItem);
         pItem = &(*pItem)->next;
     }
-    zjs_free(zjs_ipm_callbacks);
     zjs_ipm_callbacks = NULL;
     #endif
 }
