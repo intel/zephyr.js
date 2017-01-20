@@ -2,6 +2,7 @@
 #include "zjs_i2c_handler.h"
 #include "zjs_ipm.h"
 #include "zjs_common.h"
+
 static struct k_sem i2c_sem;
 #define ZJS_I2C_TIMEOUT_TICKS                      5000
 
