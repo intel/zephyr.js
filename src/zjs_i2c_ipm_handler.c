@@ -58,7 +58,6 @@ void zjs_i2c_ipm_init() {
 uint8_t zjs_i2c_handle_write (uint8_t msg_bus, uint8_t *data, uint32_t length,
                               uint16_t address)
 {
-    uint8_t error_code = 0;
     zjs_ipm_message_t send;
     zjs_ipm_message_t reply;
 
@@ -95,7 +94,7 @@ uint8_t zjs_i2c_handle_open (uint8_t msg_bus)
         ERR_PRINT("zjs_i2c_write: ipm message failed or timed out!");
     }
 
-    if (reply.error_code) {
+    if (send.error_code) {
         ERR_PRINT("zjs_i2c_open: Failed to open I2C bus");
     }
 
@@ -105,7 +104,6 @@ uint8_t zjs_i2c_handle_open (uint8_t msg_bus)
 uint8_t zjs_i2c_handle_read (uint8_t msg_bus, uint8_t *data, uint32_t length,
                              uint16_t address)
 {
-    uint8_t error_code = 0;
     zjs_ipm_message_t send;
     zjs_ipm_message_t reply;
 
@@ -127,7 +125,6 @@ uint8_t zjs_i2c_handle_burst_read (uint8_t msg_bus, uint8_t *data,
                                    uint32_t length, uint16_t address,
                                    uint16_t register_addr)
 {
-    uint8_t error_code = 0;
     zjs_ipm_message_t send;
     zjs_ipm_message_t reply;
 
