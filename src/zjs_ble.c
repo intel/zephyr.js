@@ -493,9 +493,8 @@ static void zjs_ble_connected_c_callback(void *handle, void* argv)
 {
     // FIXME: get real bluetooth address
     jerry_value_t arg = jerry_create_string((jerry_char_t *)"AB:CD:DF:AB:CD:EF");
-    // FIXME: arg should be released after this call, or else it needs to be
-    //        saved somewhere to be released later, like in a handle/post
     zjs_trigger_event(ble_conn.ble_obj, "accept", &arg, 1, NULL, NULL);
+    jerry_release_value(arg);
     DBG_PRINT("BLE event: accept\n");
 }
 
@@ -514,9 +513,8 @@ static void zjs_ble_disconnected_c_callback(void *handle, void* argv)
 {
     // FIXME: get real bluetooth address
     jerry_value_t arg = jerry_create_string((jerry_char_t *)"AB:CD:DF:AB:CD:EF");
-    // FIXME: arg should be released after this call, or else it needs to be
-    //        saved somewhere to be released later, like in a handle/post
     zjs_trigger_event(ble_conn.ble_obj, "disconnect", &arg, 1, NULL, NULL);
+    jerry_release_value(arg);
     DBG_PRINT("BLE event: disconnect\n");
 }
 
@@ -1244,9 +1242,8 @@ static jerry_value_t zjs_ble_update_rssi(const jerry_value_t function_obj,
 {
     // TODO: get actual RSSI value from Zephyr Bluetooth driver
     jerry_value_t arg = jerry_create_number(-50);
-    // FIXME: arg should be released after this call, or else it needs to be
-    //        saved somewhere to be released later, like in a handle/post
     zjs_trigger_event(ble_conn.ble_obj, "rssiUpdate", &arg, 1, NULL, NULL);
+    jerry_release_value(arg);
     return ZJS_UNDEFINED;
 }
 
