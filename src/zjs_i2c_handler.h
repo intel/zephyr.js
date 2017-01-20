@@ -3,7 +3,6 @@
 #define __zjs_i2c_msg_h__
 
 #include <i2c.h>
-#include "zjs_error.h"
 
 uint8_t zjs_i2c_handle_open(uint8_t msg_bus);
 uint8_t zjs_i2c_handle_write(uint8_t msg_bus, uint8_t *data, uint32_t length, uint16_t address);
