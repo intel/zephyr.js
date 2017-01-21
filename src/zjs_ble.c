@@ -549,9 +549,8 @@ static struct bt_conn_auth_cb zjs_ble_auth_cb_display = {
 static void zjs_ble_ready_c_callback(void *handle, void* argv)
 {
     jerry_value_t arg = jerry_create_string((jerry_char_t *)"poweredOn");
-    // FIXME: arg should be released after this call, or else it needs to be
-    //        saved somewhere to be released later, like in a handle/post
     zjs_trigger_event(ble_conn.ble_obj, "stateChange", &arg, 1, NULL, NULL);
+    jerry_release_value(arg);
     DBG_PRINT("BLE event: stateChange - poweredOn");
 }
 
@@ -768,10 +767,9 @@ static jerry_value_t zjs_ble_start_advertising(const jerry_value_t function_obj,
     jerry_value_t error = err ? zjs_error("advertising failed") :
                                 jerry_create_null();
 
-    // FIXME: error should be released after this call, or else it needs to be
-    //        saved somewhere to be released later, like in a handle/post
     zjs_trigger_event(ble_conn.ble_obj, "advertisingStart", &error,
                       1, NULL, NULL);
+    jerry_release_value(error);
     DBG_PRINT("BLE event: adveristingStart\n");
 
     zjs_free(url_frame);
@@ -1344,7 +1342,6 @@ jerry_value_t zjs_ble_init()
     ble_conn.ready_cb_id = zjs_add_c_callback(&ble_conn, zjs_ble_ready_c_callback);
     ble_conn.connected_cb_id = zjs_add_c_callback(&ble_conn, zjs_ble_connected_c_callback);
     ble_conn.disconnected_cb_id = zjs_add_c_callback(&ble_conn, zjs_ble_disconnected_c_callback);
-    // FIXME: must free this in a cleanup function
     ble_conn.ble_obj = jerry_acquire_value(ble_obj);
 
     return ble_obj;
@@ -1354,6 +1351,7 @@ void zjs_ble_cleanup()
 {
     zjs_ble_free_services(ble_conn.services);
     ble_conn.services = NULL;
+    jerry_release_value(ble_conn.ble_obj);
 }
 
 #endif  // QEMU_BUILD
