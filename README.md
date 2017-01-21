@@ -461,3 +461,27 @@ compared to Zephyr. This target runs the core code, but most modules do not run
 on it, specifically the hardware modules (AIO, I2C, GPIO etc.). There are some
 modules which can be used though like Events, Promises, Performance and OCF. This
 list may grow if other modules are ported to the Linux target.
+
+## Supported modules (Linux vs Zephyr)
+There is only partial support for modules on Linux compared to Zephyr. Any hardware
+specific module (I2C, UART, GPIO, ADC etc.) is not supported on Linux. Trying
+to run a Zephyr specific module on Linux will result in the JavaScript not running
+successfully. Below is a complete table of modules and target support.
+
+| Module    | Linux                    | Zephyr                   |
+| :---:     | :---:                    | :---:                    |
+|  ADC      | <ul><li>- [ ] </li></ul> | <ul><li>- [x] </li></ul> |
+|  PWM      | <ul><li>- [ ] </li></ul> | <ul><li>- [x] </li></ul> |
+|  GPIO     | <ul><li>- [ ] </li></ul> | <ul><li>- [x] </li></ul> |
+|  I2C      | <ul><li>- [ ] </li></ul> | <ul><li>- [x] </li></ul> |
+|  BLE      | <ul><li>- [ ] </li></ul> | <ul><li>- [x] </li></ul> |
+|  UART     | <ul><li>- [ ] </li></ul> | <ul><li>- [x] </li></ul> |
+| Sensor    | <ul><li>- [ ] </li></ul> | <ul><li>- [x] </li></ul> |
+| Buffer    | <ul><li>- [x] </li></ul> | <ul><li>- [x] </li></ul> |
+| Console   | <ul><li>- [x] </li></ul> | <ul><li>- [x] </li></ul> |
+| Event     | <ul><li>- [x] </li></ul> | <ul><li>- [x] </li></ul> |
+| OCF       | <ul><li>- [x] </li></ul> | <ul><li>- [x] </li></ul> |
+|Performance| <ul><li>- [x] </li></ul> | <ul><li>- [x] </li></ul> |
+| Timers    | <ul><li>- [x] </li></ul> | <ul><li>- [x] </li></ul> |
+
+|
