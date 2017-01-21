@@ -267,7 +267,7 @@ static void zjs_gpio_free_cb(const uintptr_t native)
     gpio_handle_t *handle = (gpio_handle_t *)native;
     if (!handle->closed)
         zjs_gpio_close(handle);
-    
+
     zjs_free(handle);
 }
 

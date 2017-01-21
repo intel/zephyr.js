@@ -124,7 +124,7 @@ bool zjs_obj_get_boolean(jerry_value_t obj, const char *name, bool *flag)
         *flag = jerry_get_boolean_value(value);
         rval = true;
     }
-    
+
     jerry_release_value(value);
     return rval;
 }

@@ -414,7 +414,7 @@ static jerry_value_t get_listeners(const jerry_value_t function_obj,
 
     int32_t callback_id = -1;
     jerry_value_t id_prop = zjs_get_property(event_obj, "callback_id");
-    
+
     if (jerry_value_is_number(id_prop)) {
         // If there already is an event object, get the callback ID
         zjs_obj_get_int32(event_obj, "callback_id", &callback_id);
