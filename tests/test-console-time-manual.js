@@ -28,13 +28,21 @@ setTimeout(function() {
 
     console.log("test: set invalid timer name");
     var Timer21;
-    console.time(Timer21);
-    console.timeEnd(Timer21);
-    console.log("expected result: throw error\n");
+    try {
+        console.time(Timer21);
+        console.timeEnd(Timer21);
+    } catch (e) {
+        console.log("expected result: throw error");
+        console.log("ERROR: " + e.name + " - " + e.message + "\n");
+    }
 
     console.log("test: set timer name as null");
     var Timer22 = "";
     console.time(Timer22);
-    console.timeEnd(Timer22);
-    console.log("expected result: throw error\n");
+    setTimeout(function() {
+        console.timeEnd(Timer22);
+        console.log("expected result: 1020ms\n");
+
+        console.log("Testing completed");
+    }, 1000);
 }, 3000);
