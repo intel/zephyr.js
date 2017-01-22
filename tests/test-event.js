@@ -3,59 +3,22 @@
 // Testing EVENT APIs
 
 var event = require("events");
-
-var total = 0;
-var passed = 0;
-
-function assert(actual, description) {
-    total += 1;
-
-    var label = "\033[1m\033[31mFAIL\033[0m";
-    if (actual === true) {
-        passed += 1;
-        label = "\033[1m\033[32mPASS\033[0m";
-    }
-
-    console.log(label + " - " + description);
-}
-
-function expectThrow(description, func) {
-    var threw = false;
-    try {
-        func();
-    }
-    catch (err) {
-        threw = true;
-    }
-    assert(threw, description);
-}
+var Assert = require("Assert.js");
 
 var eventEmitter = new event();
 
-expectThrow("event: set max of listeners as 'value'", function () {
-    eventEmitter.setMaxListeners("value");
-});
-
-expectThrow("event: set max of listeners as '-1024'", function () {
-    eventEmitter.setMaxListeners(-1024);
-});
-
-expectThrow("event: get max of listeners on event named 'value'", function () {
-    eventEmitter.getMaxListeners("value");
-});
-
 var defaultNum = eventEmitter.getMaxListeners();
-assert(defaultNum === 0, "event: default number of listeners");
+Assert.true(defaultNum === 10, "event: default number of listeners");
 
 var SetlistenersNum = 20;
 eventEmitter.setMaxListeners(SetlistenersNum);
 var GetlistenersNum = eventEmitter.getMaxListeners();
-assert(SetlistenersNum === GetlistenersNum,
-       "event: set and get max of listeners");
+Assert.true(SetlistenersNum === GetlistenersNum,
+           "event: set and get max of listeners");
 
 var NoeventsName = eventEmitter.eventNames();
-assert(NoeventsName !== null && typeof NoeventsName === "object",
-       "event: get event name by no-event");
+Assert.true(NoeventsName !== null && typeof NoeventsName === "object",
+           "event: get event name by no-event");
 
 var EmitnoeventFlag, EmiteventFlag;
 EmitnoeventFlag = eventEmitter.emit("value");
@@ -118,59 +81,43 @@ eventEmitter.addListener("event_listener", event_listener_10);
 
 // test listeners name
 var listenersName;
-expectThrow("event: get listeners name without event name", function () {
-    listenersName = eventEmitter.listeners();
-});
-
-expectThrow("event: get listeners name with invalid event", function () {
-    listenersName = eventEmitter.listeners("value");
-});
-
 listenersName = eventEmitter.listeners("event_listener");
-assert(listenersName.length === 10,
-       "event: add listener and get listeners name");
+Assert.true(listenersName.length === 10,
+            "event: add listener and get listeners name");
 
 // test events name
 var eventsName;
-expectThrow("event: get events name with invalid parameter", function () {
-    eventsName = eventEmitter.eventNames("value");
-});
-
 eventsName = eventEmitter.eventNames();
-assert((eventsName.length - 9) === 3, "event: get all events name");
+Assert.true((eventsName.length - 9) === 3, "event: get all events name");
 
 // test remove all listeners
 var oldAllListenersNum, newAllListenersNum;
-expectThrow("event: remove all listeners without event name", function () {
-    eventEmitter.removeAllListeners();
-});
-
 oldAllListenersNum = eventEmitter.listenerCount("event_listener");
 eventEmitter.removeAllListeners("event_listener");
 newAllListenersNum = eventEmitter.listenerCount("event_listener");
-assert(oldAllListenersNum !== 0 && newAllListenersNum === 0,
-       "event: remove all listeners on event");
+Assert.true(oldAllListenersNum !== 0 && newAllListenersNum === 0,
+            "event: remove all listeners on event");
 
 // event response time is about 10 ms
 var OldlistenerNum, NewlistenerNum;
 setTimeout(function() {
-    assert(onFlag, "event: listen and emit without args");
+    Assert.true(onFlag, "event: listen and emit without args");
 
-    assert(totalNum === 210, "event: set 20 args for listener");
+    Assert.true(totalNum === 210, "event: set 20 args for listener");
 
-    assert(EmitnoeventFlag === false && typeof EmitnoeventFlag === "boolean",
-           "event: emit with invalid event name");
+    Assert.true(EmitnoeventFlag === false && typeof EmitnoeventFlag === "boolean",
+                "event: emit with invalid event name");
 
-    assert(EmiteventFlag === true && typeof EmiteventFlag === "boolean",
-           "event: emit with event name");
+    Assert.true(EmiteventFlag === true && typeof EmiteventFlag === "boolean",
+                "event: emit with event name");
 
     // test remove one listener
     OldlistenerNum = eventEmitter.listenerCount("event_noArg");
     eventEmitter.removeListener("event_noArg", test_listener_noArg);
     NewlistenerNum = eventEmitter.listenerCount("event_noArg");
 
-    assert(OldlistenerNum === 1 && NewlistenerNum === 0,
-           "event: remove one listener");
+    Assert.true(OldlistenerNum === 1 && NewlistenerNum === 0,
+                "event: remove one listener");
 
-    console.log("TOTAL: " + passed + " of " + total + " passed");
+    Assert.result();
 }, 1000);
