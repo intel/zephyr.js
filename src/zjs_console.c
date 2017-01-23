@@ -43,12 +43,90 @@ static int is_int(jerry_value_t val) {
     }
 }
 
+static bool value2str(const jerry_value_t value, char *buf, int maxlen,
+                      bool quotes)
+{
+    // requires: buf has at least maxlen characters
+    //  effects: writes a string representation of the value to buf; when
+    //             processing a string value, puts quotes around it if quotes
+    //             is true
+    //  returns: true if the representation was complete or false if it
+    //             was abbreviated
+    if (jerry_value_is_array(value)) {
+        uint32_t len = jerry_get_array_length(value);
+        sprintf(buf, "[Array - length %lu]", len);
+        return false;
+    }
+    else if (jerry_value_is_boolean(value)) {
+        uint8_t val = jerry_get_boolean_value(value);
+        sprintf(buf, (val) ? "true" : "false");
+    }
+    else if (jerry_value_is_function(value)) {
+        sprintf(buf, "[Function]");
+    }
+    else if (jerry_value_is_number(value)) {
+        int type = is_int(value);
+        if (type == IS_NUMBER) {
+#ifdef ZJS_PRINT_FLOATS
+            double num = jerry_get_number_value(value);
+            sprintf(buf, "%f", num);
+#else
+            int32_t num = (int32_t)jerry_get_number_value(value);
+            sprintf(buf, "[Float ~%li]", num);
+#endif
+        } else if (type == IS_UINT) {
+            uint32_t num = (uint32_t)jerry_get_number_value(value);
+            sprintf(buf, "%lu", num);
+        } else if (type == IS_INT) {
+            int32_t num = (int32_t)jerry_get_number_value(value);
+            // Linux and Zephyr print int32_t's differently if %li is used
+#ifdef ZJS_LINUX_BUILD
+            sprintf(buf, "%i", num);
+#else
+            sprintf(buf, "%li", num);
+#endif
+        }
+    }
+    else if (jerry_value_is_null(value)) {
+        sprintf(buf, "null");
+    }
+    // NOTE: important that checks for function and array were above this
+    else if (jerry_value_is_object(value)) {
+        sprintf(buf, "[Object]");
+    }
+    else if (jerry_value_is_string(value)) {
+        jerry_size_t size = jerry_get_string_size(value);
+        if (size >= maxlen) {
+            sprintf(buf, "[String - length %lu]", size);
+        }
+        else {
+            char buffer[++size];
+            zjs_copy_jstring(value, buffer, &size);
+            if (quotes) {
+                sprintf(buf, "\"%s\"", buffer);
+            }
+            else {
+                sprintf(buf, "%s", buffer);
+            }
+        }
+    }
+    else if (jerry_value_is_undefined(value)) {
+        sprintf(buf, "undefined");
+    }
+    else {
+        // should never get this
+        sprintf(buf, "UNKNOWN");
+    }
+    return true;
+}
+
 static void print_value(const jerry_value_t value, FILE *out, bool deep,
                         bool quotes)
 {
-    if (jerry_value_is_array(value)) {
-        uint32_t len = jerry_get_array_length(value);
-        if (deep) {
+    char buf[MAX_STR_LENGTH];
+    if (!value2str(value, buf, MAX_STR_LENGTH, quotes) && deep) {
+        if (jerry_value_is_array(value)) {
+            uint32_t len = jerry_get_array_length(value);
             fprintf(out, "[");
             for (int i = 0; i < len; i++) {
                 if (i) {
@@ -60,69 +138,9 @@ static void print_value(const jerry_value_t value, FILE *out, bool deep,
             }
             fprintf(out, "]");
         }
-        else {
-            fprintf(out, "[Array - length %lu]", len);
-        }
-    }
-    else if (jerry_value_is_boolean(value)) {
-        uint8_t val = jerry_get_boolean_value(value);
-        fprintf(out, (val) ? "true" : "false");
-    }
-    else if (jerry_value_is_function(value)) {
-        fprintf(out, "[Function]");
-    }
-    else if (jerry_value_is_number(value)) {
-        int type = is_int(value);
-        if (type == IS_NUMBER) {
-#ifdef ZJS_PRINT_FLOATS
-            double num = jerry_get_number_value(value);
-            fprintf(out, "%f", num);
-#else
-            int32_t num = (int32_t)jerry_get_number_value(value);
-            fprintf(out, "[Float ~%li]", num);
-#endif
-        } else if (type == IS_UINT) {
-            uint32_t num = (uint32_t)jerry_get_number_value(value);
-            fprintf(out, "%lu", num);
-        } else if (type == IS_INT) {
-            int32_t num = (int32_t)jerry_get_number_value(value);
-            // Linux and Zephyr print int32_t's differently if %li is used
-#ifdef ZJS_LINUX_BUILD
-            fprintf(out, "%i", num);
-#else
-            fprintf(out, "%li", num);
-#endif
-        }
-    }
-    else if (jerry_value_is_null(value)) {
-        fprintf(out, "null");
-    }
-    // NOTE: important that checks for function and array were above this
-    else if (jerry_value_is_object(value)) {
-        fprintf(out, "[Object]");
-    }
-    else if (jerry_value_is_string(value)) {
-        jerry_size_t size = jerry_get_string_size(value);
-        if (size >= MAX_STR_LENGTH) {
-            fprintf(out, "[String - length %lu]", size);
-        }
-        else {
-            char buffer[++size];
-            zjs_copy_jstring(value, buffer, &size);
-            if (quotes) {
-                fprintf(out, "\"%s\"", buffer);
-            }
-            else {
-                fprintf(out, "%s", buffer);
-            }
-        }
-    }
-    else if (jerry_value_is_undefined(value)) {
-        fprintf(out, "undefined");
     }
     else {
-        // should never get this
-        fprintf(out, "UNKNOWN");
+        fprintf(out, "%s", buf);
     }
 }
 
@@ -214,31 +232,16 @@ static jerry_value_t console_assert(const jerry_value_t function_obj,
                                     const jerry_length_t argc)
 {
     char message[MAX_STR_LENGTH];
-    uint8_t has_message = 0;
     if (!jerry_value_is_boolean(argv[0])) {
-        ERR_PRINT("invalid parameters\n");
-        return ZJS_UNDEFINED;
+        return TYPE_ERROR("invalid parameter");
     }
     bool b = jerry_get_boolean_value(argv[0]);
     if (!b) {
         if (argc > 1) {
-            if (!jerry_value_is_string(argv[1])) {
-                ERR_PRINT("message parameter must be a string\n");
-                return ZJS_UNDEFINED;
-            } else {
-                jerry_size_t sz = MAX_STR_LENGTH;
-                zjs_copy_jstring(argv[1], message, &sz);
-                if (!sz) {
-                    ERR_PRINT("string is too long\n");
-                    return ZJS_UNDEFINED;
-                }
-                has_message = 1;
-            }
-        }
-        if (has_message) {
+            value2str(argv[1], message, MAX_STR_LENGTH, false);
             return ASSERTION_ERROR(message);
         } else {
-            return ASSERTION_ERROR("console.assert() error");
+            return ASSERTION_ERROR("console.assert");
         }
     }
     return ZJS_UNDEFINED;
