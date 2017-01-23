@@ -44,5 +44,3 @@ General
 [Performance](./performance.md)
 
 [Timers](./timers.md)
-
-[Console](./console.md)

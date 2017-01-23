@@ -91,8 +91,7 @@ static jerry_value_t is_file(const jerry_value_t function_obj,
     struct fs_dirent* entry;
 
     if (!jerry_get_object_native_handle(this, (uintptr_t*)&entry)) {
-        ERR_PRINT("native handle not found\n");
-        return jerry_create_boolean(false);
+        return zjs_error("native handle not found");
     }
     if (entry->type == FS_DIR_ENTRY_FILE) {
         return jerry_create_boolean(true);
@@ -109,8 +108,7 @@ static jerry_value_t is_directory(const jerry_value_t function_obj,
     struct fs_dirent* entry;
 
     if (!jerry_get_object_native_handle(this, (uintptr_t*)&entry)) {
-        ERR_PRINT("native handle not found\n");
-        return jerry_create_boolean(false);
+        return zjs_error("native handle not found");
     }
     if (entry->type == FS_DIR_ENTRY_DIR) {
         return jerry_create_boolean(true);
@@ -192,18 +190,11 @@ static jerry_value_t zjs_open(const jerry_value_t function_obj,
 
     /*
      * TODO: Currently Zephyr has no concept of file permissions, when you open
-     *       a file it is automatically readable and writable. This if block
-     *       is here in case things change and we can throw an exception if a
-     *       file is opened with improper permissions.
+     *       a file it is automatically readable and writable. This comment
+     *       is left as a reminder that if other systems/OS have permissions
+     *       we may want to implement the logic, but for now the 'mode' parameter
+     *       is unused.
      */
-    if (file_exists(path)) {
-        if (handle->mode & FLAGS_NO_CREATE) {
-            ERR_PRINT("Opening file %s in mode %s throws exception if file exists\n", path, mode);
-            return zjs_error("file already exists");
-        } else {
-            DBG_PRINT("Opening existing file %s with mode %s\n", path, mode);
-        }
-    }
 
     handle->error = fs_open(&handle->fp, path);
     if (handle->error != 0) {
@@ -399,22 +390,31 @@ static jerry_value_t zjs_read(const jerry_value_t function_obj,
         return zjs_error("native handle not found");
     }
     zjs_buffer_t* buffer = zjs_buffer_find(argv[1]);
-    uint32_t offset = jerry_get_number_value(argv[2]);
-    uint32_t length = jerry_get_number_value(argv[3]);
-    uint32_t position = jerry_get_number_value(argv[4]);
+    double offset = jerry_get_number_value(argv[2]);
+    double length = jerry_get_number_value(argv[3]);
+    double position = jerry_get_number_value(argv[4]);
+
+    if (offset < 0 || length < 0 || position < 0) {
+        return zjs_error("offset, length and position must be positive numbers");
+    }
+    if (offset >= buffer->bufsize) {
+        return zjs_error("offset overflows buffer");
+    }
+    if (offset + length > buffer->bufsize) {
+        return zjs_error("offset + length overflows buffer");
+    }
 
     // if a position was specified, seek to it before writing
-
-    if (fs_seek(&handle->fp, position, SEEK_SET) != 0) {
+    if (fs_seek(&handle->fp, (uint32_t)position, SEEK_SET) != 0) {
         return zjs_error("error seeking to position");
     }
 
     DBG_PRINT("reading into fp=%p, buffer=%p, offset=%lu, length=%lu\n", &handle->fp, buffer->buffer, offset, length);
 
-    uint32_t ret = fs_read(&handle->fp, buffer->buffer + offset, length);
+    uint32_t ret = fs_read(&handle->fp, buffer->buffer + (uint32_t)offset, (uint32_t)length);
 
-    if (ret != length) {
-        ERR_PRINT("could not read %lu bytes, only %lu were read\n", length, ret);
+    if (ret != (uint32_t)length) {
+        DBG_PRINT("could not read %lu bytes, only %lu were read\n", (uint32_t)length, ret);
         err = -1;
     }
 
@@ -462,7 +462,7 @@ static jerry_value_t zjs_write(const jerry_value_t function_obj,
                                uint8_t async)
 {
     file_handle* handle;
-    int position = 0;
+    double position = 0;
     jerry_value_t js_cb = ZJS_UNDEFINED;
 
     if (argc < 5) {
@@ -506,20 +506,30 @@ static jerry_value_t zjs_write(const jerry_value_t function_obj,
         return zjs_error("native handle not found");
     }
     zjs_buffer_t* buffer = zjs_buffer_find(argv[1]);
-    uint32_t offset = jerry_get_number_value(argv[2]);
-    uint32_t length = jerry_get_number_value(argv[3]);
+    double offset = jerry_get_number_value(argv[2]);
+    double length = jerry_get_number_value(argv[3]);
+
+    if (offset < 0 || length < 0 || position < 0) {
+        return zjs_error("offset, length and position must be positive numbers");
+    }
+    if (offset >= buffer->bufsize) {
+        return zjs_error("offset overflows buffer");
+    }
+    if (offset + length > buffer->bufsize) {
+        return zjs_error("offset + length overflows buffer");
+    }
 
     // if a position was specified, seek to it before writing
-    if (fs_seek(&handle->fp, position, SEEK_SET) != 0) {
+    if (fs_seek(&handle->fp, (uint32_t)position, SEEK_SET) != 0) {
         return zjs_error("error seeking to position\n");
     }
 
-    DBG_PRINT("writing to fp=%p, buffer=%p, offset=%lu, length=%lu\n", &handle->fp, buffer->buffer, offset, length);
+    DBG_PRINT("writing to fp=%p, buffer=%p, offset=%lu, length=%lu\n", &handle->fp, buffer->buffer, (uint32_t)offset, (uint32_t)length);
 
-    uint32_t written = fs_write(&handle->fp, buffer->buffer + offset, length);
+    uint32_t written = fs_write(&handle->fp, buffer->buffer + (uint32_t)offset, (uint32_t)length);
 
-    if (written != length) {
-        ERR_PRINT("could not write %lu bytes, only %lu were written\n", length, written);
+    if (written != (uint32_t)length) {
+        DBG_PRINT("could not write %lu bytes, only %lu were written\n", (uint32_t)length, written);
     }
 
 #ifdef ZJS_FS_ASYNC_APIS
