@@ -497,7 +497,7 @@ static jerry_value_t zjs_sensor_create(const jerry_value_t function_obj,
     sensor_handle_t* handle = zjs_sensor_alloc_handle(channel);
     handle->id = zjs_add_c_callback(handle, zjs_sensor_onchange_c_callback);
     handle->channel = channel;
-    handle->sensor_obj = sensor_obj;
+    handle->sensor_obj = jerry_acquire_value(sensor_obj);
 
     // watch for the object getting garbage collected, and clean up
     jerry_set_object_native_handle(sensor_obj, (uintptr_t)handle,

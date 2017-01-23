@@ -45,7 +45,7 @@ static bool zjs_glcd_ipm_send_sync(zjs_ipm_message_t* send,
     return true;
 }
 
-static jerry_value_t zjs_glcd_call_remote_function(zjs_ipm_message_t* send)
+static jerry_value_t zjs_glcd_call_remote_function(zjs_ipm_message_t *send)
 {
     if (!send)
         return zjs_error("zjs_glcd_call_remote_function: invalid send message");
@@ -66,6 +66,17 @@ static jerry_value_t zjs_glcd_call_remote_function(zjs_ipm_message_t* send)
     uint8_t value = reply.data.glcd.value;
 
     return jerry_create_number(value);
+}
+
+// returns undefined instead of the value result
+static jerry_value_t zjs_glcd_call_remote_ignore(zjs_ipm_message_t *send)
+{
+    jerry_value_t rval = zjs_glcd_call_remote_function(send);
+    if (jerry_value_has_error_flag(rval))
+        return rval;
+
+    jerry_release_value(rval);
+    return ZJS_UNDEFINED;
 }
 
 static void ipm_msg_receive_callback(void *context, uint32_t id, volatile void *data)
@@ -109,10 +120,9 @@ static jerry_value_t zjs_glcd_print(const jerry_value_t function_obj,
     send.type = TYPE_GLCD_PRINT;
     send.data.glcd.buffer = buffer;
 
-    jerry_value_t result = zjs_glcd_call_remote_function(&send);
+    jerry_value_t result = zjs_glcd_call_remote_ignore(&send);
     zjs_free(buffer);
-
-    return jerry_value_has_error_flag(result) ? result : ZJS_UNDEFINED;
+    return result;
 }
 
 static jerry_value_t zjs_glcd_clear(const jerry_value_t function_obj,
@@ -124,10 +134,7 @@ static jerry_value_t zjs_glcd_clear(const jerry_value_t function_obj,
     zjs_ipm_message_t send;
     // no input parameter to set
     send.type = TYPE_GLCD_CLEAR;
-
-    jerry_value_t result = zjs_glcd_call_remote_function(&send);
-
-    return jerry_value_has_error_flag(result) ? result : ZJS_UNDEFINED;
+    return zjs_glcd_call_remote_function(&send);
 }
 
 static jerry_value_t zjs_glcd_set_cursor_pos(const jerry_value_t function_obj,
@@ -147,9 +154,7 @@ static jerry_value_t zjs_glcd_set_cursor_pos(const jerry_value_t function_obj,
     send.data.glcd.col = (uint8_t)jerry_get_number_value(argv[0]);
     send.data.glcd.row = (uint8_t)jerry_get_number_value(argv[1]);
 
-    jerry_value_t result = zjs_glcd_call_remote_function(&send);
-
-    return jerry_value_has_error_flag(result) ? result : ZJS_UNDEFINED;
+    return zjs_glcd_call_remote_ignore(&send);
 }
 
 static jerry_value_t zjs_glcd_select_color(const jerry_value_t function_obj,
@@ -166,9 +171,7 @@ static jerry_value_t zjs_glcd_select_color(const jerry_value_t function_obj,
     send.type = TYPE_GLCD_SELECT_COLOR;
     send.data.glcd.value = (uint8_t)jerry_get_number_value(argv[0]);
 
-    jerry_value_t result = zjs_glcd_call_remote_function(&send);
-
-    return jerry_value_has_error_flag(result) ? result : ZJS_UNDEFINED;
+    return zjs_glcd_call_remote_ignore(&send);
 }
 
 static jerry_value_t zjs_glcd_set_color(const jerry_value_t function_obj,
@@ -190,9 +193,7 @@ static jerry_value_t zjs_glcd_set_color(const jerry_value_t function_obj,
     send.data.glcd.color_g = (uint8_t)jerry_get_number_value(argv[1]);
     send.data.glcd.color_b = (uint8_t)jerry_get_number_value(argv[2]);
 
-    jerry_value_t result = zjs_glcd_call_remote_function(&send);
-
-    return jerry_value_has_error_flag(result) ? result : ZJS_UNDEFINED;
+    return zjs_glcd_call_remote_ignore(&send);
 }
 
 static jerry_value_t zjs_glcd_set_function(const jerry_value_t function_obj,
@@ -209,9 +210,7 @@ static jerry_value_t zjs_glcd_set_function(const jerry_value_t function_obj,
     send.type = TYPE_GLCD_SET_FUNCTION;
     send.data.glcd.value = (uint8_t)jerry_get_number_value(argv[0]);
 
-    jerry_value_t result = zjs_glcd_call_remote_function(&send);
-
-    return jerry_value_has_error_flag(result) ? result : ZJS_UNDEFINED;
+    return zjs_glcd_call_remote_ignore(&send);
 }
 
 static jerry_value_t zjs_glcd_get_function(const jerry_value_t function_obj,
@@ -241,9 +240,7 @@ static jerry_value_t zjs_glcd_set_display_state(const jerry_value_t function_obj
     send.type = TYPE_GLCD_SET_DISPLAY_STATE;
     send.data.glcd.value = (uint8_t)jerry_get_number_value(argv[0]);
 
-    jerry_value_t result = zjs_glcd_call_remote_function(&send);
-
-    return jerry_value_has_error_flag(result) ? result : ZJS_UNDEFINED;
+    return zjs_glcd_call_remote_ignore(&send);
 }
 
 static jerry_value_t zjs_glcd_get_display_state(const jerry_value_t function_obj,
@@ -273,9 +270,7 @@ static jerry_value_t zjs_glcd_set_input_state(const jerry_value_t function_obj,
     send.type = TYPE_GLCD_SET_INPUT_STATE;
     send.data.glcd.value = (uint8_t)jerry_get_number_value(argv[0]);
 
-    jerry_value_t result = zjs_glcd_call_remote_function(&send);
-
-    return jerry_value_has_error_flag(result) ? result : ZJS_UNDEFINED;
+    return zjs_glcd_call_remote_ignore(&send);
 }
 
 static jerry_value_t zjs_glcd_get_input_state(const jerry_value_t function_obj,
@@ -302,10 +297,10 @@ static jerry_value_t zjs_glcd_init(const jerry_value_t function_obj,
     send.type = TYPE_GLCD_INIT;
 
     jerry_value_t result = zjs_glcd_call_remote_function(&send);
-
     if (jerry_value_has_error_flag(result)) {
         return result;
     }
+    jerry_release_value(result);
 
     // create the Grove LCD device object
     jerry_value_t dev_obj = jerry_create_object();

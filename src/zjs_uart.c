@@ -166,6 +166,7 @@ static jerry_value_t uart_write(const jerry_value_t function_obj,
         jerry_value_t error = make_uart_error("TypeMismatchError",
                 "first parameter must be a Buffer");
         zjs_reject_promise(promise, &error, 1);
+        jerry_release_value(error);
         return promise;
     }
 
@@ -231,6 +232,7 @@ static jerry_value_t uart_init(const jerry_value_t function_obj,
         jerry_value_t error = make_uart_error("TypeMismatchError",
                 "first parameter must be UART options");
         zjs_reject_promise(promise, &error, 1);
+        jerry_release_value(error);
         return promise;
     }
 
@@ -241,21 +243,24 @@ static jerry_value_t uart_init(const jerry_value_t function_obj,
     char port[size];
 
     zjs_copy_jstring(port_val, port, &size);
+    jerry_release_value(port_val);
+
     if (!size) {
         DBG_PRINT("port length is too long\n");
         jerry_value_t error = make_uart_error("TypeMismatchError",
                 "port length is too long");
         zjs_reject_promise(promise, &error, 1);
+        jerry_release_value(error);
         return promise;
     }
-
-    jerry_release_value(port_val);
 
     jerry_value_t baud_val = zjs_get_property(argv[0], "baud");
 
     if (jerry_value_is_number(baud_val)) {
         baud = (int)jerry_get_number_value(baud_val);
     }
+    jerry_release_value(baud_val);
+
     for (i = 0; i < (sizeof(device_map) / sizeof(device_map[0])); ++i) {
         // FIXME: we allowed 16-char string above but are only looking at 4?
         if (strncmp(device_map[0].port, port, 4) == 0) {
@@ -268,6 +273,7 @@ static jerry_value_t uart_init(const jerry_value_t function_obj,
         jerry_value_t error = make_uart_error("NotFoundError",
                 "could not find port provided");
         zjs_reject_promise(promise, &error, 1);
+        jerry_release_value(error);
         return promise;
     }
 
@@ -310,6 +316,7 @@ static jerry_value_t uart_init(const jerry_value_t function_obj,
             jerry_value_t error = make_uart_error("InternalError",
                     "baud could not be set");
             zjs_reject_promise(promise, &error, 1);
+            jerry_release_value(error);
             return promise;
         }
     }

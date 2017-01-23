@@ -63,7 +63,7 @@ module_t zjs_modules_array[] = {
 #endif
 #endif
 #ifdef BUILD_MODULE_BLE
-    { "ble", zjs_ble_init },
+    { "ble", zjs_ble_init, zjs_ble_cleanup },
 #endif
 #ifdef BUILD_MODULE_GPIO
     { "gpio", zjs_gpio_init, zjs_gpio_cleanup },
@@ -141,15 +141,17 @@ static jerry_value_t native_require_handler(const jerry_value_t function_obj,
               module);
     jerry_value_t global_obj = jerry_get_global_object();
     jerry_value_t modules_obj = zjs_get_property(global_obj, "module");
+    jerry_release_value(global_obj);
+
     if (!jerry_value_is_object(modules_obj)) {
-        jerry_release_value(global_obj);
         jerry_release_value(modules_obj);
         return SYSTEM_ERROR("native_require_handler: modules object not found");
     }
+
     jerry_value_t exports_obj = zjs_get_property(modules_obj, "exports");
+    jerry_release_value(modules_obj);
+
     if (!jerry_value_is_object(exports_obj)) {
-        jerry_release_value(global_obj);
-        jerry_release_value(modules_obj);
         jerry_release_value(exports_obj);
         return SYSTEM_ERROR("native_require_handler: exports object not found");
     }
@@ -160,19 +162,16 @@ static jerry_value_t native_require_handler(const jerry_value_t function_obj,
     }
 
     jerry_value_t found_obj = zjs_get_property(exports_obj, module);
+    jerry_release_value(exports_obj);
 
-    if (jerry_value_is_object(found_obj)) {
-        DBG_PRINT("JavaScript module %s loaded\n", module);
-        jerry_release_value(global_obj);
-        jerry_release_value(modules_obj);
-        jerry_release_value(exports_obj);
-        return found_obj;
+    if (!jerry_value_is_object(found_obj)) {
+        jerry_release_value(found_obj);
+        return NOTSUPPORTED_ERROR("native_require_handler: module not found");
     }
 
-    jerry_release_value(global_obj);
-    jerry_release_value(modules_obj);
+    DBG_PRINT("JavaScript module %s loaded\n", module);
     jerry_release_value(exports_obj);
-    return NOTSUPPORTED_ERROR("native_require_handler: module not found");
+    return found_obj;
 }
 
 void zjs_modules_init()

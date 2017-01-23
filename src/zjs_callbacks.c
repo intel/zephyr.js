@@ -305,7 +305,8 @@ void zjs_remove_callback(zjs_callback_id id)
         if (GET_TYPE(cb_map[id]->flags) == CALLBACK_TYPE_JS) {
             if (GET_JS_TYPE(cb_map[id]->flags) == JS_TYPE_SINGLE) {
                 jerry_release_value(cb_map[id]->js_func);
-            } else if (GET_JS_TYPE(cb_map[id]->flags) == JS_TYPE_LIST && cb_map[id]->func_list) {
+            } else if (GET_JS_TYPE(cb_map[id]->flags) == JS_TYPE_LIST &&
+                       cb_map[id]->func_list) {
                 int i;
                 for (i = 0; i < cb_map[id]->num_funcs; ++i) {
                     jerry_release_value(cb_map[id]->func_list[i]);
@@ -320,9 +321,10 @@ void zjs_remove_callback(zjs_callback_id id)
     }
 }
 
-void zjs_signal_callback(zjs_callback_id id, void* args, uint32_t size)
+void zjs_signal_callback(zjs_callback_id id, const void *args, uint32_t size)
 {
-    DBG_PRINT("pushing item to ring buffer. id=%d, args=%p, size=%lu\n", id, args, size);
+    DBG_PRINT("pushing item to ring buffer. id=%d, args=%p, size=%lu\n", id,
+              args, size);
     int ret = zjs_port_ring_buf_put(&ring_buffer,
                                     (uint16_t)id,
                                     0,

@@ -118,15 +118,15 @@ bool zjs_obj_get_boolean(jerry_value_t obj, const char *name, bool *flag)
     //             boolean
     //  effects: retrieves field specified by name as a boolean
     jerry_value_t value = zjs_get_property(obj, name);
-    if (jerry_value_has_error_flag(value))
-        return false;
+    bool rval = false;
 
-    if (!jerry_value_is_boolean(value))
-        return false;
+    if (!jerry_value_has_error_flag(value) && jerry_value_is_boolean(value)) {
+        *flag = jerry_get_boolean_value(value);
+        rval = true;
+    }
 
-    *flag = jerry_get_boolean_value(value);
     jerry_release_value(value);
-    return true;
+    return rval;
 }
 
 bool zjs_obj_get_string(jerry_value_t obj, const char *name, char *buffer,
@@ -139,11 +139,9 @@ bool zjs_obj_get_string(jerry_value_t obj, const char *name, char *buffer,
     //             a null terminator into buffer and returns true; otherwise,
     //             returns false
     jerry_value_t value = zjs_get_property(obj, name);
-    if (jerry_value_has_error_flag(value))
-        return false;
-
     bool rval = false;
-    if (jerry_value_is_string(value)) {
+
+    if (!jerry_value_has_error_flag(value) && jerry_value_is_string(value)) {
         jerry_size_t size = len;
         zjs_copy_jstring(value, buffer, &size);
         if (size)
@@ -159,12 +157,15 @@ bool zjs_obj_get_double(jerry_value_t obj, const char *name, double *num)
     // requires: obj is an existing JS object, value name should exist as number
     //  effects: retrieves field specified by name as a uint32
     jerry_value_t value = zjs_get_property(obj, name);
-    if (jerry_value_has_error_flag(value))
-        return false;
+    bool rval = false;
 
-    *num = jerry_get_number_value(value);
+    if (!jerry_value_has_error_flag(value)) {
+        *num = jerry_get_number_value(value);
+        rval = true;
+    }
+
     jerry_release_value(value);
-    return true;
+    return rval;
 }
 
 bool zjs_obj_get_uint32(jerry_value_t obj, const char *name, uint32_t *num)
@@ -172,12 +173,15 @@ bool zjs_obj_get_uint32(jerry_value_t obj, const char *name, uint32_t *num)
     // requires: obj is an existing JS object, value name should exist as number
     //  effects: retrieves field specified by name as a uint32
     jerry_value_t value = zjs_get_property(obj, name);
-    if (jerry_value_has_error_flag(value))
-        return false;
+    bool rval = false;
 
-    *num = (uint32_t)jerry_get_number_value(value);
+    if (!jerry_value_has_error_flag(value)) {
+        *num = (uint32_t)jerry_get_number_value(value);
+        rval = true;
+    }
+
     jerry_release_value(value);
-    return true;
+    return rval;
 }
 
 bool zjs_obj_get_int32(jerry_value_t obj, const char *name, int32_t *num)
@@ -185,12 +189,15 @@ bool zjs_obj_get_int32(jerry_value_t obj, const char *name, int32_t *num)
     // requires: obj is an existing JS object, value name should exist as number
     //  effects: retrieves field specified by name as a int32
     jerry_value_t value = zjs_get_property(obj, name);
-    if (jerry_value_has_error_flag(value))
-        return false;
+    bool rval = false;
 
-    *num = (int32_t)jerry_get_number_value(value);
+    if (!jerry_value_has_error_flag(value)) {
+        *num = (int32_t)jerry_get_number_value(value);
+        rval = true;
+    }
+
     jerry_release_value(value);
-    return true;
+    return rval;
 }
 
 void zjs_copy_jstring(jerry_value_t jstr, char *buffer, jerry_size_t *maxlen)
