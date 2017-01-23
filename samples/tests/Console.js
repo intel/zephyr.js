@@ -8,7 +8,7 @@ console.log(" Booleans:", true, false);
 console.log("Functions:", function () {});
 console.log("  Numbers:", 1, -1, 123.456, -123.456);
 console.log("  Objects:", {}, {foo: 'bar'});
-console.log("  Strings:", '', "", 'abc', "def");
+console.log("  Strings:", '', "", 'abc', "def");  // expect: "  abc def"
 console.log("     Misc:", null, undefined);
 
 console.log("\nTesting console.error...");
@@ -52,26 +52,39 @@ longstr += '6';  // length 256
 console.log(longstr);
 
 console.log("\nTesting console.assert... ");
+console.log("assert(true): expected result: nothing");
 console.assert(true);
-console.log("assert(true): expected result nothing");
 
+console.log("\nassert(false, 'false assertion'): " +
+            "expected result: AssertionError");
 try {
-    console.assert(false, "My lover!");
+    console.assert(false, 'false assertion');
 } catch (e) {
-    console.log("assert(false, 'My lover!'): expected result throw error");
-    console.log("ERROR: " + e.name + " - " + e.message);
+    console.log("Caught error: " + e.name + ": " + e.message);
 }
 
-console.assert(consoleStr);
-console.log("assert(string): expected result [ERROR] invalid parameters");
+console.log("\nassert(string): expected result: throw TypeError");
+try {
+    console.assert(consoleStr);
+} catch (e) {
+    console.log("Caught error: " + e.name + ": " + e.message);
+}
 
-console.assert(false, longstr);
-console.log("assert(false, longstr): " +
-            "expected result [ERROR] string is too long");
+console.log("\nassert(false, longstr): " +
+            "expected result: AssertionError with long string");
+try {
+    console.assert(false, longstr);
+} catch (e) {
+    console.log("Caught error: " + e.name + ": " + e.message);
+}
 
-console.assert(false, consoleNum);
-console.log("assert(false, Num): " +
-            "expected result [ERROR] message parameter must be a string");
+console.log("\nassert(false, 1024): " +
+            "expected result: AssertionError with number value 1024");
+try {
+    console.assert(false, 1024);
+} catch (e) {
+    console.log("Caught error: " + e.name + ": " + e.message);
+}
 
 console.log("\nTesting constructor to create...");
 var stdout, stderr;
