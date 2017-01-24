@@ -423,8 +423,7 @@ static void print_error_message(jerry_value_t error)
     }
     jerry_release_value(err_name);
 
-    size = 0;
-    message = zjs_alloc_from_jstring(err_msg, &size);
+    message = zjs_alloc_from_jstring(err_msg, NULL);
 
     jerry_release_value(err_msg);
 
