@@ -2,10 +2,10 @@
 
 // Testing UART APIs
 
-console.log("UART APIs test.");
+console.log("UART APIs test");
 
-var board = require('uart');
-var assert = require('Assert.js');
+var board = require("uart");
+var assert = require("Assert.js");
 
 board.init({ port: "value", baud: 115200 }).then(function () {
     assert.true(false, "uart: set port as value");
@@ -21,56 +21,13 @@ board.init({ port: "tty0", baud: 9600 }).then(function () {
     assert.true(false, "uart: set baud as 9600");
 });
 
-var currentData = "";
-var readFlag = false;
-var helloFlag = true;
-var worldFlag = true;
-var finishFlag = false;
 board.init({ port: "tty0", baud: 115200 }).then(function (uart) {
     assert.true(true, "uart: set init as tty0 and 115200");
     assert.true(uart !== null && typeof uart === "object",
                 "uart: callback value for UART.init");
 
     uart.setReadRange(1, 16);
-    uart.on("read", function (data) {
-        if (data.toString("ascii") === "\n" ||
-            data.toString("ascii") === "\r") {
-            if (helloFlag === true) {
-                console.log("please send 'hello'");
-                helloFlag = false;
-            }
-
-            if (currentData === "hello") {
-                if (worldFlag === true) {
-                    console.log("please send 'world'");
-                    worldFlag = false;
-                }
-
-                uart.setReadRange(1, 16);
-            }
-
-            if (currentData === "world" && finishFlag === false) {
-                assert.true(helloFlag === false && worldFlag === false,
-                            "uart: read data by 'hello world'");
-                assert.true(true,
-                            "uart: set readrange as 1 bytes and 16 bytes");
-
-                readFlag = true;
-            }
-
-            if (readFlag === true) {
-                assert.result();
-
-                readFlag = false;
-                finishFlag = true;
-            }
-
-            uart.write(new Buffer("Data recv: " + currentData + "\r\n"));
-            currentData = "";
-        } else {
-            currentData += data.toString("ascii");
-        }
-    });
+    uart.on("read", function (data) {});
 
     uart.write(new Buffer("UART write test\r\n")).then(function () {
         assert.true(true, "uart: write data with string");
@@ -94,6 +51,8 @@ board.init({ port: "tty0", baud: 115200 }).then(function (uart) {
     }).catch(function (error) {
         assert.true(error !== null && typeof error === "object",
                     "uart: catch error for UART.write");
+
+        assert.result();
     });
 }).catch(function (error) {
     assert.true(false, "uart: set init as tty0 and 115200");
