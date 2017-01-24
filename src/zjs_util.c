@@ -4,6 +4,7 @@
 
 // ZJS includes
 #include "zjs_util.h"
+#include "zjs_buffer.h"
 
 void zjs_set_property(const jerry_value_t obj, const char *str,
                       const jerry_value_t prop)
@@ -305,4 +306,75 @@ uint32_t zjs_uncompress_16_to_32(uint16_t num)
 
     // shift back up to the right point
     return uncompressed << (21 - zeroes);
+}
+
+void* zjs_serialize_data(jerry_value_t value, uint32_t* maxLen, uint32_t* actualLen)
+{
+    uint8_t* data = NULL;
+    if (jerry_value_is_string(value)) {
+        uint32_t actual = 0;
+        if (maxLen) {
+            actual = *maxLen;
+        }
+        data = zjs_alloc_from_jstring(value, &actual);
+        *actualLen = actual;
+        return data;
+    } else if (jerry_value_is_array(value)) {
+        int i;
+        uint32_t len = jerry_get_array_length(value);
+        if (len > 0) {
+            if (maxLen) {
+                if (len > *maxLen) {
+                    ERR_PRINT("array length is too big\n");
+                    return NULL;
+                }
+            }
+            // check array type
+            jerry_value_t prop = jerry_get_property_by_index(value, 0);
+            if (!jerry_value_is_number(prop)) {
+                ERR_PRINT("only arrays of bytes can be serialized\n");
+                jerry_release_value(prop);
+                return NULL;
+            }
+            jerry_release_value(prop);
+        } else {
+            // empty array
+            return NULL;
+        }
+        data = zjs_malloc(len);
+        for (i = 0; i < len; i++) {
+            jerry_value_t prop = jerry_get_property_by_index(value, i);
+            if (!jerry_value_is_number(prop)) {
+                ERR_PRINT("array element %u was not a byte value\n", i);
+                jerry_release_value(prop);
+                zjs_free(data);
+                return NULL;
+            }
+            data[i] = (uint8_t)jerry_get_number_value(prop);
+            jerry_release_value(prop);
+        }
+        *actualLen = len;
+        return data;
+    } else if (jerry_value_is_object(value)) {
+        // buffer type
+        zjs_buffer_t* buf = zjs_buffer_find(value);
+        if (buf) {
+            if (maxLen) {
+                if (buf->bufsize > *maxLen) {
+                    ERR_PRINT("buffer is too big\n");
+                    return NULL;
+                }
+            }
+            data = zjs_malloc(buf->bufsize);
+            memcpy(data, buf->buffer, buf->bufsize);
+            *actualLen = buf->bufsize;
+            return data;
+        } else {
+            ERR_PRINT("objects cannot be serialized\n");
+            return NULL;
+        }
+    } else {
+        ERR_PRINT("data type could not be serialized\n");
+    }
+    return NULL;
 }

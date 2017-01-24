@@ -161,20 +161,22 @@ static jerry_value_t uart_write(const jerry_value_t function_obj,
 
     zjs_make_promise(promise, NULL, NULL);
 
-    if (!jerry_value_is_object(argv[0])) {
-        DBG_PRINT("first parameter must be a Buffer");
+    uint32_t len;
+    void* data = zjs_serialize_data(argv[0], NULL, &len);
+    if (!data) {
+        ERR_PRINT("invalid parameters\n");
         jerry_value_t error = make_uart_error("TypeMismatchError",
-                "first parameter must be a Buffer");
+                                              "first parameter must be a Buffer");
         zjs_reject_promise(promise, &error, 1);
         jerry_release_value(error);
         return promise;
     }
 
-    zjs_buffer_t* buffer = zjs_buffer_find(argv[0]);
-
-    write_data(uart_dev, (const char*)buffer->buffer, buffer->bufsize);
+    write_data(uart_dev, (const char*)data, len);
 
     zjs_fulfill_promise(promise, NULL, 0);
+
+    zjs_free(data);
 
     return promise;
 }
