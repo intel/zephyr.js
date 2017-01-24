@@ -31,7 +31,8 @@ include Makefile.ocf_linux
 
 LINUX_DEFINES +=	-DOC_CLIENT \
 			-DOC_SERVER \
-			-DBUILD_MODULE_OCF
+			-DBUILD_MODULE_OCF \
+			-DBUILD_MODULE_BUFFER
 endif
 
 .PHONY: all

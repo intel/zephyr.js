@@ -288,7 +288,7 @@ static jerry_value_t zjs_buffer_write_string(const jerry_value_t function_obj_va
         }
 
         char arg4_str[arg4_sz];
-        char utf8_str[4];
+        char utf8_str[5];
         strcpy(utf8_str, "utf8");
         uint8_t utf8 = strcmp(arg4_str, utf8_str);
 
