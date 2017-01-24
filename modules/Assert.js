@@ -3,54 +3,27 @@
 // JavaScript library for the tests case
 
 function Assert() {
-
     // API object
-    var assert = {};
-
-    assert.total = 0;
-    assert.pass = 0;
-
-    assert.true = function (actual, description) {
-        if (typeof actual !== "boolean" ||
-            typeof description !== "string") {
-            console.log("AssertionError: invalid input type given");
-            throw new Error();
-            return;
-        }
-
-        this.total++;
+    var assert = function (actual, description) {
+        var thisfunc = arguments.callee;
+        thisfunc.total++;
 
         var label = "\033[1m\033[31mFAIL\033[0m";
-        if (actual === true) {
-            this.pass++;
+        if (actual) {
+            thisfunc.pass++;
             label = "\033[1m\033[32mPASS\033[0m";
         }
 
+        if (description === undefined)
+            description = 'no description provided';
         console.log(label + " - " + description);
     }
 
     assert.equal = function (argA, argB, description) {
-        if (typeof argA !== "object" ||
-            typeof argA === "undefined" ||
-            typeof argB !== "object" ||
-            typeof argB === "undefined" ||
-            typeof description !== "string") {
-            console.log("AssertionError: invalid input type given");
-            throw new Error();
-            return;
-        }
-
-        this.true(argA === argB, description);
+        return this(argA === argB, description);
     }
 
-    assert.throws = function (description, func) {
-        if (typeof description !== "string" ||
-            typeof func !== "function") {
-            console.log("AssertionError: invalid input type given");
-            throw new Error();
-            return;
-        }
-
+    assert.throws = function (func, description) {
         var booleanValue = false;
 
         try {
@@ -60,13 +33,15 @@ function Assert() {
             booleanValue = true;
         }
 
-        this.true(booleanValue, description);
+        return this(booleanValue, description);
     }
 
     assert.result = function () {
-        console.log("TOTAL: " + this.pass + " of "
-                    + this.total + " passed");
+        console.log("TOTAL: " + this.pass + " of " + this.total + " passed");
     }
+
+    assert.total = 0;
+    assert.pass = 0;
 
     return assert;
 };
