@@ -9,9 +9,9 @@ I/O
 
 [GPIO](./gpio.md)
 
-[PWM](./pwm.md)
-
 [I2C](./i2c.md)
+
+[PWM](./pwm.md)
 
 [UART](./uart.md)
 
@@ -33,10 +33,10 @@ General
 -------
 [Buffer](./buffer.md)
 
-[Performance](./performance.md)
-
-[Timers](./timers.md)
+[Console](./console.md)
 
 [Events](./events.md)
 
-[Console](./console.md)
+[Performance](./performance.md)
+
+[Timers](./timers.md)
