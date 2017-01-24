@@ -7,14 +7,14 @@
 
 typedef enum zjs_error_type {
     AssertionError,
-    SecurityError,
-    NotSupportedError,
-    SyntaxError,
-    TypeError,
-    RangeError,
-    TimeoutError,
     NetworkError,
+    NotSupportedError,
+    RangeError,
+    SecurityError,
+    SyntaxError,
     SystemError,
+    TimeoutError,
+    TypeError,
     Error
 } zjs_error_type_t;
 

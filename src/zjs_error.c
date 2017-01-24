@@ -9,14 +9,15 @@ typedef struct {
 } zjs_error_t;
 
 static zjs_error_t error_types[] = {
-    { "SecurityError" },
-    { "NotSupportedError" },
-    { "SyntaxError" },
-    { "TypeError" },
-    { "RangeError" },
-    { "TimeoutError" },
+    { "AssertionError" },
     { "NetworkError" },
-    { "SystemError" }
+    { "NotSupportedError" },
+    { "RangeError" },
+    { "SecurityError" },
+    { "SyntaxError" },
+    { "SystemError" },
+    { "TimeoutError" },
+    { "TypeError" },
 };
 
 static jerry_value_t error_handler(const jerry_value_t function_obj,
