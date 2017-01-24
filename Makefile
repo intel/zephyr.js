@@ -46,6 +46,14 @@ ifneq ($(shell pwd)/deps/zephyr, $(ZEPHYR_BASE))
 $(info Note: ZEPHYR_BASE is set outside the current ZJS tree ($(ZEPHYR_BASE)))
 endif
 endif
+
+.PHONY: all
+ifeq ($(BOARD), linux)
+all: linux
+else
+all: zephyr arc
+endif
+
 # Build for zephyr, default target
 .PHONY: zephyr
 zephyr: analyze generate jerryscript
@@ -96,9 +104,6 @@ endif
 	fi
 	@sed -i '/This is a generated file/r./zjs.conf.tmp' src/Makefile
 
-.PHONY: all
-all: zephyr arc
-
 # Update dependency repos
 .PHONY: update
 update:
@@ -132,13 +137,14 @@ endif
 # Explicit clean
 .PHONY: clean
 clean:
-	@if [ -d $(ZEPHYR_SDK_INSTALL_DIR) ]; then \
-		rm -rf $(JERRY_BASE)/build/$(BOARD)/; \
-		rm -f outdir/$(BOARD)/libjerry-core.a; \
-		make -f Makefile.zephyr clean BOARD=$(BOARD); \
-		cd arc/; make clean; \
-	fi
+ifeq ($(BOARD), linux)
 	make -f Makefile.linux clean
+else
+	rm -rf $(JERRY_BASE)/build/$(BOARD)/; \
+	rm -f outdir/$(BOARD)/libjerry-core.a; \
+	make -f Makefile.zephyr clean BOARD=$(BOARD); \
+	cd arc/; make clean;
+endif
 	@rm -f src/*.o
 	@rm -f src/zjs_script_gen.c
 	@rm -f src/zjs_snapshot_gen.c

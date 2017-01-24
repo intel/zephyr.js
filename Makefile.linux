@@ -11,7 +11,7 @@ UNAME := $(shell uname)
 ifeq ($(UNAME),Darwin)
 COPY=rsync -R
 else
-COPY=cp --parents
+COPY=cp --parents --no-clobber
 # Only build OCF on linux, until iotivity-constrained is fixed on Mac
 CORE_SRC +=	src/zjs_ocf_common.c \
 		src/zjs_ocf_client.c \
@@ -136,4 +136,5 @@ linux: setup linux_copy $(BUILD_OBJ)
 
 .PHONY: clean
 clean:
-	rm -f $(BUILD_OBJ)
+	rm -rf $(ZJS_BASE)/outdir/linux/
+	rm -rf $(JERRY_BASE)/build/lib/
