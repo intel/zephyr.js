@@ -388,6 +388,53 @@ void print_callbacks(void)
 #define print_callbacks() do {} while (0)
 #endif
 
+#define MAX_ERROR_NAME_LENGTH       32
+#define MAX_ERROR_MESSAGE_LENGTH    128
+
+static void print_error_message(jerry_value_t error)
+{
+    uint32_t size;
+    char* message = NULL;
+    jerry_value_t err_name = zjs_get_property(error, "name");
+    if (!jerry_value_is_string(err_name)) {
+        ERR_PRINT("error did not have name\n");
+        jerry_release_value(err_name);
+        // we should never get here.
+        return;
+    }
+    jerry_value_t err_msg = zjs_get_property(error, "message");
+    if (!jerry_value_is_string(err_msg)) {
+        ERR_PRINT("error did not have message\n");
+        jerry_release_value(err_name);
+        jerry_release_value(err_msg);
+        // we should never get here.
+        return;
+    }
+
+    size = MAX_ERROR_NAME_LENGTH;
+    char name[size];
+
+    zjs_copy_jstring(err_name, name, &size);
+    if (!size) {
+        ERR_PRINT("name length is too long\n");
+        jerry_release_value(err_name);
+        jerry_release_value(err_msg);
+        return;
+    }
+    jerry_release_value(err_name);
+
+    message = zjs_alloc_from_jstring(err_msg, NULL);
+
+    jerry_release_value(err_msg);
+
+    if (message) {
+        ERR_PRINT("Uncaught exception: %s: %s\n", name, message);
+        zjs_free(message);
+    } else {
+        ERR_PRINT("Uncaught exception: %s\n", name);
+    }
+}
+
 void zjs_call_callback(zjs_callback_id id, void* data, uint32_t sz)
 {
     if (id <= cb_size && cb_map[id]) {
@@ -398,13 +445,13 @@ void zjs_call_callback(zjs_callback_id id, void* data, uint32_t sz)
             if (GET_JS_TYPE(cb_map[id]->flags) == JS_TYPE_SINGLE) {
                 ret_val = jerry_call_function(cb_map[id]->js_func, cb_map[id]->this, data, sz);
                 if (jerry_value_has_error_flag(ret_val)) {
-                    DBG_PRINT("callback %d returned an error for function\n", id);
+                    print_error_message(ret_val);
                 }
             } else if (GET_JS_TYPE(cb_map[id]->flags) == JS_TYPE_LIST) {
                 for (i = 0; i < cb_map[id]->num_funcs; ++i) {
                     ret_val = jerry_call_function(cb_map[id]->func_list[i], cb_map[id]->this, data, sz);
                     if (jerry_value_has_error_flag(ret_val)) {
-                        DBG_PRINT("callback %d returned an error for function[%i]\n", id, i);
+                        print_error_message(ret_val);
                     }
                 }
             }
@@ -418,6 +465,7 @@ void zjs_call_callback(zjs_callback_id id, void* data, uint32_t sz)
             if (GET_ONCE(cb_map[id]->flags)) {
                 zjs_remove_callback(id);
             }
+            jerry_release_value(ret_val);
         } else if (GET_TYPE(cb_map[id]->flags) == CALLBACK_TYPE_C && cb_map[id]->function) {
             cb_map[id]->function(cb_map[id]->handle, data);
         }
