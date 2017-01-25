@@ -139,6 +139,7 @@ clean:
 		cd arc/; make clean; \
 	fi
 	make -f Makefile.linux clean
+	@rm -rf $(JERRY_BASE)/build
 	@rm -f src/*.o
 	@rm -f src/zjs_script_gen.c
 	@rm -f src/zjs_snapshot_gen.c
