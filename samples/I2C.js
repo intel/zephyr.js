@@ -115,7 +115,7 @@ function changeRGB(red, green, blue) {
     var greenData = new Buffer([REGISTER_G, green]);
     var blueData = new Buffer([REGISTER_B, blue]);
 
-    // Send messages as close together as possible so that the color change is smoother
+    // Send messages as close together as possible so color change is smoother
     i2cDevice.write(GROVE_RGB_BACKLIGHT_ADDR, blueData);
     i2cDevice.write(GROVE_RGB_BACKLIGHT_ADDR, redData);
     i2cDevice.write(GROVE_RGB_BACKLIGHT_ADDR, greenData);
@@ -123,9 +123,10 @@ function changeRGB(red, green, blue) {
 
 function writeWord() {
     var wordBuffer = new Buffer(7);
-        // The first byte in the buffer is for the register address,
-        // which is where the word is going to be written to.
-        wordBuffer.writeUInt8(GLCD_CMD_SET_CGRAM_ADDR, 0);
+
+    // The first byte in the buffer is for the register address,
+    // which is where the word is going to be written to.
+    wordBuffer.writeUInt8(GLCD_CMD_SET_CGRAM_ADDR, 0);
     if (hello) {
         // Append the text we want to print after that
         wordBuffer.write("HELLO!", 1);
@@ -146,7 +147,6 @@ function writeWord() {
 }
 
 // Main function
-
 init();
 
 // Alternate writing HELLO! and WORLD! forever
