@@ -280,15 +280,14 @@ static jerry_value_t zjs_buffer_write_string(const jerry_value_t function_obj_va
 
     // Check if the encoding string is anything other than utf8
     if (argc > 3) {
-        const char *utf8_encoding = "utf8";
-        int utf8_len = strlen(utf8_encoding);
-        jerry_size_t size = utf8_len + 1;
-        char *encoding = zjs_alloc_from_jstring(argv[3], &size);
+        char *encoding = zjs_alloc_from_jstring(argv[3], NULL);
         if (!encoding) {
             return zjs_error("zjs_buffer_write_string: allocation failure");
         }
 
         // ask for one more char than needed to make sure not just prefix match
+        const char *utf8_encoding = "utf8";
+        int utf8_len = strlen(utf8_encoding);
         int rval = strncmp(encoding, utf8_encoding, utf8_len + 1);
         zjs_free(encoding);
         if (rval != 0) {
