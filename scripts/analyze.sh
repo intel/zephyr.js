@@ -88,6 +88,29 @@ fi
 check_for_js_require
 
 # Check for native modules
+if check_for_require dgram || check_config_file ZJS_DGRAM; then
+    >&2 echo Using module: Dgram
+    MODULES+=" -DBUILD_MODULE_DGRAM -DBUILD_MODULE_BUFFER"
+    echo "export ZJS_DGRAM=y" >> zjs.conf.tmp
+    echo "export ZJS_BUFFER=y" >> zjs.conf.tmp
+    echo "CONFIG_NETWORKING=y" >> prj.conf.tmp
+    echo "CONFIG_NET_IPV6=y" >> prj.conf.tmp
+    echo "CONFIG_NET_IPV4=y" >> prj.conf.tmp
+    echo "CONFIG_NET_UDP=y" >> prj.conf.tmp
+
+    # Buffer number options - these should be handled more generally
+    echo "CONFIG_NET_NBUF_RX_COUNT=10" >> prj.conf.tmp
+    echo "CONFIG_NET_NBUF_TX_COUNT=10" >> prj.conf.tmp
+    echo "CONFIG_NET_NBUF_DATA_COUNT=30" >> prj.conf.tmp
+
+    # Debug options
+    echo "CONFIG_TEST_RANDOM_GENERATOR=y" >> prj.conf.tmp
+    echo "CONFIG_NET_SLIP_TAP=y" >> prj.conf.tmp
+    echo "CONFIG_PRINTK=y" >> prj.conf.tmp
+    echo "CONFIG_NET_LOG=y" >> prj.conf.tmp
+    echo "CONFIG_NET_STATISTICS=y" >> prj.conf.tmp
+fi
+
 if check_for_require events || check_config_file ZJS_EVENTS; then
     >&2 echo Using module: Events
     MODULES+=" -DBUILD_MODULE_EVENTS"
