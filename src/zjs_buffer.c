@@ -280,20 +280,18 @@ static jerry_value_t zjs_buffer_write_string(const jerry_value_t function_obj_va
 
     // Check if the encoding string is anything other than utf8
     if (argc > 3) {
-        jerry_value_t arg4 = argv[3];
-        jerry_size_t arg4_sz = jerry_get_string_size(arg4);
-
-        if (arg4_sz > 4096) {
-            return zjs_error("zjs_buffer_write_string: encoding arg string is too long");
+        char *encoding = zjs_alloc_from_jstring(argv[3], NULL);
+        if (!encoding) {
+            return zjs_error("zjs_buffer_write_string: allocation failure");
         }
 
-        char arg4_str[arg4_sz];
-        char utf8_str[5];
-        strcpy(utf8_str, "utf8");
-        uint8_t utf8 = strcmp(arg4_str, utf8_str);
-
-        if (utf8 != 0) {
-            return zjs_error("zjs_buffer_write_string: only utf8 encoding is supported");
+        // ask for one more char than needed to make sure not just prefix match
+        const char *utf8_encoding = "utf8";
+        int utf8_len = strlen(utf8_encoding);
+        int rval = strncmp(encoding, utf8_encoding, utf8_len + 1);
+        zjs_free(encoding);
+        if (rval != 0) {
+            return NOTSUPPORTED_ERROR("zjs_buffer_write_string: only utf8 encoding supported");
         }
     }
 
