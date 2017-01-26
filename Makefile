@@ -287,7 +287,7 @@ endif
 	@rm -f .snapshot.last_build
 endif
 
-NET_BUILD=$(shell grep -q BUILD_MODULE_OCF src/Makefile && echo y)
+NET_BUILD=$(shell grep -q -E "BUILD_MODULE_OCF|BUILD_MODULE_DGRAM" src/Makefile && echo y)
 
 # Run QEMU target
 .PHONY: qemu
