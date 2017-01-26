@@ -542,8 +542,6 @@ bool zjs_trigger_event_now(jerry_value_t obj,
 
     zjs_call_callback(callback_id, argv, argc);
 
-    zjs_free(trigger);
-
     return true;
 }
 

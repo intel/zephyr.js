@@ -26,7 +26,7 @@ struct server_resource {
 
 struct ocf_handler {
     jerry_value_t promise_obj;
-    jerry_value_t* argv;
+    //jerry_value_t* argv;
     jerry_value_t properties;
     struct ocf_response* resp;
     struct server_resource* res;
@@ -59,13 +59,11 @@ static void post_ocf_promise(void* handle)
 {
     struct ocf_handler* h = (struct ocf_handler*)handle;
     if (h) {
-        if (h->argv) {
-            zjs_free(h->argv);
-        }
         if (h->resp) {
             zjs_free(h->resp);
         }
         zjs_free(h);
+        jerry_release_value(h->promise_obj);
     }
 }
 
@@ -292,10 +290,10 @@ static void ocf_get_handler(oc_request_t *request, oc_interface_mask_t interface
         ERR_PRINT("handler was NULL\n");
         return;
     }
-    h->argv = zjs_malloc(sizeof(jerry_value_t) * 2);
-    h->argv[0] = create_request(h->res, OC_GET, h);
-    h->argv[1] = jerry_create_boolean(0);
-    zjs_trigger_event_now(h->res->object, "retrieve", h->argv, 2, post_get, h);
+    jerry_value_t argv[2];
+    argv[0] = create_request(h->res, OC_GET, h);
+    argv[1] = jerry_create_boolean(0);
+    zjs_trigger_event_now(h->res->object, "retrieve", argv, 2, post_get, h);
 
     if (!jerry_value_is_object(h->properties)) {
         ERR_PRINT("properties is not an object\n");
@@ -316,8 +314,7 @@ static void ocf_get_handler(oc_request_t *request, oc_interface_mask_t interface
 
     DBG_PRINT("sent GET response, code=OK\n");
 
-    jerry_release_value(h->argv[0]);
-    zjs_free(h->argv);
+    jerry_release_value(argv[0]);
     zjs_free(h->resp);
     zjs_free(h);
 }
@@ -334,7 +331,6 @@ static void ocf_put_handler(oc_request_t *request, oc_interface_mask_t interface
         ERR_PRINT("handler was NULL\n");
         return;
     }
-    h->argv = zjs_malloc(sizeof(jerry_value_t));
     jerry_value_t request_val = create_request(h->res, OC_PUT, h);
     jerry_value_t props_val = request_to_jerry_value(request);
     jerry_value_t resource_val = jerry_create_object();
@@ -342,8 +338,7 @@ static void ocf_put_handler(oc_request_t *request, oc_interface_mask_t interface
     zjs_set_property(resource_val, "properties", props_val);
     zjs_set_property(request_val, "resource", resource_val);
 
-    h->argv[0] = request_val;
-    zjs_trigger_event_now(h->res->object, "update", h->argv, 1, post_put, h);
+    zjs_trigger_event_now(h->res->object, "update", &request_val, 1, post_put, h);
 
     oc_send_response(request, OC_STATUS_CHANGED);
 
@@ -352,7 +347,6 @@ static void ocf_put_handler(oc_request_t *request, oc_interface_mask_t interface
     jerry_release_value(props_val);
     jerry_release_value(resource_val);
     jerry_release_value(request_val);
-    zjs_free(h->argv);
     zjs_free(h->resp);
     zjs_free(h);
 }
@@ -492,13 +486,12 @@ static jerry_value_t ocf_register(const jerry_value_t function_val,
     h = new_ocf_handler(resource);
     zjs_make_promise(promise, post_ocf_promise, h);
     h->promise_obj = promise;
-    h->argv = zjs_malloc(sizeof(jerry_value_t));
-    h->argv[0] = create_resource(resource_path, argv[0]);
-    zjs_fulfill_promise(promise, h->argv, 1);
+    jerry_value_t res = create_resource(resource_path, argv[0]);
+    zjs_fulfill_promise(promise, &res, 1);
 
     resource->object = this;
 
-    jerry_set_object_native_handle(h->argv[0], (uintptr_t)resource, NULL);
+    jerry_set_object_native_handle(res, (uintptr_t)resource, NULL);
 
     DBG_PRINT("registered resource, path=%s\n", resource_path);
 
