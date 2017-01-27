@@ -474,6 +474,10 @@ static jerry_value_t ocf_register(const jerry_value_t function_val,
     oc_resource_bind_resource_interface(resource->res, OC_IF_RW);
     oc_resource_set_default_interface(resource->res, OC_IF_RW);
 
+#ifdef OC_SECURITY
+  oc_resource_make_secure(resource->res);
+#endif
+
     if (flags & FLAG_DISCOVERABLE) {
         oc_resource_set_discoverable(resource->res, 1);
     }

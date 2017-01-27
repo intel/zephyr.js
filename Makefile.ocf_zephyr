@@ -4,6 +4,7 @@ ccflags-y += -I${ZEPHYR_BASE}/net/ip
 ccflags-y += -I${ZEPHYR_BASE}/net/ip/contiki
 ccflags-y += -I${ZEPHYR_BASE}/net/ip/contiki/os/lib
 ccflags-y += -I${ZEPHYR_BASE}/net/ip/contiki/os
+ccflags-y += -I${ZEPHYR_BASE}/samples/bluetooth
 
 ccflags-y += -I$(OCF_ROOT)/port/zephyr/src \
              -I$(OCF_ROOT)/include -I$(OCF_ROOT) \
@@ -14,8 +15,10 @@ ccflags-y += -DDTLSV12 \
              -DDTLS_CHECK_CONTENTTYPE \
              -DWITH_OCF  \
              -DOC_SERVER \
-             -DNDEBUG \
-             -DOC_CLIENT
+             -DNDEBUG
+ifeq ($(SECURE), 1)
+ccflags-y += -DOC_SECURITY
+endif
 
 ccflags-y += -include $(ZJS_BASE)/$(OCF_ROOT)/port/zephyr/src/config.h
 ccflags-y += -I$(ZJS_BASE)/$(OCF_ROOT)/$(OCF_ROOT)/include
@@ -50,4 +53,26 @@ obj-y += ../$(OCF_ROOT)/deps/tinycbor/src/cborencoder_close_container_checked.o 
          ../$(OCF_ROOT)/port/zephyr/src/random.o \
          ../$(OCF_ROOT)/port/zephyr/src/clock.o \
          ../$(OCF_ROOT)/port/zephyr/src/abort.o \
-         ../$(OCF_ROOT)/port/zephyr/src/storage.o
+         ../$(OCF_ROOT)/port/zephyr/src/storage.o \
+         ../deps/zephyr/samples/bluetooth/gatt/ipss.o
+
+ifeq ($(SECURE), 1)
+obj-y += ../$(OCF_ROOT)/deps/tinydtls/ccm.o \
+         ../$(OCF_ROOT)/deps/tinydtls/hmac.o \
+         ../$(OCF_ROOT)/deps/tinydtls/netq.o \
+         ../$(OCF_ROOT)/deps/tinydtls/peer.o \
+         ../$(OCF_ROOT)/deps/tinydtls/dtls_time.o \
+         ../$(OCF_ROOT)/deps/tinydtls/session.o \
+         ../$(OCF_ROOT)/deps/tinydtls/sha2/sha2.o \
+         ../$(OCF_ROOT)/deps/tinydtls/ecc/ecc.o \
+         ../$(OCF_ROOT)/deps/tinydtls/aes/rijndael.o \
+         ../$(OCF_ROOT)/deps/tinydtls/crypto.o \
+         ../$(OCF_ROOT)/deps/tinydtls/dtls.o \
+         ../$(OCF_ROOT)/security/oc_acl.o \
+         ../$(OCF_ROOT)/security/oc_cred.o \
+         ../$(OCF_ROOT)/security/oc_doxm.o \
+         ../$(OCF_ROOT)/security/oc_dtls.o \
+         ../$(OCF_ROOT)/security/oc_pstat.o \
+         ../$(OCF_ROOT)/security/oc_store.o \
+         ../$(OCF_ROOT)/security/oc_svr.o
+endif

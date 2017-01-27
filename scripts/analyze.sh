@@ -98,14 +98,16 @@ if check_for_require ocf || check_config_file ZJS_OCF; then
     >&2 echo Using module: OCF
     MODULES+=" -DBUILD_MODULE_OCF"
     MODULES+=" -DBUILD_MODULE_EVENTS"
+    if [ $BOARD = "qemu_x86" ]; then
+        echo "CONFIG_NET_LOG=y" >> prj.conf.tmp
+        echo "CONFIG_NET_SLIP=y" >> prj.conf.tmp
+        echo "CONFIG_NET_SLIP_TAP=y" >> prj.conf.tmp
+    fi
     echo "CONFIG_NETWORKING=y" >> prj.conf.tmp
     echo "CONFIG_NET_IPV6=y" >> prj.conf.tmp
     echo "CONFIG_NET_UDP=y" >> prj.conf.tmp
     echo "CONFIG_NANO_TIMEOUTS=y" >> prj.conf.tmp
     echo "CONFIG_TEST_RANDOM_GENERATOR=y" >> prj.conf.tmp
-    echo "CONFIG_NET_LOG=y" >> prj.conf.tmp
-    echo "CONFIG_NET_SLIP=y" >> prj.conf.tmp
-    echo "CONFIG_NET_SLIP_TAP=y" >> prj.conf.tmp
     echo "CONFIG_INIT_STACKS=y" >> prj.conf.tmp
     echo "CONFIG_PRINTK=n" >> prj.conf.tmp
     echo "CONFIG_NET_NBUF_RX_COUNT=14" >> prj.conf.tmp
@@ -114,6 +116,16 @@ if check_for_require ocf || check_config_file ZJS_OCF; then
     echo "CONFIG_NET_IF_MCAST_IPV6_ADDR_COUNT=1" >> prj.conf.tmp
     echo "CONFIG_NET_MAX_CONTEXTS=3" >> prj.conf.tmp
     echo "CONFIG_MAIN_STACK_SIZE=2048" >> prj.conf.tmp
+
+    echo "CONFIG_BLUETOOTH=y" >> prj.conf.tmp
+    echo "CONFIG_BLUETOOTH_SMP=y" >> prj.conf.tmp
+    echo "CONFIG_BLUETOOTH_SIGNING=y" >> prj.conf.tmp
+    echo "CONFIG_BLUETOOTH_PERIPHERAL=y" >> prj.conf.tmp
+    echo "CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL=y" >> prj.conf.tmp
+    echo "CONFIG_NETWORKING_WITH_6LOWPAN=y" >> prj.conf.tmp
+    echo "CONFIG_6LOWPAN_COMPRESSION_IPHC=y" >> prj.conf.tmp
+    echo "CONFIG_NET_L2_BLUETOOTH=y" >> prj.conf.tmp
+
     echo "export ZJS_OCF=y" >> zjs.conf.tmp
     echo "export ZJS_EVENTS=y" >> zjs.conf.tmp
 fi
