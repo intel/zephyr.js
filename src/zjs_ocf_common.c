@@ -194,11 +194,13 @@ void oc_signal_main_loop(void)
 {
 }
 
+#ifdef OC_CLIENT
 // Probably can remove this
 static void issue_requests(void)
 {
     DBG_PRINT("issue_requests()\n");
 }
+#endif
 
 static void app_init(void)
 {
@@ -214,10 +216,15 @@ uint8_t main_poll_routine(void* handle)
     return 0;
 }
 
-static const oc_handler_t handler = { .init = app_init,
-                                      .signal_event_loop = oc_signal_main_loop,
+static const oc_handler_t handler = {
+#ifdef OC_CLIENT
                                       .requests_entry = issue_requests,
-                                      .register_resources = zjs_ocf_register_resources
+#endif
+#ifdef OC_SERVER
+                                      .register_resources = zjs_ocf_register_resources,
+#endif
+                                      .init = app_init,
+                                      .signal_event_loop = oc_signal_main_loop,
 };
 
 jerry_value_t zjs_ocf_init()
@@ -230,14 +237,16 @@ jerry_value_t zjs_ocf_init()
         return ZJS_UNDEFINED;
     }
     jerry_value_t ocf = jerry_create_object();
+#ifdef OC_CLIENT
     jerry_value_t client = zjs_ocf_client_init();
-    jerry_value_t server = zjs_ocf_server_init();
-
     zjs_set_property(ocf, "client", client);
-    zjs_set_property(ocf, "server", server);
-
     jerry_release_value(client);
+#endif
+#ifdef OC_SERVER
+    jerry_value_t server = zjs_ocf_server_init();
+    zjs_set_property(ocf, "server", server);
     jerry_release_value(server);
+#endif
 
     return ocf;
 }

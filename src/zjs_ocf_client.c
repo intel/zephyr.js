@@ -159,22 +159,22 @@ static jerry_value_t get_props_from_response(oc_client_response_t* data)
         DBG_PRINT("Type: %u, Key: %s, Value: ", rep->type, oc_string(rep->name));
         switch (rep->type) {
         case BOOL:
-            zjs_obj_add_boolean(prop_object, rep->value_boolean, oc_string(rep->name));
-            DBG_PRINT("%d\n", rep->value_boolean);
+            zjs_obj_add_boolean(prop_object, rep->value.boolean, oc_string(rep->name));
+            DBG_PRINT("%d\n", rep->value.boolean);
             break;
         case INT:
-            zjs_obj_add_number(prop_object, (double)rep->value_int, oc_string(rep->name));
-            DBG_PRINT("%ld\n", (uint32_t)rep->value_int);
+            zjs_obj_add_number(prop_object, (double)rep->value.integer, oc_string(rep->name));
+            DBG_PRINT("%ld\n", (uint32_t)rep->value.integer);
             break;
         case BYTE_STRING:
         case STRING:
-            zjs_obj_add_string(prop_object, oc_string(rep->value_string), oc_string(rep->name));
-            DBG_PRINT("%s\n", oc_string(rep->value_string));
+            zjs_obj_add_string(prop_object, oc_string(rep->value.string), oc_string(rep->name));
+            DBG_PRINT("%s\n", oc_string(rep->value.string));
             break;
         case STRING_ARRAY:
             DBG_PRINT("[ ");
-            for (i = 0; i < oc_string_array_get_allocated_size(rep->value_array); i++) {
-                DBG_PRINT("%s ", oc_string_array_get_item(rep->value_array, i));
+            for (i = 0; i < oc_string_array_get_allocated_size(rep->value.array); i++) {
+                DBG_PRINT("%s ", oc_string_array_get_item(rep->value.array, i));
             }
             DBG_PRINT("]\n");
             break;
@@ -199,19 +199,19 @@ static void print_props_data(oc_client_response_t *data)
         ZJS_PRINT("Type: %u, Key: %s, Value: ", rep->type, oc_string(rep->name));
         switch (rep->type) {
         case BOOL:
-            ZJS_PRINT("%d\n", rep->value_boolean);
+            ZJS_PRINT("%d\n", rep->value.boolean);
             break;
         case INT:
-            ZJS_PRINT("%ld\n", (uint32_t)rep->value_int);
+            ZJS_PRINT("%ld\n", (uint32_t)rep->value.integer);
             break;
         case BYTE_STRING:
         case STRING:
-            ZJS_PRINT("%s\n", oc_string(rep->value_string));
+            ZJS_PRINT("%s\n", oc_string(rep->value.string));
             break;
         case STRING_ARRAY:
             ZJS_PRINT("[ ");
-            for (i = 0; i < oc_string_array_get_allocated_size(rep->value_array); i++) {
-                ZJS_PRINT("%s ", oc_string_array_get_item(rep->value_array, i));
+            for (i = 0; i < oc_string_array_get_allocated_size(rep->value.array); i++) {
+                ZJS_PRINT("%s ", oc_string_array_get_item(rep->value.array, i));
             }
             ZJS_PRINT("]\n");
             break;
@@ -889,10 +889,10 @@ static void ocf_get_platform_info_handler(oc_client_response_t *data)
             DBG_PRINT("Key: %s, Value: ", oc_string(rep->name));
             switch (rep->type) {
             case BOOL:
-                DBG_PRINT("%d\n", rep->value_boolean);
+                DBG_PRINT("%d\n", rep->value.boolean);
                 break;
             case INT:
-                DBG_PRINT("%ld\n", (uint32_t)rep->value_int);
+                DBG_PRINT("%ld\n", (uint32_t)rep->value.integer);
                 break;
             case BYTE_STRING:
             case STRING:
@@ -901,16 +901,16 @@ static void ocf_get_platform_info_handler(oc_client_response_t *data)
                  *       can set a map in C array to reference these strange names
                  */
                 if (strcmp(oc_string(rep->name), "mnmn") == 0) {
-                    zjs_obj_add_string(platform_info, oc_string(rep->value_string), "manufacturerName");
+                    zjs_obj_add_string(platform_info, oc_string(rep->value.string), "manufacturerName");
                 } else if (strcmp(oc_string(rep->name), "pi") == 0) {
-                    zjs_obj_add_string(platform_info, oc_string(rep->value_string), "id");
+                    zjs_obj_add_string(platform_info, oc_string(rep->value.string), "id");
                 }
-                DBG_PRINT("%s\n", oc_string(rep->value_string));
+                DBG_PRINT("%s\n", oc_string(rep->value.string));
                 break;
             case STRING_ARRAY:
                 DBG_PRINT("[ ");
-                for (i = 0; i < oc_string_array_get_allocated_size(rep->value_array); i++) {
-                    DBG_PRINT("%s ", oc_string_array_get_item(rep->value_array, i));
+                for (i = 0; i < oc_string_array_get_allocated_size(rep->value.array); i++) {
+                    DBG_PRINT("%s ", oc_string_array_get_item(rep->value.array, i));
                 }
                 DBG_PRINT("]\n");
                 break;
@@ -996,33 +996,33 @@ static void ocf_get_device_info_handler(oc_client_response_t *data)
             DBG_PRINT("Key: %s, Value: ", oc_string(rep->name));
             switch (rep->type) {
             case BOOL:
-                DBG_PRINT("%d\n", rep->value_boolean);
+                DBG_PRINT("%d\n", rep->value.boolean);
                 break;
             case INT:
-                DBG_PRINT("%ld\n", (uint32_t)rep->value_int);
+                DBG_PRINT("%ld\n", (uint32_t)rep->value.integer);
                 break;
             case BYTE_STRING:
             case STRING:
                 if (strcmp(oc_string(rep->name), "di") == 0) {
-                    zjs_obj_add_string(device_info, oc_string(rep->value_string), "uuid");
+                    zjs_obj_add_string(device_info, oc_string(rep->value.string), "uuid");
                     /*
                      * TODO: Where do we get the devices path to construct the URL.
                      * For now, the existing resources path will be used, but this is
                      * incorrect, because there could be devices found that are not
                      * already in our list of resources.
                      */
-                    zjs_obj_add_string(device_info, create_url(oc_string(rep->value_string), resource->resource_path), "url");
+                    zjs_obj_add_string(device_info, create_url(oc_string(rep->value.string), resource->resource_path), "url");
                 } else if (strcmp(oc_string(rep->name), "n") == 0) {
-                    zjs_obj_add_string(device_info, oc_string(rep->value_string), "name");
+                    zjs_obj_add_string(device_info, oc_string(rep->value.string), "name");
                 } else if (strcmp(oc_string(rep->name), "icv") == 0) {
-                    zjs_obj_add_string(device_info, oc_string(rep->value_string), "coreSpecVersion");
+                    zjs_obj_add_string(device_info, oc_string(rep->value.string), "coreSpecVersion");
                 }
-                DBG_PRINT("%s\n", oc_string(rep->value_string));
+                DBG_PRINT("%s\n", oc_string(rep->value.string));
                 break;
             case STRING_ARRAY:
                 DBG_PRINT("[ ");
-                for (i = 0; i < oc_string_array_get_allocated_size(rep->value_array); i++) {
-                    DBG_PRINT("%s ", oc_string_array_get_item(rep->value_array, i));
+                for (i = 0; i < oc_string_array_get_allocated_size(rep->value.array); i++) {
+                    DBG_PRINT("%s ", oc_string_array_get_item(rep->value.array, i));
                 }
                 DBG_PRINT("]\n");
                 break;

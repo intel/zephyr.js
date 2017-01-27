@@ -7,9 +7,9 @@ var MyProperties = {
 }
 
 var resourceInit = {
-    resourcePath: "/light/1",
-    resourceTypes: ["oic.r.light"],
-    interfaces: ["/oic/if/w"],
+    resourcePath: "/a/light",
+    resourceTypes: ["core.light"],
+    interfaces: ["/oic/if/rw"],
     discoverable: true,
     observable: true,
     properties: MyProperties

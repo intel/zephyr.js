@@ -36,9 +36,6 @@ struct ocf_response {
 };
 
 struct ocf_handler {
-    /*
-     * TODO: Since we return the promise we dont need to save it here
-     */
     oc_request_t *req;
     struct ocf_response* resp;
     struct server_resource* res;
@@ -113,14 +110,14 @@ static jerry_value_t request_to_jerry_value(oc_request_t *request)
     while (rep != NULL) {
         switch (rep->type) {
         case BOOL:
-            zjs_obj_add_boolean(props, rep->value_boolean, oc_string(rep->name));
+            zjs_obj_add_boolean(props, rep->value.boolean, oc_string(rep->name));
             break;
         case INT:
-            zjs_obj_add_number(props, rep->value_int, oc_string(rep->name));
+            zjs_obj_add_number(props, rep->value.integer, oc_string(rep->name));
             break;
         case BYTE_STRING:
         case STRING:
-            zjs_obj_add_string(props, oc_string(rep->value_string), oc_string(rep->name));
+            zjs_obj_add_string(props, oc_string(rep->value.string), oc_string(rep->name));
             break;
             /*
              * TODO: Implement encoding for complex types
@@ -392,6 +389,16 @@ static jerry_value_t ocf_notify(const jerry_value_t function_val,
     return ZJS_UNDEFINED;
 }
 
+/*
+typedef struct resource_list {
+    oc_resource_t *resource;
+    struct resource_list* next;
+} resource_list_t;
+
+static resource_list_t *r_list = NULL;
+static bool has_registered = false;
+*/
+
 static jerry_value_t ocf_register(const jerry_value_t function_val,
                                   const jerry_value_t this,
                                   const jerry_value_t argv[],
@@ -482,7 +489,13 @@ static jerry_value_t ocf_register(const jerry_value_t function_val,
     oc_resource_set_request_handler(resource->res, OC_PUT, ocf_put_handler, resource);
     //oc_resource_set_request_handler(resource->res, OC_DELETE, ocf_delete_handler, resource);
     oc_resource_set_request_handler(resource->res, OC_POST, ocf_post_handler, resource);
+
     oc_add_resource(resource->res);
+
+    /*resource_list_t *new = zjs_malloc(sizeof(resource_list_t));
+    new->resource = resource->res;
+    new->next = r_list;
+    r_list = new;*/
 
     h = new_ocf_handler(resource);
     zjs_make_promise(promise, post_ocf_promise, h);
@@ -508,13 +521,20 @@ static jerry_value_t ocf_register(const jerry_value_t function_val,
 }
 
 /*
- * TODO: This gets called by iotivity-constrained before we have a chance to
- *       get any of the resource information. If we register nothing, there is
- *       a seg-fault so we just have an empty function.
+ * TODO: iotivity-constrained requires that resources get registered in this
+ *       function, which gets called long before we know about any resources.
+ *       What we have "works" but its not how its supposed to be structured.
  */
 void zjs_ocf_register_resources(void)
 {
-    // ZJS_PRINT("zjs_ocf_register_resources()\n");
+    // ZJS_PRINT("zjs_ocf_register_resources() callback\n");
+    /*resource_list_t *cur = r_list;
+    while (cur) {
+        oc_add_resource(cur->resource);
+        resource_list_t *next = cur->next;
+        zjs_free(cur);
+        cur = next;
+    }*/
 }
 
 jerry_value_t zjs_ocf_server_init()
@@ -522,7 +542,6 @@ jerry_value_t zjs_ocf_server_init()
     jerry_value_t server = jerry_create_object();
 
     zjs_obj_add_function(server, ocf_register, "register");
-    //zjs_obj_add_function(server, ocf_respond, "respond");
     zjs_obj_add_function(server, ocf_notify, "notify");
 
     zjs_make_event(server, ZJS_UNDEFINED);
