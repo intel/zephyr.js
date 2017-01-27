@@ -35,12 +35,13 @@ static int get_space(struct zjs_port_ring_buf* buf)
 }
 
 void zjs_port_ring_buf_init(struct zjs_port_ring_buf* buf,
-                            uint32_t size,
+                            uint32_t pow,
                             uint32_t* data)
 {
     buf->head = 0;
     buf->tail = 0;
-    buf->size = size;
+    buf->size = (1 << (pow));
+    buf->mask = (1 << (pow)) - 1;
     buf->buf = data;
 }
 
