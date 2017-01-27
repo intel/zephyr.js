@@ -86,10 +86,7 @@ BUILD_OBJ = $(CORE_OBJ:%.o=$(BUILD_DIR)/%.o)
 
 
 UNAME := $(shell uname)
-ifeq ($(UNAME),Darwin)
-COPY=rsync -R
-else
-COPY=cp --parents --no-clobber
+ifneq ($(UNAME),Darwin)
 # Only build OCF on linux, until iotivity-constrained is fixed on Mac
 CORE_SRC +=	src/zjs_ocf_common.c \
 		src/zjs_ocf_client.c \
@@ -116,15 +113,15 @@ endif
 all: linux
 
 $(BUILD_DIR)/%.o:%.c
-	@echo "Building $@"
 	@mkdir -p $(@D)
-	gcc -c -o $@ $< $(LINUX_INCLUDES) $(LINUX_DEFINES) $(LINUX_FLAGS)
+	@echo [CC] $@
+	@gcc -c -o $@ $< $(LINUX_INCLUDES) $(LINUX_DEFINES) $(LINUX_FLAGS)
 
 .PHONY: linux
 linux: $(BUILD_OBJ)
-	@echo "Building for Linux $(BUILD_OBJ)"
-	cd deps/jerryscript; python ./tools/build.py $(VERBOSE);
-	gcc $(LINUX_INCLUDES) $(JERRY_LIB_PATH) -o $(BUILD_DIR)/jslinux $(BUILD_OBJ) $(LINUX_FLAGS) $(CFLAGS) $(LINUX_DEFINES) $(LINUX_LIBS)
+	@cd deps/jerryscript; python ./tools/build.py $(VERBOSE);
+	@echo [LD] $(BUILD_DIR)/jslinux
+	@gcc $(LINUX_INCLUDES) $(JERRY_LIB_PATH) -o $(BUILD_DIR)/jslinux $(BUILD_OBJ) $(LINUX_FLAGS) $(CFLAGS) $(LINUX_DEFINES) $(LINUX_LIBS)
 
 .PHONY: clean
 clean:
