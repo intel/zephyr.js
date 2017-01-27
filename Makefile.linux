@@ -115,22 +115,13 @@ endif
 .PHONY: all
 all: linux
 
-.PHONY: setup
-setup:
-	@if [ ! -d $(ZJS_BASE)/outdir/linux/$(VARIANT) ]; then \
-		mkdir -p $(ZJS_BASE)/outdir/linux/$(VARIANT); \
-	fi
-
-.PHONY: linux_copy
-linux_copy:
-	$(COPY) $(CORE_SRC) $(BUILD_DIR)
-
-%.o:%.c
+$(BUILD_DIR)/%.o:%.c
 	@echo "Building $@"
+	@mkdir -p $(@D)
 	gcc -c -o $@ $< $(LINUX_INCLUDES) $(LINUX_DEFINES) $(LINUX_FLAGS)
 
 .PHONY: linux
-linux: setup linux_copy $(BUILD_OBJ)
+linux: $(BUILD_OBJ)
 	@echo "Building for Linux $(BUILD_OBJ)"
 	cd deps/jerryscript; python ./tools/build.py $(VERBOSE);
 	gcc $(LINUX_INCLUDES) $(JERRY_LIB_PATH) -o $(BUILD_DIR)/jslinux $(BUILD_OBJ) $(LINUX_FLAGS) $(CFLAGS) $(LINUX_DEFINES) $(LINUX_LIBS)
