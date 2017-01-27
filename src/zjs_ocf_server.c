@@ -364,11 +364,6 @@ static void ocf_delete_handler(oc_request_t *request, oc_interface_mask_t interf
 }
 #endif
 
-static void ocf_post_handler(oc_request_t *request, oc_interface_mask_t interface, void* user_data)
-{
-    // ZJS_PRINT("ocf_post_handler(): POST\n");
-}
-
 /*
  * TODO: Get resource object and use it to notify
  */
@@ -485,10 +480,12 @@ static jerry_value_t ocf_register(const jerry_value_t function_val,
     if (flags & FLAG_OBSERVE) {
         oc_resource_set_periodic_observable(resource->res, 1);
     }
+    /*
+     * TODO: Since requests are handled in JS can POST/PUT use the same handler?
+     */
     oc_resource_set_request_handler(resource->res, OC_GET, ocf_get_handler, resource);
     oc_resource_set_request_handler(resource->res, OC_PUT, ocf_put_handler, resource);
-    //oc_resource_set_request_handler(resource->res, OC_DELETE, ocf_delete_handler, resource);
-    oc_resource_set_request_handler(resource->res, OC_POST, ocf_post_handler, resource);
+    oc_resource_set_request_handler(resource->res, OC_POST, ocf_put_handler, resource);
 
     oc_add_resource(resource->res);
 

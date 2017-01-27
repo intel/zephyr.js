@@ -3,7 +3,8 @@ var server = require('ocf').server;
 console.log("Started OCF server");
 
 var MyProperties = {
-    state: true
+    state: true,
+    power: 10
 }
 
 var resourceInit = {
@@ -34,12 +35,12 @@ server.register(resourceInit).then(function(resource) {
         console.log("on('update'): request.target.resourcePath=" + request.target.resourcePath);
         if (request.resource.properties) {
             console.log("properties.state=" + request.resource.properties.state);
-            //MyProperties.state = request.resource.properties.state;
+            MyProperties.state = request.resource.properties.state;
         } else {
             console.log("request.properties does not exist");
         }
-        //request.respond(MyProperties);
-        server.notify(MyResource);
+        request.respond(MyProperties);
+        //server.notify(MyResource);
     });
 }).catch(function(error) {
     console.log("Error registering");
