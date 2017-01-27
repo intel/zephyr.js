@@ -39,7 +39,7 @@ void zjs_port_ring_buf_init(struct zjs_port_ring_buf* buf,
                             uint32_t* data)
 {
     int i;
-    for (i = 0; i < 32; ++i) {
+    for (i = 0; i < 20; ++i) {
         if (size == (1 << i) * 4) {
             break;
         } else if (size < (1 << i) * 4) {
