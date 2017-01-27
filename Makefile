@@ -134,17 +134,8 @@ endif
 		cat prj.conf.tmp >> prj.conf; \
 	fi
 
-# Explicit clean
-.PHONY: clean
-clean:
-ifeq ($(BOARD), linux)
-	make -f Makefile.linux clean
-else
-	rm -rf $(JERRY_BASE)/build/$(BOARD)/; \
-	rm -f outdir/$(BOARD)/libjerry-core.a; \
-	make -f Makefile.zephyr clean BOARD=$(BOARD); \
-	cd arc/; make clean;
-endif
+.PHONY: cleanlocal
+cleanlocal:
 	@rm -f src/*.o
 	@rm -f src/zjs_script_gen.c
 	@rm -f src/zjs_snapshot_gen.c
@@ -157,10 +148,23 @@ endif
 	@rm -f prj.mdef
 	@rm -f zjs.conf.tmp
 
+# Explicit clean
+.PHONY: clean
+clean: cleanlocal
+ifeq ($(BOARD), linux)
+	make -f Makefile.linux clean
+else
+	rm -rf $(JERRY_BASE)/build/$(BOARD)/; \
+	rm -f outdir/$(BOARD)/libjerry-core.a; \
+	make -f Makefile.zephyr clean BOARD=$(BOARD); \
+	cd arc/; make clean;
+endif
+
 .PHONY: pristine
-pristine:
-	make -f Makefile.zephyr pristine; \
-	cd arc; make pristine; \
+pristine: cleanlocal
+	@rm -rf $(JERRY_BASE)/build;
+	@make -f Makefile.zephyr pristine;
+	@cd arc; make pristine;
 
 # Flash Arduino 101 x86 image
 .PHONY: dfu
