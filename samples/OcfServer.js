@@ -24,8 +24,7 @@ server.register(resourceInit).then(function(resource) {
         MyProperties.state = (MyProperties.state) ? false : true;
         console.log("on('retrieve'): request.target.resourcePath=" +
                 request.target.resourcePath + " observe=" + observe);
-        var err = null;
-        server.respond(request, err, resourceInit).then(function() {
+        request.respond(MyProperties).then(function() {
             console.log("respond success");
         }).catch(function(error) {
             console.log("respond error: " + error.name);
@@ -35,16 +34,12 @@ server.register(resourceInit).then(function(resource) {
         console.log("on('update'): request.target.resourcePath=" + request.target.resourcePath);
         if (request.resource.properties) {
             console.log("properties.state=" + request.resource.properties.state);
+            //MyProperties.state = request.resource.properties.state;
         } else {
             console.log("request.properties does not exist");
         }
+        //request.respond(MyProperties);
         server.notify(MyResource);
-    });
-    server.on('delete', function() {
-        console.log("DELETE event");
-    });
-    server.on('create', function() {
-        console.log("CREATE event");
     });
 }).catch(function(error) {
     console.log("Error registering");

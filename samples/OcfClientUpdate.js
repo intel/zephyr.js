@@ -33,6 +33,7 @@ var t1 = null;
 
 function onfound(resource) {
     t1 = setInterval(function() {
+        console.log("Updating/Retrieving...");
         lightOn = lightOn ? false : true;
         resource.state = lightOn;
         client.update(resource).then(function(resource) {

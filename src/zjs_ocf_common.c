@@ -42,6 +42,9 @@ static bool ocf_foreach_prop(const jerry_value_t prop_name,
 
     ZJS_GET_STRING(prop_name, name, OCF_MAX_PROP_NAME_LEN);
 
+    /*
+     * Use zjs_alloc_from_jstring
+     */
     // Skip id/resourcePath/resourceType because that is not a resource property that is sent out
     if ((strcmp(name, "deviceId") != 0) &&
         (strcmp(name, "resourcePath") != 0) &&
@@ -60,9 +63,7 @@ static bool ocf_foreach_prop(const jerry_value_t prop_name,
  * Turn a Jerry object into an array of its properties. The returned handle
  * will contain an array of strings with all the property names.
  */
-static struct props_handle* ocf_get_all_properties(jerry_value_t resource,
-                                                       jerry_value_t* prop_array,
-                                                       uint32_t* prop_cnt)
+static struct props_handle* ocf_get_all_properties(jerry_value_t resource)
 {
     struct props_handle* handle = zjs_malloc(sizeof(struct props_handle));
 
@@ -77,9 +78,6 @@ static struct props_handle* ocf_get_all_properties(jerry_value_t resource,
     handle->names_array = zjs_malloc(sizeof(char*) * arr_length);
 
     jerry_foreach_object_property(resource, ocf_foreach_prop, handle);
-
-    *prop_array = handle->props_array;
-    *prop_cnt = handle->size;
 
     return handle;
 }
@@ -96,9 +94,7 @@ void* zjs_ocf_props_setup(jerry_value_t props_object,
 {
     void* ret = NULL;
     int i;
-    jerry_value_t prop_arr;
-    uint32_t count;
-    struct props_handle* h = ocf_get_all_properties(props_object, &prop_arr, &count);
+    struct props_handle* h = ocf_get_all_properties(props_object);
     ret = h;
     fflush(stdout);
     CborEncoder* enc;
@@ -108,8 +104,8 @@ void* zjs_ocf_props_setup(jerry_value_t props_object,
         enc = encoder;
     }
 
-    for (i = 0; i < count; ++i) {
-        jerry_value_t prop = jerry_get_property_by_index(prop_arr, i);
+    for (i = 0; i < h->size; ++i) {
+        jerry_value_t prop = jerry_get_property_by_index(h->props_array, i);
 
         if (jerry_value_is_number(prop)) {
             // Number could be double, int, uint
@@ -150,6 +146,9 @@ void* zjs_ocf_props_setup(jerry_value_t props_object,
             zjs_rep_end_object(enc, &child);
             DBG_PRINT("}\n");
         } else if (jerry_value_is_array(prop)) {
+            /*
+             * TODO: need to start object?
+             */
             CborEncoder child;
             DBG_PRINT("Encoding array: %s   [\n", h->names_array[i]);
             //jerry_value_t jarray = zjs_get_property(prop, h->names_array[i]);
@@ -183,6 +182,7 @@ void zjs_ocf_free_props(void* h)
             }
             zjs_free(handle->names_array);
         }
+        jerry_release_value(handle->props_array);
         zjs_free(handle);
     }
 }
@@ -202,8 +202,8 @@ static void issue_requests(void)
 
 static void app_init(void)
 {
-    oc_init_platform("Zephyr.js", NULL, NULL);
-    oc_add_device("/oic/d", "oic.d.zephyrjs", "Zephyr.js Device", "1.0", "1.0", NULL, NULL);
+    oc_init_platform("ZJS", NULL, NULL);
+    oc_add_device("/oic/d", "oic.d.zjs", "ZJS Device", "1.0", "1.0", NULL, NULL);
 }
 
 uint8_t main_poll_routine(void* handle)

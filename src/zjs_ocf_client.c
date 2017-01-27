@@ -32,22 +32,38 @@ typedef enum {
 #define FLAG_SLOW           1 << 2
 #define FLAG_SECURE         1 << 3
 
+/*
+ * TODO: Add native handle to 'client' object so it JS loses reference we can
+ *       clean up all our info
+ */
+
 struct client_resource {
     char* device_id;
     char* resource_type;
     char* resource_path;
     oc_server_handle_t server;
     resource_state state;
+    /*
+     * Dont need, can reference with 'this'
+     */
     jerry_value_t client;
     uint32_t flags;
     uint32_t error_code;
     struct client_resource* next;
 };
 
+/*
+ * Clean up, dont need this, only need 'res'
+ */
 struct ocf_handler {
+    /*
+     * Remove, will get released by JS
+     */
     jerry_value_t promise_obj;
+    /*
+     * Dont need, can create arguments on stack
+     */
     jerry_value_t* argv;
-    int32_t promise_id;
     struct client_resource* res;
 };
 
@@ -311,11 +327,14 @@ static void post_ocf_promise(void* handle)
 {
     struct ocf_handler* h = (struct ocf_handler*)handle;
     if (h) {
-        if (h->argv) {
+        /*
+         * TODO: fix
+         */
+        /*if (h->argv) {
             jerry_release_value(h->argv[0]);
             zjs_free(h->argv);
-        }
-        jerry_release_value(h->promise_obj);
+        }*/
+        //jerry_release_value(h->promise_obj);
         zjs_free(h);
     }
 }
@@ -399,6 +418,9 @@ NotFound:
             }
 Found:
             cur->state = RES_STATE_FOUND;
+            /*
+             * TODO: Check if this is ok, check sample
+             */
             memcpy(&cur->server, server, sizeof(oc_server_handle_t));
 
             if (!cur->device_id) {
@@ -412,6 +434,10 @@ Found:
                 cur->resource_path[uri_len] = '\0';
             }
             jerry_value_t args = create_resource(cur->device_id, cur->resource_path);
+            /*
+             * TODO: Change to on stack, and change to use one jerry_value_t
+             *       as the resource
+             */
             jerry_value_t* args_arr = zjs_malloc(sizeof(jerry_value_t));
             args_arr[0] = args;
             zjs_trigger_event(cur->client, "resourcefound", args_arr, 1, post_resource_found, args_arr);
@@ -486,6 +512,9 @@ static jerry_value_t ocf_find_resources(const jerry_value_t function_val,
         DBG_PRINT("'resourcefound' listener provided\n");
     }
 
+    /*
+     * TODO: wont need to pass in 'this'
+     */
     add_resource(device_id, resource_type, resource_path, this, listener);
 
     if (device_id) {
@@ -495,6 +524,9 @@ static jerry_value_t ocf_find_resources(const jerry_value_t function_val,
         zjs_free(resource_path);
     }
 
+    /*
+     * TODO: dont need to store promise object
+     */
     struct ocf_handler* h = new_ocf_handler(NULL);
     h->promise_obj = promise;
 
@@ -525,6 +557,9 @@ static void ocf_get_handler(oc_client_response_t *data)
 
                 zjs_trigger_event(resource->client, "update", &resource_val, 1, NULL, NULL);
 
+                /*
+                 * TODO: change to on stack
+                 */
                 h->argv = zjs_malloc(sizeof(jerry_value_t));
                 h->argv[0] = resource_val;
                 zjs_fulfill_promise(h->promise_obj, h->argv, 1);
@@ -532,7 +567,13 @@ static void ocf_get_handler(oc_client_response_t *data)
                 DBG_PRINT("GET response OK, device_id=%s\n", resource->device_id);
             } else {
                 // Reject promise
+                /*
+                 * TODO: change to use real errors
+                 */
                 jerry_value_t err = make_ocf_error("NetworkError", "Error code from GET", resource);
+                /*
+                 * TODO: change to on stack
+                 */
                 h->argv = zjs_malloc(sizeof(jerry_value_t));
                 h->argv[0] = err;
                 zjs_reject_promise(h->promise_obj, h->argv, 1);
@@ -631,6 +672,9 @@ static jerry_value_t ocf_retrieve(const jerry_value_t function_val,
 
     h = new_ocf_handler(resource);
     h->res = resource;
+    /*
+     * TODO: Dont need to save promise object
+     */
     h->promise_obj = promise;
 
     zjs_make_promise(promise, post_ocf_promise, h);
@@ -638,9 +682,12 @@ static jerry_value_t ocf_retrieve(const jerry_value_t function_val,
     if (!oc_do_get(resource->resource_path,
                    &resource->server,
                    NULL,
-                   &ocf_get_handler,
+                   ocf_get_handler,
                    LOW_QOS,
                    h)) {
+        /*
+         * TODO: create on stack, use promise reject helper
+         */
         h->argv = zjs_malloc(sizeof(jerry_value_t));
         h->argv[0] = make_ocf_error("NetworkError", "GET call failed", resource);
         zjs_reject_promise(promise, h->argv, 1);
@@ -705,12 +752,15 @@ static jerry_value_t ocf_update(const jerry_value_t function_val,
     h = new_ocf_handler(resource);
     zjs_make_promise(promise, post_ocf_promise, h);
     h->res = resource;
+    /*
+     * TODO: dont need to save
+     */
     h->promise_obj = promise;
 
     if (oc_init_put(resource->resource_path,
                     &resource->server,
                     NULL,
-                    &put_finished,
+                    put_finished,
                     LOW_QOS,
                     h)) {
         void* ret;
@@ -723,11 +773,17 @@ static jerry_value_t ocf_update(const jerry_value_t function_val,
         zjs_ocf_free_props(ret);
         if (!oc_do_put()) {
             ERR_PRINT("error sending PUT request\n");
+            /*
+             * TODO: on stack
+             */
             h->argv = zjs_malloc(sizeof(jerry_value_t));
             h->argv[0] = make_ocf_error("NetworkError", "PUT call failed", resource);
             zjs_reject_promise(promise, h->argv, 1);
         }
     } else {
+        /*
+         * TODO: on stack
+         */
         ERR_PRINT("error initializing PUT\n");
         h->argv = zjs_malloc(sizeof(jerry_value_t));
         h->argv[0] = make_ocf_error("NetworkError", "PUT init failed", resource);
@@ -737,6 +793,9 @@ static jerry_value_t ocf_update(const jerry_value_t function_val,
     return promise;
 }
 
+/*
+ * TODO: delete not supported, ifdef out
+ */
 static void delete_finished(oc_client_response_t *data)
 {
     if (data && data->user_data) {
@@ -795,6 +854,9 @@ static jerry_value_t ocf_delete(const jerry_value_t function_val,
     return promise;
 }
 
+/*
+ * TODO: ifdef out
+ */
 static jerry_value_t ocf_create(const jerry_value_t function_val,
                                 const jerry_value_t this,
                                 const jerry_value_t argv[],
@@ -834,6 +896,10 @@ static void ocf_get_platform_info_handler(oc_client_response_t *data)
                 break;
             case BYTE_STRING:
             case STRING:
+                /*
+                 * TODO: try and find the names of all the platform info properties
+                 *       can set a map in C array to reference these strange names
+                 */
                 if (strcmp(oc_string(rep->name), "mnmn") == 0) {
                     zjs_obj_add_string(platform_info, oc_string(rep->value_string), "manufacturerName");
                 } else if (strcmp(oc_string(rep->name), "pi") == 0) {
@@ -855,6 +921,9 @@ static void ocf_get_platform_info_handler(oc_client_response_t *data)
         }
 
         zjs_trigger_event(resource->client, "platformfound", &platform_info, 1, NULL, NULL);
+        /*
+         * TODO: on stack
+         */
         h->argv = zjs_malloc(sizeof(jerry_value_t));
         h->argv[0] = platform_info;
         zjs_fulfill_promise(h->promise_obj, h->argv, 1);
@@ -893,9 +962,12 @@ static jerry_value_t ocf_get_platform_info(const jerry_value_t function_val,
     if (!oc_do_get("/oic/p",
                    &resource->server,
                    NULL,
-                   &ocf_get_platform_info_handler,
+                   ocf_get_platform_info_handler,
                    LOW_QOS,
                    h)) {
+        /*
+         * TODO: on stack
+         */
         h->argv = zjs_malloc(sizeof(jerry_value_t));
         h->argv[0] = make_ocf_error("NetworkError", "GET call failed", resource);
         zjs_reject_promise(promise, h->argv, 1);
@@ -961,6 +1033,9 @@ static void ocf_get_device_info_handler(oc_client_response_t *data)
         }
 
         zjs_trigger_event(resource->client, "devicefound", &device_info, 1, NULL, NULL);
+        /*
+         * TODO: on stack
+         */
         h->argv = zjs_malloc(sizeof(jerry_value_t));
         h->argv[0] = device_info;
         zjs_fulfill_promise(h->promise_obj, h->argv, 1);
@@ -1002,6 +1077,9 @@ static jerry_value_t ocf_get_device_info(const jerry_value_t function_val,
                    &ocf_get_device_info_handler,
                    LOW_QOS,
                    h)) {
+        /*
+         * TODO: on stack
+         */
         h->argv = zjs_malloc(sizeof(jerry_value_t));
         h->argv[0] = make_ocf_error("NetworkError", "GET call failed", resource);
         zjs_reject_promise(promise, h->argv, 1);
@@ -1010,6 +1088,9 @@ static jerry_value_t ocf_get_device_info(const jerry_value_t function_val,
     return promise;
 }
 
+/*
+ * TODO: ifdef out
+ */
 static jerry_value_t ocf_find_devices(const jerry_value_t function_val,
                                       const jerry_value_t this,
                                       const jerry_value_t argv[],
@@ -1022,6 +1103,9 @@ static jerry_value_t ocf_find_devices(const jerry_value_t function_val,
     return promise;
 }
 
+/*
+ * TODO: ifdef out
+ */
 static jerry_value_t ocf_find_platforms(const jerry_value_t function_val,
                                         const jerry_value_t this,
                                         const jerry_value_t argv[],
