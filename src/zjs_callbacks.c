@@ -114,9 +114,7 @@ void zjs_init_callbacks(void)
         memset(cb_map, 0, size);
     }
 #ifdef ZJS_LINUX_BUILD
-    // TODO: way to pass in size and convert to its 2 ^ power value?
-    // second parameter (x) is:    2 ^ x = buffer size
-    zjs_port_ring_buf_init(&ring_buffer, 8, (uint32_t*)args_buffer);
+    zjs_port_ring_buf_init(&ring_buffer, ZJS_CALLBACK_BUF_SIZE, (uint32_t*)args_buffer);
 #endif
     ring_buf_initialized = 1;
     return;
