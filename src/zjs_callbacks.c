@@ -540,17 +540,11 @@ uint8_t zjs_service_callbacks(void)
                         break;
                     }
                     DBG_PRINT("calling callback with args. id=%u, args=%p, sz=%u, ret=%i\n", id, data, sz, ret);
-                    jerry_value_t *values = NULL;
-                    if (GET_TYPE(cb_map[id]->flags) == CALLBACK_TYPE_JS) {
-                        // record values for JS case
-                        values = (jerry_value_t *)data;
-                    }
+                    bool is_js = GET_TYPE(cb_map[id]->flags) == CALLBACK_TYPE_JS;
                     zjs_call_callback(id, data, sz);
-                    if (values) {
-                        // free values from the ring buffer
-                        for (int i = 0; i < sz; i++) {
-                            jerry_release_value(values[i]);
-                        }
+                    if (is_js) {
+                        for (int i = 0; i < sz; i++)
+                            jerry_release_value(data[i]);
                     }
                 } else if (ret == 0) {
                     // item in ring buffer with size == 0, no args
