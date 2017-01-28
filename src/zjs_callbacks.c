@@ -511,7 +511,12 @@ uint8_t zjs_service_callbacks(void)
                         break;
                     }
                     DBG_PRINT("calling callback with args. id=%u, args=%p, sz=%u, ret=%i\n", id, data, sz, ret);
+                    bool is_js = GET_TYPE(cb_map[id]->flags) == CALLBACK_TYPE_JS;
                     zjs_call_callback(id, data, sz);
+                    if (is_js) {
+                        for (int i = 0; i < sz; i++)
+                            jerry_release_value(data[i]);
+                    }
                 } else if (ret == 0) {
                     // item in ring buffer with size == 0, no args
                     DBG_PRINT("calling callback with no args, original vals id=%u, size=%u, ret=%i\n", id, size, ret);
