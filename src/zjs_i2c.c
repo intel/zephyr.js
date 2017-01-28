@@ -73,17 +73,23 @@ static jerry_value_t zjs_i2c_read_base(const jerry_value_t this,
     }
 
     if (!burst) {
-        uint8_t error_msg = zjs_i2c_handle_read((uint8_t)bus,
-                                                buf->buffer,
-                                                buf->bufsize,
-                                                (uint16_t)address);
+        int error_msg = zjs_i2c_handle_read((uint8_t)bus,
+                                            buf->buffer,
+                                            buf->bufsize,
+                                            (uint16_t)address);
+        if (error_msg != 0) {
+            ERR_PRINT("i2c_read failed with error %i\n", error_msg);
+        }
     }
     else {
-        uint8_t error_msg = zjs_i2c_handle_burst_read((uint8_t)bus,
-                                                      buf->buffer,
-                                                      buf->bufsize,
-                                                      (uint16_t)address,
-                                                      (uint16_t)register_addr);
+        int error_msg = zjs_i2c_handle_burst_read((uint8_t)bus,
+                                                  buf->buffer,
+                                                  buf->bufsize,
+                                                  (uint16_t)address,
+                                                  (uint16_t)register_addr);
+        if (error_msg != 0) {
+            ERR_PRINT("i2c_read failed with error %i\n", error_msg);
+        }
     }
 
     return buf_obj;
@@ -169,13 +175,13 @@ static jerry_value_t zjs_i2c_write(const jerry_value_t function_obj,
     } else {
         return zjs_error("zjs_i2c_write: missing data buffer");
     }
-    int reply;
+
     uint32_t address = (uint32_t)jerry_get_number_value(argv[0]);
 
-    uint8_t error_msg = zjs_i2c_handle_write((uint8_t)bus,
-                                             dataBuf->buffer,
-                                             dataBuf->bufsize,
-                                             (uint16_t)address);
+    int error_msg = zjs_i2c_handle_write((uint8_t)bus,
+                                         dataBuf->buffer,
+                                         dataBuf->bufsize,
+                                         (uint16_t)address);
 
     return jerry_create_number(error_msg);
 }
@@ -224,8 +230,9 @@ static jerry_value_t zjs_i2c_open(const jerry_value_t function_obj,
         return zjs_error("zjs_i2c_open: missing required field (speed)");
     }
 
-    uint8_t error_msg = zjs_i2c_handle_open((uint8_t)bus);
-
+    if (zjs_i2c_handle_open((uint8_t)bus)) {
+        return zjs_error("zjs_i2c_open: failed to open connection to I2C bus");
+    }
     // create the I2C object
     jerry_value_t i2c_obj = jerry_create_object();
     jerry_set_prototype(i2c_obj, zjs_i2c_prototype);

@@ -2,6 +2,7 @@
 #include "zjs_i2c_handler.h"
 #include "zjs_ipm.h"
 #include "zjs_common.h"
+#include <string.h>
 
 static struct k_sem i2c_sem;
 #define ZJS_I2C_TIMEOUT_TICKS                      5000
@@ -55,7 +56,7 @@ void zjs_i2c_ipm_init() {
     k_sem_init(&i2c_sem, 0, 1);
 }
 
-uint8_t zjs_i2c_handle_write (uint8_t msg_bus, uint8_t *data, uint32_t length,
+int zjs_i2c_handle_write (uint8_t msg_bus, uint8_t *data, uint32_t length,
                               uint16_t address)
 {
     zjs_ipm_message_t send;
@@ -78,7 +79,7 @@ uint8_t zjs_i2c_handle_write (uint8_t msg_bus, uint8_t *data, uint32_t length,
     return send.error_code;
 }
 
-uint8_t zjs_i2c_handle_open (uint8_t msg_bus)
+int zjs_i2c_handle_open (uint8_t msg_bus)
 {
     // send IPM message to the ARC side
     zjs_ipm_message_t send;
@@ -101,7 +102,7 @@ uint8_t zjs_i2c_handle_open (uint8_t msg_bus)
     return send.error_code;
 }
 
-uint8_t zjs_i2c_handle_read (uint8_t msg_bus, uint8_t *data, uint32_t length,
+int zjs_i2c_handle_read (uint8_t msg_bus, uint8_t *data, uint32_t length,
                              uint16_t address)
 {
     zjs_ipm_message_t send;
@@ -121,7 +122,7 @@ uint8_t zjs_i2c_handle_read (uint8_t msg_bus, uint8_t *data, uint32_t length,
     return send.error_code;
 }
 
-uint8_t zjs_i2c_handle_burst_read (uint8_t msg_bus, uint8_t *data,
+int zjs_i2c_handle_burst_read (uint8_t msg_bus, uint8_t *data,
                                    uint32_t length, uint16_t address,
                                    uint16_t register_addr)
 {
