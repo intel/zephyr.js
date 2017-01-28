@@ -1,4 +1,5 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
+
 #ifndef SRC_ZJS_CALLBACKS_H_
 #define SRC_ZJS_CALLBACKS_H_
 
@@ -154,6 +155,14 @@ void zjs_remove_callback(zjs_callback_id id);
  * called only once, and will NOT remove the callback from the list. You can
  * signal callbacks multiple times, but if the callback has not been serviced
  * between signaling, it will only get called once.
+ *
+ * For a JS callback, the arguments are of type jerry_value_t and they will be
+ * acquired by the callback module and released when the callback fires. So the
+ * caller should release its copies as usual.
+ *
+ * For a C callback, if there is a pointer among the arguments, it is opaque
+ * to the callback module and must be managed by the caller and perhaps freed
+ * in the post-callback function if appropriate.
  *
  * @param id            ID returned from zjs_add_callback
  * @param args          Arguments given to the JS/C callback

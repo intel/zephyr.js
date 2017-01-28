@@ -1,4 +1,5 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
+
 #ifdef BUILD_MODULE_BUFFER
 
 #include <string.h>
@@ -371,7 +372,7 @@ static jerry_value_t zjs_buffer(const jerry_value_t function_obj,
                                 const jerry_length_t argc)
 {
     // requires: single argument can be a numeric size in bytes, an array of
-    //             uint8, or a string
+    //             uint8s, or a string
     //  effects: constructs a new JS Buffer object, and an associated buffer
     //             tied to it through a zjs_buffer_t struct stored in a global
     //             list
@@ -382,34 +383,35 @@ static jerry_value_t zjs_buffer(const jerry_value_t function_obj,
         return zjs_error("zjs_buffer: invalid argument");
 
     if (jerry_value_is_number(argv[0])) {
-        // If passed a number, use that to allocate a buffer with a length of that number
+        // treat a number argument as a length
         uint32_t size = (uint32_t)jerry_get_number_value(argv[0]);
         return zjs_buffer_create(size);
-    } else if (jerry_value_is_array(argv[0])){
-        // If passed an array, allocate the memory and fill it with the array value
+    }
+    else if (jerry_value_is_array(argv[0])) {
+        // treat array argument as byte initializers
         jerry_value_t array = argv[0];
-        uint32_t arr_size = jerry_get_array_length(array);
-        jerry_value_t new_buf = zjs_buffer_create(arr_size);
-        zjs_buffer_t *buf = zjs_buffer_find(new_buf);
-        jerry_value_t array_item;
+        uint32_t len = jerry_get_array_length(array);
 
-        if (buf) {
-            if (arr_size > buf->bufsize) {
-                return zjs_error("zjs_buffer: write beyond end of buffer");
-            }
-
-            for (int i = 0; i < arr_size; i++) {
-                array_item = jerry_get_property_by_index(array, i);
-                if (jerry_value_is_number(array_item)) {
-                    buf->buffer[i] = (uint8_t)jerry_get_number_value(array_item);
+        jerry_value_t new_buf = zjs_buffer_create(len);
+        if (jerry_value_is_object(new_buf)) {
+            zjs_buffer_t *buf = zjs_buffer_find(new_buf);
+            jerry_value_t item;
+            for (int i = 0; i < len; i++) {
+                item = jerry_get_property_by_index(array, i);
+                if (jerry_value_is_number(item)) {
+                    buf->buffer[i] = (uint8_t)jerry_get_number_value(item);
                 } else {
-                    return zjs_error("zjs_buffer: buffer only supports numeric values in an array");
+                    ERR_PRINT("non-numeric value in array, treating as 0");
+                    buf->buffer[i] = 0;
                 }
+                jerry_release_value(item);
             }
         }
+
         return new_buf;
-    } else {
-        // if passed string, convert to char array and copy to buffer
+    }
+    else {
+        // treat string argument as initializer
         jerry_size_t size = 0;
         char *str = zjs_alloc_from_jstring(argv[0], &size);
         if (!str) {
@@ -417,11 +419,12 @@ static jerry_value_t zjs_buffer(const jerry_value_t function_obj,
         }
 
         jerry_value_t new_buf = zjs_buffer_create(size);
-        zjs_buffer_t *buf = zjs_buffer_find(new_buf);
+        if (jerry_value_is_object(new_buf)) {
+            zjs_buffer_t *buf = zjs_buffer_find(new_buf);
+            memcpy(buf->buffer, str, size);
+        }
 
-        memcpy(buf->buffer, str, size);
         zjs_free(str);
-
         return new_buf;
     }
 }
