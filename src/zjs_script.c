@@ -46,6 +46,7 @@ uint8_t zjs_read_script(char* name, const char** script, uint32_t* length)
             return 1;
         }
 
+        s[size] = '\0';
         *script = s;
         *length = size;
         fclose(f);
