@@ -147,7 +147,7 @@ static jerry_value_t native_require_handler(const jerry_value_t function_obj,
     char full_path[size + 9];
     char* str;
     uint32_t len;
-    sprintf(full_path, "%s%s", "modules/", module);
+    sprintf(full_path, "modules/%s", module);
     full_path[size + 8] = '\0';
 
     if (zjs_read_script(full_path, &str, &len)) {
