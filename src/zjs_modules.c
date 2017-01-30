@@ -144,32 +144,28 @@ static jerry_value_t native_require_handler(const jerry_value_t function_obj,
 #ifdef ZJS_LINUX_BUILD
     // Linux can pass in the script at runtime, so we have to read in/parse any
     // JS modules now rather than at compile time
-    char full_path[size + 8];
+    char full_path[size + 9];
     char* str;
     uint32_t len;
-    memcpy(full_path, "modules/", 8);
-    memcpy(full_path + 8, module, size);
+    sprintf(full_path, "%s%s", "modules/", module);
     full_path[size + 8] = '\0';
 
     if (zjs_read_script(full_path, &str, &len)) {
         ERR_PRINT("could not read module %s\n", full_path);
         return SYSTEM_ERROR("native_require_handler: could not read module script");
     }
-
     jerry_value_t code_eval = jerry_parse((jerry_char_t *)str, len, false);
     if (jerry_value_has_error_flag(code_eval)) {
         jerry_release_value(code_eval);
         return SYSTEM_ERROR("native_require_handler: could not parse javascript");
     }
     jerry_value_t result = jerry_run(code_eval);
-
+    jerry_release_value(code_eval);
     if (jerry_value_has_error_flag(result)) {
-        jerry_release_value(code_eval);
         jerry_release_value(result);
         return SYSTEM_ERROR("native_require_handler: could not run javascript");
     }
 
-    jerry_release_value(code_eval);
     jerry_release_value(result);
     zjs_free_script(str);
 #endif
