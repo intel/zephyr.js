@@ -27,6 +27,16 @@ void zjs_error_cleanup();
 /**
  * Create an error object to return from an API.
  *
+ * @param name A custom name for the error.
+ * @param message String for additional detail about the error.
+ *
+ * @return A new Error object with the given name and message set.
+ */
+jerry_value_t zjs_custom_error(const char *name, const char *message);
+
+/**
+ * Create an error object to return from an API.
+ *
  * @param type An error type from zjs_error_type enum.
  * @param message String for additional detail about the error.
  *
