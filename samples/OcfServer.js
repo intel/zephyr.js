@@ -1,3 +1,4 @@
+setBleAddress('11:22:33:44:55:66');
 var server = require('ocf').server;
 
 console.log("Started OCF server");
