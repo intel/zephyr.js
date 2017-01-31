@@ -190,6 +190,12 @@ ifeq ($(SNAPSHOT), on)
 	fi
 	@echo Creating snapshot bytecode from JS application...
 	@outdir/snapshot/snapshot $(JS) src/zjs_snapshot_gen.c
+# SNAPSHOT=on, check if rebuilding JerryScript is needed
+ifeq ("$(wildcard .snapshot.last_build)", "")
+	@rm -rf $(JERRY_BASE)/build/$(BOARD)/
+	@rm -f outdir/$(BOARD)/libjerry-core.a
+endif
+	echo "" > .snapshot.last_build
 else
 	@echo Creating C string from JS application...
 ifeq ($(TARGET), linux)
@@ -197,6 +203,12 @@ ifeq ($(TARGET), linux)
 else
 	@./scripts/convert.sh /tmp/zjs.js src/zjs_script_gen.c
 endif
+# SNAPSHOT=off, check if rebuilding JerryScript is needed
+ifneq ("$(wildcard .snapshot.last_build)", "")
+	@rm -rf $(JERRY_BASE)/build/$(BOARD)/
+	@rm -f outdir/$(BOARD)/libjerry-core.a
+endif
+	@rm -f .snapshot.last_build
 endif
 
 NET_BUILD=$(shell grep -q BUILD_MODULE_OCF src/Makefile && echo y)
