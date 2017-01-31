@@ -33,7 +33,7 @@ uint8_t zjs_read_script(char* name, const char** script, uint32_t* length)
             fclose(f);
             return 1;
         }
-        s = (char*)zjs_malloc(size);
+        s = (char*)zjs_malloc(size + 1);
         if (!s) {
             ERR_PRINT("error allocating %u bytes, fatal\n", size);
             fclose(f);
@@ -46,6 +46,7 @@ uint8_t zjs_read_script(char* name, const char** script, uint32_t* length)
             return 1;
         }
 
+        s[size] = '\0';
         *script = s;
         *length = size;
         fclose(f);
