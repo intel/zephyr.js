@@ -81,6 +81,14 @@ void zjs_error_cleanup()
     }
 }
 
+jerry_value_t zjs_custom_error(const char *name, const char *message)
+{
+    jerry_value_t error = jerry_create_error(JERRY_ERROR_TYPE,
+                                             (jerry_char_t *)message);
+    zjs_obj_add_string(error, name, "name");
+    return error;
+}
+
 jerry_value_t zjs_standard_error(zjs_error_type_t type, const char *message)
 {
     int count = sizeof(error_types) / sizeof(zjs_error_t);
