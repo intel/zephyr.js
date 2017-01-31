@@ -484,4 +484,6 @@ successfully. Below is a complete table of modules and target support.
 |Performance| <ul><li>- [x] </li></ul> | <ul><li>- [x] </li></ul> |
 | Timers    | <ul><li>- [x] </li></ul> | <ul><li>- [x] </li></ul> |
 
-|
+## OCF over BLE
+There is a deticated [document](./docs/ocf-ble.md) for building and running OCF over
+BLE on the Arduino 101.
