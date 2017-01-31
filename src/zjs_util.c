@@ -77,12 +77,28 @@ void zjs_obj_add_object(jerry_value_t parent, jerry_value_t child,
 void zjs_obj_add_string(jerry_value_t obj, const char *str, const char *name)
 {
     // requires: obj is an existing JS object
-    //  effects: creates a new field in parent named name, set to sval
+    //  effects: creates a new field in parent named name, set to str
     jerry_value_t jname = jerry_create_string((const jerry_char_t *)name);
     jerry_value_t jstr = jerry_create_string((const jerry_char_t *)str);
     jerry_set_property(obj, jname, jstr);
     jerry_release_value(jname);
     jerry_release_value(jstr);
+}
+
+void zjs_obj_add_readonly_string(jerry_value_t obj, const char *str,
+                                 const char *name)
+{
+    // requires: obj is an existing JS object
+    //  effects: creates a new readonly field in parent named name, set to str
+    jerry_value_t jname = jerry_create_string((const jerry_char_t *)name);
+    jerry_property_descriptor_t pd;
+    jerry_init_property_descriptor_fields(&pd);
+    pd.is_writable = false;
+    pd.is_value_defined = true;
+    pd.value = jerry_create_string((const jerry_char_t *)str);
+    jerry_define_own_property(obj, jname, &pd);
+    jerry_free_property_descriptor_fields(&pd);
+    jerry_release_value(jname);
 }
 
 void zjs_obj_add_number(jerry_value_t obj, double num, const char *name)
@@ -100,7 +116,7 @@ void zjs_obj_add_readonly_number(jerry_value_t obj, double num,
                                  const char *name)
 {
     // requires: obj is an existing JS object
-    //  effects: creates a new readonly field in parent named name, set to nval
+    //  effects: creates a new readonly field in parent named name, set to num
     jerry_value_t jname = jerry_create_string((const jerry_char_t *)name);
     jerry_property_descriptor_t pd;
     jerry_init_property_descriptor_fields(&pd);
