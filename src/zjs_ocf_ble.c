@@ -94,7 +94,7 @@ static jerry_value_t ocf_set_ble_address(const jerry_value_t function_val,
     };
 
     str2bt_addr_le(addr, "random", &id_addr);
-    DBG_PRINT("BLE addr is set to: %s\n", ble_addr);
+    DBG_PRINT("BLE addr is set to: %s\n", addr);
     BT_ADDR_SET_STATIC(&id_addr.a);
     bt_storage_register(&storage);
 
