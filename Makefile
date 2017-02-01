@@ -3,7 +3,7 @@ BOARD ?= arduino_101
 # Dump memory information: on = print allocs, full = print allocs + dump pools
 TRACE ?= off
 # Generate and run snapshot as byte code instead of running JS directly
-SNAPSHOT ?= off
+SNAPSHOT ?= on
 
 ifndef ZJS_BASE
 $(error ZJS_BASE not defined. You need to source zjs-env.sh)
@@ -15,8 +15,10 @@ VARIANT ?= release
 # JerryScript options
 JERRY_BASE ?= $(ZJS_BASE)/deps/jerryscript
 EXT_JERRY_FLAGS ?= -DENABLE_ALL_IN_ONE=ON
+ifneq ($(DEV), ashell)
 ifeq ($(SNAPSHOT), on)
 EXT_JERRY_FLAGS += -DFEATURE_JS_PARSER=OFF
+endif
 endif
 ifeq ($(BOARD), arduino_101)
 EXT_JERRY_FLAGS += -DENABLE_LTO=ON
@@ -25,6 +27,7 @@ endif
 # if no config file passed use the ashell default
 ifeq ($(DEV), ashell)
 	CONFIG ?= fragments/zjs.conf.dev
+	SNAPSHOT = off
 endif
 
 # Print callback statistics during runtime
@@ -35,6 +38,13 @@ PRINT_FLOAT ?= off
 # Make target (linux or zephyr)
 # MAKECMDGOALS is a Make variable that is set to the target your building for.
 TARGET = $(MAKECMDGOALS)
+
+ifeq ($(TARGET), linux)
+	SNAPSHOT = off
+endif
+ifeq ($(BOARD), linux)
+	SNAPSHOT = off
+endif
 
 # If target is one of these, ensure ZEPHYR_BASE is set
 ZEPHYR_TARGETS = zephyr arc debug
