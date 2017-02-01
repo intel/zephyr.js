@@ -481,9 +481,9 @@ static void process_accel_data(struct device *dev)
         ABS(dval[1] - accel_last_value[1]) > threshold ||
         ABS(dval[2] - accel_last_value[2]) > threshold) {
         union sensor_reading reading;
-        reading.x = dval[0];
-        reading.y = dval[1];
-        reading.z = dval[2];
+        accel_last_value[0] = reading.x = dval[0];
+        accel_last_value[1] = reading.y = dval[1];
+        accel_last_value[2] = reading.z = dval[2];
         send_sensor_data(SENSOR_CHAN_ACCEL_ANY, reading);
     }
 
@@ -515,9 +515,9 @@ static void process_gyro_data(struct device *dev)
         dval[1] != gyro_last_value[1] ||
         dval[2] != gyro_last_value[2]) {
         union sensor_reading reading;
-        reading.x = dval[0];
-        reading.y = dval[1];
-        reading.z = dval[2];
+        gyro_last_value[0] = reading.x = dval[0];
+        gyro_last_value[1] = reading.y = dval[1];
+        gyro_last_value[2] = reading.z = dval[2];
         send_sensor_data(SENSOR_CHAN_GYRO_ANY, reading);
     }
 
@@ -583,7 +583,7 @@ static int auto_calibration(struct device *dev)
     return 0;
 }
 
-static int start_accel_trigger(struct device *dev)
+static int start_accel_trigger(struct device *dev, int freq)
 {
     struct sensor_value attr;
     struct sensor_trigger trig;
@@ -598,14 +598,13 @@ static int start_accel_trigger(struct device *dev)
         return -1;
     }
 
-    // set sampling frequency to 50Hz for accelerometer
     attr.type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
-    attr.val1 = 50;
+    attr.val1 = freq;
     attr.val2 = 0;
 
     if (sensor_attr_set(dev, SENSOR_CHAN_ACCEL_ANY,
                         SENSOR_ATTR_SAMPLING_FREQUENCY, &attr) < 0) {
-        ERR_PRINT("failed to set accelerometer sampling frequency\n");
+        ERR_PRINT("failed to set accelerometer sampling frequency %d\n", freq);
         return -1;
     }
 
@@ -658,14 +657,13 @@ static int stop_accel_trigger(struct device *dev)
     return 0;
 }
 
-static int start_gyro_trigger(struct device *dev)
+static int start_gyro_trigger(struct device *dev, int freq)
 {
     struct sensor_value attr;
     struct sensor_trigger trig;
 
-    // set sampling frequency to 50Hz for gyroscope
     attr.type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
-    attr.val1 = 50;
+    attr.val1 = freq;
     attr.val2 = 0;
 
     if (sensor_attr_set(bmi160, SENSOR_CHAN_GYRO_ANY,
@@ -759,6 +757,7 @@ static void process_light_updates()
 
 static void handle_sensor(struct zjs_ipm_message* msg)
 {
+    int freq;
     uint32_t error_code = ERROR_IPM_NONE;
 
     switch(msg->type) {
@@ -781,14 +780,15 @@ static void handle_sensor(struct zjs_ipm_message* msg)
         }
         break;
     case TYPE_SENSOR_START:
+        freq = msg->data.sensor.frequency;
         if (msg->data.sensor.channel == SENSOR_CHAN_ACCEL_ANY) {
             if (!bmi160 || (!accel_trigger &&
-                             start_accel_trigger(bmi160) != 0)) {
+                             start_accel_trigger(bmi160, freq) != 0)) {
                 error_code = ERROR_IPM_OPERATION_FAILED;
             }
         } else if (msg->data.sensor.channel == SENSOR_CHAN_GYRO_ANY) {
             if (!bmi160 || (!gyro_trigger &&
-                             start_gyro_trigger(bmi160) != 0)) {
+                             start_gyro_trigger(bmi160, freq) != 0)) {
                 error_code = ERROR_IPM_OPERATION_FAILED;
             }
 #ifdef BUILD_MODULE_SENSOR_LIGHT

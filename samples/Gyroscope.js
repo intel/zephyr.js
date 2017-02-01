@@ -7,7 +7,7 @@ console.log("Gyroscope test...");
 
 
 var sensor = new Gyroscope({
-    frequency: 50
+    frequency: 20
 });
 
 sensor.onchange = function(event) {
