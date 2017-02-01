@@ -15,6 +15,7 @@
 #include "zjs_util.h"
 
 #define ZJS_SENSOR_TIMEOUT_TICKS 5000
+#define DEFAULT_SAMPLING_FREQUENCY 20
 
 static struct k_sem sensor_sem;
 
@@ -30,6 +31,7 @@ enum sensor_state {
 typedef struct sensor_handle {
     zjs_callback_id id;
     enum sensor_channel channel;
+    int frequency;
     enum sensor_state state;
     union sensor_reading reading;
     jerry_value_t sensor_obj;
@@ -340,6 +342,7 @@ static jerry_value_t zjs_sensor_start(const jerry_value_t function_obj,
     zjs_ipm_message_t send;
     send.type = TYPE_SENSOR_START;
     send.data.sensor.channel = handle->channel;
+    send.data.sensor.frequency = handle->frequency;
     if (handle->channel == SENSOR_CHAN_LIGHT) {
         // AmbientLightSensor needs provide AIO pin value
         uint32_t pin;
@@ -406,7 +409,7 @@ static jerry_value_t zjs_sensor_create(const jerry_value_t function_obj,
                                        const jerry_length_t argc,
                                        enum sensor_channel channel)
 {
-    double frequency = 50; // default frequency
+    double frequency = DEFAULT_SAMPLING_FREQUENCY;
     uint32_t pin;
 
     if (argc < 1 && channel == SENSOR_CHAN_LIGHT) {
@@ -422,16 +425,15 @@ static jerry_value_t zjs_sensor_create(const jerry_value_t function_obj,
 
         double option_freq;
         if (zjs_obj_get_double(options, "frequency", &option_freq)) {
-            // TODO: figure out a list of frequencies we can support
-            // For now, frequency is always set to 50Hz,
-            // other frequency values are not supported
-            if (option_freq != 50) {
-                ERR_PRINT("unsupported frequency, defaulting to 50Hz\n");
+            if (option_freq < 1) {
+                ERR_PRINT("unsupported frequency, default to %dHz\n",
+                          DEFAULT_SAMPLING_FREQUENCY);
             } else {
                 frequency = option_freq;
             }
         } else {
-            DBG_PRINT("frequency not found, defaulting to 50Hz\n");
+            DBG_PRINT("frequency not found, default to %dHz\n",
+                      DEFAULT_SAMPLING_FREQUENCY);
         }
 
         if (channel == SENSOR_CHAN_ACCEL_ANY) {
@@ -475,6 +477,7 @@ static jerry_value_t zjs_sensor_create(const jerry_value_t function_obj,
     sensor_handle_t* handle = zjs_sensor_alloc_handle(channel);
     handle->id = zjs_add_c_callback(handle, zjs_sensor_onchange_c_callback);
     handle->channel = channel;
+    handle->frequency = frequency;
     handle->sensor_obj = jerry_acquire_value(sensor_obj);
 
     // watch for the object getting garbage collected, and clean up
@@ -490,7 +493,7 @@ static jerry_value_t zjs_accel_create(const jerry_value_t function_obj,
                                       const jerry_length_t argc)
 {
     // requires: arg 0 is an object containing sensor options:
-    //             frequency (double) - sampling frequency, default to 50
+    //             frequency (double) - sampling frequency
     //             includeGravity (bool) - whether you want gravity included
     //  effects: Creates a Accelerometer object to the local sensor
     return zjs_sensor_create(function_obj,
@@ -506,7 +509,7 @@ static jerry_value_t zjs_gyro_create(const jerry_value_t function_obj,
                                      const jerry_length_t argc)
 {
     // requires: arg 0 is an object containing sensor options:
-    //             frequency (double) - sampling frequency, default to 50
+    //             frequency (double) - sampling frequency
     //  effects: Creates a Gyroscope object to the local sensor
     return zjs_sensor_create(function_obj,
                              this,
@@ -521,7 +524,7 @@ static jerry_value_t zjs_light_create(const jerry_value_t function_obj,
                                       const jerry_length_t argc)
 {
     // requires: arg 0 is an object containing sensor options:
-    //             frequency (double) - sampling frequency, default to 50
+    //             frequency (double) - sampling frequency
     //  effects: Creates a AmbientLightSensor object to the local sensor
     return zjs_sensor_create(function_obj,
                              this,

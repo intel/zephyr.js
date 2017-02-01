@@ -8,7 +8,7 @@ console.log("Accelerometer test...");
 
 var sensor = new Accelerometer({
     includeGravity: false, // true is not supported, will throw error
-    frequency: 50
+    frequency: 20
 });
 
 sensor.onchange = function(event) {
