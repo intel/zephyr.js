@@ -375,8 +375,6 @@ static inline int sensor_value_snprintf(char *buf, size_t len,
     int32_t val1, val2;
 
     switch (val->type) {
-    case SENSOR_VALUE_TYPE_INT:
-        return snprintf(buf, len, "%d", val->val1);
     case SENSOR_VALUE_TYPE_INT_PLUS_MICRO:
         if (val->val2 == 0) {
             return snprintf(buf, len, "%d", val->val1);
@@ -429,9 +427,6 @@ static double convert_sensor_value(const struct sensor_value *val)
     double result = 0;
 
     switch (val->type) {
-    case SENSOR_VALUE_TYPE_INT:
-        result = val->val1;
-        break;
     case SENSOR_VALUE_TYPE_INT_PLUS_MICRO:
         if (val->val2 == 0) {
             result = (double)val->val1;
@@ -625,8 +620,9 @@ static int start_accel_trigger(struct device *dev)
     }
 
     // set slope duration to 2 consecutive samples
-    attr.type = SENSOR_VALUE_TYPE_INT;
+    attr.type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
     attr.val1 = 2;
+    attr.val2 = 0;
     if (sensor_attr_set(dev, SENSOR_CHAN_ACCEL_ANY,
                         SENSOR_ATTR_SLOPE_DUR, &attr) < 0) {
         ERR_PRINT("failed to set slope duration\n");

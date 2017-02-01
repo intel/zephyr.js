@@ -4,11 +4,6 @@
 #ifndef ZJS_LINUX_BUILD
 // Zephyr includes
 #include <zephyr.h>
-#ifdef BUILD_MODULE_SENSOR_TRIGGER
-#include <gpio.h>
-#include <ipm.h>
-#include <ipm/ipm_quark_se.h>
-#endif
 #endif
 
 #include <string.h>
@@ -18,14 +13,6 @@
 #include "zjs_callbacks.h"
 #include "zjs_ipm.h"
 #include "zjs_util.h"
-
-#ifdef BUILD_MODULE_SENSOR_TRIGGER
-QUARK_SE_IPM_DEFINE(bmi160_ipm, 0, QUARK_SE_IPM_OUTBOUND);
-#define BMI160_INTERRUPT_PIN 4
-
-struct device *trigger_ipm;
-struct gpio_callback cb;
-#endif
 
 #define ZJS_SENSOR_TIMEOUT_TICKS 5000
 
@@ -93,15 +80,6 @@ static void zjs_sensor_free_handles(sensor_handle_t *handle)
         zjs_free(tmp);
     }
 }
-
-#ifdef BUILD_MODULE_SENSOR_TRIGGER
-static void gpio_callback(struct device *port,
-                          struct gpio_callback *cb, uint32_t pins)
-{
-    // trigger interrupt over to the ARC
-    ipm_send(trigger_ipm, 0, 0, NULL, 0);
-}
-#endif
 
 static bool zjs_sensor_ipm_send_sync(zjs_ipm_message_t* send,
                                      zjs_ipm_message_t* result)
@@ -566,30 +544,6 @@ void zjs_sensor_init()
     };
     zjs_sensor_prototype = jerry_create_object();
     zjs_obj_add_functions(zjs_sensor_prototype, array);
-
-#ifdef BUILD_MODULE_SENSOR_TRIGGER
-    // setting up trigger interrupt
-    struct device *gpio = device_get_binding("GPIO_1");
-    if (!gpio) {
-        ERR_PRINT("gpio device not found\n");
-        return;
-    }
-
-    trigger_ipm = device_get_binding("bmi160_ipm");
-    if (!trigger_ipm) {
-        ERR_PRINT("bmi160_ipm device not found\n");
-        return;
-    }
-
-    gpio_init_callback(&cb, gpio_callback, BIT(BMI160_INTERRUPT_PIN));
-    gpio_add_callback(gpio, &cb);
-
-    gpio_pin_configure(gpio, BMI160_INTERRUPT_PIN,
-                       GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
-                       GPIO_INT_ACTIVE_LOW | GPIO_INT_DEBOUNCE);
-
-    gpio_pin_enable_callback(gpio, BMI160_INTERRUPT_PIN);
-#endif
 
     // create global objects
     jerry_value_t global_obj = jerry_get_global_object();

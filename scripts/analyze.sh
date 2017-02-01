@@ -240,19 +240,12 @@ if [ $? -eq 0 ] || check_config_file ZJS_SENSOR; then
     if [ $BOARD = "arduino_101" ]; then
         bmi160=$(grep -E Accelerometer\|Gyroscope $SCRIPT)
         if [ $? -eq 0 ]; then
-            MODULES+=" -DBUILD_MODULE_SENSOR_TRIGGER"
-            echo "CONFIG_GPIO=y" >> prj.conf.tmp
-            echo "CONFIG_GPIO_QMSI=y" >> prj.conf.tmp
-            echo "CONFIG_GPIO_QMSI_0_PRI=2" >> prj.conf.tmp
-            echo "CONFIG_GPIO_QMSI_1=y" >> prj.conf.tmp
-            echo "CONFIG_GPIO_QMSI_1_NAME=\"GPIO_1\"" >> prj.conf.tmp
-            echo "CONFIG_GPIO_QMSI_1_PRI=2" >> prj.conf.tmp
             echo "CONFIG_SENSOR=y" >> arc/prj.conf.tmp
             echo "CONFIG_GPIO=y" >> arc/prj.conf.tmp
             echo "CONFIG_SPI=y" >> arc/prj.conf.tmp
             echo "CONFIG_BMI160=y" >> arc/prj.conf.tmp
             echo "CONFIG_BMI160_NAME=\"bmi160\"" >> arc/prj.conf.tmp
-            echo "CONFIG_BMI160_SPI_PORT_NAME=\"SPI_1\"" >> arc/prj.conf.tmp
+            echo "CONFIG_BMI160_SPI_PORT_NAME=\"SPI_SS_1\"" >> arc/prj.conf.tmp
             echo "CONFIG_BMI160_SLAVE=1" >> arc/prj.conf.tmp
             echo "CONFIG_BMI160_SPI_BUS_FREQ=88" >> arc/prj.conf.tmp
             echo "CONFIG_BMI160_TRIGGER=y" >> arc/prj.conf.tmp
