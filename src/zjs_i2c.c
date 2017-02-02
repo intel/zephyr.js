@@ -13,6 +13,7 @@
 
 #ifdef CONFIG_BOARD_ARDUINO_101
 #include "zjs_ipm.h"
+#include "zjs_i2c_ipm_handler.h"
 #endif
 
 

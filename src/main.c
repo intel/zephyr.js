@@ -30,6 +30,9 @@
 #ifdef ZJS_LINUX_BUILD
 #include "zjs_unit_tests.h"
 #endif
+#ifdef CONFIG_BOARD_ARDUINO_101
+#include "zjs_ipm.h"
+#endif
 
 #define ZJS_MAX_PRINT_SIZE      512
 
