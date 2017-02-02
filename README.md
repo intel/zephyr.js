@@ -272,25 +272,24 @@ configure the heap size available to the ZJS API.
 - `tests/` - JavaScript unit tests (incomplete).
 
 ## Getting more space on your Arduino 101
-By default, Arduino 101 comes with a **144K** X86 partition, but we're able to
-pretty safely increase it to **256K**. You should only use the `dfu-util`
-method of flashing (not JTAG) after you do this.
+Arduino 101 comes with a **144K** X86 partition, but we're able to use more
+space by telling Zephyr there is more space and then splicing the images we
+flash to the device. You can control this with the SIZE= flag to make. So if
+you want to allocated 256KB for x86, use SIZE=256.
 
-The easiest way to do this is to use a flashpack.zip file that I can provide
-you (geoff@linux.intel.com). I need to make sure of the license details before
-I add it to the repo.
-
-The ZJS_PARTITION environment variable, set automatically by zjs-env.sh, is
-what controls whether the build targets 144KB or 256KB. If you use
-the wrong one, the ARC side won't come up because we'll be attempting
-to start it from the wrong place on the flash. (Note: both the ARC and X86
-images have to be rebuilt and reflashed when you switch partition sizes.)
-
-If you are using ZJS with an Arduino 101 that you have converted to a 256KB X86
-partition (see below), you should run this command when you set up your shell:
-```bash
-$ source zjs-env.sh 256
+You can also just build without it until you see a message like this:
 ```
+lfiamcu/5.2.1/real-ld: region `ROM' overflowed by 53728 bytes
+```
+
+That implies you need an extra 53K of space, so you could try passing SIZE=200.
+If it's the ARC image that needs more space, you should decrease the SIZE you're
+passing instead.
+
+**NOTE**: Earlier, we would physically repartition the device and install a new
+bootloader that knew about it. This is no longer necessary, so if you have such
+a device you should restore it to factory condition with the 256-to-144
+flashpack.
 
 ## Building system images
 The ZJS project uses a top-level Makefile to control the building of code from
@@ -302,36 +301,20 @@ To see the available make commands, type:
 $ make help
 ```
 
-## Build the ARC image
 On Arduino 101, there are two embedded microcontrollers, an X86 and an ARC one.
 If you only need the x86 side, you can disable ARC with CONFIG_ARC_INIT=n in
 the Zephyr prj.conf. Otherwise, you need a working image running on it.
-
-For the best flexibility in using ZJS, you should build and install our
-project's ARC image. Some of the APIs you can call from JavaScript won't work
-until you have this server image running there (for now this is just AIO API).
-This is because only the ARC MCU can perform certain functions, like converting
-analog inputs to digital values.
-
-We don't change the ARC engine code very often, so you only need to update this
-occasionally. To build and install the ARC image, do this:
-
-```bash
-$ make arc
-$ make dfu-arc
-```
-
-(As always with DFU, you will need to reset the device a few seconds before you
-attempt the DFU command, or it will fail.)
 
 ## Build the *Hello World* sample
 ```bash
 $ make JS=samples/HelloWorld.js
 ```
 
-This will build the system image, resulting in `outdir/arduino_101/zephyr.bin`
-as the final output. To flash this to your device with dfu-util, first press
-the Master Reset button on your Arduino 101, and about three seconds later type:
+This will build both an X86 and an ARC image, resulting in
+`outdir/arduino_101/zephyr.bin` and `arc/outdir/arduino_101_sss/zephyr.bin`
+as the final output. Then adjusted versions are created with a `.dfu` suffix.
+To flash them to your device with dfu-util, first press the Master Reset button
+on your Arduino 101, and about three seconds later type:
 
 ```bash
 $ make dfu
@@ -340,8 +323,8 @@ $ make dfu
 There is a window of about five seconds where the DFU server is available,
 starting a second or two after the device resets.
 
-Now the x86 image on your device has been updated. Press the Master Reset button
-one more time to boot your new image.
+Now both images on your device have been updated. Press the Master Reset button
+one more time to boot your new images.
 
 ## Build other samples
 The other samples may require some hardware to be set up and connected; read
