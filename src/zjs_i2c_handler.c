@@ -12,8 +12,8 @@ int zjs_i2c_handle_open(uint8_t msg_bus)
 {
     int error_code = -1;
     if (msg_bus < MAX_I2C_BUS) {
-        char bus[6];
-        snprintf(bus, 6, "I2C_%i", msg_bus);
+        char bus[9];
+        snprintf(bus, 9, "I2C_SS_%i", msg_bus);
         i2c_device[msg_bus] = device_get_binding(bus);
 
         if (!i2c_device[msg_bus]) {
@@ -33,7 +33,7 @@ int zjs_i2c_handle_open(uint8_t msg_bus)
             }
         }
     } else {
-        ERR_PRINT("I2C bus I2C_%i is not a valid I2C bus.\n", msg_bus);
+        ERR_PRINT("I2C bus I2C_SS_%i is not a valid I2C bus.\n", msg_bus);
     }
     return error_code;
 }
@@ -58,7 +58,7 @@ int zjs_i2c_handle_write(uint8_t msg_bus, uint8_t *data,
             ERR_PRINT("no I2C device is ready yet\n");
         }
     } else {
-        ERR_PRINT("I2C bus I2C_%i is not a valid I2C bus.\n", msg_bus);
+        ERR_PRINT("I2C bus I2C_SS_%i is not a valid I2C bus.\n", msg_bus);
     }
     return error_code;
 }
@@ -81,7 +81,7 @@ int zjs_i2c_handle_read(uint8_t msg_bus, uint8_t *data, uint32_t length,
         }
     }
     else {
-        ERR_PRINT("I2C bus I2C_%i is not a valid I2C bus.\n", msg_bus);
+        ERR_PRINT("I2C bus I2C_SS_%i is not a valid I2C bus.\n", msg_bus);
     }
     return error_code;
 }
@@ -104,7 +104,7 @@ int zjs_i2c_handle_burst_read(uint8_t msg_bus, uint8_t *data, uint32_t length,
         }
     }
     else {
-        ERR_PRINT("I2C bus I2C_%i is not a valid I2C bus.\n", msg_bus);
+        ERR_PRINT("I2C bus I2C_SS_%i is not a valid I2C bus.\n", msg_bus);
     }
     return error_code;
 }
