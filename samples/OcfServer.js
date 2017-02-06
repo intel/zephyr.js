@@ -1,4 +1,6 @@
-setBleAddress('11:22:33:44:55:66');
+var MY_ID = '02';
+var BLE_ADDR = 'E3:C4:7F:24:B3:' + MY_ID;
+setBleAddress(BLE_ADDR);
 var server = require('ocf').server;
 
 console.log("Started OCF server");

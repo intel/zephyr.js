@@ -77,9 +77,8 @@ will show up as a IP interface on the Linux box:
             UP POINTOPOINT RUNNING MULTICAST  MTU:1280  Metric:1
             RX packets:6 errors:0 dropped:0 overruns:0 frame:0
             TX packets:28 errors:0 dropped:0 overruns:0 carrier:0
-            collisions:0 txqueuelen:1 
+            collisions:0 txqueuelen:1
             RX bytes:167 (167.0 B)  TX bytes:1200 (1.2 KB)
-
   ```
 
 ## Connecting an OCF client
@@ -121,6 +120,5 @@ $ ./oic-get /a/light?di=31bf6309-8ebf-4309-5fbf-630930c06309
 10.237.72.146:80 /a/light?di=31bf6309-8ebf-4309-5fbf-630930c06309
 {"properties":{"state":true,"power":10}}
 HTTP: 200
- 
 As you can see, the discovery and retrieve resources works.
 ```

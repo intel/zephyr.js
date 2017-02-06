@@ -7,41 +7,6 @@ OCF_ROOT ?= deps/iotivity-constrained
 
 BUILD_DIR = $(ZJS_BASE)/outdir/linux/$(VARIANT)
 
-UNAME := $(shell uname)
-ifeq ($(UNAME),Darwin)
-COPY=rsync -R
-else
-COPY=cp --parents --no-clobber
-# Only build OCF on linux, until iotivity-constrained is fixed on Mac
-CORE_SRC +=	src/zjs_ocf_common.c \
-		src/zjs_ocf_server.c
-
-LINUX_INCLUDES += 	-I$(OCF_ROOT)/deps/tinydtls \
-			-I$(OCF_ROOT)/deps/tinycbor/src \
-			-I$(OCF_ROOT) \
-			-I$(OCF_ROOT)/port/linux \
-			-I$(OCF_ROOT)/include \
-			-I$(OCF_ROOT)/util \
-			-I$(OCF_ROOT)/messaging/coap \
-			-I$(OCF_ROOT)/api \
-			-include $(ZJS_BASE)/src/ocf_config.h
-
-include Makefile.ocf_linux
-
-LINUX_DEFINES +=	-DOC_SERVER \
-			-DBUILD_MODULE_OCF \
-			-DBUILD_MODULE_BUFFER
-endif
-
-.PHONY: all
-all: linux
-
-.PHONY: setup
-setup:
-	@if [ ! -d $(ZJS_BASE)/outdir/linux/$(VARIANT) ]; then \
-		mkdir -p $(ZJS_BASE)/outdir/linux/$(VARIANT); \
-	fi
-
 CORE_SRC +=	src/zjs_buffer.c \
 		src/zjs_callbacks.c \
 		src/zjs_common.c \
@@ -102,7 +67,7 @@ LINUX_FLAGS += 	-fno-asynchronous-unwind-tables \
 		-Wpointer-sign
 
 ifeq ($(VARIANT), debug)
-LINUX_DEFINES += -DDEBUG_BUILD -DOC_DEBUG
+LINUX_DEFINES += -DDEBUG_BUILD
 LINUX_FLAGS += -g
 DEBUG=1
 else

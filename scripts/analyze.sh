@@ -103,7 +103,6 @@ if check_for_require ocf || check_config_file ZJS_OCF; then
         echo "CONFIG_NET_SLIP=y" >> prj.conf.tmp
         echo "CONFIG_NET_SLIP_TAP=y" >> prj.conf.tmp
     fi
-    echo "CONFIG_BLUETOOTH_DEVICE_NAME=\"Zephyr OCF node\"" >> prj.conf.tmp
     echo "CONFIG_NETWORKING=y" >> prj.conf.tmp
     echo "CONFIG_NET_IPV6=y" >> prj.conf.tmp
     echo "CONFIG_NET_UDP=y" >> prj.conf.tmp
@@ -125,6 +124,7 @@ if check_for_require ocf || check_config_file ZJS_OCF; then
     echo "CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL=y" >> prj.conf.tmp
     echo "CONFIG_NETWORKING_WITH_6LOWPAN=y" >> prj.conf.tmp
     echo "CONFIG_6LOWPAN_COMPRESSION_IPHC=y" >> prj.conf.tmp
+    echo "CONFIG_NET_L2_BLUETOOTH_ZEP1656=y" >> prj.conf.tmp
     echo "CONFIG_NET_L2_BLUETOOTH=y" >> prj.conf.tmp
 
     echo "export ZJS_OCF=y" >> zjs.conf.tmp

@@ -36,4 +36,3 @@ server.register(resourceInit).then(function(resource) {
 }).catch(function(error) {
     console.log("Error registering");
 });
-
