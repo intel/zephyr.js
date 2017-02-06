@@ -85,8 +85,3 @@ try {
 } catch (e) {
     console.log("Caught error: " + e.name + ": " + e.message);
 }
-
-console.log("\nTesting constructor to create...");
-var stdout, stderr;
-var myConsole = new Console(stdout, stderr);
-myConsole.log("create new console as 'myConsole'");
