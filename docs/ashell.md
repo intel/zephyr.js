@@ -47,6 +47,12 @@ below instructions to connect to the device from the browser IDE directly.
      ```bash
      $ sudo service modemmanager stop
      ```
+    If you get the message "Unit modemmanager.service not loaded." Try this instead...
+
+    ```bash
+    $ sudo service ModemManager stop
+    ```
+
 4. On Windows:
   * WebUSB compatible device is not appearing with the official WinUSB driver on
     Windows for some reason, so try installing different version of WinUSB driver
