@@ -1,4 +1,5 @@
 BOARD ?= arduino_101
+SIZE ?= 144
 
 # Dump memory information: on = print allocs, full = print allocs + dump pools
 TRACE ?= off
@@ -7,6 +8,16 @@ SNAPSHOT ?= on
 
 ifndef ZJS_BASE
 $(error ZJS_BASE not defined. You need to source zjs-env.sh)
+endif
+
+# SIZE can't be less than the 144KB physically allocated for x86
+ifeq ($(shell test $(SIZE) -lt 144; echo $$?), 0)
+$(error SIZE must be at least 144)
+endif
+
+# SIZE can't be more than 296KB, the total size of x86 + arc partitions combined
+ifeq ($(shell test $(SIZE) -gt 296; echo $$?), 0)
+$(error SIZE must be no higher than 296)
 endif
 
 OCF_ROOT ?= deps/iotivity-constrained
@@ -57,22 +68,43 @@ $(info Note: ZEPHYR_BASE is set outside the current ZJS tree ($(ZEPHYR_BASE)))
 endif
 endif
 
+ifeq ($(BOARD), arduino_101)
+ARC = arc
+endif
+
 .PHONY: all
 ifeq ($(BOARD), linux)
 all: linux
 else
-all: zephyr arc
+all: zephyr
 endif
+
+A101BIN = outdir/arduino_101/zephyr.bin
+A101SSBIN = arc/outdir/arduino_101_sss/zephyr.bin
 
 # Build for zephyr, default target
 .PHONY: zephyr
-zephyr: analyze generate jerryscript
+zephyr: analyze generate jerryscript $(ARC)
 	@make -f Makefile.zephyr	BOARD=$(BOARD) \
 					VARIANT=$(VARIANT) \
 					MEM_STATS=$(MEM_STATS) \
 					CB_STATS=$(CB_STATS) \
 					PRINT_FLOAT=$(PRINT_FLOAT) \
 					SNAPSHOT=$(SNAPSHOT)
+ifeq ($(BOARD), arduino_101)
+	@echo
+	@echo -n Creating dfu images...
+	@dd if=$(A101BIN) of=$(A101BIN).dfu bs=1024 count=144 2> /dev/null
+	@dd if=$(A101BIN) of=$(A101SSBIN).dfu bs=1024 skip=144 2> /dev/null
+	@dd if=$(A101SSBIN) of=$(A101SSBIN).dfu bs=1024 seek=$$(($(SIZE) - 144)) 2> /dev/null
+	@echo " done."
+endif
+
+# Flash Arduino 101 x86 and arc images
+.PHONY: dfu
+dfu:
+	dfu-util -a x86_app -D $(A101BIN).dfu
+	dfu-util -a sensor_core -D $(A101SSBIN).dfu
 
 # Build JerryScript as a library (libjerry-core.a)
 jerryscript:
@@ -133,10 +165,9 @@ else
 	@cat fragments/prj.conf.base >> prj.conf
 endif
 ifeq ($(BOARD), arduino_101)
-	cat fragments/prj.conf.arduino_101 >> prj.conf
-ifeq ($(ZJS_PARTITION), 256)
-	@cat fragments/prj.conf.partition_256 >> prj.conf
-endif
+	@cat fragments/prj.conf.arduino_101 >> prj.conf
+	@echo "CONFIG_ROM_SIZE=$(SIZE)" >> prj.conf
+	@printf "CONFIG_SS_RESET_VECTOR=0x400%x\n" $$((($(SIZE) + 64) * 1024)) >> prj.conf
 endif
 endif
 # Append script specific modules to prj.conf
@@ -153,6 +184,8 @@ cleanlocal:
 	@rm -f arc/prj.conf
 	@rm -f arc/prj.conf.tmp
 	@rm -f arc/src/Makefile
+	@rm -f arc/outdir/arduino_101_sss/zephyr.bin.dfu
+	@rm -f outdir/arduino_101/zephyr.bin.dfu
 	@rm -f prj.conf
 	@rm -f prj.conf.tmp
 	@rm -f prj.mdef
@@ -162,12 +195,12 @@ cleanlocal:
 .PHONY: clean
 clean: cleanlocal
 ifeq ($(BOARD), linux)
-	make -f Makefile.linux clean
+	@make -f Makefile.linux clean
 else
-	rm -rf $(JERRY_BASE)/build/$(BOARD)/; \
-	rm -f outdir/$(BOARD)/libjerry-core.a; \
-	make -f Makefile.zephyr clean BOARD=$(BOARD); \
-	cd arc/; make clean;
+	@rm -rf $(JERRY_BASE)/build/$(BOARD)/;
+	@rm -f outdir/$(BOARD)/libjerry-core.a;
+	@make -f Makefile.zephyr clean BOARD=$(BOARD);
+	@cd arc/; make clean;
 endif
 
 .PHONY: pristine
@@ -175,20 +208,6 @@ pristine: cleanlocal
 	@rm -rf $(JERRY_BASE)/build;
 	@make -f Makefile.zephyr pristine;
 	@cd arc; make pristine;
-
-# Flash Arduino 101 x86 image
-.PHONY: dfu
-dfu:
-	dfu-util -a x86_app -D outdir/arduino_101/zephyr.bin
-
-# Flash Arduino 101 ARC image
-.PHONY: dfu-arc
-dfu-arc:
-	dfu-util -a sensor_core -D arc/outdir/arduino_101_sss/zephyr.bin
-
-# Flash both
-.PHONY: dfu-all
-dfu-all: dfu dfu-arc
 
 # Generate the script file from the JS variable
 .PHONY: generate
@@ -240,10 +259,12 @@ arc: analyze
 	@if [ -e arc/prj.conf.tmp ]; then \
 		cat arc/prj.conf.tmp >> arc/prj.conf; \
 	fi
-ifeq ($(ZJS_PARTITION), 256)
-	@cat arc/fragments/prj.conf.partition_256 >> arc/prj.conf
-endif
+	@printf "CONFIG_FLASH_BASE_ADDRESS=0x400%x\n" $$((($(SIZE) + 64) * 1024)) >> arc/prj.conf
 	@cd arc; make BOARD=arduino_101_sss
+ifeq ($(BOARD), arduino_101)
+	@echo
+	@if test $$(((296 - $(SIZE)) * 1024)) -lt $$(stat --printf="%s" $(A101SSBIN)); then echo Error: ARC image \($$(stat --printf="%s" $(A101SSBIN)) bytes\) will not fit in available $$(((296 - $(SIZE))))KB space. Try decreasing SIZE.; return 1; fi
+endif
 
 # Run debug server over JTAG
 .PHONY: debug
@@ -268,23 +289,26 @@ linux: generate
 
 .PHONY: help
 help:
+	@echo "JavaScript Runtime for Zephyr OS - Build System"
+	@echo
 	@echo "Build targets:"
-	@echo "    zephyr:    Build the main Zephyr target (default)"
-	@echo "    arc:       Build the ARC Zephyr target for Arduino 101"
-	@echo "    all:       Build the zephyr and arc targets"
+	@echo "    all:       Build for either Zephyr or Linux depending on BOARD"
+	@echo "    zephyr:    Build Zephyr for the given BOARD (A101 is default)"
+	@echo "    arc:       Build just the ARC Zephyr target for Arduino 101"
 	@echo "    linux:     Build the Linux target"
-	@echo "    dfu:       Flash the x86 core binary with dfu-util"
-	@echo "    dfu-arc:   Flash the ARC binary with dfu-util"
-	@echo "    dfu-all:   Flash both binaries with dfu-util"
+	@echo "    dfu:       Flash x86 and arc images to A101 with dfu-util"
 	@echo "    debug:     Run debug server using JTAG"
 	@echo "    gdb:       Run gdb to connect to debug server for x86"
 	@echo "    arcgdb:    Run gdb to connect to debug server for ARC"
 	@echo "    qemu:      Run QEMU after building"
-	@echo "    clean:     Clean stale build objects"
-	@echo "    setup:     Sets up dependencies"
-	@echo "    update:    Updates dependencies"
+	@echo "    clean:     Clean stale build objects for given BOARD"
+	@echo "    pristine:  Completely remove all generated files"
 	@echo
 	@echo "Build options:"
 	@echo "    BOARD=     Specify a Zephyr board to build for"
 	@echo "    JS=        Specify a JS script to compile into the binary"
+	@echo "    SIZE=      Specify size in KB for X86 partition (144 - 296)"
+	@echo "    SNAPSHOT=  Specify off to turn off snapshotting"
+	@echo "    TRACE=     Specify 'on' for malloc tracing (off is default)"
+	@echo "    VARIANT=   Specify 'debug' for extra serial output detail"
 	@echo

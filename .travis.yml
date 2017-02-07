@@ -53,28 +53,19 @@ script: >
     make V=1 JS=samples/PWM.js &&
     banner "i2c" &&
     make V=1 JS=samples/I2C.js &&
-    banner "uart" &&
-    make V=1 JS=samples/UART.js &&
     banner "events" &&
     make V=1 JS=samples/tests/Events.js &&
     banner "perf" &&
     make V=1 JS=tests/test-performance.js &&
+    banner "uart" &&
+    make V=1 JS=samples/UART.js SIZE=160 &&
+    banner "btgrove" &&
+    make V=1 JS=samples/WebBluetoothGroveLcdDemo.js SIZE=256 &&
 
     # run k64f hello world build test (should expand)
     git clean -dfx &&
     banner "k64f hello" &&
-    make V=1 BOARD=frdm_k64f &&
-
-    # test arc build
-    git clean -dfx &&
-    banner "arc" &&
-    make V=1 arc &&
-
-    # test large partition A101 x86 build
-    git clean -dfx &&
-    source zjs-env.sh 256 &&
-    banner "btgrove" &&
-    make V=1 JS=samples/WebBluetoothGroveLcdDemo.js
+    make V=1 BOARD=frdm_k64f
 
   elif [ "$TARGET" == "linux" ]; then
     # check for any new trailing whitespace since the first fetched commit
@@ -103,5 +94,5 @@ script: >
     # test ashell build
     git clean -dfx &&
     banner "ashell" &&
-    make V=1 DEV=ashell
+    make V=1 DEV=ashell SIZE=256
   fi
