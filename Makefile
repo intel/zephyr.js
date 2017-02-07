@@ -20,6 +20,10 @@ ifeq ($(shell test $(SIZE) -gt 296; echo $$?), 0)
 $(error SIZE must be no higher than 296)
 endif
 
+ifeq ($(MAKECMDGOALS), linux)
+$(error 'linux' make target is depricated, use "make BOARD=linux")
+endif
+
 OCF_ROOT ?= deps/iotivity-constrained
 JS ?= samples/HelloWorld.js
 VARIANT ?= release
@@ -46,11 +50,8 @@ CB_STATS ?= off
 # Print floats (uses -u _printf_float flag). This is a workaround on the A101
 # otherwise floats will not print correctly. It does use ~11k extra ROM though
 PRINT_FLOAT ?= off
-# Make target (linux or zephyr)
-# MAKECMDGOALS is a Make variable that is set to the target your building for.
-TARGET = $(MAKECMDGOALS)
 
-ifeq ($(TARGET), linux)
+ifeq ($(BOARD), linux)
 	SNAPSHOT = off
 endif
 ifeq ($(BOARD), linux)
@@ -59,7 +60,7 @@ endif
 
 # If target is one of these, ensure ZEPHYR_BASE is set
 ZEPHYR_TARGETS = zephyr arc debug
-ifeq ($(TARGET), $(filter $(ZEPHYR_TARGETS),$(TARGET)))
+ifeq ($(BOARD), $(filter $(ZEPHYR_TARGETS),$(TARGET)))
 ifndef ZEPHYR_BASE
 $(error ZEPHYR_BASE not set. Source deps/zephyr/zephyr-env.sh)
 endif
@@ -227,7 +228,7 @@ endif
 	echo "" > .snapshot.last_build
 else
 	@echo Creating C string from JS application...
-ifeq ($(TARGET), linux)
+ifeq ($(BOARD), linux)
 	@./scripts/convert.sh $(JS) src/zjs_script_gen.c
 else
 	@./scripts/convert.sh /tmp/zjs.js src/zjs_script_gen.c
