@@ -82,6 +82,26 @@ endif
 A101BIN = outdir/arduino_101/zephyr.bin
 A101SSBIN = arc/outdir/arduino_101_sss/zephyr.bin
 
+.PHONY: ram_report
+ram_report:
+	@make -f Makefile.zephyr	BOARD=$(BOARD) \
+					VARIANT=$(VARIANT) \
+					MEM_STATS=$(MEM_STATS) \
+					CB_STATS=$(CB_STATS) \
+					PRINT_FLOAT=$(PRINT_FLOAT) \
+					SNAPSHOT=$(SNAPSHOT) \
+					ram_report
+
+.PHONY: rom_report
+rom_report:
+	@make -f Makefile.zephyr	BOARD=$(BOARD) \
+					VARIANT=$(VARIANT) \
+					MEM_STATS=$(MEM_STATS) \
+					CB_STATS=$(CB_STATS) \
+					PRINT_FLOAT=$(PRINT_FLOAT) \
+					SNAPSHOT=$(SNAPSHOT) \
+					ram_report
+
 # Build for zephyr, default target
 .PHONY: zephyr
 zephyr: analyze generate jerryscript $(ARC)
