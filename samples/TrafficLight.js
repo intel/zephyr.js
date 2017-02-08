@@ -41,16 +41,16 @@ green.write(false);
 setInterval(function () {
     elapsed++;
     if (elapsed == 5) {
-        // switch to yellow after 5s
+        // switch to green after 5s
         red.write(false);
-        yellow.write(true);
-    } else if (elapsed == 7) {
-        // switch to green after 2s
-        yellow.write(false);
         green.write(true);
-    } else if (elapsed == 10) {
-        // switch to red after 3s
+    } else if (elapsed == 8) {
+        // switch to yellow after 3s
         green.write(false);
+        yellow.write(true);
+    } else if (elapsed == 10) {
+        // switch to red after 2s
+        yellow.write(false);
         red.write(true);
         elapsed = 0;
     }
