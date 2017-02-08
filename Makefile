@@ -21,7 +21,7 @@ $(error SIZE must be no higher than 296)
 endif
 
 ifeq ($(MAKECMDGOALS), linux)
-$(error 'linux' make target is depricated, use "make BOARD=linux")
+$(error 'linux' make target is deprecated, use "make BOARD=linux")
 endif
 
 OCF_ROOT ?= deps/iotivity-constrained

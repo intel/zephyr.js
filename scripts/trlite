@@ -199,7 +199,7 @@ if [ "$VM2" == "y" ]; then
     try_func "jstring2" check_jstring_others
 
     # linux build tests
-    try_command "linux" make $VERBOSE linux
+    try_command "linux" make $VERBOSE BOARD=linux
 
     # linux unit tests
     try_command "unit tests" ./outdir/linux/release/jslinux --unittest
