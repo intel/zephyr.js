@@ -54,9 +54,6 @@ PRINT_FLOAT ?= off
 ifeq ($(BOARD), linux)
 	SNAPSHOT = off
 endif
-ifeq ($(BOARD), linux)
-	SNAPSHOT = off
-endif
 
 # If target is one of these, ensure ZEPHYR_BASE is set
 ZEPHYR_TARGETS = zephyr arc debug
@@ -219,7 +216,7 @@ ifeq ($(SNAPSHOT), on)
 		make -f Makefile.snapshot; \
 	fi
 	@echo Creating snapshot bytecode from JS application...
-	@outdir/snapshot/snapshot $(JS) src/zjs_snapshot_gen.c
+	@outdir/snapshot/snapshot /tmp/zjs.js src/zjs_snapshot_gen.c
 # SNAPSHOT=on, check if rebuilding JerryScript is needed
 ifeq ("$(wildcard .snapshot.last_build)", "")
 	@rm -rf $(JERRY_BASE)/build/$(BOARD)/
