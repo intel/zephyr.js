@@ -346,6 +346,15 @@ void zjs_signal_callback(zjs_callback_id id, const void *args, uint32_t size)
                                     (uint8_t)((size + 3) / 4));
     if (ret != 0) {
         ERR_PRINT("error putting into ring buffer, ret=%u\n", ret);
+
+        if (GET_TYPE(cb_map[id]->flags) == CALLBACK_TYPE_JS) {
+            // for JS, acquire values and release them after servicing callback
+            int argc = size / sizeof(jerry_value_t);
+            jerry_value_t *values = (jerry_value_t *)args;
+            for (int i=0; i<argc; i++) {
+                jerry_release_value(values[i]);
+            }
+        }
     }
 }
 
@@ -416,6 +425,7 @@ void zjs_call_callback(zjs_callback_id id, void* data, uint32_t sz)
                 if (jerry_value_has_error_flag(ret_val)) {
                     zjs_print_error_message(ret_val);
                 }
+                jerry_release_value(ret_val);
             } else if (GET_JS_TYPE(cb_map[id]->flags) == JS_TYPE_LIST) {
                 for (i = 0; i < cb_map[id]->num_funcs; ++i) {
                     ret_val = jerry_call_function(cb_map[id]->func_list[i],
@@ -423,6 +433,7 @@ void zjs_call_callback(zjs_callback_id id, void* data, uint32_t sz)
                     if (jerry_value_has_error_flag(ret_val)) {
                         zjs_print_error_message(ret_val);
                     }
+                    jerry_release_value(ret_val);
                 }
             }
 
@@ -435,8 +446,6 @@ void zjs_call_callback(zjs_callback_id id, void* data, uint32_t sz)
                     zjs_remove_callback(id);
                 }
             }
-
-            jerry_release_value(ret_val);
         } else if (GET_TYPE(cb_map[id]->flags) == CALLBACK_TYPE_C &&
                    cb_map[id]->function) {
             cb_map[id]->function(cb_map[id]->handle, data);
