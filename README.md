@@ -90,7 +90,7 @@ $ sudo usermod -a -G plugdev USERNAME
 #### Add udev rules
 Copy these two files into your /etc/udev/rules.d directory (/etc/udev.rules for Ubuntu 14.04):
 
-* [99-openocd.rules](https://raw.githubusercontent.com/arduino/OpenOCD/master/contrib/99-openocd.rules) (from this [Arduino github project](https://github.com/arduino/OpenOCD/blob/master/contrib/99-openocd.rules))
+* [60-openocd.rules](https://raw.githubusercontent.com/arduino/OpenOCD/master/contrib/60-openocd.rules) (from this [Arduino github project](https://github.com/arduino/OpenOCD/blob/master/contrib/60-openocd.rules))
 * [99-dfu.rules](https://raw.githubusercontent.com/01org/CODK-A-ARC/master/bin/99-dfu.rules) (from this [01org github project](https://github.com/01org/CODK-A-ARC/blob/master/bin/99-dfu.rules))
 
 Then run this command:
@@ -147,7 +147,7 @@ with the same JS file so the required sub-modules are enabled on both images.
 You can build both with a single command:
 
 ```bash
-$ make JS=samples/TrafficLight.js all
+$ make JS=samples/TrafficLight.js
 ```
 
 The JS= argument lets you provide the path to your application. The TrafficLight
@@ -160,7 +160,7 @@ Then connect the Arduino 101 to your host with a USB A/B cable. Press the
 Master Reset button on the Arduino 101 and after a few seconds type:
 
 ```bash
-$ make dfu-all
+$ make dfu
 ```
 
 This will flash both the images to the device using the dfu-util program.
@@ -177,35 +177,6 @@ You have built and run your first ZJS application!
 
 If you want to make changes to the application, or run a different .js sample,
 you just need to repeat the steps the desired JavaScript filename.
-
-#### x86 application image only
-If you want to build the x86 and ARC images separately, or if you just want to
-build another .js sample that uses the same sub-modules, then you can build only
-the x86 image with:
-
-```bash
-$ make JS=path/to/filename.js
-$ make dfu
-```
-
-#### ARC support image only
-To build and flash only the ARC support image:
-
-```bash
-$ make JS=path/to/filename.js arc
-$ make dfu-arc
-```
-
-If you run a different .js sample that uses different sub-modules, for example,
-from AIO.js to I2C.js, then you'll need to repeat the last two steps to flash
-both images.
-
-If you forget to update the ARC image when your module requirements have changed,
-you'll see an error in the serial console (setup steps below) similar to this:
-
-```bash
-ipm_console0: 'unsupported ipm message id: 1, check ARC modules'
-```
 
 ### Next steps
 
