@@ -43,7 +43,6 @@ server.register(resourceInit).then(function(resource) {
             console.log("request.properties does not exist");
         }
         request.respond(MyProperties);
-        //server.notify(MyResource);
     });
 }).catch(function(error) {
     console.log("Error registering");

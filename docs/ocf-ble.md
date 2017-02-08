@@ -46,7 +46,7 @@ will show up as a IP interface on the Linux box:
   hciconfig hci0 reset
   ```
 
-3. Look for your Arduino 101 advertisment
+3. Look for your Arduino 101 advertisement
 
   ```
   hcitool lescan
@@ -66,7 +66,8 @@ will show up as a IP interface on the Linux box:
   echo "connect F1:F9:50:21:43:4A 2" > /sys/kernel/debug/bluetooth/6lowpan_control
   ```
 
-5. Check that you have a new network interface for this connection
+5. Check that you have a new network interface for this connection. It may take a few
+seconds for it to appear.
 
   ```
   ifconfig
@@ -82,8 +83,8 @@ will show up as a IP interface on the Linux box:
   ```
 
 ## Connecting an OCF client
-Now that your Arduino 101 is connected, it is as if its a regular OCF IP device. You
-can now connect an OCF client. There are example OCF client samples in the
+Now that your Arduino 101 is connected, it is as if it's a regular OCF IP device. You
+can now connect an OCF client. There are OCF client samples in the
 [iot-rest-api-server](https://github.com/01org/iot-rest-api-server) repo.
 ```
 git clone git@github.com:01org/iot-rest-api-server.git
