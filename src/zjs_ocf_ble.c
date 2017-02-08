@@ -21,19 +21,19 @@ static ssize_t zjs_ble_storage_read(const bt_addr_le_t *addr, uint16_t key,
 }
 
 /*
- * Convert a device ID (MAC) string to  Zephyr bluetooth address
+ * Convert a device ID (MAC) string to Zephyr bluetooth address
  * e.g. input: "AA:BB:CC:DD:EE:FF"
  */
 static int str2bt_addr_le(const char *str, const char *type, bt_addr_le_t *addr)
 {
-    int i, j;
+    int i;
     uint8_t tmp;
 
     if (strlen(str) != 17) {
         return -EINVAL;
     }
 
-    for (i = 5; *str != '\0', i >= 0; str+=3, i--) {
+    for (i = 5; i >= 0; str+=3, i--) {
         if (!zjs_hex_to_byte(str, &tmp)) {
             return -EINVAL;
         }
@@ -62,9 +62,6 @@ static jerry_value_t ocf_set_ble_address(const jerry_value_t function_val,
     jerry_size_t size = 18;
     char addr[size];
     zjs_copy_jstring(argv[0], addr, &size);
-    if (size != 17) {
-        return zjs_error("BLE address length incorrect");
-    }
 
     static const struct bt_storage storage = {
             .read = zjs_ble_storage_read,
@@ -73,7 +70,7 @@ static jerry_value_t ocf_set_ble_address(const jerry_value_t function_val,
     };
 
     if (str2bt_addr_le(addr, "random", &id_addr) < 0) {
-        return zjs_error("error setting BLE address");
+        return zjs_error("bad BLE address string");
     }
     DBG_PRINT("BLE addr is set to: %s\n", addr);
     BT_ADDR_SET_STATIC(&id_addr.a);
