@@ -84,7 +84,7 @@ script: >
 
     # run linux build test
     banner "linux" &&
-    make V=1 linux &&
+    make V=1 BOARD=linux &&
 
     # run linux unit tests
     banner "unit tests" &&
