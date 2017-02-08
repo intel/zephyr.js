@@ -6,7 +6,7 @@ JERRY_BASE ?= $(ZJS_BASE)/deps/jerryscript
 
 JERRY_FLAGS ?= --snapshot-save=on
 
-BUILD_DIR = $(ZJS_BASE)/outdir/snapshot/$(VARIANT)
+BUILD_DIR = $(ZJS_BASE)/outdir/snapshot/
 
 UNAME := $(shell uname)
 ifeq ($(UNAME),Darwin)
@@ -20,8 +20,8 @@ all: snapshot
 
 .PHONY: setup
 setup:
-	@if [ ! -d $(ZJS_BASE)/outdir/snapshot/$(VARIANT) ]; then \
-		mkdir -p $(ZJS_BASE)/outdir/snapshot/$(VARIANT); \
+	@if [ ! -d $(ZJS_BASE)/outdir/snapshot/ ]; then \
+		mkdir -p $(ZJS_BASE)/outdir/snapshot/; \
 	fi
 
 CORE_SRC +=		src/snapshot.c \
@@ -63,7 +63,6 @@ SNAPSHOT_FLAGS += 	-fno-asynchronous-unwind-tables \
 			-Wpointer-sign
 
 ifeq ($(VARIANT), debug)
-SNAPSHOT_DEFINES +=	-DDEBUG_BUILD
 SNAPSHOT_FLAGS +=	-g
 DEBUG=1
 else
