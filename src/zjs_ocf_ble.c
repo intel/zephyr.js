@@ -29,7 +29,7 @@ static int str2bt_addr_le(const char *str, const char *type, bt_addr_le_t *addr)
     int i;
     uint8_t tmp;
 
-    if (strlen(str) != 17) {
+    if (strnlen(str, 18) != 17) {
         return -EINVAL;
     }
 
