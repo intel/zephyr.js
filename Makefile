@@ -29,7 +29,7 @@ JS ?= samples/HelloWorld.js
 VARIANT ?= release
 # JerryScript options
 JERRY_BASE ?= $(ZJS_BASE)/deps/jerryscript
-EXT_JERRY_FLAGS ?= -DENABLE_ALL_IN_ONE=ON
+EXT_JERRY_FLAGS ?= -DENABLE_ALL_IN_ONE=ON -DFEATURE_PROFILE=$(ZJS_BASE)/jerry_feature.profile
 ifneq ($(DEV), ashell)
 ifeq ($(SNAPSHOT), on)
 EXT_JERRY_FLAGS += -DFEATURE_JS_PARSER=OFF
