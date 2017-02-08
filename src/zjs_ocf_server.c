@@ -17,6 +17,11 @@
 #include "zjs_promise.h"
 
 struct server_resource {
+    /*
+     * TODO: cant reference with 'this' because iotivity-constrained callbacks
+     *       which trigger events need this. They are not JS API's that have
+     *       'this' pointer so we have to save it in C.
+     */
     jerry_value_t object;
     char* device_id;
     char* resource_path;
@@ -24,16 +29,15 @@ struct server_resource {
     oc_resource_t *res;
 };
 
-struct ocf_handler {
-    jerry_value_t promise_obj;
-    jerry_value_t* argv;
-    jerry_value_t properties;
-    struct ocf_response* resp;
+struct ocf_response {
+    oc_method_t method;         // Current method being executed
+    oc_request_t* request;
     struct server_resource* res;
 };
 
-struct ocf_response {
-    oc_method_t method;         // Current method being executed
+struct ocf_handler {
+    oc_request_t *req;
+    struct ocf_response* resp;
     struct server_resource* res;
 };
 
@@ -59,9 +63,6 @@ static void post_ocf_promise(void* handle)
 {
     struct ocf_handler* h = (struct ocf_handler*)handle;
     if (h) {
-        if (h->argv) {
-            zjs_free(h->argv);
-        }
         if (h->resp) {
             zjs_free(h->resp);
         }
@@ -109,14 +110,14 @@ static jerry_value_t request_to_jerry_value(oc_request_t *request)
     while (rep != NULL) {
         switch (rep->type) {
         case BOOL:
-            zjs_obj_add_boolean(props, rep->value_boolean, oc_string(rep->name));
+            zjs_obj_add_boolean(props, rep->value.boolean, oc_string(rep->name));
             break;
         case INT:
-            zjs_obj_add_number(props, rep->value_int, oc_string(rep->name));
+            zjs_obj_add_number(props, rep->value.integer, oc_string(rep->name));
             break;
         case BYTE_STRING:
         case STRING:
-            zjs_obj_add_string(props, oc_string(rep->value_string), oc_string(rep->name));
+            zjs_obj_add_string(props, oc_string(rep->value.string), oc_string(rep->name));
             break;
             /*
              * TODO: Implement encoding for complex types
@@ -173,33 +174,6 @@ static jerry_value_t create_resource(const char* path, jerry_value_t resource_in
     return res;
 }
 
-static jerry_value_t create_request(struct server_resource* resource, oc_method_t method, struct ocf_handler* handler)
-{
-
-    handler->resp = create_response(resource, method);
-    jerry_value_t object = jerry_create_object();
-    jerry_value_t target = jerry_create_object();
-    jerry_value_t source = jerry_create_object();
-
-    if (resource->res) {
-        zjs_obj_add_string(source, oc_string(resource->res->uri), "resourcePath");
-        zjs_obj_add_string(target, oc_string(resource->res->uri), "resourcePath");
-    }
-
-    // source is the resource requesting the operation
-    zjs_set_property(object, "source", source);
-
-    // target is the resource being retrieved
-    zjs_set_property(object, "target", target);
-
-    jerry_set_object_native_handle(object, (uintptr_t)handler, NULL);
-
-    jerry_release_value(target);
-    jerry_release_value(source);
-
-    return object;
-}
-
 #if 0
 static void print_props_data(oc_request_t *data)
 {
@@ -243,41 +217,71 @@ static jerry_value_t ocf_respond(const jerry_value_t function_val,
 {
     jerry_value_t promise = jerry_create_object();
     struct ocf_handler* h;
-    jerry_value_t request = argv[0];
+    jerry_value_t request = this;
 
-    if (!jerry_value_is_object(request)) {
-        ERR_PRINT("first parameter must be request object\n");
-        return ZJS_UNDEFINED;
-    }
-
-    jerry_value_t data;
-
-    if (argc > 2) {
-        data = argv[2];
-    } else {
-        data = ZJS_UNDEFINED;
-    }
+    jerry_value_t data = argv[0];
 
     if (!jerry_get_object_native_handle(request, (uintptr_t*)&h)) {
         ERR_PRINT("native handle not found\n");
         REJECT(promise, "TypeMismatchError", "native handle not found", h);
+        oc_send_response(h->req, OC_STATUS_INTERNAL_SERVER_ERROR);
         return promise;
     }
 
-    h->properties = zjs_get_property(data, "properties");
-    if (!jerry_value_is_object(h->properties)) {
-        ERR_PRINT("'properties' not found in data argument\n");
-        REJECT(promise, "TypeMismatchError", "'properties' not found in data argument", h);
+    if (!jerry_value_is_object(data)) {
+        ERR_PRINT("properties is not an object\n");
+        REJECT(promise, "TypeMismatchError", "native handle not found", h);
+        oc_send_response(h->req, OC_STATUS_INTERNAL_SERVER_ERROR);
         return promise;
     }
 
-    DBG_PRINT("responding to method type=%u, properties=%lu\n", h->resp->method, h->properties);
+    void* ret;
+    // Start the root encoding object
+    zjs_rep_start_root_object();
+    // Encode all properties from resource (argv[0])
+    ret = zjs_ocf_props_setup(data, &g_encoder, true);
+    zjs_rep_end_root_object();
+    // Free property return handle
+    zjs_ocf_free_props(ret);
+
+    oc_send_response(h->req, OC_STATUS_OK);
+
+    DBG_PRINT("responding to method type=%u, properties=%lu\n", h->resp->method, data);
 
     zjs_make_promise(promise, NULL, NULL);
 
     zjs_fulfill_promise(promise, NULL, 0);
 
     return promise;
+}
+
+static jerry_value_t create_request(struct server_resource* resource, oc_method_t method, struct ocf_handler* handler)
+{
+
+    handler->resp = create_response(resource, method);
+    jerry_value_t object = jerry_create_object();
+    jerry_value_t target = jerry_create_object();
+    jerry_value_t source = jerry_create_object();
+
+    if (resource->res) {
+        zjs_obj_add_string(source, oc_string(resource->res->uri), "resourcePath");
+        zjs_obj_add_string(target, oc_string(resource->res->uri), "resourcePath");
+    }
+
+    // source is the resource requesting the operation
+    zjs_set_property(object, "source", source);
+
+    // target is the resource being retrieved
+    zjs_set_property(object, "target", target);
+
+    zjs_obj_add_function(object, ocf_respond, "respond");
+
+    jerry_set_object_native_handle(object, (uintptr_t)handler, NULL);
+
+    jerry_release_value(target);
+    jerry_release_value(source);
+
+    return object;
 }
 
 static void post_get(void* handler)
@@ -287,37 +291,20 @@ static void post_get(void* handler)
 
 static void ocf_get_handler(oc_request_t *request, oc_interface_mask_t interface, void* user_data)
 {
+    ZJS_PRINT("ocf_get_handler()\n");
     struct ocf_handler* h = new_ocf_handler((struct server_resource*)user_data);
     if (!h) {
         ERR_PRINT("handler was NULL\n");
         return;
     }
-    h->argv = zjs_malloc(sizeof(jerry_value_t) * 2);
-    h->argv[0] = create_request(h->res, OC_GET, h);
-    h->argv[1] = jerry_create_boolean(0);
-    zjs_trigger_event_now(h->res->object, "retrieve", h->argv, 2, post_get, h);
+    jerry_value_t argv[2];
+    argv[0] = create_request(h->res, OC_GET, h);
+    argv[1] = jerry_create_boolean(0);
+    h->req = request;
+    zjs_trigger_event_now(h->res->object, "retrieve", argv, 2, post_get, h);
 
-    if (!jerry_value_is_object(h->properties)) {
-        ERR_PRINT("properties is not an object\n");
-        oc_send_response(request, OC_STATUS_INTERNAL_SERVER_ERROR);
-        return;
-    }
-
-    void* ret;
-    // Start the root encoding object
-    zjs_rep_start_root_object();
-    // Encode all properties from resource (argv[0])
-    ret = zjs_ocf_props_setup(h->properties, &g_encoder, true);
-    zjs_rep_end_root_object();
-    // Free property return handle
-    zjs_ocf_free_props(ret);
-
-    oc_send_response(request, OC_STATUS_OK);
-
-    DBG_PRINT("sent GET response, code=OK\n");
-
-    jerry_release_value(h->argv[0]);
-    zjs_free(h->argv);
+    jerry_release_value(argv[0]);
+    jerry_release_value(argv[1]);
     zjs_free(h->resp);
     zjs_free(h);
 }
@@ -329,12 +316,12 @@ static void post_put(void* handler)
 
 static void ocf_put_handler(oc_request_t *request, oc_interface_mask_t interface, void* user_data)
 {
+    ZJS_PRINT("ocf_put_handler()\n");
     struct ocf_handler* h = new_ocf_handler((struct server_resource*)user_data);
     if (!h) {
         ERR_PRINT("handler was NULL\n");
         return;
     }
-    h->argv = zjs_malloc(sizeof(jerry_value_t));
     jerry_value_t request_val = create_request(h->res, OC_PUT, h);
     jerry_value_t props_val = request_to_jerry_value(request);
     jerry_value_t resource_val = jerry_create_object();
@@ -342,21 +329,21 @@ static void ocf_put_handler(oc_request_t *request, oc_interface_mask_t interface
     zjs_set_property(resource_val, "properties", props_val);
     zjs_set_property(request_val, "resource", resource_val);
 
-    h->argv[0] = request_val;
-    zjs_trigger_event_now(h->res->object, "update", h->argv, 1, post_put, h);
+    jerry_release_value(props_val);
+    jerry_release_value(resource_val);
 
-    oc_send_response(request, OC_STATUS_CHANGED);
+    h->req = request;
+
+    zjs_trigger_event_now(h->res->object, "update", &request_val, 1, post_put, h);
 
     DBG_PRINT("sent PUT response, code=CHANGED\n");
 
-    jerry_release_value(props_val);
-    jerry_release_value(resource_val);
     jerry_release_value(request_val);
-    zjs_free(h->argv);
     zjs_free(h->resp);
     zjs_free(h);
 }
 
+#ifdef ZJS_OCF_DELETE_SUPPORT
 static void post_delete(void* handler)
 {
     // ZJS_PRINT("POST DELETE\n");
@@ -375,12 +362,11 @@ static void ocf_delete_handler(oc_request_t *request, oc_interface_mask_t interf
 
     DBG_PRINT("sent DELETE response, code=OC_STATUS_DELETED\n");
 }
+#endif
 
-static void ocf_post_handler(oc_request_t *request, oc_interface_mask_t interface, void* user_data)
-{
-    // ZJS_PRINT("ocf_post_handler(): POST\n");
-}
-
+/*
+ * TODO: Get resource object and use it to notify
+ */
 static jerry_value_t ocf_notify(const jerry_value_t function_val,
                                 const jerry_value_t this,
                                 const jerry_value_t argv[],
@@ -392,10 +378,21 @@ static jerry_value_t ocf_notify(const jerry_value_t function_val,
         return ZJS_UNDEFINED;
     }
     DBG_PRINT("path=%s\n", resource->resource_path);
+
     oc_notify_observers(resource->res);
 
     return ZJS_UNDEFINED;
 }
+
+/*
+typedef struct resource_list {
+    oc_resource_t *resource;
+    struct resource_list* next;
+} resource_list_t;
+
+static resource_list_t *r_list = NULL;
+static bool has_registered = false;
+*/
 
 static jerry_value_t ocf_register(const jerry_value_t function_val,
                                   const jerry_value_t this,
@@ -477,28 +474,45 @@ static jerry_value_t ocf_register(const jerry_value_t function_val,
     oc_resource_bind_resource_interface(resource->res, OC_IF_RW);
     oc_resource_set_default_interface(resource->res, OC_IF_RW);
 
+#ifdef OC_SECURITY
+  oc_resource_make_secure(resource->res);
+#endif
+
     if (flags & FLAG_DISCOVERABLE) {
         oc_resource_set_discoverable(resource->res, 1);
     }
     if (flags & FLAG_OBSERVE) {
         oc_resource_set_periodic_observable(resource->res, 1);
     }
+    /*
+     * TODO: Since requests are handled in JS can POST/PUT use the same handler?
+     */
     oc_resource_set_request_handler(resource->res, OC_GET, ocf_get_handler, resource);
     oc_resource_set_request_handler(resource->res, OC_PUT, ocf_put_handler, resource);
-    oc_resource_set_request_handler(resource->res, OC_DELETE, ocf_delete_handler, resource);
-    oc_resource_set_request_handler(resource->res, OC_POST, ocf_post_handler, resource);
+    oc_resource_set_request_handler(resource->res, OC_POST, ocf_put_handler, resource);
+
     oc_add_resource(resource->res);
+
+    /*resource_list_t *new = zjs_malloc(sizeof(resource_list_t));
+    new->resource = resource->res;
+    new->next = r_list;
+    r_list = new;*/
 
     h = new_ocf_handler(resource);
     zjs_make_promise(promise, post_ocf_promise, h);
-    h->promise_obj = promise;
-    h->argv = zjs_malloc(sizeof(jerry_value_t));
-    h->argv[0] = create_resource(resource_path, argv[0]);
-    zjs_fulfill_promise(promise, h->argv, 1);
+    /*
+     * Find lifetime of resource, free in post promise
+     */
+    jerry_value_t res = create_resource(resource_path, argv[0]);
+    zjs_fulfill_promise(promise, &res, 1);
 
+    /*
+     * TODO: Add native handle to ensure it gets freed,
+     *       check if we can reference with 'this'
+     */
     resource->object = this;
 
-    jerry_set_object_native_handle(h->argv[0], (uintptr_t)resource, NULL);
+    jerry_set_object_native_handle(res, (uintptr_t)resource, NULL);
 
     DBG_PRINT("registered resource, path=%s\n", resource_path);
 
@@ -508,13 +522,20 @@ static jerry_value_t ocf_register(const jerry_value_t function_val,
 }
 
 /*
- * TODO: This gets called by iotivity-constrained before we have a chance to
- *       get any of the resource information. If we register nothing, there is
- *       a seg-fault so we just have an empty function.
+ * TODO: iotivity-constrained requires that resources get registered in this
+ *       function, which gets called long before we know about any resources.
+ *       What we have "works" but its not how its supposed to be structured.
  */
 void zjs_ocf_register_resources(void)
 {
-    // ZJS_PRINT("zjs_ocf_register_resources()\n");
+    // ZJS_PRINT("zjs_ocf_register_resources() callback\n");
+    /*resource_list_t *cur = r_list;
+    while (cur) {
+        oc_add_resource(cur->resource);
+        resource_list_t *next = cur->next;
+        zjs_free(cur);
+        cur = next;
+    }*/
 }
 
 jerry_value_t zjs_ocf_server_init()
@@ -522,7 +543,6 @@ jerry_value_t zjs_ocf_server_init()
     jerry_value_t server = jerry_create_object();
 
     zjs_obj_add_function(server, ocf_register, "register");
-    zjs_obj_add_function(server, ocf_respond, "respond");
     zjs_obj_add_function(server, ocf_notify, "notify");
 
     zjs_make_event(server, ZJS_UNDEFINED);

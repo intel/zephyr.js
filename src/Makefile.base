@@ -51,7 +51,8 @@ obj-$(ZJS_PERFORMANCE) += zjs_performance.o
 obj-$(ZJS_UART) += zjs_uart.o
 obj-$(ZJS_OCF) += zjs_ocf_client.o \
                   zjs_ocf_server.o \
-                  zjs_ocf_common.o
+                  zjs_ocf_common.o \
+                  zjs_ocf_ble.o
 
 ifeq ($(SNAPSHOT), on)
 obj-y += zjs_snapshot_gen.o

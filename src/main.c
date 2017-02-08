@@ -23,6 +23,9 @@
 #include "zjs_timers.h"
 #ifdef BUILD_MODULE_OCF
 #include "zjs_ocf_common.h"
+#ifdef CONFIG_NET_L2_BLUETOOTH
+#include "zjs_ocf_ble.h"
+#endif
 #endif
 #ifdef BUILD_MODULE_BLE
 #include "zjs_ble.h"
@@ -163,6 +166,9 @@ int main(int argc, char *argv[])
 
 #ifdef BUILD_MODULE_OCF
     zjs_register_service_routine(NULL, main_poll_routine);
+#ifdef CONFIG_NET_L2_BLUETOOTH
+    zjs_init_ocf_ble();
+#endif
 #endif
 
 #ifndef ZJS_SNAPSHOT_BUILD

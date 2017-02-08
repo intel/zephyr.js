@@ -1,15 +1,19 @@
+var MY_ID = '02';
+var BLE_ADDR = 'E3:C4:7F:24:B3:' + MY_ID;
+setBleAddress(BLE_ADDR);
 var server = require('ocf').server;
 
 console.log("Started OCF server");
 
 var MyProperties = {
-    state: true
+    state: true,
+    power: 10
 }
 
 var resourceInit = {
-    resourcePath: "/light/1",
-    resourceTypes: ["oic.r.light"],
-    interfaces: ["/oic/if/w"],
+    resourcePath: "/a/light",
+    resourceTypes: ["core.light"],
+    interfaces: ["/oic/if/rw"],
     discoverable: true,
     observable: true,
     properties: MyProperties
@@ -24,8 +28,7 @@ server.register(resourceInit).then(function(resource) {
         MyProperties.state = (MyProperties.state) ? false : true;
         console.log("on('retrieve'): request.target.resourcePath=" +
                 request.target.resourcePath + " observe=" + observe);
-        var err = null;
-        server.respond(request, err, resourceInit).then(function() {
+        request.respond(MyProperties).then(function() {
             console.log("respond success");
         }).catch(function(error) {
             console.log("respond error: " + error.name);
@@ -35,16 +38,11 @@ server.register(resourceInit).then(function(resource) {
         console.log("on('update'): request.target.resourcePath=" + request.target.resourcePath);
         if (request.resource.properties) {
             console.log("properties.state=" + request.resource.properties.state);
+            MyProperties.state = request.resource.properties.state;
         } else {
             console.log("request.properties does not exist");
         }
-        server.notify(MyResource);
-    });
-    server.on('delete', function() {
-        console.log("DELETE event");
-    });
-    server.on('create', function() {
-        console.log("CREATE event");
+        request.respond(MyProperties);
     });
 }).catch(function(error) {
     console.log("Error registering");

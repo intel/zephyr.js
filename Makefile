@@ -27,6 +27,7 @@ endif
 OCF_ROOT ?= deps/iotivity-constrained
 JS ?= samples/HelloWorld.js
 VARIANT ?= release
+BLE_NAME ?= "Zephyr OCF Node"
 # JerryScript options
 JERRY_BASE ?= $(ZJS_BASE)/deps/jerryscript
 EXT_JERRY_FLAGS ?= -DENABLE_ALL_IN_ONE=ON -DFEATURE_PROFILE=$(ZJS_BASE)/jerry_feature.profile
@@ -140,12 +141,12 @@ else
 endif
 
 	@echo "ccflags-y += $(shell ./scripts/analyze.sh $(BOARD) $(JS) $(CONFIG) $(DEV))" | tee -a src/Makefile arc/src/Makefile
-
+	@sed -i '/This is a generated file/r./zjs.conf.tmp' src/Makefile
 	@# Add the include for the OCF Makefile only if the script is using OCF
 	@if grep BUILD_MODULE_OCF src/Makefile; then \
+		echo "CONFIG_BLUETOOTH_DEVICE_NAME=\"$(BLE_NAME)\"" >> prj.conf.tmp; \
 		echo "include \$$(ZJS_BASE)/Makefile.ocf_zephyr" >> src/Makefile; \
 	fi
-	@sed -i '/This is a generated file/r./zjs.conf.tmp' src/Makefile
 
 # Update dependency repos
 .PHONY: update
