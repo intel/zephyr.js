@@ -192,6 +192,7 @@ cleanlocal:
 	@rm -f prj.conf.tmp
 	@rm -f prj.mdef
 	@rm -f zjs.conf.tmp
+	@rm -f .snapshot.last_build
 
 # Explicit clean
 .PHONY: clean
