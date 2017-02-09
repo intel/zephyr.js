@@ -19,6 +19,7 @@ if [ ! -d "$ZJS_BASE" ]; then
 fi
 
 TRLDIR=$ZJS_BASE/.trlite
+TMPFILE=/tmp/zjstest.js
 
 if [ "$1" == "-h" -o "$1" == "-?" ]; then
     echo usage: trlite [-h] [-v] [vmname] [testnum]
@@ -111,7 +112,7 @@ function try_command()
     banner "$LABEL"
     if ! $*; then
         CODE=$?
-        echo Error: Failed in $LABEL!
+        echo Error: Failed in $LABEL \(subtest \#$TESTNUM\)!
         exit $CODE
     fi
     echo Success: $LABEL
@@ -146,17 +147,64 @@ if [ "$VM1" == "y" ]; then
 
     # A101 build tests spanning all modules
     try_command "helloworld" make $VERBOSE
-    try_command "traffic" make $VERBOSE JS=samples/TrafficLight.js
-    try_command "pwm" make $VERBOSE JS=samples/PWM.js
-    try_command "i2c" make $VERBOSE JS=samples/I2C.js
-    try_command "uart" make $VERBOSE JS=samples/UART.js
-    try_command "events" make $VERBOSE JS=samples/tests/Events.js
-    try_command "perf" make $VERBOSE JS=tests/test-performance.js
+
+    # set this large enough to handle the biggest individual module (OCF now)
+    ROMSIZE=210
+
+    # individually test build modules with short names (ten chars or less)
+    SHORTMODULES=(aio ble events gpio grove_lcd i2c k64f_pins ocf pwm uart)
+    for index in "${!SHORTMODULES[@]}"; do
+        MODULE=${SHORTMODULES[index]}
+        echo "var module = require('$MODULE');" > $TMPFILE
+        try_command "$MODULE" make $VERBOSE JS=$TMPFILE ROM=$ROMSIZE
+    done
+
+    # individually test build modules with long names, supplying short labels
+    LONGMODULES=(arduino101_pins performance)
+    LONGLABELS=(a101_pins perf)
+    for index in "${!LONGMODULES[@]}"; do
+        MODULE=${LONGMODULES[index]}
+        LABEL=${LONGLABELS[index]}
+        echo "var module = require('$MODULE');" > $TMPFILE
+        try_command "$LABEL" make $VERBOSE JS=$TMPFILE
+    done
+
+    # individually test A101 sensors
+    SENSORS=(Accelerometer Gyroscope AmbientLightSensor)
+    SENSORLABELS=(accelerom gyroscope ambient)
+    for index in "${!SENSORS[@]}"; do
+        MODULE=${SENSORS[index]}
+        LABEL=${SENSORLABELS[index]}
+        echo "var sensor = $MODULE({});" > $TMPFILE
+        try_command "$LABEL" make $VERBOSE JS=$TMPFILE
+    done
+
+    # individually test special modules
+    echo "var buf = new Buffer(10);" > $TMPFILE
+    try_command "buffer" make $VERBOSE JS=$TMPFILE
+
+    echo "console.log(3.14159);" > $TMPFILE
+    try_command "console" make $VERBOSE JS=$TMPFILE
+    try_command "floats" make $VERBOSE JS=$TMPFILE PRINT_FLOAT=on
+
+    echo "setTimeout(function() {}, 10);" > $TMPFILE
+    try_command "timers" make $VERBOSE JS=$TMPFILE
+
+    # test key sample code
     try_command "btgrove" make $VERBOSE JS=samples/WebBluetoothGroveLcdDemo.js ROM=256
+
+    # test snapshot off
+    try_command "snapoff" make $VERBOSE SNAPSHOT=off
+
+    # test debug build
+    try_command "debug" make $VERBOSE VARIANT=debug
+
+    # test RAM size change
+    try_command "ram" make $VERBOSE RAM=70
 
     # k64f build tests
     git clean -dfx
-    try_command "k64f hello" make $VERBOSE BOARD=frdm_k64f
+    try_command "k64f_hello" make $VERBOSE BOARD=frdm_k64f
 fi
 
 #
