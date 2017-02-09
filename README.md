@@ -33,8 +33,11 @@ default with Ubuntu:
 
 ```bash
 $ sudo apt-get update
-$ sudo apt-get install cmake dfu-util git screen uglifyjs
+$ sudo apt-get install cmake dfu-util git screen sysvbanner uglifyjs
 ```
+
+Note: sysvbanner is just used to identify tests as they run in the trlite test
+build script, so it could be left out.
 
 #### Clone the ZJS repo
 Next, clone this git repo:
