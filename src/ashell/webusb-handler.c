@@ -75,7 +75,7 @@ static const uint8_t webusb_allowed_origins[] = {
     /* Allowed Origins Header:
      * https://wicg.github.io/webusb/#get-allowed-origins
      */
-    0x05, 0x00, 0x0D, 0x00, 0x01,
+    0x05, 0x00, 0x0E, 0x00, 0x01,
 
     /* Configuration Subset Header:
      * https://wicg.github.io/webusb/#configuration-subset-header
@@ -85,17 +85,27 @@ static const uint8_t webusb_allowed_origins[] = {
     /* Function Subset Header:
      * https://wicg.github.io/webusb/#function-subset-header
      */
-    0x04, 0x02, 0x02, 0x01
+    0x05, 0x02, 0x02, 0x01, 0x02
 };
 
 /* Number of allowed origins */
-#define NUMBER_OF_ALLOWED_ORIGINS   1
+#define NUMBER_OF_ALLOWED_ORIGINS   2
 
 /* Microsoft OS 2.0 descriptor request */
 #define MS_OS_20_REQUEST_DESCRIPTOR 0x07
 
 /* URL Descriptor: https://wicg.github.io/webusb/#url-descriptor */
-const uint8_t webusb_origin_url_1[] = {
+static const uint8_t webusb_origin_url_1[] = {
+    0x1F,  // Length
+    0x03,  // URL descriptor
+    0x01,  // Scheme https://
+    '0', '1', 'o', 'r', 'g', '.', 'g', 'i', 't', 'h', 'u', 'b', '.',
+    'i', 'o', '/', 'z', 'e', 'p', 'h', 'y', 'r', 'j', 's', '-', 'i',
+    'd', 'e'
+};
+
+/* URL Descriptor: https://wicg.github.io/webusb/#url-descriptor */
+const uint8_t webusb_origin_url_2[] = {
     0x11,  // Length
     0x03,  // URL descriptor
     0x00,  // Scheme http://
@@ -154,6 +164,10 @@ int webusb_vendor_handler(struct usb_setup_packet *pSetup,
         if (index == 1) {
             *data = (uint8_t *)(&webusb_origin_url_1);
             *len = sizeof(webusb_origin_url_1);
+            return 0;
+        } else if (index == 2) {
+            *data = (uint8_t *)(&webusb_origin_url_2);
+            *len = sizeof(webusb_origin_url_2);
             return 0;
         }
     } else if (pSetup->bRequest == 0x02 &&
