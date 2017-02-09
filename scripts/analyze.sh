@@ -255,6 +255,7 @@ if [ $? -eq 0 ] || check_config_file ZJS_SENSOR; then
         if [ $? -eq 0 ]; then
             echo "CONFIG_SENSOR=y" >> arc/prj.conf.tmp
             echo "CONFIG_GPIO=y" >> arc/prj.conf.tmp
+            echo "CONFIG_GPIO_QMSI_SS_0_NAME=\"GPIO_SS_0\"" >> arc/prj.conf.tmp
             echo "CONFIG_SPI=y" >> arc/prj.conf.tmp
             echo "CONFIG_BMI160=y" >> arc/prj.conf.tmp
             echo "CONFIG_BMI160_NAME=\"bmi160\"" >> arc/prj.conf.tmp

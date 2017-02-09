@@ -374,33 +374,26 @@ static inline int sensor_value_snprintf(char *buf, size_t len,
 {
     int32_t val1, val2;
 
-    switch (val->type) {
-    case SENSOR_VALUE_TYPE_INT_PLUS_MICRO:
-        if (val->val2 == 0) {
-            return snprintf(buf, len, "%d", val->val1);
-        }
+    if (val->val2 == 0) {
+        return snprintf(buf, len, "%d", val->val1);
+    }
 
-        /* normalize value */
-        if (val->val1 < 0 && val->val2 > 0) {
-            val1 = val->val1 + 1;
-            val2 = val->val2 - 1000000;
-        } else {
-            val1 = val->val1;
-            val2 = val->val2;
-        }
+    /* normalize value */
+    if (val->val1 < 0 && val->val2 > 0) {
+        val1 = val->val1 + 1;
+        val2 = val->val2 - 1000000;
+    } else {
+        val1 = val->val1;
+        val2 = val->val2;
+    }
 
-        /* print value to buffer */
-        if (val1 > 0 || (val1 == 0 && val2 > 0)) {
-                return snprintf(buf, len, "%d.%06d", val1, val2);
-        } else if (val1 == 0 && val2 < 0) {
-                return snprintf(buf, len, "-0.%06d", -val2);
-        } else {
-                return snprintf(buf, len, "%d.%06d", val1, -val2);
-        }
-    case SENSOR_VALUE_TYPE_DOUBLE:
-        return snprintf(buf, len, "%f", val->dval);
-    default:
-        return 0;
+    /* print value to buffer */
+    if (val1 > 0 || (val1 == 0 && val2 > 0)) {
+        return snprintf(buf, len, "%d.%06d", val1, val2);
+    } else if (val1 == 0 && val2 < 0) {
+        return snprintf(buf, len, "-0.%06d", -val2);
+    } else {
+        return snprintf(buf, len, "%d.%06d", val1, -val2);
     }
 }
 #endif // DEBUG_BUILD
@@ -426,36 +419,25 @@ static double convert_sensor_value(const struct sensor_value *val)
     int32_t val1, val2;
     double result = 0;
 
-    switch (val->type) {
-    case SENSOR_VALUE_TYPE_INT_PLUS_MICRO:
-        if (val->val2 == 0) {
-            result = (double)val->val1;
-            break;
-        }
+    if (val->val2 == 0) {
+        result = (double)val->val1;
+    }
 
-        /* normalize value */
-        if (val->val1 < 0 && val->val2 > 0) {
-            val1 = val->val1 + 1;
-            val2 = val->val2 - 1000000;
-        } else {
-            val1 = val->val1;
-            val2 = val->val2;
-        }
+    /* normalize value */
+    if (val->val1 < 0 && val->val2 > 0) {
+        val1 = val->val1 + 1;
+        val2 = val->val2 - 1000000;
+    } else {
+        val1 = val->val1;
+        val2 = val->val2;
+    }
 
-        if (val1 > 0 || (val1 == 0 && val2 > 0)) {
-            result = val1 + (double)val2 * 0.000001;
-        } else if (val1 == 0 && val2 < 0) {
-            result = (double)val2 * (-0.000001);
-        } else {
-            result = val1 + (double)val2 * (-0.000001);
-        }
-        break;
-    case SENSOR_VALUE_TYPE_DOUBLE:
-        result = val->dval;
-        break;
-    default:
-        ERR_PRINT("invalid type %d\n", val->type);
-        return 0;
+    if (val1 > 0 || (val1 == 0 && val2 > 0)) {
+        result = val1 + (double)val2 * 0.000001;
+    } else if (val1 == 0 && val2 < 0) {
+        result = (double)val2 * (-0.000001);
+    } else {
+        result = val1 + (double)val2 * (-0.000001);
     }
 
     return result;
@@ -557,9 +539,9 @@ static void trigger_hdlr(struct device *dev,
  * device has to stay still for about 500ms = 250ms(accel) + 250ms(gyro).
  */
 struct sensor_value acc_calib[] = {
-    {SENSOR_VALUE_TYPE_INT_PLUS_MICRO, { {0, 0} } },      /* X */
-    {SENSOR_VALUE_TYPE_INT_PLUS_MICRO, { {0, 0} } },      /* Y */
-    {SENSOR_VALUE_TYPE_INT_PLUS_MICRO, { {9, 806650} } }, /* Z */
+    {0, 0},      /* X */
+    {0, 0},      /* Y */
+    {9, 806650}, /* Z */
 };
 
 static int auto_calibration(struct device *dev)
@@ -598,7 +580,6 @@ static int start_accel_trigger(struct device *dev, int freq)
         return -1;
     }
 
-    attr.type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
     attr.val1 = freq;
     attr.val2 = 0;
 
@@ -609,7 +590,6 @@ static int start_accel_trigger(struct device *dev, int freq)
     }
 
     // set slope threshold to 0.1G (0.1 * 9.80665 = 4.903325 m/s^2).
-    attr.type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
     attr.val1 = 0;
     attr.val2 = 980665;
     if (sensor_attr_set(dev, SENSOR_CHAN_ACCEL_ANY,
@@ -619,7 +599,6 @@ static int start_accel_trigger(struct device *dev, int freq)
     }
 
     // set slope duration to 2 consecutive samples
-    attr.type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
     attr.val1 = 2;
     attr.val2 = 0;
     if (sensor_attr_set(dev, SENSOR_CHAN_ACCEL_ANY,
@@ -662,7 +641,6 @@ static int start_gyro_trigger(struct device *dev, int freq)
     struct sensor_value attr;
     struct sensor_trigger trig;
 
-    attr.type = SENSOR_VALUE_TYPE_INT_PLUS_MICRO;
     attr.val1 = freq;
     attr.val2 = 0;
 
