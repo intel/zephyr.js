@@ -99,4 +99,18 @@ void zjs_default_convert_pin(uint32_t orig, int *dev, int *pin);
 uint16_t zjs_compress_32_to_16(uint32_t num);
 uint32_t zjs_uncompress_16_to_32(uint16_t num);
 
+/**
+ * Serialize a jerry_value_t into a buffer. The returned buffer must be freed
+ * after use.
+ *
+ * @param value     Value to serialize. This can be a Buffer, Array (of bytes)
+ *                  or String.
+ * @param maxLen    Maximum length of data to serialize. If the length does not
+ *                  matter you can specify 0 or NULL.
+ * @param actualLen Actual length of buffer
+ *
+ * @return          Pointer to serialized data (must be freed).
+ */
+void* zjs_serialize_data(jerry_value_t value, uint32_t* maxLen, uint32_t* actualLen);
+
 #endif  // __zjs_util_h__
