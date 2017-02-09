@@ -139,8 +139,7 @@ static jerry_value_t add_listener(const jerry_value_t function_obj,
         return zjs_error("event name is too long");
     }
     zjs_add_event_listener(this, name, argv[1]);
-    jerry_value_t rval = jerry_acquire_value(this);
-    return rval;
+    return jerry_acquire_value(this);
 }
 
 static jerry_value_t emit_event(const jerry_value_t function_obj,
