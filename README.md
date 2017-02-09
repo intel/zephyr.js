@@ -248,22 +248,30 @@ configure the heap size available to the ZJS API.
 ## Getting more space on your Arduino 101
 Arduino 101 comes with a **144K** X86 partition, but we're able to use more
 space by telling Zephyr there is more space and then splicing the images we
-flash to the device. You can control this with the SIZE= flag to make. So if
-you want to allocated 256KB for x86, use SIZE=256.
+flash to the device. You can control this with the ROM= flag to make. So if
+you want to allocated 256KB for x86, use ROM=256.
 
 You can also just build without it until you see a message like this:
 ```
 lfiamcu/5.2.1/real-ld: region `ROM' overflowed by 53728 bytes
 ```
 
-That implies you need an extra 53K of space, so you could try passing SIZE=200.
-If it's the ARC image that needs more space, you should decrease the SIZE you're
+That implies you need an extra 53K of space, so you could try passing ROM=200.
+If it's the ARC image that needs more space, you should decrease the ROM you're
 passing instead.
 
 **NOTE**: Earlier, we would physically repartition the device and install a new
 bootloader that knew about it. This is no longer necessary, so if you have such
 a device you should restore it to factory condition with the 256-to-144
 flashpack.
+
+You can also influence the amount of RAM allocated to the X86 side with a new
+RAM= argument. Here the default is 55 but it can theoretically go as high as
+79 if ARC was disabled; realistically up to maybe 75 or so depending on how
+few modules you require in the ARC build.
+
+The RAM and ROM sizes being used are now displayed at the top of the make
+output when you do build for Arduino 101.
 
 ## Building system images
 The ZJS project uses a top-level Makefile to control the building of code from

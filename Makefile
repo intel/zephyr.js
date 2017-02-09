@@ -1,5 +1,6 @@
 BOARD ?= arduino_101
-SIZE ?= 144
+RAM ?= 55
+ROM ?= 144
 
 # Dump memory information: on = print allocs, full = print allocs + dump pools
 TRACE ?= off
@@ -10,14 +11,27 @@ ifndef ZJS_BASE
 $(error ZJS_BASE not defined. You need to source zjs-env.sh)
 endif
 
-# SIZE can't be less than the 144KB physically allocated for x86
-ifeq ($(shell test $(SIZE) -lt 144; echo $$?), 0)
-$(error SIZE must be at least 144)
+# RAM can't be less than the 55KB normally allocated for x86
+# NOTE: We could change this and allow it though, find a sane minimum
+ifeq ($(shell test $(RAM) -lt 55; echo $$?), 0)
+$(error RAM must be at least 55)
 endif
 
-# SIZE can't be more than 296KB, the total size of x86 + arc partitions combined
-ifeq ($(shell test $(SIZE) -gt 296; echo $$?), 0)
-$(error SIZE must be no higher than 296)
+# RAM can't be more than 79KB, the total size of RAM left for x86/arc
+# NOTE: the first 1KB is reserved for ARC_READY bit
+ifeq ($(shell test $(RAM) -gt 79; echo $$?), 0)
+$(error RAM must be no higher than 79)
+endif
+
+# ROM can't be less than the 144KB physically allocated for x86
+# NOTE: We could change this and allow it though, but splice images in reverse
+ifeq ($(shell test $(ROM) -lt 144; echo $$?), 0)
+$(error ROM must be at least 144)
+endif
+
+# ROM can't be more than 296KB, the total size of x86 + arc partitions combined
+ifeq ($(shell test $(ROM) -gt 296; echo $$?), 0)
+$(error ROM must be no higher than 296)
 endif
 
 ifeq ($(MAKECMDGOALS), linux)
@@ -38,6 +52,9 @@ endif
 endif
 ifeq ($(BOARD), arduino_101)
 EXT_JERRY_FLAGS += -DENABLE_LTO=ON
+$(info Building for Arduino 101...)
+$(info RAM allocation: $(RAM)KB for X86, $(shell echo $$((79 - $(RAM))))KB for ARC)
+$(info ROM allocation: $(ROM)KB for X86, $(shell echo $$((296 - $(ROM))))KB for ARC)
 endif
 
 # if no config file passed use the ashell default
@@ -98,7 +115,7 @@ ifeq ($(BOARD), arduino_101)
 	@echo -n Creating dfu images...
 	@dd if=$(A101BIN) of=$(A101BIN).dfu bs=1024 count=144 2> /dev/null
 	@dd if=$(A101BIN) of=$(A101SSBIN).dfu bs=1024 skip=144 2> /dev/null
-	@dd if=$(A101SSBIN) of=$(A101SSBIN).dfu bs=1024 seek=$$(($(SIZE) - 144)) 2> /dev/null
+	@dd if=$(A101SSBIN) of=$(A101SSBIN).dfu bs=1024 seek=$$(($(ROM) - 144)) 2> /dev/null
 	@echo " done."
 endif
 
@@ -168,8 +185,10 @@ else
 endif
 ifeq ($(BOARD), arduino_101)
 	@cat fragments/prj.conf.arduino_101 >> prj.conf
-	@echo "CONFIG_ROM_SIZE=$(SIZE)" >> prj.conf
-	@printf "CONFIG_SS_RESET_VECTOR=0x400%x\n" $$((($(SIZE) + 64) * 1024)) >> prj.conf
+	@printf "CONFIG_PHYS_RAM_ADDR=0xA800%x\n" $$(((80 - $(RAM)) * 1024)) >> prj.conf
+	@echo "CONFIG_RAM_SIZE=$(RAM)" >> prj.conf
+	@echo "CONFIG_ROM_SIZE=$(ROM)" >> prj.conf
+	@printf "CONFIG_SS_RESET_VECTOR=0x400%x\n" $$((($(ROM) + 64) * 1024)) >> prj.conf
 endif
 endif
 # Append script specific modules to prj.conf
@@ -262,11 +281,12 @@ arc: analyze
 	@if [ -e arc/prj.conf.tmp ]; then \
 		cat arc/prj.conf.tmp >> arc/prj.conf; \
 	fi
-	@printf "CONFIG_FLASH_BASE_ADDRESS=0x400%x\n" $$((($(SIZE) + 64) * 1024)) >> arc/prj.conf
+	@printf "CONFIG_SRAM_SIZE=%d\n" $$((79 - $(RAM))) >> arc/prj.conf
+	@printf "CONFIG_FLASH_BASE_ADDRESS=0x400%x\n" $$((($(ROM) + 64) * 1024)) >> arc/prj.conf
 	@cd arc; make BOARD=arduino_101_sss
 ifeq ($(BOARD), arduino_101)
 	@echo
-	@if test $$(((296 - $(SIZE)) * 1024)) -lt $$(stat --printf="%s" $(A101SSBIN)); then echo Error: ARC image \($$(stat --printf="%s" $(A101SSBIN)) bytes\) will not fit in available $$(((296 - $(SIZE))))KB space. Try decreasing SIZE.; return 1; fi
+	@if test $$(((296 - $(ROM)) * 1024)) -lt $$(stat --printf="%s" $(A101SSBIN)); then echo Error: ARC image \($$(stat --printf="%s" $(A101SSBIN)) bytes\) will not fit in available $$(((296 - $(ROM))))KB space. Try decreasing ROM.; return 1; fi
 endif
 
 # Run debug server over JTAG
@@ -310,7 +330,8 @@ help:
 	@echo "Build options:"
 	@echo "    BOARD=     Specify a Zephyr board to build for"
 	@echo "    JS=        Specify a JS script to compile into the binary"
-	@echo "    SIZE=      Specify size in KB for X86 partition (144 - 296)"
+	@echo "    RAM=       Specify size in KB for RAM allocated to X86"
+	@echo "    ROM=       Specify size in KB for X86 partition (144 - 296)"
 	@echo "    SNAPSHOT=  Specify off to turn off snapshotting"
 	@echo "    TRACE=     Specify 'on' for malloc tracing (off is default)"
 	@echo "    VARIANT=   Specify 'debug' for extra serial output detail"

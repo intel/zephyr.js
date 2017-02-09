@@ -149,10 +149,10 @@ if [ "$VM1" == "y" ]; then
     try_command "traffic" make $VERBOSE JS=samples/TrafficLight.js
     try_command "pwm" make $VERBOSE JS=samples/PWM.js
     try_command "i2c" make $VERBOSE JS=samples/I2C.js
-    try_command "uart" make $VERBOSE JS=samples/UART.js SIZE=160
+    try_command "uart" make $VERBOSE JS=samples/UART.js
     try_command "events" make $VERBOSE JS=samples/tests/Events.js
     try_command "perf" make $VERBOSE JS=tests/test-performance.js
-    try_command "btgrove" make $VERBOSE JS=samples/WebBluetoothGroveLcdDemo.js SIZE=256
+    try_command "btgrove" make $VERBOSE JS=samples/WebBluetoothGroveLcdDemo.js ROM=256
 
     # k64f build tests
     git clean -dfx
@@ -214,7 +214,7 @@ if [ "$VM3" == "y" ]; then
 
     # ashell tests
     git clean -dfx
-    try_command "ashell" make $VERBOSE DEV=ashell SIZE=256
+    try_command "ashell" make $VERBOSE DEV=ashell ROM=256
 fi
 
 # clean up on success
