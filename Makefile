@@ -3,7 +3,7 @@ BOARD ?= arduino_101
 # Dump memory information: on = print allocs, full = print allocs + dump pools
 TRACE ?= off
 # Generate and run snapshot as byte code instead of running JS directly
-SNAPSHOT ?= off
+SNAPSHOT ?= on
 
 ifndef ZJS_BASE
 $(error ZJS_BASE not defined. You need to source zjs-env.sh)
@@ -15,8 +15,10 @@ VARIANT ?= release
 # JerryScript options
 JERRY_BASE ?= $(ZJS_BASE)/deps/jerryscript
 EXT_JERRY_FLAGS ?= -DENABLE_ALL_IN_ONE=ON
+ifneq ($(DEV), ashell)
 ifeq ($(SNAPSHOT), on)
 EXT_JERRY_FLAGS += -DFEATURE_JS_PARSER=OFF
+endif
 endif
 ifeq ($(BOARD), arduino_101)
 EXT_JERRY_FLAGS += -DENABLE_LTO=ON
@@ -25,6 +27,7 @@ endif
 # if no config file passed use the ashell default
 ifeq ($(DEV), ashell)
 	CONFIG ?= fragments/zjs.conf.dev
+	SNAPSHOT = off
 endif
 
 # Print callback statistics during runtime
@@ -32,9 +35,14 @@ CB_STATS ?= off
 # Print floats (uses -u _printf_float flag). This is a workaround on the A101
 # otherwise floats will not print correctly. It does use ~11k extra ROM though
 PRINT_FLOAT ?= off
+
 # Make target (linux or zephyr)
 # MAKECMDGOALS is a Make variable that is set to the target your building for.
 TARGET = $(MAKECMDGOALS)
+
+ifeq ($(TARGET), linux)
+	SNAPSHOT = off
+endif
 
 # If target is one of these, ensure ZEPHYR_BASE is set
 ZEPHYR_TARGETS = zephyr arc debug
@@ -119,7 +127,7 @@ else
 	@cat fragments/prj.conf.base >> prj.conf
 endif
 ifeq ($(BOARD), arduino_101)
-	cat fragments/prj.conf.arduino_101 >> prj.conf
+	@cat fragments/prj.conf.arduino_101 >> prj.conf
 ifeq ($(ZJS_PARTITION), 256)
 	@cat fragments/prj.conf.partition_256 >> prj.conf
 endif
@@ -151,6 +159,7 @@ clean:
 	@rm -f prj.conf.tmp
 	@rm -f prj.mdef
 	@rm -f zjs.conf.tmp
+	@rm -f .snapshot.last_build
 
 .PHONY: pristine
 pristine:
@@ -180,7 +189,13 @@ ifeq ($(SNAPSHOT), on)
 		make -f Makefile.snapshot; \
 	fi
 	@echo Creating snapshot bytecode from JS application...
-	@outdir/snapshot/snapshot $(JS) src/zjs_snapshot_gen.c
+	@outdir/snapshot/snapshot /tmp/zjs.js src/zjs_snapshot_gen.c
+# SNAPSHOT=on, check if rebuilding JerryScript is needed
+ifeq ("$(wildcard .snapshot.last_build)", "")
+	@rm -rf $(JERRY_BASE)/build/$(BOARD)/
+	@rm -f outdir/$(BOARD)/libjerry-core.a
+endif
+	echo "" > .snapshot.last_build
 else
 	@echo Creating C string from JS application...
 ifeq ($(TARGET), linux)
@@ -188,12 +203,21 @@ ifeq ($(TARGET), linux)
 else
 	@./scripts/convert.sh /tmp/zjs.js src/zjs_script_gen.c
 endif
+# SNAPSHOT=off, check if rebuilding JerryScript is needed
+ifneq ("$(wildcard .snapshot.last_build)", "")
+	@rm -rf $(JERRY_BASE)/build/$(BOARD)/
+	@rm -f outdir/$(BOARD)/libjerry-core.a
+endif
+	@rm -f .snapshot.last_build
 endif
 
 # Run QEMU target
 .PHONY: qemu
 qemu: zephyr
-	make -f Makefile.zephyr MEM_STATS=$(MEM_STATS) CB_STATS=$(CB_STATS) SNAPSHOT=$(SNAPSHOT) qemu
+	make -f Makefile.zephyr qemu \
+		MEM_STATS=$(MEM_STATS) \
+		CB_STATS=$(CB_STATS) \
+		SNAPSHOT=$(SNAPSHOT)
 
 # Builds ARC binary
 .PHONY: arc
@@ -250,4 +274,5 @@ help:
 	@echo "Build options:"
 	@echo "    BOARD=     Specify a Zephyr board to build for"
 	@echo "    JS=        Specify a JS script to compile into the binary"
+	@echo "    SNAPSHOT=  Specify off to turn off snapshotting"
 	@echo
