@@ -63,7 +63,7 @@ int main(int argc, char *argv[])
     }
 
     size_t size = jerry_parse_and_save_snapshot((jerry_char_t *)script,
-                                                strlen(script),
+                                                len,
                                                 true,
                                                 false,
                                                 snapshot_buf,
