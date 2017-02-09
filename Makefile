@@ -101,12 +101,29 @@ endif
 A101BIN = outdir/arduino_101/zephyr.bin
 A101SSBIN = arc/outdir/arduino_101_sss/zephyr.bin
 
+.PHONY: ram_report
+ram_report: zephyr
+	@make -f Makefile.zephyr	BOARD=$(BOARD) \
+					VARIANT=$(VARIANT) \
+					CB_STATS=$(CB_STATS) \
+					PRINT_FLOAT=$(PRINT_FLOAT) \
+					SNAPSHOT=$(SNAPSHOT) \
+					ram_report
+
+.PHONY: rom_report
+rom_report: zephyr
+	@make -f Makefile.zephyr	BOARD=$(BOARD) \
+					VARIANT=$(VARIANT) \
+					CB_STATS=$(CB_STATS) \
+					PRINT_FLOAT=$(PRINT_FLOAT) \
+					SNAPSHOT=$(SNAPSHOT) \
+					rom_report
+
 # Build for zephyr, default target
 .PHONY: zephyr
 zephyr: analyze generate jerryscript $(ARC)
 	@make -f Makefile.zephyr	BOARD=$(BOARD) \
 					VARIANT=$(VARIANT) \
-					MEM_STATS=$(MEM_STATS) \
 					CB_STATS=$(CB_STATS) \
 					PRINT_FLOAT=$(PRINT_FLOAT) \
 					SNAPSHOT=$(SNAPSHOT)
@@ -268,7 +285,6 @@ NET_BUILD=$(shell grep -q BUILD_MODULE_OCF src/Makefile && echo y)
 .PHONY: qemu
 qemu: zephyr
 	make -f Makefile.zephyr qemu \
-		MEM_STATS=$(MEM_STATS) \
 		CB_STATS=$(CB_STATS) \
 		SNAPSHOT=$(SNAPSHOT) \
 		NETWORK_BUILD=$(NET_BUILD)
