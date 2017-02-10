@@ -11,6 +11,12 @@ ifndef ZJS_BASE
 $(error ZJS_BASE not defined. You need to source zjs-env.sh)
 endif
 
+TARGET_OS=zephyr
+ifeq ($(BOARD), linux)
+TARGET_OS=linux
+endif
+
+ifeq ($(BOARD), arduino_101)
 # RAM can't be less than the 55KB normally allocated for x86
 # NOTE: We could change this and allow it though, find a sane minimum
 ifeq ($(shell test $(RAM) -lt 55; echo $$?), 0)
@@ -33,9 +39,19 @@ endif
 ifeq ($(shell test $(ROM) -gt 296; echo $$?), 0)
 $(error ROM must be no higher than 296)
 endif
+endif  # BOARD = arduino_101
 
-ifeq ($(MAKECMDGOALS), linux)
+ifeq ($(filter $(MAKECMDGOALS),linux), linux)
 $(error 'linux' make target is deprecated, use "make BOARD=linux")
+endif
+
+ifeq ($(TARGET_OS), zephyr)
+ifndef ZEPHYR_BASE
+$(error ZEPHYR_BASE not set. Source deps/zephyr/zephyr-env.sh)
+endif
+ifneq ($(shell pwd)/deps/zephyr, $(ZEPHYR_BASE))
+$(info Note: ZEPHYR_BASE is set outside the current ZJS tree ($(ZEPHYR_BASE)))
+endif
 endif
 
 OCF_ROOT ?= deps/iotivity-constrained
@@ -52,10 +68,20 @@ endif
 endif
 ifeq ($(BOARD), arduino_101)
 EXT_JERRY_FLAGS += -DENABLE_LTO=ON
-$(info Building for Arduino 101...)
-$(info RAM allocation: $(RAM)KB for X86, $(shell echo $$((79 - $(RAM))))KB for ARC)
-$(info ROM allocation: $(ROM)KB for X86, $(shell echo $$((296 - $(ROM))))KB for ARC)
+$(info makecmd: $(MAKECMDGOALS))
+ifeq ($(MAKECMDGOALS),)
+TARGETS=all
+else
+TARGETS=$(MAKECMDGOALS)
 endif
+
+# if actually building for A101 (not clean), report RAM/ROM allocation
+ifneq ($(filter all zephyr arc,$(TARGETS)),)
+$(info Building for Arduino 101...)
+$(info $() $() RAM allocation: $(RAM)KB for X86, $(shell echo $$((79 - $(RAM))))KB for ARC)
+$(info $() $() ROM allocation: $(ROM)KB for X86, $(shell echo $$((296 - $(ROM))))KB for ARC)
+endif
+endif  # BOARD = arduino_101
 
 # if no config file passed use the ashell default
 ifeq ($(DEV), ashell)
@@ -71,17 +97,6 @@ PRINT_FLOAT ?= off
 
 ifeq ($(BOARD), linux)
 	SNAPSHOT = off
-endif
-
-# If target is one of these, ensure ZEPHYR_BASE is set
-ZEPHYR_TARGETS = zephyr arc debug
-ifeq ($(BOARD), $(filter $(ZEPHYR_TARGETS),$(TARGET)))
-ifndef ZEPHYR_BASE
-$(error ZEPHYR_BASE not set. Source deps/zephyr/zephyr-env.sh)
-endif
-ifneq ($(shell pwd)/deps/zephyr, $(ZEPHYR_BASE))
-$(info Note: ZEPHYR_BASE is set outside the current ZJS tree ($(ZEPHYR_BASE)))
-endif
 endif
 
 ifeq ($(BOARD), arduino_101)
