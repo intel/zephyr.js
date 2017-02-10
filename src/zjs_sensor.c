@@ -265,9 +265,11 @@ static void zjs_sensor_onchange_c_callback(void *h, void *argv)
         return;
     }
 
-    zjs_sensor_update_reading(handle->sensor_obj,
-                              handle->channel,
-                              handle->reading);
+    if (zjs_sensor_get_state(handle->sensor_obj) == SENSOR_STATE_ACTIVATED) {
+        zjs_sensor_update_reading(handle->sensor_obj,
+                                  handle->channel,
+                                  handle->reading);
+    }
 }
 
 static void zjs_sensor_signal_callbacks(sensor_handle_t *handle,
@@ -275,10 +277,8 @@ static void zjs_sensor_signal_callbacks(sensor_handle_t *handle,
 {
     // iterate all sensor instances to update readings and trigger event
     for (sensor_handle_t *h = handle; h; h = h->next) {
-        if (zjs_sensor_get_state(h->sensor_obj) == SENSOR_STATE_ACTIVATED) {
-            memcpy(&h->reading, &reading, sizeof(reading));
-            zjs_signal_callback(h->id, NULL, 0);
-        }
+        memcpy(&h->reading, &reading, sizeof(reading));
+        zjs_signal_callback(h->id, NULL, 0);
     }
 }
 
