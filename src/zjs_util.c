@@ -5,6 +5,9 @@
 // ZJS includes
 #include "zjs_buffer.h"
 #include "zjs_util.h"
+#ifndef ZJS_LINUX_BUILD
+#include "zjs_zephyr_port.h"
+#endif
 
 void *zjs_malloc_with_retry(size_t size)
 {
@@ -493,3 +496,21 @@ int zjs_validate_args(const char *expectations[], const jerry_length_t argc,
     }
     return opt_args;
 }
+
+#ifndef ZJS_LINUX_BUILD
+static zjs_port_sem block;
+void zjs_loop_unblock(void)
+{
+    zjs_port_sem_give(&block);
+}
+
+void zjs_loop_block(int time)
+{
+    zjs_port_sem_take(&block, time);
+}
+
+void zjs_loop_init(void)
+{
+    zjs_port_sem_init(&block, 0, 1);
+}
+#endif

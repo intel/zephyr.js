@@ -9,23 +9,6 @@
 
 #define ZJS_PRINT printf
 
-#ifndef ZJS_LINUX_BUILD
-/*
- * Unblock the main loop
- */
-void zjs_loop_unblock(void);
-
-/*
- * Block in the main loop for a specified amount of time
- */
-void zjs_loop_block(int time);
-
-/*
- * Initialize the main loop blocking semaphore
- */
-void zjs_loop_init(void);
-#endif
-
 /**
  * Return a pointer to the filename portion of a string plus one parent dir
  *
