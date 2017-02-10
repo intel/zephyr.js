@@ -45,21 +45,17 @@ Next, clone this git repo:
 $ git clone http://github.com/01org/zephyr.js.git
 ```
 
-#### Check out the stable tag
-Next, unless you know you have other plans, check out the `stable` tag. This is
-currently based on the stable Zephyr 1.5.0 release and should be the best
-working version. (By this we mean it had the highest pass rate by our QA folks.)
+#### Check out the desired version
+If you want to use a stable release version, the latest is 0.2:
 
 ```bash
-$ git checkout stable
+$ git checkout v0.2
 ```
 
 If you do nothing and remain on master, you will be looking at the very latest
-changes which may have regressions or instability. Instead, you could check out
-the `latest` tag which will still be pretty recent but at least sanity-checked
-by QA and known to basically work. You can read the `version` file in the root
-of the source tree to see what version you're on. If you're on the master
-development branch it will just say 'devel'.
+changes which may have regressions or instability. You can read the `version`
+file in the root of the source tree to see what version you're on. If you're on
+the master development branch it will just say 'devel'.
 
 #### Install the Zephyr SDK
 Download the [latest Zephyr SDK] (https://www.zephyrproject.org/downloads/tools), then:
