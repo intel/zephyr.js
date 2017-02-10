@@ -177,9 +177,9 @@ static ZJS_DECL_FUNC(native_clear_interval_handler)
     return ZJS_UNDEFINED;
 }
 
-uint8_t zjs_timers_process_events()
+int32_t zjs_timers_process_events()
 {
-    uint8_t serviced = 0;
+    int32_t wait = ZJS_TICKS_FOREVER;
 #ifdef DEBUG_BUILD
 #ifndef ZJS_LINUX_BUILD
     extern void update_print_timer(void);
@@ -187,7 +187,6 @@ uint8_t zjs_timers_process_events()
 #endif
 #endif
     for (zjs_timer_t *tm = zjs_timers; tm; tm = tm->next) {
-        serviced = 1;
         if (tm->completed) {
             delete_timer(tm->callback_id);
         }
@@ -206,8 +205,23 @@ uint8_t zjs_timers_process_events()
                 tm->completed = true;
             }
         }
+#ifndef ZJS_LINUX_BUILD
+        int32_t remaining = zjs_port_timer_get_remaining(&tm->timer);
+        if (remaining > 0 && !tm->completed) {
+            wait = (wait < tm->interval) ? wait : tm->interval;
+        }
+#else
+        /*
+         * On Linux, we don't block on a semaphore; we just need to return if
+         * there were any timers serviced. If 'wait' has not changed then no
+         * timers are pending.
+         */
+        if (wait == ZJS_TICKS_FOREVER) {
+            wait = 0;
+        }
+#endif
     }
-    return serviced;
+    return wait;
 }
 
 void zjs_timers_init()

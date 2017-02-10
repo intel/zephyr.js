@@ -4,6 +4,9 @@
 
 // ZJS includes
 #include "zjs_common.h"
+#ifndef ZJS_LINUX_BUILD
+#include "zjs_zephyr_port.h"
+#endif
 
 char *zjs_shorten_filepath(char *filepath)
 {
@@ -23,6 +26,24 @@ char *zjs_shorten_filepath(char *filepath)
     }
     return filepath;
 }
+
+#ifndef ZJS_LINUX_BUILD
+static zjs_port_sem block;
+void zjs_loop_unblock(void)
+{
+    zjs_port_sem_give(&block);
+}
+
+void zjs_loop_block(int time)
+{
+    zjs_port_sem_take(&block, time);
+}
+
+void zjs_loop_init(void)
+{
+    zjs_port_sem_init(&block, 0, 1);
+}
+#endif
 
 #ifdef DEBUG_BUILD
 

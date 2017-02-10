@@ -477,6 +477,9 @@ void signal_callback_priv(zjs_callback_id id,
         zjs_ringbuf_error_count++;
         zjs_ringbuf_last_error = ret;
     }
+#ifndef ZJS_LINUX_BUILD
+    zjs_loop_unblock();
+#endif
     UNLOCK();
 }
 
