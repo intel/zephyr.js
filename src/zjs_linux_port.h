@@ -52,6 +52,7 @@ int zjs_port_ring_buf_get(struct zjs_port_ring_buf* buf,
                           uint32_t* data,
                           uint8_t* size32);
 
+// INTERRUPT SAFE FUNCTION: No JerryScript VM, allocs, or release prints!
 int zjs_port_ring_buf_put(struct zjs_port_ring_buf* buf,
                           uint16_t type,
                           uint8_t value,

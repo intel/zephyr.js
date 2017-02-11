@@ -114,6 +114,7 @@ static jerry_value_t zjs_aio_call_remote_function(zjs_ipm_message_t* send)
     return jerry_create_number(value);
 }
 
+// INTERRUPT SAFE FUNCTION: No JerryScript VM, allocs, or likely prints!
 static void ipm_msg_receive_callback(void *context, uint32_t id,
                                      volatile void *data)
 {

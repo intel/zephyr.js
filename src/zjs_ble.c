@@ -225,6 +225,7 @@ static void zjs_ble_read_c_callback(void *handle, void* argv)
     jerry_release_value(rval);
 }
 
+// INTERRUPT SAFE FUNCTION: No JerryScript VM, allocs, or release prints!
 static ssize_t zjs_ble_read_attr_callback(struct bt_conn *conn,
                                           const struct bt_gatt_attr *attr,
                                           void *buf, uint16_t len,
@@ -258,7 +259,7 @@ static ssize_t zjs_ble_read_attr_callback(struct bt_conn *conn,
 
         if (chrc->read_cb.error_code == ZJS_BLE_RESULT_SUCCESS) {
             if (chrc->read_cb.buffer && chrc->read_cb.buffer_size > 0) {
-                // buffer should be pointing to the Buffer object that JS created
+                // buffer should point to the Buffer object that JS created
                 // copy the bytes into the return buffer ptr
                 memcpy(buf, chrc->read_cb.buffer, chrc->read_cb.buffer_size);
                 return chrc->read_cb.buffer_size;
@@ -338,6 +339,7 @@ static void zjs_ble_write_c_callback(void *handle, void* argv)
     jerry_release_value(rval);
 }
 
+// INTERRUPT SAFE FUNCTION: No JerryScript VM, allocs, or release prints!
 static ssize_t zjs_ble_write_attr_callback(struct bt_conn *conn,
                                            const struct bt_gatt_attr *attr,
                                            const void *buf, uint16_t len,
@@ -473,6 +475,7 @@ static ble_characteristic_t* get_base_chrc(const struct bt_gatt_attr *attr)
     return NULL;
 }
 
+// INTERRUPT SAFE FUNCTION: No JerryScript VM, allocs, or release prints!
 static void zjs_ble_blvl_ccc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
     ble_characteristic_t *base_chrc = get_base_chrc(attr);
@@ -486,7 +489,7 @@ static void zjs_ble_blvl_ccc_cfg_changed(const struct bt_gatt_attr *attr, uint16
             zjs_signal_callback(base_chrc->unsubscribe_cb.id, NULL, 0);
         }
     } else {
-        ERR_PRINT("base characterstic not found\n");
+        ERR_PRINT("base characteristic not found\n");
     }
 }
 
@@ -499,6 +502,7 @@ static void zjs_ble_connected_c_callback(void *handle, void* argv)
     DBG_PRINT("BLE event: connected, addr %s\n", addr);
 }
 
+// INTERRUPT SAFE FUNCTION: No JerryScript VM, allocs, or release prints!
 static void zjs_ble_connected(struct bt_conn *conn, uint8_t err)
 {
     if (err) {
@@ -521,6 +525,7 @@ static void zjs_ble_disconnected_c_callback(void *handle, void* argv)
     DBG_PRINT("BLE event: disconnected, addr %s\n", addr);
 }
 
+// INTERRUPT SAFE FUNCTION: No JerryScript VM, allocs, or release prints!
 static void zjs_ble_disconnected(struct bt_conn *conn, uint8_t reason)
 {
     DBG_PRINT("========== Disconnected (reason %u) ==========\n", reason);
@@ -559,6 +564,7 @@ static void zjs_ble_ready_c_callback(void *handle, void* argv)
     DBG_PRINT("BLE event: stateChange - poweredOn");
 }
 
+// INTERRUPT SAFE FUNCTION: No JerryScript VM, allocs, or release prints!
 static void zjs_ble_bt_ready(int err)
 {
     DBG_PRINT("bt_ready() is called [err %d]\n", err);
