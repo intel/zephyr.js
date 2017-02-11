@@ -338,6 +338,7 @@ void zjs_remove_all_callbacks()
     }
 }
 
+// INTERRUPT SAFE FUNCTION: No JerryScript VM, allocs, or release prints!
 void zjs_signal_callback(zjs_callback_id id, const void *args, uint32_t size)
 {
     DBG_PRINT("pushing item to ring buffer. id=%d, args=%p, size=%lu\n", id,

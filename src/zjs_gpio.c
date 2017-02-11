@@ -100,8 +100,8 @@ static jerry_value_t lookup_pin(const jerry_value_t pin_obj,
     return ZJS_UNDEFINED;
 }
 
-// C callback to be called after a GPIO input ISR fires
-static void gpio_c_callback(void *h, void *args)
+// C callback from task context in response to GPIO input interrupt
+static void zjs_gpio_c_callback(void *h, void *args)
 {
     gpio_handle_t *handle = (gpio_handle_t *)h;
     if (handle->closed) {
@@ -130,9 +130,10 @@ static void gpio_c_callback(void *h, void *args)
 }
 
 // Callback when a GPIO input fires
-static void gpio_zephyr_callback(struct device *port,
-                                 struct gpio_callback *cb,
-                                 uint32_t pins)
+// INTERRUPT SAFE FUNCTION: No JerryScript VM, allocs, or release prints!
+static void zjs_gpio_zephyr_callback(struct device *port,
+                                     struct gpio_callback *cb,
+                                     uint32_t pins)
 {
     // Get our handle for this pin
     gpio_handle_t *handle = CONTAINER_OF(cb, gpio_handle_t, callback);
@@ -385,13 +386,13 @@ static jerry_value_t zjs_gpio_open(const jerry_value_t function_obj,
 
     if (!dirOut) {
         // Zephyr ISR callback init
-        gpio_init_callback(&handle->callback, gpio_zephyr_callback,
+        gpio_init_callback(&handle->callback, zjs_gpio_zephyr_callback,
                            BIT(newpin));
         gpio_add_callback(gpiodev, &handle->callback);
         gpio_pin_enable_callback(gpiodev, newpin);
 
         // Register a C callback (will be called after the ISR is called)
-        handle->callbackId = zjs_add_c_callback(handle, gpio_c_callback);
+        handle->callbackId = zjs_add_c_callback(handle, zjs_gpio_c_callback);
 
         if (!strcmp(edge, ZJS_EDGE_BOTH)) {
             handle->edge_both = 1;

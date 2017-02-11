@@ -272,6 +272,7 @@ static void zjs_sensor_onchange_c_callback(void *h, void *argv)
     }
 }
 
+// INTERRUPT SAFE FUNCTION: No JerryScript VM, allocs, or likely prints!
 static void zjs_sensor_signal_callbacks(sensor_handle_t *handle,
                                         union sensor_reading reading)
 {
@@ -282,6 +283,7 @@ static void zjs_sensor_signal_callbacks(sensor_handle_t *handle,
     }
 }
 
+// INTERRUPT SAFE FUNCTION: No JerryScript VM, allocs, or likely prints!
 static void ipm_msg_receive_callback(void *context, uint32_t id, volatile void *data)
 {
     if (id != MSG_ID_SENSOR)
