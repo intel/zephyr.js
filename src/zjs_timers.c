@@ -213,15 +213,17 @@ int32_t zjs_timers_process_events()
 #else
         /*
          * On Linux, we don't block on a semaphore; we just need to return if
-         * there were any timers serviced. If 'wait' has not changed then no
-         * timers are pending.
+         * there were any timers serviced. If there was any timers in the list
+         * then we signal.
          */
-        if (wait == ZJS_TICKS_FOREVER) {
-            wait = 0;
-        }
+        wait = 1;
 #endif
     }
+#ifdef ZJS_LINUX_BUILD
+    return !(wait == ZJS_TICKS_FOREVER);
+#else
     return wait;
+#endif
 }
 
 void zjs_timers_init()
