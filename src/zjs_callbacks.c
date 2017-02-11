@@ -78,6 +78,9 @@ static zjs_callback_id cb_limit = INITIAL_CALLBACK_SIZE;
 static zjs_callback_id cb_size = 0;
 static struct zjs_callback_t** cb_map = NULL;
 
+static int zjs_ringbuf_error_count = 0;
+static int zjs_ringbuf_last_error = 0;
+
 static zjs_callback_id new_id(void)
 {
     zjs_callback_id id = 0;
@@ -354,8 +357,6 @@ void zjs_signal_callback(zjs_callback_id id, const void *args, uint32_t size)
                                     (uint32_t*)args,
                                     (uint8_t)((size + 3) / 4));
     if (ret != 0) {
-        ERR_PRINT("error putting into ring buffer, ret=%u\n", ret);
-
         if (GET_TYPE(cb_map[id]->flags) == CALLBACK_TYPE_JS) {
             // for JS, acquire values and release them after servicing callback
             int argc = size / sizeof(jerry_value_t);
@@ -364,6 +365,9 @@ void zjs_signal_callback(zjs_callback_id id, const void *args, uint32_t size)
                 jerry_release_value(values[i]);
             }
         }
+
+        zjs_ringbuf_error_count++;
+        zjs_ringbuf_last_error = ret;
     }
 }
 
@@ -475,6 +479,12 @@ void zjs_call_callback(zjs_callback_id id, void* data, uint32_t sz)
 
 uint8_t zjs_service_callbacks(void)
 {
+    if (zjs_ringbuf_error_count > 0) {
+        ERR_PRINT("%d errors putting into ring buffer (last rval=%d)\n",
+                  zjs_ringbuf_error_count, zjs_ringbuf_last_error);
+        zjs_ringbuf_error_count = 0;
+    }
+
     uint8_t serviced = 0;
     if (ring_buf_initialized) {
 #ifdef ZJS_PRINT_CALLBACK_STATS
