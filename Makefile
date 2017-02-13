@@ -11,11 +11,6 @@ ifndef ZJS_BASE
 $(error ZJS_BASE not defined. You need to source zjs-env.sh)
 endif
 
-TARGET_OS=zephyr
-ifeq ($(BOARD), linux)
-TARGET_OS=linux
-endif
-
 ifeq ($(BOARD), arduino_101)
 # RAM can't be less than the 55KB normally allocated for x86
 # NOTE: We could change this and allow it though, find a sane minimum
