@@ -11,11 +11,6 @@ ifndef ZJS_BASE
 $(error ZJS_BASE not defined. You need to source zjs-env.sh)
 endif
 
-TARGET_OS=zephyr
-ifeq ($(BOARD), linux)
-TARGET_OS=linux
-endif
-
 ifeq ($(BOARD), arduino_101)
 # RAM can't be less than the 55KB normally allocated for x86
 # NOTE: We could change this and allow it though, find a sane minimum
@@ -43,15 +38,6 @@ endif  # BOARD = arduino_101
 
 ifeq ($(filter $(MAKECMDGOALS),linux), linux)
 $(error 'linux' make target is deprecated, use "make BOARD=linux")
-endif
-
-ifeq ($(TARGET_OS), zephyr)
-ifndef ZEPHYR_BASE
-$(error ZEPHYR_BASE not set. Source deps/zephyr/zephyr-env.sh)
-endif
-ifneq ($(shell pwd)/deps/zephyr, $(ZEPHYR_BASE))
-$(info Note: ZEPHYR_BASE is set outside the current ZJS tree ($(ZEPHYR_BASE)))
-endif
 endif
 
 OCF_ROOT ?= deps/iotivity-constrained
