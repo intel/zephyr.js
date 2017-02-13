@@ -45,15 +45,6 @@ ifeq ($(filter $(MAKECMDGOALS),linux), linux)
 $(error 'linux' make target is deprecated, use "make BOARD=linux")
 endif
 
-ifeq ($(TARGET_OS), zephyr)
-ifndef ZEPHYR_BASE
-$(error ZEPHYR_BASE not set. Source deps/zephyr/zephyr-env.sh)
-endif
-ifneq ($(shell pwd)/deps/zephyr, $(ZEPHYR_BASE))
-$(info Note: ZEPHYR_BASE is set outside the current ZJS tree ($(ZEPHYR_BASE)))
-endif
-endif
-
 OCF_ROOT ?= deps/iotivity-constrained
 JS ?= samples/HelloWorld.js
 VARIANT ?= release
