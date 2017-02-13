@@ -222,8 +222,8 @@ uint8_t zjs_timers_process_events()
             // timer has expired, signal the callback
             DBG_PRINT("signaling timer. id=%d, argv=%p, argc=%lu\n",
                     tm->callback_id, tm->argv, tm->argc);
-            zjs_call_callback(tm->callback_id, tm->argv,
-                              tm->argc * sizeof(jerry_value_t));
+            zjs_signal_callback(tm->callback_id, tm->argv,
+                                tm->argc * sizeof(jerry_value_t));
 
             // reschedule or remove timer
             if (tm->repeat) {
