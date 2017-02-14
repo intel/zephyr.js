@@ -201,8 +201,6 @@ if check_for_require i2c || check_config_file ZJS_I2C; then
     MODULES+=" -DBUILD_MODULE_I2C"
     if [ $BOARD = "arduino_101" ]; then
         echo "CONFIG_I2C=y" >> arc/prj.conf.tmp
-        echo "CONFIG_I2C_SS_0=y" >> arc/prj.conf.tmp
-        echo "CONFIG_I2C_SS_0_NAME=\"I2C_SS_0\"" >> arc/prj.conf.tmp
     else
         echo "CONFIG_I2C=y" >> prj.conf.tmp
     fi
