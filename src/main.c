@@ -9,6 +9,7 @@
 #endif // ZJS_LINUX_BUILD
 #include <string.h>
 #include "zjs_script.h"
+#include "zjs_util.h"
 
 // JerryScript includes
 #include "jerry-api.h"
@@ -204,6 +205,7 @@ int main(int argc, char *argv[])
     code_eval = jerry_parse((jerry_char_t *)script, len, false);
     if (jerry_value_has_error_flag(code_eval)) {
         ERR_PRINT("JerryScript: cannot parse javascript\n");
+        zjs_print_error_message(code_eval);
         goto error;
     }
 #endif
@@ -224,6 +226,7 @@ int main(int argc, char *argv[])
 
     if (jerry_value_has_error_flag(result)) {
         ERR_PRINT("JerryScript: cannot run javascript\n");
+        zjs_print_error_message(result);
         goto error;
     }
 

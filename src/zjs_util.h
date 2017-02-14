@@ -99,4 +99,6 @@ void zjs_default_convert_pin(uint32_t orig, int *dev, int *pin);
 uint16_t zjs_compress_32_to_16(uint32_t num);
 uint32_t zjs_uncompress_16_to_32(uint16_t num);
 
+void zjs_print_error_message(jerry_value_t error);
+
 #endif  // __zjs_util_h__
