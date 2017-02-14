@@ -106,16 +106,13 @@ if check_for_require ocf || check_config_file ZJS_OCF; then
     echo "CONFIG_NETWORKING=y" >> prj.conf.tmp
     echo "CONFIG_NET_IPV6=y" >> prj.conf.tmp
     echo "CONFIG_NET_UDP=y" >> prj.conf.tmp
-    echo "CONFIG_NANO_TIMEOUTS=y" >> prj.conf.tmp
     echo "CONFIG_TEST_RANDOM_GENERATOR=y" >> prj.conf.tmp
     echo "CONFIG_INIT_STACKS=y" >> prj.conf.tmp
-    echo "CONFIG_PRINTK=n" >> prj.conf.tmp
     echo "CONFIG_NET_NBUF_RX_COUNT=14" >> prj.conf.tmp
     echo "CONFIG_NET_NBUF_TX_COUNT=14" >> prj.conf.tmp
     echo "CONFIG_NET_IF_UNICAST_IPV6_ADDR_COUNT=1" >> prj.conf.tmp
     echo "CONFIG_NET_IF_MCAST_IPV6_ADDR_COUNT=1" >> prj.conf.tmp
     echo "CONFIG_NET_MAX_CONTEXTS=3" >> prj.conf.tmp
-    echo "CONFIG_MAIN_STACK_SIZE=2048" >> prj.conf.tmp
 
     echo "CONFIG_BLUETOOTH=y" >> prj.conf.tmp
     echo "CONFIG_BLUETOOTH_SMP=y" >> prj.conf.tmp

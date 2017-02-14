@@ -132,7 +132,7 @@ if [ "$VM1" == "y" ]; then
     try_command "helloworld" make $VERBOSE
 
     # set this large enough to handle the biggest individual module (OCF now)
-    ROMSIZE=210
+    ROMSIZE=215
 
     # individually test build modules with short names (ten chars or less)
     SHORTMODULES=(aio ble events gpio grove_lcd i2c k64f_pins ocf pwm uart)
