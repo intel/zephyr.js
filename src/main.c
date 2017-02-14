@@ -204,7 +204,7 @@ int main(int argc, char *argv[])
 #ifndef ZJS_SNAPSHOT_BUILD
     code_eval = jerry_parse((jerry_char_t *)script, len, false);
     if (jerry_value_has_error_flag(code_eval)) {
-        ERR_PRINT("JerryScript: cannot parse javascript\n");
+        ERR_PRINT("Error parsing javascript\n");
         zjs_print_error_message(code_eval);
         goto error;
     }
@@ -225,7 +225,7 @@ int main(int argc, char *argv[])
 #endif
 
     if (jerry_value_has_error_flag(result)) {
-        ERR_PRINT("JerryScript: cannot run javascript\n");
+        ERR_PRINT("Error running javascript\n");
         zjs_print_error_message(result);
         goto error;
     }
