@@ -328,18 +328,20 @@ uint32_t zjs_uncompress_16_to_32(uint16_t num)
 
 void zjs_print_error_message(jerry_value_t error)
 {
+    const char *uncaught = "Uncaught exception: ";
+
     uint32_t size;
     char* message = NULL;
     jerry_value_t err_name = zjs_get_property(error, "name");
     if (!jerry_value_is_string(err_name)) {
-        ERR_PRINT("error did not have name\n");
+        ERR_PRINT("%s(no name)\n", uncaught);
         jerry_release_value(err_name);
         // we should never get here.
         return;
     }
     jerry_value_t err_msg = zjs_get_property(error, "message");
     if (!jerry_value_is_string(err_msg)) {
-        ERR_PRINT("error did not have message\n");
+        ERR_PRINT("%s(no message)\n", uncaught);
         jerry_release_value(err_name);
         jerry_release_value(err_msg);
         // we should never get here.
@@ -351,7 +353,7 @@ void zjs_print_error_message(jerry_value_t error)
 
     zjs_copy_jstring(err_name, name, &size);
     if (!size) {
-        ERR_PRINT("name length is too long\n");
+        ERR_PRINT("%s(name too long)\n", uncaught);
         jerry_release_value(err_name);
         jerry_release_value(err_msg);
         return;
@@ -363,9 +365,9 @@ void zjs_print_error_message(jerry_value_t error)
     jerry_release_value(err_msg);
 
     if (message) {
-        ERR_PRINT("Uncaught exception: %s: %s\n", name, message);
+        ERR_PRINT("%s%s: %s\n", uncaught, name, message);
         zjs_free(message);
     } else {
-        ERR_PRINT("Uncaught exception: %s\n", name);
+        ERR_PRINT("%s%s\n", uncaught, name);
     }
 }
