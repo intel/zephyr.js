@@ -6,11 +6,7 @@
 #define I2C_1 1
 #define MAX_I2C_BUS 2
 
-#ifdef CONFIG_BOARD_ARDUINO_101_SSS
-#define I2C_BUS "I2C_SS_"
-#else
 #define I2C_BUS "I2C_"
-#endif
 
 static struct device *i2c_device[MAX_I2C_BUS];
 
