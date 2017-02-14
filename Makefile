@@ -46,7 +46,10 @@ VARIANT ?= release
 BLE_NAME ?= "Zephyr OCF Node"
 # JerryScript options
 JERRY_BASE ?= $(ZJS_BASE)/deps/jerryscript
-EXT_JERRY_FLAGS ?= -DENABLE_ALL_IN_ONE=ON -DFEATURE_PROFILE=$(ZJS_BASE)/jerry_feature.profile
+EXT_JERRY_FLAGS ?=	-DENABLE_ALL_IN_ONE=ON \
+					-DFEATURE_PROFILE=$(ZJS_BASE)/jerry_feature.profile \
+					-DFEATURE_ERROR_MESSAGES=OFF \
+					-DJERRY_LIBM=OFF
 ifneq ($(DEV), ashell)
 ifeq ($(SNAPSHOT), on)
 EXT_JERRY_FLAGS += -DFEATURE_JS_PARSER=OFF

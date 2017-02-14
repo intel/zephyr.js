@@ -119,7 +119,7 @@ $(BUILD_DIR)/%.o:%.c
 
 .PHONY: linux
 linux: $(BUILD_OBJ)
-	@cd deps/jerryscript; python ./tools/build.py $(VERBOSE);
+	@cd deps/jerryscript; python ./tools/build.py --error-messages ON $(VERBOSE);
 	@echo [LD] $(BUILD_DIR)/jslinux
 	@gcc $(LINUX_INCLUDES) $(JERRY_LIB_PATH) -o $(BUILD_DIR)/jslinux $(BUILD_OBJ) $(LINUX_FLAGS) $(CFLAGS) $(LINUX_DEFINES) $(LINUX_LIBS)
 
