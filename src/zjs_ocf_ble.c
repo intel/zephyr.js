@@ -92,7 +92,8 @@ void zjs_init_ocf_ble()
     };
 
     if (str2bt_addr_le(default_ble, "random", &id_addr) < 0) {
-        return zjs_error("bad BLE address string");
+        ERR_PRINT("bad BLE address string");
+        return;
     }
     DBG_PRINT("BLE addr is set to: %s\n", default_ble);
     BT_ADDR_SET_STATIC(&id_addr.a);
