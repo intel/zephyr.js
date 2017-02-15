@@ -32,21 +32,27 @@ is advertising over BLE. The following steps will create that connection which
 will show up as a IP interface on the Linux box:
 (Note: You will likely have to run these commands as root)
 
-1. Enable 6LoWPAN module
+1. Install BLE adapter
+
+  Plug in a USB BLE adapter, unless your system has it built in. We've used the
+  [ASUS USB-BT400](http://a.co/0ZlqU5C) and the
+  [Plugable BT4.0 micro adapter](http://a.co/diQXq2S) successfully.
+
+2. Enable 6LoWPAN module
 
   ```
   modprobe bluetooth_6lowpan
   echo 1 > /sys/kernel/debug/bluetooth/6lowpan_enable
   ```
 
-2. Reset HCI
+3. Reset HCI
 
   ```
   hciconfig hci0
   hciconfig hci0 reset
   ```
 
-3. Look for your Arduino 101 advertisement
+4. Look for your Arduino 101 advertisement
 
   ```
   hcitool lescan
@@ -58,7 +64,7 @@ will show up as a IP interface on the Linux box:
   # Use Ctrl-C to stop the scan once your device is found
   ```
 
-4. Connect Linux to your Arduino 101
+5. Connect Linux to your Arduino 101
 
   ```
   echo "connect <device id> 2" > /sys/kernel/debug/bluetooth/6lowpan_control
@@ -66,8 +72,8 @@ will show up as a IP interface on the Linux box:
   echo "connect F1:F9:50:21:43:4A 2" > /sys/kernel/debug/bluetooth/6lowpan_control
   ```
 
-5. Check that you have a new network interface for this connection. It may take a few
-seconds for it to appear.
+6. Check that you have a new network interface for this connection. It may take
+a few seconds for it to appear.
 
   ```
   ifconfig
@@ -83,8 +89,8 @@ seconds for it to appear.
   ```
 
 ## Connecting an OCF client
-Now that your Arduino 101 is connected, it is as if it's a regular OCF IP device. You
-can now connect an OCF client. There are OCF client samples in the
+Now that your Arduino 101 is connected, it is as if it's a regular OCF IP
+device. You can now connect an OCF client. There are OCF client samples in the
 [iot-rest-api-server](https://github.com/01org/iot-rest-api-server) repo.
 ```
 git clone git@github.com:01org/iot-rest-api-server.git
@@ -92,18 +98,29 @@ npm i
 node index.js
 ```
 
-You can then do discovery a) from the browser or b) using one of the test scripts
+You can then do discovery a) from the browser or b) using one of the test
+scripts
 
 a) http://localhost:8000/api/oic/res
 
-You should see the /a/light resource there
+You should see a JSON array in response, and find the /a/light resource listed
+at the end.
 
 b) Using oic-get script under test/
 
 ```
 $ ./oic-get /res
 10.237.72.146:80 /res
-[{"di":"b492c1dd-fa51-47f1-a03c-d31495a0b99a","links":[{"href":"/oic/sec/doxm","rt":"oic.r.doxm","if":"oic.if.baseline"}]},{"di":"b492c1dd-fa51-47f1-a03c-d31495a0b99a","links":[{"href":"/oic/sec/pstat","rt":"oic.r.pstat","if":"oic.if.baseline"}]},{"di":"b492c1dd-fa51-47f1-a03c-d31495a0b99a","links":[{"href":"/oic/d","rt":"oic.wk.d","if":"oic.if.baseline"}]},{"di":"b492c1dd-fa51-47f1-a03c-d31495a0b99a","links":[{"href":"/oic/p","rt":"oic.wk.p","if":"oic.if.baseline"}]},{"di":"31bf6309-8ebf-4309-5fbf-630930c06309","links":[{"href":"/oic/p","rt":"oic.wk.p","if":"oic.if.r"}]},{"di":"31bf6309-8ebf-4309-5fbf-630930c06309","links":[{"href":"/oic/d","rt":"oic.d.zjs","if":"oic.if.r"}]},{"di":"31bf6309-8ebf-4309-5fbf-630930c06309","links":[{"href":"/a/light","rt":"core.light","if":"oic.if.rw"}]}]
+[{"di":"b492c1dd-fa51-47f1-a03c-d31495a0b99a","links":[{"href":"/oic/sec/doxm","
+rt":"oic.r.doxm","if":"oic.if.baseline"}]},{"di":"b492c1dd-fa51-47f1-a03c-d31495
+a0b99a","links":[{"href":"/oic/sec/pstat","rt":"oic.r.pstat","if":"oic.if.baseli
+ne"}]},{"di":"b492c1dd-fa51-47f1-a03c-d31495a0b99a","links":[{"href":"/oic/d","r
+t":"oic.wk.d","if":"oic.if.baseline"}]},{"di":"b492c1dd-fa51-47f1-a03c-d31495a0b
+99a","links":[{"href":"/oic/p","rt":"oic.wk.p","if":"oic.if.baseline"}]},{"di":"
+31bf6309-8ebf-4309-5fbf-630930c06309","links":[{"href":"/oic/p","rt":"oic.wk.p",
+"if":"oic.if.r"}]},{"di":"31bf6309-8ebf-4309-5fbf-630930c06309","links":[{"href"
+:"/oic/d","rt":"oic.d.zjs","if":"oic.if.r"}]},{"di":"31bf6309-8ebf-4309-5fbf-630
+930c06309","links":[{"href":"/a/light","rt":"core.light","if":"oic.if.rw"}]}]
 HTTP: 200
 $ ./oic-get /a/light?di=31bf6309-8ebf-4309-5fbf-630930c06309
 10.237.72.146:80 /a/light?di=31bf6309-8ebf-4309-5fbf-630930c06309
