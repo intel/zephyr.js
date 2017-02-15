@@ -326,6 +326,15 @@ void zjs_remove_callback(zjs_callback_id id)
     }
 }
 
+void zjs_remove_all_callback()
+{
+   for (int i = 0; i < cb_size; i++) {
+        if (cb_map[i]) {
+            zjs_remove_callback(i);
+        }
+    }
+}
+
 void zjs_signal_callback(zjs_callback_id id, const void *args, uint32_t size)
 {
     DBG_PRINT("pushing item to ring buffer. id=%d, args=%p, size=%lu\n", id,
