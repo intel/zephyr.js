@@ -4,7 +4,10 @@ var BLE_ADDR = 'E3:C4:7F:24:B3:' + MY_ID;
 var server = require('ocf').server;
 
 var aio = require('aio');
+var gpio = require("gpio");
+var pins = require("arduino101_pins");
 
+var led = gpio.open({pin: pins.LED2, direction: 'out', activeLow: true});
 var pinA = aio.open({ device: 0, pin: pins.A0 });
 
 console.log("Started OCF server");
@@ -12,7 +15,8 @@ console.log("Started OCF server");
 var MyProperties = {
     state: true,
     power: 10,
-    sensor: null
+    sensor: null,
+    light: false
 }
 
 var resourceInit = {
@@ -44,6 +48,7 @@ server.register(resourceInit).then(function(resource) {
         console.log("on('update'): request.target.resourcePath=" + request.target.resourcePath);
         if (request.resource.properties) {
             console.log("properties.state=" + request.resource.properties.state);
+            led.write(request.resource.properties.light);
             MyProperties = request.resource.properties;
         } else {
             console.log("request.properties does not exist");
