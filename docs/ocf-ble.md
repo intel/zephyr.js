@@ -64,6 +64,9 @@ will show up as a IP interface on the Linux box:
   # Use Ctrl-C to stop the scan once your device is found
   ```
 
+  Note: If this fails with an input/output error, try running the reset command
+  above again.
+
 5. Connect Linux to your Arduino 101
 
   ```
@@ -88,6 +91,9 @@ a few seconds for it to appear.
             RX bytes:167 (167.0 B)  TX bytes:1200 (1.2 KB)
   ```
 
+  Note: If you fail to see this bt0 interface, try the connect command above
+  again.
+
 ## Connecting an OCF client
 Now that your Arduino 101 is connected, it is as if it's a regular OCF IP
 device. You can now connect an OCF client. There are OCF client samples in the
@@ -98,45 +104,49 @@ npm i
 node index.js
 ```
 
-You can then do discovery a) from the browser or b) using one of the test
-scripts
+You can then do discovery from the browser or using one of the test scripts:
 
-a) http://localhost:8000/api/oic/res
+1. Browser method
 
-You should see a JSON array in response, and find the /a/light resource listed
-at the end.
+  Open this URL in a browser: [http://localhost:8000/api/oic/res](http://localhost:8000/api/oic/res)
 
-b) Using oic-get script under test/
+  You should see a JSON array in response, and find the /a/light resource listed
+  at the end.
 
-```
-$ ./oic-get /res
-10.237.72.146:80 /res
-[{"di":"b492c1dd-fa51-47f1-a03c-d31495a0b99a","links":[{"href":"/oic/sec/doxm","
-rt":"oic.r.doxm","if":"oic.if.baseline"}]},{"di":"b492c1dd-fa51-47f1-a03c-d31495
-a0b99a","links":[{"href":"/oic/sec/pstat","rt":"oic.r.pstat","if":"oic.if.baseli
-ne"}]},{"di":"b492c1dd-fa51-47f1-a03c-d31495a0b99a","links":[{"href":"/oic/d","r
-t":"oic.wk.d","if":"oic.if.baseline"}]},{"di":"b492c1dd-fa51-47f1-a03c-d31495a0b
-99a","links":[{"href":"/oic/p","rt":"oic.wk.p","if":"oic.if.baseline"}]},{"di":"
-31bf6309-8ebf-4309-5fbf-630930c06309","links":[{"href":"/oic/p","rt":"oic.wk.p",
-"if":"oic.if.r"}]},{"di":"31bf6309-8ebf-4309-5fbf-630930c06309","links":[{"href"
-:"/oic/d","rt":"oic.d.zjs","if":"oic.if.r"}]},{"di":"31bf6309-8ebf-4309-5fbf-630
-930c06309","links":[{"href":"/a/light","rt":"core.light","if":"oic.if.rw"}]}]
-HTTP: 200
-$ ./oic-get /a/light?di=31bf6309-8ebf-4309-5fbf-630930c06309
-10.237.72.146:80 /a/light?di=31bf6309-8ebf-4309-5fbf-630930c06309
-{"properties":{"state":false,"power":10}}
-HTTP: 200
-$ ./oic-get /a/light?di=31bf6309-8ebf-4309-5fbf-630930c06309
-10.237.72.146:80 /a/light?di=31bf6309-8ebf-4309-5fbf-630930c06309
-{"properties":{"state":true,"power":10}}
-HTTP: 200
-$ ./oic-get /a/light?di=31bf6309-8ebf-4309-5fbf-630930c06309
-10.237.72.146:80 /a/light?di=31bf6309-8ebf-4309-5fbf-630930c06309
-{"properties":{"state":false,"power":10}}
-HTTP: 200
-$ ./oic-get /a/light?di=31bf6309-8ebf-4309-5fbf-630930c06309
-10.237.72.146:80 /a/light?di=31bf6309-8ebf-4309-5fbf-630930c06309
-{"properties":{"state":true,"power":10}}
-HTTP: 200
-As you can see, the discovery and retrieve resources works.
-```
+2. Test script method
+
+  Run the oic-get script from the iot-rest-api-server test/ directory.
+
+  ```
+  $ ./oic-get /res
+  10.237.72.146:80 /res
+  [{"di":"b492c1dd-fa51-47f1-a03c-d31495a0b99a","links":[{"href":"/oic/sec/doxm","
+  rt":"oic.r.doxm","if":"oic.if.baseline"}]},{"di":"b492c1dd-fa51-47f1-a03c-d31495
+  a0b99a","links":[{"href":"/oic/sec/pstat","rt":"oic.r.pstat","if":"oic.if.baseli
+  ne"}]},{"di":"b492c1dd-fa51-47f1-a03c-d31495a0b99a","links":[{"href":"/oic/d","r
+  t":"oic.wk.d","if":"oic.if.baseline"}]},{"di":"b492c1dd-fa51-47f1-a03c-d31495a0b
+  99a","links":[{"href":"/oic/p","rt":"oic.wk.p","if":"oic.if.baseline"}]},{"di":"
+  31bf6309-8ebf-4309-5fbf-630930c06309","links":[{"href":"/oic/p","rt":"oic.wk.p",
+  "if":"oic.if.r"}]},{"di":"31bf6309-8ebf-4309-5fbf-630930c06309","links":[{"href"
+  :"/oic/d","rt":"oic.d.zjs","if":"oic.if.r"}]},{"di":"31bf6309-8ebf-4309-5fbf-630
+  930c06309","links":[{"href":"/a/light","rt":"core.light","if":"oic.if.rw"}]}]
+  HTTP: 200
+  $ ./oic-get /a/light?di=31bf6309-8ebf-4309-5fbf-630930c06309
+  10.237.72.146:80 /a/light?di=31bf6309-8ebf-4309-5fbf-630930c06309
+  {"properties":{"state":false,"power":10}}
+  HTTP: 200
+  $ ./oic-get /a/light?di=31bf6309-8ebf-4309-5fbf-630930c06309
+  10.237.72.146:80 /a/light?di=31bf6309-8ebf-4309-5fbf-630930c06309
+  {"properties":{"state":true,"power":10}}
+  HTTP: 200
+  $ ./oic-get /a/light?di=31bf6309-8ebf-4309-5fbf-630930c06309
+  10.237.72.146:80 /a/light?di=31bf6309-8ebf-4309-5fbf-630930c06309
+  {"properties":{"state":false,"power":10}}
+  HTTP: 200
+  $ ./oic-get /a/light?di=31bf6309-8ebf-4309-5fbf-630930c06309
+  10.237.72.146:80 /a/light?di=31bf6309-8ebf-4309-5fbf-630930c06309
+  {"properties":{"state":true,"power":10}}
+  HTTP: 200
+  ```
+
+  You should see the discovery and resource retrieval working.
