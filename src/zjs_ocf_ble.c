@@ -3,6 +3,9 @@
 #include "zjs_ocf_ble.h"
 
 static bt_addr_le_t id_addr;
+#ifdef ZJS_CONFIG_BLE_ADDRESS
+static char default_ble[18] = ZJS_CONFIG_BLE_ADDRESS;
+#endif
 
 static ssize_t zjs_ble_storage_read(const bt_addr_le_t *addr, uint16_t key,
     void *data, size_t length)
@@ -81,6 +84,20 @@ static jerry_value_t ocf_set_ble_address(const jerry_value_t function_val,
 
 void zjs_init_ocf_ble()
 {
+#ifdef ZJS_CONFIG_BLE_ADDRESS
+    static const struct bt_storage storage = {
+            .read = zjs_ble_storage_read,
+            .write = NULL,
+            .clear = NULL,
+    };
+
+    if (str2bt_addr_le(default_ble, "random", &id_addr) < 0) {
+        return zjs_error("bad BLE address string");
+    }
+    DBG_PRINT("BLE addr is set to: %s\n", default_ble);
+    BT_ADDR_SET_STATIC(&id_addr.a);
+    bt_storage_register(&storage);
+#endif
     jerry_value_t global_obj = jerry_get_global_object();
     zjs_obj_add_function(global_obj, ocf_set_ble_address, "setBleAddress");
     jerry_release_value(global_obj);
