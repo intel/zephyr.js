@@ -1,6 +1,6 @@
 BOARD ?= arduino_101
 RAM ?= 55
-ROM ?= 144
+ROM ?= 256
 
 # Dump memory information: on = print allocs, full = print allocs + dump pools
 TRACE ?= off
