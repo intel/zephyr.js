@@ -37,7 +37,7 @@ static int str2bt_addr_le(const char *str, const char *type, bt_addr_le_t *addr)
     }
 
     for (i = 5; i >= 0; str+=3, i--) {
-        if (!zjs_hex_to_byte(str, &tmp)) {
+        if (!zjs_hex_to_byte((char*)str, &tmp)) {
             return -EINVAL;
         }
         addr->a.val[i] = tmp;

@@ -208,10 +208,11 @@ static void issue_requests(void)
 #define CONFIG_DEVICE_NAME CONFIG_BLUETOOTH_DEVICE_NAME
 #endif
 
-static void app_init(void)
+static int app_init(void)
 {
-    oc_init_platform("ZJS", NULL, NULL);
-    oc_add_device("/oic/d", "oic.d.zjs", CONFIG_DEVICE_NAME, "1.0", "1.0", NULL, NULL);
+    int ret = oc_init_platform("ZJS", NULL, NULL);
+    ret |= oc_add_device("/oic/d", "oic.d.zjs", CONFIG_DEVICE_NAME, "1.0", "1.0", NULL, NULL);
+    return ret;
 }
 
 uint8_t main_poll_routine(void* handle)
