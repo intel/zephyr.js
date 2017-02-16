@@ -238,14 +238,6 @@ int main(int argc, char *argv[])
     jerry_release_value(exports_obj);
     jerry_release_value(result);
 
-#ifndef ZJS_LINUX_BUILD
-#ifndef QEMU_BUILD
-#ifdef BUILD_MODULE_BLE
-    zjs_ble_enable();
-#endif
-#endif
-#endif // ZJS_LINUX_BUILD
-
 #ifdef ZJS_LINUX_BUILD
     uint8_t last_serviced = 1;
 #endif
