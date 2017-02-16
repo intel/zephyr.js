@@ -30,6 +30,7 @@
 #define ZJS_BLE_TIMEOUT_TICKS                  5000
 
 static struct k_sem ble_sem;
+static bool bt_enabled = false;
 
 typedef void (*ccc_cfg_changed_func)(const struct bt_gatt_attr *attr,
                                      uint16_t value);
@@ -1343,6 +1344,11 @@ jerry_value_t zjs_ble_init()
     ble_conn.connected_cb_id = zjs_add_c_callback(&ble_conn, zjs_ble_connected_c_callback);
     ble_conn.disconnected_cb_id = zjs_add_c_callback(&ble_conn, zjs_ble_disconnected_c_callback);
     ble_conn.ble_obj = jerry_acquire_value(ble_obj);
+
+    if (!bt_enabled) {
+        zjs_ble_enable();
+        bt_enabled = true;
+    }
 
     return ble_obj;
 }
