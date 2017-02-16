@@ -92,7 +92,7 @@ void zjs_copy_jstring(jerry_value_t jstr, char *buffer, jerry_size_t *maxlen);
  */
 char *zjs_alloc_from_jstring(jerry_value_t jstr, jerry_size_t *maxlen);
 
-bool zjs_hex_to_byte(char *buf, uint8_t *byte);
+bool zjs_hex_to_byte(const char *buf, uint8_t *byte);
 
 void zjs_default_convert_pin(uint32_t orig, int *dev, int *pin);
 

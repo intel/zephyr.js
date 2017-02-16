@@ -67,11 +67,8 @@ LINUX_FLAGS += 	-fno-asynchronous-unwind-tables \
 		-Wpointer-sign
 
 ifeq ($(VARIANT), debug)
-LINUX_DEFINES += -DDEBUG_BUILD
+LINUX_DEFINES += -DDEBUG_BUILD -DOC_DEBUG
 LINUX_FLAGS += -g
-DEBUG=1
-else
-DEBUG=0
 endif
 
 ifeq ($(CB_STATS), on)
@@ -104,9 +101,7 @@ LINUX_INCLUDES += 	-I$(OCF_ROOT)/deps/tinydtls \
 
 include Makefile.ocf_linux
 
-LINUX_DEFINES +=	-DOC_CLIENT \
-			-DOC_SERVER \
-			-DBUILD_MODULE_OCF
+LINUX_DEFINES += -DOC_SERVER -DBUILD_MODULE_OCF
 endif
 
 .PHONY: all
