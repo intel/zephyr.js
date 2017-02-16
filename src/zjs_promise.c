@@ -52,30 +52,45 @@ static void post_promise(void* h, jerry_value_t* ret_val)
     }
 }
 
-static jerry_value_t promise_then(const jerry_value_t function_obj,
-                                   const jerry_value_t this,
-                                   const jerry_value_t argv[],
-                                   const jerry_length_t argc)
+static jerry_value_t promise_resolve(const jerry_value_t function_obj,
+                                     const jerry_value_t this,
+                                     const jerry_value_t argv[],
+                                     const jerry_length_t argc,
+                                     uint8_t fulfill)
 {
-    zjs_promise_t *handle = NULL;
+    if (!jerry_value_is_function(argv[0])) {
+        return zjs_error("invalid arguments");
+    }
 
+    zjs_promise_t *handle = NULL;
     jerry_value_t promise_obj = zjs_get_property(this, "promise");
     jerry_get_object_native_handle(promise_obj, (uintptr_t*)&handle);
-
     jerry_release_value(promise_obj);
-    if (jerry_value_is_function(argv[0])) {
-        if (handle) {
-            jerry_release_value(handle->then);
-            handle->then = jerry_acquire_value(argv[0]);
-            zjs_edit_js_func(handle->then_id, handle->then);
-            handle->then_set = 1;
-        }
 
-        // Return the promise so it can be used by catch()
-        return this;
-    } else {
-        return ZJS_UNDEFINED;
+    if (!handle) {
+        return zjs_error("promise handle not found");
     }
+    if (fulfill) {
+        jerry_release_value(handle->then);
+        handle->then = jerry_acquire_value(argv[0]);
+        zjs_edit_js_func(handle->then_id, handle->then);
+        handle->then_set = 1;
+    } else {
+        jerry_release_value(handle->catch);
+        handle->catch = jerry_acquire_value(argv[0]);
+        zjs_edit_js_func(handle->catch_id, handle->catch);
+        handle->catch_set = 1;
+    }
+
+    return jerry_acquire_value(this);
+}
+
+static jerry_value_t promise_then(const jerry_value_t function_obj,
+                                  const jerry_value_t this,
+                                  const jerry_value_t argv[],
+                                  const jerry_length_t argc)
+{
+    return promise_resolve(function_obj, this, argv, argc, 1);
 }
 
 static jerry_value_t promise_catch(const jerry_value_t function_obj,
@@ -83,21 +98,7 @@ static jerry_value_t promise_catch(const jerry_value_t function_obj,
                                    const jerry_value_t argv[],
                                    const jerry_length_t argc)
 {
-    zjs_promise_t *handle = NULL;
-
-    jerry_value_t promise_obj = zjs_get_property(this, "promise");
-    jerry_get_object_native_handle(promise_obj, (uintptr_t*)&handle);
-
-    jerry_release_value(promise_obj);
-    if (handle) {
-        if (jerry_value_is_function(argv[0])) {
-            jerry_release_value(handle->catch);
-            handle->catch = jerry_acquire_value(argv[0]);
-            zjs_edit_js_func(handle->catch_id, handle->catch);
-            handle->catch_set = 1;
-        }
-    }
-    return ZJS_UNDEFINED;
+    return promise_resolve(function_obj, this, argv, argc, 0);
 }
 
 void zjs_make_promise(jerry_value_t obj, zjs_post_promise_func post,
