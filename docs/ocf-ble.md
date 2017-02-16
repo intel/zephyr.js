@@ -16,13 +16,13 @@ Please follow the ZJS initial setup in the main [README](../README.md)
 ## Building for A101
 Building the OCF server sample is the same as any other:
 ```
-make BOARD=arduino_101 JS=samples/OcfServer.js
+$ make BOARD=arduino_101 JS=samples/OcfServer.js
 ```
 
 ## Flashing the A101
 Flash the Arduino 101 as you would any other script:
 ```
-make dfu
+$ make dfu
 ```
 
 ## Linux Setup
@@ -40,39 +40,58 @@ will show up as a IP interface on the Linux box:
 
 2. Enable 6LoWPAN module
 
-  ```
-  modprobe bluetooth_6lowpan
-  echo 1 > /sys/kernel/debug/bluetooth/6lowpan_enable
-  ```
-
-3. Reset HCI
+  Load the 6lowpan driver and enable it:
 
   ```
-  hciconfig hci0
-  hciconfig hci0 reset
+  $ modprobe bluetooth_6lowpan
+  $ echo 1 > /sys/kernel/debug/bluetooth/6lowpan_enable
   ```
 
-4. Look for your Arduino 101 advertisement
+3. Make sure Bluetooth is on
+
+  You can run this command to see if your Bluetooth is disabled by a hardware
+  or software "radio kill switch":
 
   ```
-  hcitool lescan
-  # This should start listing BLE devices
-  # Your device should appear as "Zephyr OCF node"
-  # e.g.
+  $ rfkill list bluetooth
+  ```
+
+  If you see that it is software blocked, you can fix it with this command:
+
+  ```
+  $ rfkill unblock bluetooth
+  ```
+
+4. Reset HCI
+
+  ```
+  $ hciconfig hci0
+  $ hciconfig hci0 reset
+  ```
+
+5. Look for your Arduino 101 advertisement
+
+  The following command should start listing BLE devices. Your device should
+  appear as "Zephyr OCF Node" by default.
+
+  ```
+  $ hcitool lescan
   LE Scan ...
-  F1:F9:50:21:43:4A Zephyr OCF node
-  # Use Ctrl-C to stop the scan once your device is found
+  F1:F9:50:21:43:4A Zephyr OCF Node
   ```
+
+  Use Ctrl-C to stop the scan once your device is found.
 
   Note: If this fails with an input/output error, try running the reset command
   above again.
 
-5. Connect Linux to your Arduino 101
+6. Connect Linux to your Arduino 101
+
+  Next, echo "connect <device id> 2" to the file
+  /sys/kernel/debug/bluetooth/6lowpan_control. For example:
 
   ```
-  echo "connect <device id> 2" > /sys/kernel/debug/bluetooth/6lowpan_control
-  # e.g.
-  echo "connect F1:F9:50:21:43:4A 2" > /sys/kernel/debug/bluetooth/6lowpan_control
+  $ echo "connect F1:F9:50:21:43:4A 2" > /sys/kernel/debug/bluetooth/6lowpan_control
   ```
 
   Note: If you subsequently rebuild your app and reboot your device, you should
@@ -81,13 +100,13 @@ will show up as a IP interface on the Linux box:
   stack gets into a bad state and the only way we know to fix it is to reboot
   the Linux host.
 
-6. Check that you have a new network interface for this connection. It may take
-a few seconds for it to appear.
+6. Check for the Bluetooth network interface
+
+  Check that you have a new network interface for this connection. It may take
+  a few seconds for it to appear:
 
   ```
-  ifconfig
-  # You should see a bt0 interface
-  # e.g.
+  $ ifconfig
   bt0       Link encap:UNSPEC  HWaddr 5C-F3-70-FF-FE-78-1D-72-00-00-00-00-00-00-00-00
             inet6 addr: fe80::5ef3:70ff:fe78:1d72/64 Scope:Link
             UP POINTOPOINT RUNNING MULTICAST  MTU:1280  Metric:1
@@ -95,6 +114,8 @@ a few seconds for it to appear.
             TX packets:28 errors:0 dropped:0 overruns:0 carrier:0
             collisions:0 txqueuelen:1
             RX bytes:167 (167.0 B)  TX bytes:1200 (1.2 KB)
+
+  [eth0, lo, etc.]
   ```
 
   Note: If you fail to see this bt0 interface, try the connect command above
