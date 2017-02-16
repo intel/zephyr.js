@@ -121,7 +121,9 @@ You can then do discovery from the browser or using one of the test scripts:
 
 2. Test script method
 
-  Run the oic-get script from the iot-rest-api-server test/ directory.
+  Use the oic-get script from the iot-rest-api-server test/ directory.
+
+  Run resource discovery with the /res path:
 
   ```
   $ ./oic-get /res
@@ -137,22 +139,25 @@ You can then do discovery from the browser or using one of the test scripts:
   :"/oic/d","rt":"oic.d.zjs","if":"oic.if.r"}]},{"di":"31bf6309-8ebf-4309-5fbf-630
   930c06309","links":[{"href":"/a/light","rt":"core.light","if":"oic.if.rw"}]}]
   HTTP: 200
+  ```
+
+  Using the device UUID listed for the /a/light resource, query to retrieve
+  details for this resource:
+
+  ```
   $ ./oic-get /a/light?di=31bf6309-8ebf-4309-5fbf-630930c06309
   10.237.72.146:80 /a/light?di=31bf6309-8ebf-4309-5fbf-630930c06309
   {"properties":{"state":false,"power":10}}
   HTTP: 200
-  $ ./oic-get /a/light?di=31bf6309-8ebf-4309-5fbf-630930c06309
-  10.237.72.146:80 /a/light?di=31bf6309-8ebf-4309-5fbf-630930c06309
-  {"properties":{"state":true,"power":10}}
-  HTTP: 200
-  $ ./oic-get /a/light?di=31bf6309-8ebf-4309-5fbf-630930c06309
-  10.237.72.146:80 /a/light?di=31bf6309-8ebf-4309-5fbf-630930c06309
-  {"properties":{"state":false,"power":10}}
-  HTTP: 200
+  ```
+
+  Note the state is 'false', i.e. the light is off. Later, when the light is on:
+
+  ```
   $ ./oic-get /a/light?di=31bf6309-8ebf-4309-5fbf-630930c06309
   10.237.72.146:80 /a/light?di=31bf6309-8ebf-4309-5fbf-630930c06309
   {"properties":{"state":true,"power":10}}
   HTTP: 200
   ```
 
-  You should see the discovery and resource retrieval working.
+  This is what it looks like when discovery and resource retrieval is working.
