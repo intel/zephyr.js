@@ -150,7 +150,7 @@ void javascript_stop()
 
     /* Cleanup engine */
     zjs_modules_cleanup();
-    zjs_remove_all_callback();
+    zjs_remove_all_callbacks();
     zjs_ipm_free_callbacks();
     jerry_cleanup();
 
