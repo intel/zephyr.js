@@ -75,6 +75,12 @@ will show up as a IP interface on the Linux box:
   echo "connect F1:F9:50:21:43:4A 2" > /sys/kernel/debug/bluetooth/6lowpan_control
   ```
 
+  Note: If you subsequently rebuild your app and reboot your device, you should
+  be able to rerun just this command to reconnect. If it doesn't work, try going
+  back to earlier commands. Sometimes, though, we seem to see that the Linux
+  stack gets into a bad state and the only way we know to fix it is to reboot
+  the Linux host.
+
 6. Check that you have a new network interface for this connection. It may take
 a few seconds for it to appear.
 
