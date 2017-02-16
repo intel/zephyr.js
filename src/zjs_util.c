@@ -252,7 +252,7 @@ char *zjs_alloc_from_jstring(jerry_value_t jstr, jerry_size_t *maxlen)
     return buffer;
 }
 
-bool zjs_hex_to_byte(char *buf, uint8_t *byte)
+bool zjs_hex_to_byte(const char *buf, uint8_t *byte)
 {
     // requires: buf is a string with at least two hex chars
     //  effects: converts the first two hex chars in buf to a number and
