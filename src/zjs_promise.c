@@ -72,7 +72,7 @@ static jerry_value_t promise_then(const jerry_value_t function_obj,
         }
 
         // Return the promise so it can be used by catch()
-        return this;
+        return jerry_acquire_value(this);
     } else {
         return ZJS_UNDEFINED;
     }
@@ -97,7 +97,7 @@ static jerry_value_t promise_catch(const jerry_value_t function_obj,
             handle->catch_set = 1;
         }
     }
-    return ZJS_UNDEFINED;
+    return jerry_acquire_value(this);
 }
 
 void zjs_make_promise(jerry_value_t obj, zjs_post_promise_func post,
