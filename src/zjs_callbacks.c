@@ -326,7 +326,7 @@ void zjs_remove_callback(zjs_callback_id id)
     }
 }
 
-void zjs_remove_all_callback()
+void zjs_remove_all_callbacks()
 {
    for (int i = 0; i < cb_size; i++) {
         if (cb_map[i]) {

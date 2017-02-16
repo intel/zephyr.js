@@ -150,7 +150,7 @@ void zjs_remove_callback(zjs_callback_id id);
 /*
  * Remove all callbacks from memory
  */
-void zjs_remove_all_callback();
+void zjs_remove_all_callbacks();
 
 /*
  * Signal the system to make a callback. The callback will not be called
