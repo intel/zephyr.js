@@ -47,7 +47,6 @@ typedef struct gpio_handle {
     uint32_t value;                 // Value of the pin
     zjs_callback_id callbackId;             // ID for the C callback
     jerry_value_t pin_obj;          // Pin object returned from open()
-    jerry_value_t onchange_func;    // Function registered to onChange
     jerry_value_t open_rval;
     uint32_t last;
     uint8_t edge_both;
@@ -119,14 +118,8 @@ static void gpio_c_callback(void *h, void *args)
         // Put the boolean GPIO trigger value in the object
         zjs_obj_add_boolean(event, val, "value");
 
-        // Only acquire once, once we have it just keep using it.
-        // It will be released in close()
-        if (!handle->onchange_func) {
-            handle->onchange_func = jerry_acquire_value(onchange_func);
-        }
-
         // Call the JS callback
-        jerry_call_function(handle->onchange_func, ZJS_UNDEFINED, &event, 1);
+        jerry_call_function(onchange_func, ZJS_UNDEFINED, &event, 1);
 
         jerry_release_value(event);
     } else {
@@ -239,9 +232,6 @@ static jerry_value_t zjs_gpio_pin_write(const jerry_value_t function_obj,
 static void zjs_gpio_close(gpio_handle_t *handle)
 {
         zjs_remove_callback(handle->callbackId);
-        if (handle->onchange_func) {
-            jerry_release_value(handle->onchange_func);
-        }
         gpio_remove_callback(handle->port, &handle->callback);
         handle->closed = true;
 }
