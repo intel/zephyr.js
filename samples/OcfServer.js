@@ -1,6 +1,5 @@
-var MY_ID = '02';
-var BLE_ADDR = 'E3:C4:7F:24:B3:' + MY_ID;
-setBleAddress(BLE_ADDR);
+// Copyright (c) 2017, Intel Corporation.
+
 var server = require('ocf').server;
 
 console.log("Started OCF server");

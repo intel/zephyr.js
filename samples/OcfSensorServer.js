@@ -1,6 +1,8 @@
-var MY_ID = '02';
-var BLE_ADDR = 'E3:C4:7F:24:B3:' + MY_ID;
-//setBleAddress(BLE_ADDR);
+// Copyright (c) 2017, Intel Corporation.
+
+// OCF server which has one resource and two properties. One property (sensor)
+// is ready only and other one (light) is read-write.
+
 var server = require('ocf').server;
 
 var aio = require('aio');
