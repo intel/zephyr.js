@@ -492,11 +492,11 @@ static void zjs_ble_blvl_ccc_cfg_changed(const struct bt_gatt_attr *attr, uint16
 
 static void zjs_ble_connected_c_callback(void *handle, void* argv)
 {
-    // FIXME: get real bluetooth address
-    jerry_value_t arg = jerry_create_string((jerry_char_t *)"AB:CD:DF:AB:CD:EF");
+    char* addr = (char*)argv;
+    jerry_value_t arg = jerry_create_string((jerry_char_t *)addr);
     zjs_trigger_event(ble_conn.ble_obj, "accept", &arg, 1, NULL, NULL);
     jerry_release_value(arg);
-    DBG_PRINT("BLE event: accept\n");
+    DBG_PRINT("BLE event: connected, addr %s\n", addr);
 }
 
 static void zjs_ble_connected(struct bt_conn *conn, uint8_t err)
@@ -505,27 +505,31 @@ static void zjs_ble_connected(struct bt_conn *conn, uint8_t err)
         DBG_PRINT("Connection failed (err %u)\n", err);
     } else {
         DBG_PRINT("========== connected ==========\n");
+        char addr[BT_ADDR_LE_STR_LEN];
+        bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
         ble_conn.default_conn = bt_conn_ref(conn);
-        zjs_signal_callback(ble_conn.connected_cb_id, NULL, 0);
+        zjs_signal_callback(ble_conn.connected_cb_id, &addr, sizeof(addr));
     }
 }
 
 static void zjs_ble_disconnected_c_callback(void *handle, void* argv)
 {
-    // FIXME: get real bluetooth address
-    jerry_value_t arg = jerry_create_string((jerry_char_t *)"AB:CD:DF:AB:CD:EF");
+    char* addr = (char*)argv;
+    jerry_value_t arg = jerry_create_string((jerry_char_t *)addr);
     zjs_trigger_event(ble_conn.ble_obj, "disconnect", &arg, 1, NULL, NULL);
     jerry_release_value(arg);
-    DBG_PRINT("BLE event: disconnect\n");
+    DBG_PRINT("BLE event: disconnected, addr %s\n", addr);
 }
 
 static void zjs_ble_disconnected(struct bt_conn *conn, uint8_t reason)
 {
     DBG_PRINT("========== Disconnected (reason %u) ==========\n", reason);
     if (ble_conn.default_conn) {
+        char addr[BT_ADDR_LE_STR_LEN];
+        bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
         bt_conn_unref(ble_conn.default_conn);
         ble_conn.default_conn = NULL;
-        zjs_signal_callback(ble_conn.disconnected_cb_id, NULL, 0);
+        zjs_signal_callback(ble_conn.disconnected_cb_id, &addr, sizeof(addr));
     }
 }
 
