@@ -15,6 +15,10 @@ I/O
 
 [UART](./uart.md)
 
+Generic Sensors
+---------------
+[Sensors](./sensors.md)
+
 Communications
 --------------
 [BLE](./ble.md)
