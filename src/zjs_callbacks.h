@@ -148,6 +148,11 @@ void zjs_edit_callback_handle(zjs_callback_id id, void* handle);
 void zjs_remove_callback(zjs_callback_id id);
 
 /*
+ * Remove all callbacks from memory
+ */
+void zjs_remove_all_callbacks();
+
+/*
  * Signal the system to make a callback. The callback will not be called
  * immediately, but rather once the system has time to service the callback
  * module; this allows the system to fairly share CPU time as well as prevent

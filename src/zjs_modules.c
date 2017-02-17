@@ -242,6 +242,9 @@ void zjs_modules_init()
 
 void zjs_modules_cleanup()
 {
+    // stop timers first to prevent further calls
+    zjs_timers_cleanup();
+
     int modcount = sizeof(zjs_modules_array) / sizeof(module_t);
     for (int i = 0; i < modcount; i++) {
         module_t *mod = &zjs_modules_array[i];
@@ -256,7 +259,6 @@ void zjs_modules_cleanup()
 
     // clean up fixed modules
     zjs_error_cleanup();
-    zjs_timers_cleanup();
 #ifdef BUILD_MODULE_CONSOLE
     zjs_console_cleanup();
 #endif

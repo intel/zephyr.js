@@ -149,8 +149,9 @@ void javascript_stop()
     parsed_code = 0;
 
     /* Cleanup engine */
-    zjs_ipm_free_callbacks();
     zjs_modules_cleanup();
+    zjs_remove_all_callbacks();
+    zjs_ipm_free_callbacks();
     jerry_cleanup();
 
     restore_zjs_api();
