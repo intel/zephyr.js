@@ -52,7 +52,10 @@ typedef struct gpio_handle {
     uint32_t last;
     uint8_t edge_both;
     bool closed;
+    struct gpio_handle* next;
 } gpio_handle_t;
+
+struct gpio_handle_t* handle_list = NULL;
 
 static jerry_value_t lookup_pin(const jerry_value_t pin_obj,
                                 struct device **port, int *pin)
@@ -242,6 +245,7 @@ static void zjs_gpio_close(gpio_handle_t *handle)
         if (handle->onchange_func) {
             jerry_release_value(handle->onchange_func);
         }
+        gpio_pin_disable_callback(handle->port, handle->pin);
         gpio_remove_callback(handle->port, &handle->callback);
         handle->closed = true;
 }
@@ -267,8 +271,22 @@ static jerry_value_t zjs_gpio_pin_close(const jerry_value_t function_obj,
 static void zjs_gpio_free_cb(const uintptr_t native)
 {
     gpio_handle_t *handle = (gpio_handle_t *)native;
-    if (!handle->closed)
+    if (!handle->closed) {
         zjs_gpio_close(handle);
+    }
+    gpio_handle_t* i = handle_list;
+    if (i == handle) {
+        handle_list = i->next;
+        zjs_free(handle);
+        return;
+    }
+    while (i) {
+        if (i->next == handle) {
+            i->next = handle->next;
+            break;;
+        }
+        i = i->next;
+    }
 
     zjs_free(handle);
 }
@@ -390,6 +408,9 @@ static jerry_value_t zjs_gpio_open(const jerry_value_t function_obj,
     handle->port = gpiodev;
     handle->callbackId = -1;
 
+    handle->next = handle_list;
+    handle_list = handle;
+
     // Set the native handle so we can free it when close() is called
     jerry_set_object_native_handle(pinobj, (uintptr_t)handle, zjs_gpio_free_cb);
 
@@ -484,6 +505,11 @@ jerry_value_t zjs_gpio_init()
 void zjs_gpio_cleanup()
 {
     jerry_release_value(zjs_gpio_pin_prototype);
+    gpio_handle_t* i = handle_list;
+    while (i) {
+        zjs_gpio_close(i);
+        i = i->next;
+    }
 }
 
 #endif // BUILD_MODULE_GPIO
