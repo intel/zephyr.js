@@ -17,7 +17,7 @@ var rbuf = new Buffer(wbuf.length);
 var rlen = fs.readSync(fd, rbuf, 0, rbuf.length, 0);
 
 if (rbuf.toString('ascii') != wbuf.toString('ascii')) {
-    console.log('error, buffers do not match; wbuf=' + 
+    console.log('error, buffers do not match; wbuf=' +
         wbuf.toString('ascii') + ' rbuf=' + rbuf.toString('ascii'));
     pass = false;
 }
