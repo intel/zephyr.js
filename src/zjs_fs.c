@@ -899,33 +899,33 @@ static jerry_value_t zjs_write_file(const jerry_value_t function_obj,
                                     const jerry_length_t argc,
                                     uint8_t async)
 {
+    uint8_t is_buf = 0;
+    jerry_size_t size;
     int error = 0;
     jerry_value_t js_cb = ZJS_UNDEFINED;
-    char* data;
+    char* data = NULL;
     uint32_t length;
     if (!jerry_value_is_string(argv[0])) {
         return zjs_error("first parameter must be file name");
     }
     if (jerry_value_is_string(argv[1])) {
-        jerry_size_t jlen = jerry_get_string_size(argv[0]);
-        data = zjs_malloc(jlen + 1);
-
-        int wlen = jerry_string_to_char_buffer(argv[0], (jerry_char_t *)data, jlen);
-        if (jlen != wlen) {
-            return zjs_error("size mismatch");
-        }
-        data[wlen] = '\0';
-        length = wlen;
+        size = 256;
+        data = zjs_alloc_from_jstring(argv[1], &size);
+        length = size;
     } else if (jerry_value_is_object(argv[1])) {
         zjs_buffer_t* buffer = zjs_buffer_find(argv[1]);
         data = buffer->buffer;
         length = buffer->bufsize;
+        is_buf = 1;
     } else {
         return zjs_error("second parameter must be string of buffer data");
     }
     // Options provided
     if (argc > 3) {
         if (!jerry_value_is_object(argv[2])) {
+            if (data && !is_buf) {
+                zjs_free(data);
+            }
             return zjs_error("third parameter must be options object");
         }
         // Options object has no effect on Zephyr, 'mode' and 'flag' properties
@@ -942,14 +942,15 @@ static jerry_value_t zjs_write_file(const jerry_value_t function_obj,
     } else if (async) {
         js_cb = argv[argc - 1];
     }
-    jerry_size_t jlen = jerry_get_string_size(argv[0]);
-    char path[jlen + 1];
 
-    int wlen = jerry_string_to_char_buffer(argv[0], (jerry_char_t *)path, jlen);
-    if (jlen != wlen) {
-        return zjs_error("size mismatch");
+    size = 32;
+    char* path = zjs_alloc_from_jstring(argv[0], &size);
+    if (!path) {
+        if (data && !is_buf) {
+            zjs_free(data);
+        }
+        return zjs_error("path string too long\n");
     }
-    path[wlen] = '\0';
 
     fs_file_t fp;
     error = fs_open(&fp, path);
@@ -982,6 +983,12 @@ Finished:
         zjs_signal_callback(id, &err, sizeof(jerry_value_t));
     }
 #endif
+    if (data && !is_buf) {
+        zjs_free(data);
+    }
+    if (path) {
+        zjs_free(path);
+    }
     return ZJS_UNDEFINED;
 }
 
