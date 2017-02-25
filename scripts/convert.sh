@@ -75,9 +75,11 @@ do
         if [ "$char" = $'r' ] || [ "$char" = $'n' ]; then
             printf "\\\\$char" >> $OUTPUT
         fi
-    elif [ "$char" = $'\n' ] && [ $UGLIFY -eq 0 ]; then
-        # Handle new lines if uglify is not installed
-        printf "\\\n\"\n\"" >> $OUTPUT
+    elif [ "$char" = $'\n' ]; then
+        if [ $UGLIFY -eq 0 ]; then
+            # Handle new lines if uglify is not installed
+            printf "\\\n\"\n\"" >> $OUTPUT
+        fi
     else
         echo -n "$char" >> $OUTPUT
     fi
