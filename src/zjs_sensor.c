@@ -51,9 +51,9 @@ static sensor_handle_t *zjs_sensor_alloc_handle(enum sensor_channel channel)
 
     // append to the list
     sensor_handle_t **head = NULL;
-    if (channel == SENSOR_CHAN_ACCEL_ANY) {
+    if (channel == SENSOR_CHAN_ACCEL_XYZ) {
         head = &accel_handles;
-    } else if (channel == SENSOR_CHAN_GYRO_ANY) {
+    } else if (channel == SENSOR_CHAN_GYRO_XYZ) {
         head = &gyro_handles;
     } else if (channel == SENSOR_CHAN_LIGHT) {
         head = &light_handles;
@@ -191,26 +191,42 @@ static void zjs_sensor_set_state(jerry_value_t obj, enum sensor_state state)
 
 static void zjs_sensor_update_reading(jerry_value_t obj,
                                       enum sensor_channel channel,
-                                      union sensor_reading reading)
+                                      void *reading)
 {
     // update reading property and trigger onchange event
     jerry_value_t reading_obj = jerry_create_object();
-    if (channel == SENSOR_CHAN_ACCEL_ANY ||
-        channel == SENSOR_CHAN_GYRO_ANY) {
-        jerry_value_t x_val = jerry_create_number(reading.x);
-        jerry_value_t y_val = jerry_create_number(reading.y);
-        jerry_value_t z_val = jerry_create_number(reading.z);
-        zjs_set_property(reading_obj, "x", x_val);
-        zjs_set_property(reading_obj, "y", y_val);
-        zjs_set_property(reading_obj, "z", z_val);
-        jerry_release_value(x_val);
-        jerry_release_value(y_val);
-        jerry_release_value(z_val);
-    } else if (channel == SENSOR_CHAN_LIGHT) {
-        jerry_value_t d_val = jerry_create_number(reading.dval);
-        zjs_set_property(reading_obj, "illuminance", d_val);
-        jerry_release_value(d_val);
+    switch(channel) {
+        case SENSOR_CHAN_ACCEL_XYZ:
+        case SENSOR_CHAN_GYRO_XYZ: ;
+            // reading is a ptr to an array of 3 double values
+            double x = ((double*)reading)[0];
+            double y = ((double*)reading)[1];
+            double z = ((double*)reading)[2];
+            jerry_value_t x_val = jerry_create_number(x);
+            jerry_value_t y_val = jerry_create_number(y);
+            jerry_value_t z_val = jerry_create_number(z);
+            zjs_set_property(reading_obj, "x", x_val);
+            zjs_set_property(reading_obj, "y", y_val);
+            zjs_set_property(reading_obj, "z", z_val);
+            jerry_release_value(x_val);
+            jerry_release_value(y_val);
+            jerry_release_value(z_val);
+            break;
+        case SENSOR_CHAN_LIGHT: ;
+            // reading is a ptr to double
+            double d = *((double*)reading);
+            jerry_value_t d_val = jerry_create_number(d);
+            zjs_set_property(reading_obj, "illuminance", d_val);
+            jerry_release_value(d_val);
+            break;
+
+        default:
+            ERR_PRINT("unsupported sensor type\n");
+            jerry_release_value(reading_obj);
+            return;
+
     }
+
     zjs_set_property(obj, "reading", reading_obj);
     jerry_value_t func = zjs_get_property(obj, "onchange");
     if (jerry_value_is_function(func)) {
@@ -264,21 +280,49 @@ static void zjs_sensor_onchange_c_callback(void *h, void *argv)
         return;
     }
 
-    union sensor_reading *reading = (union sensor_reading*)argv;
     if (zjs_sensor_get_state(handle->sensor_obj) == SENSOR_STATE_ACTIVATED) {
         zjs_sensor_update_reading(handle->sensor_obj,
                                   handle->channel,
-                                  *reading);
+                                  argv);
     }
 }
 
 // INTERRUPT SAFE FUNCTION: No JerryScript VM, allocs, or likely prints!
-static void zjs_sensor_signal_callbacks(sensor_handle_t *handle,
-                                        union sensor_reading reading)
+static void zjs_sensor_signal_callbacks(struct sensor_data *data)
 {
+    sensor_handle_t *handles = NULL;
+    bool xyz = false;
+
+    switch(data->channel) {
+    case SENSOR_CHAN_ACCEL_XYZ:
+        handles = accel_handles;
+        xyz = true;
+        break;
+    case SENSOR_CHAN_GYRO_XYZ:
+        handles = gyro_handles;
+        xyz = true;
+        break;
+    case SENSOR_CHAN_LIGHT:
+        handles = light_handles;
+        break;
+
+    default:
+        ERR_PRINT("unsupported sensor type\n");
+        return;
+    }
+
     // iterate all sensor instances to update readings and trigger event
-    for (sensor_handle_t *h = handle; h; h = h->next) {
-        zjs_signal_callback(h->id, &reading, sizeof(reading));
+    for (sensor_handle_t *h = handles; h; h = h->next) {
+        if (xyz) {
+            double xyz[3];
+            xyz[0] = data->reading.x;
+            xyz[1] = data->reading.y;
+            xyz[2] = data->reading.z;
+            zjs_signal_callback(h->id, &xyz, sizeof(xyz));
+        } else {
+            double dval = data->reading.dval;
+            zjs_signal_callback(h->id, &dval, sizeof(dval));
+        }
     }
 }
 
@@ -298,16 +342,8 @@ static void ipm_msg_receive_callback(void *context, uint32_t id, volatile void *
         // un-block sync api
         k_sem_give(&sensor_sem);
     } else if (msg->type == TYPE_SENSOR_EVENT_READING_CHANGE) {
-        // value change event, copy the data, and signal event callback
-        if (msg->data.sensor.channel == SENSOR_CHAN_ACCEL_ANY) {
-            zjs_sensor_signal_callbacks(accel_handles, msg->data.sensor.reading);
-        } else if (msg->data.sensor.channel == SENSOR_CHAN_GYRO_ANY) {
-            zjs_sensor_signal_callbacks(gyro_handles, msg->data.sensor.reading);
-        } else if (msg->data.sensor.channel == SENSOR_CHAN_LIGHT) {
-            zjs_sensor_signal_callbacks(light_handles, msg->data.sensor.reading);
-        } else {
-            ERR_PRINT("unsupported sensor type\n");
-        }
+        // value change event, signal event callback
+        zjs_sensor_signal_callbacks(&msg->data.sensor);
     } else {
         ERR_PRINT("unsupported message received\n");
     }
@@ -437,7 +473,7 @@ static jerry_value_t zjs_sensor_create(const jerry_value_t function_obj,
                       DEFAULT_SAMPLING_FREQUENCY);
         }
 
-        if (channel == SENSOR_CHAN_ACCEL_ANY) {
+        if (channel == SENSOR_CHAN_ACCEL_XYZ) {
             bool option_gravity;
             if (zjs_obj_get_boolean(options, "includeGravity", &option_gravity) &&
                 option_gravity) {
@@ -501,7 +537,7 @@ static jerry_value_t zjs_accel_create(const jerry_value_t function_obj,
                              this,
                              argv,
                              argc,
-                             SENSOR_CHAN_ACCEL_ANY);
+                             SENSOR_CHAN_ACCEL_XYZ);
 }
 
 static jerry_value_t zjs_gyro_create(const jerry_value_t function_obj,
@@ -516,7 +552,7 @@ static jerry_value_t zjs_gyro_create(const jerry_value_t function_obj,
                              this,
                              argv,
                              argc,
-                             SENSOR_CHAN_GYRO_ANY);
+                             SENSOR_CHAN_GYRO_XYZ);
 }
 
 static jerry_value_t zjs_light_create(const jerry_value_t function_obj,

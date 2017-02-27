@@ -448,7 +448,7 @@ static void process_accel_data(struct device *dev)
     struct sensor_value val[3];
     double dval[3];
 
-    if (sensor_channel_get(dev, SENSOR_CHAN_ACCEL_ANY, val) < 0) {
+    if (sensor_channel_get(dev, SENSOR_CHAN_ACCEL_XYZ, val) < 0) {
         ERR_PRINT("failed to read accelerometer channels\n");
         return;
     }
@@ -466,7 +466,7 @@ static void process_accel_data(struct device *dev)
         accel_last_value[0] = reading.x = dval[0];
         accel_last_value[1] = reading.y = dval[1];
         accel_last_value[2] = reading.z = dval[2];
-        send_sensor_data(SENSOR_CHAN_ACCEL_ANY, reading);
+        send_sensor_data(SENSOR_CHAN_ACCEL_XYZ, reading);
     }
 
 #ifdef DEBUG_BUILD
@@ -484,7 +484,7 @@ static void process_gyro_data(struct device *dev)
     struct sensor_value val[3];
     double dval[3];
 
-    if (sensor_channel_get(dev, SENSOR_CHAN_GYRO_ANY, val) < 0) {
+    if (sensor_channel_get(dev, SENSOR_CHAN_GYRO_XYZ, val) < 0) {
         ERR_PRINT("failed to read gyroscope channels\n");
         return;
     }
@@ -500,7 +500,7 @@ static void process_gyro_data(struct device *dev)
         gyro_last_value[0] = reading.x = dval[0];
         gyro_last_value[1] = reading.y = dval[1];
         gyro_last_value[2] = reading.z = dval[2];
-        send_sensor_data(SENSOR_CHAN_GYRO_ANY, reading);
+        send_sensor_data(SENSOR_CHAN_GYRO_XYZ, reading);
     }
 
 #ifdef DEBUG_BUILD
@@ -526,9 +526,9 @@ static void trigger_hdlr(struct device *dev,
         return;
     }
 
-    if (trigger->chan == SENSOR_CHAN_ACCEL_ANY) {
+    if (trigger->chan == SENSOR_CHAN_ACCEL_XYZ) {
         process_accel_data(dev);
-    } else if (trigger->chan == SENSOR_CHAN_GYRO_ANY) {
+    } else if (trigger->chan == SENSOR_CHAN_GYRO_XYZ) {
         process_gyro_data(dev);
     }
 }
@@ -547,7 +547,7 @@ struct sensor_value acc_calib[] = {
 static int auto_calibration(struct device *dev)
 {
     /* calibrate accelerometer */
-    if (sensor_attr_set(dev, SENSOR_CHAN_ACCEL_ANY,
+    if (sensor_attr_set(dev, SENSOR_CHAN_ACCEL_XYZ,
                         SENSOR_ATTR_CALIB_TARGET, acc_calib) < 0) {
         return -1;
     }
@@ -557,7 +557,7 @@ static int auto_calibration(struct device *dev)
      * the target on all axis is set internally to 0. This is used just to
      * trigger a gyro calibration.
      */
-    if (sensor_attr_set(dev, SENSOR_CHAN_GYRO_ANY,
+    if (sensor_attr_set(dev, SENSOR_CHAN_GYRO_XYZ,
                         SENSOR_ATTR_CALIB_TARGET, NULL) < 0) {
         return -1;
     }
@@ -574,7 +574,7 @@ static int start_accel_trigger(struct device *dev, int freq)
     // units, convert the range to m/s^2.
     sensor_g_to_ms2(16, &attr);
 
-    if (sensor_attr_set(dev, SENSOR_CHAN_ACCEL_ANY,
+    if (sensor_attr_set(dev, SENSOR_CHAN_ACCEL_XYZ,
                         SENSOR_ATTR_FULL_SCALE, &attr) < 0) {
         ERR_PRINT("failed to set accelerometer range\n");
         return -1;
@@ -583,7 +583,7 @@ static int start_accel_trigger(struct device *dev, int freq)
     attr.val1 = freq;
     attr.val2 = 0;
 
-    if (sensor_attr_set(dev, SENSOR_CHAN_ACCEL_ANY,
+    if (sensor_attr_set(dev, SENSOR_CHAN_ACCEL_XYZ,
                         SENSOR_ATTR_SAMPLING_FREQUENCY, &attr) < 0) {
         ERR_PRINT("failed to set accelerometer sampling frequency %d\n", freq);
         return -1;
@@ -592,7 +592,7 @@ static int start_accel_trigger(struct device *dev, int freq)
     // set slope threshold to 0.1G (0.1 * 9.80665 = 4.903325 m/s^2).
     attr.val1 = 0;
     attr.val2 = 980665;
-    if (sensor_attr_set(dev, SENSOR_CHAN_ACCEL_ANY,
+    if (sensor_attr_set(dev, SENSOR_CHAN_ACCEL_XYZ,
                         SENSOR_ATTR_SLOPE_TH, &attr) < 0) {
         ERR_PRINT("failed set slope threshold\n");
         return -1;
@@ -601,7 +601,7 @@ static int start_accel_trigger(struct device *dev, int freq)
     // set slope duration to 2 consecutive samples
     attr.val1 = 2;
     attr.val2 = 0;
-    if (sensor_attr_set(dev, SENSOR_CHAN_ACCEL_ANY,
+    if (sensor_attr_set(dev, SENSOR_CHAN_ACCEL_XYZ,
                         SENSOR_ATTR_SLOPE_DUR, &attr) < 0) {
         ERR_PRINT("failed to set slope duration\n");
         return -1;
@@ -609,7 +609,7 @@ static int start_accel_trigger(struct device *dev, int freq)
 
     // set data ready trigger handler
     trig.type = SENSOR_TRIG_DATA_READY;
-    trig.chan = SENSOR_CHAN_ACCEL_ANY;
+    trig.chan = SENSOR_CHAN_ACCEL_XYZ;
 
     if (sensor_trigger_set(dev, &trig, trigger_hdlr) < 0) {
         ERR_PRINT("failed to enable accelerometer trigger\n");
@@ -625,7 +625,7 @@ static int stop_accel_trigger(struct device *dev)
     struct sensor_trigger trig;
 
     trig.type = SENSOR_TRIG_DATA_READY;
-    trig.chan = SENSOR_CHAN_ACCEL_ANY;
+    trig.chan = SENSOR_CHAN_ACCEL_XYZ;
 
     if (sensor_trigger_set(bmi160, &trig, NULL) < 0) {
         ERR_PRINT("failed to disable accelerometer trigger\n");
@@ -644,7 +644,7 @@ static int start_gyro_trigger(struct device *dev, int freq)
     attr.val1 = freq;
     attr.val2 = 0;
 
-    if (sensor_attr_set(bmi160, SENSOR_CHAN_GYRO_ANY,
+    if (sensor_attr_set(bmi160, SENSOR_CHAN_GYRO_XYZ,
                         SENSOR_ATTR_SAMPLING_FREQUENCY, &attr) < 0) {
         ERR_PRINT("failed to set sampling frequency for gyroscope\n");
         return -1;
@@ -652,7 +652,7 @@ static int start_gyro_trigger(struct device *dev, int freq)
 
     // set data ready trigger handler
     trig.type = SENSOR_TRIG_DATA_READY;
-    trig.chan = SENSOR_CHAN_GYRO_ANY;
+    trig.chan = SENSOR_CHAN_GYRO_XYZ;
 
     if (sensor_trigger_set(bmi160, &trig, trigger_hdlr) < 0) {
         ERR_PRINT("failed to enable gyroscope trigger\n");
@@ -668,7 +668,7 @@ static int stop_gyro_trigger(struct device *dev)
     struct sensor_trigger trig;
 
     trig.type = SENSOR_TRIG_DATA_READY;
-    trig.chan = SENSOR_CHAN_GYRO_ANY;
+    trig.chan = SENSOR_CHAN_GYRO_XYZ;
 
     if (sensor_trigger_set(bmi160, &trig, NULL) < 0) {
         ERR_PRINT("failed to disable gyroscope trigger\n");
@@ -740,8 +740,8 @@ static void handle_sensor(struct zjs_ipm_message* msg)
 
     switch(msg->type) {
     case TYPE_SENSOR_INIT:
-        if (msg->data.sensor.channel == SENSOR_CHAN_ACCEL_ANY ||
-            msg->data.sensor.channel == SENSOR_CHAN_GYRO_ANY) {
+        if (msg->data.sensor.channel == SENSOR_CHAN_ACCEL_XYZ ||
+            msg->data.sensor.channel == SENSOR_CHAN_GYRO_XYZ) {
             if (!bmi160) {
                 bmi160 = device_get_binding("bmi160");
 
@@ -759,12 +759,12 @@ static void handle_sensor(struct zjs_ipm_message* msg)
         break;
     case TYPE_SENSOR_START:
         freq = msg->data.sensor.frequency;
-        if (msg->data.sensor.channel == SENSOR_CHAN_ACCEL_ANY) {
+        if (msg->data.sensor.channel == SENSOR_CHAN_ACCEL_XYZ) {
             if (!bmi160 || (!accel_trigger &&
                              start_accel_trigger(bmi160, freq) != 0)) {
                 error_code = ERROR_IPM_OPERATION_FAILED;
             }
-        } else if (msg->data.sensor.channel == SENSOR_CHAN_GYRO_ANY) {
+        } else if (msg->data.sensor.channel == SENSOR_CHAN_GYRO_XYZ) {
             if (!bmi160 || (!gyro_trigger &&
                              start_gyro_trigger(bmi160, freq) != 0)) {
                 error_code = ERROR_IPM_OPERATION_FAILED;
@@ -786,12 +786,12 @@ static void handle_sensor(struct zjs_ipm_message* msg)
         }
         break;
     case TYPE_SENSOR_STOP:
-        if (msg->data.sensor.channel == SENSOR_CHAN_ACCEL_ANY) {
+        if (msg->data.sensor.channel == SENSOR_CHAN_ACCEL_XYZ) {
             if (!bmi160 || (accel_trigger &&
                             stop_accel_trigger(bmi160) != 0)) {
                 error_code = ERROR_IPM_OPERATION_FAILED;
             }
-        } else if (msg->data.sensor.channel == SENSOR_CHAN_GYRO_ANY) {
+        } else if (msg->data.sensor.channel == SENSOR_CHAN_GYRO_XYZ) {
             if (!bmi160 || (gyro_trigger &&
                             stop_gyro_trigger(bmi160) != 0)) {
                 error_code = ERROR_IPM_OPERATION_FAILED;
