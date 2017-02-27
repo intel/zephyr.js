@@ -75,9 +75,13 @@ Registers a callback. The `event` may be one of the following:
 
 Bind socket to a local address and port. This is required operation for
 server-side sockets, i.e. sockets which wait and receive data from other
-network nodes. `ip_addr` must be a string representing an IP address.
-This module does not support domain name resolution, so only IP addresses
-are allowed. An example of IPv4 address: `'192.0.2.1'`, IPV6: `'2001:db8::1'`.
+network nodes. `ip_addr` must be a string representing an IP address of
+a *local* network interface, or a "wildcard" address of `'0.0.0.0'` (IPv4)
+or `'::'` (IPv6), in which case a socket will be bound to all local
+interfaces. This module does not support domain name resolution, so only
+IP addresses are allowed. At the time of writing, local interface
+addresses are hardcoded to be: `'192.0.2.1'` (IPv4) and `'2001:db8::1'`
+(IPv6) (but these will become configurable in the future).
 
 ### DgramSocket.send
 
