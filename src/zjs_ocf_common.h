@@ -79,6 +79,11 @@ void zjs_ocf_free_props(void* h);
 uint8_t main_poll_routine(void* handle);
 
 /*
+ * Start Iotivity-constrained.
+ */
+int zjs_ocf_start();
+
+/*
  * Object returned from require('ocf')
  */
 jerry_value_t zjs_ocf_init();

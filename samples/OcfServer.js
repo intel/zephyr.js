@@ -1,6 +1,24 @@
 // Copyright (c) 2017, Intel Corporation.
 
-var server = require('ocf').server;
+var ocf = require('ocf');
+var server = ocf.server;
+
+ocf.device = {
+	name: "MyOCFServer",
+	coreSpecVersion: '2.0',
+	dataModels: '2.5'
+}
+
+ocf.platform = {
+	manufacturerName: "MyManufacturer",
+	osVersion: '10.0',
+	model: 'Arduino101',
+	manufacturerURL: 'myurl.com',
+	manufacturerDate: '11-11-2011',
+	platformVersion: '5.0',
+	firmwareVersion: '9.0',
+	supportURL: 'myurl.com/support'
+}
 
 console.log("Started OCF server");
 

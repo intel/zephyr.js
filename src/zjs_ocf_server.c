@@ -463,6 +463,8 @@ static jerry_value_t ocf_register(const jerry_value_t function_val,
 
     resource = new_server_resource(resource_path);
 
+    zjs_ocf_start();
+
     resource->res = oc_new_resource(resource_path, num_types, 0);
 
     for (i = 0; i < num_types; ++i) {

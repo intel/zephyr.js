@@ -187,6 +187,8 @@ void zjs_ocf_free_props(void* h)
     }
 }
 
+jerry_value_t ocf_object;
+
 /*
  * Must be defined for iotivity-constrained
  */
@@ -208,10 +210,208 @@ static void issue_requests(void)
 #define CONFIG_DEVICE_NAME CONFIG_BLUETOOTH_DEVICE_NAME
 #endif
 
+static void platform_init(void *data)
+{
+    uint32_t size;
+    jerry_value_t platform = zjs_get_property(ocf_object, "platform");
+    if (!jerry_value_is_undefined(platform)) {
+        // osVersion
+        jerry_value_t os_version = zjs_get_property(platform, "osVersion");
+        if (!jerry_value_is_undefined(os_version) &&
+            jerry_value_is_string(os_version)) {
+            size = 8;
+            char s[size];
+            zjs_copy_jstring(os_version, s, &size);
+            if (size) {
+                zjs_rep_set_text_string(&root_map, "mnos", s);
+            } else {
+                ERR_PRINT("osVersion string is too long\n");
+            }
+        }
+        jerry_release_value(os_version);
+
+        // model
+        jerry_value_t model = zjs_get_property(platform, "model");
+        if (!jerry_value_is_undefined(model) &&
+            jerry_value_is_string(model)) {
+            size = 32;
+            char s[size];
+            zjs_copy_jstring(model, s, &size);
+            if (size) {
+                zjs_rep_set_text_string(&root_map, "mnmo", s);
+            } else {
+                ERR_PRINT("model string is too long\n");
+            }
+        }
+        jerry_release_value(model);
+
+        // manufacturerURL
+        jerry_value_t manuf_url = zjs_get_property(platform, "manufacturerURL");
+        if (!jerry_value_is_undefined(manuf_url) &&
+            jerry_value_is_string(manuf_url)) {
+            size = 64;
+            char s[size];
+            zjs_copy_jstring(manuf_url, s, &size);
+            if (size) {
+                zjs_rep_set_text_string(&root_map, "mnml", s);
+            } else {
+                ERR_PRINT("manufacturerURL string is too long\n");
+            }
+        }
+        jerry_release_value(manuf_url);
+
+        // manufacturerDate
+        jerry_value_t manuf_date = zjs_get_property(platform, "manufacturerDate");
+        if (!jerry_value_is_undefined(manuf_date) &&
+            jerry_value_is_string(manuf_date)) {
+            size = 12;
+            char s[size];
+            zjs_copy_jstring(manuf_date, s, &size);
+            if (size) {
+                zjs_rep_set_text_string(&root_map, "mndt", s);
+            } else {
+                ERR_PRINT("manufacturerDate string is too long\n");
+            }
+        }
+        jerry_release_value(manuf_date);
+
+        // platformVersion
+        jerry_value_t plat_ver = zjs_get_property(platform, "platformVersion");
+        if (!jerry_value_is_undefined(plat_ver) &&
+            jerry_value_is_string(plat_ver)) {
+            size = 8;
+            char s[size];
+            zjs_copy_jstring(plat_ver, s, &size);
+            if (size) {
+                zjs_rep_set_text_string(&root_map, "mnpv", s);
+            } else {
+                ERR_PRINT("platformVersion string is too long\n");
+            }
+        }
+        jerry_release_value(plat_ver);
+
+        // firmwareVersion
+        jerry_value_t fw_ver = zjs_get_property(platform, "firmwareVersion");
+        if (!jerry_value_is_undefined(fw_ver) &&
+            jerry_value_is_string(fw_ver)) {
+            size = 8;
+            char s[size];
+            zjs_copy_jstring(fw_ver, s, &size);
+            if (size) {
+                zjs_rep_set_text_string(&root_map, "mnfv", s);
+            } else {
+                ERR_PRINT("firmwareVersion string is too long\n");
+            }
+        }
+        jerry_release_value(fw_ver);
+
+        // supportURL
+        jerry_value_t supp_url = zjs_get_property(platform, "supportURL");
+        if (!jerry_value_is_undefined(supp_url) &&
+            jerry_value_is_string(supp_url)) {
+            size = 64;
+            char s[size];
+            zjs_copy_jstring(supp_url, s, &size);
+            if (size) {
+                zjs_rep_set_text_string(&root_map, "mnsl", s);
+            } else {
+                ERR_PRINT("supportURL string is too long\n");
+            }
+        }
+        jerry_release_value(supp_url);
+    }
+    jerry_release_value(platform);
+}
+
 static int app_init(void)
 {
-    int ret = oc_init_platform("ZJS", NULL, NULL);
-    ret |= oc_add_device("/oic/d", "oic.d.zjs", CONFIG_DEVICE_NAME, "1.0", "1.0", NULL, NULL);
+    uint32_t size;
+    // device props
+    char* name = NULL;
+    char* spec_version = NULL;
+    char* data_model_version = NULL;
+
+    // platform props
+    char* manufacturer_name = NULL;
+
+    jerry_value_t platform = zjs_get_property(ocf_object, "platform");
+    if (!jerry_value_is_undefined(platform)) {
+        jerry_value_t manuf_name = zjs_get_property(platform, "manufacturerName");
+        if (!jerry_value_is_undefined(manuf_name) &&
+            jerry_value_is_string(manuf_name)) {
+            size = 32;
+            manufacturer_name = zjs_alloc_from_jstring(manuf_name, &size);
+            if (!manufacturer_name) {
+                ERR_PRINT("manufacturerName is too long\n");
+            }
+        }
+        jerry_release_value(manuf_name);
+    }
+    jerry_release_value(platform);
+
+    int ret = oc_init_platform((manufacturer_name) ? manufacturer_name : "ZJS",
+                               platform_init,
+                               NULL);
+    if (manufacturer_name) {
+        zjs_free(manufacturer_name);
+    }
+    jerry_value_t device  = zjs_get_property(ocf_object, "device");
+    if (!jerry_value_is_undefined(device)) {
+        jerry_value_t dev_name = zjs_get_property(device, "name");
+        if (!jerry_value_is_undefined(dev_name) &&
+            jerry_value_is_string(dev_name)) {
+            size = 32;
+            name = zjs_alloc_from_jstring(dev_name, &size);
+            if (!name) {
+                ERR_PRINT("name is too long\n");
+            }
+        }
+        jerry_release_value(dev_name);
+        jerry_value_t spec_ver = zjs_get_property(device, "coreSpecVersion");
+        if (!jerry_value_is_undefined(spec_ver) &&
+            jerry_value_is_string(spec_ver)) {
+            size = 8;
+            spec_version = zjs_alloc_from_jstring(spec_ver, &size);
+            if (!spec_version) {
+                ERR_PRINT("coreSpecVersion is too long\n");
+            }
+        }
+        jerry_release_value(spec_ver);
+        /*
+         * TODO: This property is defined as a "list of supported data models"
+         *       Iotivity-constrained just allows a "data model version" to be
+         *       inputed. For now a single "data model version" will be used.
+         */
+        jerry_value_t data_model_ver = zjs_get_property(device, "dataModels");
+        if (!jerry_value_is_undefined(data_model_ver) &&
+            jerry_value_is_string(data_model_ver)) {
+            size = 8;
+            data_model_version = zjs_alloc_from_jstring(data_model_ver, &size);
+            if (!data_model_version) {
+                ERR_PRINT("dataModels string is too long\n");
+            }
+        }
+        jerry_release_value(data_model_ver);
+    }
+    jerry_release_value(device);
+    /*
+     * TODO: uuid and url are automatically generated and cannot be set from JS
+     */
+    ret |= oc_add_device("/oic/d",
+                         "oic.d.zjs",
+                         (name) ? name : "ZJS Device",
+                         (spec_version) ? spec_version : "1.0",
+                         (data_model_version) ? data_model_version : "1.0",
+                         NULL, NULL);
+    if (name) {
+        zjs_free(name);
+    }
+    if (spec_version) {
+        zjs_free(spec_version);
+    }
+    if (data_model_version) {
+        zjs_free(data_model_version);
+    }
     return ret;
 }
 
@@ -234,28 +434,40 @@ static const oc_handler_t handler = {
                                       .signal_event_loop = oc_signal_main_loop,
 };
 
-jerry_value_t zjs_ocf_init()
+int zjs_ocf_start()
 {
     int ret;
 
     ret = oc_main_init(&handler);
     if (ret < 0) {
         ERR_PRINT("error initializing, ret=%u\n", ret);
-        return ZJS_UNDEFINED;
     }
-    jerry_value_t ocf = jerry_create_object();
+    return ret;
+}
+
+jerry_value_t zjs_ocf_init()
+{
+    ocf_object = jerry_create_object();
+
+    jerry_value_t device = ZJS_UNDEFINED;
+    zjs_set_property(ocf_object, "device", device);
+    jerry_release_value(device);
+
+    jerry_value_t platform = ZJS_UNDEFINED;
+    zjs_set_property(ocf_object, "platform", platform);
+    jerry_release_value(platform);
 #ifdef OC_CLIENT
     jerry_value_t client = zjs_ocf_client_init();
-    zjs_set_property(ocf, "client", client);
+    zjs_set_property(ocf_object, "client", client);
     jerry_release_value(client);
 #endif
 #ifdef OC_SERVER
     jerry_value_t server = zjs_ocf_server_init();
-    zjs_set_property(ocf, "server", server);
+    zjs_set_property(ocf_object, "server", server);
     jerry_release_value(server);
 #endif
 
-    return ocf;
+    return ocf_object;
 }
 
 #endif // BUILD_MODULE_OCF
