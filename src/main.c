@@ -90,7 +90,7 @@ static jerry_value_t stop_js_handler(const jerry_value_t function_obj,
 
 #ifdef ZJS_LINUX_BUILD
 // enabled if --autoexit is passed to jslinux
-static uint8_t auto_exit = 0;
+static uint8_t no_exit = 0;
 // if > 0, jslinux will exit after this many milliseconds
 static uint32_t exit_after = 0;
 static struct timespec exit_timer;
@@ -103,8 +103,8 @@ uint8_t process_cmd_line(int argc, char *argv[])
             // run unit tests
             zjs_run_unit_tests();
         }
-        else if (!strncmp(argv[i], "--autoexit", 10)) {
-            auto_exit = 1;
+        else if (!strncmp(argv[i], "--noexit", 8)) {
+            no_exit = 1;
         }
         else if (!strncmp(argv[i], "-t", 2)) {
             if (i == argc - 1) {
@@ -258,11 +258,13 @@ int main(int argc, char *argv[])
         //   busy wait
         zjs_sleep(1);
 #ifdef ZJS_LINUX_BUILD
-        if (auto_exit) {
+        if (!no_exit) {
             // if the last and current loop had no pending "events" (timers or
             // callbacks) and --autoexit is enabled the program will terminate
             if (last_serviced == 0 && serviced == 0) {
                 ZJS_PRINT("no timers or callbacks were processed, exiting!\n");
+                ZJS_PRINT("   * to run your script indefinitely use --noexit\n");
+                ZJS_PRINT("   * to run your script for a set timeout, use -t <ms>\n");
                 goto error;
             }
         }
