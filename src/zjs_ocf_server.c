@@ -463,7 +463,10 @@ static jerry_value_t ocf_register(const jerry_value_t function_val,
 
     resource = new_server_resource(resource_path);
 
-    zjs_ocf_start();
+    if (zjs_ocf_start() < 0) {
+        REJECT(promise, "InternalError", "OCF failed to start", h);
+        return promise;
+    }
 
     resource->res = oc_new_resource(resource_path, num_types, 0);
 
