@@ -89,7 +89,7 @@ static jerry_value_t stop_js_handler(const jerry_value_t function_obj,
 }
 
 #ifdef ZJS_LINUX_BUILD
-// enabled if --autoexit is passed to jslinux
+// enabled if --noexit is passed to jslinux
 static uint8_t no_exit = 0;
 // if > 0, jslinux will exit after this many milliseconds
 static uint32_t exit_after = 0;
