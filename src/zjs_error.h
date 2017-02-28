@@ -6,7 +6,6 @@
 #include "jerry-api.h"
 
 typedef enum zjs_error_type {
-    AssertionError,
     NetworkError,
     NotSupportedError,
     RangeError,
@@ -46,7 +45,6 @@ jerry_value_t zjs_standard_error(zjs_error_type_t type, const char *message);
 
 #define zjs_error(msg)          (zjs_standard_error(Error, (msg)))
 
-#define ASSERTION_ERROR(msg)    (zjs_standard_error(AssertionError, (msg)))
 #define SECURITY_ERROR(msg)     (zjs_standard_error(SecurityError, (msg)))
 #define NOTSUPPORTED_ERROR(msg) (zjs_standard_error(NotSupportedError, (msg)))
 #define SYNTAX_ERROR(msg)       (zjs_standard_error(SyntaxError, (msg)))
