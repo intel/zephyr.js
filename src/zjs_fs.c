@@ -30,18 +30,23 @@
 
 #define MAX_PATH_LENGTH 128
 
-typedef struct file_handle_t {
+typedef struct file_handle {
     fs_file_t fp;
     uint16_t mode;
     jerry_value_t fd_val;
     int error;
-} file_handle;
+} file_handle_t;
 
-static file_handle* new_file(void)
+static jerry_value_t invalid_args(void)
 {
-    file_handle* handle = zjs_malloc(sizeof(file_handle));
+    return zjs_error("invalid arguments");
+}
 
-    memset(handle, 0, sizeof(file_handle));
+static file_handle_t* new_file(void)
+{
+    file_handle_t* handle = zjs_malloc(sizeof(file_handle_t));
+
+    memset(handle, 0, sizeof(file_handle_t));
 
     return handle;
 }
@@ -117,7 +122,7 @@ static jerry_value_t is_directory(const jerry_value_t function_obj,
     }
 }
 
-void free_stats(const uintptr_t native)
+static void free_stats(const uintptr_t native)
 {
     struct zfs_dirent* entry = (struct zfs_dirent*)native;
     if (entry) {
@@ -136,7 +141,7 @@ static jerry_value_t create_stats_obj(struct fs_dirent* entry)
     }
     memcpy(new_entry, entry, sizeof(struct fs_dirent));
 
-    jerry_set_object_native_handle(stats_obj, (uintptr_t)new_entry, NULL);
+    jerry_set_object_native_handle(stats_obj, (uintptr_t)new_entry, free_stats);
 
     zjs_obj_add_function(stats_obj, is_file, "isFile");
     zjs_obj_add_function(stats_obj, is_directory, "isDirectory");
@@ -151,21 +156,21 @@ static jerry_value_t zjs_open(const jerry_value_t function_obj,
                               uint8_t async)
 {
     if (argc < 3 && async) {
-        return zjs_error("not enough arguments");
+        return invalid_args();
     }
     if (!jerry_value_is_string(argv[0])) {
-        return zjs_error("first parameter must be path string");
+        return invalid_args();
     }
     if (!jerry_value_is_string(argv[1])) {
-        return zjs_error("second parameter must be flags string");
+        return invalid_args();
     }
     if (async) {
         if (!jerry_value_is_function(argv[argc - 1])) {
-            return zjs_error("last parameter must be callback function");
+            return invalid_args();
         }
     }
 
-    file_handle* handle = new_file();
+    file_handle_t* handle = new_file();
     handle->fd_val = jerry_create_object();
 
     jerry_size_t size = MAX_PATH_LENGTH;
@@ -247,14 +252,14 @@ static jerry_value_t zjs_close(const jerry_value_t function_obj,
                                const jerry_length_t argc,
                                uint8_t async)
 {
-    file_handle* handle;
+    file_handle_t* handle;
 
     if (!jerry_value_is_object(argv[0])) {
-        return zjs_error("first parameter was not file descriptor");
+        return invalid_args();
     }
     if (async) {
         if (!jerry_value_is_function(argv[1])) {
-            return zjs_error("second parameter must be callback function");
+            return invalid_args();
         }
     }
     if (!jerry_get_object_native_handle(argv[0], (uintptr_t*)&handle)) {
@@ -304,11 +309,11 @@ static jerry_value_t zjs_unlink(const jerry_value_t function_obj,
     int ret = 0;
 
     if (!jerry_value_is_string(argv[0])) {
-        return zjs_error("first parameter was not path");
+        return invalid_args();
     }
     if (async) {
         if (!jerry_value_is_function(argv[1])) {
-            return zjs_error("second parameter was not function");
+            return invalid_args();
         }
     }
 
@@ -359,31 +364,31 @@ static jerry_value_t zjs_read(const jerry_value_t function_obj,
                               const jerry_length_t argc,
                               uint8_t async)
 {
-    file_handle* handle;
+    file_handle_t* handle;
     int err = 0;
 
     if (argc < 6 && async) {
-        return zjs_error("not enough parameters");
+        return invalid_args();
     }
 
     if (!jerry_value_is_object(argv[0])) {
-        return zjs_error("first parameter was not file descriptor");
+        return invalid_args();
     }
     if (!jerry_value_is_object(argv[1])) {
-        return zjs_error("second parameter was not buffer");
+        return invalid_args();
     }
     if (!jerry_value_is_number(argv[2])) {
-        return zjs_error("third parameter was not offset");
+        return invalid_args();
     }
     if (!jerry_value_is_number(argv[3])) {
-        return zjs_error("fourth parameter was not length");
+        return invalid_args();
     }
     if (!jerry_value_is_number(argv[4])) {
-        return zjs_error("fifth parameter was not position");
+        return invalid_args();
     }
     if (async) {
         if (!jerry_value_is_function(argv[5])) {
-            return zjs_error("sixth parameter was not callback function");
+            return invalid_args();
         }
     }
     if (!jerry_get_object_native_handle(argv[0], (uintptr_t*)&handle)) {
@@ -395,7 +400,7 @@ static jerry_value_t zjs_read(const jerry_value_t function_obj,
     double position = jerry_get_number_value(argv[4]);
 
     if (offset < 0 || length < 0 || position < 0) {
-        return zjs_error("offset, length and position must be positive numbers");
+        return invalid_args();
     }
     if (offset >= buffer->bufsize) {
         return zjs_error("offset overflows buffer");
@@ -461,33 +466,33 @@ static jerry_value_t zjs_write(const jerry_value_t function_obj,
                                const jerry_length_t argc,
                                uint8_t async)
 {
-    file_handle* handle;
+    file_handle_t* handle;
     double position = 0;
     jerry_value_t js_cb = ZJS_UNDEFINED;
 
     if (argc < 5) {
-        return zjs_error("not enough parameters");
+        return invalid_args();
     }
 
     if (!jerry_value_is_object(argv[0])) {
-        return zjs_error("first parameter was not file descriptor");
+        return invalid_args();
     }
     if (!jerry_value_is_object(argv[1])) {
-        return zjs_error("second parameter was not buffer");
+        return invalid_args();
     }
     if (!jerry_value_is_number(argv[2])) {
-        return zjs_error("third parameter was not offset");
+        return invalid_args();
     }
     if (!jerry_value_is_number(argv[3])) {
-        return zjs_error("fourth parameter was not length");
+        return invalid_args();
     }
     if (argc == 6) {
         if (!jerry_value_is_number(argv[4])) {
-            return zjs_error("position parameter was not number");
+            return invalid_args();
         }
         if (async) {
             if (!jerry_value_is_function(argv[5])) {
-                return zjs_error("sixth parameter was not callback function");
+                return invalid_args();
             }
             js_cb = argv[5];
         }
@@ -496,7 +501,7 @@ static jerry_value_t zjs_write(const jerry_value_t function_obj,
 #ifdef ZJS_FS_ASYNC_APIS
         if (async) {
             if (!jerry_value_is_function(argv[4])) {
-                return zjs_error("fifth parameter was not callback function");
+                return invalid_args();
             }
             js_cb = argv[4];
         }
@@ -510,7 +515,7 @@ static jerry_value_t zjs_write(const jerry_value_t function_obj,
     double length = jerry_get_number_value(argv[3]);
 
     if (offset < 0 || length < 0 || position < 0) {
-        return zjs_error("offset, length and position must be positive numbers");
+        return invalid_args();
     }
     if (offset >= buffer->bufsize) {
         return zjs_error("offset overflows buffer");
@@ -577,15 +582,15 @@ static jerry_value_t zjs_truncate(const jerry_value_t function_obj,
 {
     fs_file_t fp;
     if (!jerry_value_is_number(argv[1])) {
-        return zjs_error("second parameter must be length");
+        return invalid_args();
     }
     if (async) {
         if (!jerry_value_is_function(argv[2])) {
-            return zjs_error("third paramter must be callback function");
+            return invalid_args();
         }
     }
     if (jerry_value_is_object(argv[0])) {
-        file_handle* handle;
+        file_handle_t* handle;
         if (!jerry_get_object_native_handle(argv[0], (uintptr_t*)&handle)) {
             return zjs_error("native handle not found");
         }
@@ -602,7 +607,7 @@ static jerry_value_t zjs_truncate(const jerry_value_t function_obj,
             return zjs_error("error opening file for truncation");
         }
     } else {
-        return zjs_error("first parameter must be either file descriptor or file path");
+        return invalid_args();
     }
 
     uint32_t length = jerry_get_number_value(argv[1]);
@@ -650,18 +655,18 @@ static jerry_value_t zjs_mkdir(const jerry_value_t function_obj,
     uint32_t mode = MODE_A_PLUS;
     jerry_size_t size;
     if (!jerry_value_is_string(argv[0])) {
-        return zjs_error("first parameter was not path");
+        return invalid_args();
     }
     if (argc > 2) {
         if (async) {
             if (!jerry_value_is_function(argv[2])) {
-                return zjs_error("third parameter must be callback function");
+                return invalid_args();
             } else {
                 js_cb = argv[2];
             }
         }
         if (!jerry_value_is_string(argv[1])) {
-            return zjs_error("second parameter must be mode string");
+            return invalid_args();
         } else {
             size = 4;
             char mode_str[size];
@@ -676,7 +681,7 @@ static jerry_value_t zjs_mkdir(const jerry_value_t function_obj,
     } else {
         if (async) {
             if (!jerry_value_is_function(argv[1])) {
-                return zjs_error("second parameter must be callback function");
+                return invalid_args();
             } else {
                 js_cb = argv[1];
             }
@@ -837,11 +842,11 @@ static jerry_value_t zjs_stat(const jerry_value_t function_obj,
                               uint8_t async)
 {
     if (!jerry_value_is_string(argv[0])) {
-        return zjs_error("first parameter was not path");
+        return invalid_args();
     }
     if (async) {
         if (!jerry_value_is_function(argv[1])) {
-            return zjs_error("second parameter was not callback function");
+            return invalid_args();
         }
     }
     jerry_size_t size = MAX_PATH_LENGTH;
@@ -906,7 +911,7 @@ static jerry_value_t zjs_write_file(const jerry_value_t function_obj,
     char* data = NULL;
     uint32_t length;
     if (!jerry_value_is_string(argv[0])) {
-        return zjs_error("first parameter must be file name");
+        return invalid_args();
     }
     if (jerry_value_is_string(argv[1])) {
         size = 256;
@@ -918,7 +923,7 @@ static jerry_value_t zjs_write_file(const jerry_value_t function_obj,
         length = buffer->bufsize;
         is_buf = 1;
     } else {
-        return zjs_error("second parameter must be string of buffer data");
+        return invalid_args();
     }
     // Options provided
     if (argc > 3) {
@@ -926,14 +931,14 @@ static jerry_value_t zjs_write_file(const jerry_value_t function_obj,
             if (data && !is_buf) {
                 zjs_free(data);
             }
-            return zjs_error("third parameter must be options object");
+            return invalid_args();
         }
         // Options object has no effect on Zephyr, 'mode' and 'flag' properties
         // are not used for opening a file, so their values are irrelevant
 #ifdef ZJS_FS_ASYNC_APIS
         if (async) {
             if (!jerry_value_is_function(argv[3])) {
-                return zjs_error("last parameter must be callback function");
+                return invalid_args();
             } else {
                 js_cb = argv[3];
             }
