@@ -51,9 +51,6 @@ function bmp280Init() {
 
 function glcdInit() {
 
-    // Clear the screen
-    glcd.clear();
-
     // Set our preferences for the Grove LCD
     glcd.i2cDevice.write(glcd.glcdAddrs.DISPLAY_ADDR,
                          new Buffer([0, glcd.glcdAddrs.CMD_FUNCTION_SET |
@@ -66,6 +63,10 @@ function glcdInit() {
                          glcd.glcdAddrs.DS_DISPLAY_ON |
                          glcd.glcdAddrs.DS_CURSOR_OFF |
                          glcd.glcdAddrs.DS_BLINK_OFF]));
+
+    // Clear the screen. This has to happen after CMD_FUNCTION_SET and
+    // CMD_DISPLAY_SWITCH to allow text to be shown
+    glcd.clear();
 
     // Init backlight
     glcd.i2cDevice.write(glcd.glcdAddrs.BACKLIGHT_ADDR,
