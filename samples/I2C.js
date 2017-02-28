@@ -83,7 +83,6 @@ function clear() {
 }
 
 function init() {
-    clear();
 
     // Set our preferences for the Grove LCD
     i2cDevice.write(GROVE_LCD_DISPLAY_ADDR,
@@ -95,6 +94,10 @@ function init() {
                     new Buffer([0, GLCD_CMD_DISPLAY_SWITCH |
                     GLCD_DS_DISPLAY_ON | GLCD_DS_CURSOR_OFF |
                     GLCD_DS_BLINK_OFF]));
+
+    // Clear the screen. This has to happen after CMD_FUNCTION_SET and
+    // CMD_DISPLAY_SWITCH to allow text to be shown
+    clear();
 
     // Init the backlight
     i2cDevice.write(GROVE_RGB_BACKLIGHT_ADDR,
