@@ -59,7 +59,7 @@ interface AccelerometerSensor : Sensor {
 };
 
 dictionary AccelerometerSensorOptions : SensorOptions  {
-   boolean includeGravity = true; //  not supported, will throw an error if set
+   boolean includeGravity = true;  // not supported, will throw an error if set
 };
 
 interface AccelerometerSensorReading : SensorReading {
@@ -90,7 +90,7 @@ interface AmbientLightSensor : Sensor {
 };
 
 dictionary AmbientLightSensorOptions : SensorOptions  {
-    unsigned long pin; //  analog pin where the light is connected
+    unsigned long pin;  // analog pin where the light is connected
 };
 
 interface AmbientLightSensorReading : SensorReading {
