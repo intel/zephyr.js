@@ -26,7 +26,7 @@ specific API functions.
 Sensor Interface
 ```javascript
 interface Sensor {
-    attribute SensorState state;            // The current state of Sensor object
+    readonly attribute SensorState state;   // The current state of Sensor object
     void start();                           // Starts the sensor
     void stop();                            // Stops the sensor
     attribute ChangeCallback onchange;      // Callback handler for change events
@@ -67,9 +67,9 @@ dictionary AccelerometerOptions : SensorOptions  {
 };
 
 interface AccelerometerrReading : SensorReading {
-    attribute double x;
-    attribute double y;
-    attribute double z;
+    readonly attribute double x;
+    readonly attribute double y;
+    readonly attribute double z;
 };
 
 callback ChangeCallback = void(AccelerometerReading value);
@@ -83,9 +83,9 @@ interface GyroscopeSensor : Sensor {
 };
 
 interface GyroscopeSensorReading : SensorReading {
-    attribute double x;
-    attribute double y;
-    attribute double z;
+    readonly attribute double x;
+    readonly attribute double y;
+    readonly attribute double z;
 };
 
 callback ChangeCallback = void(GyroscopeReading value);
@@ -102,7 +102,7 @@ dictionary AmbientLightSensorOptions : SensorOptions  {
 };
 
 interface AmbientLightSensorReading : SensorReading {
-    attribute double illuminance;
+    readonly attribute double illuminance;
 };
 
 callback ChangeCallback = void(AmbientLightSensorReading value);
