@@ -238,19 +238,13 @@ static void zjs_sensor_trigger_error(jerry_value_t obj,
     if (jerry_value_is_function(func)) {
         // if onerror exists, call it
         jerry_value_t event = jerry_create_object();
-        jerry_value_t error_obj = jerry_create_object();
-        jerry_value_t name_val = jerry_create_string(error_name);
-        jerry_value_t message_val = jerry_create_string(error_message);
-        zjs_set_property(error_obj, "name", name_val);
-        zjs_set_property(error_obj, "message", message_val);
+        jerry_value_t error_obj = zjs_custom_error(error_name, error_message);
         zjs_set_property(event, "error", error_obj);
         jerry_value_t rval = jerry_call_function(func, obj, &event, 1);
         if (jerry_value_has_error_flag(rval)) {
-            ERR_PRINT("calling onerrorhange\n");
+            ERR_PRINT("calling onerror\n");
         }
         jerry_release_value(rval);
-        jerry_release_value(name_val);
-        jerry_release_value(message_val);
         jerry_release_value(error_obj);
         jerry_release_value(event);
     }
