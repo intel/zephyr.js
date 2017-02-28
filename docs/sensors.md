@@ -25,17 +25,17 @@ specific API functions.
 
 Sensor Interface
 ```javascript
-interface Sensor : EventTarget {
-    readonly attribute SensorState state;  // The current state of Sensor object
-    void start();                          // Starts the sensor
-    void stop();                           // Stops the sensor
-    attribute EventHandler onchange;       // Event handler for change events
-    attribute EventHandler onactivate;     // Event handler for activate events
-    attribute EventHandler onerror;        // Event handler for error events
+interface Sensor {
+    attribute SensorState state;            // The current state of Sensor object
+    void start();                           // Starts the sensor
+    void stop();                            // Stops the sensor
+    attribute ChangeCallback onchange;      // Callback handler for change events
+    attribute ActivateCallback onactivate;  // Callback handler for activate events
+    attribute ErrorCallback onerror;        // Callback handler for error events
 };
 
 dictionary SensorOptions {
-    double frequency;                      // The requested polling frequency, default is 20 if unset
+    double frequency;  // The requested polling frequency, default is 20 if unset
 };
 
 enum SensorState {
@@ -46,47 +46,55 @@ enum SensorState {
     "errored"
 };
 
-interface SensorErrorEvent : Event {
-    readonly attribute Error error;
-};
-```
-AccelerometerSensor Interface
-```javascript
-[Constructor(optional AccelerometerSensorOptions accelerometerSensorOptions)]
-interface AccelerometerSensor : Sensor {
-    readonly attribute AccelerometerSensorReading reading;
-    readonly attribute boolean includesGravity;
+interface SensorErrorEvent {
+    attribute Error error;
 };
 
-dictionary AccelerometerSensorOptions : SensorOptions  {
+callback ChangeCallback = void(SensorReading value);
+callback ActivateCallback = void();
+callback ErrorCallback = void(SensorErrorEvent error);
+```
+Accelerometer Interface
+```javascript
+[Constructor(optional AccelerometerOptions accelerometerOptions)]
+interface Accelerometer : Sensor {
+    attribute AccelerometerReading reading;
+    attribute boolean includesGravity;
+};
+
+dictionary AccelerometerOptions : SensorOptions  {
    boolean includeGravity = true;  // not supported, will throw an error if set
 };
 
-interface AccelerometerSensorReading : SensorReading {
-    readonly attribute double x;
-    readonly attribute double y;
-    readonly attribute double z;
+interface AccelerometerrReading : SensorReading {
+    attribute double x;
+    attribute double y;
+    attribute double z;
 };
+
+callback ChangeCallback = void(AccelerometerReading value);
 ```
 
 GyroscopeSensor Interface
 ```javascript
 [Constructor(optional SensorOptions sensorOptions)]
 interface GyroscopeSensor : Sensor {
-    readonly attribute GyroscopeSensorReading reading;
+    attribute GyroscopeSensorReading reading;
 };
 
 interface GyroscopeSensorReading : SensorReading {
-    readonly attribute double x;
-    readonly attribute double y;
-    readonly attribute double z;
+    attribute double x;
+    attribute double y;
+    attribute double z;
 };
+
+callback ChangeCallback = void(GyroscopeReading value);
 ```
 AmbientLightSensor Interface
 ```javascript
 [Constructor(optional SensorOptions sensorOptions)]
 interface AmbientLightSensor : Sensor {
-    readonly attribute AmbientLightSensorReading reading;
+    attribute AmbientLightSensorReading reading;
 };
 
 dictionary AmbientLightSensorOptions : SensorOptions  {
@@ -94,8 +102,10 @@ dictionary AmbientLightSensorOptions : SensorOptions  {
 };
 
 interface AmbientLightSensorReading : SensorReading {
-    readonly attribute double illuminance;
+    attribute double illuminance;
 };
+
+callback ChangeCallback = void(AmbientLightSensorReading value);
 ```
 
 API Documentation
