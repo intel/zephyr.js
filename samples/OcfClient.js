@@ -46,4 +46,3 @@ client.findResources({ resourceType:"core.light" }, onfound).then(function(resou
 }).catch(function(error) {
     console.log("findResources() returned an error: " + error.name);
 });
-
