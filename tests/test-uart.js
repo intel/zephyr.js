@@ -5,21 +5,7 @@
 console.log("UART APIs test");
 
 var board = require("uart");
-
-var total = 0;
-var passed = 0;
-
-function assert(actual, description) {
-    total += 1;
-
-    var label = "\033[1m\033[31mFAIL\033[0m";
-    if (actual === true) {
-        passed += 1;
-        label = "\033[1m\033[32mPASS\033[0m";
-    }
-
-    console.log(label + " - " + description);
-}
+var assert = require("Assert.js");
 
 board.init({ port: "value", baud: 115200 }).then(function () {
     assert(false, "uart: set port as value");
@@ -66,7 +52,7 @@ board.init({ port: "tty0", baud: 115200 }).then(function (uart) {
         assert(error !== null && typeof error === "object",
                     "uart: catch error for UART.write");
 
-        console.log("TOTAL: " + passed + " of " + total + " passed");
+        assert.result();
     });
 }).catch(function (error) {
     assert(false, "uart: set init as tty0 and 115200");

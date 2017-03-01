@@ -8,37 +8,12 @@ console.log("Wire IO4 to A0!");
 var aio = require("aio");
 var gpio = require("gpio");
 var pins = require("arduino101_pins");
-
-var total = 0;
-var passed = 0;
-
-function assert(actual, description) {
-    total += 1;
-
-    var label = "\033[1m\033[31mFAIL\033[0m";
-    if (actual === true) {
-        passed += 1;
-        label = "\033[1m\033[32mPASS\033[0m";
-    }
-
-    console.log(label + " - " + description);
-}
-
-function expectThrow(description, func) {
-    var threw = false;
-    try {
-        func();
-    }
-    catch (err) {
-        threw = true;
-    }
-    assert(threw, description);
-}
+var assert = require("Assert.js");
 
 // test AIO open
-expectThrow("open: undefined pin", function () {
+assert.throws(function() {
     aio.open({ pin: 1024 });
-});
+}, "open: undefined pin");
 
 var pinA = aio.open({ pin: pins.A0 });
 assert(pinA !== null && typeof pinA === "object", "open: defined pin");
@@ -122,7 +97,7 @@ var onInterval = setInterval(function () {
             assert(readAsyncflag !== readFlag,
                    "aiopin: read by asynchronously");
 
-            console.log("TOTAL: " + passed + " of " + total + " passed");
+            assert.result();
         });
 
         clearInterval(onInterval);

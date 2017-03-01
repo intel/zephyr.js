@@ -19,33 +19,7 @@
 console.log("Grove LCD is required...");
 
 var i2c = require("i2c");
-
-var total = 0;
-var passed = 0;
-
-function assert(actual, description) {
-    total += 1;
-
-    var label = "\033[1m\033[31mFAIL\033[0m";
-    if (actual === true) {
-        passed += 1;
-        label = "\033[1m\033[32mPASS\033[0m";
-    }
-
-    console.log(label + " - " + description);
-}
-
-function expectThrow(description, func) {
-    var threw = false;
-    try {
-        func();
-    }
-    catch (err) {
-        threw = true;
-    }
-    assert(threw, description);
-}
-
+var assert = require("Assert.js");
 
 // I2CBus bus and speed
 var speeds = [10, 100, 400, 1000, 34000];
@@ -102,8 +76,8 @@ var size = 8;
 readValue = i2cDevice.burstRead(GROVE_RGB_BACKLIGHT_ADDR, size, 0x00);
 assert(!!readValue && readValue.length === size, "I2C: burstRead()");
 
-expectThrow("I2C: open invalid bus", function () {
+assert.throws(function () {
     i2c.open({ bus: 1, speed: 100 });
-});
+}, "I2C: open invalid bus");
 
-console.log("TOTAL: " + passed + " of " + total + " passed");
+assert.result();

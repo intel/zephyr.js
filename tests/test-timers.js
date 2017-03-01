@@ -2,28 +2,7 @@
 
 // Timers tests
 
-var total = 0;
-var passed = 0;
-function assert(actual, description) {
-    total += 1;
-    var label = "\033[1m\033[31mFAIL\033[0m";
-    if (actual === true) {
-        passed += 1;
-        label = "\033[1m\033[32mPASS\033[0m";
-    }
-    console.log(label + " - " + description);
-}
-
-function expectThrow(description, func) {
-    var threw = false;
-    try {
-        func();
-    }
-    catch (e) {
-        threw = true;
-    }
-    assert(threw, description);
-}
+var assert = require("Assert.js");
 
 // test setInterval and clearInterval
 var countFlag = 10;
@@ -53,9 +32,9 @@ var testIntervalMoreArg = setInterval(function (arg1, arg2) {
     }
 }, 100, IntervalArg1, IntervalArg2);
 
-expectThrow("clearInterval: intervalID does not exist", function () {
+assert.throws(function () {
     clearInterval(NotExistedIntervalID);
-});
+}, "clearInterval: intervalID does not exist");
 
 // test setTimeout
 setTimeout(function () {
@@ -97,10 +76,10 @@ setTimeout(function () {
     assert(clearFlag, "clearTimeout: timeoutID");
 }, 1500);
 
-expectThrow("clearTimeout: timeoutID does not exist", function () {
+assert.throws(function () {
     clearTimeout(NotExistedTimeoutID);
-});
+}, "clearTimeout: timeoutID does not exist");
 
 setTimeout(function () {
-    console.log("TOTAL: " + passed + " of " + total + " passed");
+    assert.result();
 }, 2000);

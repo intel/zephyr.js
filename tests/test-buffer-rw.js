@@ -2,31 +2,7 @@
 
 // Buffer read/write tests
 
-var total = 0;
-var passed = 0;
-
-function assert(actual, description) {
-    total += 1;
-
-    var label = "\033[1m\033[31mFAIL\033[0m";
-    if (actual === true) {
-        passed += 1;
-        label = "\033[1m\033[32mPASS\033[0m";
-    }
-
-    console.log(label + " - " + description);
-}
-
-function expectThrow(description, func) {
-    var threw = false;
-    try {
-        func();
-    }
-    catch (err) {
-        threw = true;
-    }
-    assert(threw, description);
-}
+var assert = require("Assert.js");
 
 // setup buffer with 0xdeadbeef, then 0xfadedcab
 var buf = Buffer(8);
@@ -40,22 +16,22 @@ buf.writeUInt8(0xdc, 6);
 buf.writeUInt8(0xab, 7);
 
 // test readUInt8 / writeUInt8
-expectThrow("readUInt8: invalid argument", function () {
+assert.throws(function () {
     buf.readUInt8('whale');
-});
-expectThrow("readUInt8: out of bounds", function () {
+}, "readUInt8: invalid argument");
+assert.throws(function () {
     buf.readUInt8(9);
-});
+}, "readUInt8: out of bounds");
 
-expectThrow("writeUInt8: invalid first argument", function () {
+assert.throws(function () {
     buf.writeUInt8('bowl');
-});
-expectThrow("writeUInt8: invalid second argument", function () {
+}, "writeUInt8: invalid first argument");
+assert.throws(function () {
     buf.writeUInt8(42, 'petunias');
-});
-expectThrow("readUInt8: out of bounds", function () {
+}, "writeUInt8: invalid second argument");
+assert.throws(function () {
     buf.writeUInt8(42, 9);
-});
+}, "readUInt8: out of bounds");
 
 assert(buf.readUInt8()  == 0xde, "readUInt8: read a byte, no arg");
 assert(buf.readUInt8(0) == 0xde, "readUInt8: read a byte, offset 0");
@@ -131,4 +107,4 @@ assert(buf.readUInt8(4) == 0xce && buf.readUInt8(5) == 0xfa &&
        buf.readUInt8(6) == 0xad && buf.readUInt8(7) == 0xbe,
        "writeUInt32LE: write long, offset 4");
 
-console.log("TOTAL: " + passed + " of " + total + " passed");
+assert.result();

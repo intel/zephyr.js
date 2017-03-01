@@ -2,31 +2,7 @@
 
 // Buffer Testing
 
-var total = 0;
-var passed = 0;
-
-function assert(actual, description) {
-    total += 1;
-
-    var label = "\033[1m\033[31mFAIL\033[0m";
-    if (actual === true) {
-        passed += 1;
-        label = "\033[1m\033[32mPASS\033[0m";
-    }
-
-    console.log(label + " - " + description);
-}
-
-function expectThrow(description, func) {
-    var threw = false;
-    try {
-        func();
-    }
-    catch (err) {
-        threw = true;
-    }
-    assert(threw, description);
-}
+var assert = require("Assert.js");
 
 // Attribute: readonly unsigned long length
 var buff;
@@ -75,17 +51,17 @@ for(var i = 0; i < uints.length; i++) {
 }
 
 
-expectThrow("Error thrown when the offset of writeUInt8() " +
-            "is outside the bounds of the Buffer", function () {
+assert.throws(function () {
     // write beyond end of buffer
     buff.writeUInt8(0, uints.length);
-});
+}, "Error thrown when the offset of writeUInt8() " +
+   "is outside the bounds of the Buffer");
 
-expectThrow("Error thrown when the offset of readUInt8() " +
-            "is outside the bounds of the Buffer", function () {
+assert.throws(function () {
     // read beyond end of buffer
     buff.readUInt8(uints.length);
-});
+}, "Error thrown when the offset of readUInt8() " +
+   "is outside the bounds of the Buffer");
 
 // Function: string toString(string encoding)
 var hexs = [[0, "00"],
@@ -103,9 +79,9 @@ assert(buff.toString('hex') === expected,
        "The value of toString('hex') expected:" + expected +
        " got:" + buff.toString('hex'));
 
-expectThrow("Error thrown when 'hex' is not given to toString()", function () {
+assert.throws(function () {
     // unsupported encoding
     buff.toString("utf8");
-});
+}, "Error thrown when 'hex' is not given to toString()");
 
-console.log("TOTAL: " + passed + " of " + total + " passed");
+assert.result();
