@@ -30,7 +30,9 @@ enum sensor_state {
 };
 
 typedef struct sensor_handle {
-    zjs_callback_id id;
+    zjs_callback_id onchange_cb_id;
+    zjs_callback_id onstart_cb_id;
+    zjs_callback_id onstop_cb_id;
     enum sensor_channel channel;
     int frequency;
     enum sensor_state state;
@@ -81,6 +83,20 @@ static void zjs_sensor_free_handles(sensor_handle_t *handle)
         jerry_release_value(tmp->sensor_obj);
         zjs_free(tmp);
     }
+}
+
+static sensor_handle_t *zjs_sensor_get_handle(jerry_value_t obj)
+{
+    uintptr_t ptr;
+    sensor_handle_t *handle = NULL;
+    if (jerry_get_object_native_handle(obj, &ptr)) {
+        handle = (sensor_handle_t *)ptr;
+        if (handle) {
+            return handle;
+        }
+    }
+    ERR_PRINT("cannot find handle");
+    return NULL;
 }
 
 static bool zjs_sensor_ipm_send_sync(zjs_ipm_message_t* send,
@@ -178,11 +194,9 @@ static void zjs_sensor_set_state(jerry_value_t obj, enum sensor_state state)
     if (jerry_value_is_function(func)) {
         // if onstatechange exists, call it
         jerry_value_t new_state = jerry_create_string(state_str);
-        jerry_value_t rval = jerry_call_function(func, obj, &new_state, 1);
-        if (jerry_value_has_error_flag(rval)) {
-            ERR_PRINT("calling onstatechange\n");
-        }
-        jerry_release_value(rval);
+        zjs_callback_id id = zjs_add_callback_once(func, obj, NULL, NULL);
+        zjs_signal_callback(id, &new_state, sizeof(new_state));
+        jerry_release_value(new_state);
     }
     jerry_release_value(func);
 
@@ -191,11 +205,8 @@ static void zjs_sensor_set_state(jerry_value_t obj, enum sensor_state state)
         func = zjs_get_property(obj, "onactivate");
         if (jerry_value_is_function(func)) {
             // if onactivate exists, call it
-            jerry_value_t rval = jerry_call_function(func, obj, NULL, 0);
-            if (jerry_value_has_error_flag(rval)) {
-                ERR_PRINT("calling onactivate\n");
-            }
-            jerry_release_value(rval);
+            zjs_callback_id id = zjs_add_callback_once(func, obj, NULL, NULL);
+            zjs_signal_callback(id, NULL, 0);
         }
         jerry_release_value(func);
     }
@@ -262,11 +273,8 @@ static void zjs_sensor_trigger_error(jerry_value_t obj,
         zjs_set_property(error_obj, "name", name_val);
         zjs_set_property(error_obj, "message", message_val);
         zjs_set_property(event, "error", error_obj);
-        jerry_value_t rval = jerry_call_function(func, obj, &event, 1);
-        if (jerry_value_has_error_flag(rval)) {
-            ERR_PRINT("calling onerrorhange\n");
-        }
-        jerry_release_value(rval);
+        zjs_callback_id id = zjs_add_callback_once(func, obj, NULL, NULL);
+        zjs_signal_callback(id, &event, 1);
         jerry_release_value(name_val);
         jerry_release_value(message_val);
         jerry_release_value(error_obj);
@@ -321,10 +329,10 @@ static void zjs_sensor_signal_callbacks(struct sensor_data *data)
             xyz[0] = data->reading.x;
             xyz[1] = data->reading.y;
             xyz[2] = data->reading.z;
-            zjs_signal_callback(h->id, &xyz, sizeof(xyz));
+            zjs_signal_callback(h->onchange_cb_id, &xyz, sizeof(xyz));
         } else {
             double dval = data->reading.dval;
-            zjs_signal_callback(h->id, &dval, sizeof(dval));
+            zjs_signal_callback(h->onchange_cb_id, &dval, sizeof(dval));
         }
     }
 }
@@ -357,6 +365,84 @@ static void zjs_sensor_callback_free(uintptr_t handle)
     zjs_free((sensor_handle_t *)handle);
 }
 
+static void zjs_sensor_onstart_c_callback(void *h, void *argv)
+{
+    sensor_handle_t *handle = (sensor_handle_t *)h;
+    if (!handle) {
+        ERR_PRINT("handle not found\n");
+        return;
+    }
+
+    jerry_value_t obj = handle->sensor_obj;
+    zjs_ipm_message_t send;
+    send.type = TYPE_SENSOR_START;
+    send.data.sensor.channel = handle->channel;
+    send.data.sensor.frequency = handle->frequency;
+    if (handle->channel == SENSOR_CHAN_LIGHT) {
+        // AmbientLightSensor needs provide AIO pin value
+        uint32_t pin;
+        if (!zjs_obj_get_uint32(obj, "pin", &pin)) {
+            zjs_sensor_trigger_error(obj, "DataError",
+                                     "pin not found");
+            return;
+        }
+        send.data.sensor.pin = pin;
+    }
+
+    int error = zjs_sensor_call_remote_function(&send);
+    if (error != ERROR_IPM_NONE) {
+        if (error == ERROR_IPM_OPERATION_NOT_ALLOWED) {
+            zjs_sensor_trigger_error(obj, "NotAllowedError",
+                                     "permission denied");
+        } else {
+            zjs_sensor_trigger_error(obj, "UnknownError",
+                                     "IPM failed");
+        }
+    }
+
+    zjs_sensor_set_state(obj, SENSOR_STATE_ACTIVATED);
+}
+
+static void zjs_sensor_onstop_c_callback(void *h, void *argv)
+{
+    sensor_handle_t *handle = (sensor_handle_t *)h;
+    if (!handle) {
+        ERR_PRINT("handle not found\n");
+        return;
+    }
+
+    jerry_value_t obj = handle->sensor_obj;
+    zjs_ipm_message_t send;
+    send.type = TYPE_SENSOR_STOP;
+    send.data.sensor.channel = handle->channel;
+
+    jerry_value_t reading_val = jerry_create_null();
+    zjs_set_property(obj, "reading", reading_val);
+    jerry_release_value(reading_val);
+    if (handle->channel == SENSOR_CHAN_LIGHT) {
+        // AmbientLightSensor needs provide AIO pin value
+        uint32_t pin;
+        if (!zjs_obj_get_uint32(obj, "pin", &pin)) {
+            zjs_sensor_trigger_error(obj, "DataError",
+                                     "pin not found");
+            return;
+        }
+        send.data.sensor.pin = pin;
+    }
+
+    int error = zjs_sensor_call_remote_function(&send);
+    if (error != ERROR_IPM_NONE) {
+        if (error == ERROR_IPM_OPERATION_NOT_ALLOWED) {
+            zjs_sensor_trigger_error(obj, "NotAllowedError",
+                                     "permission denied");
+        } else {
+            zjs_sensor_trigger_error(obj, "UnknownError",
+                                     "IPM failed");
+        }
+        zjs_sensor_set_state(obj, SENSOR_STATE_ERRORED);
+    }
+}
+
 static jerry_value_t zjs_sensor_start(const jerry_value_t function_obj,
                                       const jerry_value_t this,
                                       const jerry_value_t argv[],
@@ -369,41 +455,13 @@ static jerry_value_t zjs_sensor_start(const jerry_value_t function_obj,
         return ZJS_UNDEFINED;
     }
 
-    uintptr_t ptr;
-    sensor_handle_t *handle = NULL;
-    if (jerry_get_object_native_handle(this, &ptr)) {
-         handle = (sensor_handle_t *)ptr;
-         if (!handle) {
-             return zjs_error("zjs_sensor_start: cannot find handle");
-         }
+    sensor_handle_t *handle = zjs_sensor_get_handle(this);
+    if (!handle) {
+         return zjs_error("cannot find handle");
     }
 
     zjs_sensor_set_state(this, SENSOR_STATE_ACTIVATING);
-    zjs_ipm_message_t send;
-    send.type = TYPE_SENSOR_START;
-    send.data.sensor.channel = handle->channel;
-    send.data.sensor.frequency = handle->frequency;
-    if (handle->channel == SENSOR_CHAN_LIGHT) {
-        // AmbientLightSensor needs provide AIO pin value
-        uint32_t pin;
-        if (!zjs_obj_get_uint32(this, "pin", &pin)) {
-            return zjs_error("zjs_sensor_start: pin not found");
-        }
-        send.data.sensor.pin = pin;
-    }
-    int error = zjs_sensor_call_remote_function(&send);
-    if (error != ERROR_IPM_NONE) {
-        if (error == ERROR_IPM_OPERATION_NOT_ALLOWED) {
-            zjs_sensor_trigger_error(this, "NotAllowedError",
-                                     "permission denied");
-            return ZJS_UNDEFINED;
-        }
-        else {
-            // throw exception for all other errors
-            return zjs_error("zjs_sensor_start: operation failed");
-        }
-    }
-    zjs_sensor_set_state(this, SENSOR_STATE_ACTIVATED);
+    zjs_signal_callback(handle->onstart_cb_id, NULL, 0);
     return ZJS_UNDEFINED;
 }
 
@@ -419,27 +477,15 @@ static jerry_value_t zjs_sensor_stop(const jerry_value_t function_obj,
         return ZJS_UNDEFINED;
     }
 
-    uintptr_t ptr;
-    sensor_handle_t *handle = NULL;
-    if (jerry_get_object_native_handle(this, &ptr)) {
-         handle = (sensor_handle_t *)ptr;
-         if (!handle) {
-             return zjs_error("zjs_sensor_stop: cannot find handle");
-         }
+    sensor_handle_t *handle = zjs_sensor_get_handle(this);
+    if (!handle) {
+         return zjs_error("cannot find handle");
     }
 
-    zjs_ipm_message_t send;
-    send.type = TYPE_SENSOR_STOP;
-    send.data.sensor.channel = handle->channel;
-    int error = zjs_sensor_call_remote_function(&send);
-    if (error != ERROR_IPM_NONE) {
-        // throw exception for all other errors
-        return zjs_error("zjs_sensor_start: operation failed");
-    }
-    jerry_value_t reading_val = jerry_create_null();
-    zjs_set_property(this, "reading", reading_val);
-    jerry_release_value(reading_val);
+    // we have to set state to idle first and then check if error occued
+    // in the onstop_c_callback()
     zjs_sensor_set_state(this, SENSOR_STATE_IDLE);
+    zjs_signal_callback(handle->onstop_cb_id, NULL, 0);
     return ZJS_UNDEFINED;
 }
 
@@ -450,7 +496,7 @@ static jerry_value_t zjs_sensor_create(const jerry_value_t function_obj,
                                        enum sensor_channel channel)
 {
     double frequency = DEFAULT_SAMPLING_FREQUENCY;
-    uint32_t pin;
+    uint32_t pin = -1;
 
     if (argc < 1 && channel == SENSOR_CHAN_LIGHT) {
         // AmbientLightSensor requires ADC pin object
@@ -487,7 +533,7 @@ static jerry_value_t zjs_sensor_create(const jerry_value_t function_obj,
 
         if (channel == SENSOR_CHAN_LIGHT) {
             if (!zjs_obj_get_uint32(options, "pin", &pin)) {
-                return zjs_error("zjs_sensor_create: missing required field (pin)");
+                pin = -1;
             }
         }
     }
@@ -508,14 +554,16 @@ static jerry_value_t zjs_sensor_create(const jerry_value_t function_obj,
     zjs_set_property(sensor_obj, "reading", reading_val);
     jerry_release_value(reading_val);
 
-    if (channel == SENSOR_CHAN_LIGHT) {
+    if (channel == SENSOR_CHAN_LIGHT && pin != -1) {
         zjs_obj_add_number(sensor_obj, pin, "pin");
     }
 
     jerry_set_prototype(sensor_obj, zjs_sensor_prototype);
 
     sensor_handle_t* handle = zjs_sensor_alloc_handle(channel);
-    handle->id = zjs_add_c_callback(handle, zjs_sensor_onchange_c_callback);
+    handle->onchange_cb_id = zjs_add_c_callback(handle, zjs_sensor_onchange_c_callback);
+    handle->onstart_cb_id = zjs_add_c_callback(handle, zjs_sensor_onstart_c_callback);
+    handle->onstop_cb_id = zjs_add_c_callback(handle, zjs_sensor_onstop_c_callback);
     handle->channel = channel;
     handle->frequency = frequency;
     handle->sensor_obj = jerry_acquire_value(sensor_obj);
