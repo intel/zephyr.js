@@ -128,18 +128,24 @@ void zjs_init_callbacks(void)
     return;
 }
 
-void zjs_edit_js_func(zjs_callback_id id, jerry_value_t func)
+bool zjs_edit_js_func(zjs_callback_id id, jerry_value_t func)
 {
-    if (id != -1) {
+    if (id != -1 && cb_map[id]) {
         jerry_release_value(cb_map[id]->js_func);
         cb_map[id]->js_func = jerry_acquire_value(func);
+        return true;
+    } else {
+        return false;
     }
 }
 
-void zjs_edit_callback_handle(zjs_callback_id id, void* handle)
+bool zjs_edit_callback_handle(zjs_callback_id id, void* handle)
 {
     if (id != -1 && cb_map[id]) {
         cb_map[id]->handle = handle;
+        return true;
+    } else {
+        return false;
     }
 }
 

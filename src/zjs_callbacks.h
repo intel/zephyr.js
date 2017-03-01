@@ -127,16 +127,20 @@ zjs_callback_id zjs_add_callback_once(jerry_value_t js_func,
  *
  * @param id            ID of callback
  * @param func          New JS function
+ *
+ * @return              true if edit was successful
  */
-void zjs_edit_js_func(zjs_callback_id id, jerry_value_t func);
+bool zjs_edit_js_func(zjs_callback_id id, jerry_value_t func);
 
 /*
  * Change a callback ID's native handle
  *
  * @param id            ID of callback
  * @param handle        New callback handle
+ *
+ * @return              true if edit was successful
  */
-void zjs_edit_callback_handle(zjs_callback_id id, void* handle);
+bool zjs_edit_callback_handle(zjs_callback_id id, void* handle);
 
 /*
  * Remove a function that was registered by zjs_add_callback(). If you remove a
