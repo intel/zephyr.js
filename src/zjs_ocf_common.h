@@ -39,7 +39,8 @@ struct props_handle {
     handler = new_ocf_handler(NULL); \
     zjs_make_promise(promise, post_ocf_promise, handler); \
     jerry_value_t error = make_ocf_error(err_name, err_msg, NULL); \
-    zjs_reject_promise(promise, &error, 1);
+    zjs_reject_promise(promise, &error, 1); \
+    jerry_release_value(error);
 
 /*
  * Test if value at index is a double or integer

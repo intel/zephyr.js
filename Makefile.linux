@@ -101,7 +101,7 @@ LINUX_INCLUDES += 	-I$(OCF_ROOT)/deps/tinydtls \
 
 include Makefile.ocf_linux
 
-LINUX_DEFINES += -DOC_SERVER -DBUILD_MODULE_OCF
+LINUX_DEFINES += -DOC_SERVER -DOC_CLIENT -DBUILD_MODULE_OCF
 endif
 
 .PHONY: all

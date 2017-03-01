@@ -11,7 +11,6 @@ ccflags-y += -I$(OCF_ROOT)/port/zephyr/src \
              -I$(OCF_ROOT)/deps/tinydtls
 
 ccflags-y += -DWITH_OCF  \
-             -DOC_SERVER \
              -DNDEBUG
 
 ifneq ($(BLE_ADDR), none)
