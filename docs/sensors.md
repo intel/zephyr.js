@@ -23,7 +23,7 @@ Web IDL
 This IDL provides an overview of the interface; see below for documentation of
 specific API functions.
 
-Sensor Interface
+####Sensor Interface
 ```javascript
 interface Sensor {
     readonly attribute SensorState state;   // The current state of Sensor object
@@ -54,7 +54,7 @@ callback ChangeCallback = void(SensorReading value);
 callback ActivateCallback = void();
 callback ErrorCallback = void(SensorErrorEvent error);
 ```
-**Accelerometer Interface**
+####Accelerometer Interface
 ```javascript
 [Constructor(optional AccelerometerOptions accelerometerOptions)]
 interface Accelerometer : Sensor {
@@ -74,8 +74,7 @@ interface AccelerometerrReading : SensorReading {
 
 callback ChangeCallback = void(AccelerometerReading value);
 ```
-
-**GyroscopeSensor Interface**
+####GyroscopeSensor Interface
 ```javascript
 [Constructor(optional SensorOptions sensorOptions)]
 interface GyroscopeSensor : Sensor {
@@ -90,7 +89,7 @@ interface GyroscopeSensorReading : SensorReading {
 
 callback ChangeCallback = void(GyroscopeReading value);
 ```
-**AmbientLightSensor Interface**
+####AmbientLightSensor Interface
 ```javascript
 [Constructor(optional SensorOptions sensorOptions)]
 interface AmbientLightSensor : Sensor {
