@@ -57,7 +57,7 @@ callback ErrorCallback = void(SensorErrorEvent error);
 Accelerometer Interface
 ```javascript
 [Constructor(optional AccelerometerOptions accelerometerOptions)]
-interface Accelerometer : Sensor {
+interface **Accelerometer** : Sensor {
     attribute AccelerometerReading reading;
     attribute boolean includesGravity;
 };
@@ -78,7 +78,7 @@ callback ChangeCallback = void(AccelerometerReading value);
 GyroscopeSensor Interface
 ```javascript
 [Constructor(optional SensorOptions sensorOptions)]
-interface GyroscopeSensor : Sensor {
+interface **GyroscopeSensor** : Sensor {
     attribute GyroscopeSensorReading reading;
 };
 
@@ -93,7 +93,7 @@ callback ChangeCallback = void(GyroscopeReading value);
 AmbientLightSensor Interface
 ```javascript
 [Constructor(optional SensorOptions sensorOptions)]
-interface AmbientLightSensor : Sensor {
+interface **AmbientLightSensor** : Sensor {
     attribute AmbientLightSensorReading reading;
 };
 
