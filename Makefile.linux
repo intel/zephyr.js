@@ -21,6 +21,7 @@ CORE_SRC +=	src/zjs_buffer.c \
 		src/zjs_promise.c \
 		src/zjs_script.c \
 		src/zjs_timers.c \
+		src/zjs_test_promise.c \
 		src/zjs_unit_tests.c \
 		src/zjs_util.c
 
@@ -46,7 +47,8 @@ LINUX_DEFINES +=	-DZJS_LINUX_BUILD \
 			-DBUILD_MODULE_PERFORMANCE \
 			-DBUILD_MODULE_CONSOLE \
 			-DZJS_PRINT_FLOATS \
-			-DBUILD_MODULE_BUFFER
+			-DBUILD_MODULE_BUFFER \
+			-DBUILD_MODULE_TEST_PROMISE
 
 LINUX_FLAGS += 	-fno-asynchronous-unwind-tables \
 		-fno-omit-frame-pointer \
@@ -114,7 +116,7 @@ $(BUILD_DIR)/%.o:%.c
 
 .PHONY: linux
 linux: $(BUILD_OBJ)
-	@cd deps/jerryscript; python ./tools/build.py --error-messages ON $(VERBOSE);
+	@cd deps/jerryscript; python ./tools/build.py --error-messages ON $(VERBOSE) --mem-heap 16;
 	@echo [LD] $(BUILD_DIR)/jslinux
 	@gcc $(LINUX_INCLUDES) $(JERRY_LIB_PATH) -o $(BUILD_DIR)/jslinux $(BUILD_OBJ) $(LINUX_FLAGS) $(CFLAGS) $(LINUX_DEFINES) $(LINUX_LIBS)
 
