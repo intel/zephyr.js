@@ -28,8 +28,6 @@ obj-y += ../../deps/zephyr/samples/usb/webusb/src/webusb_serial.o
 obj-y += webusb-handler.o
 endif
 
-obj-y += main-zephyr.o
-
 obj-y += file-utils.o
 obj-y += jerry-code.o
 

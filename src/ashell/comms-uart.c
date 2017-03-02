@@ -61,12 +61,6 @@ extern void __stdout_hook_install(int(*fn)(int));
 
 static const char banner[] = "Zephyr.js DEV MODE " __DATE__ " " __TIME__ "\r\n";
 
-const char WRONG_TERMINAL_WARNING[] = "\n" \
-    "Warning: The JavaScript terminal is in a different interface.\n" \
-    "Examples:\n" \
-    "\tMac   /dev/cu.usbmodem\n" \
-    "\tLinux /dev/ttyACM0\n";
-
 const char filename[] = "jerry.js";
 
 // Jerryscript in green color
@@ -155,7 +149,6 @@ void fifo_recycle_buffer(struct comms_input *data)
     }
     k_fifo_put(&avail_queue, data);
 }
-
 void comms_clear(void)
 {
     void *data = NULL;
@@ -503,20 +496,11 @@ void comms_runner()
  * Task running the shell in the ACM Uart port
  */
 
-#ifndef ASHELL_MAIN
-void main_development_shell(void);
-#endif
-
 void acm()
 {
     ashell_process_start();
 
     printk(banner);
-
-#ifndef ASHELL_MAIN
-    printk(WRONG_TERMINAL_WARNING);
-    main_development_shell();
-#endif
 
 #ifdef CONFIG_USB_CDC_ACM
     dev_upload = device_get_binding(CONFIG_CDC_ACM_PORT_NAME);
