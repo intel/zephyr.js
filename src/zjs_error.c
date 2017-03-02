@@ -9,7 +9,6 @@ typedef struct {
 } zjs_error_t;
 
 static zjs_error_t error_types[] = {
-    { "AssertionError" },
     { "NetworkError" },
     { "NotSupportedError" },
     { "RangeError" },

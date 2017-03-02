@@ -239,9 +239,9 @@ static jerry_value_t console_assert(const jerry_value_t function_obj,
     if (!b) {
         if (argc > 1) {
             value2str(argv[1], message, MAX_STR_LENGTH, false);
-            return ASSERTION_ERROR(message);
+            return zjs_custom_error("AssertionError", message);
         } else {
-            return ASSERTION_ERROR("console.assert");
+            return zjs_custom_error("AssertionError", "console.assert");
         }
     }
     return ZJS_UNDEFINED;
