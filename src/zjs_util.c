@@ -175,7 +175,7 @@ bool zjs_obj_get_double(jerry_value_t obj, const char *name, double *num)
     jerry_value_t value = zjs_get_property(obj, name);
     bool rval = false;
 
-    if (!jerry_value_has_error_flag(value)) {
+    if (!jerry_value_has_error_flag(value) && jerry_value_is_number(value)) {
         *num = jerry_get_number_value(value);
         rval = true;
     }
@@ -191,7 +191,7 @@ bool zjs_obj_get_uint32(jerry_value_t obj, const char *name, uint32_t *num)
     jerry_value_t value = zjs_get_property(obj, name);
     bool rval = false;
 
-    if (!jerry_value_has_error_flag(value)) {
+    if (!jerry_value_has_error_flag(value) && jerry_value_is_number(value)) {
         *num = (uint32_t)jerry_get_number_value(value);
         rval = true;
     }
@@ -207,7 +207,7 @@ bool zjs_obj_get_int32(jerry_value_t obj, const char *name, int32_t *num)
     jerry_value_t value = zjs_get_property(obj, name);
     bool rval = false;
 
-    if (!jerry_value_has_error_flag(value)) {
+    if (!jerry_value_has_error_flag(value) && jerry_value_is_number(value)) {
         *num = (int32_t)jerry_get_number_value(value);
         rval = true;
     }
