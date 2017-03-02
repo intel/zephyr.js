@@ -30,6 +30,7 @@
 void zjs_set_property(const jerry_value_t obj, const char *str,
                       const jerry_value_t prop);
 jerry_value_t zjs_get_property (const jerry_value_t obj, const char *str);
+bool zjs_delete_property(const jerry_value_t obj, const char *str);
 
 typedef struct zjs_native_func {
     void *function;
