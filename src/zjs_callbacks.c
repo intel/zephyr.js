@@ -59,7 +59,7 @@
 #define CB_FLUSH_ALL 0xff
 
 // FIXME: func_list is really an array :)
-struct zjs_callback_t {
+typedef struct zjs_callback {
     void* handle;
     zjs_post_callback_func post;
     jerry_value_t this;
@@ -72,7 +72,7 @@ struct zjs_callback_t {
     uint8_t flags;      // holds once and type bits
     uint8_t max_funcs;
     uint8_t num_funcs;
-};
+} zjs_callback_t;
 
 #ifdef ZJS_LINUX_BUILD
 static uint8_t args_buffer[ZJS_CALLBACK_BUF_SIZE];
@@ -84,7 +84,7 @@ static uint8_t ring_buf_initialized = 1;
 
 static zjs_callback_id cb_limit = INITIAL_CALLBACK_SIZE;
 static zjs_callback_id cb_size = 0;
-static struct zjs_callback_t** cb_map = NULL;
+static zjs_callback_t** cb_map = NULL;
 
 static int zjs_ringbuf_error_count = 0;
 static int zjs_ringbuf_last_error = 0;
@@ -97,8 +97,8 @@ static zjs_callback_id new_id(void)
     //   can be less than cb_size when callbacks are removed.
     if (cb_size >= cb_limit) {
         cb_limit += CB_CHUNK_SIZE;
-        size_t size = sizeof(struct zjs_callback_t *) * cb_limit;
-        struct zjs_callback_t** new_map = zjs_malloc(size);
+        size_t size = sizeof(zjs_callback_t *) * cb_limit;
+        zjs_callback_t** new_map = zjs_malloc(size);
         if (!new_map) {
             DBG_PRINT("error allocating space for new callback map\n");
             return -1;
@@ -106,7 +106,7 @@ static zjs_callback_id new_id(void)
         DBG_PRINT("callback list size too small, increasing by %d\n",
                   CB_CHUNK_SIZE);
         memset(new_map, 0, size);
-        memcpy(new_map, cb_map, sizeof(struct zjs_callback_t *) * cb_size);
+        memcpy(new_map, cb_map, sizeof(zjs_callback_t *) * cb_size);
         zjs_free(cb_map);
         cb_map = new_map;
     }
@@ -119,9 +119,9 @@ static zjs_callback_id new_id(void)
 void zjs_init_callbacks(void)
 {
     if (!cb_map) {
-        size_t size = sizeof(struct zjs_callback_t *) *
+        size_t size = sizeof(zjs_callback_t *) *
             INITIAL_CALLBACK_SIZE;
-        cb_map = (struct zjs_callback_t**)zjs_malloc(size);
+        cb_map = (zjs_callback_t**)zjs_malloc(size);
         if (!cb_map) {
             DBG_PRINT("error allocating space for CB map\n");
             return;
@@ -233,12 +233,12 @@ zjs_callback_id zjs_add_callback_list(jerry_value_t js_func,
             return -1;
         }
     } else {
-        struct zjs_callback_t* new_cb = zjs_malloc(sizeof(struct zjs_callback_t));
+        zjs_callback_t* new_cb = zjs_malloc(sizeof(zjs_callback_t));
         if (!new_cb) {
             DBG_PRINT("error allocating space for new callback\n");
             return -1;
         }
-        memset(new_cb, 0, sizeof(struct zjs_callback_t));
+        memset(new_cb, 0, sizeof(zjs_callback_t));
 
         SET_ONCE(new_cb->flags, 0);
         SET_TYPE(new_cb->flags, CALLBACK_TYPE_JS);
@@ -269,12 +269,12 @@ zjs_callback_id add_callback(jerry_value_t js_func,
                              zjs_post_callback_func post,
                              uint8_t once)
 {
-    struct zjs_callback_t* new_cb = zjs_malloc(sizeof(struct zjs_callback_t));
+    zjs_callback_t* new_cb = zjs_malloc(sizeof(zjs_callback_t));
     if (!new_cb) {
         DBG_PRINT("error allocating space for new callback\n");
         return -1;
     }
-    memset(new_cb, 0, sizeof(struct zjs_callback_t));
+    memset(new_cb, 0, sizeof(zjs_callback_t));
 
     SET_ONCE(new_cb->flags, (once) ? 1 : 0);
     SET_TYPE(new_cb->flags, CALLBACK_TYPE_JS);
@@ -411,12 +411,12 @@ void zjs_signal_callback(zjs_callback_id id, const void *args, uint32_t size)
 
 zjs_callback_id zjs_add_c_callback(void* handle, zjs_c_callback_func callback)
 {
-    struct zjs_callback_t* new_cb = zjs_malloc(sizeof(struct zjs_callback_t));
+    zjs_callback_t* new_cb = zjs_malloc(sizeof(zjs_callback_t));
     if (!new_cb) {
         DBG_PRINT("error allocating space for new callback\n");
         return -1;
     }
-    memset(new_cb, 0, sizeof(struct zjs_callback_t));
+    memset(new_cb, 0, sizeof(zjs_callback_t));
 
     SET_ONCE(new_cb->flags, 0);
     SET_TYPE(new_cb->flags, CALLBACK_TYPE_C);
