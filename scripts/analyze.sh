@@ -225,7 +225,7 @@ if check_for_require fs || check_config_file ZJS_FS; then
     echo "CONFIG_FILE_SYSTEM=y" >> prj.conf.tmp
     echo "CONFIG_FILE_SYSTEM_FAT=y" >> prj.conf.tmp
     echo "CONFIG_DISK_ACCESS_FLASH=y" >> prj.conf.tmp
-    
+
     echo "CONFIG_FLASH=y" >> prj.conf.tmp
     echo "CONFIG_SPI=y" >> prj.conf.tmp
     echo "CONFIG_GPIO=y" >> prj.conf.tmp
