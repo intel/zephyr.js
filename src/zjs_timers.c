@@ -53,10 +53,7 @@ static zjs_timer_t *add_timer(uint32_t interval,
                               uint32_t argc,
                               const jerry_value_t argv[])
 {
-    int i;
-    zjs_timer_t *tm;
-
-    tm = zjs_malloc(sizeof(zjs_timer_t));
+    zjs_timer_t *tm = zjs_malloc(sizeof(zjs_timer_t));
     if (!tm) {
         ERR_PRINT("out of memory allocating timer struct\n");
         return NULL;
@@ -66,25 +63,35 @@ static zjs_timer_t *add_timer(uint32_t interval,
     tm->interval = interval;
     tm->repeat = repeat;
     tm->completed = false;
-    tm->next = zjs_timers;
-    if (tm->repeat) {
-        tm->callback_id = zjs_add_callback(callback, this, tm, NULL);
-    } else {
-        tm->callback_id = zjs_add_callback_once(callback, this, tm, NULL);
-    }
+    tm->next = NULL;
     tm->argc = argc;
     if (tm->argc) {
         tm->argv = zjs_malloc(sizeof(jerry_value_t) * argc);
-        for (i = 0; i < argc; ++i) {
+        if (!tm->argv) {
+            zjs_free(tm);
+            ERR_PRINT("out of memory allocating timer args\n");
+            return NULL;
+        }
+        for (int i = 0; i < argc; ++i) {
             tm->argv[i] = jerry_acquire_value(argv[i + 2]);
         }
     } else {
         tm->argv = NULL;
     }
 
-    zjs_timers = tm;
+    if (tm->repeat) {
+        tm->callback_id = zjs_add_callback(callback, this, tm, NULL);
+    } else {
+        tm->callback_id = zjs_add_callback_once(callback, this, tm, NULL);
+    }
 
-    DBG_PRINT("adding timer. id=%d, interval=%lu, repeat=%u, argv=%p, argc=%lu\n",
+    zjs_timer_t **pnext = &zjs_timers;
+    while (*pnext != NULL) {
+        pnext = &(*pnext)->next;
+    }
+    *pnext = tm;
+
+    DBG_PRINT("add timer, id=%d, interval=%lu, repeat=%u, argv=%p, argc=%lu\n",
               tm->callback_id, interval, repeat, argv, argc);
     zjs_port_timer_start(&tm->timer, interval);
     return tm;
