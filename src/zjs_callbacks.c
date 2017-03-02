@@ -37,33 +37,41 @@
 #define JS_TYPE_SINGLE      0
 // flag bit value for list JS callback
 #define JS_TYPE_LIST        1
+
 // Bits in flags for once, type (C or JS), and JS type (single or list)
-#define ONCE_BIT    0
-#define TYPE_BIT    1
-#define JS_TYPE_BIT 2
+#define ONCE_BIT       0
+#define TYPE_BIT       1
+#define JS_TYPE_BIT    2
+#define CB_REMOVED_BIT 3
 // Macros to set the bits in flags
-#define SET_ONCE(f, b)      f |= (b << ONCE_BIT)
-#define SET_TYPE(f, b)      f |= (b << TYPE_BIT)
-#define SET_JS_TYPE(f, b)   f |= (b << JS_TYPE_BIT)
+#define SET_ONCE(f, b)     f |= (b << ONCE_BIT)
+#define SET_TYPE(f, b)     f |= (b << TYPE_BIT)
+#define SET_JS_TYPE(f, b)  f |= (b << JS_TYPE_BIT)
+#define SET_CB_REMOVED(f)  f |= (1 << CB_REMOVED_BIT)
 // Macros to get the bits in flags
-#define GET_ONCE(f)         (f & (1 << ONCE_BIT)) >> ONCE_BIT
-#define GET_TYPE(f)         (f & (1 << TYPE_BIT)) >> TYPE_BIT
-#define GET_JS_TYPE(f)      (f & (1 << JS_TYPE_BIT)) >> JS_TYPE_BIT
+#define GET_ONCE(f)        (f & (1 << ONCE_BIT)) >> ONCE_BIT
+#define GET_TYPE(f)        (f & (1 << TYPE_BIT)) >> TYPE_BIT
+#define GET_JS_TYPE(f)     (f & (1 << JS_TYPE_BIT)) >> JS_TYPE_BIT
+#define GET_CB_REMOVED(f)  (f & (1 << CB_REMOVED_BIT)) >> CB_REMOVED_BIT
+
+// ring buffer values for flushing pending callbacks
+#define CB_FLUSH_ONE 0xfe
+#define CB_FLUSH_ALL 0xff
 
 // FIXME: func_list is really an array :)
 struct zjs_callback_t {
-    zjs_callback_id id;
     void* handle;
-    uint8_t flags;      // holds once and type bits
     zjs_post_callback_func post;
     jerry_value_t this;
-    uint8_t max_funcs;
-    uint8_t num_funcs;
     union {
         jerry_value_t js_func;          // Single JS function callback
         jerry_value_t* func_list;       // JS callback list
         zjs_c_callback_func function;   // C callback
     };
+    zjs_callback_id id;
+    uint8_t flags;      // holds once and type bits
+    uint8_t max_funcs;
+    uint8_t num_funcs;
 };
 
 #ifdef ZJS_LINUX_BUILD
@@ -307,8 +315,20 @@ zjs_callback_id zjs_add_callback_once(jerry_value_t js_func,
     return add_callback(js_func, this, handle, post, 1);
 }
 
-void zjs_remove_callback(zjs_callback_id id)
+static void zjs_free_callback(zjs_callback_id id)
 {
+    // effects: frees callback associated with id if it's marked as removed
+    if (id != -1 && cb_map[id] && GET_CB_REMOVED(cb_map[id]->flags)) {
+        zjs_free(cb_map[id]);
+        cb_map[id] = NULL;
+    }
+}
+
+static void zjs_remove_callback_priv(zjs_callback_id id, bool skip_flush)
+{
+    // effects: removes the callback associated with id; if skip_flush is true,
+    //            assumes the callback will be "flushed" elsewhere, that is
+    //            freed and the id reclaimed; otherwise, tries to do it here
     if (id != -1 && cb_map[id]) {
         if (GET_TYPE(cb_map[id]->flags) == CALLBACK_TYPE_JS) {
             if (GET_JS_TYPE(cb_map[id]->flags) == JS_TYPE_SINGLE) {
@@ -323,17 +343,34 @@ void zjs_remove_callback(zjs_callback_id id)
             }
             jerry_release_value(cb_map[id]->this);
         }
-        zjs_free(cb_map[id]);
-        cb_map[id] = NULL;
+        SET_CB_REMOVED(cb_map[id]->flags);
+        if (!skip_flush) {
+            int ret = zjs_port_ring_buf_put(&ring_buffer, (uint16_t)id,
+                                            CB_FLUSH_ONE, NULL, 0);
+            if (ret) {
+                // couldn't add flush command, so just free now
+                DBG_PRINT("no room for flush callback %d command\n", id);
+                zjs_free_callback(id);
+            }
+        }
         DBG_PRINT("removing callback id %d\n", id);
     }
 }
 
+void zjs_remove_callback(zjs_callback_id id)
+{
+    zjs_remove_callback_priv(id, false);
+}
+
 void zjs_remove_all_callbacks()
 {
-   for (int i = 0; i < cb_size; i++) {
+    // try posting a command to flush all removed callbacks
+    int ret = zjs_port_ring_buf_put(&ring_buffer, 0, CB_FLUSH_ALL, NULL, 0);
+    bool skip_flush = ret ? false : true;
+
+    for (int i = 0; i < cb_size; i++) {
         if (cb_map[i]) {
-            zjs_remove_callback(i);
+            zjs_remove_callback_priv(i, skip_flush);
         }
     }
 }
@@ -354,7 +391,7 @@ void zjs_signal_callback(zjs_callback_id id, const void *args, uint32_t size)
     }
     int ret = zjs_port_ring_buf_put(&ring_buffer,
                                     (uint16_t)id,
-                                    0,
+                                    0,  // we use value for CB_FLUSH_ONE/ALL
                                     (uint32_t*)args,
                                     (uint8_t)((size + 3) / 4));
     if (ret != 0) {
@@ -427,7 +464,13 @@ void print_callbacks(void)
 
 void zjs_call_callback(zjs_callback_id id, void* data, uint32_t sz)
 {
-    if (id <= cb_size && cb_map[id]) {
+    if (id == -1 || id > cb_size || !cb_map[id]) {
+        ERR_PRINT("callback %d does not exist\n", id);
+    }
+    else if (GET_CB_REMOVED(cb_map[id]->flags)) {
+        DBG_PRINT("callback %d has already been removed\n", id);
+    }
+    else {
         if (GET_TYPE(cb_map[id]->flags) == CALLBACK_TYPE_JS) {
             // Function list callback
             int i;
@@ -457,24 +500,13 @@ void zjs_call_callback(zjs_callback_id id, void* data, uint32_t sz)
                     cb_map[id]->post(cb_map[id]->handle, &ret_val);
                 }
                 if (GET_ONCE(cb_map[id]->flags)) {
-                    zjs_remove_callback(id);
+                    zjs_remove_callback_priv(id, false);
                 }
             }
         } else if (GET_TYPE(cb_map[id]->flags) == CALLBACK_TYPE_C &&
                    cb_map[id]->function) {
             cb_map[id]->function(cb_map[id]->handle, data);
         }
-    } else {
-        // NOTE: This can happen if a callback is removed while one is pending,
-        //   and that's not really an error.
-        // FIXME: But... new_id() could assign the same callback ID out again
-        //   in the meantime, in which case we might call the new callback
-        //   handler above, possibly disastrously expecting a different number
-        //   of arguments. One solution might be to always increase new_id but
-        //   map it to a slot id. (This would be a contender for my recent idea
-        //   about storing key/value map type data within a JS object to keep
-        //   from using malloc for that.)
-        ERR_PRINT("callback does not exist: %d\n", id);
     }
 }
 
@@ -529,9 +561,24 @@ uint8_t zjs_service_callbacks(void)
                             jerry_release_value(data[i]);
                     }
                 } else if (ret == 0) {
-                    // item in ring buffer with size == 0, no args
-                    DBG_PRINT("calling callback with no args, original vals id=%u, size=%u, ret=%i\n", id, size, ret);
-                    zjs_call_callback(id, NULL, 0);
+                    // check for flush commands
+                    switch (value) {
+                    case CB_FLUSH_ONE:
+                        DBG_PRINT("flushed callback %d, freeing\n", id);
+                        zjs_free_callback(id);
+                        break;
+
+                    case CB_FLUSH_ALL:
+                        DBG_PRINT("flushed all callbacks, freeing\n");
+                        for (int i = 0; i < cb_size; i++)
+                            zjs_free_callback(id);
+                        break;
+
+                    default:
+                        // item in ring buffer with size == 0, no args
+                        DBG_PRINT("calling callback with no args, original vals id=%u, size=%u, ret=%i\n", id, size, ret);
+                        zjs_call_callback(id, NULL, 0);
+                    }
                 }
 #ifdef ZJS_PRINT_CALLBACK_STATS
                 if (!header_printed) {
