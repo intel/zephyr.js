@@ -5,11 +5,7 @@
 
 #include "jerry-api.h"
 
-#ifdef ZJS_32_BIT_CALLBACK_ID
-typedef int32_t zjs_callback_id;
-#else
 typedef int16_t zjs_callback_id;
-#endif
 
 /*
  * Function that will be called BEFORE the JS function is called.
