@@ -22,7 +22,7 @@ var i2 = setInterval(function(a, b) {
 }, 1000, 1, 2);
 
 setTimeout(function(a, b) {
-    console.log("Timeout, clearing interval");
+    console.log("Timeout, clearing intervals");
     clearInterval(a);
     clearInterval(b);
 }, 5000, i1, i2);

@@ -19,7 +19,7 @@
 
 typedef struct zjs_timer {
     zjs_port_timer_t timer;
-    jerry_value_t* argv;
+    jerry_value_t *argv;
     uint32_t argc;
     uint32_t interval;
     zjs_callback_id callback_id;
@@ -30,9 +30,9 @@ typedef struct zjs_timer {
 
 static zjs_timer_t *zjs_timers = NULL;
 
-jerry_value_t* pre_timer(void* h, uint32_t* argc)
+jerry_value_t *pre_timer(void *h, uint32_t *argc)
 {
-    zjs_timer_t* handle = (zjs_timer_t*)h;
+    zjs_timer_t *handle = (zjs_timer_t *)h;
     *argc = handle->argc;
     return handle->argv;
 }
@@ -46,12 +46,12 @@ jerry_value_t* pre_timer(void* h, uint32_t* argc)
  * argv         Array of arguments to pass to timer callback function
  * argc         Number of arguments in argv
  */
-static zjs_timer_t* add_timer(uint32_t interval,
+static zjs_timer_t *add_timer(uint32_t interval,
                               jerry_value_t callback,
                               jerry_value_t this,
                               bool repeat,
-                              const jerry_value_t argv[],
-                              uint32_t argc)
+                              uint32_t argc,
+                              const jerry_value_t argv[])
 {
     int i;
     zjs_timer_t *tm;
@@ -134,8 +134,8 @@ void zjs_timers_cleanup()
 
 static jerry_value_t add_timer_helper(const jerry_value_t function_obj,
                                       const jerry_value_t this,
-                                      const jerry_value_t argv[],
                                       const jerry_length_t argc,
+                                      const jerry_value_t argv[],
                                       bool repeat)
 {
     if (argc < 2 || !jerry_value_is_function(argv[0]) ||
@@ -146,7 +146,8 @@ static jerry_value_t add_timer_helper(const jerry_value_t function_obj,
     jerry_value_t callback = argv[0];
     jerry_value_t timer_obj = jerry_create_object();
 
-    zjs_timer_t* handle = add_timer(interval, callback, this, repeat, argv, argc - 2);
+    zjs_timer_t *handle = add_timer(interval, callback, this, repeat,
+                                    argc - 2, argv);
     if (handle->callback_id == -1)
         return zjs_error("native_set_interval_handler: timer alloc failed");
     jerry_set_object_native_handle(timer_obj, (uintptr_t)handle, NULL);
@@ -162,8 +163,8 @@ static jerry_value_t native_set_interval_handler(const jerry_value_t function_ob
 {
     return add_timer_helper(function_obj,
                             this,
-                            argv,
                             argc,
+                            argv,
                             true);
 }
 
@@ -175,8 +176,8 @@ static jerry_value_t native_set_timeout_handler(const jerry_value_t function_obj
 {
     return add_timer_helper(function_obj,
                             this,
-                            argv,
                             argc,
+                            argv,
                             false);
 }
 
@@ -187,7 +188,7 @@ static jerry_value_t native_clear_interval_handler(const jerry_value_t function_
                                                    const jerry_length_t argc)
 {
     jerry_value_t timer_obj = argv[0];
-    zjs_timer_t* handle;
+    zjs_timer_t *handle;
 
     if (!jerry_value_is_object(argv[0])) {
         ERR_PRINT("invalid arguments\n");
