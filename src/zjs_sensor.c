@@ -22,6 +22,7 @@ static struct k_sem sensor_sem;
 static jerry_value_t zjs_sensor_prototype;
 
 enum sensor_state {
+    SENSOR_STATE_UNCONNECTED,
     SENSOR_STATE_IDLE,
     SENSOR_STATE_ACTIVATING,
     SENSOR_STATE_ACTIVATED,
@@ -120,6 +121,8 @@ static enum sensor_state zjs_sensor_get_state(jerry_value_t obj)
     const int BUFLEN = 20;
     char buffer[BUFLEN];
     if (zjs_obj_get_string(obj, "state", buffer, BUFLEN)) {
+        if (!strcmp(buffer, "unconnected"))
+            return SENSOR_STATE_UNCONNECTED;
         if (!strcmp(buffer, "idle"))
             return SENSOR_STATE_IDLE;
         if (!strcmp(buffer, "activating"))
@@ -128,12 +131,13 @@ static enum sensor_state zjs_sensor_get_state(jerry_value_t obj)
             return SENSOR_STATE_ACTIVATED;
         if (!strcmp(buffer, "errored"))
             return SENSOR_STATE_ERRORED;
+        else
+            ERR_PRINT("invalid state set %s\n", buffer);
+    } else {
+        ERR_PRINT("state is undefined\n");
     }
 
-    ERR_PRINT("state not set\n");
-    jerry_value_t state = jerry_create_string("errored");
-    zjs_set_property(obj, "state", state);
-    jerry_release_value(state);
+    zjs_obj_add_readonly_string(obj, "errored", "state");
     return SENSOR_STATE_ERRORED;
 }
 
@@ -145,26 +149,35 @@ static void zjs_sensor_set_state(jerry_value_t obj, enum sensor_state state)
     }
 
     // update state property and trigger onstatechange event
-    jerry_value_t new_state;
+    const char* state_str = NULL;
     switch(state) {
+    case SENSOR_STATE_UNCONNECTED:
+        state_str = "unconnected";
+        break;
     case SENSOR_STATE_IDLE:
-        new_state = jerry_create_string("idle");
+        state_str = "idle";
         break;
     case SENSOR_STATE_ACTIVATING:
-        new_state = jerry_create_string("activating");
+        state_str = "activating";
         break;
     case SENSOR_STATE_ACTIVATED:
-        new_state = jerry_create_string("activated");
+        state_str = "activated";
         break;
     case SENSOR_STATE_ERRORED:
-        new_state = jerry_create_string("errored");
+        state_str = "errored";
         break;
+
+    default:
+        // should never get here
+        ERR_PRINT("invalid state\n");
+        return;
     }
-    zjs_set_property(obj, "state", new_state);
+    zjs_obj_add_readonly_string(obj, state_str, "state");
 
     jerry_value_t func = zjs_get_property(obj, "onstatechange");
     if (jerry_value_is_function(func)) {
         // if onstatechange exists, call it
+        jerry_value_t new_state = jerry_create_string(state_str);
         jerry_value_t rval = jerry_call_function(func, obj, &new_state, 1);
         if (jerry_value_has_error_flag(rval)) {
             ERR_PRINT("calling onstatechange\n");
@@ -186,7 +199,6 @@ static void zjs_sensor_set_state(jerry_value_t obj, enum sensor_state state)
         }
         jerry_release_value(func);
     }
-    jerry_release_value(new_state);
 }
 
 static void zjs_sensor_update_reading(jerry_value_t obj,
@@ -196,35 +208,26 @@ static void zjs_sensor_update_reading(jerry_value_t obj,
     // update reading property and trigger onchange event
     jerry_value_t reading_obj = jerry_create_object();
     switch(channel) {
-        case SENSOR_CHAN_ACCEL_XYZ:
-        case SENSOR_CHAN_GYRO_XYZ: ;
-            // reading is a ptr to an array of 3 double values
-            double x = ((double*)reading)[0];
-            double y = ((double*)reading)[1];
-            double z = ((double*)reading)[2];
-            jerry_value_t x_val = jerry_create_number(x);
-            jerry_value_t y_val = jerry_create_number(y);
-            jerry_value_t z_val = jerry_create_number(z);
-            zjs_set_property(reading_obj, "x", x_val);
-            zjs_set_property(reading_obj, "y", y_val);
-            zjs_set_property(reading_obj, "z", z_val);
-            jerry_release_value(x_val);
-            jerry_release_value(y_val);
-            jerry_release_value(z_val);
-            break;
-        case SENSOR_CHAN_LIGHT: ;
-            // reading is a ptr to double
-            double d = *((double*)reading);
-            jerry_value_t d_val = jerry_create_number(d);
-            zjs_set_property(reading_obj, "illuminance", d_val);
-            jerry_release_value(d_val);
-            break;
+    case SENSOR_CHAN_ACCEL_XYZ:
+    case SENSOR_CHAN_GYRO_XYZ: ;
+        // reading is a ptr to an array of 3 double values
+        double x = ((double*)reading)[0];
+        double y = ((double*)reading)[1];
+        double z = ((double*)reading)[2];
+        zjs_obj_add_readonly_number(reading_obj, x, "x");
+        zjs_obj_add_readonly_number(reading_obj, y, "y");
+        zjs_obj_add_readonly_number(reading_obj, z, "z");
+        break;
+    case SENSOR_CHAN_LIGHT: ;
+        // reading is a ptr to double
+        double d = *((double*)reading);
+        zjs_obj_add_readonly_number(reading_obj, d, "illuminance");
+        break;
 
-        default:
-            ERR_PRINT("unsupported sensor type\n");
-            jerry_release_value(reading_obj);
-            return;
-
+    default:
+        ERR_PRINT("unsupported sensor type\n");
+        jerry_release_value(reading_obj);
+        return;
     }
 
     zjs_set_property(obj, "reading", reading_obj);
@@ -361,6 +364,11 @@ static jerry_value_t zjs_sensor_start(const jerry_value_t function_obj,
 {
     // requires: this is a Sensor object from takes no args
     //  effects: activates the sensor and start monitoring changes
+    enum sensor_state state = zjs_sensor_get_state(this);
+    if (state == SENSOR_STATE_ACTIVATING || state == SENSOR_STATE_ACTIVATED) {
+        return ZJS_UNDEFINED;
+    }
+
     uintptr_t ptr;
     sensor_handle_t *handle = NULL;
     if (jerry_get_object_native_handle(this, &ptr)) {
@@ -368,11 +376,6 @@ static jerry_value_t zjs_sensor_start(const jerry_value_t function_obj,
          if (!handle) {
              return zjs_error("zjs_sensor_start: cannot find handle");
          }
-    }
-
-    enum sensor_state state = zjs_sensor_get_state(this);
-    if (state != SENSOR_STATE_IDLE && state != SENSOR_STATE_ERRORED) {
-        return zjs_error("zjs_sensor_start: invalid state");
     }
 
     zjs_sensor_set_state(this, SENSOR_STATE_ACTIVATING);
@@ -411,6 +414,11 @@ static jerry_value_t zjs_sensor_stop(const jerry_value_t function_obj,
 {
     // requires: this is a Sensor object from takes no args
     //  effects: de-activates the sensor and stop monitoring changes
+    enum sensor_state state = zjs_sensor_get_state(this);
+    if (state != SENSOR_STATE_ACTIVATING && state != SENSOR_STATE_ACTIVATED) {
+        return ZJS_UNDEFINED;
+    }
+
     uintptr_t ptr;
     sensor_handle_t *handle = NULL;
     if (jerry_get_object_native_handle(this, &ptr)) {
@@ -418,11 +426,6 @@ static jerry_value_t zjs_sensor_stop(const jerry_value_t function_obj,
          if (!handle) {
              return zjs_error("zjs_sensor_stop: cannot find handle");
          }
-    }
-
-    enum sensor_state state = zjs_sensor_get_state(this);
-    if (state == SENSOR_STATE_IDLE || state == SENSOR_STATE_ERRORED) {
-        return zjs_error("zjs_sensor_stop: invalid state");
     }
 
     zjs_ipm_message_t send;
@@ -501,7 +504,7 @@ static jerry_value_t zjs_sensor_create(const jerry_value_t function_obj,
     jerry_value_t sensor_obj = jerry_create_object();
     jerry_value_t reading_val = jerry_create_null();
     zjs_obj_add_number(sensor_obj, frequency, "frequency");
-    zjs_obj_add_string(sensor_obj, "idle", "state");
+    zjs_obj_add_readonly_string(sensor_obj, "unconnected", "state");
     zjs_set_property(sensor_obj, "reading", reading_val);
     jerry_release_value(reading_val);
 
