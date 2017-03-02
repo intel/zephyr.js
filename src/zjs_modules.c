@@ -156,7 +156,7 @@ static jerry_value_t native_require_handler(const jerry_value_t function_obj,
 
     if (zjs_read_script(full_path, &str, &len)) {
         ERR_PRINT("could not read module %s\n", full_path);
-        return SYSTEM_ERROR("native_require_handler: could not read module script");
+        return NOTSUPPORTED_ERROR("native_require_handler: could not read module script");
     }
     jerry_value_t code_eval = jerry_parse((jerry_char_t *)str, len, false);
     if (jerry_value_has_error_flag(code_eval)) {
