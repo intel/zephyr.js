@@ -19,6 +19,27 @@ On the Arduino 101 the flash file system uses SPI and the pins are shared with
 IO10-13. For this reason you will not be able to use these GPIO pins at the
 same time as the file system.
 
+Available file modes:
+
+`'r'` - Open file for only reading. An error will be thrown if the file does
+not exist.
+
+`'r+'` - Open a file for reading and writing. An error will be thrown if the
+file does not exist.
+
+`'w'` - Opens a file for writing. The file will be overwritten if it already
+exists.
+
+`'w+'` - Opens a file for writing and reading. The file will be overwritten if
+it already exists.
+
+`'a'` - Opens a file for appending. The write pointer will always seek
+to the end of the file during a write.
+
+`'a+'` - Opens a file for appending and reading. As with `'a'` the write
+pointer will seek to the end for writes, but reads can be done from the
+start of the file (read pointer saved across different read calls).
+
 Web IDL
 -------
 This IDL provides an overview of the interface; see below for documentation of
@@ -47,10 +68,6 @@ Opens a file.
 `mode` is the mode to open the file in (r/w/a/r+/w+/a+).
 
 Returns an object representing the file descriptor.
-
-Note: On Zephyr, the underlying API's do not take a file mode. This API will do
-basic checking to make sure the mode matches characteristics of the file i.e.
-whether it exists or not.
 
 ### FS.closeSync
 `void closeSync(object fd);`
