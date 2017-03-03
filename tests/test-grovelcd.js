@@ -3,32 +3,7 @@
 console.log("Test GroveLCD APIs");
 
 var grove_lcd = require("grove_lcd");
-
-var total = 0;
-var passed = 0;
-
-function assert(actual, description) {
-    total += 1;
-
-    var label = "\033[1m\033[31mFAIL\033[0m";
-    if (actual === true) {
-        passed += 1;
-        label = "\033[1m\033[32mPASS\033[0m";
-    }
-
-    console.log(label + " - " + description);
-}
-
-function expectThrow(description, func) {
-    var threw = false;
-    try {
-        func();
-    }
-    catch (err) {
-        threw = true;
-    }
-    assert(threw, description);
-}
+var assert = require("Assert.js");
 
 // Check pins defined and typeof Number
 function checkDefined(name) {
@@ -44,17 +19,17 @@ assert(glcd !== null && typeof glcd === "object",
 // set cursor
 glcd.setCursorPos(0, 0);
 
-expectThrow("cursor: set col as 'value'", function () {
+assert.throws(function () {
     glcd.setCursorPos("value", 0);
-});
+}, "cursor: set col as 'value'");
 
 // print text
 var printText = "Hello World";
 glcd.print(printText);
 
-expectThrow("print: set text as '-1024'", function () {
+assert.throws(function () {
     glcd.print(-1024);
-});
+}, "print: set text as '-1024'");
 
 // select LCD color as key
 var colorKey = [
@@ -71,9 +46,9 @@ for (var i = 0; i < colorKey.length; i++) {
 // set LCD color as num
 glcd.setColor(0, 0, 0);
 
-expectThrow("color: set invalid value as 'value'", function () {
+assert.throws(function () {
     glcd.setColor("value", 0, 0);
-});
+}, "color: set invalid value as 'value'");
 
 glcd.setColor(255, 255, 255);
 
@@ -255,4 +230,4 @@ glcd.setInputState(inputConfig);
 
 assert(glcd.getInputState() === 3, "input: left enter and increment");
 
-console.log("TOTAL: " + passed + " of " + total + " passed");
+assert.result();

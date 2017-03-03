@@ -6,32 +6,7 @@ var pins = require('arduino101_pins');
 var gpio = require('gpio');
 var pwm = require('pwm');
 var aio = require('aio');
-
-var total = 0;
-var passed = 0;
-
-function assert(actual, description) {
-    total += 1;
-
-    var label = "\033[1m\033[31mFAIL\033[0m";
-    if (actual === true) {
-        passed += 1;
-        label = "\033[1m\033[32mPASS\033[0m";
-    }
-
-    console.log(label + " - " + description);
-}
-
-function expectThrow(description, func) {
-    var threw = false;
-    try {
-        func();
-    }
-    catch (err) {
-        threw = true;
-    }
-    assert(threw, description);
-}
+var assert = require("Assert.js");
 
 // Check pins defined and typeof Number
 function checkDefined(name) {
@@ -122,4 +97,4 @@ for(var i = 0; i < AIOPins.length; i++) {
            "Arduino101Pins: " + pinName + " digital value");
 }
 
-console.log("TOTAL: " + passed + " of " + total + " passed");
+assert.result();

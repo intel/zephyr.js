@@ -4,20 +4,7 @@
 
 console.log('Testing error types...\n');
 
-var total = 0;
-var passed = 0;
-
-function assert(actual, description) {
-    total += 1;
-
-    var label = "\033[1m\033[31mFAIL\033[0m";
-    if (actual === true) {
-        passed += 1;
-        label = "\033[1m\033[32mPASS\033[0m";
-    }
-
-    console.log(label + " - " + description);
-}
+var assert = require("Assert.js");
 
 function expectStandardError(description, type, func) {
     var threw = false;
@@ -97,4 +84,4 @@ expectStandardError("calling require with an invalid module name",
     require('easterbunny');
 });
 
-console.log("TOTAL: " + passed + " of " + total + " passed");
+assert.result();

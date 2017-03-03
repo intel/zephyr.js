@@ -5,29 +5,7 @@ console.log("Wire IO2 to IO4");
 var gpio = require("gpio");
 var pins = require("arduino101_pins");
 var ble = require ("ble");
-
-var total = 0;
-var passed = 0;
-function assert(actual, description) {
-    total += 1;
-    var label = "\033[1m\033[31mFAIL\033[0m";
-    if (actual === true) {
-        passed += 1;
-        label = "\033[1m\033[32mPASS\033[0m";
-    }
-    console.log(label + " - " + description);
-}
-
-function expectThrow(description, func) {
-    var threw = false;
-    try {
-        func();
-    }
-    catch (e) {
-        threw = true;
-    }
-    assert(threw, description);
-}
+var assert = require("Assert.js");
 
 var deviceName, bufferData, pinA, pinB, disconnectClient,
     readValue, acceptClient, rssiValue, tmpValue;
@@ -165,9 +143,9 @@ ble.on('stateChange', function (state) {
         poweredOnFlag = true;
         deviceName = "BLE SERVICE is very good and so cool";
 
-        expectThrow("advertising: invalid deviceName and UUID", function () {
+        assert.throws(function () {
             ble.startAdvertising(deviceName, ['abcdef']);
-        });
+        }, "advertising: invalid deviceName and UUID");
 
         deviceName = "BLE SERVICE";
         ble.startAdvertising(deviceName, ['abcd']);
@@ -244,7 +222,7 @@ ble.on('disconnect', function (clientAddress) {
     if (totalFlag) {
         totalFlag = false;
 
-        console.log("TOTAL: " + passed + " of " + total + " passed");
+        assert.result();
     }
 });
 

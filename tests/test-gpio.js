@@ -7,32 +7,7 @@ console.log("Wire IO7 to IO8");
 
 var gpio = require("gpio");
 var pins = require("arduino101_pins");
-
-var total = 0;
-var passed = 0;
-
-function assert(actual, description) {
-    total += 1;
-
-    var label = "\033[1m\033[31mFAIL\033[0m";
-    if (actual === true) {
-        passed += 1;
-        label = "\033[1m\033[32mPASS\033[0m";
-    }
-
-    console.log(label + " - " + description);
-}
-
-function expectThrow(description, func) {
-    var threw = false;
-    try {
-        func();
-    }
-    catch (err) {
-        threw = true;
-    }
-    assert(threw, description);
-}
+var assert = require("Assert.js");
 
 var pinA, pinB, aValue, bValue;
 
@@ -74,7 +49,7 @@ var edgeInterval = setInterval(function () {
         mark = mark + 1;
 
         if (mark == 3) {
-            console.log("TOTAL: " + passed + " of " + total + " passed");
+            assert.result();
             clearInterval(edgeInterval);
         }
     }, 1000);
@@ -90,9 +65,9 @@ assert(pinA != null && typeof pinA == "object",
 assert(pinB != null && typeof pinB == "object",
       "open: defined pin with direction 'in'");
 
-expectThrow("open: invalid pin", function () {
+assert.throws(function () {
     gpio.open({ pin: 1024 });
-});
+}, "open: invalid pin");
 
 // test GPIOPin read and write
 pinA.write(true);
@@ -106,9 +81,9 @@ pinB.write(false);
 bValue = pinB.read();
 assert(bValue, "gpiopin: write input pin");
 
-expectThrow("gpiopin: write invalid argument", function () {
+assert.throws(function () {
     pinA.write(1);
-});
+}, "gpiopin: write invalid argument");
 
 // test activeLow
 pinB = gpio.open({ pin: pins.IO8, activeLow:true, direction: "in" });

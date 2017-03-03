@@ -2,31 +2,7 @@
 
 console.log("Wire IO3 to IO2");
 
-var total = 0;
-var passed = 0;
-
-function assert(actual, description) {
-    total += 1;
-
-    var label = "\033[1m\033[31mFAIL\033[0m";
-    if (actual === true) {
-        passed += 1;
-        label = "\033[1m\033[32mPASS\033[0m";
-    }
-
-    console.log(label + " - " + description);
-}
-
-function expectThrow(description, func) {
-    var threw = false;
-    try {
-        func();
-    }
-    catch (err) {
-        threw = true;
-    }
-    assert(threw, description);
-}
+var assert = require("Assert.js");
 
 var pwm = require("pwm");
 var gpio = require("gpio");
@@ -40,18 +16,18 @@ pinA = pwm.open({ channel: pins.IO3 });
 assert(pinA !== null && typeof pinA === "object",
       "open: defined pin and default argument");
 
-expectThrow("open: undefined pin", function () {
+assert.throws(function () {
     pinA = pwm.open({ channel: 1024 });
-});
+}, "open: undefined pin");
 
 // set Period and PulseWidth with ms
 // duty cycle: 33%
 var msTrue = 0;
 var msFalse = 0;
 
-expectThrow("pwmpin: set pulseWidth without period", function () {
+assert.throws(function () {
     pinA.setPulseWidth(300);
-});
+}, "pwmpin: set pulseWidth without period");
 
 pinA = pwm.open({ channel: pins.IO3, period: 3, pulseWidth: 1 });
 assert(pinA !== null && typeof pinA === "object",
@@ -59,9 +35,9 @@ assert(pinA !== null && typeof pinA === "object",
 
 pinA.setPeriod(3000);
 
-expectThrow("pwmpin: set pulseWidth greater than period", function () {
+assert.throws(function () {
     pinA.setPulseWidth(3000);
-});
+}, "pwmpin: set pulseWidth greater than period");
 
 pinA.setPulseWidth(1000);
 
@@ -80,13 +56,13 @@ setTimeout(function () {
            "pwmpin: set period and pulseWidth");
     clearInterval(msTimer);
 
-    expectThrow("pwmpin: set period with invalid value", function () {
+    assert.throws(function () {
         pinA.setPeriod("Value");
-    });
+    }, "pwmpin: set period with invalid value");
 
-    expectThrow("pwmpin: set pulseWidth with invalid value", function () {
+    assert.throws(function () {
         pinA.setPulseWidth("Value");
-    });
+    }, "pwmpin: set pulseWidth with invalid value");
 
     // set Period and PulseWidth with cycle
     // duty cycle: 70%
@@ -126,7 +102,7 @@ setTimeout(function () {
                       (28 < cyclesTrue) && (cyclesTrue < 32),
                       "pwmpin: set periodCycles and pulseWidthCycles");
 
-               console.log("TOTAL: " + passed + " of " + total + " passed");
+               assert.result();
                clearInterval(cycleTimer);
            }
        }
@@ -134,10 +110,10 @@ setTimeout(function () {
     }, 10);
 }, 3040);
 
-expectThrow("pwmpin: set periodCycles with invalid value", function () {
+assert.throws(function () {
     pinA.setPeriodCycles("Value");
-});
+}, "pwmpin: set periodCycles with invalid value");
 
-expectThrow("pwmpin: set pulseWidthCycles with invalid value", function () {
+assert.throws(function () {
     pinA.setPulseWidthCycles("Value");
-});
+}, "pwmpin: set pulseWidthCycles with invalid value");
