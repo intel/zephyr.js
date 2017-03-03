@@ -153,7 +153,7 @@ function GenericSensor() {
         setTimeout(function() {
             startState = sensor.state;
             assert(defaultState !== startState &&
-                   defaultState === "idle" &&
+                   defaultState === "unconnected" &&
                    startState === "activated",
                    "sensor: be started");
         }, 1000);
