@@ -121,6 +121,26 @@ if check_for_require ocf || check_config_file ZJS_OCF; then
     >&2 echo Using module: OCF
     MODULES+=" -DBUILD_MODULE_OCF"
     MODULES+=" -DBUILD_MODULE_EVENTS"
+    if grep -q "require *( *['\"]ocf['\"] *)*;" $SCRIPT; then
+        OCF_OBJ=$(grep "require('ocf')" $SCRIPT  | cut -d'=' -f1 | cut -d' ' -f2)
+        if grep -q "$OCF_OBJ.client" $SCRIPT; then
+            >&2 echo Using module: OCF client
+            MODULES+=" -DOC_CLIENT"
+        elif grep -q "$OCF_OBJ.server" $SCRIPT; then
+            >&2 echo Using module: OCF server
+            MODULES+=" -DOC_SERVER"
+        fi
+    else
+        if grep -q "require *( *['\"]ocf['\"] *).server*" $SCRIPT; then
+            >&2 echo Using module: OCF server
+            MODULES+=" -DOC_SERVER"
+        fi
+        if grep -q "require *( *['\"]ocf['\"] *).client*" $SCRIPT; then
+            >&2 echo Using module: OCF client
+            MODULES+=" -DOC_CLIENT"
+        fi
+    fi
+
     if [ $BOARD = "qemu_x86" ]; then
         echo "CONFIG_NET_LOG=y" >> prj.conf.tmp
         echo "CONFIG_NET_SLIP=y" >> prj.conf.tmp
