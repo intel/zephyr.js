@@ -11,30 +11,34 @@
 #include "zjs_util.h"
 #include "zjs_buffer.h"
 
-#define FLAGS_READABLE      (1 << 0)
-#define FLAGS_WRITEABLE     (1 << 1)
-#define FLAGS_APPENDABLE    (1 << 2)
-#define FLAGS_CREATE        (1 << 3)
-#define FLAGS_NO_CREATE     (1 << 4)
-
-#define MODE_R          (FLAGS_READABLE | FLAGS_NO_CREATE)
-#define MODE_R_PLUS     (FLAGS_READABLE | FLAGS_WRITEABLE | FLAGS_NO_CREATE)
-#define MODE_W          (FLAGS_WRITEABLE | FLAGS_CREATE)
-#define MODE_WX         (FLAGS_WRITEABLE | FLAGS_NO_CREATE)
-#define MODE_W_PLUS     (FLAGS_WRITEABLE | FLAGS_READABLE | FLAGS_CREATE)
-#define MODE_WX_PLUS    (FLAGS_WRITEABLE | FLAGS_READABLE | FLAGS_NO_CREATE)
-#define MODE_A          (FLAGS_WRITEABLE | FLAGS_APPENDABLE | FLAGS_CREATE)
-#define MODE_AX         (FLAGS_WRITEABLE | FLAGS_APPENDABLE | FLAGS_NO_CREATE)
-#define MODE_A_PLUS     (FLAGS_READABLE | FLAGS_APPENDABLE | FLAGS_CREATE)
-#define MODE_AX_PLUS    (FLAGS_READABLE | FLAGS_APPENDABLE | FLAGS_NO_CREATE)
+typedef enum {
+    // Open for reading, file must already exist
+    MODE_R,
+    // Open for reading/writing, file must already exist
+    MODE_R_PLUS,
+    // Open file for writing, file will be created or overwritten
+    MODE_W,
+    // Open file for reading/writing, file will be created or overwritten
+    MODE_W_PLUS,
+    // Open file for appending, file is created if it does not exist
+    MODE_A,
+    // Open a file for appending/reading, file is created if it does not exist
+    MODE_A_PLUS
+} FileMode;
 
 #define MAX_PATH_LENGTH 128
 
+/*
+ * TODO: Someday we may want to keep a list of all open file descriptors. In
+ *       the ashell use case the user may not clean up a descriptor which could
+ *       get leaked.
+ */
 typedef struct file_handle {
     fs_file_t fp;
-    uint16_t mode;
+    FileMode mode;
     jerry_value_t fd_val;
     int error;
+    uint32_t rpos;
 } file_handle_t;
 
 static jerry_value_t invalid_args(void)
@@ -70,20 +74,12 @@ static uint16_t get_mode(char* str)
         mode = MODE_R_PLUS;
     } else if (strcmp(str, "w") == 0) {
         mode = MODE_W;
-    } else if (strcmp(str, "wx") == 0) {
-        mode = MODE_WX;
     } else if (strcmp(str, "w+") == 0) {
         mode = MODE_W_PLUS;
-    } else if (strcmp(str, "wx+") == 0) {
-        mode = MODE_WX_PLUS;
     } else if (strcmp(str, "a") == 0) {
         mode = MODE_A;
-    } else if (strcmp(str, "ax") == 0) {
-        mode = MODE_AX;
     } else if (strcmp(str, "a+") == 0) {
         mode = MODE_A_PLUS;
-    } else if (strcmp(str, "ax+") == 0) {
-        mode = MODE_AX_PLUS;
     }
     return mode;
 }
@@ -193,17 +189,18 @@ static jerry_value_t zjs_open(const jerry_value_t function_obj,
 
     handle->mode = get_mode(mode);
 
-    /*
-     * TODO: Currently Zephyr has no concept of file permissions, when you open
-     *       a file it is automatically readable and writable. This comment
-     *       is left as a reminder that if other systems/OS have permissions
-     *       we may want to implement the logic, but for now the 'mode' parameter
-     *       is unused.
-     */
+    if ((handle->mode == MODE_R || handle->mode == MODE_R_PLUS)
+        && !file_exists(path)) {
+        jerry_release_value(handle->fd_val);
+        zjs_free(handle);
+        return zjs_error("file already exists");
+    }
 
     handle->error = fs_open(&handle->fp, path);
     if (handle->error != 0) {
         ERR_PRINT("could not open file: %s, error=%d\n", path, handle->error);
+        jerry_release_value(handle->fd_val);
+        zjs_free(handle);
         return zjs_error("could not open file");
     }
 
@@ -280,6 +277,8 @@ static jerry_value_t zjs_close(const jerry_value_t function_obj,
         zjs_signal_callback(id, &error, sizeof(jerry_value_t));
     }
 #endif
+
+    zjs_free(handle);
 
     return ZJS_UNDEFINED;
 }
@@ -394,6 +393,11 @@ static jerry_value_t zjs_read(const jerry_value_t function_obj,
     if (!jerry_get_object_native_handle(argv[0], (uintptr_t*)&handle)) {
         return zjs_error("native handle not found");
     }
+
+    if (handle->mode == MODE_W || handle->mode == MODE_A) {
+        return zjs_error("file is not open for reading");
+    }
+
     zjs_buffer_t* buffer = zjs_buffer_find(argv[1]);
     double offset = jerry_get_number_value(argv[2]);
     double length = jerry_get_number_value(argv[3]);
@@ -409,12 +413,19 @@ static jerry_value_t zjs_read(const jerry_value_t function_obj,
         return zjs_error("offset + length overflows buffer");
     }
 
-    // if a position was specified, seek to it before writing
-    if (fs_seek(&handle->fp, (uint32_t)position, SEEK_SET) != 0) {
+    if (handle->mode == MODE_A_PLUS) {
+        // mode is a+, seek to read position
+        if (fs_seek(&handle->fp, handle->rpos, SEEK_SET) != 0) {
+            return zjs_error("error seeking to position");
+        }
+    }
+    // if a position was specified, seek to it before reading
+    if (fs_seek(&handle->fp, (uint32_t)position, SEEK_CUR) != 0) {
         return zjs_error("error seeking to position");
     }
+    handle->rpos += position;
 
-    DBG_PRINT("reading into fp=%p, buffer=%p, offset=%lu, length=%lu\n", &handle->fp, buffer->buffer, offset, length);
+    DBG_PRINT("reading into fp=%p, buffer=%p, offset=%lu, length=%lu\n", &handle->fp, buffer->buffer, (uint32_t)offset, (uint32_t)length);
 
     uint32_t ret = fs_read(&handle->fp, buffer->buffer + (uint32_t)offset, (uint32_t)length);
 
@@ -422,6 +433,7 @@ static jerry_value_t zjs_read(const jerry_value_t function_obj,
         DBG_PRINT("could not read %lu bytes, only %lu were read\n", (uint32_t)length, ret);
         err = -1;
     }
+    handle->rpos += ret;
 
 #ifdef ZJS_FS_ASYNC_APIS
     if (async) {
@@ -510,6 +522,14 @@ static jerry_value_t zjs_write(const jerry_value_t function_obj,
     if (!jerry_get_object_native_handle(argv[0], (uintptr_t*)&handle)) {
         return zjs_error("native handle not found");
     }
+
+    if (handle->mode == MODE_R) {
+        return zjs_error("file is not open for writing");
+    }
+    if (handle->mode == MODE_A && position) {
+        return zjs_error("cannot seek in mode a");
+    }
+
     zjs_buffer_t* buffer = zjs_buffer_find(argv[1]);
     double offset = jerry_get_number_value(argv[2]);
     double length = jerry_get_number_value(argv[3]);
@@ -524,9 +544,16 @@ static jerry_value_t zjs_write(const jerry_value_t function_obj,
         return zjs_error("offset + length overflows buffer");
     }
 
-    // if a position was specified, seek to it before writing
-    if (fs_seek(&handle->fp, (uint32_t)position, SEEK_SET) != 0) {
-        return zjs_error("error seeking to position\n");
+    if (handle->mode == MODE_A || handle->mode == MODE_A_PLUS) {
+        // if in append mode, seek to end (ignoring position parameter)
+        if (fs_seek(&handle->fp, 0, SEEK_END) != 0) {
+            return zjs_error("error seeking start");
+        }
+    } else {
+        // if a position was specified, seek to it before writing
+        if (fs_seek(&handle->fp, (uint32_t)position, SEEK_SET) != 0) {
+            return zjs_error("error seeking to position\n");
+        }
     }
 
     DBG_PRINT("writing to fp=%p, buffer=%p, offset=%lu, length=%lu\n", &handle->fp, buffer->buffer, (uint32_t)offset, (uint32_t)length);
