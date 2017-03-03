@@ -262,8 +262,8 @@ int main(int argc, char *argv[])
             // if the last and current loop had no pending "events" (timers or
             // callbacks) and --autoexit is enabled the program will terminate
             if (last_serviced == 0 && serviced == 0) {
-                ZJS_PRINT("no timers or callbacks were processed, exiting!\n");
-                ZJS_PRINT("   * to run your script indefinitely use --noexit\n");
+                ZJS_PRINT("\njslinux: no more timers or callbacks found, exiting!\n");
+                ZJS_PRINT("   * to run your script indefinitely, use --noexit\n");
                 ZJS_PRINT("   * to run your script for a set timeout, use -t <ms>\n");
                 goto error;
             }
