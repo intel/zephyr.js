@@ -144,8 +144,7 @@ void zjs_obj_add_readonly_number(jerry_value_t obj, double num,
 
 bool zjs_obj_get_boolean(jerry_value_t obj, const char *name, bool *flag)
 {
-    // requires: obj is an existing JS object, value name should exist as
-    //             boolean
+    // requires: obj is an existing JS object
     //  effects: retrieves field specified by name as a boolean
     jerry_value_t value = zjs_get_property(obj, name);
     bool rval = false;
@@ -162,8 +161,8 @@ bool zjs_obj_get_boolean(jerry_value_t obj, const char *name, bool *flag)
 bool zjs_obj_get_string(jerry_value_t obj, const char *name, char *buffer,
                         int len)
 {
-    // requires: obj is an existing JS object, value name should exist as
-    //             string, buffer can receive the string, len is its size
+    // requires: obj is an existing JS object, buffer can receive the string,
+    //             len is its size
     //  effects: retrieves field specified by name; if it exists, and is a
     //             string, and can fit into the given buffer, copies it plus
     //             a null terminator into buffer and returns true; otherwise,
@@ -184,12 +183,12 @@ bool zjs_obj_get_string(jerry_value_t obj, const char *name, char *buffer,
 
 bool zjs_obj_get_double(jerry_value_t obj, const char *name, double *num)
 {
-    // requires: obj is an existing JS object, value name should exist as number
+    // requires: obj is an existing JS object
     //  effects: retrieves field specified by name as a uint32
     jerry_value_t value = zjs_get_property(obj, name);
     bool rval = false;
 
-    if (!jerry_value_has_error_flag(value)) {
+    if (!jerry_value_has_error_flag(value) && jerry_value_is_number(value)) {
         *num = jerry_get_number_value(value);
         rval = true;
     }
@@ -200,12 +199,12 @@ bool zjs_obj_get_double(jerry_value_t obj, const char *name, double *num)
 
 bool zjs_obj_get_uint32(jerry_value_t obj, const char *name, uint32_t *num)
 {
-    // requires: obj is an existing JS object, value name should exist as number
+    // requires: obj is an existing JS object
     //  effects: retrieves field specified by name as a uint32
     jerry_value_t value = zjs_get_property(obj, name);
     bool rval = false;
 
-    if (!jerry_value_has_error_flag(value)) {
+    if (!jerry_value_has_error_flag(value) && jerry_value_is_number(value)) {
         *num = (uint32_t)jerry_get_number_value(value);
         rval = true;
     }
@@ -216,12 +215,12 @@ bool zjs_obj_get_uint32(jerry_value_t obj, const char *name, uint32_t *num)
 
 bool zjs_obj_get_int32(jerry_value_t obj, const char *name, int32_t *num)
 {
-    // requires: obj is an existing JS object, value name should exist as number
+    // requires: obj is an existing JS object
     //  effects: retrieves field specified by name as a int32
     jerry_value_t value = zjs_get_property(obj, name);
     bool rval = false;
 
-    if (!jerry_value_has_error_flag(value)) {
+    if (!jerry_value_has_error_flag(value) && jerry_value_is_number(value)) {
         *num = (int32_t)jerry_get_number_value(value);
         rval = true;
     }
