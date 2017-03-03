@@ -10,6 +10,8 @@ Introduction
 ZJS provides console API's which match Node.js' Console module. We describe them here as there could
 potentially be minor differences.
 
+Note that the console API's do not support format specifiers (e.g. %d, %f etc.).
+
 API Documentation
 -----------------
 
