@@ -697,4 +697,4 @@ void shell_unit_test()
     }
     printf("All tests were successful \n");
 }
-#endif
+#endif  // CONFIG_SHELL_UNIT_TESTS
