@@ -24,6 +24,17 @@ jerry_value_t zjs_get_property(const jerry_value_t obj, const char *name)
     return rval;
 }
 
+bool zjs_delete_property(const jerry_value_t obj, const char *name)
+{
+    // requires: obj is an object, name is a property name string
+    //  effects: looks up the property name in obj, and deletes it; return true
+    //             if success, false otherwise
+    jerry_value_t jname = jerry_create_string((const jerry_char_t *)name);
+    bool rval = jerry_delete_property(obj, jname);
+    jerry_release_value(jname);
+    return rval;
+}
+
 void zjs_obj_add_functions(jerry_value_t obj, zjs_native_func_t *funcs)
 {
     // requires: obj is an existing JS object
@@ -93,7 +104,10 @@ void zjs_obj_add_readonly_string(jerry_value_t obj, const char *str,
     jerry_value_t jname = jerry_create_string((const jerry_char_t *)name);
     jerry_property_descriptor_t pd;
     jerry_init_property_descriptor_fields(&pd);
+    pd.is_writable_defined = true;
     pd.is_writable = false;
+    pd.is_configurable_defined = true;
+    pd.is_configurable = true;
     pd.is_value_defined = true;
     pd.value = jerry_create_string((const jerry_char_t *)str);
     jerry_define_own_property(obj, jname, &pd);
