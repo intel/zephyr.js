@@ -501,6 +501,8 @@ void acm()
     ashell_process_start();
 
     printk(banner);
+    printk("Warning: The JavaScript terminal is in a different interface.\
+            \nExamples:\n\tMac   /dev/cu.usbmodem\n\tLinux /dev/ttyACM0\n");
 
 #ifdef CONFIG_USB_CDC_ACM
     dev_upload = device_get_binding(CONFIG_CDC_ACM_PORT_NAME);
