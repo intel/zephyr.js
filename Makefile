@@ -173,7 +173,6 @@ analyze: $(JS)
 ifeq ($(DEV), ashell)
 	@cat fragments/prj.mdef.dev >> prj.mdef
 else
-	@cat fragments/prj.mdef.base >> prj.mdef
 	@cat fragments/prj.mdef.heap >> prj.mdef
 endif
 
