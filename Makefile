@@ -172,8 +172,6 @@ analyze: $(JS)
 	fi
 ifeq ($(DEV), ashell)
 	@cat fragments/prj.mdef.dev >> prj.mdef
-else
-	@cat fragments/prj.mdef.heap >> prj.mdef
 endif
 
 	@echo "ccflags-y += $(shell ./scripts/analyze.sh $(BOARD) $(JS) $(CONFIG) $(DEV))" | tee -a src/Makefile arc/src/Makefile
