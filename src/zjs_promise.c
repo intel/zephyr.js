@@ -98,12 +98,12 @@ void zjs_make_promise(jerry_value_t obj, zjs_post_promise_func post,
 
     new->then_id = zjs_add_callback_once(ZJS_UNDEFINED,
                                          obj,
-                                         handle,
+                                         new,
                                          post_promise);
 
     new->catch_id = zjs_add_callback_once(ZJS_UNDEFINED,
                                           obj,
-                                          handle,
+                                          new,
                                           post_promise);
 
     // Add the "promise" object to the object passed as a property, because the
