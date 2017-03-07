@@ -79,6 +79,13 @@ void zjs_ocf_free_props(void* h);
  */
 uint8_t main_poll_routine(void* handle);
 
+/**
+ * Set the 'uuid' property in the device object.
+ *
+ * @param uuid          UUID obtained from iotivity-constrained system
+ */
+void zjs_set_uuid(char* uuid);
+
 /*
  * Start Iotivity-constrained.
  */

@@ -210,6 +210,15 @@ static void issue_requests(void)
 #define CONFIG_DEVICE_NAME CONFIG_BLUETOOTH_DEVICE_NAME
 #endif
 
+void zjs_set_uuid(char* uuid)
+{
+    jerry_value_t device = zjs_get_property(ocf_object, "device");
+    if (!jerry_value_is_undefined(device)) {
+        zjs_obj_add_string(device, uuid, "uuid");
+    }
+    jerry_release_value(device);
+}
+
 static void platform_init(void *data)
 {
     uint32_t size;

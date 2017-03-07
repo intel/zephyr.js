@@ -406,6 +406,17 @@ static resource_list_t *r_list = NULL;
 static bool has_registered = false;
 */
 
+/*
+ * TODO: This is a workaround for getting the resource UUID. There is no API
+ *       available to do this currently so we must get it with this external
+ *       structure.
+ */
+extern struct oc_device_info_t
+{
+  oc_uuid_t uuid;
+  oc_string_t payload;
+} oc_device_info[OC_MAX_NUM_DEVICES];
+
 static jerry_value_t ocf_register(const jerry_value_t function_val,
                                   const jerry_value_t this,
                                   const jerry_value_t argv[],
@@ -578,6 +589,10 @@ static jerry_value_t ocf_register(const jerry_value_t function_val,
     //oc_resource_set_request_handler(resource->res, OC_POST, ocf_put_handler, resource);
 
     //oc_add_resource(resource->res);
+
+    char uuid[37];
+    oc_uuid_to_str(&oc_device_info[resource->res->device].uuid, uuid, 37);
+    zjs_set_uuid(uuid);
 
     /*resource_list_t *new = zjs_malloc(sizeof(resource_list_t));
     new->resource = resource->res;
