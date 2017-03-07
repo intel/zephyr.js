@@ -7,15 +7,33 @@
 #include "zjs_promise.h"
 #include "zjs_util.h"
 
+typedef struct dummy_handle {
+    uint32_t value;
+} dummy_handle_t;
+
+static void post_promise(void* handle)
+{
+    if (handle) {
+        dummy_handle_t* h = (dummy_handle_t*)handle;
+        if (h->value != 42) {
+            ERR_PRINT("Handle was not valid!!!\n");
+        }
+        zjs_free(h);
+    }
+}
+
 static jerry_value_t create_promise(const jerry_value_t function_obj,
                                     const jerry_value_t this,
                                     const jerry_value_t argv[],
                                     const jerry_length_t argc)
 {
+    dummy_handle_t* handle = zjs_malloc(sizeof(dummy_handle_t));
+    handle->value = 42;
+
     jerry_value_t promise = jerry_create_object();
     ZJS_PRINT("Testing promise, object = %u\n", promise);
 
-    zjs_make_promise(promise, NULL, NULL);
+    zjs_make_promise(promise, post_promise, handle);
 
     return promise;
 }
