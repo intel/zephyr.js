@@ -496,7 +496,8 @@ static jerry_value_t zjs_sensor_create(const jerry_value_t function_obj,
                                        enum sensor_channel channel)
 {
     double frequency = DEFAULT_SAMPLING_FREQUENCY;
-    uint32_t pin = -1;
+    bool hasPin = false;
+    uint32_t pin;
 
     if (argc < 1 && channel == SENSOR_CHAN_LIGHT) {
         // AmbientLightSensor requires ADC pin object
@@ -532,9 +533,7 @@ static jerry_value_t zjs_sensor_create(const jerry_value_t function_obj,
         }
 
         if (channel == SENSOR_CHAN_LIGHT) {
-            if (!zjs_obj_get_uint32(options, "pin", &pin)) {
-                pin = -1;
-            }
+            hasPin = zjs_obj_get_uint32(options, "pin", &pin);
         }
     }
 
@@ -554,7 +553,7 @@ static jerry_value_t zjs_sensor_create(const jerry_value_t function_obj,
     zjs_set_property(sensor_obj, "reading", reading_val);
     jerry_release_value(reading_val);
 
-    if (channel == SENSOR_CHAN_LIGHT && pin != -1) {
+    if (channel == SENSOR_CHAN_LIGHT && hasPin) {
         zjs_obj_add_number(sensor_obj, pin, "pin");
     }
 
