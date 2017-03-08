@@ -236,6 +236,23 @@ if check_for_require aio || check_config_file ZJS_AIO; then
     echo "export ZJS_AIO=y" >> zjs.conf.tmp
 fi
 
+if check_for_require fs || check_config_file ZJS_FS; then
+    >&2 echo Using module: FS
+    MODULES+=" -DBUILD_MODULE_FS -DBUILD_MODULE_BUFFER"
+    if [ $BOARD = "arduino_101" ]; then
+        echo "CONFIG_FS_FAT_FLASH_DISK_W25QXXDV=y" >> prj.conf.tmp
+    fi
+    echo "CONFIG_FILE_SYSTEM=y" >> prj.conf.tmp
+    echo "CONFIG_FILE_SYSTEM_FAT=y" >> prj.conf.tmp
+    echo "CONFIG_DISK_ACCESS_FLASH=y" >> prj.conf.tmp
+
+    echo "CONFIG_FLASH=y" >> prj.conf.tmp
+    echo "CONFIG_SPI=y" >> prj.conf.tmp
+    echo "CONFIG_GPIO=y" >> prj.conf.tmp
+    echo "export ZJS_FS=y" >> zjs.conf.tmp
+    echo "export ZJS_BUFFER=y" >> zjs.conf.tmp
+fi
+
 if check_for_require i2c || check_config_file ZJS_I2C; then
     >&2 echo Using module: I2C
     MODULES+=" -DBUILD_MODULE_I2C"
