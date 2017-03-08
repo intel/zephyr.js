@@ -193,7 +193,7 @@ static jerry_value_t zjs_open(const jerry_value_t function_obj,
         && !file_exists(path)) {
         jerry_release_value(handle->fd_val);
         zjs_free(handle);
-        return zjs_error("file already exists");
+        return zjs_error("file doesn't exists");
     }
 
     handle->error = fs_open(&handle->fp, path);
@@ -365,6 +365,7 @@ static jerry_value_t zjs_read(const jerry_value_t function_obj,
 {
     file_handle_t* handle;
     int err = 0;
+    uint8_t from_cur = 0;
 
     if (argc < 6 && async) {
         return invalid_args();
@@ -382,7 +383,7 @@ static jerry_value_t zjs_read(const jerry_value_t function_obj,
     if (!jerry_value_is_number(argv[3])) {
         return invalid_args();
     }
-    if (!jerry_value_is_number(argv[4])) {
+    if (!jerry_value_is_number(argv[4]) && !jerry_value_is_null(argv[4])) {
         return invalid_args();
     }
     if (async) {
@@ -401,7 +402,14 @@ static jerry_value_t zjs_read(const jerry_value_t function_obj,
     zjs_buffer_t* buffer = zjs_buffer_find(argv[1]);
     double offset = jerry_get_number_value(argv[2]);
     double length = jerry_get_number_value(argv[3]);
-    double position = jerry_get_number_value(argv[4]);
+    double position;
+    if (jerry_value_is_null(argv[4])) {
+        position = 0;
+        // null == read from current position
+        from_cur = 1;
+    } else {
+        position = jerry_get_number_value(argv[4]);
+    }
 
     if (offset < 0 || length < 0 || position < 0) {
         return invalid_args();
@@ -413,17 +421,21 @@ static jerry_value_t zjs_read(const jerry_value_t function_obj,
         return zjs_error("offset + length overflows buffer");
     }
 
-    if (handle->mode == MODE_A_PLUS) {
+    // a+ or read from current position (position == null)
+    if ((handle->mode == MODE_A_PLUS) || from_cur) {
         // mode is a+, seek to read position
         if (fs_seek(&handle->fp, handle->rpos, SEEK_SET) != 0) {
             return zjs_error("error seeking to position");
         }
     }
-    // if a position was specified, seek to it before reading
-    if (fs_seek(&handle->fp, (uint32_t)position, SEEK_CUR) != 0) {
-        return zjs_error("error seeking to position");
+    if (!from_cur) {
+        // if position was a number, set as the new read position
+        handle->rpos = position;
+        // if a position was specified, seek to it before reading
+        if (fs_seek(&handle->fp, (uint32_t)position, SEEK_SET) != 0) {
+            return zjs_error("error seeking to position");
+        }
     }
-    handle->rpos += position;
 
     DBG_PRINT("reading into fp=%p, buffer=%p, offset=%lu, length=%lu\n", &handle->fp, buffer->buffer, (uint32_t)offset, (uint32_t)length);
 
@@ -480,45 +492,58 @@ static jerry_value_t zjs_write(const jerry_value_t function_obj,
 {
     file_handle_t* handle;
     double position = 0;
-    jerry_value_t js_cb = ZJS_UNDEFINED;
-
-    if (argc < 5) {
-        return invalid_args();
-    }
-
-    if (!jerry_value_is_object(argv[0])) {
-        return invalid_args();
-    }
-    if (!jerry_value_is_object(argv[1])) {
-        return invalid_args();
-    }
-    if (!jerry_value_is_number(argv[2])) {
-        return invalid_args();
-    }
-    if (!jerry_value_is_number(argv[3])) {
-        return invalid_args();
-    }
-    if (argc == 6) {
-        if (!jerry_value_is_number(argv[4])) {
-            return invalid_args();
-        }
-        if (async) {
-            if (!jerry_value_is_function(argv[5])) {
-                return invalid_args();
-            }
-            js_cb = argv[5];
-        }
-        position = jerry_get_number_value(argv[4]);
-    } else {
+    double offset = 0;
+    double length = 0;
+    uint8_t from_cur = 0;
 #ifdef ZJS_FS_ASYNC_APIS
-        if (async) {
-            if (!jerry_value_is_function(argv[4])) {
+    jerry_value_t js_cb = ZJS_UNDEFINED;
+#endif
+
+    if (argc < 2) {
+        return invalid_args();
+    }
+    if (jerry_value_is_object(argv[1])) {
+        // buffer
+        if (argc > 2) {
+            if (jerry_value_is_number(argv[2])) {
+                offset = jerry_get_number_value(argv[2]);
+            } else {
                 return invalid_args();
             }
-            js_cb = argv[4];
+        }
+        if (argc > 3) {
+            if (jerry_value_is_number(argv[3])) {
+                length = jerry_get_number_value(argv[3]);
+            } else {
+                return invalid_args();
+            }
+        }
+        if (argc > 4) {
+            if (jerry_value_is_number(argv[4])) {
+                position = jerry_get_number_value(argv[4]);
+            } else {
+                // position != number
+                from_cur = 1;
+            }
+        }
+#ifdef ZJS_FS_ASYNC_APIS
+        if (!jerry_value_is_function(argv[argc - 1])) {
+            return invalid_args();
+        } else {
+            js_cb = argv[argc - 1];
         }
 #endif
+    } else if (jerry_value_is_string(argv[1])) {
+        /*
+         * TODO: Eventually support string if its desired. It makes argument
+         *       parsing a huge pain, so just supporting buffer for now seems
+         *       like the right decision.
+         */
+        return zjs_error("string input not supported");
+    } else {
+        return invalid_args();
     }
+
     if (!jerry_get_object_native_handle(argv[0], (uintptr_t*)&handle)) {
         return zjs_error("native handle not found");
     }
@@ -526,13 +551,14 @@ static jerry_value_t zjs_write(const jerry_value_t function_obj,
     if (handle->mode == MODE_R) {
         return zjs_error("file is not open for writing");
     }
-    if (handle->mode == MODE_A && position) {
-        return zjs_error("cannot seek in mode a");
-    }
 
     zjs_buffer_t* buffer = zjs_buffer_find(argv[1]);
-    double offset = jerry_get_number_value(argv[2]);
-    double length = jerry_get_number_value(argv[3]);
+
+    if (offset && !length) {
+        length = buffer->bufsize - offset;
+    } else if (!length) {
+        length = buffer->bufsize;
+    }
 
     if (offset < 0 || length < 0 || position < 0) {
         return invalid_args();
@@ -549,7 +575,7 @@ static jerry_value_t zjs_write(const jerry_value_t function_obj,
         if (fs_seek(&handle->fp, 0, SEEK_END) != 0) {
             return zjs_error("error seeking start");
         }
-    } else {
+    } else if (!from_cur) {
         // if a position was specified, seek to it before writing
         if (fs_seek(&handle->fp, (uint32_t)position, SEEK_SET) != 0) {
             return zjs_error("error seeking to position\n");
