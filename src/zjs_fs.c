@@ -167,6 +167,9 @@ static jerry_value_t zjs_open(const jerry_value_t function_obj,
     }
 
     file_handle_t* handle = new_file();
+    if (!handle) {
+        return zjs_error("malloc failed");
+    }
     handle->fd_val = jerry_create_object();
 
     jerry_size_t size = MAX_PATH_LENGTH;
@@ -193,7 +196,7 @@ static jerry_value_t zjs_open(const jerry_value_t function_obj,
         && !file_exists(path)) {
         jerry_release_value(handle->fd_val);
         zjs_free(handle);
-        return zjs_error("file doesn't exists");
+        return zjs_error("file doesn't exist");
     }
 
     handle->error = fs_open(&handle->fp, path);
@@ -365,7 +368,6 @@ static jerry_value_t zjs_read(const jerry_value_t function_obj,
 {
     file_handle_t* handle;
     int err = 0;
-    uint8_t from_cur = 0;
 
     if (argc < 6 && async) {
         return invalid_args();
@@ -402,16 +404,8 @@ static jerry_value_t zjs_read(const jerry_value_t function_obj,
     zjs_buffer_t* buffer = zjs_buffer_find(argv[1]);
     double offset = jerry_get_number_value(argv[2]);
     double length = jerry_get_number_value(argv[3]);
-    double position;
-    if (jerry_value_is_null(argv[4])) {
-        position = 0;
-        // null == read from current position
-        from_cur = 1;
-    } else {
-        position = jerry_get_number_value(argv[4]);
-    }
 
-    if (offset < 0 || length < 0 || position < 0) {
+    if (offset < 0 || length < 0) {
         return invalid_args();
     }
     if (offset >= buffer->bufsize) {
@@ -421,15 +415,19 @@ static jerry_value_t zjs_read(const jerry_value_t function_obj,
         return zjs_error("offset + length overflows buffer");
     }
 
-    // a+ or read from current position (position == null)
-    if ((handle->mode == MODE_A_PLUS) || from_cur) {
+    // if mode == a+
+    if (handle->mode == MODE_A_PLUS) {
         // mode is a+, seek to read position
         if (fs_seek(&handle->fp, handle->rpos, SEEK_SET) != 0) {
             return zjs_error("error seeking to position");
         }
     }
-    if (!from_cur) {
+    if (jerry_value_is_number(argv[4])) {
         // if position was a number, set as the new read position
+        double position = jerry_get_number_value(argv[4]);
+        if (position < 0) {
+            return invalid_args();
+        }
         handle->rpos = position;
         // if a position was specified, seek to it before reading
         if (fs_seek(&handle->fp, (uint32_t)position, SEEK_SET) != 0) {
