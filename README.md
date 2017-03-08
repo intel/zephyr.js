@@ -61,7 +61,7 @@ the master development branch it will just say 'devel'.
 Download the [latest Zephyr SDK] (https://www.zephyrproject.org/downloads), then:
 ```bash
 $ chmod +x /path/to/zephyr-sdk-<VERSION>-setup.run
-$ sudo ./path/to/zephyr-sdk-<VERSION>-setup.run
+$ sudo /path/to/zephyr-sdk-<VERSION>-setup.run
 ```
 
 Follow the prompts, but the defaults should be fine.
