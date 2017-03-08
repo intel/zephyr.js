@@ -110,7 +110,7 @@ module_t zjs_modules_array[] = {
     { "performance", zjs_performance_init },
 #endif
 #ifdef BUILD_MODULE_OCF
-    { "ocf", zjs_ocf_init },
+    { "ocf", zjs_ocf_init, zjs_ocf_cleanup },
 #endif
 #ifdef BUILD_MODULE_TEST_PROMISE
     { "test_promise", zjs_test_promise_init }

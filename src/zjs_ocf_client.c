@@ -1074,4 +1074,23 @@ jerry_value_t zjs_ocf_client_init()
     return ocf_client;
 }
 
+void zjs_ocf_client_cleanup()
+{
+    if (resources) {
+        struct client_resource *cur = resources;
+        while (cur) {
+            if (cur->resource_type) {
+                zjs_free(cur->resource_type);
+            }
+            if (cur->resource_path) {
+                zjs_free(cur->resource_path);
+            }
+            jerry_release_value(cur->client);
+            resources = resources->next;
+            zjs_free(cur);
+            cur = resources;
+        }
+    }
+}
+
 #endif // BUILD_MODULE_OCF

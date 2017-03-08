@@ -479,4 +479,11 @@ jerry_value_t zjs_ocf_init()
     return ocf_object;
 }
 
+void zjs_ocf_cleanup()
+{
+    zjs_ocf_server_cleanup();
+    zjs_ocf_client_cleanup();
+    jerry_release_value(ocf_object);
+}
+
 #endif // BUILD_MODULE_OCF

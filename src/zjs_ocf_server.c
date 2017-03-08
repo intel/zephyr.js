@@ -397,16 +397,6 @@ static jerry_value_t ocf_notify(const jerry_value_t function_val,
 }
 
 /*
-typedef struct resource_list {
-    oc_resource_t *resource;
-    struct resource_list* next;
-} resource_list_t;
-
-static resource_list_t *r_list = NULL;
-static bool has_registered = false;
-*/
-
-/*
  * TODO: This is a workaround for getting the resource UUID. There is no API
  *       available to do this currently so we must get it with this external
  *       structure.
@@ -433,6 +423,7 @@ static jerry_value_t ocf_register(const jerry_value_t function_val,
     // Required
     jerry_value_t resource_path_val = zjs_get_property(argv[0], "resourcePath");
     if (!jerry_value_is_string(resource_path_val)) {
+        jerry_release_value(resource_path_val);
         ERR_PRINT("resourcePath not found\n");
         REJECT(promise, "TypeMismatchError", "resourcePath not found", h);
         return promise;
@@ -442,12 +433,13 @@ static jerry_value_t ocf_register(const jerry_value_t function_val,
 
     jerry_value_t res_type_array = zjs_get_property(argv[0], "resourceTypes");
     if (!jerry_value_is_array(res_type_array)) {
+        jerry_release_value(res_type_array);
         ERR_PRINT("resourceTypes array not found\n");
         REJECT(promise, "TypeMismatchError", "resourceTypes array not found", h);
         return promise;
     }
-    uint32_t num_types = jerry_get_array_length(res_type_array);
 
+    // Optional
     uint8_t flags;
     jerry_value_t observable_val = zjs_get_property(argv[0], "observable");
     if (jerry_value_is_boolean(observable_val)) {
@@ -481,20 +473,15 @@ static jerry_value_t ocf_register(const jerry_value_t function_val,
     }
     jerry_release_value(secure_val);
 
-
-    //if (!res_list) {
-    //    res_list = zjs_malloc(sizeof(resource_list_t));
-    //    res_list->next = NULL;
-    //    res_list->resource = NULL;
-    //}
-
     resource_list_t* new = zjs_malloc(sizeof(resource_list_t));
     if (!new) {
+        jerry_release_value(res_type_array);
         REJECT(promise, "InternalError", "Could not allocate resource list", h);
         return promise;
     }
     resource = new_server_resource(resource_path);
     if (!resource) {
+        jerry_release_value(res_type_array);
         REJECT(promise, "InternalError", "Could not allocate resource", h);
         return promise;
     }
@@ -504,21 +491,15 @@ static jerry_value_t ocf_register(const jerry_value_t function_val,
 
     resource->flags = flags;
 
-    resource->resource_types = zjs_malloc(sizeof(char*) * num_types);
+    resource->num_types = jerry_get_array_length(res_type_array);
+    resource->resource_types = zjs_malloc(sizeof(char*) * resource->num_types);
     if (!resource->resource_types) {
+        jerry_release_value(res_type_array);
         REJECT(promise, "InternalError", "resourceType alloc failed", h);
         return promise;
     }
-    /*
-    if (zjs_ocf_start() < 0) {
-        REJECT(promise, "InternalError", "OCF failed to start", h);
-        return promise;
-    }
-    */
 
-    //resource->res = oc_new_resource(resource_path, num_types, 0);
-
-    for (i = 0; i < num_types; ++i) {
+    for (i = 0; i < resource->num_types; ++i) {
         jerry_value_t type_val = jerry_get_property_by_index(res_type_array, i);
         uint32_t size = OCF_MAX_RES_TYPE_LEN;
         resource->resource_types[i] = zjs_alloc_from_jstring(type_val, &size);
@@ -528,11 +509,9 @@ static jerry_value_t ocf_register(const jerry_value_t function_val,
             REJECT(promise, "InternalError", "resourceType alloc failed", h);
             return promise;
         }
-        //oc_resource_bind_resource_type(resource->res, type_name);
         jerry_release_value(type_val);
     }
-
-    resource->num_types = num_types;
+    jerry_release_value(res_type_array);
 
     jerry_value_t iface_array = zjs_get_property(argv[0], "interfaces");
     if (!jerry_value_is_array(iface_array)) {
@@ -541,16 +520,16 @@ static jerry_value_t ocf_register(const jerry_value_t function_val,
         REJECT(promise, "TypeMismatchError", "resourceTypes array not found", h);
         return promise;
     }
-    uint32_t num_ifaces = jerry_get_array_length(iface_array);
-    resource->num_ifaces = num_ifaces;
 
-    resource->resource_ifaces = zjs_malloc(sizeof(char*) * num_ifaces);
+    resource->num_ifaces = jerry_get_array_length(iface_array);
+    resource->resource_ifaces = zjs_malloc(sizeof(char*) * resource->num_ifaces);
     if (!resource->resource_ifaces) {
+        jerry_release_value(iface_array);
         REJECT(promise, "InternalError", "interfaces alloc failed", h);
         return promise;
     }
 
-    for (i = 0; i < num_ifaces; ++i) {
+    for (i = 0; i < resource->num_ifaces; ++i) {
         jerry_value_t val = jerry_get_property_by_index(iface_array, i);
         uint32_t size = OCF_MAX_RES_TYPE_LEN;
         resource->resource_ifaces[i] = zjs_alloc_from_jstring(val, &size);
@@ -562,42 +541,18 @@ static jerry_value_t ocf_register(const jerry_value_t function_val,
         }
         jerry_release_value(val);
     }
+    jerry_release_value(iface_array);
 
+    // Start OCF. Device/platform/resource properties should all be set after
     if (zjs_ocf_start() < 0) {
         REJECT(promise, "InternalError", "OCF failed to start", h);
         return promise;
     }
 
-    //oc_resource_bind_resource_interface(resource->res, OC_IF_RW);
-    //oc_resource_set_default_interface(resource->res, OC_IF_RW);
-
-#ifdef OC_SECURITY
-  //oc_resource_make_secure(resource->res);
-#endif
-
-    //if (flags & FLAG_DISCOVERABLE) {
-    //    oc_resource_set_discoverable(resource->res, 1);
-    //}
-    //if (flags & FLAG_OBSERVE) {
-    //    oc_resource_set_periodic_observable(resource->res, 1);
-    //}
-    /*
-     * TODO: Since requests are handled in JS can POST/PUT use the same handler?
-     */
-    //oc_resource_set_request_handler(resource->res, OC_GET, ocf_get_handler, resource);
-    //oc_resource_set_request_handler(resource->res, OC_PUT, ocf_put_handler, resource);
-    //oc_resource_set_request_handler(resource->res, OC_POST, ocf_put_handler, resource);
-
-    //oc_add_resource(resource->res);
-
+    // Get UUID and set it in the ocf.device object
     char uuid[37];
     oc_uuid_to_str(&oc_device_info[resource->res->device].uuid, uuid, 37);
     zjs_set_uuid(uuid);
-
-    /*resource_list_t *new = zjs_malloc(sizeof(resource_list_t));
-    new->resource = resource->res;
-    new->next = r_list;
-    r_list = new;*/
 
     h = new_ocf_handler(resource);
     zjs_make_promise(promise, post_ocf_promise, h);
@@ -627,13 +582,11 @@ void zjs_ocf_register_resources(void)
         int i;
         struct server_resource* resource = cur->resource;
 
-        ZJS_PRINT("registering %s\n", cur->resource->resource_path);
         resource->res = oc_new_resource(resource->resource_path, resource->num_types, 0);
         for (i = 0; i < resource->num_types; ++i) {
             oc_resource_bind_resource_type(resource->res, resource->resource_types[i]);
         }
         for (i = 0; i < resource->num_ifaces; ++i) {
-            DBG_PRINT("binding iface: %s\n", resource->resource_ifaces[i]);
             if (strcmp(resource->resource_ifaces[i], "/oic/if/rw") == 0) {
                 oc_resource_bind_resource_interface(resource->res, OC_IF_RW);
                 oc_resource_set_default_interface(resource->res, OC_IF_RW);
@@ -681,6 +634,44 @@ jerry_value_t zjs_ocf_server_init()
     zjs_make_event(server, ZJS_UNDEFINED);
 
     return server;
+}
+
+void zjs_ocf_server_cleanup()
+{
+    if (res_list) {
+        resource_list_t* cur = res_list;
+        while (cur) {
+            int i;
+            struct server_resource* resource = cur->resource;
+            if (resource->device_id) {
+                zjs_free(resource->device_id);
+            }
+            if (resource->resource_path) {
+                zjs_free(resource->resource_path);
+            }
+            if (resource->resource_types) {
+                for (i = 0; i < resource->num_types; ++i) {
+                    if (resource->resource_types[i]) {
+                        zjs_free(resource->resource_types[i]);
+                    }
+                }
+                zjs_free(resource->resource_types);
+            }
+            if (resource->resource_ifaces) {
+                for (i = 0; i < resource->num_ifaces; ++i) {
+                    if (resource->resource_ifaces[i]) {
+                        zjs_free(resource->resource_ifaces[i]);
+                    }
+                }
+                zjs_free(resource->resource_ifaces);
+            }
+            jerry_release_value(resource->object);
+            zjs_free(resource);
+            res_list = res_list->next;
+            zjs_free(cur);
+            cur = res_list;
+        }
+    }
 }
 
 #endif // BUILD_MODULE_OCF

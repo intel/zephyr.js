@@ -10,4 +10,9 @@
  */
 jerry_value_t zjs_ocf_client_init();
 
+/*
+ * Cleanup OCF client
+ */
+void zjs_ocf_client_cleanup();
+
 #endif // __zjs_ocf_client__
