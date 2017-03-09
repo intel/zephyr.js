@@ -1,4 +1,5 @@
 // Copyright (c) 2017, Linaro Limited.
+
 #ifdef BUILD_MODULE_DGRAM
 
 // Zephyr includes
@@ -45,10 +46,8 @@ static jerry_value_t get_addr(sa_family_t family,
                               const jerry_value_t port,
                               struct sockaddr *sockaddr)
 {
+    // requires: addr must be a string value, and port must be a number value
     int ret;
-
-    if (!jerry_value_is_number(port) || !jerry_value_is_string(addr))
-        return zjs_error("port and IP address expected");
 
     // We employ the fact that port and address offsets are the same for IPv4&6
     struct sockaddr_in *sockaddr_in = (struct sockaddr_in*)sockaddr;
@@ -145,11 +144,10 @@ static jerry_value_t zjs_dgram_createSocket(const jerry_value_t function_obj,
                                             const jerry_value_t argv[],
                                             const jerry_length_t argc)
 {
+    // args: address family
+    ZJS_VALIDATE_ARGS(Z_STRING);
+
     int ret;
-    if (argc > 1)
-        return NOTSUPPORTED_ERROR("createSocket: only 1 arg supported");
-    if (argc < 1)
-        return zjs_error("createSocket: invalid argument");
 
     char type_str[8];
     GET_STR(argv[0], type_str);
@@ -184,16 +182,12 @@ static jerry_value_t zjs_dgram_createSocket(const jerry_value_t function_obj,
 }
 
 static jerry_value_t zjs_dgram_sock_on(const jerry_value_t function_obj,
-                                    const jerry_value_t this,
-                                    const jerry_value_t argv[],
-                                    const jerry_length_t argc)
+                                       const jerry_value_t this,
+                                       const jerry_value_t argv[],
+                                       const jerry_length_t argc)
 {
-    if (argc < 2 ||
-        !jerry_value_is_string(argv[0]) ||
-        (!jerry_value_is_function(argv[1]) &&
-         !jerry_value_is_null(argv[1]))) {
-        return zjs_error("zjs_dgram_sock_on: invalid argument");
-    }
+    // args: event name, callback
+    ZJS_VALIDATE_ARGS(Z_STRING, Z_FUNCTION Z_NULL);
 
     GET_HANDLE(dgram_handle_t, handle);
 
@@ -247,11 +241,15 @@ static jerry_value_t zjs_dgram_sock_send(const jerry_value_t function_obj,
                                          const jerry_value_t argv[],
                                          const jerry_length_t argc)
 {
-    int ret;
+    // NOTE: really argv[1] and argv[2] (offset and length) are supposed to be
+    //   optional, which would require improvements to ZJS_VALIDATE_ARGS,
+    //   but for now I'll leave them as required, as they were here before
 
-    if (argc < 5 || argc > 6 || !jerry_value_is_number(argv[1])
-                             || !jerry_value_is_number(argv[2]))
-        return zjs_error("dgram.send: invalid args");
+    // args: buffer, offset, length, port, address[, callback]
+    ZJS_VALIDATE_ARGS(Z_OBJECT, Z_NUMBER, Z_NUMBER, Z_NUMBER, Z_STRING,
+                      Z_OPTIONAL Z_FUNCTION);
+
+    int ret;
 
     GET_HANDLE(dgram_handle_t, handle);
 
@@ -295,10 +293,13 @@ static jerry_value_t zjs_dgram_sock_bind(const jerry_value_t function_obj,
                                          const jerry_value_t argv[],
                                          const jerry_length_t argc)
 {
-    int ret;
+    // NOTE: really argv[0] and argv[1] are supposed to be optional, but
+    //   leaving them as they were here for now
 
-    if (argc != 2)
-        return zjs_error("dgram.bind: wrong number of args");
+    // args: port, address
+    ZJS_VALIDATE_ARGS(Z_NUMBER, Z_STRING);
+
+    int ret;
 
     GET_HANDLE(dgram_handle_t, handle);
 

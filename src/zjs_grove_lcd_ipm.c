@@ -1,4 +1,5 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
+
 #ifdef BUILD_MODULE_GROVE_LCD
 #ifndef QEMU_BUILD
 #ifndef ZJS_LINUX_BUILD
@@ -105,9 +106,8 @@ static jerry_value_t zjs_glcd_print(const jerry_value_t function_obj,
                                     const jerry_value_t argv[],
                                     const jerry_length_t argc)
 {
-    if (argc < 1 || !jerry_value_is_string(argv[0])) {
-        return zjs_error("zjs_glcd_print: invalid argument");
-    }
+    // args: text
+    ZJS_VALIDATE_ARGS(Z_STRING);
 
     jerry_size_t size = MAX_BUFFER_SIZE;
     char *buffer = zjs_alloc_from_jstring(argv[0], &size);
@@ -142,11 +142,8 @@ static jerry_value_t zjs_glcd_set_cursor_pos(const jerry_value_t function_obj,
                                              const jerry_value_t argv[],
                                              const jerry_length_t argc)
 {
-    if (argc != 2 ||
-        !jerry_value_is_number(argv[0]) ||
-        !jerry_value_is_number(argv[1])) {
-        return zjs_error("zjs_glcd_set_cursor_pos: invalid argument");
-    }
+    // args: column, row
+    ZJS_VALIDATE_ARGS(Z_NUMBER, Z_NUMBER);
 
     // send IPM message to the ARC side
     zjs_ipm_message_t send;
@@ -162,9 +159,8 @@ static jerry_value_t zjs_glcd_select_color(const jerry_value_t function_obj,
                                            const jerry_value_t argv[],
                                            const jerry_length_t argc)
 {
-    if (argc != 1 || !jerry_value_is_number(argv[0])) {
-        return zjs_error("zjs_glcd_select_color: invalid argument");
-    }
+    // args: predefined color index
+    ZJS_VALIDATE_ARGS(Z_NUMBER);
 
     // send IPM message to the ARC side
     zjs_ipm_message_t send;
@@ -179,12 +175,8 @@ static jerry_value_t zjs_glcd_set_color(const jerry_value_t function_obj,
                                         const jerry_value_t argv[],
                                         const jerry_length_t argc)
 {
-    if (argc != 3 ||
-        !jerry_value_is_number(argv[0]) ||
-        !jerry_value_is_number(argv[1]) ||
-        !jerry_value_is_number(argv[2])) {
-        return zjs_error("zjs_glcd_set_color: invalid argument");
-    }
+    // args: red, green, blue
+    ZJS_VALIDATE_ARGS(Z_NUMBER, Z_NUMBER, Z_NUMBER);
 
     // send IPM message to the ARC side
     zjs_ipm_message_t send;
@@ -201,9 +193,8 @@ static jerry_value_t zjs_glcd_set_function(const jerry_value_t function_obj,
                                            const jerry_value_t argv[],
                                            const jerry_length_t argc)
 {
-    if (argc != 1 || !jerry_value_is_number(argv[0])) {
-        return zjs_error("zjs_glcd_set_function: invalid argument");
-    }
+    // args: predefined function number
+    ZJS_VALIDATE_ARGS(Z_NUMBER);
 
     // send IPM message to the ARC side
     zjs_ipm_message_t send;
@@ -231,9 +222,8 @@ static jerry_value_t zjs_glcd_set_display_state(const jerry_value_t function_obj
                                                 const jerry_value_t argv[],
                                                 const jerry_length_t argc)
 {
-    if (argc != 1 || !jerry_value_is_number(argv[0])) {
-        return zjs_error("zjs_glcd_set_display_state: invalid argument");
-    }
+    // args: predefined numeric constants
+    ZJS_VALIDATE_ARGS(Z_NUMBER);
 
     // send IPM message to the ARC side
     zjs_ipm_message_t send;
@@ -261,9 +251,8 @@ static jerry_value_t zjs_glcd_set_input_state(const jerry_value_t function_obj,
                                               const jerry_value_t argv[],
                                               const jerry_length_t argc)
 {
-    if (argc != 1 || !jerry_value_is_number(argv[0])) {
-        return zjs_error("zjs_glcd_set_input_state: invalid argument");
-    }
+    // args: predefined numeric constants
+    ZJS_VALIDATE_ARGS(Z_NUMBER);
 
     // send IPM message to the ARC side
     zjs_ipm_message_t send;

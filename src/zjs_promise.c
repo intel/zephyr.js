@@ -39,9 +39,8 @@ static jerry_value_t promise_resolve(const jerry_value_t function_obj,
                                      const jerry_length_t argc,
                                      uint8_t fulfill)
 {
-    if (!jerry_value_is_function(argv[0])) {
-        return zjs_error("invalid arguments");
-    }
+    // args: callback
+    ZJS_VALIDATE_ARGS(Z_FUNCTION);
 
     zjs_promise_t *handle = NULL;
     jerry_value_t promise_obj = zjs_get_property(this, "promise");

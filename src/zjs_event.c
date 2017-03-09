@@ -128,10 +128,9 @@ static jerry_value_t add_listener(const jerry_value_t function_obj,
                                   const jerry_value_t argv[],
                                   const jerry_length_t argc)
 {
-    if (!jerry_value_is_string(argv[0]) ||
-        !jerry_value_is_function(argv[1])) {
-        return zjs_error("invalid argument");
-    }
+    // args: event name, callback
+    ZJS_VALIDATE_ARGS(Z_STRING, Z_FUNCTION);
+
     jerry_size_t size = ZJS_MAX_EVENT_NAME_SIZE;
     char name[size];
     zjs_copy_jstring(argv[0], name, &size);
@@ -147,9 +146,8 @@ static jerry_value_t emit_event(const jerry_value_t function_obj,
                                 const jerry_value_t *argv,
                                 const jerry_length_t argc)
 {
-    if (!jerry_value_is_string(argv[0])) {
-        return zjs_error("parameter is not a string");
-    }
+    // args: event name[, additional pass-through args]
+    ZJS_VALIDATE_ARGS(Z_STRING);
 
     jerry_size_t size = ZJS_MAX_EVENT_NAME_SIZE;
     char event[size];
@@ -169,12 +167,8 @@ static jerry_value_t remove_listener(const jerry_value_t function_obj,
                                      const jerry_value_t argv[],
                                      const jerry_length_t argc)
 {
-    if (!jerry_value_is_string(argv[0])) {
-        return zjs_error("event name must be first parameter");
-    }
-    if (!jerry_value_is_function(argv[1])) {
-        return zjs_error("event listener must be second parameter");
-    }
+    // args: event name, callback
+    ZJS_VALIDATE_ARGS(Z_STRING, Z_FUNCTION);
 
     jerry_value_t event_emitter = zjs_get_property(this, HIDDEN_PROP("event"));
 
@@ -216,9 +210,8 @@ static jerry_value_t remove_all_listeners(const jerry_value_t function_obj,
                                           const jerry_value_t argv[],
                                           const jerry_length_t argc)
 {
-    if (!jerry_value_is_string(argv[0])) {
-        return zjs_error("event name must be first parameter");
-    }
+    // args: event name
+    ZJS_VALIDATE_ARGS(Z_STRING);
 
     jerry_value_t event_emitter = zjs_get_property(this, HIDDEN_PROP("event"));
 
@@ -313,9 +306,9 @@ static jerry_value_t set_max_listeners(const jerry_value_t function_obj,
                                        const jerry_value_t argv[],
                                        const jerry_length_t argc)
 {
-    if (!jerry_value_is_number(argv[0])) {
-        return zjs_error("max listeners count must be first parameter");
-    }
+    // args: max count
+    ZJS_VALIDATE_ARGS(Z_NUMBER);
+
     jerry_value_t event_emitter = zjs_get_property(this, HIDDEN_PROP("event"));
 
     double num = jerry_get_number_value(argv[0]);
@@ -334,9 +327,8 @@ static jerry_value_t get_listener_count(const jerry_value_t function_obj,
                                         const jerry_value_t argv[],
                                         const jerry_length_t argc)
 {
-    if (!jerry_value_is_string(argv[0])) {
-        return zjs_error("event name must be first parameter");
-    }
+    // args: event name
+    ZJS_VALIDATE_ARGS(Z_STRING);
 
     jerry_value_t event_emitter = zjs_get_property(this, HIDDEN_PROP("event"));
 
@@ -377,9 +369,8 @@ static jerry_value_t get_listeners(const jerry_value_t function_obj,
                                    const jerry_value_t argv[],
                                    const jerry_length_t argc)
 {
-    if (!jerry_value_is_string(argv[0])) {
-        return zjs_error("event name must be first parameter");
-    }
+    // args: event name
+    ZJS_VALIDATE_ARGS(Z_STRING);
 
     jerry_value_t event_emitter = zjs_get_property(this, HIDDEN_PROP("event"));
 

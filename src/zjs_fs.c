@@ -1,4 +1,5 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
+
 #ifdef BUILD_MODULE_FS
 
 #include <zephyr.h>
@@ -151,20 +152,17 @@ static jerry_value_t zjs_open(const jerry_value_t function_obj,
                               const jerry_length_t argc,
                               uint8_t async)
 {
-    if (argc < 3 && async) {
-        return invalid_args();
-    }
-    if (!jerry_value_is_string(argv[0])) {
-        return invalid_args();
-    }
-    if (!jerry_value_is_string(argv[1])) {
-        return invalid_args();
-    }
+    // NOTE: what we call mode below is actually 'flags' in Node docs, argv[1];
+    //   we don't support mode (optional argv[2])
+    // args: filepath, flags
+    ZJS_VALIDATE_ARGS(Z_STRING, Z_STRING);
+
+#ifdef ZJS_FS_ASYNC_APIS
+    // async case add callback arg
     if (async) {
-        if (!jerry_value_is_function(argv[argc - 1])) {
-            return invalid_args();
-        }
+        ZJS_VALIDATE_ARGS_OFFSET(2, Z_FUNCTION);
     }
+#endif
 
     file_handle_t* handle = new_file();
     if (!handle) {
@@ -211,13 +209,9 @@ static jerry_value_t zjs_open(const jerry_value_t function_obj,
 
 #ifdef ZJS_FS_ASYNC_APIS
     if (async) {
-        zjs_callback_id id = zjs_add_callback_once(argv[argc - 1],
-                                                   this,
-                                                   handle,
-                                                   NULL);
+        zjs_callback_id id = zjs_add_callback_once(argv[2], this, handle, NULL);
 
         jerry_value_t args[2];
-
         args[0] = jerry_create_number(handle->error);
         args[1] = handle->fd_val;
 
@@ -252,16 +246,18 @@ static jerry_value_t zjs_close(const jerry_value_t function_obj,
                                const jerry_length_t argc,
                                uint8_t async)
 {
+    // args: file descriptor
+    ZJS_VALIDATE_ARGS(Z_OBJECT);
+
     file_handle_t* handle;
 
-    if (!jerry_value_is_object(argv[0])) {
-        return invalid_args();
-    }
+#ifdef ZJS_FS_ASYNC_APIS
+    // async case adds callback arg
     if (async) {
-        if (!jerry_value_is_function(argv[1])) {
-            return invalid_args();
-        }
+        ZJS_VALIDATE_ARGS_OFFSET(1, Z_FUNCTION);
     }
+#endif
+
     if (!jerry_get_object_native_handle(argv[0], (uintptr_t*)&handle)) {
         return zjs_error("native handle not found");
     }
@@ -276,7 +272,6 @@ static jerry_value_t zjs_close(const jerry_value_t function_obj,
                                                    NULL);
 
         jerry_value_t error = jerry_create_number(handle->error);
-
         zjs_signal_callback(id, &error, sizeof(jerry_value_t));
     }
 #endif
@@ -308,17 +303,17 @@ static jerry_value_t zjs_unlink(const jerry_value_t function_obj,
                                 const jerry_length_t argc,
                                 uint8_t async)
 {
-    int ret = 0;
+    // args: filename
+    ZJS_VALIDATE_ARGS(Z_STRING);
 
-    if (!jerry_value_is_string(argv[0])) {
-        return invalid_args();
-    }
+#ifdef ZJS_FS_ASYNC_APIS
+    // async case adds callback arg
     if (async) {
-        if (!jerry_value_is_function(argv[1])) {
-            return invalid_args();
-        }
+        ZJS_VALIDATE_ARGS_OFFSET(1, Z_FUNCTION);
     }
+#endif
 
+    int ret = 0;
     jerry_size_t size = MAX_PATH_LENGTH;
     char path[size];
 
@@ -366,33 +361,19 @@ static jerry_value_t zjs_read(const jerry_value_t function_obj,
                               const jerry_length_t argc,
                               uint8_t async)
 {
+    // args: file descriptor, buffer, offset, length, position
+    ZJS_VALIDATE_ARGS(Z_OBJECT, Z_OBJECT, Z_NUMBER, Z_NUMBER, Z_NUMBER Z_NULL);
+
+#ifdef ZJS_FS_ASYNC_APIS
+    // async case adds callback
+    if (async) {
+        ZJS_VALIDATE_ARGS_OFFSET(5, Z_FUNCTION);
+    }
+#endif
+
     file_handle_t* handle;
     int err = 0;
 
-    if (argc < 6 && async) {
-        return invalid_args();
-    }
-
-    if (!jerry_value_is_object(argv[0])) {
-        return invalid_args();
-    }
-    if (!jerry_value_is_object(argv[1])) {
-        return invalid_args();
-    }
-    if (!jerry_value_is_number(argv[2])) {
-        return invalid_args();
-    }
-    if (!jerry_value_is_number(argv[3])) {
-        return invalid_args();
-    }
-    if (!jerry_value_is_number(argv[4]) && !jerry_value_is_null(argv[4])) {
-        return invalid_args();
-    }
-    if (async) {
-        if (!jerry_value_is_function(argv[5])) {
-            return invalid_args();
-        }
-    }
     if (!jerry_get_object_native_handle(argv[0], (uintptr_t*)&handle)) {
         return zjs_error("native handle not found");
     }
@@ -448,7 +429,6 @@ static jerry_value_t zjs_read(const jerry_value_t function_obj,
 #ifdef ZJS_FS_ASYNC_APIS
     if (async) {
         jerry_value_t args[3];
-
         args[0] = jerry_create_number(err);
         args[1] = jerry_create_number(ret);
         args[2] = argv[1];
@@ -457,7 +437,6 @@ static jerry_value_t zjs_read(const jerry_value_t function_obj,
                                                    this,
                                                    NULL,
                                                    NULL);
-
         zjs_signal_callback(id, args, sizeof(jerry_value_t) * 3);
 
         return ZJS_UNDEFINED;
@@ -488,59 +467,23 @@ static jerry_value_t zjs_write(const jerry_value_t function_obj,
                                const jerry_length_t argc,
                                uint8_t async)
 {
-    file_handle_t* handle;
-    double position = 0;
-    double offset = 0;
-    double length = 0;
-    uint8_t from_cur = 0;
+    // args: file descriptor, buffer, offset, length[, position]
+    ZJS_VALIDATE_ARGS_OPTCOUNT(optcount, Z_OBJECT, Z_OBJECT, Z_NUMBER,
+                               Z_NUMBER, Z_OPTIONAL Z_NUMBER);
+
 #ifdef ZJS_FS_ASYNC_APIS
-    jerry_value_t js_cb = ZJS_UNDEFINED;
+    // async case adds callback arg
+    int cbindex = 4 + optcount;
+    if (async) {
+        ZJS_VALIDATE_ARGS_OFFSET(cbindex, Z_FUNCTION);
+    }
 #endif
 
-    if (argc < 2) {
-        return invalid_args();
-    }
-    if (jerry_value_is_object(argv[1])) {
-        // buffer
-        if (argc > 2) {
-            if (jerry_value_is_number(argv[2])) {
-                offset = jerry_get_number_value(argv[2]);
-            } else {
-                return invalid_args();
-            }
-        }
-        if (argc > 3) {
-            if (jerry_value_is_number(argv[3])) {
-                length = jerry_get_number_value(argv[3]);
-            } else {
-                return invalid_args();
-            }
-        }
-        if (argc > 4) {
-            if (jerry_value_is_number(argv[4])) {
-                position = jerry_get_number_value(argv[4]);
-            } else {
-                // position != number
-                from_cur = 1;
-            }
-        }
-#ifdef ZJS_FS_ASYNC_APIS
-        if (!jerry_value_is_function(argv[argc - 1])) {
-            return invalid_args();
-        } else {
-            js_cb = argv[argc - 1];
-        }
-#endif
-    } else if (jerry_value_is_string(argv[1])) {
-        /*
-         * TODO: Eventually support string if its desired. It makes argument
-         *       parsing a huge pain, so just supporting buffer for now seems
-         *       like the right decision.
-         */
-        return zjs_error("string input not supported");
-    } else {
-        return invalid_args();
-    }
+    file_handle_t* handle;
+    double offset = 0;
+    double length = 0;
+    double position = 0;
+    uint8_t from_cur = 0;
 
     if (!jerry_get_object_native_handle(argv[0], (uintptr_t*)&handle)) {
         return zjs_error("native handle not found");
@@ -551,6 +494,12 @@ static jerry_value_t zjs_write(const jerry_value_t function_obj,
     }
 
     zjs_buffer_t* buffer = zjs_buffer_find(argv[1]);
+
+    offset = jerry_get_number_value(argv[2]);
+    length = jerry_get_number_value(argv[3]);
+    if (optcount > 0) {
+        position = jerry_get_number_value(argv[4]);
+    }
 
     if (offset && !length) {
         length = buffer->bufsize - offset;
@@ -591,16 +540,12 @@ static jerry_value_t zjs_write(const jerry_value_t function_obj,
 #ifdef ZJS_FS_ASYNC_APIS
     if (async) {
         jerry_value_t args[3];
-
         args[0] = jerry_create_number(0);
         args[1] = jerry_create_number(written);
         args[2] = argv[1];
 
-        zjs_callback_id id = zjs_add_callback_once(js_cb,
-                                                   this,
-                                                   NULL,
+        zjs_callback_id id = zjs_add_callback_once(argv[cbindex], this, NULL,
                                                    NULL);
-
         zjs_signal_callback(id, args, sizeof(jerry_value_t) * 3);
 
         return ZJS_UNDEFINED;
@@ -631,15 +576,17 @@ static jerry_value_t zjs_truncate(const jerry_value_t function_obj,
                                   const jerry_length_t argc,
                                   uint8_t async)
 {
-    fs_file_t fp;
-    if (!jerry_value_is_number(argv[1])) {
-        return invalid_args();
-    }
+    // args: file descriptor or string path, length
+    ZJS_VALIDATE_ARGS(Z_OBJECT Z_STRING, Z_NUMBER);
+
+#ifdef ZJS_FS_ASYNC_APIS
+    // async case adds callback arg
     if (async) {
-        if (!jerry_value_is_function(argv[2])) {
-            return invalid_args();
-        }
+        ZJS_VALIDATE_ARGS_OFFSET(2, Z_FUNCTION);
     }
+#endif
+
+    fs_file_t fp;
     if (jerry_value_is_object(argv[0])) {
         file_handle_t* handle;
         if (!jerry_get_object_native_handle(argv[0], (uintptr_t*)&handle)) {
@@ -673,7 +620,6 @@ static jerry_value_t zjs_truncate(const jerry_value_t function_obj,
                                                    this,
                                                    NULL,
                                                    NULL);
-
         zjs_signal_callback(id, NULL, 0);
     }
 #endif
@@ -702,42 +648,19 @@ static jerry_value_t zjs_mkdir(const jerry_value_t function_obj,
                                const jerry_length_t argc,
                                uint8_t async)
 {
-    jerry_value_t js_cb = ZJS_UNDEFINED;
+    // args: dirpath
+    ZJS_VALIDATE_ARGS(Z_STRING);
+
+#ifdef ZJS_FS_ASYNC_APIS
+    // async case adds callback arg
+    if (async) {
+        ZJS_VALIDATE_ARGS_OFFSET(1, Z_FUNCTION);
+    }
+#endif
+
     uint32_t mode = MODE_A_PLUS;
     jerry_size_t size;
-    if (!jerry_value_is_string(argv[0])) {
-        return invalid_args();
-    }
-    if (argc > 2) {
-        if (async) {
-            if (!jerry_value_is_function(argv[2])) {
-                return invalid_args();
-            } else {
-                js_cb = argv[2];
-            }
-        }
-        if (!jerry_value_is_string(argv[1])) {
-            return invalid_args();
-        } else {
-            size = 4;
-            char mode_str[size];
 
-            zjs_copy_jstring(argv[1], mode_str, &size);
-            if (!size) {
-                return zjs_error("size mismatch");
-            }
-
-            mode = get_mode(mode_str);
-        }
-    } else {
-        if (async) {
-            if (!jerry_value_is_function(argv[1])) {
-                return invalid_args();
-            } else {
-                js_cb = argv[1];
-            }
-        }
-    }
     size = MAX_PATH_LENGTH;
     char path[size];
 
@@ -751,11 +674,7 @@ static jerry_value_t zjs_mkdir(const jerry_value_t function_obj,
     }
 #ifdef ZJS_FS_ASYNC_APIS
     if (async) {
-        zjs_callback_id id = zjs_add_callback_once(js_cb,
-                                                   this,
-                                                   NULL,
-                                                   NULL);
-
+        zjs_callback_id id = zjs_add_callback_once(argv[1], this, NULL, NULL);
         zjs_signal_callback(id, NULL, 0);
     }
 #endif
@@ -785,11 +704,17 @@ static jerry_value_t zjs_readdir(const jerry_value_t function_obj,
                                  const jerry_length_t argc,
                                  uint8_t async)
 {
-    jerry_value_t array;
+    // args: dirpath
+    ZJS_VALIDATE_ARGS(Z_STRING);
 
-    if (!jerry_value_is_string(argv[0])) {
-        return zjs_error("first parameter was not path");
+#ifdef ZJS_FS_ASYNC_APIS
+    // async case adds callback arg
+    if (async) {
+        ZJS_VALIDATE_ARGS_OFFSET(1, Z_FUNCTION);
     }
+#endif
+
+    jerry_value_t array;
     jerry_size_t size = MAX_PATH_LENGTH;
     char path[size];
 
@@ -858,7 +783,6 @@ static jerry_value_t zjs_readdir(const jerry_value_t function_obj,
                                                NULL);
 
         jerry_value_t args[2];
-
         args[0] = jerry_create_number(res);
         args[1] = array;
 
@@ -892,14 +816,16 @@ static jerry_value_t zjs_stat(const jerry_value_t function_obj,
                               const jerry_length_t argc,
                               uint8_t async)
 {
-    if (!jerry_value_is_string(argv[0])) {
-        return invalid_args();
-    }
+    // args: filepath
+    ZJS_VALIDATE_ARGS(Z_STRING);
+
+#ifdef ZJS_FS_ASYNC_APIS
+    // async case adds callback arg
     if (async) {
-        if (!jerry_value_is_function(argv[1])) {
-            return invalid_args();
-        }
+        ZJS_VALIDATE_ARGS_OFFSET(1, Z_FUNCTION);
     }
+#endif
+
     jerry_size_t size = MAX_PATH_LENGTH;
     char path[size];
 
@@ -924,7 +850,6 @@ static jerry_value_t zjs_stat(const jerry_value_t function_obj,
                                                    this,
                                                    NULL,
                                                    NULL);
-
         zjs_signal_callback(id, args, sizeof(jerry_value_t) * 2);
 
         return ZJS_UNDEFINED;
@@ -955,48 +880,30 @@ static jerry_value_t zjs_write_file(const jerry_value_t function_obj,
                                     const jerry_length_t argc,
                                     uint8_t async)
 {
+    // args: filepath, data
+    ZJS_VALIDATE_ARGS_OPTCOUNT(optcount, Z_STRING, Z_OBJECT Z_STRING);
+
+#ifdef ZJS_FS_ASYNC_APIS
+    // async case adds callback arg
+    if (async) {
+        ZJS_VALIDATE_ARGS_OFFSET(2, Z_FUNCTION);
+    }
+#endif
+
     uint8_t is_buf = 0;
     jerry_size_t size;
     int error = 0;
-    jerry_value_t js_cb = ZJS_UNDEFINED;
     char* data = NULL;
     uint32_t length;
-    if (!jerry_value_is_string(argv[0])) {
-        return invalid_args();
-    }
     if (jerry_value_is_string(argv[1])) {
         size = 256;
         data = zjs_alloc_from_jstring(argv[1], &size);
         length = size;
-    } else if (jerry_value_is_object(argv[1])) {
+    } else {
         zjs_buffer_t* buffer = zjs_buffer_find(argv[1]);
         data = buffer->buffer;
         length = buffer->bufsize;
         is_buf = 1;
-    } else {
-        return invalid_args();
-    }
-    // Options provided
-    if (argc > 3) {
-        if (!jerry_value_is_object(argv[2])) {
-            if (data && !is_buf) {
-                zjs_free(data);
-            }
-            return invalid_args();
-        }
-        // Options object has no effect on Zephyr, 'mode' and 'flag' properties
-        // are not used for opening a file, so their values are irrelevant
-#ifdef ZJS_FS_ASYNC_APIS
-        if (async) {
-            if (!jerry_value_is_function(argv[3])) {
-                return invalid_args();
-            } else {
-                js_cb = argv[3];
-            }
-        }
-#endif
-    } else if (async) {
-        js_cb = argv[argc - 1];
     }
 
     size = 32;
@@ -1029,10 +936,7 @@ static jerry_value_t zjs_write_file(const jerry_value_t function_obj,
 Finished:
 #ifdef ZJS_FS_ASYNC_APIS
     if (async) {
-        zjs_callback_id id = zjs_add_callback_once(js_cb,
-                                                   this,
-                                                   NULL,
-                                                   NULL);
+        zjs_callback_id id = zjs_add_callback_once(argv[2], this, NULL, NULL);
 
         jerry_value_t err = jerry_create_number(error);
 

@@ -444,16 +444,17 @@ static jerry_value_t ocf_find_resources(const jerry_value_t function_val,
                                         const jerry_value_t argv[],
                                         const jerry_length_t argc)
 {
+    // args: options object
+    ZJS_VALIDATE_ARGS(Z_OPTIONAL Z_OBJECT, Z_OPTIONAL Z_FUNCTION);
+
     char* resource_type = NULL;
     char* device_id = NULL;
     char* resource_path = NULL;
-    uint8_t listen_idx = 0xff;
     jerry_value_t listener = ZJS_UNDEFINED;
     jerry_value_t promise = jerry_create_object();
 
-    if (jerry_value_is_object(argv[0])) {
+    if (argc > 0 && !jerry_value_is_function(argv[0])) {
         // has options parameter
-
         jerry_value_t device_id_val = zjs_get_property(argv[0], "deviceId");
         jerry_value_t res_type_val = zjs_get_property(argv[0], "resourceType");
         jerry_value_t res_path_val = zjs_get_property(argv[0], "resourcePath");
@@ -481,19 +482,13 @@ static jerry_value_t ocf_find_resources(const jerry_value_t function_val,
                 DBG_PRINT("resourcePath: %s\n", resource_path);
         }
         jerry_release_value(res_path_val);
-
     }
 
     if (jerry_value_is_function(argv[0])) {
-        // has listener parameter
-        listen_idx = 0;
-    } else if (jerry_value_is_function(argv[1])) {
-        listen_idx = 1;
+        listener = argv[0];
     }
-
-    if (listen_idx != 0xff) {
-        listener = argv[listen_idx];
-        DBG_PRINT("'resourcefound' listener provided\n");
+    else if (argc >= 2) {
+        listener = argv[1];
     }
 
     add_resource(device_id, resource_type, resource_path, this, listener);
@@ -571,16 +566,13 @@ static jerry_value_t ocf_retrieve(const jerry_value_t function_val,
                                   const jerry_value_t argv[],
                                   const jerry_length_t argc)
 {
+    // args: device id[, options][, listener]
+    ZJS_VALIDATE_ARGS(Z_STRING, Z_OPTIONAL Z_OBJECT, Z_OPTIONAL Z_FUNCTION);
+
     jerry_value_t options = 0;
-    jerry_value_t listener;
+    jerry_value_t listener = 0;
     jerry_value_t promise = jerry_create_object();
     struct ocf_handler* h;
-
-    if (!jerry_value_is_string(argv[0])) {
-        ERR_PRINT("first parameter must be deviceId\n");
-        REJECT(promise, "TypeMismatchError", "first parameter must be device ID", h);
-        return promise;
-    }
 
     ZJS_GET_STRING(argv[0], device_id, OCF_MAX_DEVICE_ID_LEN + 1);
 
@@ -592,23 +584,22 @@ static jerry_value_t ocf_retrieve(const jerry_value_t function_val,
     }
 
     if (argc > 1) {
-        if (argc == 2) {
-            if (jerry_value_is_function(argv[1])) {
-                listener = argv[1];
-                zjs_add_event_listener(this, "update", listener);
-            } else {
-                options = argv[1];
-            }
-        } else if (argc == 3) {
-            if (jerry_value_is_function(argv[1])) {
-                listener = argv[1];
-                options = argv[2];
-            } else {
+        if (jerry_value_is_function(argv[1])) {
+            listener = argv[1];
+        }
+        else {
+            options = argv[1];
+            if (argc > 2) {
                 listener = argv[2];
-                options = argv[1];
             }
+        }
+
+        if (listener) {
             zjs_add_event_listener(this, "update", listener);
         }
+    }
+
+    if (options) {
         jerry_value_t observe_flag = zjs_get_property(options, "observable");
         if (jerry_value_is_boolean(observe_flag)) {
             bool val = jerry_get_boolean_value(observe_flag);
@@ -647,10 +638,12 @@ static jerry_value_t ocf_retrieve(const jerry_value_t function_val,
     }
 
     if (resource->flags & FLAG_OBSERVE) {
-        oc_do_observe(resource->resource_path, &resource->server, NULL, &observe_callback, LOW_QOS, resource);
+        oc_do_observe(resource->resource_path, &resource->server, NULL,
+                      &observe_callback, LOW_QOS, resource);
     }
 
-    DBG_PRINT("resource found in lookup: path=%s, id=%s\n", resource->resource_path, resource->device_id);
+    DBG_PRINT("resource found in lookup: path=%s, id=%s\n",
+              resource->resource_path, resource->device_id);
 
     h = new_ocf_handler(resource);
     h->res = resource;
@@ -700,14 +693,12 @@ static jerry_value_t ocf_update(const jerry_value_t function_val,
                                 const jerry_value_t argv[],
                                 const jerry_length_t argc)
 {
+    // args: resource object
+    ZJS_VALIDATE_ARGS(Z_OBJECT);
+
     jerry_value_t promise = jerry_create_object();
     struct ocf_handler* h;
 
-    if (!jerry_value_is_object(argv[0])) {
-        ERR_PRINT("first parameter must be resource object\n");
-        REJECT(promise, "TypeMismatchError", "first parameter must be resource object", h);
-        return promise;
-    }
     // Get device ID property from resource
     jerry_value_t device_id_val = zjs_get_property(argv[0], "deviceId");
 
@@ -786,14 +777,11 @@ static jerry_value_t ocf_delete(const jerry_value_t function_val,
                                 const jerry_value_t argv[],
                                 const jerry_length_t argc)
 {
+    // args: device id
+    ZJS_VALIDATE_ARGS(Z_STRING);
+
     struct ocf_handler* h;
     jerry_value_t promise = jerry_create_object();
-
-    if (!jerry_value_is_string(argv[0])) {
-        ERR_PRINT("first parameter must be deviceId\n");
-        REJECT(promise, "TypeMismatchError", "first parameter must be device ID", h);
-        return promise;
-    }
 
     ZJS_GET_STRING(argv[0], uri, OCF_MAX_URI_LEN);
 
@@ -898,14 +886,10 @@ static jerry_value_t ocf_get_platform_info(const jerry_value_t function_val,
                                            const jerry_value_t argv[],
                                            const jerry_length_t argc)
 {
+    // args: device ide
+    ZJS_VALIDATE_ARGS(Z_STRING);
     struct ocf_handler* h;
     jerry_value_t promise = jerry_create_object();
-
-    if (!jerry_value_is_string(argv[0])) {
-        ERR_PRINT("first parameter must be device ID\n");
-        REJECT(promise, "TypeMismatchError", "first parameter must be device ID", h);
-        return promise;
-    }
 
     ZJS_GET_STRING(argv[0], device_id, OCF_MAX_DEVICE_ID_LEN + 1);
 
@@ -1002,14 +986,11 @@ static jerry_value_t ocf_get_device_info(const jerry_value_t function_val,
                                          const jerry_value_t argv[],
                                          const jerry_length_t argc)
 {
+    // args: device id
+    ZJS_VALIDATE_ARGS(Z_STRING);
+
     struct ocf_handler* h;
     jerry_value_t promise = jerry_create_object();
-
-    if (!jerry_value_is_string(argv[0])) {
-        ERR_PRINT("first parameter must be device ID\n");
-        REJECT(promise, "TypeMismatchError", "first parameter must be device ID", h);
-        return promise;
-    }
 
     ZJS_GET_STRING(argv[0], device_id, OCF_MAX_DEVICE_ID_LEN + 1);
 

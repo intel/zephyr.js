@@ -145,9 +145,8 @@ static jerry_value_t add_timer_helper(const jerry_value_t function_obj,
                                       const jerry_value_t argv[],
                                       bool repeat)
 {
-    if (argc < 2 || !jerry_value_is_function(argv[0]) ||
-            !jerry_value_is_number(argv[1]))
-        return zjs_error("native_set_interval_handler: invalid arguments");
+    // args: callback, time in milliseconds[, pass-through args]
+    ZJS_VALIDATE_ARGS(Z_FUNCTION, Z_NUMBER);
 
     uint32_t interval = (uint32_t)(jerry_get_number_value(argv[1]));
     jerry_value_t callback = argv[0];
@@ -194,13 +193,12 @@ static jerry_value_t native_clear_interval_handler(const jerry_value_t function_
                                                    const jerry_value_t argv[],
                                                    const jerry_length_t argc)
 {
+    // args: timer object
+    // FIXME: timers should be ints, not objects!
+    ZJS_VALIDATE_ARGS(Z_OBJECT);
+
     jerry_value_t timer_obj = argv[0];
     zjs_timer_t *handle;
-
-    if (!jerry_value_is_object(argv[0])) {
-        ERR_PRINT("invalid arguments\n");
-        return jerry_create_undefined();
-    }
 
     if (!jerry_get_object_native_handle(timer_obj, (uintptr_t*)&handle)) {
         return zjs_error("native_clear_interval_handler(): native handle not found");
@@ -209,7 +207,7 @@ static jerry_value_t native_clear_interval_handler(const jerry_value_t function_
     if (!delete_timer(handle->callback_id))
         return zjs_error("native_clear_interval_handler: timer not found");
 
-    return jerry_create_undefined();
+    return ZJS_UNDEFINED;
 }
 
 uint8_t zjs_timers_process_events()

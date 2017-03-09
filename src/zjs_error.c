@@ -24,6 +24,9 @@ static jerry_value_t error_handler(const jerry_value_t function_obj,
                                    const jerry_value_t argv[],
                                    const jerry_length_t argc)
 {
+    // args: message
+    ZJS_VALIDATE_ARGS(Z_OPTIONAL Z_STRING);
+
     int count = sizeof(error_types) / sizeof(zjs_error_t);
     bool found = false;
     for (int i=0; i<count; i++) {
@@ -39,7 +42,7 @@ static jerry_value_t error_handler(const jerry_value_t function_obj,
         return zjs_error("error_handler: unknown type");
     }
 
-    if (argc >= 1 && jerry_value_is_string(argv[0])) {
+    if (argc >= 1) {
         zjs_set_property(this, "message", argv[0]);
     }
 

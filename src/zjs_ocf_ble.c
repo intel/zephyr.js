@@ -59,9 +59,9 @@ static jerry_value_t ocf_set_ble_address(const jerry_value_t function_val,
                                          const jerry_value_t argv[],
                                          const jerry_length_t argc)
 {
-    if (!jerry_value_is_string(argv[0])) {
-        return zjs_error("invalid arguments");
-    }
+    // args: address
+    ZJS_VALIDATE_ARGS(Z_STRING);
+
     jerry_size_t size = 18;
     char addr[size];
     zjs_copy_jstring(argv[0], addr, &size);

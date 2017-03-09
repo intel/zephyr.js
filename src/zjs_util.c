@@ -384,3 +384,91 @@ void zjs_print_error_message(jerry_value_t error)
         ERR_PRINT("%s%s\n", uncaught, name);
     }
 }
+
+bool zjs_true(const jerry_value_t value)
+{
+    // return true for any value
+    return true;
+}
+
+typedef bool (*zjs_type_test)(const jerry_value_t);
+
+// NOTE: These must match the order of Z_ANY to Z_UNDEFINED in zjs_util.h
+zjs_type_test zjs_type_map[] = {
+    zjs_true,
+    jerry_value_is_array,
+    jerry_value_is_boolean,
+    jerry_value_is_function,
+    jerry_value_is_null,
+    jerry_value_is_number,
+    jerry_value_is_object,
+    jerry_value_is_string,
+    jerry_value_is_undefined
+};
+
+static int zjs_validate_arg(const char *expectation, jerry_value_t arg)
+{
+    // requires: If this argument is optional, first char of expectation must
+    //             be '?'; then additional chars are one of "abflnosu", meaning
+    //             array, boolean, float, nul(l), number, object, string or
+    //             undefined, and it must be null-terminated.
+    //  effects: returns a value from enum above
+    bool optional = false;
+    int index = 0;
+    if (expectation[0] == Z_OPTIONAL[0]) {
+        optional = true;
+        ++index;
+    }
+
+    while (expectation[index] != '\0') {
+        // NOTE: This relies on Z_ANY to Z_UNDEFINED being consecutive and
+        //   Z_UNDEFINED being the last one
+        int type_index = expectation[index] - Z_ANY[0];
+        if (type_index < 0 || type_index > Z_UNDEFINED[0]) {
+            ERR_PRINT("invalid argument type: '%c'", expectation[index]);
+            return ZJS_INTERNAL_ERROR;
+        }
+
+        if (zjs_type_map[type_index](arg)) {
+            return optional ? ZJS_VALID_OPTIONAL : ZJS_VALID_REQUIRED;
+        }
+    }
+
+    return optional ? ZJS_SKIP_OPTIONAL : ZJS_INVALID_ARG;
+}
+
+int zjs_validate_args(const char *expectations[], const jerry_length_t argc,
+                      const jerry_value_t argv[])
+{
+    // effects: returns number of optional arguments found, or a negative
+    //            number on error
+    int expect_index = 0, arg_index = 0, opt_args = 0;
+    while (expectations[expect_index] != NULL && arg_index < argc) {
+        int rval = zjs_validate_arg(expectations[expect_index],
+                                    argv[arg_index]);
+        switch (rval) {
+        case ZJS_VALID_OPTIONAL:
+            ++opt_args;
+        case ZJS_VALID_REQUIRED:
+            ++arg_index;
+        case ZJS_SKIP_OPTIONAL:
+            ++expect_index;
+            break;
+
+        default:
+            return rval;
+        }
+    }
+
+    // check for any more required args
+    while (expectations[expect_index] != NULL) {
+        if (expectations[expect_index][0] != '?')
+            return ZJS_INSUFFICIENT_ARGS;
+        ++expect_index;
+    }
+
+    if (arg_index < argc) {
+        DBG_PRINT("API received %lu unexpected arg(s)\n", argc - arg_index);
+    }
+    return opt_args;
+}

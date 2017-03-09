@@ -195,6 +195,10 @@ static jerry_value_t zjs_gpio_pin_write(const jerry_value_t function_obj,
     // requires: this is a GPIOPin object from zjs_gpio_open, takes one arg,
     //             the logical boolean value to set to the pin (true = active)
     //  effects: writes the logical value to the pin
+
+    // args: pin value
+    ZJS_VALIDATE_ARGS(Z_BOOL);
+
     uintptr_t ptr;
     if (jerry_get_object_native_handle(this, &ptr)) {
         gpio_handle_t *handle = (gpio_handle_t *)ptr;
@@ -202,9 +206,6 @@ static jerry_value_t zjs_gpio_pin_write(const jerry_value_t function_obj,
             return zjs_error("zjs_gpio_pin_write: pin closed");
         }
     }
-
-    if (argc < 1 || !jerry_value_is_boolean(argv[0]))
-        return zjs_error("zjs_gpio_pin_write: invalid argument");
 
     bool logical = jerry_get_boolean_value(argv[0]);
 
@@ -284,8 +285,9 @@ static jerry_value_t zjs_gpio_open(const jerry_value_t function_obj,
     // requires: arg 0 is an object with these members: pin (int), direction
     //             (defaults to "out"), activeLow (defaults to false),
     //             edge (defaults to "any"), pull (default to undefined)
-    if (argc < 1 || !jerry_value_is_object(argv[0]))
-        return zjs_error("zjs_gpio_open: invalid argument");
+
+    // args: initialization object
+    ZJS_VALIDATE_ARGS(Z_OBJECT);
 
     // data input object
     jerry_value_t data = argv[0];

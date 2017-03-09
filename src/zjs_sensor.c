@@ -1,4 +1,5 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
+
 #ifdef BUILD_MODULE_SENSOR
 #ifndef QEMU_BUILD
 #ifndef ZJS_LINUX_BUILD
@@ -495,19 +496,19 @@ static jerry_value_t zjs_sensor_create(const jerry_value_t function_obj,
                                        const jerry_length_t argc,
                                        enum sensor_channel channel)
 {
+    // args: [initialization object]
+    char *expect = Z_OPTIONAL Z_OBJECT;
+    if (channel == SENSOR_CHAN_LIGHT) {
+        // arg is required for AmbientLightSensor
+        expect = Z_OBJECT;
+    }
+    ZJS_VALIDATE_ARGS(expect);
+
     double frequency = DEFAULT_SAMPLING_FREQUENCY;
     bool hasPin = false;
     uint32_t pin;
 
-    if (argc < 1 && channel == SENSOR_CHAN_LIGHT) {
-        // AmbientLightSensor requires ADC pin object
-        return zjs_error("zjs_sensor_create: invalid argument\n");
-    }
-
     if (argc >= 1) {
-        if (!jerry_value_is_object(argv[0]))
-            return zjs_error("zjs_sensor_create: invalid argument");
-
         jerry_value_t options = argv[0];
 
         double option_freq;

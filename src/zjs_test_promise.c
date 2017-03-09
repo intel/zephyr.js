@@ -45,6 +45,9 @@ static jerry_value_t test_fulfill(const jerry_value_t function_obj,
                                   const jerry_value_t argv[],
                                   const jerry_length_t argc)
 {
+    // args: promise object
+    ZJS_VALIDATE_ARGS(Z_OBJECT);
+
     zjs_fulfill_promise(argv[0], NULL, 0);
     return ZJS_UNDEFINED;
 }
@@ -54,6 +57,9 @@ static jerry_value_t test_reject(const jerry_value_t function_obj,
                                  const jerry_value_t argv[],
                                  const jerry_length_t argc)
 {
+    // args: promise object
+    ZJS_VALIDATE_ARGS(Z_OBJECT);
+
     zjs_reject_promise(argv[0], NULL, 0);
     return ZJS_UNDEFINED;
 }

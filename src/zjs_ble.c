@@ -176,6 +176,8 @@ static jerry_value_t zjs_ble_read_callback_function(const jerry_value_t function
                                                     const jerry_value_t argv[],
                                                     const jerry_length_t argc)
 {
+    // TODO: couldn't use ZJS_VALIDATE_ARGS here because it needs to give the
+    //   semaphore on error case
     if (argc != 2 ||
         !jerry_value_is_number(argv[0]) ||
         !jerry_value_is_object(argv[1])) {
@@ -283,6 +285,8 @@ static jerry_value_t zjs_ble_write_callback_function(const jerry_value_t functio
                                                      const jerry_value_t argv[],
                                                      const jerry_length_t argc)
 {
+    // TODO: couldn't use ZJS_VALIDATE_ARGS here because it needs to give the
+    //   semaphore on error case
     if (argc != 1 ||
         !jerry_value_is_number(argv[0])) {
         k_sem_give(&ble_sem);
@@ -383,10 +387,8 @@ static jerry_value_t zjs_ble_update_value_callback_function(const jerry_value_t 
                                                             const jerry_value_t argv[],
                                                             const jerry_length_t argc)
 {
-    if (argc != 1 ||
-        !jerry_value_is_object(argv[0])) {
-        return zjs_error("zjs_ble_update_value_call_function: invalid arguments");
-    }
+    // args: buffer
+    ZJS_VALIDATE_ARGS(Z_OBJECT);
 
     // expects a Buffer object
     zjs_buffer_t *buf = zjs_buffer_find(argv[0]);
@@ -679,12 +681,7 @@ static jerry_value_t zjs_ble_start_advertising(const jerry_value_t function_obj,
     // arg 0 should be the device name to advertise, e.g. "Arduino101"
     // arg 1 should be an array of UUIDs (short, 4 hex chars)
     // arg 2 should be a short URL (typically registered with Google, I think)
-    if (argc < 2 ||
-        !jerry_value_is_string(argv[0]) ||
-        !jerry_value_is_object(argv[1]) ||
-        (argc >= 3 && !jerry_value_is_string(argv[2]))) {
-        return zjs_error("zjs_ble_adv_start: invalid arguments");
-    }
+    ZJS_VALIDATE_ARGS(Z_STRING, Z_ARRAY, Z_OPTIONAL Z_STRING);
 
     jerry_value_t array = argv[1];
     if (!jerry_value_is_array(array)) {
@@ -1158,15 +1155,8 @@ static jerry_value_t zjs_ble_set_services(const jerry_value_t function_obj,
 {
     // arg 0 should be an array of services
     // arg 1 is optionally an callback function
-    if (argc < 1 ||
-        !jerry_value_is_array(argv[0]) ||
-        (argc > 1 && !jerry_value_is_function(argv[1]))) {
-        return zjs_error("zjs_ble_set_services: invalid arguments");
-    }
+    ZJS_VALIDATE_ARGS(Z_ARRAY, Z_OPTIONAL Z_FUNCTION);
 
-    // FIXME: currently hard-coded to work with demo
-    // which has only 1 primary service and 2 characteristics
-    // add support for multiple services
     jerry_value_t v_services = argv[0];
     int array_size = jerry_get_array_length(v_services);
     if (array_size == 0) {
@@ -1262,9 +1252,8 @@ static jerry_value_t zjs_ble_primary_service(const jerry_value_t function_obj,
                                              const jerry_value_t argv[],
                                              const jerry_length_t argc)
 {
-    if (argc < 1 || !jerry_value_is_object(argv[0])) {
-        return zjs_error("zjs_ble_primary_service: invalid arguments");
-    }
+    // args: initialization object
+    ZJS_VALIDATE_ARGS(Z_OBJECT);
 
     return jerry_acquire_value(argv[0]);
 }
@@ -1275,9 +1264,8 @@ static jerry_value_t zjs_ble_characteristic(const jerry_value_t function_obj,
                                             const jerry_value_t argv[],
                                             const jerry_length_t argc)
 {
-    if (argc < 1 || !jerry_value_is_object(argv[0])) {
-        return zjs_error("zjs_ble_characterstic: invalid arguments");
-    }
+    // args: initialization object
+    ZJS_VALIDATE_ARGS(Z_OBJECT);
 
     // FIXME: Taking over the incoming object isn't really right; one side
     //   effect will be if they've stored a reference to the object they
@@ -1320,9 +1308,8 @@ static jerry_value_t zjs_ble_descriptor(const jerry_value_t function_obj,
                                         const jerry_value_t argv[],
                                         const jerry_length_t argc)
 {
-    if (argc < 1 || !jerry_value_is_object(argv[0])) {
-        return zjs_error("zjs_ble_descriptor: invalid arguments");
-    }
+    // args: initialization object
+    ZJS_VALIDATE_ARGS(Z_OBJECT);
 
     return jerry_acquire_value(argv[0]);
 }
