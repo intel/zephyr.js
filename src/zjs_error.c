@@ -80,6 +80,63 @@ void zjs_error_cleanup()
     }
 }
 
+static char* construct_message(jerry_value_t this,
+                                      jerry_value_t func,
+                                      const char *message)
+{
+    jerry_size_t size = 64;
+    char name[size];
+    jerry_value_t keys_array = jerry_get_object_keys(this);
+    uint32_t arr_length = jerry_get_array_length(keys_array);
+    int i;
+    for (i = 0; i < arr_length; ++i) {
+        jerry_value_t val = jerry_get_property_by_index(keys_array, i);
+        zjs_copy_jstring(val, name, &size);
+        jerry_value_t func_val = zjs_get_property(this, name);
+        if (func_val == func) {
+            break;
+        }
+        jerry_release_value(val);
+        jerry_release_value(func_val);
+    }
+    jerry_release_value(keys_array);
+
+    int nlen = strlen(name);
+    char *msg = zjs_malloc(strlen(message) + nlen + 4);
+
+    memcpy(msg, name, nlen);
+    msg[nlen] = '(';
+    msg[nlen + 1] = ')';
+    msg[nlen + 2] = ':';
+    memcpy(msg + nlen + 3, message, strlen(message));
+    msg[strlen(message) + nlen + 3] = '\0';
+
+    return msg;
+}
+
+jerry_value_t zjs_custom_error_with_func(jerry_value_t this,
+                                         jerry_value_t func,
+                                         const char *name,
+                                         const char *message)
+{
+    char *msg = construct_message(this, func, message);
+    jerry_value_t error = zjs_custom_error(name, msg);
+    zjs_free(msg);
+    return error;
+}
+
+jerry_value_t zjs_error_with_func(jerry_value_t this,
+                                  jerry_value_t func,
+                                  zjs_error_type_t type,
+                                  const char *message)
+
+{
+    char *msg = construct_message(this, func, message);
+    jerry_value_t error = zjs_standard_error(type, msg);
+    zjs_free(msg);
+    return error;
+}
+
 jerry_value_t zjs_custom_error(const char *name, const char *message)
 {
     jerry_value_t error = jerry_create_error(JERRY_ERROR_TYPE,
