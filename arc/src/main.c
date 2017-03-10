@@ -628,8 +628,14 @@ static int stop_accel_trigger(struct device *dev)
     trig.chan = SENSOR_CHAN_ACCEL_XYZ;
 
     if (sensor_trigger_set(bmi160, &trig, NULL) < 0) {
-        ERR_PRINT("failed to disable accelerometer trigger\n");
-        return -1;
+        // ToDo: this is a bug on the Zephyr driver that unregistering
+        // will return error on first try on the Arduino 101, that
+        // reading from SPI will fail, so adding this work-around
+        // to retry again if this happens.
+        if (sensor_trigger_set(bmi160, &trig, NULL) < 0) {
+            ERR_PRINT("failed to disable accelerometer trigger\n");
+            return -1;
+        }
     }
 
     accel_trigger = false;
@@ -671,8 +677,14 @@ static int stop_gyro_trigger(struct device *dev)
     trig.chan = SENSOR_CHAN_GYRO_XYZ;
 
     if (sensor_trigger_set(bmi160, &trig, NULL) < 0) {
-        ERR_PRINT("failed to disable gyroscope trigger\n");
-        return -1;
+        // ToDo: this is a bug on the Zephyr driver that unregistering
+        // will return error on first try on the Arduino 101, that
+        // reading from SPI will fail, so adding this work-around
+        // to retry again if this happens.
+        if (sensor_trigger_set(bmi160, &trig, NULL) < 0) {
+            ERR_PRINT("failed to disable gyroscope trigger\n");
+            return -1;
+        }
     }
 
     gyro_trigger = false;
