@@ -627,9 +627,12 @@ static int stop_accel_trigger(struct device *dev)
     trig.type = SENSOR_TRIG_DATA_READY;
     trig.chan = SENSOR_CHAN_ACCEL_XYZ;
 
-    if (sensor_trigger_set(bmi160, &trig, NULL) < 0) {
-        ERR_PRINT("failed to disable accelerometer trigger\n");
-        return -1;
+    // HACK: Try 50x to stop the sensor
+    int count = 0;
+    while (sensor_trigger_set(bmi160, &trig, NULL) < 0) {
+        if (++count > 50) {
+            return -1;
+        }
     }
 
     accel_trigger = false;
@@ -670,9 +673,12 @@ static int stop_gyro_trigger(struct device *dev)
     trig.type = SENSOR_TRIG_DATA_READY;
     trig.chan = SENSOR_CHAN_GYRO_XYZ;
 
-    if (sensor_trigger_set(bmi160, &trig, NULL) < 0) {
-        ERR_PRINT("failed to disable gyroscope trigger\n");
-        return -1;
+    // HACK: Try 50x to stop the sensor
+    int count = 0;
+    while (sensor_trigger_set(bmi160, &trig, NULL) < 0) {
+        if (++count > 50) {
+            return -1;
+        }
     }
 
     gyro_trigger = false;
