@@ -87,6 +87,7 @@ static zjs_callback_id cb_size = 0;
 static zjs_callback_t** cb_map = NULL;
 
 static int zjs_ringbuf_error_count = 0;
+static int zjs_ringbuf_error_max = 0;
 static int zjs_ringbuf_last_error = 0;
 
 static zjs_callback_id new_id(void)
@@ -518,9 +519,10 @@ void zjs_call_callback(zjs_callback_id id, void* data, uint32_t sz)
 
 uint8_t zjs_service_callbacks(void)
 {
-    if (zjs_ringbuf_error_count > 0) {
-        ERR_PRINT("%d errors putting into ring buffer (last rval=%d)\n",
+    if (zjs_ringbuf_error_count > zjs_ringbuf_error_max) {
+        ERR_PRINT("%d ringbuf put errors (last rval=%d)\n",
                   zjs_ringbuf_error_count, zjs_ringbuf_last_error);
+        zjs_ringbuf_error_max = zjs_ringbuf_error_count * 2;
         zjs_ringbuf_error_count = 0;
     }
 
