@@ -5,7 +5,7 @@
 
 var ble = require("ble");
 
-var DEVICE_NAME = 'Arduino101';
+var DEVICE_NAME = 'Intel Curie';
 
 var SensorCharacteristic = new ble.Characteristic({
     uuid: 'fc0a',
@@ -48,7 +48,7 @@ SensorCharacteristic.valueChange = function(isAccel, x, y, z) {
 
 ble.on('stateChange', function(state) {
     if (state === 'poweredOn') {
-        ble.startAdvertising(DEVICE_NAME, ['fc00'], "https://goo.gl/slMyHI");
+        ble.startAdvertising(DEVICE_NAME, ['fc00'], "https://goo.gl/pw8HvI");
     } else {
         if (state === 'unsupported') {
             console.log("BLE not enabled on board");
