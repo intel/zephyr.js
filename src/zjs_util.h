@@ -127,9 +127,9 @@ enum {
     ZJS_VALID_REQUIRED,
     ZJS_VALID_OPTIONAL,
     ZJS_SKIP_OPTIONAL,
-    ZJS_INVALID_ARG = -1,
-    ZJS_INSUFFICIENT_ARGS = -2,
-    ZJS_INTERNAL_ERROR = -3
+    ZJS_INTERNAL_ERROR = -1,
+    ZJS_INVALID_ARG = -2,
+    ZJS_INSUFFICIENT_ARGS = -3
 };
 
 int zjs_validate_args(const char *expectations[], const jerry_length_t argc,
@@ -156,11 +156,8 @@ int zjs_validate_args(const char *expectations[], const jerry_length_t argc,
     const char *zjs_expectations[] = { __VA_ARGS__, NULL };             \
     int optcount = zjs_validate_args(zjs_expectations, argc - offset,   \
                                      argv + offset);                    \
-    if (optcount == ZJS_INVALID_ARG) {                                  \
-        return TYPE_ERROR("invalid argument");                          \
-    }                                                                   \
-    if (optcount == ZJS_INSUFFICIENT_ARGS) {                            \
-        return zjs_error("insufficient arguments");                     \
+    if (optcount <= ZJS_INVALID_ARG) {                                  \
+        return TYPE_ERROR("invalid arguments");                         \
     }
 
 // Use this if you need an offset
