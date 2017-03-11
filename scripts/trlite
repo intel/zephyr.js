@@ -79,7 +79,7 @@ done
 
 echo Preserving uncommitted changes:
 cd $ZJS_BASE
-git diff HEAD --stat
+git --no-pager diff HEAD --stat
 git diff HEAD > $TRLDIR/uncommitted.patch
 cd $TRLDIR
 patch -p1 < uncommitted.patch > /dev/null
@@ -221,7 +221,7 @@ if [ "$VM2" == "y" ]; then
     TESTNUM=0
 
     # git check
-    try_command "git check" git diff --check $(git rev-list HEAD | tail -1)
+    try_command "git check" git --no-pager diff --check $(git rev-list HEAD | tail -1)
 
     # ensure only two uses of jerry_string_to_char_buffer in zjs_util.c
     try_command "jstring1" check_jstring_util
