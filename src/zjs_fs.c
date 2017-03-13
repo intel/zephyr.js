@@ -658,7 +658,6 @@ static jerry_value_t zjs_mkdir(const jerry_value_t function_obj,
     }
 #endif
 
-    uint32_t mode = MODE_A_PLUS;
     jerry_size_t size;
 
     size = MAX_PATH_LENGTH;
