@@ -93,11 +93,11 @@ ble.on('disconnect', function(clientAddress) {
 });
 
 var accel = new Accelerometer({
-    frequency: 100
+    frequency: 20
 });
 
 var gyro = new Gyroscope({
-    frequency: 100
+    frequency: 20
 });
 
 accel.onchange = function(event) {
