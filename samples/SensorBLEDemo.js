@@ -31,15 +31,18 @@ SensorCharacteristic.onUnsubscribe = function() {
 };
 
 SensorCharacteristic.valueChange = function(isAccel, x, y, z) {
-    var xval = (x * 10000) | 0;
-    var yval = (y * 10000) | 0;
-    var zval = (z * 10000) | 0;
+    var multi = 262144; // 2 ** (32 - 14bit precision).
+
+    var xval = (x * multi) >> 1;
+    var yval = (y * multi) >> 1;
+    var zval = (z * multi) >> 1;
 
     var data = new Buffer(13);
     data.writeUInt8(isAccel, 0);
-    data.writeUInt32BE(xval, 1);
-    data.writeUInt32BE(yval, 5);
-    data.writeUInt32BE(zval, 9);
+
+    data.writeUInt32BE(xval, 1, true);
+    data.writeUInt32BE(yval, 5, true);
+    data.writeUInt32BE(zval, 9, true);
 
     if (this._onChange) {
         this._onChange(data);

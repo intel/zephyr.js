@@ -13,6 +13,7 @@
 
 static jerry_value_t zjs_buffer_prototype;
 
+
 // TODO: Call sites could be replaced with get_object_native_handle directly
 zjs_buffer_t *zjs_buffer_find(const jerry_value_t obj)
 {
@@ -89,7 +90,7 @@ static jerry_value_t zjs_buffer_write_bytes(const jerry_value_t this,
         return zjs_error("zjs_buffer_write_bytes: invalid argument");
     }
 
-    uint32_t value = jerry_get_number_value(argv[0]);
+    uint32_t value = (uint32_t)(int32_t)jerry_get_number_value(argv[0]);
 
     uint32_t offset = 0;
     if (argc > 1)

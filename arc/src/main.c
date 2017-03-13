@@ -416,31 +416,10 @@ static void send_sensor_data(enum sensor_channel channel,
 
 static double convert_sensor_value(const struct sensor_value *val)
 {
-    int32_t val1, val2;
-    double result = 0;
-
-    if (val->val2 == 0) {
-        result = (double)val->val1;
-    }
-
-    /* normalize value */
-    if (val->val1 < 0 && val->val2 > 0) {
-        val1 = val->val1 + 1;
-        val2 = val->val2 - 1000000;
-    } else {
-        val1 = val->val1;
-        val2 = val->val2;
-    }
-
-    if (val1 > 0 || (val1 == 0 && val2 > 0)) {
-        result = val1 + (double)val2 * 0.000001;
-    } else if (val1 == 0 && val2 < 0) {
-        result = (double)val2 * (-0.000001);
-    } else {
-        result = val1 + (double)val2 * (-0.000001);
-    }
-
-    return result;
+    // According to documentation, the value is represented as having an
+    // integer and a fractional part, and can be obtained using the formula
+    // val1 + val2 * 10^(-6).
+    return  (double)val->val1 + (double)val->val2 * 0.000001;
 }
 
 static void process_accel_data(struct device *dev)
