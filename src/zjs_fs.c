@@ -467,22 +467,25 @@ static jerry_value_t zjs_write(const jerry_value_t function_obj,
                                const jerry_length_t argc,
                                uint8_t async)
 {
-    // args: file descriptor, buffer, offset, length[, position]
-    ZJS_VALIDATE_ARGS_OPTCOUNT(optcount, Z_OBJECT, Z_OBJECT, Z_NUMBER,
-                               Z_NUMBER, Z_OPTIONAL Z_NUMBER);
+    // args: file descriptor, buffer[, offset[, length[, position]]]
+    ZJS_VALIDATE_ARGS_OPTCOUNT(optcount, Z_OBJECT, Z_OBJECT,
+                               Z_OPTIONAL Z_NUMBER, Z_OPTIONAL Z_NUMBER,
+                               Z_OPTIONAL Z_NUMBER);
+    // NOTE: Borrowing the optional parameters from Node 7.x, beyond 6.10 LTS
+    //         which we're currently targeting.
 
 #ifdef ZJS_FS_ASYNC_APIS
     // async case adds callback arg
-    int cbindex = 4 + optcount;
+    int cbindex = 2 + optcount;
     if (async) {
         ZJS_VALIDATE_ARGS_OFFSET(cbindex, Z_FUNCTION);
     }
 #endif
 
     file_handle_t* handle;
-    double offset = 0;
-    double length = 0;
-    double position = 0;
+    uint32_t offset = 0;
+    uint32_t length = 0;
+    uint32_t position = 0;
     uint8_t from_cur = 0;
 
     if (!jerry_get_object_native_handle(argv[0], (uintptr_t*)&handle)) {
@@ -495,10 +498,15 @@ static jerry_value_t zjs_write(const jerry_value_t function_obj,
 
     zjs_buffer_t* buffer = zjs_buffer_find(argv[1]);
 
-    offset = jerry_get_number_value(argv[2]);
-    length = jerry_get_number_value(argv[3]);
-    if (optcount > 0) {
+    switch (optcount) {
+    case 3:
         position = jerry_get_number_value(argv[4]);
+    case 2:
+        length = jerry_get_number_value(argv[3]);
+    case 1:
+        offset = jerry_get_number_value(argv[2]);
+    default:
+        break;
     }
 
     if (offset && !length) {
@@ -507,9 +515,6 @@ static jerry_value_t zjs_write(const jerry_value_t function_obj,
         length = buffer->bufsize;
     }
 
-    if (offset < 0 || length < 0 || position < 0) {
-        return invalid_args();
-    }
     if (offset >= buffer->bufsize) {
         return zjs_error("offset overflows buffer");
     }
@@ -524,17 +529,18 @@ static jerry_value_t zjs_write(const jerry_value_t function_obj,
         }
     } else if (!from_cur) {
         // if a position was specified, seek to it before writing
-        if (fs_seek(&handle->fp, (uint32_t)position, SEEK_SET) != 0) {
+        if (fs_seek(&handle->fp, position, SEEK_SET) != 0) {
             return zjs_error("error seeking to position\n");
         }
     }
 
-    DBG_PRINT("writing to fp=%p, buffer=%p, offset=%lu, length=%lu\n", &handle->fp, buffer->buffer, (uint32_t)offset, (uint32_t)length);
+    DBG_PRINT("writing to fp=%p, buffer=%p, offset=%lu, length=%lu\n",
+              &handle->fp, buffer->buffer, offset, length);
 
-    uint32_t written = fs_write(&handle->fp, buffer->buffer + (uint32_t)offset, (uint32_t)length);
-
-    if (written != (uint32_t)length) {
-        DBG_PRINT("could not write %lu bytes, only %lu were written\n", (uint32_t)length, written);
+    uint32_t written = fs_write(&handle->fp, buffer->buffer + offset, length);
+    if (written != length) {
+        DBG_PRINT("could not write %lu bytes, only %lu were written\n", length,
+                  written);
     }
 
 #ifdef ZJS_FS_ASYNC_APIS
@@ -880,7 +886,7 @@ static jerry_value_t zjs_write_file(const jerry_value_t function_obj,
                                     uint8_t async)
 {
     // args: filepath, data
-    ZJS_VALIDATE_ARGS_OPTCOUNT(optcount, Z_STRING, Z_OBJECT Z_STRING);
+    ZJS_VALIDATE_ARGS(Z_STRING, Z_OBJECT Z_STRING);
 
 #ifdef ZJS_FS_ASYNC_APIS
     // async case adds callback arg
