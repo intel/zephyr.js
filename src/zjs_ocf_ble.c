@@ -54,10 +54,10 @@ static int str2bt_addr_le(const char *str, const char *type, bt_addr_le_t *addr)
     return 0;
 }
 
-static jerry_value_t ocf_set_ble_address(const jerry_value_t function_val,
-                                         const jerry_value_t this,
-                                         const jerry_value_t argv[],
-                                         const jerry_length_t argc)
+jerry_value_t zjs_ocf_set_ble_address(const jerry_value_t function_val,
+                                      const jerry_value_t this,
+                                      const jerry_value_t argv[],
+                                      const jerry_length_t argc)
 {
     // args: address
     ZJS_VALIDATE_ARGS(Z_STRING);
@@ -99,7 +99,4 @@ void zjs_init_ocf_ble()
     BT_ADDR_SET_STATIC(&id_addr.a);
     bt_storage_register(&storage);
 #endif
-    jerry_value_t global_obj = jerry_get_global_object();
-    zjs_obj_add_function(global_obj, ocf_set_ble_address, "setBleAddress");
-    jerry_release_value(global_obj);
 }

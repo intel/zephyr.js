@@ -466,7 +466,9 @@ jerry_value_t zjs_ocf_init()
     zjs_set_property(ocf_object, "server", server);
     jerry_release_value(server);
 #endif
-
+#ifdef ZJS_CONFIG_BLE_ADDRESS
+    zjs_obj_add_function(ocf_object, zjs_ocf_set_ble_address, "setBleAddress");
+#endif
     return ocf_object;
 }
 
