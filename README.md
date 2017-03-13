@@ -382,7 +382,7 @@ and instead uses the host OS. This can be build on Linux or Mac OSX using the
 command:
 
 ```bash
-make linux
+make BOARD=linux
 ```
 
 The executable will be outputted to `outdir/linux/<variant>/jslinux`. Where
