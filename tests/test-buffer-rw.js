@@ -17,18 +17,12 @@ buf.writeUInt8(0xab, 7);
 
 // test readUInt8 / writeUInt8
 assert.throws(function () {
-    buf.readUInt8('whale');
-}, "readUInt8: invalid argument");
-assert.throws(function () {
     buf.readUInt8(9);
 }, "readUInt8: out of bounds");
 
 assert.throws(function () {
-    buf.writeUInt8('bowl');
+    buf.writeUInt8('petunias');
 }, "writeUInt8: invalid first argument");
-assert.throws(function () {
-    buf.writeUInt8(42, 'petunias');
-}, "writeUInt8: invalid second argument");
 assert.throws(function () {
     buf.writeUInt8(42, 9);
 }, "readUInt8: out of bounds");
