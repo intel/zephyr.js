@@ -432,6 +432,8 @@ static int zjs_validate_arg(const char *expectation, jerry_value_t arg)
         if (zjs_type_map[type_index](arg)) {
             return optional ? ZJS_VALID_OPTIONAL : ZJS_VALID_REQUIRED;
         }
+
+        ++index;
     }
 
     return optional ? ZJS_SKIP_OPTIONAL : ZJS_INVALID_ARG;
