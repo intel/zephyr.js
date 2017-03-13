@@ -68,7 +68,7 @@ Sets the devices BLE MAC address. This function is in the global scope. It
 is only defined on Zephyr boards with BLE capabilities (e.g. Arduino 101).
 
 The `address` parameter should be a MAC address string in the format
-`XX:XX:XX:XX:XX:X` where each character is in HEX format (0-9, A-F).
+`XX:XX:XX:XX:XX:XX` where each character is in HEX format (0-9, A-F).
 
 ### OCFServer.register
 `Promise<OCFResource> register(ResourceInit init);`
