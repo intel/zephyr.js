@@ -166,8 +166,7 @@ static jerry_value_t zjs_aio_pin_read(const jerry_value_t function_obj,
                                       const jerry_value_t argv[],
                                       const jerry_length_t argc)
 {
-    uint32_t device, pin;
-    zjs_obj_get_uint32(this, "device", &device);
+    uint32_t pin;
     zjs_obj_get_uint32(this, "pin", &pin);
 
     if (pin < ARC_AIO_MIN || pin > ARC_AIO_MAX) {
@@ -257,8 +256,7 @@ static jerry_value_t zjs_aio_pin_read_async(const jerry_value_t function_obj,
     // args: callback
     ZJS_VALIDATE_ARGS(Z_FUNCTION);
 
-    uint32_t device, pin;
-    zjs_obj_get_uint32(this, "device", &device);
+    uint32_t pin;
     zjs_obj_get_uint32(this, "pin", &pin);
 
     aio_handle_t *handle = zjs_aio_alloc_handle();
@@ -285,24 +283,9 @@ static jerry_value_t zjs_aio_open(const jerry_value_t function_obj,
 
     jerry_value_t data = argv[0];
 
-    uint32_t device;
-    if (!zjs_obj_get_uint32(data, "device", &device))
-        return zjs_error("zjs_aio_open: missing required field (device)");
-
     uint32_t pin;
     if (!zjs_obj_get_uint32(data, "pin", &pin))
         return zjs_error("zjs_aio_open: missing required field (pin)");
-
-    const int BUFLEN = 32;
-    char buffer[BUFLEN];
-
-    if (zjs_obj_get_string(data, "name", buffer, BUFLEN)) {
-        buffer[0] = '\0';
-    }
-
-    char *name = buffer;
-    bool raw = false;
-    zjs_obj_get_boolean(data, "raw", &raw);
 
     // send IPM message to the ARC side
     zjs_ipm_message_t send;
@@ -316,10 +299,7 @@ static jerry_value_t zjs_aio_open(const jerry_value_t function_obj,
     // create the AIOPin object
     jerry_value_t pinobj = jerry_create_object();
     jerry_set_prototype(pinobj, zjs_aio_prototype);
-    zjs_obj_add_string(pinobj, name, "name");
-    zjs_obj_add_number(pinobj, device, "device");
     zjs_obj_add_number(pinobj, pin, "pin");
-    zjs_obj_add_boolean(pinobj, raw, "raw");
 
     return pinobj;
 }

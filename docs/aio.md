@@ -37,9 +37,6 @@ interface AIO {
 
 dictionary AIOInit {
     unsigned long pin;
-    unsigned long device;  // TODO: remove for now, not used
-    string name;  // TODO: remove, not used
-    boolean raw;  // TODO: remove, not used
 };
 
 [NoInterfaceObject]
