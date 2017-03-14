@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 #ifdef BUILD_MODULE_UART
 
@@ -141,15 +141,16 @@ static void uart_irq_handler(struct device *dev)
     }
 }
 
-static void write_data(struct device *dev, const char *buf, int len)
+static int write_data(struct device *dev, const char *buf, int len)
 {
     uart_irq_tx_enable(dev);
 
     tx = false;
-    uart_fifo_fill(dev, buf, len);
+    int bytes = uart_fifo_fill(dev, buf, len);
     while (tx == false);
 
     uart_irq_tx_disable(dev);
+    return bytes;
 }
 
 static jerry_value_t uart_write(const jerry_value_t function_obj,
@@ -157,24 +158,28 @@ static jerry_value_t uart_write(const jerry_value_t function_obj,
                                 const jerry_value_t argv[],
                                 const jerry_length_t argc)
 {
-    jerry_value_t promise = jerry_create_object();
-
-    zjs_make_promise(promise, NULL, NULL);
-
-    if (!jerry_value_is_object(argv[0])) {
-        DBG_PRINT("first parameter must be a Buffer");
-        jerry_value_t error = make_uart_error("TypeMismatchError",
-                "first parameter must be a Buffer");
-        zjs_reject_promise(promise, &error, 1);
-        jerry_release_value(error);
-        return promise;
-    }
+    // args: buffer
+    ZJS_VALIDATE_ARGS(Z_OBJECT);
 
     zjs_buffer_t* buffer = zjs_buffer_find(argv[0]);
+    if (!buffer) {
+        return TYPE_ERROR("expected buffer");
+    }
 
-    write_data(uart_dev, (const char*)buffer->buffer, buffer->bufsize);
+    jerry_value_t promise = jerry_create_object();
+    zjs_make_promise(promise, NULL, NULL);
 
-    zjs_fulfill_promise(promise, NULL, 0);
+    int wrote = write_data(uart_dev, (const char*)buffer->buffer,
+                           buffer->bufsize);
+    if (wrote == buffer->bufsize) {
+        zjs_fulfill_promise(promise, NULL, 0);
+    }
+    else {
+        jerry_value_t error = make_uart_error("WriteError",
+                "incomplete write");
+        zjs_reject_promise(promise, &error, 1);
+        jerry_release_value(error);
+    }
 
     return promise;
 }
@@ -184,10 +189,8 @@ static jerry_value_t uart_set_read_range(const jerry_value_t function_obj,
                                          const jerry_value_t argv[],
                                          const jerry_length_t argc)
 {
-    if (!jerry_value_is_number(argv[0]) || !jerry_value_is_number(argv[1])) {
-        DBG_PRINT("parameters must be min and max read size\n");
-        return ZJS_UNDEFINED;
-    }
+    // args: min, max
+    ZJS_VALIDATE_ARGS(Z_NUMBER, Z_NUMBER);
 
     uint32_t min = jerry_get_number_value(argv[0]);
     uint32_t max = jerry_get_number_value(argv[1]);
@@ -218,6 +221,9 @@ static jerry_value_t uart_init(const jerry_value_t function_obj,
                                const jerry_value_t argv[],
                                const jerry_length_t argc)
 {
+    // args: initialization object
+    ZJS_VALIDATE_ARGS(Z_OBJECT);
+
     int i;
     int baud = 115200;
 #ifdef CONFIG_UART_LINE_CTRL
@@ -226,15 +232,6 @@ static jerry_value_t uart_init(const jerry_value_t function_obj,
     jerry_value_t promise = jerry_create_object();
 
     zjs_make_promise(promise, NULL, NULL);
-
-    if (!jerry_value_is_object(argv[0])) {
-        DBG_PRINT("first parameter must be UART options object\n");
-        jerry_value_t error = make_uart_error("TypeMismatchError",
-                "first parameter must be UART options");
-        zjs_reject_promise(promise, &error, 1);
-        jerry_release_value(error);
-        return promise;
-    }
 
     jerry_value_t port_val = zjs_get_property(argv[0], "port");
 

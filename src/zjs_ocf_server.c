@@ -215,6 +215,9 @@ static jerry_value_t ocf_respond(const jerry_value_t function_val,
                                  const jerry_value_t argv[],
                                  const jerry_length_t argc)
 {
+    // args: properties object
+    ZJS_VALIDATE_ARGS(Z_OBJECT);
+
     jerry_value_t promise = jerry_create_object();
     struct ocf_handler* h;
     jerry_value_t request = this;
@@ -223,13 +226,6 @@ static jerry_value_t ocf_respond(const jerry_value_t function_val,
 
     if (!jerry_get_object_native_handle(request, (uintptr_t*)&h)) {
         ERR_PRINT("native handle not found\n");
-        REJECT(promise, "TypeMismatchError", "native handle not found", h);
-        oc_send_response(h->req, OC_STATUS_INTERNAL_SERVER_ERROR);
-        return promise;
-    }
-
-    if (!jerry_value_is_object(data)) {
-        ERR_PRINT("properties is not an object\n");
         REJECT(promise, "TypeMismatchError", "native handle not found", h);
         oc_send_response(h->req, OC_STATUS_INTERNAL_SERVER_ERROR);
         return promise;
@@ -246,7 +242,8 @@ static jerry_value_t ocf_respond(const jerry_value_t function_val,
 
     oc_send_response(h->req, OC_STATUS_OK);
 
-    DBG_PRINT("responding to method type=%u, properties=%lu\n", h->resp->method, data);
+    DBG_PRINT("responding to method type=%u, properties=%lu\n", h->resp->method,
+              data);
 
     zjs_make_promise(promise, NULL, NULL);
 
@@ -372,6 +369,9 @@ static jerry_value_t ocf_notify(const jerry_value_t function_val,
                                 const jerry_value_t argv[],
                                 const jerry_length_t argc)
 {
+    // args: resource object
+    ZJS_VALIDATE_ARGS(Z_OBJECT);
+
     struct server_resource* resource;
     if (!jerry_get_object_native_handle(argv[0], (uintptr_t*)&resource)) {
         DBG_PRINT("native handle not found\n");
@@ -399,16 +399,14 @@ static jerry_value_t ocf_register(const jerry_value_t function_val,
                                   const jerry_value_t argv[],
                                   const jerry_length_t argc)
 {
+    // args: resource object
+    ZJS_VALIDATE_ARGS(Z_OBJECT);
+
     struct server_resource* resource;
     int i;
     jerry_value_t promise = jerry_create_object();
     struct ocf_handler* h;
 
-    if (!jerry_value_is_object(argv[0])) {
-        ERR_PRINT("first parameter must be resource object\n");
-        REJECT(promise, "TypeMismatchError", "first parameter must be resource object", h);
-        return promise;
-    }
     // Required
     jerry_value_t resource_path_val = zjs_get_property(argv[0], "resourcePath");
     if (!jerry_value_is_string(resource_path_val)) {

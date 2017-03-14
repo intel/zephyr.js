@@ -130,9 +130,8 @@ static jerry_value_t native_require_handler(const jerry_value_t function_obj,
                                             const jerry_value_t argv[],
                                             const jerry_length_t argc)
 {
-    if (!jerry_value_is_string(argv[0])) {
-        return TYPE_ERROR("native_require_handler: string expected");
-    }
+    // args: module name
+    ZJS_VALIDATE_ARGS(Z_STRING);
 
     const int MAX_MODULE_LEN = 32;
     jerry_size_t size = MAX_MODULE_LEN;

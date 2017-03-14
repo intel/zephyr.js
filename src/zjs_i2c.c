@@ -1,4 +1,5 @@
 // Copyright (c) 2016-2017, Intel Corporation.
+
 #ifndef QEMU_BUILD
 
 // Zephyr includes
@@ -16,13 +17,12 @@
 #include "zjs_i2c_ipm_handler.h"
 #endif
 
-
 static jerry_value_t zjs_i2c_prototype;
 
 static jerry_value_t zjs_i2c_read_base(const jerry_value_t this,
                                        const jerry_value_t argv[],
                                        const jerry_length_t argc,
-                                       bool                 burst)
+                                       bool burst)
 {
     // requires: Requires three arguments and has an optional fourth.
     //           arg[0] - Address of the I2C device you wish to read from.
@@ -34,18 +34,13 @@ static jerry_value_t zjs_i2c_read_base(const jerry_value_t this,
     //           from the register address. Returns a buffer object
     //           that size containing the data.
 
-    if (argc < 2 || !jerry_value_is_number(argv[0]) ||
-        !jerry_value_is_number(argv[1])) {
-        return zjs_error("zjs_i2c_read_base: missing arguments");
-    }
+    // args: device, length[, register]
+    ZJS_VALIDATE_ARGS(Z_NUMBER, Z_NUMBER, Z_OPTIONAL Z_NUMBER);
 
     uint32_t register_addr = 0;
     uint32_t size = (uint32_t)jerry_get_number_value(argv[1]);
 
     if (argc >= 3) {
-        if (!jerry_value_is_number(argv[2])) {
-            return zjs_error("zjs_i2c_read_base: register is not a number");
-        }
         register_addr = (uint32_t)jerry_get_number_value(argv[2]);
     }
 
@@ -145,22 +140,13 @@ static jerry_value_t zjs_i2c_write(const jerry_value_t function_obj,
     //  effects: Writes the number of bytes requested to the I2C device
     //           at the register address. Returns an error if unsuccessful.
 
-    if (argc < 2 || !jerry_value_is_number(argv[0])) {
-        return zjs_error("zjs_i2c_write: missing arguments");
-    }
-
-    if (!jerry_value_is_object(argv[1])) {
-        return zjs_error("zjs_i2c_write: message buffer is invalid");
-    }
+    // args: device, buffer[, register]
+    ZJS_VALIDATE_ARGS(Z_NUMBER, Z_OBJECT, Z_OPTIONAL Z_NUMBER);
 
     uint32_t register_addr = 0;
 
     if (argc >= 3) {
-        if (!jerry_value_is_number(argv[2])) {
-            return zjs_error("zjs_i2c_read: register is not a number");
-        } else {
-            register_addr = (uint32_t)jerry_get_number_value(argv[2]);
-        }
+        register_addr = (uint32_t)jerry_get_number_value(argv[2]);
     }
 
     uint32_t bus;
@@ -215,9 +201,8 @@ static jerry_value_t zjs_i2c_open(const jerry_value_t function_obj,
     //           arg[1] - Bus speed in kbps.
     //  effects: Creates a I2C object connected to the bus number specified.
 
-    if (argc < 1 || !jerry_value_is_object(argv[0])) {
-        return zjs_error("zjs_i2c_open: invalid argument");
-    }
+    // args: initialization object
+    ZJS_VALIDATE_ARGS(Z_OBJECT);
 
     jerry_value_t data = argv[0];
     uint32_t bus;

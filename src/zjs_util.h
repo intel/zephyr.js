@@ -38,7 +38,8 @@ typedef struct zjs_native_func {
 } zjs_native_func_t;
 
 /**
- * Add a series of functions described in array funcs to obj
+ * Add a series of functions described in array funcs to obj.
+ *
  * @param obj    JerryScript object to add the functions to
  * @param funcs  Array of zjs_native_func_t, terminated with {NULL, NULL}
  */
@@ -101,5 +102,74 @@ uint16_t zjs_compress_32_to_16(uint32_t num);
 uint32_t zjs_uncompress_16_to_32(uint16_t num);
 
 void zjs_print_error_message(jerry_value_t error);
+
+//
+// ztypes (for argument validation)
+//
+
+// Z_OPTIONAL means the argument isn't required, this must come first if present
+#define Z_OPTIONAL  "?"
+
+// Z_ANY matches any type (i.e. ignores it) - only makes sense for required arg
+#define Z_ANY       "a"
+
+// the rest all match specific type by calling jerry_value_is_* function
+#define Z_ARRAY     "b"
+#define Z_BOOL      "c"
+#define Z_FUNCTION  "d"
+#define Z_NULL      "e"
+#define Z_NUMBER    "f"
+#define Z_OBJECT    "g"
+#define Z_STRING    "h"
+#define Z_UNDEFINED "i"
+
+enum {
+    ZJS_VALID_REQUIRED,
+    ZJS_VALID_OPTIONAL,
+    ZJS_SKIP_OPTIONAL,
+    ZJS_INTERNAL_ERROR = -1,
+    ZJS_INVALID_ARG = -2,
+    ZJS_INSUFFICIENT_ARGS = -3
+};
+
+int zjs_validate_args(const char *expectations[], const jerry_length_t argc,
+                      const jerry_value_t argv[]);
+/**
+ * Macro to validate existing argv based on a list of expected argument types.
+ *
+ * NOTE: Expects argc and argv to exist as in a JerryScript native function.
+ *
+ * @param optcount  A pointer to an int to receive count of optional args found,
+ *                    or NULL if not needed.
+ * @param offset    Integer offset of arg in argv to start with (normally 0)
+ * @param typestr   Each remaining comma-separated argument to the macro
+ *                    corresponds to an argument in argv; each argument should
+ *                    be a space-separated list of "ztypes" from defines above.
+ *
+ * Example: ZJS_VALIDATE_ARGS(Z_NUMBER, Z_OBJECT Z_NULL, Z_OPTIONAL Z_FUNCTION);
+ * This requires argv[0] to be a number type, argv[1] to be an object type
+ *   or null,  and argv[2] may or may not exist, but if it does it must be a
+ *   function type. (Implicitly, argc will have to be at least 2.) Arguments
+ *   beyond what are specified are allowed and ignored.
+ */
+#define ZJS_VALIDATE_ARGS_FULL(optcount, offset, ...)                   \
+    const char *zjs_expectations[] = { __VA_ARGS__, NULL };             \
+    int optcount = zjs_validate_args(zjs_expectations, argc - offset,   \
+                                     argv + offset);                    \
+    if (optcount <= ZJS_INVALID_ARG) {                                  \
+        return TYPE_ERROR("invalid arguments");                         \
+    }
+
+// Use this if you need an offset
+#define ZJS_VALIDATE_ARGS_OFFSET(offset, ...)           \
+    ZJS_VALIDATE_ARGS_FULL(zjs_validate_rval, offset, __VA_ARGS__)
+
+// Use this if you need the number of optional args found
+#define ZJS_VALIDATE_ARGS_OPTCOUNT(optcount, ...)       \
+    ZJS_VALIDATE_ARGS_FULL(optcount, 0, __VA_ARGS__)
+
+// Normally use this as a shortcut
+#define ZJS_VALIDATE_ARGS(...)                      \
+    ZJS_VALIDATE_ARGS_FULL(zjs_validate_rval, 0, __VA_ARGS__)
 
 #endif  // __zjs_util_h__

@@ -42,8 +42,9 @@ static jerry_value_t zjs_buffer_read_bytes(const jerry_value_t this,
     //  effects: reads bytes from the buffer associated with this JS object, if
     //             found, at the given offset, if within the bounds of the
     //             buffer; otherwise returns an error
-    if (argc >= 1 && !jerry_value_is_number(argv[0]))
-        return zjs_error("zjs_buffer_read_bytes: invalid argument");
+
+    // args: offset
+    ZJS_VALIDATE_ARGS(Z_OPTIONAL Z_NUMBER);
 
     uint32_t offset = 0;
     if (argc >= 1)
@@ -85,10 +86,9 @@ static jerry_value_t zjs_buffer_write_bytes(const jerry_value_t this,
     //  effects: writes bytes into the buffer associated with this JS object, if
     //             found, at the given offset, if within the bounds of the
     //             buffer; otherwise returns an error
-    if (argc < 1 || !jerry_value_is_number(argv[0]) ||
-        (argc >= 2 && !jerry_value_is_number(argv[1]))) {
-        return zjs_error("zjs_buffer_write_bytes: invalid argument");
-    }
+
+    // args: value[, offset]
+    ZJS_VALIDATE_ARGS(Z_NUMBER, Z_OPTIONAL Z_NUMBER);
 
     uint32_t value = (uint32_t)(int32_t)jerry_get_number_value(argv[0]);
 
@@ -210,12 +210,13 @@ static jerry_value_t zjs_buffer_to_string(const jerry_value_t function_obj,
                                           const jerry_length_t argc)
 {
     // requires: this must be a JS buffer object, if an argument is present it
-    //             must be the string 'hex', as that is the only supported
-    //             encoding for now
+    //             must be the string 'ascii' or 'hex', as those are the only
+    //             supported encodings for now
     //  effects: if the buffer object is found, converts its contents to a hex
-    //             string and returns it in ret_val_p
-    if (argc > 1 || (argc == 1 && !jerry_value_is_string(argv[0])))
-        return zjs_error("zjs_buffer_to_string: invalid argument");
+    //             string and returns it
+
+    // args: [encoding]
+    ZJS_VALIDATE_ARGS(Z_OPTIONAL Z_STRING);
 
     zjs_buffer_t *buf = zjs_buffer_find(this);
     if (buf && argc == 0) {
@@ -261,7 +262,7 @@ static void zjs_buffer_callback_free(uintptr_t handle)
     zjs_free(item);
 }
 
-static jerry_value_t zjs_buffer_write_string(const jerry_value_t function_obj_val,
+static jerry_value_t zjs_buffer_write_string(const jerry_value_t function_obj,
                                              const jerry_value_t this,
                                              const jerry_value_t argv[],
                                              const jerry_length_t argc)
@@ -274,11 +275,9 @@ static jerry_value_t zjs_buffer_write_string(const jerry_value_t function_obj_va
     //  effects: writes string to buf at offset according to the character
     //             encoding in encoding.
 
-    if (argc < 1 || !jerry_value_is_string(argv[0]) ||
-        (argc > 1 && !jerry_value_is_number(argv[1])) ||
-        (argc > 2 && !jerry_value_is_number(argv[2])) ||
-        (argc > 3 && !jerry_value_is_string(argv[3])))
-        return zjs_error("zjs_buffer_write_string: invalid argument");
+    // args: data[, offset[, length[, encoding]]]
+    ZJS_VALIDATE_ARGS(Z_STRING, Z_OPTIONAL Z_NUMBER, Z_OPTIONAL Z_NUMBER,
+                      Z_OPTIONAL Z_STRING);
 
     // Check if the encoding string is anything other than utf8
     if (argc > 3) {
@@ -377,11 +376,9 @@ static jerry_value_t zjs_buffer(const jerry_value_t function_obj,
     //  effects: constructs a new JS Buffer object, and an associated buffer
     //             tied to it through a zjs_buffer_t struct stored in a global
     //             list
-    if (argc != 1 ||
-        !(jerry_value_is_number(argv[0]) ||
-        jerry_value_is_array(argv[0]) ||
-        jerry_value_is_string(argv[0])))
-        return zjs_error("zjs_buffer: invalid argument");
+
+    // args: initial size or initialization data
+    ZJS_VALIDATE_ARGS(Z_NUMBER Z_ARRAY Z_STRING);
 
     if (jerry_value_is_number(argv[0])) {
         // treat a number argument as a length

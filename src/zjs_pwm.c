@@ -1,4 +1,5 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
+
 #ifdef BUILD_MODULE_PWM
 // Zephyr includes
 #include <zephyr.h>
@@ -107,8 +108,9 @@ static jerry_value_t zjs_pwm_pin_set_period_cycles(const jerry_value_t function_
     //             underlying hardware (31.25ns each for Arduino 101)
     //  effects: updates the period of this PWM pin, using the finest grain
     //             units provided by the platform, providing the widest range
-    if (argc < 1 || !jerry_value_is_number(argv[0]))
-        return zjs_error("zjs_pwm_pin_set_period_cycles: invalid argument");
+
+    // args: period in cycles
+    ZJS_VALIDATE_ARGS(Z_NUMBER);
 
     double periodHW = jerry_get_number_value(argv[0]);
 
@@ -125,8 +127,9 @@ static jerry_value_t zjs_pwm_pin_set_period(const jerry_value_t function_obj,
     //             argument, the period in milliseconds (float)
     //  effects: updates the period of this PWM pin, getting as close as
     //             possible to what is requested given hardware constraints
-    if (argc < 1 || !jerry_value_is_number(argv[0]))
-        return zjs_error("zjs_pwm_pin_set_period: invalid argument");
+
+    // args: period in milliseconds
+    ZJS_VALIDATE_ARGS(Z_NUMBER);
 
     double pulseWidth;
     if (!zjs_obj_get_double(this, "pulseWidth", &pulseWidth)) {
@@ -172,8 +175,9 @@ static jerry_value_t zjs_pwm_pin_set_pulse_width_cycles(const jerry_value_t func
     //             argument, the pulse width in hardware cycles, dependent on
     //             the underlying hardware (31.25ns each for Arduino 101)
     //  effects: updates the pulse width of this PWM pin
-    if (argc < 1 || !jerry_value_is_number(argv[0]))
-        return zjs_error("zjs_pwm_pin_set_pulse_width_cycles: invalid argument");
+
+    // args: pulse width in cycles
+    ZJS_VALIDATE_ARGS(Z_NUMBER);
 
     double pulseWidth = jerry_get_number_value(argv[0]);
     // store the pulseWidth in the pwm object
@@ -191,8 +195,9 @@ static jerry_value_t zjs_pwm_pin_set_pulse_width(const jerry_value_t function_ob
     // requires: this is a PWMPin object from zjs_pwm_open, takes one
     //             argument, the pulse width in milliseconds (float)
     //  effects: updates the pulse width of this PWM pin
-    if (argc < 1 || !jerry_value_is_number(argv[0]))
-        return zjs_error("zjs_pwm_pin_set_pulse_width: invalid argument");
+
+    // args: pulse width in milliseconds
+    ZJS_VALIDATE_ARGS(Z_NUMBER);
 
     double period;
     zjs_obj_get_double(this, "period", &period);
@@ -215,8 +220,9 @@ static jerry_value_t zjs_pwm_open(const jerry_value_t function_obj,
     //             hardware cycles (defaults to 255), pulse width in hardware
     //             cycles (defaults to 0), polarity (defaults to "normal")
     //  effects: returns a new PWMPin object representing the given channel
-    if (argc < 1 || !jerry_value_is_object(argv[0]))
-        return zjs_error("zjs_pwm_open: invalid argument");
+
+    // args: initialization object
+    ZJS_VALIDATE_ARGS(Z_OBJECT);
 
     // data input object
     jerry_value_t data = argv[0];

@@ -91,7 +91,7 @@ Remove a directory from the file system.
 `path` is the name of the directory.
 
 ### FS.writeSync
-`number writeSync(object fd, [String|Buffer] data, number offset, number length, optional number position);`
+`number writeSync(object fd, Buffer data, number offset, number length, optional number position);`
 
 Write bytes to an opened file.
 

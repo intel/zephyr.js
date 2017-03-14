@@ -209,12 +209,8 @@ static jerry_value_t zjs_aio_pin_on(const jerry_value_t function_obj,
                                     const jerry_value_t argv[],
                                     const jerry_length_t argc)
 {
-    if (argc < 2 ||
-        !jerry_value_is_string(argv[0]) ||
-        (!jerry_value_is_function(argv[1]) &&
-         !jerry_value_is_null(argv[1]))) {
-        return zjs_error("zjs_aio_pin_on: invalid argument");
-    }
+    // args: event name, callback
+    ZJS_VALIDATE_ARGS(Z_STRING, Z_FUNCTION Z_NULL);
 
     uint32_t pin;
     zjs_obj_get_uint32(this, "pin", &pin);
@@ -258,8 +254,8 @@ static jerry_value_t zjs_aio_pin_read_async(const jerry_value_t function_obj,
                                             const jerry_value_t argv[],
                                             const jerry_length_t argc)
 {
-    if (argc < 1 || !jerry_value_is_function(argv[0]))
-        return zjs_error("zjs_aio_pin_read_async: invalid argument");
+    // args: callback
+    ZJS_VALIDATE_ARGS(Z_FUNCTION);
 
     uint32_t device, pin;
     zjs_obj_get_uint32(this, "device", &device);
@@ -284,8 +280,8 @@ static jerry_value_t zjs_aio_open(const jerry_value_t function_obj,
                                   const jerry_value_t argv[],
                                   const jerry_length_t argc)
 {
-    if (argc < 1 || !jerry_value_is_object(argv[0]))
-        return zjs_error("zjs_aio_open: invalid argument");
+    // args: initialization object
+    ZJS_VALIDATE_ARGS(Z_OBJECT);
 
     jerry_value_t data = argv[0];
 

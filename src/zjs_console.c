@@ -182,9 +182,8 @@ static jerry_value_t console_time(const jerry_value_t function_obj,
                                   const jerry_value_t argv[],
                                   const jerry_length_t argc)
 {
-    if (argc < 1 || !jerry_value_is_string(argv[0])) {
-        return TYPE_ERROR("invalid argument");
-    }
+    // args: label
+    ZJS_VALIDATE_ARGS(Z_STRING);
 
     uint32_t start = zjs_port_timer_get_uptime();
 
@@ -199,9 +198,8 @@ static jerry_value_t console_time_end(const jerry_value_t function_obj,
                                       const jerry_value_t argv[],
                                       const jerry_length_t argc)
 {
-    if (argc < 1 || !jerry_value_is_string(argv[0])) {
-        return TYPE_ERROR("invalid argument");
-    }
+    // args: label
+    ZJS_VALIDATE_ARGS(Z_STRING);
 
     jerry_value_t num = jerry_get_property(gbl_time_obj, argv[0]);
     jerry_delete_property(gbl_time_obj, argv[0]);
@@ -231,10 +229,10 @@ static jerry_value_t console_assert(const jerry_value_t function_obj,
                                     const jerry_value_t argv[],
                                     const jerry_length_t argc)
 {
+    // args: validity[, output]
+    ZJS_VALIDATE_ARGS(Z_BOOL, Z_OPTIONAL Z_ANY);
+
     char message[MAX_STR_LENGTH];
-    if (!jerry_value_is_boolean(argv[0])) {
-        return TYPE_ERROR("invalid parameter");
-    }
     bool b = jerry_get_boolean_value(argv[0]);
     if (!b) {
         if (argc > 1) {
