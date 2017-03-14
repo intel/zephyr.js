@@ -25,7 +25,7 @@ OCF Client; see below for documentation of specific API functions.
 The OCF Object
 --------------
 The OCF object is the top level object containing either OCF Server,
-OCF client, or both, as well as device and platform information.
+OCF Client, or both, as well as device and platform information.
 
 ```javascript
 // require returns an OCFObject
@@ -62,7 +62,7 @@ The OCF device and platform objects can be set up after requiring 'ocf'. An
 example of this can be found in [OCF Server sample](../samples/OcfServer.js).
 The properties are registered to the system (and available during discovery)
 once either `OCFServer.registerResource()` or `OCFClient.findResources()`
-are called.
+is called.
 
 OCF API Documentation
 ---------------------
@@ -70,11 +70,11 @@ OCF API Documentation
 ### OCFObject.setBleAddress
 `void setBleAddress(string address);`
 
-Sets the devices BLE MAC address. This function is only defined on
+Sets the device's BLE MAC address. This function is only defined on
 Zephyr boards with BLE capabilities (e.g. Arduino 101).
 
 The `address` parameter should be a MAC address string in the format
-`XX:XX:XX:XX:XX:X` where each character is in HEX format (0-9, A-F).
+`XX:XX:XX:XX:XX:XX` where each character is in HEX format (0-9, A-F).
 
 OCF Server
 ----------
@@ -170,13 +170,11 @@ dictionary ClientOptions {
 }
 
 interface Resource {
-
     string resourcePath;      // Path for this resource
     object properties;        // Application specific resource properties
 };
 
 callback FoundListener = void (ClientResource);
-
 ```
 
 Client API Documentation
@@ -184,12 +182,12 @@ Client API Documentation
 ### Client.findResources
 `Promise<ClientResource> findResources(ClientOptions options, optional FoundListener listener);`
 
-Find a remote resource matching `options` filter.
+Find remote resources matching `options` filter.
 
-The `options` paramter should contain a filter of resource options. Only
-resources matching theses options will be found.
+The `options` parameter should contain a filter of resource options. Only
+resources matching these options will be found.
 
-The `listener` paramter is an optional event listener callback. This
+The `listener` parameter is an optional event listener callback. This
 callback will be called if a resource is found (`onfound` event).
 
 Returns a promise which resolves with a `ClientResource` object if a resource
@@ -212,12 +210,12 @@ properties.
 ### Client.update
 `Promise<Resource> update(Resource resource);`
 
-Update a remote resource properties.
+Update remote resource properties.
 
 The `resource` parameter should contain a `deviceId` for the resource to
 update. The `properties` parameter will be sent to the resource and updated.
 
-Returns a Promise which resolves to a resource `Resource` containing the
+Returns a promise which resolves to a resource `Resource` containing the
 updated properties.
 
 ### Client.getPlatformInfo
@@ -228,7 +226,7 @@ Get `Platform` information for a resource.
 The `deviceId` parameter should be the ID for a resource found with
 `findResources()`.
 
-Returns a Promise which resolves to a `Platform` containing the platform
+Returns a promise which resolves to a `Platform` containing the platform
 information for the resource.
 
 ### Client.getDeviceInfo
@@ -239,7 +237,7 @@ Get `Device` information for a resource.
 The `deviceId` parameter should be the ID for a resource found with
 `findResources()`.
 
-Returns a Promise which resolves to a `Device` containing the device
+Returns a promise which resolves to a `Device` containing the device
 information for the resource.
 
 Client Samples
