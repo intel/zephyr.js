@@ -49,7 +49,7 @@ struct ocf_handler {
     struct client_resource* res;
 };
 
-struct client_resource* resources = NULL;
+static struct client_resource* resource_list = NULL;
 
 #define MAX_URI_LENGTH (30)
 
@@ -216,7 +216,7 @@ static void print_props_data(oc_client_response_t *data)
 static struct client_resource* find_resource_by_id(const char* device_id)
 {
     if (device_id) {
-        struct client_resource* cur = resources;
+        struct client_resource* cur = resource_list;
         while (cur) {
             if (cur->state != RES_STATE_SEARCHING) {
                 if (strcmp(cur->device_id, device_id) == 0) {
@@ -236,7 +236,7 @@ static struct client_resource* find_resource_by_id(const char* device_id)
 static struct client_resource* find_resource_by_path(const char* path)
 {
     if (path) {
-        struct client_resource* cur = resources;
+        struct client_resource* cur = resource_list;
         while (cur) {
             if (cur->state != RES_STATE_SEARCHING) {
                 if (strcmp(cur->resource_path, path) == 0) {
@@ -273,7 +273,7 @@ static void free_client(const uintptr_t native_p)
 {
     struct client_resource* client = (struct client_resource*)native_p;
     if (client) {
-        struct client_resource* cur = resources;
+        struct client_resource* cur = resource_list;
         while (cur->next) {
             if (cur->next == client) {
                 cur->next = client->next;
@@ -295,7 +295,7 @@ static void free_client(const uintptr_t native_p)
 }
 
 /*
- * Add a discovered resource to the list of resources
+ * Add a discovered resource to the list of resource_list
  */
 static void add_resource(char* id, char* type, char* path, jerry_value_t client, jerry_value_t listener)
 {
@@ -328,8 +328,8 @@ static void add_resource(char* id, char* type, char* path, jerry_value_t client,
         zjs_add_event_listener(new->client, "resourcefound", listener);
     }
 
-    new->next = resources;
-    resources = new;
+    new->next = resource_list;
+    resource_list = new;
 }
 
 static void post_ocf_promise(void* handle)
@@ -377,7 +377,7 @@ static oc_discovery_flags_t discovery(const char *di,
 
     for (i = 0; i < oc_string_array_get_allocated_size(types); i++) {
         char *t = oc_string_array_get_item(types, i);
-        struct client_resource* cur = resources;
+        struct client_resource* cur = resource_list;
         while (cur) {
             if (cur->state == RES_STATE_SEARCHING) {
                 // check if resource has any filter constraints
@@ -1076,8 +1076,8 @@ jerry_value_t zjs_ocf_client_init()
 
 void zjs_ocf_client_cleanup()
 {
-    if (resources) {
-        struct client_resource *cur = resources;
+    if (resource_list) {
+        struct client_resource *cur = resource_list;
         while (cur) {
             if (cur->resource_type) {
                 zjs_free(cur->resource_type);
@@ -1086,9 +1086,9 @@ void zjs_ocf_client_cleanup()
                 zjs_free(cur->resource_path);
             }
             jerry_release_value(cur->client);
-            resources = resources->next;
+            resource_list = resource_list->next;
             zjs_free(cur);
-            cur = resources;
+            cur = resource_list;
         }
     }
 }
