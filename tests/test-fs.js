@@ -187,8 +187,34 @@ assert((rlen == rbuf.length),
 assert((rbuf.toString('ascii') == "12345test"),
     "read data correct (write with buf/off/len/pos): " + rbuf.toString('ascii'));
 
-
 fs.closeSync(fd);
+
+// open/close several files
+var fd1 = fs.openSync('tf1.txt', 'w+');
+fs.writeSync(fd1, new Buffer('tf1'));
+var fd2 = fs.openSync('tf2.txt', 'w+');
+fs.writeSync(fd2, new Buffer('tf2'));
+var fd3 = fs.openSync('tf3.txt', 'w+');
+fs.writeSync(fd3, new Buffer('tf3'));
+
+var fd2_buf = new Buffer(3);
+fs.readSync(fd2, fd2_buf, 0, 3, 0);
+assert((fd2_buf.toString('ascii') == 'tf2'),
+    "read from middle opened file: " + fd2_buf.toString('ascii'));
+
+fs.closeSync(fd1);
+fs.closeSync(fd3);
+
+fd2_buf = new Buffer(3);
+fs.readSync(fd2, fd2_buf, 0, 3, 0);
+assert((fd2_buf.toString('ascii') == 'tf2'),
+    "read from middle opened file (again): " + fd2_buf.toString('ascii'));
+
+fs.closeSync(fd2);
+
+fs.unlinkSync('tf1.txt');
+fs.unlinkSync('tf2.txt');
+fs.unlinkSync('tf3.txt');
 
 fs.unlinkSync('testfile.txt');
 

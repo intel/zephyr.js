@@ -29,31 +29,85 @@ typedef enum {
 
 #define MAX_PATH_LENGTH 128
 
+#define BIT_SET(a, i) a |= 1 << i
+#define BIT_CLR(a, i) a &= ~(1 << i)
+#define IS_SET(a, i) (a >> i) & 1
+
 /*
- * TODO: Someday we may want to keep a list of all open file descriptors. In
- *       the ashell use case the user may not clean up a descriptor which could
- *       get leaked.
+ * Bit mask of currently open FD's
  */
+static uint32_t fd_used = 0;
+
 typedef struct file_handle {
     fs_file_t fp;
+    int fd;
     FileMode mode;
-    jerry_value_t fd_val;
     int error;
     uint32_t rpos;
+    struct file_handle *next;
 } file_handle_t;
+
+static file_handle_t *opened_handles = NULL;
 
 static jerry_value_t invalid_args(void)
 {
     return zjs_error("invalid arguments");
 }
 
+static file_handle_t* find_file(int fd)
+{
+    file_handle_t *cur = opened_handles;
+    while (cur) {
+        if (cur->fd == fd) {
+            return cur;
+        }
+        cur = cur->next;
+    }
+    return NULL;
+}
+
 static file_handle_t* new_file(void)
 {
+    int fd = 0;
+    while (IS_SET(fd_used, fd)) {
+        fd++;
+        if (fd > 31) {
+            return NULL;
+        }
+    }
+
     file_handle_t* handle = zjs_malloc(sizeof(file_handle_t));
+    if (!handle) {
+        return NULL;
+    }
 
     memset(handle, 0, sizeof(file_handle_t));
 
+    handle->fd = fd;
+    BIT_SET(fd_used, fd);
+
     return handle;
+}
+
+static void free_file(file_handle_t *handle)
+{
+    file_handle_t *cur = opened_handles;
+    if (cur == handle) {
+        opened_handles = opened_handles->next;
+        BIT_CLR(fd_used, handle->fd);
+        zjs_free(handle);
+        return;
+    }
+    while (cur->next) {
+        if (cur->next == handle) {
+            cur->next = handle->next;
+            BIT_CLR(fd_used, handle->fd);
+            zjs_free(handle);
+            return;
+        }
+        cur = cur->next;
+    }
+    DBG_PRINT("file not found\n");
 }
 
 static int file_exists(const char *path)
@@ -164,12 +218,6 @@ static jerry_value_t zjs_open(const jerry_value_t function_obj,
     }
 #endif
 
-    file_handle_t* handle = new_file();
-    if (!handle) {
-        return zjs_error("malloc failed");
-    }
-    handle->fd_val = jerry_create_object();
-
     jerry_size_t size = MAX_PATH_LENGTH;
     char path[size];
 
@@ -188,24 +236,28 @@ static jerry_value_t zjs_open(const jerry_value_t function_obj,
 
     DBG_PRINT("Opening file: %s, mode: %s\n", path, mode);
 
-    handle->mode = get_mode(mode);
+    FileMode m = get_mode(mode);
 
-    if ((handle->mode == MODE_R || handle->mode == MODE_R_PLUS)
+    if ((m == MODE_R || m == MODE_R_PLUS)
         && !file_exists(path)) {
-        jerry_release_value(handle->fd_val);
-        zjs_free(handle);
         return zjs_error("file doesn't exist");
+    }
+
+    file_handle_t* handle = new_file();
+    if (!handle) {
+        return zjs_error("malloc failed");
     }
 
     handle->error = fs_open(&handle->fp, path);
     if (handle->error != 0) {
         ERR_PRINT("could not open file: %s, error=%d\n", path, handle->error);
-        jerry_release_value(handle->fd_val);
         zjs_free(handle);
         return zjs_error("could not open file");
     }
 
-    jerry_set_object_native_handle(handle->fd_val, (uintptr_t)handle, NULL);
+    handle->mode = m;
+    handle->next = opened_handles;
+    opened_handles = handle;
 
 #ifdef ZJS_FS_ASYNC_APIS
     if (async) {
@@ -221,7 +273,7 @@ static jerry_value_t zjs_open(const jerry_value_t function_obj,
     }
 #endif
 
-    return handle->fd_val;
+    return jerry_create_number(handle->fd);
 }
 
 static jerry_value_t zjs_open_sync(const jerry_value_t function_obj,
@@ -247,10 +299,7 @@ static jerry_value_t zjs_close(const jerry_value_t function_obj,
                                uint8_t async)
 {
     // args: file descriptor
-    ZJS_VALIDATE_ARGS(Z_OBJECT);
-
-    file_handle_t* handle;
-
+    ZJS_VALIDATE_ARGS(Z_NUMBER);
 #ifdef ZJS_FS_ASYNC_APIS
     // async case adds callback arg
     if (async) {
@@ -258,8 +307,10 @@ static jerry_value_t zjs_close(const jerry_value_t function_obj,
     }
 #endif
 
-    if (!jerry_get_object_native_handle(argv[0], (uintptr_t*)&handle)) {
-        return zjs_error("native handle not found");
+    file_handle_t* handle;
+    handle = find_file((int)jerry_get_number_value(argv[0]));
+    if (!handle) {
+        return zjs_error("file not found");
     }
 
     handle->error = fs_close(&handle->fp);
@@ -276,7 +327,7 @@ static jerry_value_t zjs_close(const jerry_value_t function_obj,
     }
 #endif
 
-    zjs_free(handle);
+    free_file(handle);
 
     return ZJS_UNDEFINED;
 }
@@ -362,8 +413,7 @@ static jerry_value_t zjs_read(const jerry_value_t function_obj,
                               uint8_t async)
 {
     // args: file descriptor, buffer, offset, length, position
-    ZJS_VALIDATE_ARGS(Z_OBJECT, Z_OBJECT, Z_NUMBER, Z_NUMBER, Z_NUMBER Z_NULL);
-
+    ZJS_VALIDATE_ARGS(Z_NUMBER, Z_OBJECT, Z_NUMBER, Z_NUMBER, Z_NUMBER Z_NULL);
 #ifdef ZJS_FS_ASYNC_APIS
     // async case adds callback
     if (async) {
@@ -374,8 +424,9 @@ static jerry_value_t zjs_read(const jerry_value_t function_obj,
     file_handle_t* handle;
     int err = 0;
 
-    if (!jerry_get_object_native_handle(argv[0], (uintptr_t*)&handle)) {
-        return zjs_error("native handle not found");
+    handle = find_file((int)jerry_get_number_value(argv[0]));
+    if (!handle) {
+        return zjs_error("file not found");
     }
 
     if (handle->mode == MODE_W || handle->mode == MODE_A) {
@@ -468,12 +519,11 @@ static jerry_value_t zjs_write(const jerry_value_t function_obj,
                                uint8_t async)
 {
     // args: file descriptor, buffer[, offset[, length[, position]]]
-    ZJS_VALIDATE_ARGS_OPTCOUNT(optcount, Z_OBJECT, Z_OBJECT,
+    ZJS_VALIDATE_ARGS_OPTCOUNT(optcount, Z_NUMBER, Z_OBJECT,
                                Z_OPTIONAL Z_NUMBER, Z_OPTIONAL Z_NUMBER,
                                Z_OPTIONAL Z_NUMBER);
     // NOTE: Borrowing the optional parameters from Node 7.x, beyond 6.10 LTS
     //         which we're currently targeting.
-
 #ifdef ZJS_FS_ASYNC_APIS
     // async case adds callback arg
     int cbindex = 2 + optcount;
@@ -488,8 +538,9 @@ static jerry_value_t zjs_write(const jerry_value_t function_obj,
     uint32_t position = 0;
     uint8_t from_cur = 0;
 
-    if (!jerry_get_object_native_handle(argv[0], (uintptr_t*)&handle)) {
-        return zjs_error("native handle not found");
+    handle = find_file((int)jerry_get_number_value(argv[0]));
+    if (!handle) {
+        return zjs_error("file not found");
     }
 
     if (handle->mode == MODE_R) {
@@ -591,13 +642,14 @@ static jerry_value_t zjs_truncate(const jerry_value_t function_obj,
         ZJS_VALIDATE_ARGS_OFFSET(2, Z_FUNCTION);
     }
 #endif
-
     fs_file_t fp;
-    if (jerry_value_is_object(argv[0])) {
+    if (jerry_value_is_number(argv[0])) {
         file_handle_t* handle;
-        if (!jerry_get_object_native_handle(argv[0], (uintptr_t*)&handle)) {
-            return zjs_error("native handle not found");
+        handle = find_file((int)jerry_get_number_value(argv[0]));
+        if (!handle) {
+            return zjs_error("file not found");
         }
+
         fp = handle->fp;
     } else if (jerry_value_is_string(argv[0])) {
         jerry_size_t size = MAX_PATH_LENGTH;
@@ -1004,5 +1056,17 @@ jerry_value_t zjs_fs_init()
 #endif
 
     return fs;
+}
+
+void zjs_fs_cleanup()
+{
+    // cleanup any currently opened files
+    file_handle_t *cur = opened_handles;
+    while (cur) {
+        fs_close(&cur->fp);
+        file_handle_t *f = cur;
+        cur = cur->next;
+        zjs_free(f);
+    }
 }
 #endif

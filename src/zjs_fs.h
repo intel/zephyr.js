@@ -5,4 +5,6 @@
 
 jerry_value_t zjs_fs_init();
 
+void zjs_fs_cleanup();
+
 #endif /* SRC_ZJS_FS_H_ */

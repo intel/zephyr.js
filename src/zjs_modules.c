@@ -85,7 +85,7 @@ module_t zjs_modules_array[] = {
     { "i2c", zjs_i2c_init },
 #endif
 #ifdef BUILD_MODULE_FS
-    { "fs", zjs_fs_init },
+    { "fs", zjs_fs_init, zjs_fs_cleanup },
 #endif
 #ifdef CONFIG_BOARD_ARDUINO_101
 #ifdef BUILD_MODULE_A101
