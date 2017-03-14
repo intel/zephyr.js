@@ -4,7 +4,7 @@ ZJS API for Bluetooth Low Energy (BLE)
 * [Introduction](#introduction)
 * [Web IDL](#web-idl)
 * [API Documentation](#api-documentation)
-* [Client Requirements](#requirements)
+* [Client Requirements](#client-requirements)
 * [Sample Apps](#sample-apps)
 
 Introduction
