@@ -16,6 +16,7 @@
 #include "zjs_console.h"
 #endif
 #include "zjs_dgram.h"
+#include "zjs_net.h"
 #include "zjs_event.h"
 #include "zjs_modules.h"
 #include "zjs_performance.h"
@@ -102,6 +103,9 @@ module_t zjs_modules_array[] = {
 #endif // ZJS_LINUX_BUILD
 #ifdef BUILD_MODULE_DGRAM
     { "dgram", zjs_dgram_init, zjs_dgram_cleanup },
+#endif
+#ifdef BUILD_MODULE_NET
+    { "net", zjs_net_init, zjs_net_cleanup },
 #endif
 #ifdef BUILD_MODULE_EVENTS
     { "events", zjs_event_init, zjs_event_cleanup },
