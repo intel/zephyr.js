@@ -240,10 +240,17 @@ static jerry_value_t ocf_respond(const jerry_value_t function_val,
     // Free property return handle
     zjs_ocf_free_props(ret);
 
-    oc_send_response(h->req, OC_STATUS_OK);
-
-    DBG_PRINT("responding to method type=%u, properties=%lu\n", h->resp->method,
-              data);
+    /*
+     * TODO: Better error handling here. We need to implement a respond
+     *       with error as well as checking the return code of previous
+     *       OCF calls made.
+     */
+    if (h->resp->method == OC_PUT || h->resp->method == OC_POST) {
+        oc_send_response(h->req, OC_STATUS_CHANGED);
+    } else {
+        oc_send_response(h->req, OC_STATUS_OK);
+    }
+    DBG_PRINT("responding to method type=%u, properties=%lu\n", h->resp->method, data);
 
     zjs_make_promise(promise, NULL, NULL);
 

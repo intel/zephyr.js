@@ -50,7 +50,7 @@ function onfound(resource) {
     }, 1000);
 }
 
-client.findResources({ resourceType:"oic.r.light" }, onfound).then(function(resource) {
+client.findResources({ resourceType:"core.light" }, onfound).then(function(resource) {
     console.log("findResources() was successful, deviceId=" + resource.deviceId);
 }).catch(function(error) {
     console.log("findResources() returned an error: " + error.name);
