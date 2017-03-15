@@ -851,14 +851,20 @@ static void ocf_get_platform_info_handler(oc_client_response_t *data)
                 break;
             case BYTE_STRING:
             case STRING:
-                /*
-                 * TODO: try and find the names of all the platform info properties
-                 *       can set a map in C array to reference these strange names
-                 */
                 if (strcmp(oc_string(rep->name), "mnmn") == 0) {
-                    zjs_obj_add_string(platform_info, oc_string(rep->value.string), "manufacturerName");
+                    zjs_obj_add_readonly_string(platform_info, oc_string(rep->value.string), "manufacturerName");
                 } else if (strcmp(oc_string(rep->name), "pi") == 0) {
-                    zjs_obj_add_string(platform_info, oc_string(rep->value.string), "id");
+                    zjs_obj_add_readonly_string(platform_info, oc_string(rep->value.string), "id");
+                } else if (strcmp(oc_string(rep->name), "mnmo") == 0) {
+                    zjs_obj_add_readonly_string(platform_info, oc_string(rep->value.string), "model");
+                } else if (strcmp(oc_string(rep->name), "mndt") == 0) {
+                    zjs_obj_add_readonly_string(platform_info, oc_string(rep->value.string), "manufacturerDate");
+                } else if (strcmp(oc_string(rep->name), "mnpv") == 0) {
+                    zjs_obj_add_readonly_string(platform_info, oc_string(rep->value.string), "platformVersion");
+                } else if (strcmp(oc_string(rep->name), "mnos") == 0) {
+                    zjs_obj_add_readonly_string(platform_info, oc_string(rep->value.string), "osVersion");
+                } else if (strcmp(oc_string(rep->name), "mnfv") == 0) {
+                    zjs_obj_add_readonly_string(platform_info, oc_string(rep->value.string), "firmwareVersion");
                 }
                 DBG_PRINT("%s\n", oc_string(rep->value.string));
                 break;
