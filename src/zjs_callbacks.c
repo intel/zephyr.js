@@ -482,15 +482,16 @@ void zjs_call_callback(zjs_callback_id id, const void *data, uint32_t sz)
             // Function list callback
             int i;
             jerry_value_t *values = (jerry_value_t *)data;
+            ZVAL_MUTABLE rval;
             if (GET_JS_TYPE(cb_map[id]->flags) == JS_TYPE_SINGLE) {
-                ZVAL rval = jerry_call_function(cb_map[id]->js_func,
+                rval = jerry_call_function(cb_map[id]->js_func,
                                                 cb_map[id]->this, values, sz);
                 if (jerry_value_has_error_flag(rval)) {
                     zjs_print_error_message(rval);
                 }
             } else if (GET_JS_TYPE(cb_map[id]->flags) == JS_TYPE_LIST) {
                 for (i = 0; i < cb_map[id]->num_funcs; ++i) {
-                    ZVAL rval = jerry_call_function(cb_map[id]->func_list[i],
+                    rval = jerry_call_function(cb_map[id]->func_list[i],
                                                     cb_map[id]->this, values,
                                                     sz);
                     if (jerry_value_has_error_flag(rval)) {
@@ -502,7 +503,7 @@ void zjs_call_callback(zjs_callback_id id, const void *data, uint32_t sz)
             // ensure the callback wasn't deleted by the previous calls
             if (cb_map[id]) {
                 if (cb_map[id]->post) {
-                    cb_map[id]->post(cb_map[id]->handle);
+                    cb_map[id]->post(cb_map[id]->handle, &rval);
                 }
                 if (GET_ONCE(cb_map[id]->flags)) {
                     zjs_remove_callback_priv(id, false);

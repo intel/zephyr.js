@@ -295,6 +295,12 @@ if check_for_require arduino101_pins || check_config_file ZJS_ARDUINO101_PINS; t
     echo "export ZJS_ARDUINO101_PINS=y" >> zjs.conf.tmp
 fi
 
+promise=$(grep "Promise" $SCRIPT)
+if [ $? -eq 0 ] || check_config_file ZJS_JPROMISE; then
+    MODULES+=" -DZJS_JS_PROMISES"
+    echo "export ZJS_JPROMISE=y" >> zjs.conf.tmp
+fi
+
 interval=$(grep "setInterval\|setTimeout\|setImmediate" $SCRIPT)
 if [ $? -eq 0 ] || check_config_file ZJS_TIMERS; then
     MODULES+=" -DBUILD_MODULE_TIMER"

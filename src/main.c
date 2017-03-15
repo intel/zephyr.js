@@ -18,6 +18,7 @@
 #include "zjs_callbacks.h"
 #include "zjs_error.h"
 #include "zjs_modules.h"
+#include "zjs_promise.h"
 #ifdef BUILD_MODULE_SENSOR
 #include "zjs_sensor.h"
 #endif
@@ -169,6 +170,9 @@ int main(int argc, char *argv[])
 
     zjs_error_init();
 
+#ifdef ZJS_JS_PROMISES
+    zjs_init_promise();
+#endif
 #ifdef BUILD_MODULE_OCF
     zjs_register_service_routine(NULL, main_poll_routine);
 #ifdef CONFIG_NET_L2_BLUETOOTH
@@ -291,6 +295,7 @@ int main(int argc, char *argv[])
         }
         last_serviced = serviced;
 #endif
+        jerry_gc();
     }
 
 error:

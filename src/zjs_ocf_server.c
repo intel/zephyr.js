@@ -71,6 +71,7 @@ static struct ocf_handler *new_ocf_handler(struct server_resource *res)
     return h;
 }
 
+/*
 static void post_ocf_promise(void *handle)
 {
     struct ocf_handler *h = (struct ocf_handler *)handle;
@@ -80,7 +81,7 @@ static void post_ocf_promise(void *handle)
         }
         zjs_free(h);
     }
-}
+}*/
 
 static jerry_value_t make_ocf_error(const char *name, const char *msg,
                                     struct server_resource *res)
@@ -227,17 +228,16 @@ static jerry_value_t ocf_respond(const jerry_value_t function_val,
     // args: properties object
     ZJS_VALIDATE_ARGS(Z_OBJECT);
 
-    jerry_value_t promise = jerry_create_object();
-    struct ocf_handler *h;
+    jerry_value_t promise;
+    struct ocf_handler* h;
     jerry_value_t request = this;
 
     jerry_value_t data = argv[0];
 
     if (!jerry_get_object_native_handle(request, (uintptr_t *)&h)) {
         ERR_PRINT("native handle not found\n");
-        REJECT(promise, "TypeMismatchError", "native handle not found", h);
         oc_send_response(h->req, OC_STATUS_INTERNAL_SERVER_ERROR);
-        return promise;
+        REJECT("TypeMismatchError", "native handle not found");
     }
 
     void *ret;
@@ -261,9 +261,9 @@ static jerry_value_t ocf_respond(const jerry_value_t function_val,
     }
     DBG_PRINT("responding to method type=%u, properties=%lu\n", h->resp->method, data);
 
-    zjs_make_promise(promise, NULL, NULL);
+    promise = zjs_make_promise();
 
-    zjs_fulfill_promise(promise, NULL, 0);
+    zjs_fulfill_promise(promise, ZJS_UNDEFINED);
 
     return promise;
 }
@@ -315,6 +315,7 @@ static void ocf_get_handler(oc_request_t *request,
     }
 
     h->req = request;
+    ZJS_PRINT("resource=%p, this=%u\n", h->res, h->res->object);
 
     ZVAL request_val = create_request(h->res, OC_GET, h);
     ZVAL flag = jerry_create_boolean(0);
@@ -349,7 +350,7 @@ static void ocf_put_handler(oc_request_t *request,
     zjs_set_property(request_val, "resource", resource_val);
 
     h->req = request;
-    zjs_trigger_event_now(h->res->object, "update", &request_val, 1, post_put,
+    zjs_trigger_event_now(h->res->object, "update", (jerry_value_t*)&request_val, 1, post_put,
                           h);
 
     DBG_PRINT("sent PUT response, code=CHANGED\n");
@@ -423,24 +424,21 @@ static jerry_value_t ocf_register(const jerry_value_t function_val,
 
     struct server_resource *resource;
     int i;
-    jerry_value_t promise = jerry_create_object();
-    struct ocf_handler *h = NULL;
+    jerry_value_t promise; // = jerry_create_object();
+    struct ocf_handler* h = NULL;
 
     // Required
     ZVAL resource_path_val = zjs_get_property(argv[0], "resourcePath");
     if (!jerry_value_is_string(resource_path_val)) {
         ERR_PRINT("resourcePath not found\n");
-        REJECT(promise, "TypeMismatchError", "resourcePath not found", h);
-        return promise;
+        REJECT("TypeMismatchError", "resourcePath not found");
     }
     ZJS_GET_STRING(resource_path_val, resource_path, OCF_MAX_RES_PATH_LEN);
 
     ZVAL res_type_array = zjs_get_property(argv[0], "resourceTypes");
     if (!jerry_value_is_array(res_type_array)) {
         ERR_PRINT("resourceTypes array not found\n");
-        REJECT(promise, "TypeMismatchError", "resourceTypes array not found",
-               h);
-        return promise;
+        REJECT("TypeMismatchError", "resourceTypes array not found");
     }
 
     // Optional
@@ -475,13 +473,11 @@ static jerry_value_t ocf_register(const jerry_value_t function_val,
 
     resource_list_t *new = zjs_malloc(sizeof(resource_list_t));
     if (!new) {
-        REJECT(promise, "InternalError", "Could not allocate resource list", h);
-        return promise;
+        REJECT("InternalError", "Could not allocate resource list");
     }
     resource = new_server_resource(resource_path);
     if (!resource) {
-        REJECT(promise, "InternalError", "Could not allocate resource", h);
-        return promise;
+        REJECT("InternalError", "Could not allocate resource");
     }
     new->resource = resource;
     new->next = res_list;
@@ -492,8 +488,7 @@ static jerry_value_t ocf_register(const jerry_value_t function_val,
     resource->num_types = jerry_get_array_length(res_type_array);
     resource->resource_types = zjs_malloc(sizeof(char *) * resource->num_types);
     if (!resource->resource_types) {
-        REJECT(promise, "InternalError", "resourceType alloc failed", h);
-        return promise;
+        REJECT("InternalError", "resourceType alloc failed");
     }
 
     for (i = 0; i < resource->num_types; ++i) {
@@ -501,24 +496,20 @@ static jerry_value_t ocf_register(const jerry_value_t function_val,
         uint32_t size = OCF_MAX_RES_TYPE_LEN;
         resource->resource_types[i] = zjs_alloc_from_jstring(type_val, &size);
         if (!resource->resource_types[i]) {
-            REJECT(promise, "InternalError", "resourceType alloc failed", h);
-            return promise;
+            REJECT("InternalError", "resourceType alloc failed");
         }
     }
 
     ZVAL iface_array = zjs_get_property(argv[0], "interfaces");
     if (!jerry_value_is_array(iface_array)) {
         ERR_PRINT("interfaces array not found\n");
-        REJECT(promise, "TypeMismatchError", "resourceTypes array not found",
-               h);
-        return promise;
+        REJECT("TypeMismatchError", "resourceTypes array not found");
     }
 
     resource->num_ifaces = jerry_get_array_length(iface_array);
     resource->resource_ifaces = zjs_malloc(sizeof(char *) * resource->num_ifaces);
     if (!resource->resource_ifaces) {
-        REJECT(promise, "InternalError", "interfaces alloc failed", h);
-        return promise;
+        REJECT("InternalError", "interfaces alloc failed");
     }
 
     for (i = 0; i < resource->num_ifaces; ++i) {
@@ -526,15 +517,13 @@ static jerry_value_t ocf_register(const jerry_value_t function_val,
         uint32_t size = OCF_MAX_RES_TYPE_LEN;
         resource->resource_ifaces[i] = zjs_alloc_from_jstring(val, &size);
         if (!resource->resource_ifaces[i]) {
-            REJECT(promise, "InternalError", "resourceType alloc failed", h);
-            return promise;
+            REJECT("InternalError", "resourceType alloc failed");
         }
     }
 
     // Start OCF. Device/platform/resource properties should all be set after
     if (zjs_ocf_start() < 0) {
-        REJECT(promise, "InternalError", "OCF failed to start", h);
-        return promise;
+        REJECT("InternalError", "OCF failed to start");
     }
 
     // Get UUID and set it in the ocf.device object
@@ -543,22 +532,24 @@ static jerry_value_t ocf_register(const jerry_value_t function_val,
     zjs_set_uuid(uuid);
 
     h = new_ocf_handler(resource);
-    zjs_make_promise(promise, post_ocf_promise, h);
+    promise = zjs_make_promise();
     /*
      * Find lifetime of resource, free in post promise
      */
     jerry_value_t res = create_resource(resource_path, argv[0]);
-    zjs_fulfill_promise(promise, &res, 1);
 
     /*
      * TODO: Add native handle to ensure it gets freed,
      *       check if we can reference with 'this'
      */
     resource->object = this;
+    ZJS_PRINT("this=%u, resource=%p\n", resource->object, resource);
 
     jerry_set_object_native_handle(res, (uintptr_t)resource, NULL);
 
     DBG_PRINT("registered resource, path=%s\n", resource_path);
+
+    zjs_fulfill_promise(promise, res);
 
     return promise;
 }
