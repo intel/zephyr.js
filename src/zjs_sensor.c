@@ -215,8 +215,7 @@ static void zjs_sensor_update_reading(jerry_value_t obj,
                                       enum sensor_channel channel,
                                       void *reading)
 {
-    // update reading property and trigger onchange event
-    ZVAL reading_obj = jerry_create_object();
+    // update object's internal properties and trigger onchange event
     switch(channel) {
     case SENSOR_CHAN_ACCEL_XYZ:
     case SENSOR_CHAN_GYRO_XYZ: ;
@@ -224,14 +223,14 @@ static void zjs_sensor_update_reading(jerry_value_t obj,
         double x = ((double *)reading)[0];
         double y = ((double *)reading)[1];
         double z = ((double *)reading)[2];
-        zjs_obj_add_readonly_number(reading_obj, x, "x");
-        zjs_obj_add_readonly_number(reading_obj, y, "y");
-        zjs_obj_add_readonly_number(reading_obj, z, "z");
+        zjs_obj_add_readonly_number(obj, x, "x");
+        zjs_obj_add_readonly_number(obj, y, "y");
+        zjs_obj_add_readonly_number(obj, z, "z");
         break;
     case SENSOR_CHAN_LIGHT: ;
         // reading is a ptr to double
         double d = *((double *)reading);
-        zjs_obj_add_readonly_number(reading_obj, d, "illuminance");
+        zjs_obj_add_readonly_number(obj, d, "illuminance");
         break;
 
     default:
@@ -239,13 +238,11 @@ static void zjs_sensor_update_reading(jerry_value_t obj,
         return;
     }
 
-    zjs_set_property(obj, "reading", reading_obj);
     ZVAL func = zjs_get_property(obj, "onchange");
     if (jerry_value_is_function(func)) {
         ZVAL event = jerry_create_object();
         // if onchange exists, call it
-        zjs_set_property(event, "reading", reading_obj);
-        ZVAL rval = jerry_call_function(func, obj, &event, 1);
+        ZVAL rval = jerry_call_function(func, obj, NULL, 0);
         if (jerry_value_has_error_flag(rval)) {
             ERR_PRINT("calling onchange\n");
         }
@@ -406,7 +403,22 @@ static void zjs_sensor_onstop_c_callback(void *h, void *argv)
     send.data.sensor.channel = handle->channel;
 
     ZVAL reading_val = jerry_create_null();
-    zjs_set_property(obj, "reading", reading_val);
+    jerry_value_t null_val = jerry_create_null();
+    switch(handle->channel) {
+    case SENSOR_CHAN_ACCEL_XYZ:
+    case SENSOR_CHAN_GYRO_XYZ: ;
+        zjs_set_readonly_property(obj, "x", null_val);
+        zjs_set_readonly_property(obj, "y", null_val);
+        zjs_set_readonly_property(obj, "z", null_val);
+        break;
+    case SENSOR_CHAN_LIGHT: ;
+        zjs_set_readonly_property(obj, "illuminance", null_val);
+        break;
+
+    default:
+        ERR_PRINT("unsupported sensor type\n");
+    }
+
     if (handle->channel == SENSOR_CHAN_LIGHT) {
         // AmbientLightSensor needs provide AIO pin value
         uint32_t pin;
@@ -492,8 +504,18 @@ static jerry_value_t zjs_sensor_create(const jerry_value_t function_obj,
     ZJS_VALIDATE_ARGS(expect);
 
     double frequency = DEFAULT_SAMPLING_FREQUENCY;
-    bool hasPin = false;
     uint32_t pin;
+
+    zjs_ipm_message_t send;
+    send.type = TYPE_SENSOR_INIT;
+    send.data.sensor.channel = channel;
+    int error = zjs_sensor_call_remote_function(&send);
+    if (error != ERROR_IPM_NONE) {
+        return zjs_error("zjs_sensor_create failed to init\n");
+    }
+
+    // initialize object and default values
+    jerry_value_t sensor_obj = jerry_create_object();
 
     if (argc >= 1) {
         jerry_value_t options = argv[0];
@@ -515,35 +537,32 @@ static jerry_value_t zjs_sensor_create(const jerry_value_t function_obj,
             bool option_gravity;
             if (zjs_obj_get_boolean(options, "includeGravity",
                                     &option_gravity) && option_gravity) {
-                // TODO: find out if BMI160 can be configured to include gravity
-                ERR_PRINT("includeGravity is not supported\n");
+                if (option_gravity) {
+                    ERR_PRINT("includeGravity is not supported\n");
+                }
+                zjs_obj_add_readonly_boolean(sensor_obj, option_gravity,
+                                             "includeGravity");
             }
         }
 
-        if (channel == SENSOR_CHAN_LIGHT) {
-            hasPin = zjs_obj_get_uint32(options, "pin", &pin);
+        // initialize default sensor readings to null
+        jerry_value_t null_val = jerry_create_null();
+        if (channel == SENSOR_CHAN_ACCEL_XYZ ||
+            channel == SENSOR_CHAN_GYRO_XYZ) {
+            zjs_set_readonly_property(sensor_obj, "x", null_val);
+            zjs_set_readonly_property(sensor_obj, "y", null_val);
+            zjs_set_readonly_property(sensor_obj, "z", null_val);
+        } else if (channel == SENSOR_CHAN_LIGHT) {
+            if (zjs_obj_get_uint32(options, "pin", &pin)) {
+                zjs_obj_add_readonly_number(sensor_obj, pin, "pin");
+            }
+            zjs_set_readonly_property(sensor_obj, "illuminance", null_val);
         }
+        jerry_release_value(null_val);
     }
 
-    zjs_ipm_message_t send;
-    send.type = TYPE_SENSOR_INIT;
-    send.data.sensor.channel = channel;
-    int error = zjs_sensor_call_remote_function(&send);
-    if (error != ERROR_IPM_NONE) {
-        return zjs_error("zjs_sensor_create failed to init\n");
-    }
-
-    // initialize object and default values
-    jerry_value_t sensor_obj = jerry_create_object();
-    ZVAL reading_val = jerry_create_null();
     zjs_obj_add_number(sensor_obj, frequency, "frequency");
     zjs_obj_add_readonly_string(sensor_obj, "unconnected", "state");
-    zjs_set_property(sensor_obj, "reading", reading_val);
-
-    if (channel == SENSOR_CHAN_LIGHT && hasPin) {
-        zjs_obj_add_number(sensor_obj, pin, "pin");
-    }
-
     jerry_set_prototype(sensor_obj, zjs_sensor_prototype);
 
     sensor_handle_t *handle = zjs_sensor_alloc_handle(channel);

@@ -11,11 +11,11 @@ var sensor = new Gyroscope({
     frequency: updateFrequency
 });
 
-sensor.onchange = function(event) {
+sensor.onchange = function() {
     console.log("rotation (rad/s): " +
-                " x=" + event.reading.x +
-                " y=" + event.reading.y +
-                " z=" + event.reading.z);
+                " x=" + sensor.x +
+                " y=" + sensor.y +
+                " z=" + sensor.z);
 };
 
 sensor.onstatechange = function(event) {
