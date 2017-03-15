@@ -87,11 +87,213 @@ static void test_compress_32()
     zjs_assert(check_compress_close(0xffffffff), "compression of 0xffffffff");
 }
 
+// Test test_validate_args function
+
+static jerry_value_t dummy_func(const jerry_value_t function_obj,
+                                const jerry_value_t this,
+                                const jerry_value_t argv[],
+                                const jerry_length_t argc)
+{
+    return ZJS_UNDEFINED;
+}
+
+static void test_validate_args()
+{
+    // create some dummy objects
+    jerry_value_t obj1 = jerry_create_object();
+    jerry_value_t obj2 = jerry_create_object();
+    jerry_value_t str1 = jerry_create_string("arthur");
+    jerry_value_t str2 = jerry_create_string("ford");
+    jerry_value_t func1 = jerry_create_external_function(dummy_func);
+    jerry_value_t array1 = jerry_create_array(3);
+    jerry_value_t num1 = jerry_create_number(42);
+    jerry_value_t bool1 = jerry_create_boolean(true);
+    jerry_value_t null1 = jerry_create_null();
+    jerry_value_t undef1 = jerry_create_undefined();
+
+    // create expect strings
+    const char *expect_none[]  = { NULL };
+    const char *expect_array[] = { Z_ARRAY, NULL };
+    const char *expect_bool[]  = { Z_BOOL, NULL };
+    const char *expect_func[]  = { Z_FUNCTION, NULL };
+    const char *expect_null[]  = { Z_NULL, NULL };
+    const char *expect_num[]   = { Z_NUMBER, NULL };
+    const char *expect_obj[]   = { Z_OBJECT, NULL };
+    const char *expect_str[]   = { Z_STRING, NULL };
+    const char *expect_undef[] = { Z_UNDEFINED, NULL };
+
+    // low expectations
+    zjs_assert(zjs_validate_args(expect_none, 0, NULL) == 0,
+               "none asked, none given");
+
+    jerry_value_t argv[5];
+    argv[0] = num1;
+    zjs_assert(zjs_validate_args(expect_none, 1, argv) == 0,
+               "expect none, pass the pi");
+
+    argv[0] = obj1;
+    zjs_assert(zjs_validate_args(expect_none, 1, argv) == 0,
+               "expect none, pass an object");
+
+    // expect a string
+    zjs_assert(zjs_validate_args(expect_str, 0, argv) == ZJS_INSUFFICIENT_ARGS,
+               "expect string, pass nothing");
+
+    argv[0] = str1;
+    zjs_assert(zjs_validate_args(expect_str, 1, argv) == 0,
+               "expect string, pass string");
+
+    argv[0] = obj1;
+    zjs_assert(zjs_validate_args(expect_str, 1, argv) == ZJS_INVALID_ARG,
+               "expect string, pass object");
+
+    argv[0] = str1;
+    argv[1] = obj1;
+    zjs_assert(zjs_validate_args(expect_str, 2, argv) == 0,
+               "expect string, pass string and object");
+
+    // expect an object
+    zjs_assert(zjs_validate_args(expect_obj, 0, argv) == ZJS_INSUFFICIENT_ARGS,
+               "expect object, pass nothing");
+
+    argv[0] = obj1;
+    zjs_assert(zjs_validate_args(expect_obj, 1, argv) == 0,
+               "expect object, pass object");
+
+    argv[0] = func1;
+    zjs_assert(zjs_validate_args(expect_obj, 1, argv) == 0,
+               "expect object, pass function");
+
+    argv[0] = array1;
+    zjs_assert(zjs_validate_args(expect_obj, 1, argv) == 0,
+               "expect object, pass array");
+
+    argv[0] = num1;
+    zjs_assert(zjs_validate_args(expect_obj, 1, argv) == ZJS_INVALID_ARG,
+               "expect object, pass number");
+
+    // expect a function
+    argv[0] = obj1;
+    zjs_assert(zjs_validate_args(expect_func, 1, argv) == ZJS_INVALID_ARG,
+               "expect function, pass object");
+
+    argv[0] = func1;
+    zjs_assert(zjs_validate_args(expect_func, 1, argv) == 0,
+               "expect function, pass function");
+
+    // expect an array
+    argv[0] = obj1;
+    zjs_assert(zjs_validate_args(expect_array, 1, argv) == ZJS_INVALID_ARG,
+               "expect array, pass object");
+
+    argv[0] = array1;
+    zjs_assert(zjs_validate_args(expect_array, 1, argv) == 0,
+               "expect array, pass array");
+
+    // expect a number
+    argv[0] = num1;
+    zjs_assert(zjs_validate_args(expect_num, 1, argv) == 0,
+               "expect number, pass number");
+
+    argv[0] = null1;
+    zjs_assert(zjs_validate_args(expect_num, 1, argv) == ZJS_INVALID_ARG,
+               "expect number, pass null");
+
+    // expect a bool
+    argv[0] = bool1;
+    zjs_assert(zjs_validate_args(expect_bool, 1, argv) == 0,
+               "expect bool, pass bool");
+
+    argv[0] = num1;
+    zjs_assert(zjs_validate_args(expect_bool, 1, argv) == ZJS_INVALID_ARG,
+               "expect bool, pass number");
+
+    // expect a null
+    argv[0] = null1;
+    zjs_assert(zjs_validate_args(expect_null, 1, argv) == 0,
+               "expect null, pass null");
+
+    argv[0] = num1;
+    zjs_assert(zjs_validate_args(expect_undef, 1, argv) == ZJS_INVALID_ARG,
+               "expect null, pass number");
+
+    // expect an undefined
+    argv[0] = undef1;
+    zjs_assert(zjs_validate_args(expect_undef, 1, argv) == 0,
+               "expect undef, pass undef");
+
+    argv[0] = num1;
+    zjs_assert(zjs_validate_args(expect_undef, 1, argv) == ZJS_INVALID_ARG,
+               "expect undef, pass number");
+
+    // bogus expectation strings
+    char too_low[2] = Z_ANY;
+    too_low[0]--;
+    const char *expect_low[] = { too_low, NULL };
+    zjs_assert(zjs_validate_args(expect_low, 1, argv) == ZJS_INTERNAL_ERROR,
+               "pass low expectation character");
+
+    char too_high[2] = Z_UNDEFINED;
+    too_high[0]++;
+    const char *expect_high[] = { too_high, NULL };
+    zjs_assert(zjs_validate_args(expect_high, 1, argv) == ZJS_INTERNAL_ERROR,
+               "pass high expectation character");
+
+    // optional argument
+    const char *expect_opt[] = { Z_OPTIONAL Z_NUMBER, Z_OBJECT, NULL };
+    argv[0] = num1;
+    argv[1] = obj1;
+    zjs_assert(zjs_validate_args(expect_opt, 2, argv) == 1,
+               "expect optional number, required object, pass both");
+
+    zjs_assert(zjs_validate_args(expect_opt, 1, argv) == ZJS_INSUFFICIENT_ARGS,
+               "expect optional number, required object, pass number");
+
+    argv[0] = obj1;
+    zjs_assert(zjs_validate_args(expect_opt, 1, argv) == 0,
+               "expect optional number, required object, pass object");
+
+    // two optional arguments
+    const char *expect_more[] = { Z_OPTIONAL Z_NUMBER, Z_OPTIONAL Z_NULL,
+                                Z_OBJECT, NULL };
+    zjs_assert(zjs_validate_args(expect_more, 1, argv) == 0,
+               "optional number and null, required object, pass object");
+
+    argv[0] = num1;
+    argv[1] = obj1;
+    zjs_assert(zjs_validate_args(expect_more, 2, argv) == 1,
+               "optional number and null, required object, pass num + obj");
+
+    argv[0] = null1;
+    argv[1] = obj1;
+    zjs_assert(zjs_validate_args(expect_more, 2, argv) == 1,
+               "optional number and null, required object, pass null + obj");
+
+    argv[0] = num1;
+    argv[1] = null1;
+    argv[2] = obj1;
+    zjs_assert(zjs_validate_args(expect_more, 3, argv) == 2,
+               "optional number and null, required object, pass all");
+
+    // free up the dummy objects
+    jerry_release_value(obj1);
+    jerry_release_value(obj2);
+    jerry_release_value(str1);
+    jerry_release_value(str2);
+    jerry_release_value(func1);
+    jerry_release_value(array1);
+    jerry_release_value(num1);
+    jerry_release_value(bool1);
+    jerry_release_value(null1);
+    jerry_release_value(undef1);
+}
+
 void zjs_run_unit_tests()
 {
     test_hex_to_byte();
     test_default_convert_pin();
     test_compress_32();
+    test_validate_args();
 
     printf("TOTAL - %d of %d passed\n", passed, total);
     exit(!(passed == total));
