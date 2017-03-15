@@ -13,10 +13,10 @@ typedef struct dummy_handle {
 
 #define TEST_VAL       42
 
-static void post_promise(void* handle)
+static void post_promise(void *handle)
 {
     if (handle) {
-        dummy_handle_t* h = (dummy_handle_t*)handle;
+        dummy_handle_t *h = (dummy_handle_t *)handle;
         if (h->value != TEST_VAL) {
             ERR_PRINT("Handle was not valid!!!\n");
         }
@@ -29,7 +29,7 @@ static jerry_value_t create_promise(const jerry_value_t function_obj,
                                     const jerry_value_t argv[],
                                     const jerry_length_t argc)
 {
-    dummy_handle_t* handle = zjs_malloc(sizeof(dummy_handle_t));
+    dummy_handle_t *handle = zjs_malloc(sizeof(dummy_handle_t));
     handle->value = TEST_VAL;
 
     jerry_value_t promise = jerry_create_object();

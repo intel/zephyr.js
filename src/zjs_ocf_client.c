@@ -33,40 +33,40 @@ typedef enum {
 #define FLAG_SECURE         1 << 3
 
 struct client_resource {
-    char* device_id;
-    char* resource_type;
-    char* resource_path;
+    char *device_id;
+    char *resource_type;
+    char *resource_path;
     oc_server_handle_t server;
     resource_state state;
     jerry_value_t client;
     uint32_t flags;
     uint32_t error_code;
-    struct client_resource* next;
+    struct client_resource *next;
 };
 
 struct ocf_handler {
     jerry_value_t promise_obj;
-    struct client_resource* res;
+    struct client_resource *res;
 };
 
-static struct client_resource* resource_list = NULL;
+static struct client_resource *resource_list = NULL;
 
 #define MAX_URI_LENGTH (30)
 
-static struct ocf_handler* new_ocf_handler(struct client_resource* res)
+static struct ocf_handler *new_ocf_handler(struct client_resource *res)
 {
-    struct ocf_handler* h = zjs_malloc(sizeof(struct ocf_handler));
+    struct ocf_handler *h = zjs_malloc(sizeof(struct ocf_handler));
     if (!h) {
         ERR_PRINT("could not allocate OCF handle, out of memory\n");
         return NULL;
     }
-    memset(h, 0, sizeof(struct ocf_handler*));
+    memset(h, 0, sizeof(struct ocf_handler *));
     h->res = res;
 
     return h;
 }
 
-static jerry_value_t make_ocf_error(const char* name, const char* msg, struct client_resource* res)
+static jerry_value_t make_ocf_error(const char *name, const char *msg, struct client_resource *res)
 {
     if (res) {
         jerry_value_t ret = jerry_create_object();
@@ -102,10 +102,10 @@ static jerry_value_t make_ocf_error(const char* name, const char* msg, struct cl
 /*
  * Combine a UUID and path to form a URI
  */
-static char* create_url(const char* uuid, const char* path)
+static char *create_url(const char *uuid, const char *path)
 {
     //    oic://<uuid>/<path>
-    char* url = zjs_malloc(strlen(uuid) + strlen(path) + 8);
+    char *url = zjs_malloc(strlen(uuid) + strlen(path) + 8);
     int count = 0;
     url[0] = 'o';
     url[1] = 'i';
@@ -129,7 +129,7 @@ static char* create_url(const char* uuid, const char* path)
 /*
  * Get properties in 'data' and convert them to a jerry_value_t
  */
-static jerry_value_t get_props_from_response(oc_client_response_t* data)
+static jerry_value_t get_props_from_response(oc_client_response_t *data)
 {
     jerry_value_t prop_object = jerry_create_object();
     int i;
@@ -213,10 +213,10 @@ static void print_props_data(oc_client_response_t *data)
 /*
  * Find a client_resource by searching with a device ID
  */
-static struct client_resource* find_resource_by_id(const char* device_id)
+static struct client_resource *find_resource_by_id(const char *device_id)
 {
     if (device_id) {
-        struct client_resource* cur = resource_list;
+        struct client_resource *cur = resource_list;
         while (cur) {
             if (cur->state != RES_STATE_SEARCHING) {
                 if (strcmp(cur->device_id, device_id) == 0) {
@@ -233,10 +233,10 @@ static struct client_resource* find_resource_by_id(const char* device_id)
 /*
  * Find a client_resource by searching with a resource path
  */
-static struct client_resource* find_resource_by_path(const char* path)
+static struct client_resource *find_resource_by_path(const char *path)
 {
     if (path) {
-        struct client_resource* cur = resource_list;
+        struct client_resource *cur = resource_list;
         while (cur) {
             if (cur->state != RES_STATE_SEARCHING) {
                 if (strcmp(cur->resource_path, path) == 0) {
@@ -253,7 +253,7 @@ static struct client_resource* find_resource_by_path(const char* path)
 /*
  * Create a new resource object
  */
-static jerry_value_t create_resource(const char* device_id, const char* path)
+static jerry_value_t create_resource(const char *device_id, const char *path)
 {
     jerry_value_t resource = jerry_create_object();
 
@@ -271,9 +271,9 @@ static jerry_value_t create_resource(const char* device_id, const char* path)
 
 static void free_client(const uintptr_t native_p)
 {
-    struct client_resource* client = (struct client_resource*)native_p;
+    struct client_resource *client = (struct client_resource *)native_p;
     if (client) {
-        struct client_resource* cur = resource_list;
+        struct client_resource *cur = resource_list;
         while (cur->next) {
             if (cur->next == client) {
                 cur->next = client->next;
@@ -297,9 +297,9 @@ static void free_client(const uintptr_t native_p)
 /*
  * Add a discovered resource to the list of resource_list
  */
-static void add_resource(char* id, char* type, char* path, jerry_value_t client, jerry_value_t listener)
+static void add_resource(char *id, char *type, char *path, jerry_value_t client, jerry_value_t listener)
 {
-    struct client_resource* new = zjs_malloc(sizeof(struct client_resource));
+    struct client_resource *new = zjs_malloc(sizeof(struct client_resource));
 
     memset(new, 0, sizeof(struct client_resource));
     new->state = RES_STATE_SEARCHING;
@@ -332,9 +332,9 @@ static void add_resource(char* id, char* type, char* path, jerry_value_t client,
     resource_list = new;
 }
 
-static void post_ocf_promise(void* handle)
+static void post_ocf_promise(void *handle)
 {
-    struct ocf_handler* h = (struct ocf_handler*)handle;
+    struct ocf_handler *h = (struct ocf_handler *)handle;
     if (h) {
         zjs_free(h);
     }
@@ -349,9 +349,9 @@ static void observe_callback(oc_client_response_t *data)
 }
 
 #if 0
-static oc_event_callback_retval_t stop_observe(void* data)
+static oc_event_callback_retval_t stop_observe(void *data)
 {
-    struct client_resource* cli = (struct client_resource*)data;
+    struct client_resource *cli = (struct client_resource *)data;
     oc_stop_observe(cli->resource_path, &cli->server);
 
     DBG_PRINT("path=%s, id=%s\n", cli->resource_path, cli->device_id);
@@ -370,14 +370,14 @@ static oc_discovery_flags_t discovery(const char *di,
                                       oc_server_handle_t *server,
                                       void *user_handle)
 {
-    struct ocf_handler* h = (struct ocf_handler*)user_handle;
+    struct ocf_handler *h = (struct ocf_handler *)user_handle;
     int i;
     int uri_len = strlen(uri);
     uri_len = (uri_len >= MAX_URI_LENGTH)?MAX_URI_LENGTH-1:uri_len;
 
     for (i = 0; i < oc_string_array_get_allocated_size(types); i++) {
         char *t = oc_string_array_get_item(types, i);
-        struct client_resource* cur = resource_list;
+        struct client_resource *cur = resource_list;
         while (cur) {
             if (cur->state == RES_STATE_SEARCHING) {
                 // check if resource has any filter constraints
@@ -447,9 +447,9 @@ static jerry_value_t ocf_find_resources(const jerry_value_t function_val,
     // args: options object
     ZJS_VALIDATE_ARGS(Z_OPTIONAL Z_OBJECT, Z_OPTIONAL Z_FUNCTION);
 
-    char* resource_type = NULL;
-    char* device_id = NULL;
-    char* resource_path = NULL;
+    char *resource_type = NULL;
+    char *device_id = NULL;
+    char *resource_path = NULL;
     jerry_value_t listener = ZJS_UNDEFINED;
     jerry_value_t promise = jerry_create_object();
 
@@ -500,7 +500,7 @@ static jerry_value_t ocf_find_resources(const jerry_value_t function_val,
         zjs_free(resource_path);
     }
 
-    struct ocf_handler* h = new_ocf_handler(NULL);
+    struct ocf_handler *h = new_ocf_handler(NULL);
     h->promise_obj = promise;
 
     zjs_make_promise(promise, post_ocf_promise, h);
@@ -528,9 +528,9 @@ static jerry_value_t ocf_find_resources(const jerry_value_t function_val,
 static void ocf_get_handler(oc_client_response_t *data)
 {
     if (data && data->user_data) {
-        struct ocf_handler* h = (struct ocf_handler*)data->user_data;
+        struct ocf_handler *h = (struct ocf_handler *)data->user_data;
         if (h && h->res) {
-            struct client_resource* resource = h->res;
+            struct client_resource *resource = h->res;
             if (data->code == OC_STATUS_OK) {
                 jerry_value_t resource_val = create_resource(resource->device_id, resource->resource_path);
                 jerry_value_t properties_val = get_props_from_response(data);
@@ -572,11 +572,11 @@ static jerry_value_t ocf_retrieve(const jerry_value_t function_val,
     jerry_value_t options = 0;
     jerry_value_t listener = 0;
     jerry_value_t promise = jerry_create_object();
-    struct ocf_handler* h;
+    struct ocf_handler *h;
 
     ZJS_GET_STRING(argv[0], device_id, OCF_MAX_DEVICE_ID_LEN + 1);
 
-    struct client_resource* resource = find_resource_by_id(device_id);
+    struct client_resource *resource = find_resource_by_id(device_id);
     if (!resource) {
         ERR_PRINT("could not find resource %s\n", device_id);
         REJECT(promise, "NotFoundError", "resource was not found", h);
@@ -669,9 +669,9 @@ static jerry_value_t ocf_retrieve(const jerry_value_t function_val,
 static void put_finished(oc_client_response_t *data)
 {
     if (data) {
-        struct ocf_handler* h = (struct ocf_handler*)data->user_data;
+        struct ocf_handler *h = (struct ocf_handler *)data->user_data;
         if (h->res) {
-            struct client_resource* resource = h->res;
+            struct client_resource *resource = h->res;
             h->res->error_code = data->code;
             if (data->code == OC_STATUS_CHANGED) {
                 DBG_PRINT("PUT response OK, device_id=%s\n", resource->device_id);
@@ -697,7 +697,7 @@ static jerry_value_t ocf_update(const jerry_value_t function_val,
     ZJS_VALIDATE_ARGS(Z_OBJECT);
 
     jerry_value_t promise = jerry_create_object();
-    struct ocf_handler* h;
+    struct ocf_handler *h;
 
     // Get device ID property from resource
     jerry_value_t device_id_val = zjs_get_property(argv[0], "deviceId");
@@ -706,7 +706,7 @@ static jerry_value_t ocf_update(const jerry_value_t function_val,
 
     jerry_release_value(device_id_val);
 
-    struct client_resource* resource = find_resource_by_id(device_id);
+    struct client_resource *resource = find_resource_by_id(device_id);
     if (!resource) {
         ERR_PRINT("could not find resource %s\n", device_id);
         REJECT(promise, "NotFoundError", "resource was not found", h);
@@ -726,7 +726,7 @@ static jerry_value_t ocf_update(const jerry_value_t function_val,
                     put_finished,
                     LOW_QOS,
                     h)) {
-        void* ret;
+        void *ret;
         // Start the root encoding object
         zjs_rep_start_root_object();
         // Encode all properties from resource (argv[0])
@@ -757,8 +757,8 @@ static jerry_value_t ocf_update(const jerry_value_t function_val,
 static void delete_finished(oc_client_response_t *data)
 {
     if (data && data->user_data) {
-        struct ocf_handler* h = (struct ocf_handler*)data->user_data;
-        struct client_resource* resource = h->res;
+        struct ocf_handler *h = (struct ocf_handler *)data->user_data;
+        struct client_resource *resource = h->res;
         if (data->code == OC_STATUS_DELETED) {
             zjs_fulfill_promise(h->promise_obj, NULL, 0);
 
@@ -780,14 +780,14 @@ static jerry_value_t ocf_delete(const jerry_value_t function_val,
     // args: device id
     ZJS_VALIDATE_ARGS(Z_STRING);
 
-    struct ocf_handler* h;
+    struct ocf_handler *h;
     jerry_value_t promise = jerry_create_object();
 
     ZJS_GET_STRING(argv[0], uri, OCF_MAX_URI_LEN);
 
     DBG_PRINT("DELETE call, uri=%s\n", uri);
 
-    struct client_resource* resource = find_resource_by_id(uri);
+    struct client_resource *resource = find_resource_by_id(uri);
     if (!resource) {
         ERR_PRINT("resource '%s' not found\n", uri);
         REJECT(promise, "NotFoundError", "resource was not found", h);
@@ -816,7 +816,7 @@ static jerry_value_t ocf_create(const jerry_value_t function_val,
                                 const jerry_value_t argv[],
                                 const jerry_length_t argc)
 {
-    struct ocf_handler* h;
+    struct ocf_handler *h;
     jerry_value_t promise = jerry_create_object();
     REJECT(promise, "NotSupportedError", "create() is not supported", h);
     DBG_PRINT("create is not supported by iotivity-constrained\n");
@@ -827,8 +827,8 @@ static jerry_value_t ocf_create(const jerry_value_t function_val,
 static void ocf_get_platform_info_handler(oc_client_response_t *data)
 {
     if (data && data->user_data) {
-        struct ocf_handler* h = (struct ocf_handler*)data->user_data;
-        struct client_resource* resource = h->res;
+        struct ocf_handler *h = (struct ocf_handler *)data->user_data;
+        struct client_resource *resource = h->res;
         jerry_value_t platform_info = jerry_create_object();
 
         /*
@@ -894,12 +894,12 @@ static jerry_value_t ocf_get_platform_info(const jerry_value_t function_val,
 {
     // args: device ide
     ZJS_VALIDATE_ARGS(Z_STRING);
-    struct ocf_handler* h;
+    struct ocf_handler *h;
     jerry_value_t promise = jerry_create_object();
 
     ZJS_GET_STRING(argv[0], device_id, OCF_MAX_DEVICE_ID_LEN + 1);
 
-    struct client_resource* resource = find_resource_by_id(device_id);
+    struct client_resource *resource = find_resource_by_id(device_id);
     if (!resource) {
         ERR_PRINT("resource was not found: %s\n", device_id);
         REJECT(promise, "NotFoundError", "resource was not found", h);
@@ -928,8 +928,8 @@ static jerry_value_t ocf_get_platform_info(const jerry_value_t function_val,
 static void ocf_get_device_info_handler(oc_client_response_t *data)
 {
     if (data && data->user_data) {
-        struct ocf_handler* h = (struct ocf_handler*)data->user_data;
-        struct client_resource* resource = h->res;
+        struct ocf_handler *h = (struct ocf_handler *)data->user_data;
+        struct client_resource *resource = h->res;
         jerry_value_t device_info = jerry_create_object();
 
         /*
@@ -995,12 +995,12 @@ static jerry_value_t ocf_get_device_info(const jerry_value_t function_val,
     // args: device id
     ZJS_VALIDATE_ARGS(Z_STRING);
 
-    struct ocf_handler* h;
+    struct ocf_handler *h;
     jerry_value_t promise = jerry_create_object();
 
     ZJS_GET_STRING(argv[0], device_id, OCF_MAX_DEVICE_ID_LEN + 1);
 
-    struct client_resource* resource = find_resource_by_id(device_id);
+    struct client_resource *resource = find_resource_by_id(device_id);
     if (!resource) {
         ERR_PRINT("resource was not found: %s\n", device_id);
         REJECT(promise, "NotFoundError", "resource was not found", h);
@@ -1036,7 +1036,7 @@ static jerry_value_t ocf_find_devices(const jerry_value_t function_val,
                                       const jerry_length_t argc)
 {
     ERR_PRINT("findDevices() is not yet supported\n");
-    struct ocf_handler* h;
+    struct ocf_handler *h;
     jerry_value_t promise = jerry_create_object();
     REJECT(promise, "NotSupportedError", "findDevices() is not supported", h);
     return promise;
@@ -1053,7 +1053,7 @@ static jerry_value_t ocf_find_platforms(const jerry_value_t function_val,
     ERR_PRINT("findPlatforms() is not yet supported\n");
 
     jerry_value_t promise = jerry_create_object();
-    struct ocf_handler* h;
+    struct ocf_handler *h;
     REJECT(promise, "NotSupportedError", "findPlatforms() is not supported", h);
     return promise;
 }

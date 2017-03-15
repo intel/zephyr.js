@@ -25,42 +25,42 @@ struct server_resource {
     jerry_value_t object;
     uint32_t error_code;
     oc_resource_t *res;
-    char* device_id;
-    char* resource_path;
+    char *device_id;
+    char *resource_path;
     uint8_t num_types;
-    char** resource_types;
+    char **resource_types;
     uint8_t num_ifaces;
-    char** resource_ifaces;
+    char **resource_ifaces;
     uint8_t flags;
 };
 
 typedef struct resource_list {
-    struct server_resource* resource;
-    struct resource_list* next;
+    struct server_resource *resource;
+    struct resource_list *next;
 } resource_list_t;
 
 struct ocf_response {
     oc_method_t method;         // Current method being executed
-    oc_request_t* request;
-    struct server_resource* res;
+    oc_request_t *request;
+    struct server_resource *res;
 };
 
 struct ocf_handler {
     oc_request_t *req;
-    struct ocf_response* resp;
-    struct server_resource* res;
+    struct ocf_response *resp;
+    struct server_resource *res;
 };
 
-static resource_list_t* res_list = NULL;
+static resource_list_t *res_list = NULL;
 
 #define FLAG_OBSERVE        1 << 0
 #define FLAG_DISCOVERABLE   1 << 1
 #define FLAG_SLOW           1 << 2
 #define FLAG_SECURE         1 << 3
 
-static struct ocf_handler* new_ocf_handler(struct server_resource* res)
+static struct ocf_handler *new_ocf_handler(struct server_resource *res)
 {
-    struct ocf_handler* h = zjs_malloc(sizeof(struct ocf_handler));
+    struct ocf_handler *h = zjs_malloc(sizeof(struct ocf_handler));
     if (!h) {
         ERR_PRINT("could not allocate OCF handle, out of memory\n");
         return NULL;
@@ -71,9 +71,9 @@ static struct ocf_handler* new_ocf_handler(struct server_resource* res)
     return h;
 }
 
-static void post_ocf_promise(void* handle)
+static void post_ocf_promise(void *handle)
 {
-    struct ocf_handler* h = (struct ocf_handler*)handle;
+    struct ocf_handler *h = (struct ocf_handler *)handle;
     if (h) {
         if (h->resp) {
             zjs_free(h->resp);
@@ -82,7 +82,7 @@ static void post_ocf_promise(void* handle)
     }
 }
 
-static jerry_value_t make_ocf_error(const char* name, const char* msg, struct server_resource* res)
+static jerry_value_t make_ocf_error(const char *name, const char *msg, struct server_resource *res)
 {
     if (res) {
         jerry_value_t ret = jerry_create_object();
@@ -146,9 +146,9 @@ static jerry_value_t request_to_jerry_value(oc_request_t *request)
     return props;
 }
 
-struct server_resource* new_server_resource(char* path)
+struct server_resource *new_server_resource(char *path)
 {
-    struct server_resource* resource = zjs_malloc(sizeof(struct server_resource));
+    struct server_resource *resource = zjs_malloc(sizeof(struct server_resource));
     memset(resource, 0, sizeof(struct server_resource));
 
     resource->resource_path = zjs_malloc(strlen(path));
@@ -158,9 +158,9 @@ struct server_resource* new_server_resource(char* path)
     return resource;
 }
 
-static struct ocf_response* create_response(struct server_resource* resource, oc_method_t method)
+static struct ocf_response *create_response(struct server_resource *resource, oc_method_t method)
 {
-    struct ocf_response* resp = zjs_malloc(sizeof(struct ocf_response));
+    struct ocf_response *resp = zjs_malloc(sizeof(struct ocf_response));
     memset(resp, 0, sizeof(struct ocf_response));
     resp->res = resource;
     resp->method = method;
@@ -168,7 +168,7 @@ static struct ocf_response* create_response(struct server_resource* resource, oc
     return resp;
 }
 
-static jerry_value_t create_resource(const char* path, jerry_value_t resource_init)
+static jerry_value_t create_resource(const char *path, jerry_value_t resource_init)
 {
     jerry_value_t res = jerry_create_object();
 
@@ -231,19 +231,19 @@ static jerry_value_t ocf_respond(const jerry_value_t function_val,
     ZJS_VALIDATE_ARGS(Z_OBJECT);
 
     jerry_value_t promise = jerry_create_object();
-    struct ocf_handler* h;
+    struct ocf_handler *h;
     jerry_value_t request = this;
 
     jerry_value_t data = argv[0];
 
-    if (!jerry_get_object_native_handle(request, (uintptr_t*)&h)) {
+    if (!jerry_get_object_native_handle(request, (uintptr_t *)&h)) {
         ERR_PRINT("native handle not found\n");
         REJECT(promise, "TypeMismatchError", "native handle not found", h);
         oc_send_response(h->req, OC_STATUS_INTERNAL_SERVER_ERROR);
         return promise;
     }
 
-    void* ret;
+    void *ret;
     // Start the root encoding object
     zjs_rep_start_root_object();
     // Encode all properties from resource (argv[0])
@@ -271,7 +271,7 @@ static jerry_value_t ocf_respond(const jerry_value_t function_val,
     return promise;
 }
 
-static jerry_value_t create_request(struct server_resource* resource, oc_method_t method, struct ocf_handler* handler)
+static jerry_value_t create_request(struct server_resource *resource, oc_method_t method, struct ocf_handler *handler)
 {
 
     handler->resp = create_response(resource, method);
@@ -300,15 +300,15 @@ static jerry_value_t create_request(struct server_resource* resource, oc_method_
     return object;
 }
 
-static void post_get(void* handler)
+static void post_get(void *handler)
 {
     // ZJS_PRINT("POST GET\n");
 }
 
-static void ocf_get_handler(oc_request_t *request, oc_interface_mask_t interface, void* user_data)
+static void ocf_get_handler(oc_request_t *request, oc_interface_mask_t interface, void *user_data)
 {
     ZJS_PRINT("ocf_get_handler()\n");
-    struct ocf_handler* h = new_ocf_handler((struct server_resource*)user_data);
+    struct ocf_handler *h = new_ocf_handler((struct server_resource *)user_data);
     if (!h) {
         ERR_PRINT("handler was NULL\n");
         return;
@@ -325,15 +325,15 @@ static void ocf_get_handler(oc_request_t *request, oc_interface_mask_t interface
     zjs_free(h);
 }
 
-static void post_put(void* handler)
+static void post_put(void *handler)
 {
     // ZJS_PRINT("POST PUT\n");
 }
 
-static void ocf_put_handler(oc_request_t *request, oc_interface_mask_t interface, void* user_data)
+static void ocf_put_handler(oc_request_t *request, oc_interface_mask_t interface, void *user_data)
 {
     ZJS_PRINT("ocf_put_handler()\n");
-    struct ocf_handler* h = new_ocf_handler((struct server_resource*)user_data);
+    struct ocf_handler *h = new_ocf_handler((struct server_resource *)user_data);
     if (!h) {
         ERR_PRINT("handler was NULL\n");
         return;
@@ -360,14 +360,14 @@ static void ocf_put_handler(oc_request_t *request, oc_interface_mask_t interface
 }
 
 #ifdef ZJS_OCF_DELETE_SUPPORT
-static void post_delete(void* handler)
+static void post_delete(void *handler)
 {
     // ZJS_PRINT("POST DELETE\n");
 }
 
-static void ocf_delete_handler(oc_request_t *request, oc_interface_mask_t interface, void* user_data)
+static void ocf_delete_handler(oc_request_t *request, oc_interface_mask_t interface, void *user_data)
 {
-    struct ocf_handler* h = new_ocf_handler((struct server_resource*)user_data);
+    struct ocf_handler *h = new_ocf_handler((struct server_resource *)user_data);
     if (!h) {
         ERR_PRINT("handler was NULL\n");
         return;
@@ -391,8 +391,8 @@ static jerry_value_t ocf_notify(const jerry_value_t function_val,
     // args: resource object
     ZJS_VALIDATE_ARGS(Z_OBJECT);
 
-    struct server_resource* resource;
-    if (!jerry_get_object_native_handle(argv[0], (uintptr_t*)&resource)) {
+    struct server_resource *resource;
+    if (!jerry_get_object_native_handle(argv[0], (uintptr_t *)&resource)) {
         DBG_PRINT("native handle not found\n");
         return ZJS_UNDEFINED;
     }
@@ -422,10 +422,10 @@ static jerry_value_t ocf_register(const jerry_value_t function_val,
     // args: resource object
     ZJS_VALIDATE_ARGS(Z_OBJECT);
 
-    struct server_resource* resource;
+    struct server_resource *resource;
     int i;
     jerry_value_t promise = jerry_create_object();
-    struct ocf_handler* h = NULL;
+    struct ocf_handler *h = NULL;
 
     // Required
     jerry_value_t resource_path_val = zjs_get_property(argv[0], "resourcePath");
@@ -480,7 +480,7 @@ static jerry_value_t ocf_register(const jerry_value_t function_val,
     }
     jerry_release_value(secure_val);
 
-    resource_list_t* new = zjs_malloc(sizeof(resource_list_t));
+    resource_list_t *new = zjs_malloc(sizeof(resource_list_t));
     if (!new) {
         jerry_release_value(res_type_array);
         REJECT(promise, "InternalError", "Could not allocate resource list", h);
@@ -499,7 +499,7 @@ static jerry_value_t ocf_register(const jerry_value_t function_val,
     resource->flags = flags;
 
     resource->num_types = jerry_get_array_length(res_type_array);
-    resource->resource_types = zjs_malloc(sizeof(char*) * resource->num_types);
+    resource->resource_types = zjs_malloc(sizeof(char *) * resource->num_types);
     if (!resource->resource_types) {
         jerry_release_value(res_type_array);
         REJECT(promise, "InternalError", "resourceType alloc failed", h);
@@ -529,7 +529,7 @@ static jerry_value_t ocf_register(const jerry_value_t function_val,
     }
 
     resource->num_ifaces = jerry_get_array_length(iface_array);
-    resource->resource_ifaces = zjs_malloc(sizeof(char*) * resource->num_ifaces);
+    resource->resource_ifaces = zjs_malloc(sizeof(char *) * resource->num_ifaces);
     if (!resource->resource_ifaces) {
         jerry_release_value(iface_array);
         REJECT(promise, "InternalError", "interfaces alloc failed", h);
@@ -584,10 +584,10 @@ static jerry_value_t ocf_register(const jerry_value_t function_val,
 
 void zjs_ocf_register_resources(void)
 {
-    resource_list_t* cur = res_list;
+    resource_list_t *cur = res_list;
     while (cur) {
         int i;
-        struct server_resource* resource = cur->resource;
+        struct server_resource *resource = cur->resource;
 
         resource->res = oc_new_resource(resource->resource_path, resource->num_types, 0);
         for (i = 0; i < resource->num_types; ++i) {
@@ -646,10 +646,10 @@ jerry_value_t zjs_ocf_server_init()
 void zjs_ocf_server_cleanup()
 {
     if (res_list) {
-        resource_list_t* cur = res_list;
+        resource_list_t *cur = res_list;
         while (cur) {
             int i;
-            struct server_resource* resource = cur->resource;
+            struct server_resource *resource = cur->resource;
             if (resource->device_id) {
                 zjs_free(resource->device_id);
             }

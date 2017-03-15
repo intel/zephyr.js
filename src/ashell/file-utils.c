@@ -31,7 +31,7 @@ int fs_exist(const char *path)
     return !res;
 }
 
-fs_file_t *fs_open_alloc(const char * filename, const char * mode)
+fs_file_t *fs_open_alloc(const char *filename, const char *mode)
 {
     int res;
 
@@ -66,7 +66,7 @@ ssize_t fs_size(fs_file_t *file)
     return file_len;
 }
 
-int fs_close_alloc(fs_file_t * fp)
+int fs_close_alloc(fs_file_t *fp)
 {
     int res = fs_close(fp);
     free(fp);

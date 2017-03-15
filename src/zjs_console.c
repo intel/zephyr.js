@@ -148,7 +148,7 @@ static jerry_value_t do_print(const jerry_value_t function_obj,
                               const jerry_value_t this,
                               const jerry_value_t argv[],
                               const jerry_length_t argc,
-                              FILE* out)
+                              FILE *out)
 {
     for (int i = 0; i < argc; i++) {
         if (i) {

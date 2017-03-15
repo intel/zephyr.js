@@ -17,8 +17,8 @@ extern CborError g_err;
 /*
  * Start encoding an object
  *
- * @param parent        Parent object (CborEncoder*)
- * @param key           Child object (CborEncoder*)
+ * @param parent        Parent object (CborEncoder *)
+ * @param key           Child object (CborEncoder *)
  */
 #define zjs_rep_start_object(parent, key)                                       \
   do {                                                                         \
@@ -27,8 +27,8 @@ extern CborError g_err;
 /*
  * Finish encoding an object
  *
- * @param parent        Parent object (CborEncoder*)
- * @param key           Child object (CborEncoder*)
+ * @param parent        Parent object (CborEncoder *)
+ * @param key           Child object (CborEncoder *)
  */
 #define zjs_rep_end_object(parent, key)                                         \
   g_err |= cbor_encoder_close_container(parent, key);                  \
@@ -38,9 +38,9 @@ extern CborError g_err;
 /*
  * Set an objects name
  *
- * @param object        Parent object (CborEncoder*)
- * @param key           Child object (CborEncoder*)
- * @param name          Name of object (char*)
+ * @param object        Parent object (CborEncoder *)
+ * @param key           Child object (CborEncoder *)
+ * @param name          Name of object (char *)
  */
 #define zjs_rep_set_object(object, key, name)                                         \
   g_err |= cbor_encode_text_string(object, name, strlen(name));         \
@@ -49,8 +49,8 @@ extern CborError g_err;
 /*
  * Close/End an object
  *
- * @param object        Parent object (CborEncoder*)
- * @param key           Child object (CborEncoder*)
+ * @param object        Parent object (CborEncoder *)
+ * @param key           Child object (CborEncoder *)
  */
 #define zjs_rep_close_object(object, key) zjs_rep_end_object(object, key)
 
@@ -70,8 +70,8 @@ extern CborError g_err;
 /*
  * Start encoding an array object
  *
- * @param parent        Parent object (CborEncoder*)
- * @param key           Child array object (CborEncoder*)
+ * @param parent        Parent object (CborEncoder *)
+ * @param key           Child array object (CborEncoder *)
  */
 #define zjs_rep_start_array(parent, key)                                        \
   do {                                                                         \
@@ -80,8 +80,8 @@ extern CborError g_err;
 /*
  * Finish encoding an array obect
  *
- * @param parent        Parent object (CborEncoder*)
- * @param key           Child array object (CborEncoder*)
+ * @param parent        Parent object (CborEncoder *)
+ * @param key           Child array object (CborEncoder *)
  */
 #define zjs_rep_end_array(parent, key)                                          \
   g_err |= cbor_encoder_close_container(parent, key);                \
@@ -91,9 +91,9 @@ extern CborError g_err;
 /*
  * Set an array's name
  *
- * @param parent        Parent object (CborEncoder*)
- * @param key           Child array object (CborEncoder*)
- * @param name          Name of array object (char*)
+ * @param parent        Parent object (CborEncoder *)
+ * @param key           Child array object (CborEncoder *)
+ * @param name          Name of array object (char *)
  */
 #define zjs_rep_set_array(object, key, name)                                          \
   g_err |= cbor_encode_text_string(object, name, strlen(name));         \
@@ -102,8 +102,8 @@ extern CborError g_err;
 /*
  * Close/end an array object
  *
- * @param parent        Parent object (CborEncoder*)
- * @param key           Child array object (CborEncoder*)
+ * @param parent        Parent object (CborEncoder *)
+ * @param key           Child array object (CborEncoder *)
  */
 #define zjs_rep_close_array(object, key) zjs_rep_end_array(object, key)
 

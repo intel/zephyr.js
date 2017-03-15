@@ -10,7 +10,7 @@
  *
  * @param handle        Handle given to zjs_make_promise()
  */
-typedef void (*zjs_post_promise_func)(void* handle);
+typedef void (*zjs_post_promise_func)(void *handle);
 
 /*
  * Turn an object into a promise
@@ -20,7 +20,7 @@ typedef void (*zjs_post_promise_func)(void* handle);
  * @param handle        Handle passed to post function
  */
 void zjs_make_promise(jerry_value_t obj, zjs_post_promise_func post,
-                         void* handle);
+                         void *handle);
 
 /*
  * Fulfill a promise

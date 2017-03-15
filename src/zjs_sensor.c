@@ -100,8 +100,8 @@ static sensor_handle_t *zjs_sensor_get_handle(jerry_value_t obj)
     return NULL;
 }
 
-static bool zjs_sensor_ipm_send_sync(zjs_ipm_message_t* send,
-                                     zjs_ipm_message_t* result)
+static bool zjs_sensor_ipm_send_sync(zjs_ipm_message_t *send,
+                                     zjs_ipm_message_t *result)
 {
     send->id = MSG_ID_SENSOR;
     send->flags = 0 | MSG_SYNC_FLAG;
@@ -124,7 +124,7 @@ static bool zjs_sensor_ipm_send_sync(zjs_ipm_message_t* send,
     return true;
 }
 
-static int zjs_sensor_call_remote_function(zjs_ipm_message_t* send)
+static int zjs_sensor_call_remote_function(zjs_ipm_message_t *send)
 {
     zjs_ipm_message_t reply;
     if (!zjs_sensor_ipm_send_sync(send, &reply)) {
@@ -223,16 +223,16 @@ static void zjs_sensor_update_reading(jerry_value_t obj,
     case SENSOR_CHAN_ACCEL_XYZ:
     case SENSOR_CHAN_GYRO_XYZ: ;
         // reading is a ptr to an array of 3 double values
-        double x = ((double*)reading)[0];
-        double y = ((double*)reading)[1];
-        double z = ((double*)reading)[2];
+        double x = ((double *)reading)[0];
+        double y = ((double *)reading)[1];
+        double z = ((double *)reading)[2];
         zjs_obj_add_readonly_number(reading_obj, x, "x");
         zjs_obj_add_readonly_number(reading_obj, y, "y");
         zjs_obj_add_readonly_number(reading_obj, z, "z");
         break;
     case SENSOR_CHAN_LIGHT: ;
         // reading is a ptr to double
-        double d = *((double*)reading);
+        double d = *((double *)reading);
         zjs_obj_add_readonly_number(reading_obj, d, "illuminance");
         break;
 
@@ -344,9 +344,9 @@ static void ipm_msg_receive_callback(void *context, uint32_t id, volatile void *
     if (id != MSG_ID_SENSOR)
         return;
 
-    zjs_ipm_message_t *msg = (zjs_ipm_message_t*)(*(uintptr_t *)data);
+    zjs_ipm_message_t *msg = (zjs_ipm_message_t *)(*(uintptr_t *)data);
     if ((msg->flags & MSG_SYNC_FLAG) == MSG_SYNC_FLAG) {
-        zjs_ipm_message_t *result = (zjs_ipm_message_t*)msg->user_data;
+        zjs_ipm_message_t *result = (zjs_ipm_message_t *)msg->user_data;
         // synchrounus ipm, copy the results
         if (result) {
             memcpy(result, msg, sizeof(zjs_ipm_message_t));
@@ -560,7 +560,7 @@ static jerry_value_t zjs_sensor_create(const jerry_value_t function_obj,
 
     jerry_set_prototype(sensor_obj, zjs_sensor_prototype);
 
-    sensor_handle_t* handle = zjs_sensor_alloc_handle(channel);
+    sensor_handle_t *handle = zjs_sensor_alloc_handle(channel);
     handle->onchange_cb_id = zjs_add_c_callback(handle, zjs_sensor_onchange_c_callback);
     handle->onstart_cb_id = zjs_add_c_callback(handle, zjs_sensor_onstart_c_callback);
     handle->onstop_cb_id = zjs_add_c_callback(handle, zjs_sensor_onstop_c_callback);

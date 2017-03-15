@@ -16,7 +16,7 @@ static int generate_snapshot(const char *file_name, uint8_t *buf, int buf_size)
     // create or overwite the existing the src file that
     // initialize the array to stores the byte code
     // to be executed by jerryscript
-    FILE* f = fopen(file_name, "w+");
+    FILE *f = fopen(file_name, "w+");
     if (!f) {
         ERR_PRINT("error opening file\n");
         return 1;

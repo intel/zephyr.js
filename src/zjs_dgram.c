@@ -35,7 +35,7 @@ typedef struct dgram_handle {
         if (!jerry_get_object_native_handle(this, &native)) { \
             return zjs_error("no native handle"); \
         } \
-        var = (type*)native; \
+        var = (type *)native; \
     }
 
 // Parse textual address of given address family (IPv4/IPv6) and numeric
@@ -50,7 +50,7 @@ static jerry_value_t get_addr(sa_family_t family,
     int ret;
 
     // We employ the fact that port and address offsets are the same for IPv4&6
-    struct sockaddr_in *sockaddr_in = (struct sockaddr_in*)sockaddr;
+    struct sockaddr_in *sockaddr_in = (struct sockaddr_in *)sockaddr;
     sockaddr_in->sin_family = family;
     sockaddr_in->sin_port = htons((int)jerry_get_number_value(port));
 
@@ -63,7 +63,7 @@ static jerry_value_t get_addr(sa_family_t family,
 
 static void zjs_dgram_free_cb(const uintptr_t native)
 {
-    dgram_handle_t *handle = (dgram_handle_t*)native;
+    dgram_handle_t *handle = (dgram_handle_t *)native;
     DBG_PRINT("zjs_dgram_free_cb: %p\n", handle);
     if (!handle) {
         return;
@@ -279,7 +279,7 @@ static jerry_value_t zjs_dgram_sock_send(const jerry_value_t function_obj,
 
     void *user_data = NULL;
     if (argc > 5) {
-        user_data = (void*)argv[5];
+        user_data = (void *)argv[5];
     }
 
     CHECK(net_context_sendto(send_buf, &sockaddr_buf, sizeof(sockaddr_buf),

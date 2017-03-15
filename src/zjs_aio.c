@@ -69,8 +69,8 @@ static bool zjs_aio_ipm_send_async(uint32_t type, uint32_t pin, void *data) {
     return true;
 }
 
-static bool zjs_aio_ipm_send_sync(zjs_ipm_message_t* send,
-                                  zjs_ipm_message_t* result) {
+static bool zjs_aio_ipm_send_sync(zjs_ipm_message_t *send,
+                                  zjs_ipm_message_t *result) {
     send->id = MSG_ID_AIO;
     send->flags = 0 | MSG_SYNC_FLAG;
     send->user_data = (void *)result;
@@ -92,7 +92,7 @@ static bool zjs_aio_ipm_send_sync(zjs_ipm_message_t* send,
     return true;
 }
 
-static jerry_value_t zjs_aio_call_remote_function(zjs_ipm_message_t* send)
+static jerry_value_t zjs_aio_call_remote_function(zjs_ipm_message_t *send)
 {
     if (!send)
         return zjs_error("zjs_aio_call_remote_function: invalid send message");
@@ -124,7 +124,7 @@ static void ipm_msg_receive_callback(void *context, uint32_t id,
     zjs_ipm_message_t *msg = *(zjs_ipm_message_t **)data;
 
     if (msg->flags & MSG_SYNC_FLAG) {
-        zjs_ipm_message_t *result = (zjs_ipm_message_t*)msg->user_data;
+        zjs_ipm_message_t *result = (zjs_ipm_message_t *)msg->user_data;
         // synchronous ipm, copy the results
         if (result)
             memcpy(result, msg, sizeof(zjs_ipm_message_t));
@@ -191,8 +191,8 @@ static jerry_value_t zjs_aio_pin_close(const jerry_value_t function_obj,
     uint32_t pin;
     zjs_obj_get_uint32(this, "pin", &pin);
 
-    aio_handle_t* handle;
-    if (jerry_get_object_native_handle(this, (uintptr_t*)&handle) && handle) {
+    aio_handle_t *handle;
+    if (jerry_get_object_native_handle(this, (uintptr_t *)&handle) && handle) {
         // remove existing onchange handler and unsubscribe
         zjs_aio_ipm_send_async(TYPE_AIO_PIN_UNSUBSCRIBE, pin, handle);
         zjs_remove_callback(handle->callback_id);
@@ -220,8 +220,8 @@ static jerry_value_t zjs_aio_pin_on(const jerry_value_t function_obj,
     if (strcmp(event, "change"))
         return zjs_error("zjs_aio_pin_on: unsupported event type");
 
-    aio_handle_t* handle;
-    if (jerry_get_object_native_handle(this, (uintptr_t*)&handle) && handle) {
+    aio_handle_t *handle;
+    if (jerry_get_object_native_handle(this, (uintptr_t *)&handle) && handle) {
         if (jerry_value_is_null(argv[1])) {
             // no change function, remove if one existed before
             zjs_aio_ipm_send_async(TYPE_AIO_PIN_UNSUBSCRIBE, pin, handle);

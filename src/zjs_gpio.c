@@ -266,7 +266,7 @@ static void zjs_gpio_free_cb(const uintptr_t native)
 }
 
 // Called after the promise is fulfilled/rejected
-static void post_open_promise(void* h)
+static void post_open_promise(void *h)
 {
     gpio_handle_t *handle = (gpio_handle_t *)h;
     // Handle is the ret_args array that was malloc'ed in open()
@@ -408,7 +408,7 @@ static jerry_value_t zjs_gpio_open(const jerry_value_t function_obj,
         jerry_value_t promise_ret = jerry_create_object();
 
         // Turn object into a promise
-        zjs_make_promise(promise_ret, post_open_promise, (void*)handle);
+        zjs_make_promise(promise_ret, post_open_promise, (void *)handle);
 
         // TODO: Can open promise be rejected? For now, rejection is based on if
         // gpiodev is not NULL

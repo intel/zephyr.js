@@ -20,7 +20,7 @@ struct ring_element {
     uint32_t  value  :8;  /**< Room for small integral values */
 };
 
-static int get_space(struct zjs_port_ring_buf* buf)
+static int get_space(struct zjs_port_ring_buf *buf)
 {
     if (buf->head == buf->tail) {
         return buf->size - 1;
@@ -34,9 +34,9 @@ static int get_space(struct zjs_port_ring_buf* buf)
     return (buf->size - buf->tail) + buf->head - 1;
 }
 
-void zjs_port_ring_buf_init(struct zjs_port_ring_buf* buf,
+void zjs_port_ring_buf_init(struct zjs_port_ring_buf *buf,
                             uint32_t size,
-                            uint32_t* data)
+                            uint32_t *data)
 {
     int i;
     for (i = 0; i < 20; ++i) {
@@ -57,11 +57,11 @@ void zjs_port_ring_buf_init(struct zjs_port_ring_buf* buf,
     buf->buf = data;
 }
 
-int zjs_port_ring_buf_get(struct zjs_port_ring_buf* buf,
-                          uint16_t* type,
-                          uint8_t* value,
-                          uint32_t* data,
-                          uint8_t* size32)
+int zjs_port_ring_buf_get(struct zjs_port_ring_buf *buf,
+                          uint16_t *type,
+                          uint8_t *value,
+                          uint32_t *data,
+                          uint8_t *size32)
 {
     struct ring_element *header;
     uint32_t i, index;
@@ -100,10 +100,10 @@ int zjs_port_ring_buf_get(struct zjs_port_ring_buf* buf,
     return 0;
 }
 
-int zjs_port_ring_buf_put(struct zjs_port_ring_buf* buf,
+int zjs_port_ring_buf_put(struct zjs_port_ring_buf *buf,
                           uint16_t type,
                           uint8_t value,
-                          uint32_t* data,
+                          uint32_t *data,
                           uint8_t size32)
 {
     uint32_t i, space, index, rc = -1;

@@ -200,7 +200,7 @@ static jerry_value_t native_clear_interval_handler(const jerry_value_t function_
     jerry_value_t timer_obj = argv[0];
     zjs_timer_t *handle;
 
-    if (!jerry_get_object_native_handle(timer_obj, (uintptr_t*)&handle)) {
+    if (!jerry_get_object_native_handle(timer_obj, (uintptr_t *)&handle)) {
         return zjs_error("native_clear_interval_handler(): native handle not found");
     }
 

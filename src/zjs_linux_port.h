@@ -11,16 +11,16 @@ typedef struct zjs_port_timer {
     uint32_t sec;
     uint32_t milli;
     uint32_t interval;
-    void* data;
+    void *data;
 } zjs_port_timer_t;
 
 #define zjs_port_timer_init(t) do {} while (0)
 
-void zjs_port_timer_start(zjs_port_timer_t* timer, uint32_t interval);
+void zjs_port_timer_start(zjs_port_timer_t *timer, uint32_t interval);
 
-void zjs_port_timer_stop(zjs_port_timer_t* timer);
+void zjs_port_timer_stop(zjs_port_timer_t *timer);
 
-uint8_t zjs_port_timer_test(zjs_port_timer_t* timer);
+uint8_t zjs_port_timer_test(zjs_port_timer_t *timer);
 
 uint32_t zjs_port_timer_get_uptime(void);
 
@@ -42,21 +42,21 @@ struct zjs_port_ring_buf {
     uint32_t mask;   /**< Modulo mask if size is a power of 2 */
 };
 
-void zjs_port_ring_buf_init(struct zjs_port_ring_buf* buf,
+void zjs_port_ring_buf_init(struct zjs_port_ring_buf *buf,
                             uint32_t size,
-                            uint32_t* data);
+                            uint32_t *data);
 
-int zjs_port_ring_buf_get(struct zjs_port_ring_buf* buf,
-                          uint16_t* type,
-                          uint8_t* value,
-                          uint32_t* data,
-                          uint8_t* size32);
+int zjs_port_ring_buf_get(struct zjs_port_ring_buf *buf,
+                          uint16_t *type,
+                          uint8_t *value,
+                          uint32_t *data,
+                          uint8_t *size32);
 
 // INTERRUPT SAFE FUNCTION: No JerryScript VM, allocs, or release prints!
-int zjs_port_ring_buf_put(struct zjs_port_ring_buf* buf,
+int zjs_port_ring_buf_put(struct zjs_port_ring_buf *buf,
                           uint16_t type,
                           uint8_t value,
-                          uint32_t* data,
+                          uint32_t *data,
                           uint8_t size32);
 
 #endif /* ZJS_LINUX_PORT_H_ */

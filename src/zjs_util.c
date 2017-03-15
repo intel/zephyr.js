@@ -344,7 +344,7 @@ void zjs_print_error_message(jerry_value_t error)
     const char *uncaught = "Uncaught exception: ";
 
     uint32_t size;
-    char* message = NULL;
+    char *message = NULL;
     jerry_value_t err_name = zjs_get_property(error, "name");
     if (!jerry_value_is_string(err_name)) {
         ERR_PRINT("%s(no name)\n", uncaught);
