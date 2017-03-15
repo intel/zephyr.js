@@ -79,6 +79,14 @@ void zjs_ocf_free_props(void* h);
  */
 uint8_t main_poll_routine(void* handle);
 
+/**
+ * Set the 'uuid' property in the device object. This API is required because
+ * we dont get the UUID until after the device object is created/initialized.
+ *
+ * @param uuid          UUID obtained from iotivity-constrained system
+ */
+void zjs_set_uuid(char* uuid);
+
 /*
  * Start Iotivity-constrained.
  */
@@ -88,3 +96,8 @@ int zjs_ocf_start();
  * Object returned from require('ocf')
  */
 jerry_value_t zjs_ocf_init();
+
+/*
+ * Cleanup for OCF object
+ */
+void zjs_ocf_cleanup();

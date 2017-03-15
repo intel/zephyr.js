@@ -39,7 +39,7 @@ var resourceInit = {
 var MyResource = null;
 
 server.register(resourceInit).then(function(resource) {
-    console.log("Registered resource");
+    console.log("Registered resource. UUID: " + ocf.device.uuid);
     MyResource = resource;
     server.on("retrieve", function(request, observe) {
         MyProperties.state = (MyProperties.state) ? false : true;
