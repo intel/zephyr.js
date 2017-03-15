@@ -80,13 +80,15 @@ void zjs_error_cleanup()
     }
 }
 
-static char* construct_message(jerry_value_t this,
-                                      jerry_value_t func,
-                                      const char *message)
+static char* construct_message(jerry_value_t this, jerry_value_t func,
+                               const char *message)
 {
     jerry_size_t size = 64;
     char name[size];
     jerry_value_t keys_array = jerry_get_object_keys(this);
+    if (!jerry_value_is_array(keys_array)) {
+        return NULL;
+    }
     uint32_t arr_length = jerry_get_array_length(keys_array);
     int i;
     for (i = 0; i < arr_length; ++i) {
@@ -94,6 +96,8 @@ static char* construct_message(jerry_value_t this,
         zjs_copy_jstring(val, name, &size);
         jerry_value_t func_val = zjs_get_property(this, name);
         if (func_val == func) {
+            jerry_release_value(val);
+            jerry_release_value(func_val);
             break;
         }
         jerry_release_value(val);
@@ -102,14 +106,15 @@ static char* construct_message(jerry_value_t this,
     jerry_release_value(keys_array);
 
     int nlen = strlen(name);
-    char *msg = zjs_malloc(strlen(message) + nlen + 4);
+    int mlen = strlen(message);
+    char *msg = zjs_malloc(mlen + nlen + 4);
 
     memcpy(msg, name, nlen);
     msg[nlen] = '(';
     msg[nlen + 1] = ')';
     msg[nlen + 2] = ':';
-    memcpy(msg + nlen + 3, message, strlen(message));
-    msg[strlen(message) + nlen + 3] = '\0';
+    memcpy(msg + nlen + 3, message, mlen);
+    msg[mlen + nlen + 3] = '\0';
 
     return msg;
 }
@@ -119,9 +124,16 @@ jerry_value_t zjs_custom_error_with_func(jerry_value_t this,
                                          const char *name,
                                          const char *message)
 {
+    jerry_value_t error;
     char *msg = construct_message(this, func, message);
-    jerry_value_t error = zjs_custom_error(name, msg);
-    zjs_free(msg);
+    if (!msg) {
+        // Problem finding function
+        DBG_PRINT("calling function not found\n");
+        error = zjs_custom_error(name, message);
+    } else {
+        error = zjs_custom_error(name, msg);
+        zjs_free(msg);
+    }
     return error;
 }
 
@@ -131,9 +143,16 @@ jerry_value_t zjs_error_with_func(jerry_value_t this,
                                   const char *message)
 
 {
+    jerry_value_t error;
     char *msg = construct_message(this, func, message);
-    jerry_value_t error = zjs_standard_error(type, msg);
-    zjs_free(msg);
+    if (!msg) {
+        // Problem finding function
+        DBG_PRINT("calling function not found\n");
+        error = zjs_standard_error(type, message);
+    } else {
+        error = zjs_standard_error(type, msg);
+        zjs_free(msg);
+    }
     return error;
 }
 
