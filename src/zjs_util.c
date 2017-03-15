@@ -424,8 +424,8 @@ static int zjs_validate_arg(const char *expectation, jerry_value_t arg)
         // NOTE: This relies on Z_ANY to Z_UNDEFINED being consecutive and
         //   Z_UNDEFINED being the last one
         int type_index = expectation[index] - Z_ANY[0];
-        if (type_index < 0 || type_index > Z_UNDEFINED[0]) {
-            ERR_PRINT("invalid argument type: '%c'", expectation[index]);
+        if (type_index < 0 || expectation[index] > Z_UNDEFINED[0]) {
+            ERR_PRINT("invalid argument type: '%c'\n", expectation[index]);
             return ZJS_INTERNAL_ERROR;
         }
 
