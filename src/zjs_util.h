@@ -112,13 +112,13 @@ void zjs_print_error_message(jerry_value_t error);
 
 // Z_ANY matches any type (i.e. ignores it) - only makes sense for required arg
 #define Z_ANY       "a"
-
 // the rest all match specific type by calling jerry_value_is_* function
 #define Z_ARRAY     "b"
 #define Z_BOOL      "c"
 #define Z_FUNCTION  "d"
 #define Z_NULL      "e"
 #define Z_NUMBER    "f"
+// NOTE: Z_OBJECT will match arrays and functions too, because they are objects
 #define Z_OBJECT    "g"
 #define Z_STRING    "h"
 #define Z_UNDEFINED "i"
