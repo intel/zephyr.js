@@ -25,6 +25,7 @@ BOARD=$1
 SCRIPT=$2
 CONFIG=$3
 DEV=$4
+SDK_VERSION=$(cat ${ZEPHYR_SDK_INSTALL_DIR}/sdk_version)
 
 echo "# Modules found in $SCRIPT:" > prj.conf.tmp
 echo "# Modules found in $SCRIPT:" > arc/prj.conf.tmp
@@ -233,6 +234,12 @@ if check_for_require aio || check_config_file ZJS_AIO; then
     >&2 echo Using module: AIO
     MODULES+=" -DBUILD_MODULE_AIO"
     echo "CONFIG_ADC=y" >> arc/prj.conf.tmp
+    # Workaround for the Zephyr issue ZEP-1882: ADC doesn't work with
+    # SDK 0.9 due to some compiler optimization, so enable debug mode.
+    if [ $SDK_VERSION = "0.9" ]; then
+        >&2 echo Warning: Zephyr SDK 0.9 detected, compiling in debug mode!
+        echo "CONFIG_DEBUG=y" >> arc/prj.conf.tmp
+    fi
     echo "export ZJS_AIO=y" >> zjs.conf.tmp
 fi
 
@@ -325,6 +332,12 @@ if [ $? -eq 0 ] || check_config_file ZJS_SENSOR; then
         if [ $? -eq 0 ] || [ $DEV = "ashell" ]; then
             MODULES+=" -DBUILD_MODULE_SENSOR_LIGHT"
             echo "CONFIG_ADC=y" >> arc/prj.conf.tmp
+            # Workaround for the Zephyr issue ZEP-1882: ADC doesn't work with
+            # SDK 0.9 due to some compiler optimization, so enable debug mode.
+            if [ $SDK_VERSION = "0.9" ]; then
+                >&2 echo Warning: Zephyr SDK 0.9 detected, compiling in debug mode!
+                echo "CONFIG_DEBUG=y" >> arc/prj.conf.tmp
+            fi
         fi
     fi
 fi
