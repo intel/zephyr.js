@@ -7,6 +7,8 @@ var ble = require("ble");
 
 var DEVICE_NAME = 'Intel Curie';
 
+var updateFrequency = 20 // maximum is 100Hz, but in ashell maximum is 20Hz
+
 var SensorCharacteristic = new ble.Characteristic({
     uuid: 'fc0a',
     properties: ['read', 'notify'],
@@ -93,11 +95,11 @@ ble.on('disconnect', function(clientAddress) {
 });
 
 var accel = new Accelerometer({
-    frequency: 20
+    frequency: updateFrequency
 });
 
 var gyro = new Gyroscope({
-    frequency: 20
+    frequency: updateFrequency
 });
 
 accel.onchange = function(event) {

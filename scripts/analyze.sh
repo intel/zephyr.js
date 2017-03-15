@@ -304,7 +304,7 @@ if [ $? -eq 0 ] || check_config_file ZJS_SENSOR; then
     >&2 echo Using module: Sensor
     MODULES+=" -DBUILD_MODULE_SENSOR"
     echo "export ZJS_SENSOR=y" >> zjs.conf.tmp
-    if [ $DEV = "ashell" ] || [ $BOARD = "arduino_101" ]; then
+    if [ $BOARD = "arduino_101" ] || [ $DEV = "ashell" ]; then
         bmi160=$(grep -E Accelerometer\|Gyroscope $SCRIPT)
         if [ $? -eq 0 ] || [ $DEV = "ashell" ]; then
             echo "CONFIG_SENSOR=y" >> arc/prj.conf.tmp
