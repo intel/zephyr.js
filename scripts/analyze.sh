@@ -304,12 +304,14 @@ if [ $? -eq 0 ] || check_config_file ZJS_SENSOR; then
     >&2 echo Using module: Sensor
     MODULES+=" -DBUILD_MODULE_SENSOR"
     echo "export ZJS_SENSOR=y" >> zjs.conf.tmp
-    if [ $BOARD = "arduino_101" ]; then
+    if [ $BOARD = "arduino_101" ] || [ $DEV = "ashell" ]; then
         bmi160=$(grep -E Accelerometer\|Gyroscope $SCRIPT)
-        if [ $? -eq 0 ]; then
+        if [ $? -eq 0 ] || [ $DEV = "ashell" ]; then
             echo "CONFIG_SENSOR=y" >> arc/prj.conf.tmp
             echo "CONFIG_GPIO=y" >> arc/prj.conf.tmp
             echo "CONFIG_SPI=y" >> arc/prj.conf.tmp
+            echo "CONFIG_SPI_0=n" >> arc/prj.conf.tmp
+            echo "CONFIG_SPI_1=n" >> arc/prj.conf.tmp
             echo "CONFIG_SPI_SS_1_NAME=\"SPI_SS_1\"" >> arc/prj.conf.tmp
             echo "CONFIG_BMI160=y" >> arc/prj.conf.tmp
             echo "CONFIG_BMI160_NAME=\"bmi160\"" >> arc/prj.conf.tmp
@@ -320,7 +322,7 @@ if [ $? -eq 0 ] || check_config_file ZJS_SENSOR; then
             echo "CONFIG_BMI160_TRIGGER_OWN_THREAD=y" >> arc/prj.conf.tmp
         fi
         bmi160=$(grep -E AmbientLightSensor $SCRIPT)
-        if [ $? -eq 0 ]; then
+        if [ $? -eq 0 ] || [ $DEV = "ashell" ]; then
             MODULES+=" -DBUILD_MODULE_SENSOR_LIGHT"
             echo "CONFIG_ADC=y" >> arc/prj.conf.tmp
         fi
