@@ -481,8 +481,12 @@ jerry_value_t zjs_ocf_init()
 
 void zjs_ocf_cleanup()
 {
+#ifdef OC_SERVER
     zjs_ocf_server_cleanup();
+#endif
+#ifdef OC_CLIENT
     zjs_ocf_client_cleanup();
+#endif
     jerry_release_value(ocf_object);
 }
 

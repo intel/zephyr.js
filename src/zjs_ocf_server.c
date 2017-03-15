@@ -401,7 +401,7 @@ static jerry_value_t ocf_notify(const jerry_value_t function_val,
  *       available to do this currently so we must get it with this external
  *       structure.
  */
-extern struct oc_device_info_t
+extern struct
 {
   oc_uuid_t uuid;
   oc_string_t payload;
@@ -440,7 +440,7 @@ static jerry_value_t ocf_register(const jerry_value_t function_val,
     }
 
     // Optional
-    uint8_t flags;
+    uint8_t flags = 0;
     jerry_value_t observable_val = zjs_get_property(argv[0], "observable");
     if (jerry_value_is_boolean(observable_val)) {
         if (jerry_get_boolean_value(observable_val)) {
