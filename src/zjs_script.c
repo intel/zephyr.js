@@ -7,12 +7,12 @@
 
 #include "zjs_script.h"
 
-uint8_t zjs_read_script(char* name, const char** script, uint32_t* length)
+uint8_t zjs_read_script(char *name, const char **script, uint32_t *length)
 {
     if (name) {
-        char* s;
+        char *s;
         uint32_t size;
-        FILE* f = fopen(name, "r");
+        FILE *f = fopen(name, "r");
         if (!f) {
             ERR_PRINT("error opening file\n");
             return 1;
@@ -33,7 +33,7 @@ uint8_t zjs_read_script(char* name, const char** script, uint32_t* length)
             fclose(f);
             return 1;
         }
-        s = (char*)zjs_malloc(size + 1);
+        s = (char *)zjs_malloc(size + 1);
         if (!s) {
             ERR_PRINT("error allocating %u bytes, fatal\n", size);
             fclose(f);
@@ -55,7 +55,7 @@ uint8_t zjs_read_script(char* name, const char** script, uint32_t* length)
     return 0;
 }
 
-void zjs_free_script(const char* script)
+void zjs_free_script(const char *script)
 {
     if (script) {
         zjs_free(script);

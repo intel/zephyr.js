@@ -16,7 +16,7 @@
 struct props_handle {
     jerry_value_t props_array;
     uint32_t size;
-    char** names_array;
+    char **names_array;
 };
 
 #define TYPE_IS_NUMBER 0
@@ -61,8 +61,8 @@ int zjs_ocf_is_int(jerry_value_t val);
  *
  * @return              Handle to free the properties later
  */
-void* zjs_ocf_props_setup(jerry_value_t props_object,
-                          CborEncoder* encoder,
+void *zjs_ocf_props_setup(jerry_value_t props_object,
+                          CborEncoder *encoder,
                           bool root);
 
 /*
@@ -70,14 +70,14 @@ void* zjs_ocf_props_setup(jerry_value_t props_object,
  *
  * @param h             Handler returned from zjs_ocf_props_setup()
  */
-void zjs_ocf_free_props(void* h);
+void zjs_ocf_free_props(void *h);
 
 /**
  * Routine to call into iotivity-constrained
  *
  * @return              iotivity-constrained's polling functions return value
  */
-uint8_t main_poll_routine(void* handle);
+uint8_t main_poll_routine(void *handle);
 
 /**
  * Set the 'uuid' property in the device object. This API is required because
@@ -85,7 +85,7 @@ uint8_t main_poll_routine(void* handle);
  *
  * @param uuid          UUID obtained from iotivity-constrained system
  */
-void zjs_set_uuid(char* uuid);
+void zjs_set_uuid(char *uuid);
 
 /*
  * Start Iotivity-constrained.

@@ -36,10 +36,10 @@
 
 static struct k_sem arc_sem;
 static struct zjs_ipm_message msg_queue[QUEUE_SIZE];
-static struct zjs_ipm_message* end_of_queue_ptr = msg_queue + QUEUE_SIZE;
+static struct zjs_ipm_message *end_of_queue_ptr = msg_queue + QUEUE_SIZE;
 
 #if defined(BUILD_MODULE_AIO) || defined(BUILD_MODULE_SENSOR_LIGHT)
-static struct device* adc_dev = NULL;
+static struct device *adc_dev = NULL;
 static uint32_t pin_values[ARC_AIO_LEN] = {};
 static uint32_t pin_last_values[ARC_AIO_LEN] = {};
 static uint8_t seq_buffer[ADC_BUFFER_SIZE];
@@ -123,9 +123,9 @@ static uint32_t pin_read(uint8_t pin)
 }
 #endif
 
-static void queue_message(struct zjs_ipm_message* incoming_msg)
+static void queue_message(struct zjs_ipm_message *incoming_msg)
 {
-    struct zjs_ipm_message* msg = msg_queue;
+    struct zjs_ipm_message *msg = msg_queue;
 
     if (!incoming_msg) {
         return;
@@ -160,7 +160,7 @@ static void ipm_msg_receive_callback(void *context, uint32_t id, volatile void *
 }
 
 #ifdef BUILD_MODULE_AIO
-static void handle_aio(struct zjs_ipm_message* msg)
+static void handle_aio(struct zjs_ipm_message *msg)
 {
     uint32_t pin = msg->data.aio.pin;
     uint32_t reply_value = 0;
@@ -233,7 +233,7 @@ static void process_aio_updates()
 #endif
 
 #ifdef BUILD_MODULE_I2C
-static void handle_i2c(struct zjs_ipm_message* msg)
+static void handle_i2c(struct zjs_ipm_message *msg)
 {
     uint32_t error_code = ERROR_IPM_NONE;
     uint8_t msg_bus = msg->data.i2c.bus;
@@ -283,7 +283,7 @@ static void handle_i2c(struct zjs_ipm_message* msg)
 #endif
 
 #ifdef BUILD_MODULE_GROVE_LCD
-static void handle_glcd(struct zjs_ipm_message* msg)
+static void handle_glcd(struct zjs_ipm_message *msg)
 {
     char *buffer;
     uint8_t r, g, b;
@@ -718,7 +718,7 @@ static void process_light_updates()
 }
 #endif // BUILD_MODULE_SENSOR_LIGHT
 
-static void handle_sensor(struct zjs_ipm_message* msg)
+static void handle_sensor(struct zjs_ipm_message *msg)
 {
     int freq;
     uint32_t error_code = ERROR_IPM_NONE;
@@ -813,7 +813,7 @@ static void handle_sensor(struct zjs_ipm_message* msg)
 
 static void process_messages()
 {
-    struct zjs_ipm_message* msg = msg_queue;
+    struct zjs_ipm_message *msg = msg_queue;
 
     while (msg && msg < end_of_queue_ptr) {
         // loop through all messages and process them

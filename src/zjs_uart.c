@@ -23,8 +23,8 @@
 static jerry_value_t zjs_uart_prototype;
 
 typedef struct {
-    const char* name;
-    const char* port;
+    const char *name;
+    const char *port;
 } uart_dev_map;
 
 // Struct used to hold pointers to the onread function,
@@ -33,7 +33,7 @@ typedef struct {
 typedef struct {
     jerry_value_t uart_obj;
     jerry_value_t buf_obj;
-    char* buf;
+    char *buf;
     uint32_t size;
     uint32_t min;
     uint32_t max;
@@ -49,8 +49,8 @@ static uart_dev_map device_map[] = {
 
 #define UART_BUFFER_INITIAL_SIZE    16
 
-static uart_handle* handle = NULL;
-static struct device* uart_dev = NULL;
+static uart_handle *handle = NULL;
+static struct device *uart_dev = NULL;
 
 // This is the CB ID for the C callback. This should not have to be a
 // global ID but the UART API's do not let you add a "handle" that is
@@ -62,7 +62,7 @@ static volatile bool tx = false;
 // RX interrupt handled
 static volatile bool rx = false;
 
-static jerry_value_t make_uart_error(const char* name, const char* msg)
+static jerry_value_t make_uart_error(const char *name, const char *msg)
 {
 
     jerry_value_t ret = jerry_create_object();
@@ -83,9 +83,9 @@ static jerry_value_t make_uart_error(const char* name, const char* msg)
     return ret;
 }
 
-static uart_handle* new_uart_handle(void)
+static uart_handle *new_uart_handle(void)
 {
-    uart_handle* h = zjs_malloc(sizeof(uart_handle));
+    uart_handle *h = zjs_malloc(sizeof(uart_handle));
     memset(h, 0, sizeof(uart_handle));
 
     h->min = 1;
@@ -97,12 +97,12 @@ static uart_handle* new_uart_handle(void)
     return h;
 }
 
-static void post_event(void* h)
+static void post_event(void *h)
 {
     jerry_release_value(handle->buf_obj);
 }
 
-static void uart_c_callback(void* h, void* args)
+static void uart_c_callback(void *h, void *args)
 {
     if (!handle) {
         DBG_PRINT("UART handle not found\n");
@@ -110,7 +110,7 @@ static void uart_c_callback(void* h, void* args)
     }
     if (handle->size >= handle->min) {
         handle->buf_obj = zjs_buffer_create(handle->size);
-        zjs_buffer_t* buffer = zjs_buffer_find(handle->buf_obj);
+        zjs_buffer_t *buffer = zjs_buffer_find(handle->buf_obj);
 
         memcpy(buffer->buffer, args, handle->size);
 
@@ -161,7 +161,7 @@ static jerry_value_t uart_write(const jerry_value_t function_obj,
     // args: buffer
     ZJS_VALIDATE_ARGS(Z_OBJECT);
 
-    zjs_buffer_t* buffer = zjs_buffer_find(argv[0]);
+    zjs_buffer_t *buffer = zjs_buffer_find(argv[0]);
     if (!buffer) {
         return TYPE_ERROR("expected buffer");
     }
@@ -169,7 +169,7 @@ static jerry_value_t uart_write(const jerry_value_t function_obj,
     jerry_value_t promise = jerry_create_object();
     zjs_make_promise(promise, NULL, NULL);
 
-    int wrote = write_data(uart_dev, (const char*)buffer->buffer,
+    int wrote = write_data(uart_dev, (const char *)buffer->buffer,
                            buffer->bufsize);
     if (wrote == buffer->bufsize) {
         zjs_fulfill_promise(promise, NULL, 0);
@@ -196,7 +196,7 @@ static jerry_value_t uart_set_read_range(const jerry_value_t function_obj,
     uint32_t max = jerry_get_number_value(argv[1]);
 
     if (handle->buf) {
-        void* old = handle->buf;
+        void *old = handle->buf;
         handle->buf = zjs_malloc(max);
         memcpy(handle->buf, old, handle->size);
         handle->buf[handle->size] = '\0';
@@ -261,7 +261,7 @@ static jerry_value_t uart_init(const jerry_value_t function_obj,
     for (i = 0; i < (sizeof(device_map) / sizeof(device_map[0])); ++i) {
         // FIXME: we allowed 16-char string above but are only looking at 4?
         if (strncmp(device_map[0].port, port, 4) == 0) {
-            uart_dev = device_get_binding((char*)device_map[0].name);
+            uart_dev = device_get_binding((char *)device_map[0].name);
             break;
         }
     }
@@ -278,7 +278,7 @@ static jerry_value_t uart_init(const jerry_value_t function_obj,
 #ifdef CONFIG_UART_LINE_CTRL
     DBG_PRINT("waiting for DTR\n");
     while (1) {
-        uart_line_ctrl_get(uart_dev, LINE_CTRL_DTR, (uint32_t*)&dtr);
+        uart_line_ctrl_get(uart_dev, LINE_CTRL_DTR, (uint32_t *)&dtr);
         if (dtr) {
             break;
         }
@@ -304,7 +304,7 @@ static jerry_value_t uart_init(const jerry_value_t function_obj,
 
     int test_baud = baud;
 
-    ret = uart_line_ctrl_get(uart_dev, LINE_CTRL_BAUD_RATE, (uint32_t*)&test_baud);
+    ret = uart_line_ctrl_get(uart_dev, LINE_CTRL_BAUD_RATE, (uint32_t *)&test_baud);
     if (ret) {
         DBG_PRINT("failed to get baudrate, ret code %d\n", ret);
     } else {

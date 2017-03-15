@@ -9,7 +9,7 @@
 typedef struct zjs_promise {
     zjs_callback_id then_id;    // Callback ID for then JS callback
     zjs_callback_id catch_id;   // Callback ID for catch JS callback
-    void* user_handle;
+    void *user_handle;
     zjs_post_promise_func post;
 } zjs_promise_t;
 
@@ -22,7 +22,7 @@ zjs_promise_t *new_promise(void)
     return new;
 }
 
-static void post_promise(void* h, jerry_value_t* ret_val)
+static void post_promise(void *h, jerry_value_t *ret_val)
 {
     zjs_promise_t *handle = (zjs_promise_t *)h;
     if (handle) {
@@ -44,7 +44,7 @@ static jerry_value_t promise_resolve(const jerry_value_t function_obj,
 
     zjs_promise_t *handle = NULL;
     jerry_value_t promise_obj = zjs_get_property(this, "promise");
-    jerry_get_object_native_handle(promise_obj, (uintptr_t*)&handle);
+    jerry_get_object_native_handle(promise_obj, (uintptr_t *)&handle);
     jerry_release_value(promise_obj);
 
     if (!handle) {
@@ -78,7 +78,7 @@ static jerry_value_t promise_catch(const jerry_value_t function_obj,
 }
 
 void zjs_make_promise(jerry_value_t obj, zjs_post_promise_func post,
-                      void* handle)
+                      void *handle)
 {
     zjs_promise_t *new = new_promise();
     if (!new) {
@@ -125,7 +125,7 @@ void zjs_fulfill_promise(jerry_value_t obj, jerry_value_t argv[], uint32_t argc)
         return;
     }
 
-    jerry_get_object_native_handle(promise_obj, (uintptr_t*)&handle);
+    jerry_get_object_native_handle(promise_obj, (uintptr_t *)&handle);
     jerry_release_value(promise_obj);
     if (handle) {
         zjs_signal_callback(handle->then_id, argv,
@@ -149,7 +149,7 @@ void zjs_reject_promise(jerry_value_t obj, jerry_value_t argv[], uint32_t argc)
         return;
     }
 
-    jerry_get_object_native_handle(promise_obj, (uintptr_t*)&handle);
+    jerry_get_object_native_handle(promise_obj, (uintptr_t *)&handle);
     jerry_release_value(promise_obj);
     if (handle) {
         zjs_signal_callback(handle->catch_id, argv,

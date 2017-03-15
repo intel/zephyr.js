@@ -112,7 +112,7 @@ uint8_t process_cmd_line(int argc, char *argv[])
                 ERR_PRINT("no time argument given after '-t'\n");
                 return 0;
             } else {
-                char* str_time = argv[i + 1];
+                char *str_time = argv[i + 1];
                 exit_after = atoi(str_time);
                 ZJS_PRINT("jslinux will terminate after %lu milliseconds\n",
                           exit_after);

@@ -11,7 +11,7 @@
 #define MAX_FILENAME_SIZE MAX_FILE_NAME + 1
 
 fs_file_t *fs_open_alloc(const char *filename, const char *mode);
-int fs_close_alloc(fs_file_t * fp);
+int fs_close_alloc(fs_file_t *fp);
 int fs_exist(const char *path);
 ssize_t fs_size(fs_file_t *file);
 

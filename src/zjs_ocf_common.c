@@ -38,7 +38,7 @@ static bool ocf_foreach_prop(const jerry_value_t prop_name,
                              const jerry_value_t prop_value,
                              void *data)
 {
-    struct props_handle* handle = (struct props_handle*)data;
+    struct props_handle *handle = (struct props_handle *)data;
 
     ZJS_GET_STRING(prop_name, name, OCF_MAX_PROP_NAME_LEN);
 
@@ -63,9 +63,9 @@ static bool ocf_foreach_prop(const jerry_value_t prop_name,
  * Turn a Jerry object into an array of its properties. The returned handle
  * will contain an array of strings with all the property names.
  */
-static struct props_handle* ocf_get_all_properties(jerry_value_t resource)
+static struct props_handle *ocf_get_all_properties(jerry_value_t resource)
 {
-    struct props_handle* handle = zjs_malloc(sizeof(struct props_handle));
+    struct props_handle *handle = zjs_malloc(sizeof(struct props_handle));
 
     jerry_value_t keys_array = jerry_get_object_keys(resource);
     uint32_t arr_length = jerry_get_array_length(keys_array);
@@ -75,7 +75,7 @@ static struct props_handle* ocf_get_all_properties(jerry_value_t resource)
 
     handle->props_array = array;
     handle->size = 0;
-    handle->names_array = zjs_malloc(sizeof(char*) * arr_length);
+    handle->names_array = zjs_malloc(sizeof(char *) * arr_length);
 
     jerry_foreach_object_property(resource, ocf_foreach_prop, handle);
 
@@ -88,16 +88,16 @@ static struct props_handle* ocf_get_all_properties(jerry_value_t resource)
  * 'root' parameter should be true if this is being called on a root object,
  * otherwise it should be false and the encoder object should be provided.
  */
-void* zjs_ocf_props_setup(jerry_value_t props_object,
-                          CborEncoder* encoder,
+void *zjs_ocf_props_setup(jerry_value_t props_object,
+                          CborEncoder *encoder,
                           bool root)
 {
-    void* ret = NULL;
+    void *ret = NULL;
     int i;
-    struct props_handle* h = ocf_get_all_properties(props_object);
+    struct props_handle *h = ocf_get_all_properties(props_object);
     ret = h;
     fflush(stdout);
-    CborEncoder* enc;
+    CborEncoder *enc;
     if (root) {
         enc = &root_map;
     } else {
@@ -169,9 +169,9 @@ void* zjs_ocf_props_setup(jerry_value_t props_object,
 /*
  * Free the handle returned from get_all_ocf_properties()
  */
-void zjs_ocf_free_props(void* h)
+void zjs_ocf_free_props(void *h)
 {
-    struct props_handle* handle = (struct props_handle*)h;
+    struct props_handle *handle = (struct props_handle *)h;
     if (handle) {
         if (handle->names_array) {
             int i;
@@ -210,7 +210,7 @@ static void issue_requests(void)
 #define CONFIG_DEVICE_NAME CONFIG_BLUETOOTH_DEVICE_NAME
 #endif
 
-void zjs_set_uuid(char* uuid)
+void zjs_set_uuid(char *uuid)
 {
     jerry_value_t device = zjs_get_property(ocf_object, "device");
     if (!jerry_value_is_undefined(device)) {
@@ -336,12 +336,12 @@ static int app_init(void)
 {
     uint32_t size;
     // device props
-    char* name = NULL;
-    char* spec_version = NULL;
-    char* data_model_version = NULL;
+    char *name = NULL;
+    char *spec_version = NULL;
+    char *data_model_version = NULL;
 
     // platform props
-    char* manufacturer_name = NULL;
+    char *manufacturer_name = NULL;
 
     jerry_value_t platform = zjs_get_property(ocf_object, "platform");
     if (!jerry_value_is_undefined(platform)) {
@@ -424,7 +424,7 @@ static int app_init(void)
     return ret;
 }
 
-uint8_t main_poll_routine(void* handle)
+uint8_t main_poll_routine(void *handle)
 {
     if (oc_main_poll()) {
         return 1;

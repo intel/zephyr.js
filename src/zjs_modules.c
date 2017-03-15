@@ -119,7 +119,7 @@ module_t zjs_modules_array[] = {
 
 struct routine_map {
     zjs_service_routine func;
-    void* handle;
+    void *handle;
 };
 
 static uint8_t num_routines = 0;
@@ -158,7 +158,7 @@ static jerry_value_t native_require_handler(const jerry_value_t function_obj,
     // Linux can pass in the script at runtime, so we have to read in/parse any
     // JS modules now rather than at compile time
     char full_path[size + 9];
-    char* str;
+    char *str;
     uint32_t len;
     sprintf(full_path, "modules/%s", module);
     full_path[size + 8] = '\0';
@@ -283,7 +283,7 @@ void zjs_modules_cleanup()
 #endif
 }
 
-void zjs_register_service_routine(void* handle, zjs_service_routine func)
+void zjs_register_service_routine(void *handle, zjs_service_routine func)
 {
     if (num_routines >= NUM_SERVICE_ROUTINES) {
         DBG_PRINT(("not enough space, increase NUM_SERVICE_ROUTINES\n"));

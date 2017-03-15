@@ -17,7 +17,7 @@ typedef int16_t zjs_callback_id;
  *
  * @return              Pointer to array of jerry_value_t's
  */
-typedef jerry_value_t* (*zjs_pre_callback_func)(void* handle, uint32_t* argc);
+typedef jerry_value_t *(*zjs_pre_callback_func)(void *handle, uint32_t *argc);
 
 /*
  * Function that will be called AFTER the JS function is called.
@@ -28,14 +28,14 @@ typedef jerry_value_t* (*zjs_pre_callback_func)(void* handle, uint32_t* argc);
  * @param handle        Module specific handle
  * @param ret_val[out]  Value returned by the JS function called
  */
-typedef void (*zjs_post_callback_func)(void* handle, jerry_value_t* ret_val);
+typedef void (*zjs_post_callback_func)(void *handle, jerry_value_t *ret_val);
 
 /*
  * Function definition for a C callback
  *
  * @param handle        Handle registered by zjs_add_c_callback()
  */
-typedef void (*zjs_c_callback_func)(void* handle, void* args);
+typedef void (*zjs_c_callback_func)(void *handle, void *args);
 
 /*
  * Initialize the callback module
@@ -59,7 +59,7 @@ int zjs_get_num_callbacks(zjs_callback_id id);
  *
  * @return              Array of functions
  */
-jerry_value_t* zjs_get_callback_func_list(zjs_callback_id id, int* count);
+jerry_value_t *zjs_get_callback_func_list(zjs_callback_id id, int *count);
 
 /*
  * Remove a function from a list of callbacks
@@ -85,7 +85,7 @@ bool zjs_remove_callback_list_func(zjs_callback_id id, jerry_value_t js_func);
  */
 zjs_callback_id zjs_add_callback_list(jerry_value_t js_func,
                                       jerry_value_t this,
-                                      void* handle,
+                                      void *handle,
                                       zjs_post_callback_func post,
                                       zjs_callback_id id);
 
@@ -100,7 +100,7 @@ zjs_callback_id zjs_add_callback_list(jerry_value_t js_func,
  */
 zjs_callback_id zjs_add_callback(jerry_value_t js_func,
                                  jerry_value_t this,
-                                 void* handle,
+                                 void *handle,
                                  zjs_post_callback_func post);
 
 /*
@@ -115,7 +115,7 @@ zjs_callback_id zjs_add_callback(jerry_value_t js_func,
  */
 zjs_callback_id zjs_add_callback_once(jerry_value_t js_func,
                                       jerry_value_t this,
-                                      void* handle,
+                                      void *handle,
                                       zjs_post_callback_func post);
 
 /*
@@ -136,7 +136,7 @@ bool zjs_edit_js_func(zjs_callback_id id, jerry_value_t func);
  *
  * @return              true if edit was successful
  */
-bool zjs_edit_callback_handle(zjs_callback_id id, void* handle);
+bool zjs_edit_callback_handle(zjs_callback_id id, void *handle);
 
 /*
  * Remove a function that was registered by zjs_add_callback(). If you remove a
@@ -183,7 +183,7 @@ void zjs_signal_callback(zjs_callback_id id, const void *args, uint32_t size);
  *
  * @return              ID for the C callback
  */
-zjs_callback_id zjs_add_c_callback(void* handle, zjs_c_callback_func callback);
+zjs_callback_id zjs_add_c_callback(void *handle, zjs_c_callback_func callback);
 
 /*
  * Call a callback immediately. This should only be used when absolutely needed
@@ -195,7 +195,7 @@ zjs_callback_id zjs_add_c_callback(void* handle, zjs_c_callback_func callback);
  * @param data          Callback arguments
  * @param sz            Size of callback arguments in bytes
  */
-void zjs_call_callback(zjs_callback_id id, void* data, uint32_t sz);
+void zjs_call_callback(zjs_callback_id id, void *data, uint32_t sz);
 
 /*
  * Service the callback module. Any callback's that have been signaled will

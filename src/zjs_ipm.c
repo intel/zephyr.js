@@ -80,7 +80,7 @@ void zjs_ipm_register_callback(uint32_t msg_id, ipm_callback_t cb)
 
 #ifdef CONFIG_X86
     // x86, register for ipm message that matches the MSG_ID
-    struct zjs_ipm_callback* callback = zjs_malloc(sizeof(struct zjs_ipm_callback));
+    struct zjs_ipm_callback *callback = zjs_malloc(sizeof(struct zjs_ipm_callback));
     if (!callback) {
         ERR_PRINT("failed to allocate callback\n");
         return;

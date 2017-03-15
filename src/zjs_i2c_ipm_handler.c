@@ -7,8 +7,8 @@
 static struct k_sem i2c_sem;
 #define ZJS_I2C_TIMEOUT_TICKS                      5000
 
-static bool zjs_i2c_ipm_send_sync(zjs_ipm_message_t* send,
-                                  zjs_ipm_message_t* result) {
+static bool zjs_i2c_ipm_send_sync(zjs_ipm_message_t *send,
+                                  zjs_ipm_message_t *result) {
     send->id = MSG_ID_I2C;
     send->flags = 0 | MSG_SYNC_FLAG;
     send->user_data = (void *)result;
@@ -34,10 +34,10 @@ static void ipm_msg_receive_callback(void *context, uint32_t id,
     if (id != MSG_ID_I2C)
         return;
 
-    zjs_ipm_message_t *msg = (zjs_ipm_message_t*)(*(uintptr_t *)data);
+    zjs_ipm_message_t *msg = (zjs_ipm_message_t *)(*(uintptr_t *)data);
 
     if (msg->flags & MSG_SYNC_FLAG) {
-         zjs_ipm_message_t *result = (zjs_ipm_message_t*)msg->user_data;
+         zjs_ipm_message_t *result = (zjs_ipm_message_t *)msg->user_data;
         // synchronous ipm, copy the results
         if (result)
             memcpy(result, msg, sizeof(zjs_ipm_message_t));

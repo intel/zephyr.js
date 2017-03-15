@@ -20,7 +20,7 @@ typedef struct event {
 } event_t;
 
 typedef struct event_trigger {
-    void* handle;
+    void *handle;
     zjs_post_event post;
 } event_trigger_t;
 
@@ -29,7 +29,7 @@ typedef struct event_names {
     int idx;
 } event_names_t;
 
-void post_event(void* h, jerry_value_t* ret_val)
+void post_event(void *h, jerry_value_t *ret_val)
 {
     event_trigger_t *trigger = (event_trigger_t *)h;
     if (trigger) {
@@ -79,7 +79,7 @@ static int32_t get_callback_id(jerry_value_t event_obj)
     return callback_id;
 }
 
-void zjs_add_event_listener(jerry_value_t obj, const char* event,
+void zjs_add_event_listener(jerry_value_t obj, const char *event,
                             jerry_value_t listener)
 {
     jerry_value_t event_emitter = zjs_get_property(obj, HIDDEN_PROP("event"));
@@ -240,7 +240,7 @@ static jerry_value_t remove_all_listeners(const jerry_value_t function_obj,
     if (callback_id != -1) {
         zjs_remove_callback(callback_id);
 
-        jerry_value_t name = jerry_create_string((const jerry_char_t*)event);
+        jerry_value_t name = jerry_create_string((const jerry_char_t *)event);
         jerry_delete_property(map, (const jerry_value_t)name);
         jerry_release_value(name);
     } else {
@@ -402,7 +402,7 @@ static jerry_value_t get_listeners(const jerry_value_t function_obj,
 
     int count;
     int i;
-    jerry_value_t* func_array = zjs_get_callback_func_list(callback_id, &count);
+    jerry_value_t *func_array = zjs_get_callback_func_list(callback_id, &count);
     jerry_value_t ret_array = jerry_create_array(count);
     for (i = 0; i < count; ++i) {
         jerry_set_property_by_index(ret_array, i, func_array[i]);
@@ -412,11 +412,11 @@ static jerry_value_t get_listeners(const jerry_value_t function_obj,
 }
 
 bool zjs_trigger_event(jerry_value_t obj,
-                       const char* event,
+                       const char *event,
                        const jerry_value_t *argv,
                        uint32_t argc,
                        zjs_post_event post,
-                       void* h)
+                       void *h)
 {
     event_trigger_t *trigger = zjs_malloc(sizeof(event_trigger_t));
     if (!trigger) {
@@ -459,11 +459,11 @@ bool zjs_trigger_event(jerry_value_t obj,
 }
 
 bool zjs_trigger_event_now(jerry_value_t obj,
-                           const char* event,
+                           const char *event,
                            jerry_value_t argv[],
                            uint32_t argc,
                            zjs_post_event post,
-                           void* h)
+                           void *h)
 {
     event_trigger_t *trigger = zjs_malloc(sizeof(event_trigger_t));
     if (!trigger) {

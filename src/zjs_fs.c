@@ -54,7 +54,7 @@ static jerry_value_t invalid_args(void)
     return zjs_error("invalid arguments");
 }
 
-static file_handle_t* find_file(int fd)
+static file_handle_t *find_file(int fd)
 {
     file_handle_t *cur = opened_handles;
     while (cur) {
@@ -66,7 +66,7 @@ static file_handle_t* find_file(int fd)
     return NULL;
 }
 
-static file_handle_t* new_file(void)
+static file_handle_t *new_file(void)
 {
     int fd = 0;
     while (IS_SET(fd_used, fd)) {
@@ -76,7 +76,7 @@ static file_handle_t* new_file(void)
         }
     }
 
-    file_handle_t* handle = zjs_malloc(sizeof(file_handle_t));
+    file_handle_t *handle = zjs_malloc(sizeof(file_handle_t));
     if (!handle) {
         return NULL;
     }
@@ -120,7 +120,7 @@ static int file_exists(const char *path)
     return !res;
 }
 
-static uint16_t get_mode(char* str)
+static uint16_t get_mode(char *str)
 {
     uint16_t mode = 0;
     if (strcmp(str, "r") == 0) {
@@ -144,9 +144,9 @@ static jerry_value_t is_file(const jerry_value_t function_obj,
                              const jerry_value_t argv[],
                              const jerry_length_t argc)
 {
-    struct fs_dirent* entry;
+    struct fs_dirent *entry;
 
-    if (!jerry_get_object_native_handle(this, (uintptr_t*)&entry)) {
+    if (!jerry_get_object_native_handle(this, (uintptr_t *)&entry)) {
         return zjs_error("native handle not found");
     }
     if (entry->type == FS_DIR_ENTRY_FILE) {
@@ -161,9 +161,9 @@ static jerry_value_t is_directory(const jerry_value_t function_obj,
                                   const jerry_value_t argv[],
                                   const jerry_length_t argc)
 {
-    struct fs_dirent* entry;
+    struct fs_dirent *entry;
 
-    if (!jerry_get_object_native_handle(this, (uintptr_t*)&entry)) {
+    if (!jerry_get_object_native_handle(this, (uintptr_t *)&entry)) {
         return zjs_error("native handle not found");
     }
     if (entry->type == FS_DIR_ENTRY_DIR) {
@@ -175,18 +175,18 @@ static jerry_value_t is_directory(const jerry_value_t function_obj,
 
 static void free_stats(const uintptr_t native)
 {
-    struct zfs_dirent* entry = (struct zfs_dirent*)native;
+    struct zfs_dirent *entry = (struct zfs_dirent *)native;
     if (entry) {
         zjs_free(entry);
     }
 }
 
-static jerry_value_t create_stats_obj(struct fs_dirent* entry)
+static jerry_value_t create_stats_obj(struct fs_dirent *entry)
 {
 
     jerry_value_t stats_obj = jerry_create_object();
 
-    struct fs_dirent* new_entry = zjs_malloc(sizeof(struct fs_dirent));
+    struct fs_dirent *new_entry = zjs_malloc(sizeof(struct fs_dirent));
     if (!new_entry) {
         return zjs_error("malloc failed");
     }
@@ -243,7 +243,7 @@ static jerry_value_t zjs_open(const jerry_value_t function_obj,
         return zjs_error("file doesn't exist");
     }
 
-    file_handle_t* handle = new_file();
+    file_handle_t *handle = new_file();
     if (!handle) {
         return zjs_error("malloc failed");
     }
@@ -307,7 +307,7 @@ static jerry_value_t zjs_close(const jerry_value_t function_obj,
     }
 #endif
 
-    file_handle_t* handle;
+    file_handle_t *handle;
     handle = find_file((int)jerry_get_number_value(argv[0]));
     if (!handle) {
         return zjs_error("file not found");
@@ -421,7 +421,7 @@ static jerry_value_t zjs_read(const jerry_value_t function_obj,
     }
 #endif
 
-    file_handle_t* handle;
+    file_handle_t *handle;
     int err = 0;
 
     handle = find_file((int)jerry_get_number_value(argv[0]));
@@ -433,7 +433,7 @@ static jerry_value_t zjs_read(const jerry_value_t function_obj,
         return zjs_error("file is not open for reading");
     }
 
-    zjs_buffer_t* buffer = zjs_buffer_find(argv[1]);
+    zjs_buffer_t *buffer = zjs_buffer_find(argv[1]);
     double offset = jerry_get_number_value(argv[2]);
     double length = jerry_get_number_value(argv[3]);
 
@@ -532,7 +532,7 @@ static jerry_value_t zjs_write(const jerry_value_t function_obj,
     }
 #endif
 
-    file_handle_t* handle;
+    file_handle_t *handle;
     uint32_t offset = 0;
     uint32_t length = 0;
     uint32_t position = 0;
@@ -547,7 +547,7 @@ static jerry_value_t zjs_write(const jerry_value_t function_obj,
         return zjs_error("file is not open for writing");
     }
 
-    zjs_buffer_t* buffer = zjs_buffer_find(argv[1]);
+    zjs_buffer_t *buffer = zjs_buffer_find(argv[1]);
 
     switch (optcount) {
     case 3:
@@ -644,7 +644,7 @@ static jerry_value_t zjs_truncate(const jerry_value_t function_obj,
 #endif
     fs_file_t fp;
     if (jerry_value_is_number(argv[0])) {
-        file_handle_t* handle;
+        file_handle_t *handle;
         handle = find_file((int)jerry_get_number_value(argv[0]));
         if (!handle) {
             return zjs_error("file not found");
@@ -950,21 +950,21 @@ static jerry_value_t zjs_write_file(const jerry_value_t function_obj,
     uint8_t is_buf = 0;
     jerry_size_t size;
     int error = 0;
-    char* data = NULL;
+    char *data = NULL;
     uint32_t length;
     if (jerry_value_is_string(argv[1])) {
         size = 256;
         data = zjs_alloc_from_jstring(argv[1], &size);
         length = size;
     } else {
-        zjs_buffer_t* buffer = zjs_buffer_find(argv[1]);
+        zjs_buffer_t *buffer = zjs_buffer_find(argv[1]);
         data = buffer->buffer;
         length = buffer->bufsize;
         is_buf = 1;
     }
 
     size = 32;
-    char* path = zjs_alloc_from_jstring(argv[0], &size);
+    char *path = zjs_alloc_from_jstring(argv[0], &size);
     if (!path) {
         if (data && !is_buf) {
             zjs_free(data);
