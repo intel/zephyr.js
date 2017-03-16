@@ -27,9 +27,11 @@
 #endif  // ZJS_TRACE_MALLOC
 #endif  // ZJS_LINUX_BUILD
 
-void zjs_set_property(const jerry_value_t obj, const char *str,
+void zjs_set_property(const jerry_value_t obj, const char *name,
                       const jerry_value_t prop);
-jerry_value_t zjs_get_property (const jerry_value_t obj, const char *str);
+void zjs_set_readonly_property(const jerry_value_t obj, const char *name,
+                               const jerry_value_t prop);
+jerry_value_t zjs_get_property (const jerry_value_t obj, const char *name);
 bool zjs_delete_property(const jerry_value_t obj, const char *str);
 
 typedef struct zjs_native_func {
@@ -46,6 +48,8 @@ typedef struct zjs_native_func {
 void zjs_obj_add_functions(jerry_value_t obj, zjs_native_func_t *funcs);
 
 void zjs_obj_add_boolean(jerry_value_t obj, bool flag, const char *name);
+void zjs_obj_add_readonly_boolean(jerry_value_t obj, bool flag,
+                                  const char *name);
 void zjs_obj_add_function(jerry_value_t obj, void *function, const char *name);
 void zjs_obj_add_object(jerry_value_t parent, jerry_value_t child,
                         const char *name);
