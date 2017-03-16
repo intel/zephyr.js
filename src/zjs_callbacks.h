@@ -21,14 +21,11 @@ typedef jerry_value_t *(*zjs_pre_callback_func)(void *handle, uint32_t *argc);
 
 /*
  * Function that will be called AFTER the JS function is called.
- * This should do any cleanup/release of function arguments. This
- * also gives the module access to the value returned by the JS
- * function.
+ * This should do any cleanup/release of function arguments.
  *
  * @param handle        Module specific handle
- * @param ret_val[out]  Value returned by the JS function called
  */
-typedef void (*zjs_post_callback_func)(void *handle, jerry_value_t *ret_val);
+typedef void (*zjs_post_callback_func)(void *handle);
 
 /*
  * Function definition for a C callback
