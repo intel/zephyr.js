@@ -29,7 +29,7 @@ typedef struct event_names {
     int idx;
 } event_names_t;
 
-void post_event(void *h, jerry_value_t *ret_val)
+void post_event(void *h)
 {
     event_trigger_t *trigger = (event_trigger_t *)h;
     if (trigger) {
