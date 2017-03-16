@@ -1,5 +1,7 @@
 // Copyright (c) 2017, Intel Corporation.
 
+#include <string.h>
+
 // ZJS includes
 #include "zjs_util.h"
 
@@ -105,16 +107,15 @@ static char* construct_message(jerry_value_t this, jerry_value_t func,
     }
     jerry_release_value(keys_array);
 
-    int nlen = strlen(name);
     int mlen = strlen(message);
-    char *msg = zjs_malloc(mlen + nlen + 4);
+    char *msg = zjs_malloc(mlen + size + 4);
 
-    memcpy(msg, name, nlen);
-    msg[nlen] = '(';
-    msg[nlen + 1] = ')';
-    msg[nlen + 2] = ':';
-    memcpy(msg + nlen + 3, message, mlen);
-    msg[mlen + nlen + 3] = '\0';
+    memcpy(msg, name, size);
+    msg[size] = '(';
+    msg[size + 1] = ')';
+    msg[size + 2] = ':';
+    memcpy(msg + size + 3, message, mlen);
+    msg[mlen + size + 3] = '\0';
 
     return msg;
 }
