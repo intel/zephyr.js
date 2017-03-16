@@ -1,5 +1,7 @@
 // Copyright (c) 2017, Intel Corporation.
 
+#include <string.h>
+
 // ZJS includes
 #include "zjs_util.h"
 
@@ -81,6 +83,81 @@ void zjs_error_cleanup()
     for (int i=0; i<count; i++) {
         jerry_release_value(error_types[i].ctor);
     }
+}
+
+static char* construct_message(jerry_value_t this, jerry_value_t func,
+                               const char *message)
+{
+    jerry_size_t size = 64;
+    char name[size];
+    jerry_value_t keys_array = jerry_get_object_keys(this);
+    if (!jerry_value_is_array(keys_array)) {
+        return NULL;
+    }
+    uint32_t arr_length = jerry_get_array_length(keys_array);
+    int i;
+    for (i = 0; i < arr_length; ++i) {
+        jerry_value_t val = jerry_get_property_by_index(keys_array, i);
+        zjs_copy_jstring(val, name, &size);
+        jerry_value_t func_val = zjs_get_property(this, name);
+        if (func_val == func) {
+            jerry_release_value(val);
+            jerry_release_value(func_val);
+            break;
+        }
+        jerry_release_value(val);
+        jerry_release_value(func_val);
+    }
+    jerry_release_value(keys_array);
+
+    int mlen = strlen(message);
+    char *msg = zjs_malloc(mlen + size + 4);
+
+    memcpy(msg, name, size);
+    msg[size] = '(';
+    msg[size + 1] = ')';
+    msg[size + 2] = ':';
+    memcpy(msg + size + 3, message, mlen);
+    msg[mlen + size + 3] = '\0';
+
+    return msg;
+}
+
+jerry_value_t zjs_custom_error_with_func(jerry_value_t this,
+                                         jerry_value_t func,
+                                         const char *name,
+                                         const char *message)
+{
+    jerry_value_t error;
+    char *msg = construct_message(this, func, message);
+    if (!msg) {
+        // Problem finding function
+        DBG_PRINT("calling function not found\n");
+        error = zjs_custom_error(name, message);
+    } else {
+        error = zjs_custom_error(name, msg);
+        zjs_free(msg);
+    }
+    return error;
+}
+
+jerry_value_t zjs_error_with_func(jerry_value_t this,
+                                  jerry_value_t func,
+                                  zjs_error_type_t type,
+                                  const char *message)
+
+{
+    jerry_value_t error;
+    char *msg = construct_message(this, func, message);
+    if (!msg) {
+        // Problem finding function
+        DBG_PRINT("calling function not found\n");
+        error = zjs_standard_error(type, message);
+    } else {
+        error = zjs_standard_error(type, msg);
+        zjs_free(msg);
+    }
+    return error;
 }
 
 jerry_value_t zjs_custom_error(const char *name, const char *message)
