@@ -328,8 +328,7 @@ static void zjs_ble_write_c_callback(void *handle, void *argv)
     jerry_set_object_native_handle(callback, (uintptr_t)handle, NULL);
 
     jerry_value_t args[4] = {buf_obj, offset, without_response, callback};
-    ZVAL rval = jerry_call_function(cb->js_callback,
-                                                  chrc->chrc_obj, args, 4);
+    ZVAL rval = jerry_call_function(cb->js_callback, chrc->chrc_obj, args, 4);
     if (jerry_value_has_error_flag(rval)) {
         DBG_PRINT("failed to call onWriteRequest function\n");
     }
@@ -413,8 +412,7 @@ static void zjs_ble_subscribe_c_callback(void *handle, void *argv)
         jerry_create_external_function(zjs_ble_update_value_callback_function);
 
     jerry_value_t args[2] = {max_size, callback};
-    ZVAL rval = jerry_call_function(cb->js_callback,
-                                                  chrc->chrc_obj, args, 2);
+    ZVAL rval = jerry_call_function(cb->js_callback, chrc->chrc_obj, args, 2);
     if (jerry_value_has_error_flag(rval)) {
         DBG_PRINT("failed to call onSubscribe function\n");
     }
@@ -748,8 +746,7 @@ static jerry_value_t zjs_ble_start_advertising(const jerry_value_t function_obj,
     //   back the results asynchronously through hoops?
     int err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad),
                               sd, ARRAY_SIZE(sd));
-    ZVAL error = err ? zjs_error("advertising failed") :
-        jerry_create_null();
+    ZVAL error = err ? zjs_error("advertising failed") : jerry_create_null();
 
     zjs_trigger_event(ble_conn.ble_obj, "advertisingStart", &error,
                       1, NULL, NULL);
@@ -898,8 +895,7 @@ static bool zjs_ble_parse_service(ble_service_t *service)
     }
     service->uuid = zjs_ble_new_uuid_16(strtoul(uuid, NULL, 16));
 
-    ZVAL v_chrcs =
-        zjs_get_property(service_obj, "characteristics");
+    ZVAL v_chrcs = zjs_get_property(service_obj, "characteristics");
     if (!jerry_value_is_array(v_chrcs)) {
         ERR_PRINT("characteristics is empty or not array\n");
         return false;
@@ -1124,8 +1120,7 @@ static jerry_value_t zjs_ble_set_services(const jerry_value_t function_obj,
     bool success = true;
     ble_service_t *previous = NULL;
     for (int i = 0; i < array_size; i++) {
-        ZVAL v_service =
-            jerry_get_property_by_index(v_services, i);
+        ZVAL v_service = jerry_get_property_by_index(v_services, i);
 
         if (!jerry_value_is_object(v_service)) {
             return zjs_error("zjs_ble_set_services: service is not object");
@@ -1172,8 +1167,7 @@ static jerry_value_t zjs_ble_set_services(const jerry_value_t function_obj,
     if (argc > 1) {
         ZVAL arg = success ? ZJS_UNDEFINED :
               jerry_create_string("failed to register services");
-        ZVAL rval = jerry_call_function(argv[1], ZJS_UNDEFINED,
-                                                      &arg, 1);
+        ZVAL rval = jerry_call_function(argv[1], ZJS_UNDEFINED, &arg, 1);
         if (jerry_value_has_error_flag(rval)) {
             DBG_PRINT("failed to call callback function\n");
         }

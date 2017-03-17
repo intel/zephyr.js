@@ -527,7 +527,7 @@ static void ocf_get_handler(oc_client_response_t *data)
             struct client_resource *resource = h->res;
             if (data->code == OC_STATUS_OK) {
                 ZVAL resource_val = create_resource(resource->device_id,
-                                                     resource->resource_path);
+                                                    resource->resource_path);
                 ZVAL properties_val = get_props_from_response(data);
 
                 zjs_set_property(resource_val, "properties", properties_val);
@@ -542,8 +542,8 @@ static void ocf_get_handler(oc_client_response_t *data)
                 /*
                  * TODO: change to use real errors
                  */
-                ZVAL err = make_ocf_error("NetworkError",
-                                           "Error code from GET", resource);
+                ZVAL err = make_ocf_error("NetworkError", "Error code from GET",
+                                          resource);
                 zjs_reject_promise(h->promise_obj, &err, 1);
 
                 ERR_PRINT("GET response code %d\n", data->code);
@@ -663,12 +663,12 @@ static void put_finished(oc_client_response_t *data)
                 DBG_PRINT("PUT response OK, device_id=%s\n",
                           resource->device_id);
                 ZVAL resource_val = create_resource(resource->device_id,
-                                                     resource->resource_path);
+                                                    resource->resource_path);
                 zjs_fulfill_promise(h->promise_obj, &resource_val, 1);
             } else {
                 ERR_PRINT("PUT response code %d\n", data->code);
                 ZVAL err = make_ocf_error("NetworkError",
-                                           "PUT response error code", resource);
+                                          "PUT response error code", resource);
                 zjs_reject_promise(h->promise_obj, &err, 1);
            }
         }
@@ -721,7 +721,7 @@ static jerry_value_t ocf_update(const jerry_value_t function_val,
         if (!oc_do_put()) {
             ERR_PRINT("error sending PUT request\n");
             ZVAL err = make_ocf_error("NetworkError", "PUT call failed",
-                                       resource);
+                                      resource);
             zjs_reject_promise(promise, &err, 1);
         }
     } else {
@@ -749,7 +749,7 @@ static void delete_finished(oc_client_response_t *data)
                       resource->device_id);
         } else {
             ZVAL err = make_ocf_error("NetworkError", "DELETE had error code",
-                                       resource);
+                                      resource);
             zjs_reject_promise(h->promise_obj, &err, 1);
             ERR_PRINT("DELETE response code %d\n", data->code);
         }

@@ -240,7 +240,7 @@ static jerry_value_t uart_init(const jerry_value_t function_obj,
     if (!size) {
         DBG_PRINT("port length is too long\n");
         ZVAL error = make_uart_error("TypeMismatchError",
-                                      "port length is too long");
+                                     "port length is too long");
         zjs_reject_promise(promise, &error, 1);
         return promise;
     }
@@ -260,7 +260,7 @@ static jerry_value_t uart_init(const jerry_value_t function_obj,
     if (uart_dev == NULL) {
         DBG_PRINT("could not find port %s\n", port);
         ZVAL error = make_uart_error("NotFoundError",
-                                      "could not find port provided");
+                                     "could not find port provided");
         zjs_reject_promise(promise, &error, 1);
         return promise;
     }
@@ -302,7 +302,7 @@ static jerry_value_t uart_init(const jerry_value_t function_obj,
         if (test_baud != baud) {
             DBG_PRINT("baudrate was not set successfully");
             ZVAL error = make_uart_error("InternalError",
-                                          "baud could not be set");
+                                         "baud could not be set");
             zjs_reject_promise(promise, &error, 1);
             return promise;
         }
