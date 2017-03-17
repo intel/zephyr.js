@@ -134,7 +134,7 @@ static void udp_received(struct net_context *context,
     net_nbuf_unref(net_buf);
 
     jerry_value_t args[2] = {buf_js, rinfo};
-    zjs_signal_callback(handle->message_cb_id, &args, sizeof(args));
+    zjs_signal_callback(handle->message_cb_id, args, 2);
     jerry_release_value(buf_js);
     jerry_release_value(rinfo);
 }
