@@ -171,7 +171,7 @@ analyze: $(JS)
 		echo "ccflags-y += -DZJS_SNAPSHOT_BUILD" >> src/Makefile; \
 	fi
 ifeq ($(DEV), ashell)
-	@cat fragments/prj.mdef.dev >> prj.mdef
+	@cat fragments/prj.mdef.ashell >> prj.mdef
 endif
 
 	@echo "ccflags-y += $(shell ./scripts/analyze.sh $(BOARD) $(JS) $(CONFIG) $(DEV))" | tee -a src/Makefile arc/src/Makefile
@@ -192,14 +192,15 @@ update:
 -.PHONY: setup
 setup:
 	@echo "# This is a generated file" > prj.conf
+	@cat fragments/prj.conf.base >> prj.conf
+
 ifeq ($(BOARD), qemu_x86)
 	@cat fragments/prj.conf.qemu_x86 >> prj.conf
 else
 ifeq ($(DEV), ashell)
-	@cat fragments/prj.conf.arduino_101_dev >> prj.conf
-else
-	@cat fragments/prj.conf.base >> prj.conf
+	@cat fragments/prj.conf.ashell >> prj.conf
 endif
+
 ifeq ($(BOARD), arduino_101)
 	@cat fragments/prj.conf.arduino_101 >> prj.conf
 	@printf "CONFIG_PHYS_RAM_ADDR=0xA800%x\n" $$(((80 - $(RAM)) * 1024)) >> prj.conf
