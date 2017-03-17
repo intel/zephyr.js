@@ -52,8 +52,8 @@ static bool ocf_foreach_prop(const jerry_value_t prop_name,
         handle->names_array[handle->size] = zjs_malloc(jerry_get_string_size(prop_name) + 1);
         memcpy(handle->names_array[handle->size], name, strlen(name));
         handle->names_array[handle->size][strlen(name)] = '\0';
-        jerry_value_t ret = jerry_set_property_by_index(handle->props_array, handle->size++, prop_value);
-        jerry_release_value(ret);
+        ZVAL(ret) = jerry_set_property_by_index(handle->props_array,
+                                                handle->size++, prop_value);
     }
 
     return true;
@@ -67,13 +67,10 @@ static struct props_handle *ocf_get_all_properties(jerry_value_t resource)
 {
     struct props_handle *handle = zjs_malloc(sizeof(struct props_handle));
 
-    jerry_value_t keys_array = jerry_get_object_keys(resource);
+    ZVAL(keys_array) = jerry_get_object_keys(resource);
     uint32_t arr_length = jerry_get_array_length(keys_array);
-    jerry_value_t array = jerry_create_array(arr_length - 1);
 
-    jerry_release_value(keys_array);
-
-    handle->props_array = array;
+    handle->props_array = jerry_create_array(arr_length - 1);
     handle->size = 0;
     handle->names_array = zjs_malloc(sizeof(char *) * arr_length);
 
@@ -105,7 +102,7 @@ void *zjs_ocf_props_setup(jerry_value_t props_object,
     }
 
     for (i = 0; i < h->size; ++i) {
-        jerry_value_t prop = jerry_get_property_by_index(h->props_array, i);
+        ZVAL(prop) = jerry_get_property_by_index(h->props_array, i);
 
         if (jerry_value_is_number(prop)) {
             // Number could be double, int, uint
@@ -159,8 +156,6 @@ void *zjs_ocf_props_setup(jerry_value_t props_object,
             zjs_rep_close_array(enc, &child);
             DBG_PRINT("]\n");
         }
-
-        jerry_release_value(prop);
     }
 
     return ret;
@@ -212,20 +207,19 @@ static void issue_requests(void)
 
 void zjs_set_uuid(char *uuid)
 {
-    jerry_value_t device = zjs_get_property(ocf_object, "device");
+    ZVAL(device) = zjs_get_property(ocf_object, "device");
     if (!jerry_value_is_undefined(device)) {
         zjs_obj_add_string(device, uuid, "uuid");
     }
-    jerry_release_value(device);
 }
 
 static void platform_init(void *data)
 {
     uint32_t size;
-    jerry_value_t platform = zjs_get_property(ocf_object, "platform");
+    ZVAL(platform) = zjs_get_property(ocf_object, "platform");
     if (!jerry_value_is_undefined(platform)) {
         // osVersion
-        jerry_value_t os_version = zjs_get_property(platform, "osVersion");
+        ZVAL(os_version) = zjs_get_property(platform, "osVersion");
         if (!jerry_value_is_undefined(os_version) &&
             jerry_value_is_string(os_version)) {
             size = 8;
@@ -237,10 +231,9 @@ static void platform_init(void *data)
                 ERR_PRINT("osVersion string is too long\n");
             }
         }
-        jerry_release_value(os_version);
 
         // model
-        jerry_value_t model = zjs_get_property(platform, "model");
+        ZVAL(model) = zjs_get_property(platform, "model");
         if (!jerry_value_is_undefined(model) &&
             jerry_value_is_string(model)) {
             size = 32;
@@ -252,10 +245,9 @@ static void platform_init(void *data)
                 ERR_PRINT("model string is too long\n");
             }
         }
-        jerry_release_value(model);
 
         // manufacturerURL
-        jerry_value_t manuf_url = zjs_get_property(platform, "manufacturerURL");
+        ZVAL(manuf_url) = zjs_get_property(platform, "manufacturerURL");
         if (!jerry_value_is_undefined(manuf_url) &&
             jerry_value_is_string(manuf_url)) {
             size = 64;
@@ -267,10 +259,9 @@ static void platform_init(void *data)
                 ERR_PRINT("manufacturerURL string is too long\n");
             }
         }
-        jerry_release_value(manuf_url);
 
         // manufacturerDate
-        jerry_value_t manuf_date = zjs_get_property(platform, "manufacturerDate");
+        ZVAL(manuf_date) = zjs_get_property(platform, "manufacturerDate");
         if (!jerry_value_is_undefined(manuf_date) &&
             jerry_value_is_string(manuf_date)) {
             size = 12;
@@ -282,10 +273,9 @@ static void platform_init(void *data)
                 ERR_PRINT("manufacturerDate string is too long\n");
             }
         }
-        jerry_release_value(manuf_date);
 
         // platformVersion
-        jerry_value_t plat_ver = zjs_get_property(platform, "platformVersion");
+        ZVAL(plat_ver) = zjs_get_property(platform, "platformVersion");
         if (!jerry_value_is_undefined(plat_ver) &&
             jerry_value_is_string(plat_ver)) {
             size = 8;
@@ -297,10 +287,9 @@ static void platform_init(void *data)
                 ERR_PRINT("platformVersion string is too long\n");
             }
         }
-        jerry_release_value(plat_ver);
 
         // firmwareVersion
-        jerry_value_t fw_ver = zjs_get_property(platform, "firmwareVersion");
+        ZVAL(fw_ver) = zjs_get_property(platform, "firmwareVersion");
         if (!jerry_value_is_undefined(fw_ver) &&
             jerry_value_is_string(fw_ver)) {
             size = 8;
@@ -312,10 +301,9 @@ static void platform_init(void *data)
                 ERR_PRINT("firmwareVersion string is too long\n");
             }
         }
-        jerry_release_value(fw_ver);
 
         // supportURL
-        jerry_value_t supp_url = zjs_get_property(platform, "supportURL");
+        ZVAL(supp_url) = zjs_get_property(platform, "supportURL");
         if (!jerry_value_is_undefined(supp_url) &&
             jerry_value_is_string(supp_url)) {
             size = 64;
@@ -327,9 +315,7 @@ static void platform_init(void *data)
                 ERR_PRINT("supportURL string is too long\n");
             }
         }
-        jerry_release_value(supp_url);
     }
-    jerry_release_value(platform);
 }
 
 static int app_init(void)
@@ -343,9 +329,9 @@ static int app_init(void)
     // platform props
     char *manufacturer_name = NULL;
 
-    jerry_value_t platform = zjs_get_property(ocf_object, "platform");
+    ZVAL(platform) = zjs_get_property(ocf_object, "platform");
     if (!jerry_value_is_undefined(platform)) {
-        jerry_value_t manuf_name = zjs_get_property(platform, "manufacturerName");
+        ZVAL(manuf_name) = zjs_get_property(platform, "manufacturerName");
         if (!jerry_value_is_undefined(manuf_name) &&
             jerry_value_is_string(manuf_name)) {
             size = 32;
@@ -354,9 +340,7 @@ static int app_init(void)
                 ERR_PRINT("manufacturerName is too long\n");
             }
         }
-        jerry_release_value(manuf_name);
     }
-    jerry_release_value(platform);
 
     int ret = oc_init_platform((manufacturer_name) ? manufacturer_name : "ZJS",
                                platform_init,
@@ -364,9 +348,9 @@ static int app_init(void)
     if (manufacturer_name) {
         zjs_free(manufacturer_name);
     }
-    jerry_value_t device  = zjs_get_property(ocf_object, "device");
+    ZVAL(device)  = zjs_get_property(ocf_object, "device");
     if (!jerry_value_is_undefined(device)) {
-        jerry_value_t dev_name = zjs_get_property(device, "name");
+        ZVAL(dev_name) = zjs_get_property(device, "name");
         if (!jerry_value_is_undefined(dev_name) &&
             jerry_value_is_string(dev_name)) {
             size = 32;
@@ -375,8 +359,8 @@ static int app_init(void)
                 ERR_PRINT("name is too long\n");
             }
         }
-        jerry_release_value(dev_name);
-        jerry_value_t spec_ver = zjs_get_property(device, "coreSpecVersion");
+
+        ZVAL(spec_ver) = zjs_get_property(device, "coreSpecVersion");
         if (!jerry_value_is_undefined(spec_ver) &&
             jerry_value_is_string(spec_ver)) {
             size = 8;
@@ -385,13 +369,13 @@ static int app_init(void)
                 ERR_PRINT("coreSpecVersion is too long\n");
             }
         }
-        jerry_release_value(spec_ver);
+
         /*
          * TODO: This property is defined as a "list of supported data models"
          *       Iotivity-constrained just allows a "data model version" to be
          *       inputed. For now a single "data model version" will be used.
          */
-        jerry_value_t data_model_ver = zjs_get_property(device, "dataModels");
+        ZVAL(data_model_ver) = zjs_get_property(device, "dataModels");
         if (!jerry_value_is_undefined(data_model_ver) &&
             jerry_value_is_string(data_model_ver)) {
             size = 8;
@@ -400,9 +384,8 @@ static int app_init(void)
                 ERR_PRINT("dataModels string is too long\n");
             }
         }
-        jerry_release_value(data_model_ver);
     }
-    jerry_release_value(device);
+
     /*
      * TODO: uuid and url are automatically generated and cannot be set from JS
      */
@@ -458,23 +441,22 @@ jerry_value_t zjs_ocf_init()
 {
     ocf_object = jerry_create_object();
 
-    jerry_value_t device = ZJS_UNDEFINED;
+    ZVAL(device) = ZJS_UNDEFINED;
     zjs_set_property(ocf_object, "device", device);
-    jerry_release_value(device);
 
-    jerry_value_t platform = ZJS_UNDEFINED;
+    ZVAL(platform) = ZJS_UNDEFINED;
     zjs_set_property(ocf_object, "platform", platform);
-    jerry_release_value(platform);
+
 #ifdef OC_CLIENT
-    jerry_value_t client = zjs_ocf_client_init();
+    ZVAL(client) = zjs_ocf_client_init();
     zjs_set_property(ocf_object, "client", client);
-    jerry_release_value(client);
 #endif
+
 #ifdef OC_SERVER
-    jerry_value_t server = zjs_ocf_server_init();
+    ZVAL(server) = zjs_ocf_server_init();
     zjs_set_property(ocf_object, "server", server);
-    jerry_release_value(server);
 #endif
+
 #ifdef ZJS_CONFIG_BLE_ADDRESS
     zjs_obj_add_function(ocf_object, zjs_ocf_set_ble_address, "setBleAddress");
 #endif

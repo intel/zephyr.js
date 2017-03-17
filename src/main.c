@@ -230,6 +230,8 @@ int main(int argc, char *argv[])
         goto error;
     }
 
+    // NOTE: don't use ZVAL on these because we want to release
+    //   them early, here
 #ifndef ZJS_SNAPSHOT_BUILD
     jerry_release_value(code_eval);
 #endif

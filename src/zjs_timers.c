@@ -124,21 +124,6 @@ static bool delete_timer(int32_t id)
     return false;
 }
 
-void zjs_timers_cleanup()
-{
-    while (zjs_timers) {
-        zjs_timer_t *tm = zjs_timers;
-        for (int i = 0; i < tm->argc; ++i) {
-            jerry_release_value(tm->argv[i]);
-        }
-        zjs_port_timer_stop(&tm->timer);
-        zjs_remove_callback(tm->callback_id);
-        zjs_free(tm->argv);
-        zjs_timers = tm->next;
-        zjs_free(tm);
-    }
-}
-
 static jerry_value_t add_timer_helper(const jerry_value_t function_obj,
                                       const jerry_value_t this,
                                       const jerry_length_t argc,
@@ -245,7 +230,7 @@ uint8_t zjs_timers_process_events()
 
 void zjs_timers_init()
 {
-    jerry_value_t global_obj = jerry_get_global_object();
+    ZVAL(global_obj) = jerry_get_global_object();
 
     // create the C handler for setInterval JS call
     zjs_obj_add_function(global_obj, native_set_interval_handler,
@@ -258,5 +243,19 @@ void zjs_timers_init()
     // create the C handler for clearTimeout JS call (same as clearInterval)
     zjs_obj_add_function(global_obj, native_clear_interval_handler,
                          "clearTimeout");
-    jerry_release_value(global_obj);
+}
+
+void zjs_timers_cleanup()
+{
+    while (zjs_timers) {
+        zjs_timer_t *tm = zjs_timers;
+        for (int i = 0; i < tm->argc; ++i) {
+            jerry_release_value(tm->argv[i]);
+        }
+        zjs_port_timer_stop(&tm->timer);
+        zjs_remove_callback(tm->callback_id);
+        zjs_free(tm->argv);
+        zjs_timers = tm->next;
+        zjs_free(tm);
+    }
 }

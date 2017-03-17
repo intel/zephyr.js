@@ -51,7 +51,7 @@ static jerry_value_t zjs_i2c_read_base(const jerry_value_t this,
     uint32_t bus;
     zjs_obj_get_uint32(this, "bus", &bus);
     uint32_t address = (uint32_t)jerry_get_number_value(argv[0]);
-    jerry_value_t buf_obj = zjs_buffer_create(size);
+    ZVAL(buf_obj) = zjs_buffer_create(size);
     zjs_buffer_t *buf;
 
     if (jerry_value_is_object(buf_obj)) {
@@ -64,7 +64,6 @@ static jerry_value_t zjs_i2c_read_base(const jerry_value_t this,
         }
     }
     else {
-        jerry_release_value(buf_obj);
         return zjs_error("zjs_i2c_read_base: buffer creation failed");
     }
 
@@ -88,7 +87,7 @@ static jerry_value_t zjs_i2c_read_base(const jerry_value_t this,
         }
     }
 
-    return buf_obj;
+    return jerry_acquire_value(buf_obj);
 }
 
 static jerry_value_t zjs_i2c_read(const jerry_value_t function_obj,

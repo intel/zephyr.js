@@ -65,22 +65,20 @@ static volatile bool rx = false;
 static jerry_value_t make_uart_error(const char *name, const char *msg)
 {
 
-    jerry_value_t ret = jerry_create_object();
+    ZVAL(ret) = jerry_create_object();
     if (name) {
         zjs_obj_add_string(ret, name, "name");
     } else {
         DBG_PRINT("error must have a name\n");
-        jerry_release_value(ret);
         return ZJS_UNDEFINED;
     }
     if (msg) {
         zjs_obj_add_string(ret, msg, "message");
     } else {
         DBG_PRINT("error must have a message\n");
-        jerry_release_value(ret);
         return ZJS_UNDEFINED;
     }
-    return ret;
+    return jerry_acquire_value(ret);
 }
 
 static uart_handle *new_uart_handle(void)
@@ -175,10 +173,8 @@ static jerry_value_t uart_write(const jerry_value_t function_obj,
         zjs_fulfill_promise(promise, NULL, 0);
     }
     else {
-        jerry_value_t error = make_uart_error("WriteError",
-                "incomplete write");
+        ZVAL(error) = make_uart_error("WriteError", "incomplete write");
         zjs_reject_promise(promise, &error, 1);
-        jerry_release_value(error);
     }
 
     return promise;
@@ -233,30 +229,26 @@ static jerry_value_t uart_init(const jerry_value_t function_obj,
 
     zjs_make_promise(promise, NULL, NULL);
 
-    jerry_value_t port_val = zjs_get_property(argv[0], "port");
+    ZVAL(port_val) = zjs_get_property(argv[0], "port");
 
     const int MAX_PORT_LENGTH = 16;
     jerry_size_t size = MAX_PORT_LENGTH;
     char port[size];
 
     zjs_copy_jstring(port_val, port, &size);
-    jerry_release_value(port_val);
 
     if (!size) {
         DBG_PRINT("port length is too long\n");
-        jerry_value_t error = make_uart_error("TypeMismatchError",
-                "port length is too long");
+        ZVAL(error) = make_uart_error("TypeMismatchError",
+                                      "port length is too long");
         zjs_reject_promise(promise, &error, 1);
-        jerry_release_value(error);
         return promise;
     }
 
-    jerry_value_t baud_val = zjs_get_property(argv[0], "baud");
-
+    ZVAL(baud_val) = zjs_get_property(argv[0], "baud");
     if (jerry_value_is_number(baud_val)) {
         baud = (int)jerry_get_number_value(baud_val);
     }
-    jerry_release_value(baud_val);
 
     for (i = 0; i < (sizeof(device_map) / sizeof(device_map[0])); ++i) {
         // FIXME: we allowed 16-char string above but are only looking at 4?
@@ -267,10 +259,9 @@ static jerry_value_t uart_init(const jerry_value_t function_obj,
     }
     if (uart_dev == NULL) {
         DBG_PRINT("could not find port %s\n", port);
-        jerry_value_t error = make_uart_error("NotFoundError",
-                "could not find port provided");
+        ZVAL(error) = make_uart_error("NotFoundError",
+                                      "could not find port provided");
         zjs_reject_promise(promise, &error, 1);
-        jerry_release_value(error);
         return promise;
     }
 
@@ -310,10 +301,9 @@ static jerry_value_t uart_init(const jerry_value_t function_obj,
     } else {
         if (test_baud != baud) {
             DBG_PRINT("baudrate was not set successfully");
-            jerry_value_t error = make_uart_error("InternalError",
-                    "baud could not be set");
+            ZVAL(error) = make_uart_error("InternalError",
+                                          "baud could not be set");
             zjs_reject_promise(promise, &error, 1);
-            jerry_release_value(error);
             return promise;
         }
     }

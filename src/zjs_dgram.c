@@ -122,10 +122,10 @@ static void udp_received(struct net_context *context,
     }
     net_addr_ntop(family, addr, addr_str, sizeof(addr_str));
 
-    jerry_value_t buf_js = zjs_buffer_create(recv_len);
+    ZVAL(buf_js) = zjs_buffer_create(recv_len);
     zjs_buffer_t *buf = zjs_buffer_find(buf_js);
 
-    jerry_value_t rinfo = jerry_create_object();
+    ZVAL(rinfo) = jerry_create_object();
     zjs_obj_add_number(rinfo, ntohs(NET_UDP_BUF(net_buf)->src_port), "port");
     zjs_obj_add_string(rinfo, family == AF_INET ? "IPv4" : "IPv6", "family");
     zjs_obj_add_string(rinfo, addr_str, "address");
@@ -135,8 +135,6 @@ static void udp_received(struct net_context *context,
 
     jerry_value_t args[2] = {buf_js, rinfo};
     zjs_signal_callback(handle->message_cb_id, args, 2);
-    jerry_release_value(buf_js);
-    jerry_release_value(rinfo);
 }
 
 static jerry_value_t zjs_dgram_createSocket(const jerry_value_t function_obj,
@@ -217,22 +215,19 @@ static void udp_sent(struct net_context *context, int status, void *token,
     DBG_PRINT("udp_sent: %p, st=%d udata=%p\n", context, status, user_data);
 
     if (user_data) {
-        jerry_value_t args[1] = {ZJS_UNDEFINED};
+        ZVAL(rval) = ZJS_UNDEFINED;
         if (status != 0) {
             char errbuf[8];
             snprintf(errbuf, sizeof(errbuf), "%d", status);
-            args[0] = zjs_standard_error(NetworkError, errbuf);
+            rval = zjs_standard_error(NetworkError, errbuf);
             // We need error object, not error value (JrS doesn't allow to
             // pass the latter as a func argument).
-            jerry_value_clear_error_flag(&args[0]);
+            jerry_value_clear_error_flag(&rval);
         }
 
         zjs_callback_id id = zjs_add_callback_once((jerry_value_t)user_data,
-                                                   ZJS_UNDEFINED,
-                                                   NULL,
-                                                   NULL);
-        zjs_signal_callback(id, args, sizeof(args));
-        jerry_release_value(args[0]);
+                                                   ZJS_UNDEFINED, NULL, NULL);
+        zjs_signal_callback(id, &rval, 1);
     }
 }
 

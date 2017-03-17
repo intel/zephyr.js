@@ -167,36 +167,27 @@ static jerry_value_t native_require_handler(const jerry_value_t function_obj,
         ERR_PRINT("could not read module %s\n", full_path);
         return NOTSUPPORTED_ERROR("native_require_handler: could not read module script");
     }
-    jerry_value_t code_eval = jerry_parse((jerry_char_t *)str, len, false);
+    ZVAL(code_eval) = jerry_parse((jerry_char_t *)str, len, false);
     if (jerry_value_has_error_flag(code_eval)) {
-        jerry_release_value(code_eval);
         return SYSTEM_ERROR("native_require_handler: could not parse javascript");
     }
-    jerry_value_t result = jerry_run(code_eval);
-    jerry_release_value(code_eval);
+    ZVAL(result) = jerry_run(code_eval);
     if (jerry_value_has_error_flag(result)) {
-        jerry_release_value(result);
         return SYSTEM_ERROR("native_require_handler: could not run javascript");
     }
 
-    jerry_release_value(result);
     zjs_free_script(str);
 #endif
 
-    jerry_value_t global_obj = jerry_get_global_object();
-    jerry_value_t modules_obj = zjs_get_property(global_obj, "module");
-    jerry_release_value(global_obj);
+    ZVAL(global_obj) = jerry_get_global_object();
+    ZVAL(modules_obj) = zjs_get_property(global_obj, "module");
 
     if (!jerry_value_is_object(modules_obj)) {
-        jerry_release_value(modules_obj);
         return SYSTEM_ERROR("native_require_handler: modules object not found");
     }
 
-    jerry_value_t exports_obj = zjs_get_property(modules_obj, "exports");
-    jerry_release_value(modules_obj);
-
+    ZVAL(exports_obj) = zjs_get_property(modules_obj, "exports");
     if (!jerry_value_is_object(exports_obj)) {
-        jerry_release_value(exports_obj);
         return SYSTEM_ERROR("native_require_handler: exports object not found");
     }
 
@@ -205,26 +196,21 @@ static jerry_value_t native_require_handler(const jerry_value_t function_obj,
         module[size-i] = '\0';
     }
 
-    jerry_value_t found_obj = zjs_get_property(exports_obj, module);
-    jerry_release_value(exports_obj);
-
+    ZVAL(found_obj) = zjs_get_property(exports_obj, module);
     if (!jerry_value_is_object(found_obj)) {
-        jerry_release_value(found_obj);
         return NOTSUPPORTED_ERROR("native_require_handler: module not found");
     }
 
     DBG_PRINT("JavaScript module %s loaded\n", module);
-    jerry_release_value(exports_obj);
-    return found_obj;
+    return jerry_acquire_value(found_obj);
 }
 
 void zjs_modules_init()
 {
-    jerry_value_t global_obj = jerry_get_global_object();
+    ZVAL(global_obj) = jerry_get_global_object();
 
     // create the C handler for require JS call
     zjs_obj_add_function(global_obj, native_require_handler, "require");
-    jerry_release_value(global_obj);
 
     // auto-load the events module without waiting for require(); needed so its
     //   init function will run before it's used by UART, etc.

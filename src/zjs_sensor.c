@@ -191,25 +191,23 @@ static void zjs_sensor_set_state(jerry_value_t obj, enum sensor_state state)
     }
     zjs_obj_add_readonly_string(obj, state_str, "state");
 
-    jerry_value_t func = zjs_get_property(obj, "onstatechange");
+    ZVAL(func) = zjs_get_property(obj, "onstatechange");
     if (jerry_value_is_function(func)) {
         // if onstatechange exists, call it
-        jerry_value_t new_state = jerry_create_string(state_str);
+        ZVAL(new_state) = jerry_create_string(state_str);
         zjs_callback_id id = zjs_add_callback_once(func, obj, NULL, NULL);
         zjs_signal_callback(id, &new_state, sizeof(new_state));
-        jerry_release_value(new_state);
     }
-    jerry_release_value(func);
 
     if (old_state == SENSOR_STATE_ACTIVATING &&
         state == SENSOR_STATE_ACTIVATED) {
-        func = zjs_get_property(obj, "onactivate");
-        if (jerry_value_is_function(func)) {
+        ZVAL(activate_func) = zjs_get_property(obj, "onactivate");
+        if (jerry_value_is_function(activate_func)) {
             // if onactivate exists, call it
-            zjs_callback_id id = zjs_add_callback_once(func, obj, NULL, NULL);
+            zjs_callback_id id = zjs_add_callback_once(activate_func, obj,
+                                                       NULL, NULL);
             zjs_signal_callback(id, NULL, 0);
         }
-        jerry_release_value(func);
     }
 }
 
@@ -218,7 +216,7 @@ static void zjs_sensor_update_reading(jerry_value_t obj,
                                       void *reading)
 {
     // update reading property and trigger onchange event
-    jerry_value_t reading_obj = jerry_create_object();
+    ZVAL(reading_obj) = jerry_create_object();
     switch(channel) {
     case SENSOR_CHAN_ACCEL_XYZ:
     case SENSOR_CHAN_GYRO_XYZ: ;
@@ -238,25 +236,20 @@ static void zjs_sensor_update_reading(jerry_value_t obj,
 
     default:
         ERR_PRINT("unsupported sensor type\n");
-        jerry_release_value(reading_obj);
         return;
     }
 
     zjs_set_property(obj, "reading", reading_obj);
-    jerry_value_t func = zjs_get_property(obj, "onchange");
+    ZVAL(func) = zjs_get_property(obj, "onchange");
     if (jerry_value_is_function(func)) {
-        jerry_value_t event = jerry_create_object();
+        ZVAL(event) = jerry_create_object();
         // if onchange exists, call it
         zjs_set_property(event, "reading", reading_obj);
-        jerry_value_t rval = jerry_call_function(func, obj, &event, 1);
+        ZVAL(rval) = jerry_call_function(func, obj, &event, 1);
         if (jerry_value_has_error_flag(rval)) {
             ERR_PRINT("calling onchange\n");
         }
-        jerry_release_value(rval);
-        jerry_release_value(event);
     }
-    jerry_release_value(func);
-    jerry_release_value(reading_obj);
 }
 
 static void zjs_sensor_trigger_error(jerry_value_t obj,
@@ -264,24 +257,19 @@ static void zjs_sensor_trigger_error(jerry_value_t obj,
                                      const char *error_message)
 {
     zjs_sensor_set_state(obj, SENSOR_STATE_ERRORED);
-    jerry_value_t func = zjs_get_property(obj, "onerror");
+    ZVAL(func) = zjs_get_property(obj, "onerror");
     if (jerry_value_is_function(func)) {
         // if onerror exists, call it
-        jerry_value_t event = jerry_create_object();
-        jerry_value_t error_obj = jerry_create_object();
-        jerry_value_t name_val = jerry_create_string(error_name);
-        jerry_value_t message_val = jerry_create_string(error_message);
+        ZVAL(event) = jerry_create_object();
+        ZVAL(error_obj) = jerry_create_object();
+        ZVAL(name_val) = jerry_create_string(error_name);
+        ZVAL(message_val) = jerry_create_string(error_message);
         zjs_set_property(error_obj, "name", name_val);
         zjs_set_property(error_obj, "message", message_val);
         zjs_set_property(event, "error", error_obj);
         zjs_callback_id id = zjs_add_callback_once(func, obj, NULL, NULL);
         zjs_signal_callback(id, &event, 1);
-        jerry_release_value(name_val);
-        jerry_release_value(message_val);
-        jerry_release_value(error_obj);
-        jerry_release_value(event);
     }
-    jerry_release_value(func);
 }
 
 static void zjs_sensor_onchange_c_callback(void *h, void *argv)
@@ -417,9 +405,8 @@ static void zjs_sensor_onstop_c_callback(void *h, void *argv)
     send.type = TYPE_SENSOR_STOP;
     send.data.sensor.channel = handle->channel;
 
-    jerry_value_t reading_val = jerry_create_null();
+    ZVAL(reading_val) = jerry_create_null();
     zjs_set_property(obj, "reading", reading_val);
-    jerry_release_value(reading_val);
     if (handle->channel == SENSOR_CHAN_LIGHT) {
         // AmbientLightSensor needs provide AIO pin value
         uint32_t pin;
@@ -526,8 +513,8 @@ static jerry_value_t zjs_sensor_create(const jerry_value_t function_obj,
 
         if (channel == SENSOR_CHAN_ACCEL_XYZ) {
             bool option_gravity;
-            if (zjs_obj_get_boolean(options, "includeGravity", &option_gravity) &&
-                option_gravity) {
+            if (zjs_obj_get_boolean(options, "includeGravity",
+                                    &option_gravity) && option_gravity) {
                 // TODO: find out if BMI160 can be configured to include gravity
                 ERR_PRINT("includeGravity is not supported\n");
             }
@@ -548,11 +535,10 @@ static jerry_value_t zjs_sensor_create(const jerry_value_t function_obj,
 
     // initialize object and default values
     jerry_value_t sensor_obj = jerry_create_object();
-    jerry_value_t reading_val = jerry_create_null();
+    ZVAL(reading_val) = jerry_create_null();
     zjs_obj_add_number(sensor_obj, frequency, "frequency");
     zjs_obj_add_readonly_string(sensor_obj, "unconnected", "state");
     zjs_set_property(sensor_obj, "reading", reading_val);
-    jerry_release_value(reading_val);
 
     if (channel == SENSOR_CHAN_LIGHT && hasPin) {
         zjs_obj_add_number(sensor_obj, pin, "pin");
@@ -561,9 +547,12 @@ static jerry_value_t zjs_sensor_create(const jerry_value_t function_obj,
     jerry_set_prototype(sensor_obj, zjs_sensor_prototype);
 
     sensor_handle_t *handle = zjs_sensor_alloc_handle(channel);
-    handle->onchange_cb_id = zjs_add_c_callback(handle, zjs_sensor_onchange_c_callback);
-    handle->onstart_cb_id = zjs_add_c_callback(handle, zjs_sensor_onstart_c_callback);
-    handle->onstop_cb_id = zjs_add_c_callback(handle, zjs_sensor_onstop_c_callback);
+    handle->onchange_cb_id = zjs_add_c_callback(handle,
+                                                zjs_sensor_onchange_c_callback);
+    handle->onstart_cb_id = zjs_add_c_callback(handle,
+                                               zjs_sensor_onstart_c_callback);
+    handle->onstop_cb_id = zjs_add_c_callback(handle,
+                                              zjs_sensor_onstop_c_callback);
     handle->channel = channel;
     handle->frequency = frequency;
     handle->sensor_obj = jerry_acquire_value(sensor_obj);
@@ -637,11 +626,10 @@ void zjs_sensor_init()
     zjs_obj_add_functions(zjs_sensor_prototype, array);
 
     // create global objects
-    jerry_value_t global_obj = jerry_get_global_object();
+    ZVAL(global_obj) = jerry_get_global_object();
     zjs_obj_add_function(global_obj, zjs_accel_create, "Accelerometer");
     zjs_obj_add_function(global_obj, zjs_gyro_create, "Gyroscope");
     zjs_obj_add_function(global_obj, zjs_light_create, "AmbientLightSensor");
-    jerry_release_value(global_obj);
 }
 
 void zjs_sensor_cleanup()

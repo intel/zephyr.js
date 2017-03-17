@@ -107,6 +107,30 @@ uint32_t zjs_uncompress_16_to_32(uint16_t num);
 
 void zjs_print_error_message(jerry_value_t error);
 
+/**
+ * Release a jerry_value_t passed by reference
+ */
+void zjs_free_value(jerry_value_t *value);
+
+/**
+ * Macro to declare a jerry_value_t and have it released automatically
+ *
+ * If you're going to be returning the value from a function, do not use this
+ * as ownership will transfer to the caller (unless you acquire it on return).
+ * Also don't use this for a variable that holds a C copy of a value that was
+ * passed into you, as those are owned by the caller.
+ *
+ * NOTE: If you reuse the variable in your function, you will still need to
+ *   release the old value before you lose it.
+ *
+ * NOTE: If you want to return a value created with ZVAL, you need to call
+ *   jerry_acquire_value() on it first, typically in the return line.
+ *
+ * NOTE: Be careful to always initialize this value, or else an uninitialized
+ *   value will get freed. (Or will compiler catch that?)
+ */
+#define ZVAL(name) jerry_value_t name __attribute__ ((__cleanup__(zjs_free_value)))
+
 //
 // ztypes (for argument validation)
 //

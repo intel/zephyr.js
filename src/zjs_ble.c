@@ -210,21 +210,18 @@ static void zjs_ble_read_c_callback(void *handle, void *argv)
     ble_characteristic_t *chrc = (ble_characteristic_t *)handle;
     ble_handle_t *cb = &chrc->read_cb;
 
-    jerry_value_t rval;
-    jerry_value_t args[2];
+    ZVAL(rval);
+    ZVAL(offset) = jerry_create_number(cb->offset);
+    ZVAL(callback) =
+        jerry_create_external_function(zjs_ble_read_callback_function);
 
-    args[0] = jerry_create_number(cb->offset);
-    args[1] = jerry_create_external_function(zjs_ble_read_callback_function);
-    jerry_set_object_native_handle(args[1], (uintptr_t)handle, NULL);
+    jerry_set_object_native_handle(callback, (uintptr_t)handle, NULL);
 
+    jerry_value_t args[2] = {offset, callback};
     rval = jerry_call_function(cb->js_callback, chrc->chrc_obj, args, 2);
     if (jerry_value_has_error_flag(rval)) {
         DBG_PRINT("failed to call onReadRequest function\n");
     }
-
-    jerry_release_value(args[0]);
-    jerry_release_value(args[1]);
-    jerry_release_value(rval);
 }
 
 // INTERRUPT SAFE FUNCTION: No JerryScript VM, allocs, or release prints!
@@ -310,37 +307,33 @@ static void zjs_ble_write_c_callback(void *handle, void *argv)
     ble_characteristic_t *chrc = (ble_characteristic_t *)handle;
     ble_handle_t *cb = &chrc->write_cb;
 
-    jerry_value_t rval;
-    jerry_value_t args[4];
-
-    args[0] = jerry_create_null();
+    ZVAL(buf_obj);
     if (cb->buffer && cb->buffer_size > 0) {
-        jerry_value_t buf_obj = zjs_buffer_create(cb->buffer_size);
+        buf_obj = zjs_buffer_create(cb->buffer_size);
         zjs_buffer_t *buf = zjs_buffer_find(buf_obj);
 
         if (buf) {
             memcpy(buf->buffer, cb->buffer, cb->buffer_size);
         }
-
-        jerry_release_value(args[0]);
-        args[0] = buf_obj;
     }
-    args[1] = jerry_create_number(cb->offset);
-    // TODO: support withoutResponse flag
-    args[2] = jerry_create_boolean(false);
-    args[3] = jerry_create_external_function(zjs_ble_write_callback_function);
-    jerry_set_object_native_handle(args[3], (uintptr_t)handle, NULL);
+    else {
+        buf_obj = jerry_create_null();
+    }
 
-    rval = jerry_call_function(cb->js_callback, chrc->chrc_obj, args, 4);
+    ZVAL(offset) = jerry_create_number(cb->offset);
+    // TODO: support withoutResponse flag
+    ZVAL(without_response) = jerry_create_boolean(false);
+    ZVAL(callback) =
+        jerry_create_external_function(zjs_ble_write_callback_function);
+
+    jerry_set_object_native_handle(callback, (uintptr_t)handle, NULL);
+
+    jerry_value_t args[4] = {buf_obj, offset, without_response, callback};
+    ZVAL(rval) = jerry_call_function(cb->js_callback,
+                                                  chrc->chrc_obj, args, 4);
     if (jerry_value_has_error_flag(rval)) {
         DBG_PRINT("failed to call onWriteRequest function\n");
     }
-
-    jerry_release_value(args[0]);
-    jerry_release_value(args[1]);
-    jerry_release_value(args[2]);
-    jerry_release_value(args[3]);
-    jerry_release_value(rval);
 }
 
 // INTERRUPT SAFE FUNCTION: No JerryScript VM, allocs, or release prints!
@@ -416,19 +409,16 @@ static void zjs_ble_subscribe_c_callback(void *handle, void *argv)
     ble_characteristic_t *chrc = (ble_characteristic_t *)handle;
     ble_notify_handle_t *cb = &chrc->subscribe_cb;
 
-    jerry_value_t rval;
-    jerry_value_t args[2];
+    ZVAL(max_size) = jerry_create_number(20);
+    ZVAL(callback) =
+        jerry_create_external_function(zjs_ble_update_value_callback_function);
 
-    args[0] = jerry_create_number(20); // max payload size
-    args[1] = jerry_create_external_function(zjs_ble_update_value_callback_function);
-    rval = jerry_call_function(cb->js_callback, chrc->chrc_obj, args, 2);
+    jerry_value_t args[2] = {max_size, callback};
+    ZVAL(rval) = jerry_call_function(cb->js_callback,
+                                                  chrc->chrc_obj, args, 2);
     if (jerry_value_has_error_flag(rval)) {
         DBG_PRINT("failed to call onSubscribe function\n");
     }
-
-    jerry_release_value(args[0]);
-    jerry_release_value(args[1]);
-    jerry_release_value(rval);
 }
 
 static void zjs_ble_unsubscribe_c_callback(void *handle, void *argv)
@@ -436,14 +426,12 @@ static void zjs_ble_unsubscribe_c_callback(void *handle, void *argv)
     ble_characteristic_t *chrc = (ble_characteristic_t *)handle;
     ble_notify_handle_t *cb = &chrc->unsubscribe_cb;
 
-    jerry_value_t rval;
+    ZVAL(rval);
 
     rval = jerry_call_function(cb->js_callback, chrc->chrc_obj, NULL, 0);
     if (jerry_value_has_error_flag(rval)) {
         DBG_PRINT("failed to call onUnsubscribe function\n");
     }
-
-    jerry_release_value(rval);
 }
 
 static void zjs_ble_notify_c_callback(void *handle, void *argv)
@@ -451,14 +439,12 @@ static void zjs_ble_notify_c_callback(void *handle, void *argv)
     ble_characteristic_t *chrc = (ble_characteristic_t *)handle;
     ble_notify_handle_t *cb = &chrc->notify_cb;
 
-    jerry_value_t rval;
+    ZVAL(rval);
 
     rval = jerry_call_function(cb->js_callback, chrc->chrc_obj, NULL, 0);
     if (jerry_value_has_error_flag(rval)) {
         DBG_PRINT("failed to call onNotify function\n");
     }
-
-    jerry_release_value(rval);
 }
 
 static ble_characteristic_t *get_base_chrc(const struct bt_gatt_attr *attr)
@@ -498,9 +484,8 @@ static void zjs_ble_blvl_ccc_cfg_changed(const struct bt_gatt_attr *attr, uint16
 static void zjs_ble_connected_c_callback(void *handle, void *argv)
 {
     char *addr = (char *)argv;
-    jerry_value_t arg = jerry_create_string((jerry_char_t *)addr);
+    ZVAL(arg) = jerry_create_string((jerry_char_t *)addr);
     zjs_trigger_event(ble_conn.ble_obj, "accept", &arg, 1, NULL, NULL);
-    jerry_release_value(arg);
     DBG_PRINT("BLE event: connected, addr %s\n", addr);
 }
 
@@ -521,9 +506,8 @@ static void zjs_ble_connected(struct bt_conn *conn, uint8_t err)
 static void zjs_ble_disconnected_c_callback(void *handle, void *argv)
 {
     char *addr = (char *)argv;
-    jerry_value_t arg = jerry_create_string((jerry_char_t *)addr);
+    ZVAL(arg) = jerry_create_string((jerry_char_t *)addr);
     zjs_trigger_event(ble_conn.ble_obj, "disconnect", &arg, 1, NULL, NULL);
-    jerry_release_value(arg);
     DBG_PRINT("BLE event: disconnected, addr %s\n", addr);
 }
 
@@ -560,9 +544,8 @@ static struct bt_conn_auth_cb zjs_ble_auth_cb_display = {
 
 static void zjs_ble_ready_c_callback(void *handle, void *argv)
 {
-    jerry_value_t arg = jerry_create_string((jerry_char_t *)"poweredOn");
+    ZVAL(arg) = jerry_create_string((jerry_char_t *)"poweredOn");
     zjs_trigger_event(ble_conn.ble_obj, "stateChange", &arg, 1, NULL, NULL);
-    jerry_release_value(arg);
     DBG_PRINT("BLE event: stateChange - poweredOn");
 }
 
@@ -723,7 +706,7 @@ static jerry_value_t zjs_ble_start_advertising(const jerry_value_t function_obj,
         return zjs_error("zjs_ble_adv_start: nothing to advertise");
     }
 
-    const uint8_t url_adv[] = { 0xaa, 0xfe };
+    const uint8_t url_adv[] = {0xaa, 0xfe};
 
     struct bt_data ad[records];
     int index = 0;
@@ -740,7 +723,7 @@ static jerry_value_t zjs_ble_start_advertising(const jerry_value_t function_obj,
     }
 
     for (int i=0; i<arraylen; i++) {
-        jerry_value_t uuid;
+        ZVAL(uuid);
         uuid = jerry_get_property_by_index(array, i);
         if (!jerry_value_is_string(uuid)) {
             return zjs_error("zjs_ble_adv_start: invalid uuid argument type");
@@ -754,7 +737,6 @@ static jerry_value_t zjs_ble_start_advertising(const jerry_value_t function_obj,
             ERR_PRINT("SIZE: %lu\n", size);
             return zjs_error("zjs_ble_adv_start: unexpected uuid length");
         }
-        jerry_release_value(uuid);
 
         uint8_t bytes[2];
         if (!zjs_hex_to_byte(ubuf + 2, &bytes[0]) ||
@@ -772,12 +754,11 @@ static jerry_value_t zjs_ble_start_advertising(const jerry_value_t function_obj,
     //   back the results asynchronously through hoops?
     int err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad),
                               sd, ARRAY_SIZE(sd));
-    jerry_value_t error = err ? zjs_error("advertising failed") :
-                                jerry_create_null();
+    ZVAL(error) = err ? zjs_error("advertising failed") :
+        jerry_create_null();
 
     zjs_trigger_event(ble_conn.ble_obj, "advertisingStart", &error,
                       1, NULL, NULL);
-    jerry_release_value(error);
     DBG_PRINT("BLE event: adveristingStart\n");
 
     zjs_free(url_frame);
@@ -807,18 +788,16 @@ static bool zjs_ble_parse_characteristic(ble_characteristic_t *chrc)
 
     chrc->uuid = zjs_ble_new_uuid_16(strtoul(uuid, NULL, 16));
 
-    jerry_value_t v_array = zjs_get_property(chrc_obj, "properties");
-    if (!jerry_value_is_array(v_array)) {
-        jerry_release_value(v_array);
+    ZVAL(v_props) = zjs_get_property(chrc_obj, "properties");
+    if (!jerry_value_is_array(v_props)) {
         ERR_PRINT("properties is empty or not array\n");
         return false;
     }
 
-    for (int i=0; i<jerry_get_array_length(v_array); i++) {
-        jerry_value_t v_property = jerry_get_property_by_index(v_array, i);
+    for (int i=0; i<jerry_get_array_length(v_props); i++) {
+        ZVAL(v_property) = jerry_get_property_by_index(v_props, i);
 
         if (!jerry_value_is_string(v_property)) {
-            jerry_release_value(v_property);
             ERR_PRINT("property is not string\n");
             return false;
         }
@@ -827,7 +806,6 @@ static bool zjs_ble_parse_characteristic(ble_characteristic_t *chrc)
         jerry_size_t size = MAX_NAME_LENGTH;
         char name[MAX_NAME_LENGTH];
         zjs_copy_jstring(v_property, name, &size);
-        jerry_release_value(v_property);
 
         if (!strcmp(name, "read")) {
             chrc->flags |= BT_GATT_CHRC_READ;
@@ -837,93 +815,78 @@ static bool zjs_ble_parse_characteristic(ble_characteristic_t *chrc)
             chrc->flags |= BT_GATT_CHRC_NOTIFY;
         }
     }
-    jerry_release_value(v_array);
 
-    v_array = zjs_get_property(chrc_obj, "descriptors");
-    if (!jerry_value_is_undefined(v_array) &&
-        !jerry_value_is_null(v_array) &&
-        !jerry_value_is_array(v_array)) {
+    ZVAL(v_descs) = zjs_get_property(chrc_obj, "descriptors");
+    if (!jerry_value_is_undefined(v_descs) &&
+        !jerry_value_is_null(v_descs) &&
+        !jerry_value_is_array(v_descs)) {
         ERR_PRINT("descriptors is not array\n");
         return false;
     }
 
-    for (int i=0; i<jerry_get_array_length(v_array); i++) {
-        jerry_value_t v_desc = jerry_get_property_by_index(v_array, i);
+    for (int i=0; i<jerry_get_array_length(v_descs); i++) {
+        ZVAL(v_desc) = jerry_get_property_by_index(v_descs, i);
 
         if (!jerry_value_is_object(v_desc)) {
-            jerry_release_value(v_desc);
             ERR_PRINT("not valid descriptor object\n");
             return false;
         }
 
         char desc_uuid[ZJS_BLE_UUID_LEN];
         if (!zjs_obj_get_string(v_desc, "uuid", desc_uuid, ZJS_BLE_UUID_LEN)) {
-            jerry_release_value(v_desc);
             ERR_PRINT("descriptor uuid doesn't exist\n");
             return false;
         }
 
         if (strtoul(desc_uuid, NULL, 16) == BT_UUID_GATT_CUD_VAL) {
             // Support CUD only, ignore all other type of descriptors
-            jerry_value_t v_value = zjs_get_property(v_desc, "value");
+            ZVAL(v_value) = zjs_get_property(v_desc, "value");
             if (jerry_value_is_string(v_value)) {
                 // transfer ownership, free cud_value later
-                chrc->cud_value = v_value;
-            }
-            else {
-                jerry_release_value(v_value);
+                chrc->cud_value = jerry_acquire_value(v_value);
             }
         }
-
-        jerry_release_value(v_desc);
     }
-    jerry_release_value(v_array);
 
-    jerry_value_t v_func;
-    v_func = zjs_get_property(chrc_obj, "onReadRequest");
-    if (jerry_value_is_function(v_func)) {
-        chrc->read_cb.js_callback = jerry_acquire_value(v_func);
+    ZVAL(v_read) = zjs_get_property(chrc_obj, "onReadRequest");
+    if (jerry_value_is_function(v_read)) {
+        chrc->read_cb.js_callback = jerry_acquire_value(v_read);
         chrc->read_cb.id = zjs_add_c_callback(chrc, zjs_ble_read_c_callback);
     } else {
         chrc->read_cb.id = -1;
     }
-    jerry_release_value(v_func);
 
-    v_func = zjs_get_property(chrc_obj, "onWriteRequest");
-    if (jerry_value_is_function(v_func)) {
-        chrc->write_cb.js_callback = jerry_acquire_value(v_func);
+    ZVAL(v_write) = zjs_get_property(chrc_obj, "onWriteRequest");
+    if (jerry_value_is_function(v_write)) {
+        chrc->write_cb.js_callback = jerry_acquire_value(v_write);
         chrc->write_cb.id = zjs_add_c_callback(chrc, zjs_ble_write_c_callback);
     } else {
         chrc->write_cb.id = -1;
     }
-    jerry_release_value(v_func);
 
-    v_func = zjs_get_property(chrc_obj, "onSubscribe");
-    if (jerry_value_is_function(v_func)) {
-        chrc->subscribe_cb.js_callback = jerry_acquire_value(v_func);
+    ZVAL(v_sub) = zjs_get_property(chrc_obj, "onSubscribe");
+    if (jerry_value_is_function(v_sub)) {
+        chrc->subscribe_cb.js_callback = jerry_acquire_value(v_sub);
         chrc->subscribe_cb.id = zjs_add_c_callback(chrc, zjs_ble_subscribe_c_callback);
     } else {
         chrc->subscribe_cb.id = -1;
     }
-    jerry_release_value(v_func);
 
-    v_func = zjs_get_property(chrc_obj, "onUnsubscribe");
-    if (jerry_value_is_function(v_func)) {
-        chrc->unsubscribe_cb.js_callback = jerry_acquire_value(v_func);
+    ZVAL(v_unsub) = zjs_get_property(chrc_obj, "onUnsubscribe");
+    if (jerry_value_is_function(v_unsub)) {
+        chrc->unsubscribe_cb.js_callback = jerry_acquire_value(v_unsub);
         chrc->unsubscribe_cb.id = zjs_add_c_callback(chrc, zjs_ble_unsubscribe_c_callback);
     } else {
         chrc->unsubscribe_cb.id = -1;
     }
-    jerry_release_value(v_func);
 
-    v_func = zjs_get_property(chrc_obj, "onNotify");
-    if (jerry_value_is_function(v_func)) {
-        chrc->notify_cb.js_callback = jerry_acquire_value(v_func);
+    ZVAL(v_notify) = zjs_get_property(chrc_obj, "onNotify");
+    if (jerry_value_is_function(v_notify)) {
+        chrc->notify_cb.js_callback = jerry_acquire_value(v_notify);
         chrc->notify_cb.id = zjs_add_c_callback(chrc, zjs_ble_notify_c_callback);
     } else {
         chrc->notify_cb.id = -1;
     }
-    jerry_release_value(v_func);
 
     return true;
 }
@@ -941,28 +904,26 @@ static bool zjs_ble_parse_service(ble_service_t *service)
     }
     service->uuid = zjs_ble_new_uuid_16(strtoul(uuid, NULL, 16));
 
-    jerry_value_t v_array = zjs_get_property(service_obj, "characteristics");
-    if (!jerry_value_is_array(v_array)) {
-        jerry_release_value(v_array);
+    ZVAL(v_chrcs) =
+        zjs_get_property(service_obj, "characteristics");
+    if (!jerry_value_is_array(v_chrcs)) {
         ERR_PRINT("characteristics is empty or not array\n");
         return false;
     }
 
     char *errmsg = NULL;
     ble_characteristic_t *previous = NULL;
-    for (int i=0; i<jerry_get_array_length(v_array); i++) {
+    for (int i=0; i<jerry_get_array_length(v_chrcs); i++) {
         // FIXME: it would make sense to move these next few lines into
         //   parse_characteristic
-        jerry_value_t v_chrc = jerry_get_property_by_index(v_array, i);
+        ZVAL(v_chrc) = jerry_get_property_by_index(v_chrcs, i);
         if (!jerry_value_is_object(v_chrc)) {
-            jerry_release_value(v_chrc);
             errmsg = "characteristic is not object";
             break;
         }
 
         ble_characteristic_t *chrc = zjs_malloc(sizeof(ble_characteristic_t));
         if (!chrc) {
-            jerry_release_value(v_chrc);
             errmsg = "out of memory allocating ble_characteristic_t";
             break;
         }
@@ -975,7 +936,7 @@ static bool zjs_ble_parse_service(ble_service_t *service)
                          = -1;
 
         // transfer ownership of v_chrc to chrc struct
-        chrc->chrc_obj = v_chrc;
+        chrc->chrc_obj = jerry_acquire_value(v_chrc);
         jerry_set_object_native_handle(chrc->chrc_obj, (uintptr_t)chrc, NULL);
 
         // FIXME: All the stuff above this in the loop should move into
@@ -996,11 +957,8 @@ static bool zjs_ble_parse_service(ble_service_t *service)
         else {
            previous->next = chrc;
         }
-
-        jerry_release_value(v_chrc);
     }
 
-    jerry_release_value(v_array);
     if (errmsg) {
         ERR_PRINT("%s\n", errmsg);
         return false;
@@ -1172,23 +1130,22 @@ static jerry_value_t zjs_ble_set_services(const jerry_value_t function_obj,
     bool success = true;
     ble_service_t *previous = NULL;
     for (int i = 0; i < array_size; i++) {
-        jerry_value_t v_service = jerry_get_property_by_index(v_services, i);
+        ZVAL(v_service) =
+            jerry_get_property_by_index(v_services, i);
 
         if (!jerry_value_is_object(v_service)) {
-            jerry_release_value(v_service);
             return zjs_error("zjs_ble_set_services: service is not object");
         }
 
         ble_service_t *service = zjs_malloc(sizeof(ble_service_t));
         if (!service) {
-            jerry_release_value(v_service);
             return zjs_error("zjs_ble_set_services: out of memory allocating ble_service_t");
         }
 
         memset(service, 0, sizeof(ble_service_t));
 
         // transfer ownership of v_service to service struct
-        service->service_obj = v_service;
+        service->service_obj = jerry_acquire_value(v_service);
         jerry_set_object_native_handle(service->service_obj,
                                        (uintptr_t)service, NULL);
 
@@ -1219,16 +1176,13 @@ static jerry_value_t zjs_ble_set_services(const jerry_value_t function_obj,
     }
 
     if (argc > 1) {
-        jerry_value_t arg;
-        arg = success ? ZJS_UNDEFINED :
-              jerry_create_string((jerry_char_t *)"failed to register services");
-        jerry_value_t rval = jerry_call_function(argv[1], ZJS_UNDEFINED, &arg, 1);
+        ZVAL(arg) = success ? ZJS_UNDEFINED :
+              jerry_create_string("failed to register services");
+        ZVAL(rval) = jerry_call_function(argv[1], ZJS_UNDEFINED,
+                                                      &arg, 1);
         if (jerry_value_has_error_flag(rval)) {
             DBG_PRINT("failed to call callback function\n");
         }
-
-        jerry_release_value(rval);
-        jerry_release_value(arg);
     }
 
     return ZJS_UNDEFINED;
@@ -1240,9 +1194,8 @@ static jerry_value_t zjs_ble_update_rssi(const jerry_value_t function_obj,
                                          const jerry_length_t argc)
 {
     // TODO: get actual RSSI value from Zephyr Bluetooth driver
-    jerry_value_t arg = jerry_create_number(-50);
+    ZVAL(arg) = jerry_create_number(-50);
     zjs_trigger_event(ble_conn.ble_obj, "rssiUpdate", &arg, 1, NULL, NULL);
-    jerry_release_value(arg);
     return ZJS_UNDEFINED;
 }
 
@@ -1299,7 +1252,7 @@ static jerry_value_t zjs_ble_characteristic(const jerry_value_t function_obj,
     zjs_set_property(obj, "RESULT_UNLIKELY_ERROR", val);
     jerry_release_value(val);
 
-    return argv[0];
+    return obj;
 }
 
 // Constructor
