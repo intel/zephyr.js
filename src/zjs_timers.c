@@ -230,7 +230,7 @@ uint8_t zjs_timers_process_events()
 
 void zjs_timers_init()
 {
-    ZVAL(global_obj) = jerry_get_global_object();
+    ZVAL global_obj = jerry_get_global_object();
 
     // create the C handler for setInterval JS call
     zjs_obj_add_function(global_obj, native_set_interval_handler,

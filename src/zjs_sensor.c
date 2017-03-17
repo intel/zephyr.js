@@ -191,17 +191,17 @@ static void zjs_sensor_set_state(jerry_value_t obj, enum sensor_state state)
     }
     zjs_obj_add_readonly_string(obj, state_str, "state");
 
-    ZVAL(func) = zjs_get_property(obj, "onstatechange");
+    ZVAL func = zjs_get_property(obj, "onstatechange");
     if (jerry_value_is_function(func)) {
         // if onstatechange exists, call it
-        ZVAL(new_state) = jerry_create_string(state_str);
+        ZVAL new_state = jerry_create_string(state_str);
         zjs_callback_id id = zjs_add_callback_once(func, obj, NULL, NULL);
         zjs_signal_callback(id, &new_state, sizeof(new_state));
     }
 
     if (old_state == SENSOR_STATE_ACTIVATING &&
         state == SENSOR_STATE_ACTIVATED) {
-        ZVAL(activate_func) = zjs_get_property(obj, "onactivate");
+        ZVAL activate_func = zjs_get_property(obj, "onactivate");
         if (jerry_value_is_function(activate_func)) {
             // if onactivate exists, call it
             zjs_callback_id id = zjs_add_callback_once(activate_func, obj,
@@ -216,7 +216,7 @@ static void zjs_sensor_update_reading(jerry_value_t obj,
                                       void *reading)
 {
     // update reading property and trigger onchange event
-    ZVAL(reading_obj) = jerry_create_object();
+    ZVAL reading_obj = jerry_create_object();
     switch(channel) {
     case SENSOR_CHAN_ACCEL_XYZ:
     case SENSOR_CHAN_GYRO_XYZ: ;
@@ -240,12 +240,12 @@ static void zjs_sensor_update_reading(jerry_value_t obj,
     }
 
     zjs_set_property(obj, "reading", reading_obj);
-    ZVAL(func) = zjs_get_property(obj, "onchange");
+    ZVAL func = zjs_get_property(obj, "onchange");
     if (jerry_value_is_function(func)) {
-        ZVAL(event) = jerry_create_object();
+        ZVAL event = jerry_create_object();
         // if onchange exists, call it
         zjs_set_property(event, "reading", reading_obj);
-        ZVAL(rval) = jerry_call_function(func, obj, &event, 1);
+        ZVAL rval = jerry_call_function(func, obj, &event, 1);
         if (jerry_value_has_error_flag(rval)) {
             ERR_PRINT("calling onchange\n");
         }
@@ -257,13 +257,13 @@ static void zjs_sensor_trigger_error(jerry_value_t obj,
                                      const char *error_message)
 {
     zjs_sensor_set_state(obj, SENSOR_STATE_ERRORED);
-    ZVAL(func) = zjs_get_property(obj, "onerror");
+    ZVAL func = zjs_get_property(obj, "onerror");
     if (jerry_value_is_function(func)) {
         // if onerror exists, call it
-        ZVAL(event) = jerry_create_object();
-        ZVAL(error_obj) = jerry_create_object();
-        ZVAL(name_val) = jerry_create_string(error_name);
-        ZVAL(message_val) = jerry_create_string(error_message);
+        ZVAL event = jerry_create_object();
+        ZVAL error_obj = jerry_create_object();
+        ZVAL name_val = jerry_create_string(error_name);
+        ZVAL message_val = jerry_create_string(error_message);
         zjs_set_property(error_obj, "name", name_val);
         zjs_set_property(error_obj, "message", message_val);
         zjs_set_property(event, "error", error_obj);
@@ -405,7 +405,7 @@ static void zjs_sensor_onstop_c_callback(void *h, void *argv)
     send.type = TYPE_SENSOR_STOP;
     send.data.sensor.channel = handle->channel;
 
-    ZVAL(reading_val) = jerry_create_null();
+    ZVAL reading_val = jerry_create_null();
     zjs_set_property(obj, "reading", reading_val);
     if (handle->channel == SENSOR_CHAN_LIGHT) {
         // AmbientLightSensor needs provide AIO pin value
@@ -535,7 +535,7 @@ static jerry_value_t zjs_sensor_create(const jerry_value_t function_obj,
 
     // initialize object and default values
     jerry_value_t sensor_obj = jerry_create_object();
-    ZVAL(reading_val) = jerry_create_null();
+    ZVAL reading_val = jerry_create_null();
     zjs_obj_add_number(sensor_obj, frequency, "frequency");
     zjs_obj_add_readonly_string(sensor_obj, "unconnected", "state");
     zjs_set_property(sensor_obj, "reading", reading_val);
@@ -626,7 +626,7 @@ void zjs_sensor_init()
     zjs_obj_add_functions(zjs_sensor_prototype, array);
 
     // create global objects
-    ZVAL(global_obj) = jerry_get_global_object();
+    ZVAL global_obj = jerry_get_global_object();
     zjs_obj_add_function(global_obj, zjs_accel_create, "Accelerometer");
     zjs_obj_add_function(global_obj, zjs_gyro_create, "Gyroscope");
     zjs_obj_add_function(global_obj, zjs_light_create, "AmbientLightSensor");

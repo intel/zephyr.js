@@ -43,7 +43,7 @@ static jerry_value_t promise_resolve(const jerry_value_t function_obj,
     ZJS_VALIDATE_ARGS(Z_FUNCTION);
 
     zjs_promise_t *handle = NULL;
-    ZVAL(promise_obj) = zjs_get_property(this, "promise");
+    ZVAL promise_obj = zjs_get_property(this, "promise");
     jerry_get_object_native_handle(promise_obj, (uintptr_t *)&handle);
 
     if (!handle) {
@@ -88,7 +88,7 @@ void zjs_make_promise(jerry_value_t obj, zjs_post_promise_func post,
     zjs_obj_add_function(obj, promise_then, "then");
     zjs_obj_add_function(obj, promise_catch, "catch");
 
-    ZVAL(promise_obj) = jerry_create_object();
+    ZVAL promise_obj = jerry_create_object();
     jerry_set_object_native_handle(promise_obj, (uintptr_t)new, NULL);
 
     new->user_handle = handle;
@@ -115,7 +115,7 @@ void zjs_make_promise(jerry_value_t obj, zjs_post_promise_func post,
 void zjs_fulfill_promise(jerry_value_t obj, jerry_value_t argv[], uint32_t argc)
 {
     zjs_promise_t *handle = NULL;
-    ZVAL(promise_obj) = zjs_get_property(obj, "promise");
+    ZVAL promise_obj = zjs_get_property(obj, "promise");
 
     if (!jerry_value_is_object(promise_obj)) {
         ERR_PRINT("'promise' not found in object %lu\n", obj);
@@ -137,7 +137,7 @@ void zjs_fulfill_promise(jerry_value_t obj, jerry_value_t argv[], uint32_t argc)
 void zjs_reject_promise(jerry_value_t obj, jerry_value_t argv[], uint32_t argc)
 {
     zjs_promise_t *handle = NULL;
-    ZVAL(promise_obj) = zjs_get_property(obj, "promise");
+    ZVAL promise_obj = zjs_get_property(obj, "promise");
 
     if (!jerry_value_is_object(promise_obj)) {
         ERR_PRINT("'promise' not found in object %lu\n", obj);

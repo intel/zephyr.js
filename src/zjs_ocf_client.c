@@ -69,7 +69,7 @@ static struct ocf_handler *new_ocf_handler(struct client_resource *res)
 static jerry_value_t make_ocf_error(const char *name, const char *msg, struct client_resource *res)
 {
     if (res) {
-        ZVAL(ret) = jerry_create_object();
+        ZVAL ret = jerry_create_object();
         if (name) {
             zjs_obj_add_string(ret, name, "name");
         } else {
@@ -423,7 +423,7 @@ Found:
                 cur->resource_path[uri_len] = '\0';
             }
 
-            ZVAL(res) = create_resource(cur->device_id, cur->resource_path);
+            ZVAL res = create_resource(cur->device_id, cur->resource_path);
             zjs_trigger_event(cur->client, "resourcefound", &res, 1, NULL,
                               NULL);
             zjs_fulfill_promise(h->promise_obj, &res, 1);
@@ -453,9 +453,9 @@ static jerry_value_t ocf_find_resources(const jerry_value_t function_val,
 
     if (argc > 0 && !jerry_value_is_function(argv[0])) {
         // has options parameter
-        ZVAL(device_id_val) = zjs_get_property(argv[0], "deviceId");
-        ZVAL(res_type_val) = zjs_get_property(argv[0], "resourceType");
-        ZVAL(res_path_val) = zjs_get_property(argv[0], "resourcePath");
+        ZVAL device_id_val = zjs_get_property(argv[0], "deviceId");
+        ZVAL res_type_val = zjs_get_property(argv[0], "resourceType");
+        ZVAL res_path_val = zjs_get_property(argv[0], "resourcePath");
 
         if (jerry_value_is_string(device_id_val)) {
             jerry_size_t size = OCF_MAX_DEVICE_ID_LEN;
@@ -502,7 +502,7 @@ static jerry_value_t ocf_find_resources(const jerry_value_t function_val,
 
     if (zjs_ocf_start() < 0) {
         ERR_PRINT("OCF failed to start\n");
-        ZVAL(err) = make_ocf_error("NetworkError", "Error code from GET", NULL);
+        ZVAL err = make_ocf_error("NetworkError", "Error code from GET", NULL);
         zjs_reject_promise(h->promise_obj, &err, 1);
         if (resource_type) {
             zjs_free(resource_type);
@@ -526,9 +526,9 @@ static void ocf_get_handler(oc_client_response_t *data)
         if (h && h->res) {
             struct client_resource *resource = h->res;
             if (data->code == OC_STATUS_OK) {
-                ZVAL(resource_val) = create_resource(resource->device_id,
+                ZVAL resource_val = create_resource(resource->device_id,
                                                      resource->resource_path);
-                ZVAL(properties_val) = get_props_from_response(data);
+                ZVAL properties_val = get_props_from_response(data);
 
                 zjs_set_property(resource_val, "properties", properties_val);
                 zjs_trigger_event(resource->client, "update", &resource_val, 1,
@@ -542,7 +542,7 @@ static void ocf_get_handler(oc_client_response_t *data)
                 /*
                  * TODO: change to use real errors
                  */
-                ZVAL(err) = make_ocf_error("NetworkError",
+                ZVAL err = make_ocf_error("NetworkError",
                                            "Error code from GET", resource);
                 zjs_reject_promise(h->promise_obj, &err, 1);
 
@@ -591,7 +591,7 @@ static jerry_value_t ocf_retrieve(const jerry_value_t function_val,
     }
 
     if (options) {
-        ZVAL(observe_flag) = zjs_get_property(options, "observable");
+        ZVAL observe_flag = zjs_get_property(options, "observable");
         if (jerry_value_is_boolean(observe_flag)) {
             bool val = jerry_get_boolean_value(observe_flag);
             if (val) {
@@ -599,7 +599,7 @@ static jerry_value_t ocf_retrieve(const jerry_value_t function_val,
             }
         }
 
-        ZVAL(discover_flag) = zjs_get_property(options, "discoverable");
+        ZVAL discover_flag = zjs_get_property(options, "discoverable");
         if (jerry_value_is_boolean(discover_flag)) {
             bool val = jerry_get_boolean_value(discover_flag);
             if (val) {
@@ -607,7 +607,7 @@ static jerry_value_t ocf_retrieve(const jerry_value_t function_val,
             }
         }
 
-        ZVAL(secure_flag) = zjs_get_property(options, "secure");
+        ZVAL secure_flag = zjs_get_property(options, "secure");
         if (jerry_value_is_boolean(secure_flag)) {
             bool val = jerry_get_boolean_value(secure_flag);
             if (val) {
@@ -615,7 +615,7 @@ static jerry_value_t ocf_retrieve(const jerry_value_t function_val,
             }
         }
 
-        ZVAL(slow_flag) = zjs_get_property(options, "slow");
+        ZVAL slow_flag = zjs_get_property(options, "slow");
         if (jerry_value_is_boolean(slow_flag)) {
             bool val = jerry_get_boolean_value(slow_flag);
             if (val) {
@@ -645,7 +645,7 @@ static jerry_value_t ocf_retrieve(const jerry_value_t function_val,
                    LOW_QOS,
                    h)) {
 
-        ZVAL(err) = make_ocf_error("NetworkError", "GET call failed", resource);
+        ZVAL err = make_ocf_error("NetworkError", "GET call failed", resource);
         zjs_reject_promise(promise, &err, 1);
     }
 
@@ -662,12 +662,12 @@ static void put_finished(oc_client_response_t *data)
             if (data->code == OC_STATUS_CHANGED) {
                 DBG_PRINT("PUT response OK, device_id=%s\n",
                           resource->device_id);
-                ZVAL(resource_val) = create_resource(resource->device_id,
+                ZVAL resource_val = create_resource(resource->device_id,
                                                      resource->resource_path);
                 zjs_fulfill_promise(h->promise_obj, &resource_val, 1);
             } else {
                 ERR_PRINT("PUT response code %d\n", data->code);
-                ZVAL(err) = make_ocf_error("NetworkError",
+                ZVAL err = make_ocf_error("NetworkError",
                                            "PUT response error code", resource);
                 zjs_reject_promise(h->promise_obj, &err, 1);
            }
@@ -687,7 +687,7 @@ static jerry_value_t ocf_update(const jerry_value_t function_val,
     struct ocf_handler *h;
 
     // Get device ID property from resource
-    ZVAL(device_id_val) = zjs_get_property(argv[0], "deviceId");
+    ZVAL device_id_val = zjs_get_property(argv[0], "deviceId");
     ZJS_GET_STRING(device_id_val, device_id, OCF_MAX_DEVICE_ID_LEN + 1);
 
     struct client_resource *resource = find_resource_by_id(device_id);
@@ -720,13 +720,13 @@ static jerry_value_t ocf_update(const jerry_value_t function_val,
         zjs_ocf_free_props(ret);
         if (!oc_do_put()) {
             ERR_PRINT("error sending PUT request\n");
-            ZVAL(err) = make_ocf_error("NetworkError", "PUT call failed",
+            ZVAL err = make_ocf_error("NetworkError", "PUT call failed",
                                        resource);
             zjs_reject_promise(promise, &err, 1);
         }
     } else {
         ERR_PRINT("error initializing PUT\n");
-        ZVAL(err) = make_ocf_error("NetworkError", "PUT init failed", resource);
+        ZVAL err = make_ocf_error("NetworkError", "PUT init failed", resource);
         zjs_reject_promise(promise, &err, 1);
     }
 
@@ -748,7 +748,7 @@ static void delete_finished(oc_client_response_t *data)
             DBG_PRINT("DELETE response OK, device_id=%s\n",
                       resource->device_id);
         } else {
-            ZVAL(err) = make_ocf_error("NetworkError", "DELETE had error code",
+            ZVAL err = make_ocf_error("NetworkError", "DELETE had error code",
                                        resource);
             zjs_reject_promise(h->promise_obj, &err, 1);
             ERR_PRINT("DELETE response code %d\n", data->code);
@@ -813,7 +813,7 @@ static void ocf_get_platform_info_handler(oc_client_response_t *data)
     if (data && data->user_data) {
         struct ocf_handler *h = (struct ocf_handler *)data->user_data;
         struct client_resource *resource = h->res;
-        ZVAL(platform_info) = jerry_create_object();
+        ZVAL platform_info = jerry_create_object();
 
         /*
          * TODO: This while loop is repeated in several functions. It would be
@@ -913,7 +913,7 @@ static void ocf_get_device_info_handler(oc_client_response_t *data)
     if (data && data->user_data) {
         struct ocf_handler *h = (struct ocf_handler *)data->user_data;
         struct client_resource *resource = h->res;
-        ZVAL(device_info) = jerry_create_object();
+        ZVAL device_info = jerry_create_object();
 
         /*
          * TODO: This while loop is repeated in several functions. It would be

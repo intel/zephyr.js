@@ -86,7 +86,7 @@ static jerry_value_t make_ocf_error(const char *name, const char *msg,
                                     struct server_resource *res)
 {
     if (res) {
-        ZVAL(ret) = jerry_create_object();
+        ZVAL ret = jerry_create_object();
         if (name) {
             zjs_obj_add_string(ret, name, "name");
         } else {
@@ -175,7 +175,7 @@ static jerry_value_t create_resource(const char *path, jerry_value_t resource_in
         zjs_obj_add_string(res, path, "resourcePath");
     }
 
-    ZVAL(properties) = zjs_get_property(resource_init, "properties");
+    ZVAL properties = zjs_get_property(resource_init, "properties");
     zjs_set_property(res, "properties", properties);
 
     DBG_PRINT("path=%s, obj number=%lu\n", path, res);
@@ -275,8 +275,8 @@ static jerry_value_t create_request(struct server_resource *resource,
     handler->resp = create_response(resource, method);
 
     jerry_value_t object = jerry_create_object();
-    ZVAL(source) = jerry_create_object();
-    ZVAL(target) = jerry_create_object();
+    ZVAL source = jerry_create_object();
+    ZVAL target = jerry_create_object();
 
     if (resource->res) {
         zjs_obj_add_string(source, oc_string(resource->res->uri),
@@ -316,8 +316,8 @@ static void ocf_get_handler(oc_request_t *request,
 
     h->req = request;
 
-    ZVAL(request_val) = create_request(h->res, OC_GET, h);
-    ZVAL(flag) = jerry_create_boolean(0);
+    ZVAL request_val = create_request(h->res, OC_GET, h);
+    ZVAL flag = jerry_create_boolean(0);
 
     jerry_value_t argv[2] = {request_val, flag};
     zjs_trigger_event_now(h->res->object, "retrieve", argv, 2, post_get, h);
@@ -341,9 +341,9 @@ static void ocf_put_handler(oc_request_t *request,
         return;
     }
 
-    ZVAL(request_val) = create_request(h->res, OC_PUT, h);
-    ZVAL(props_val) = request_to_jerry_value(request);
-    ZVAL(resource_val) = jerry_create_object();
+    ZVAL request_val = create_request(h->res, OC_PUT, h);
+    ZVAL props_val = request_to_jerry_value(request);
+    ZVAL resource_val = jerry_create_object();
 
     zjs_set_property(resource_val, "properties", props_val);
     zjs_set_property(request_val, "resource", resource_val);
@@ -427,7 +427,7 @@ static jerry_value_t ocf_register(const jerry_value_t function_val,
     struct ocf_handler *h = NULL;
 
     // Required
-    ZVAL(resource_path_val) = zjs_get_property(argv[0], "resourcePath");
+    ZVAL resource_path_val = zjs_get_property(argv[0], "resourcePath");
     if (!jerry_value_is_string(resource_path_val)) {
         ERR_PRINT("resourcePath not found\n");
         REJECT(promise, "TypeMismatchError", "resourcePath not found", h);
@@ -435,7 +435,7 @@ static jerry_value_t ocf_register(const jerry_value_t function_val,
     }
     ZJS_GET_STRING(resource_path_val, resource_path, OCF_MAX_RES_PATH_LEN);
 
-    ZVAL(res_type_array) = zjs_get_property(argv[0], "resourceTypes");
+    ZVAL res_type_array = zjs_get_property(argv[0], "resourceTypes");
     if (!jerry_value_is_array(res_type_array)) {
         ERR_PRINT("resourceTypes array not found\n");
         REJECT(promise, "TypeMismatchError", "resourceTypes array not found",
@@ -445,28 +445,28 @@ static jerry_value_t ocf_register(const jerry_value_t function_val,
 
     // Optional
     uint8_t flags = 0;
-    ZVAL(observable_val) = zjs_get_property(argv[0], "observable");
+    ZVAL observable_val = zjs_get_property(argv[0], "observable");
     if (jerry_value_is_boolean(observable_val)) {
         if (jerry_get_boolean_value(observable_val)) {
             flags |= FLAG_OBSERVE;
         }
     }
 
-    ZVAL(discoverable_val) = zjs_get_property(argv[0], "discoverable");
+    ZVAL discoverable_val = zjs_get_property(argv[0], "discoverable");
     if (jerry_value_is_boolean(discoverable_val)) {
         if (jerry_get_boolean_value(discoverable_val)) {
             flags |= FLAG_DISCOVERABLE;
         }
     }
 
-    ZVAL(slow_val) = zjs_get_property(argv[0], "slow");
+    ZVAL slow_val = zjs_get_property(argv[0], "slow");
     if (jerry_value_is_boolean(slow_val)) {
         if (jerry_get_boolean_value(slow_val)) {
             flags |= FLAG_SLOW;
         }
     }
 
-    ZVAL(secure_val) = zjs_get_property(argv[0], "secure");
+    ZVAL secure_val = zjs_get_property(argv[0], "secure");
     if (jerry_value_is_boolean(secure_val)) {
         if (jerry_get_boolean_value(secure_val)) {
             flags |= FLAG_SECURE;
@@ -497,7 +497,7 @@ static jerry_value_t ocf_register(const jerry_value_t function_val,
     }
 
     for (i = 0; i < resource->num_types; ++i) {
-        ZVAL(type_val) = jerry_get_property_by_index(res_type_array, i);
+        ZVAL type_val = jerry_get_property_by_index(res_type_array, i);
         uint32_t size = OCF_MAX_RES_TYPE_LEN;
         resource->resource_types[i] = zjs_alloc_from_jstring(type_val, &size);
         if (!resource->resource_types[i]) {
@@ -506,7 +506,7 @@ static jerry_value_t ocf_register(const jerry_value_t function_val,
         }
     }
 
-    ZVAL(iface_array) = zjs_get_property(argv[0], "interfaces");
+    ZVAL iface_array = zjs_get_property(argv[0], "interfaces");
     if (!jerry_value_is_array(iface_array)) {
         ERR_PRINT("interfaces array not found\n");
         REJECT(promise, "TypeMismatchError", "resourceTypes array not found",
@@ -522,7 +522,7 @@ static jerry_value_t ocf_register(const jerry_value_t function_val,
     }
 
     for (i = 0; i < resource->num_ifaces; ++i) {
-        ZVAL(val) = jerry_get_property_by_index(iface_array, i);
+        ZVAL val = jerry_get_property_by_index(iface_array, i);
         uint32_t size = OCF_MAX_RES_TYPE_LEN;
         resource->resource_ifaces[i] = zjs_alloc_from_jstring(val, &size);
         if (!resource->resource_ifaces[i]) {

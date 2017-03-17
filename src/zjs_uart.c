@@ -65,7 +65,7 @@ static volatile bool rx = false;
 static jerry_value_t make_uart_error(const char *name, const char *msg)
 {
 
-    ZVAL(ret) = jerry_create_object();
+    ZVAL ret = jerry_create_object();
     if (name) {
         zjs_obj_add_string(ret, name, "name");
     } else {
@@ -173,7 +173,7 @@ static jerry_value_t uart_write(const jerry_value_t function_obj,
         zjs_fulfill_promise(promise, NULL, 0);
     }
     else {
-        ZVAL(error) = make_uart_error("WriteError", "incomplete write");
+        ZVAL error = make_uart_error("WriteError", "incomplete write");
         zjs_reject_promise(promise, &error, 1);
     }
 
@@ -229,7 +229,7 @@ static jerry_value_t uart_init(const jerry_value_t function_obj,
 
     zjs_make_promise(promise, NULL, NULL);
 
-    ZVAL(port_val) = zjs_get_property(argv[0], "port");
+    ZVAL port_val = zjs_get_property(argv[0], "port");
 
     const int MAX_PORT_LENGTH = 16;
     jerry_size_t size = MAX_PORT_LENGTH;
@@ -239,13 +239,13 @@ static jerry_value_t uart_init(const jerry_value_t function_obj,
 
     if (!size) {
         DBG_PRINT("port length is too long\n");
-        ZVAL(error) = make_uart_error("TypeMismatchError",
+        ZVAL error = make_uart_error("TypeMismatchError",
                                       "port length is too long");
         zjs_reject_promise(promise, &error, 1);
         return promise;
     }
 
-    ZVAL(baud_val) = zjs_get_property(argv[0], "baud");
+    ZVAL baud_val = zjs_get_property(argv[0], "baud");
     if (jerry_value_is_number(baud_val)) {
         baud = (int)jerry_get_number_value(baud_val);
     }
@@ -259,7 +259,7 @@ static jerry_value_t uart_init(const jerry_value_t function_obj,
     }
     if (uart_dev == NULL) {
         DBG_PRINT("could not find port %s\n", port);
-        ZVAL(error) = make_uart_error("NotFoundError",
+        ZVAL error = make_uart_error("NotFoundError",
                                       "could not find port provided");
         zjs_reject_promise(promise, &error, 1);
         return promise;
@@ -301,7 +301,7 @@ static jerry_value_t uart_init(const jerry_value_t function_obj,
     } else {
         if (test_baud != baud) {
             DBG_PRINT("baudrate was not set successfully");
-            ZVAL(error) = make_uart_error("InternalError",
+            ZVAL error = make_uart_error("InternalError",
                                           "baud could not be set");
             zjs_reject_promise(promise, &error, 1);
             return promise;

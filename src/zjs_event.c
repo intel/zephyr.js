@@ -42,7 +42,7 @@ void post_event(void *h)
 
 static uint32_t get_num_events(jerry_value_t emitter)
 {
-    ZVAL(val) = zjs_get_property(emitter, "numEvents");
+    ZVAL val = zjs_get_property(emitter, "numEvents");
     if (!jerry_value_is_number(val)) {
         ERR_PRINT("emitter had no numEvents property\n");
         return 0;
@@ -53,7 +53,7 @@ static uint32_t get_num_events(jerry_value_t emitter)
 
 static uint32_t get_max_event_listeners(jerry_value_t emitter)
 {
-    ZVAL(val) = zjs_get_property(emitter, "maxListeners");
+    ZVAL val = zjs_get_property(emitter, "maxListeners");
     if (!jerry_value_is_number(val)) {
         ERR_PRINT("emitter had no maxListeners property\n");
         return 0;
@@ -65,7 +65,7 @@ static uint32_t get_max_event_listeners(jerry_value_t emitter)
 static int32_t get_callback_id(jerry_value_t event_obj)
 {
     int32_t callback_id = -1;
-    ZVAL(id_prop) = zjs_get_property(event_obj, "callback_id");
+    ZVAL id_prop = zjs_get_property(event_obj, "callback_id");
     if (jerry_value_is_number(id_prop)) {
         // If there already is an event object, get the callback ID
         zjs_obj_get_int32(event_obj, "callback_id", &callback_id);
@@ -76,7 +76,7 @@ static int32_t get_callback_id(jerry_value_t event_obj)
 void zjs_add_event_listener(jerry_value_t obj, const char *event,
                             jerry_value_t listener)
 {
-    ZVAL(event_emitter) = zjs_get_property(obj, HIDDEN_PROP("event"));
+    ZVAL event_emitter = zjs_get_property(obj, HIDDEN_PROP("event"));
     if (!jerry_value_is_object(event_emitter)) {
         ERR_PRINT("no event '%s' found\n", event);
         return;
@@ -89,8 +89,8 @@ void zjs_add_event_listener(jerry_value_t obj, const char *event,
         return;
     }
 
-    ZVAL(map) = zjs_get_property(event_emitter, "map");
-    ZVAL(event_obj) = zjs_get_property(map, event);
+    ZVAL map = zjs_get_property(event_emitter, "map");
+    ZVAL event_obj = zjs_get_property(map, event);
 
     // Event object to hold callback ID and eventually listener arguments
     if (!jerry_value_is_object(event_obj)) {
@@ -157,7 +157,7 @@ static jerry_value_t remove_listener(const jerry_value_t function_obj,
     // args: event name, callback
     ZJS_VALIDATE_ARGS(Z_STRING, Z_FUNCTION);
 
-    ZVAL(event_emitter) = zjs_get_property(this, HIDDEN_PROP("event"));
+    ZVAL event_emitter = zjs_get_property(this, HIDDEN_PROP("event"));
 
     jerry_size_t size = ZJS_MAX_EVENT_NAME_SIZE;
     char event[size];
@@ -166,8 +166,8 @@ static jerry_value_t remove_listener(const jerry_value_t function_obj,
         return zjs_error("event name is too long");
     }
 
-    ZVAL(map) = zjs_get_property(event_emitter, "map");
-    ZVAL(event_obj) = zjs_get_property(map, event);
+    ZVAL map = zjs_get_property(event_emitter, "map");
+    ZVAL event_obj = zjs_get_property(map, event);
 
     // Event object to hold callback ID and eventually listener arguments
     if (!jerry_value_is_object(event_obj)) {
@@ -193,7 +193,7 @@ static jerry_value_t remove_all_listeners(const jerry_value_t function_obj,
     // args: event name
     ZJS_VALIDATE_ARGS(Z_STRING);
 
-    ZVAL(event_emitter) = zjs_get_property(this, HIDDEN_PROP("event"));
+    ZVAL event_emitter = zjs_get_property(this, HIDDEN_PROP("event"));
 
     jerry_size_t size = ZJS_MAX_EVENT_NAME_SIZE;
     char event[size];
@@ -202,8 +202,8 @@ static jerry_value_t remove_all_listeners(const jerry_value_t function_obj,
         return zjs_error("event name is too long");
     }
 
-    ZVAL(map) = zjs_get_property(event_emitter, "map");
-    ZVAL(event_obj) = zjs_get_property(map, event);
+    ZVAL map = zjs_get_property(event_emitter, "map");
+    ZVAL event_obj = zjs_get_property(map, event);
 
     // Event object to hold callback ID and eventually listener arguments
     if (!jerry_value_is_object(event_obj)) {
@@ -215,7 +215,7 @@ static jerry_value_t remove_all_listeners(const jerry_value_t function_obj,
     if (callback_id != -1) {
         zjs_remove_callback(callback_id);
 
-        ZVAL(name) = jerry_create_string((const jerry_char_t *)event);
+        ZVAL name = jerry_create_string((const jerry_char_t *)event);
         jerry_delete_property(map, name);
     } else {
         ERR_PRINT("callback_id not found for '%s'\n", event);
@@ -245,7 +245,7 @@ static jerry_value_t get_event_names(const jerry_value_t function_obj,
 {
     event_names_t names;
 
-    ZVAL(event_emitter) = zjs_get_property(this, HIDDEN_PROP("event"));
+    ZVAL event_emitter = zjs_get_property(this, HIDDEN_PROP("event"));
     uint32_t num_events = get_num_events(event_emitter);
     jerry_value_t map = zjs_get_property(event_emitter, "map");
 
@@ -262,7 +262,7 @@ static jerry_value_t get_max_listeners(const jerry_value_t function_obj,
                                        const jerry_value_t argv[],
                                        const jerry_length_t argc)
 {
-    ZVAL(event_emitter) = zjs_get_property(this, HIDDEN_PROP("event"));
+    ZVAL event_emitter = zjs_get_property(this, HIDDEN_PROP("event"));
     uint32_t max_listeners = get_max_event_listeners(event_emitter);
     return jerry_create_number(max_listeners);
 }
@@ -275,7 +275,7 @@ static jerry_value_t set_max_listeners(const jerry_value_t function_obj,
     // args: max count
     ZJS_VALIDATE_ARGS(Z_NUMBER);
 
-    ZVAL(event_emitter) = zjs_get_property(this, HIDDEN_PROP("event"));
+    ZVAL event_emitter = zjs_get_property(this, HIDDEN_PROP("event"));
 
     double num = jerry_get_number_value(argv[0]);
     if (num < 0) {
@@ -294,7 +294,7 @@ static jerry_value_t get_listener_count(const jerry_value_t function_obj,
     // args: event name
     ZJS_VALIDATE_ARGS(Z_STRING);
 
-    ZVAL(event_emitter) = zjs_get_property(this, HIDDEN_PROP("event"));
+    ZVAL event_emitter = zjs_get_property(this, HIDDEN_PROP("event"));
 
     jerry_size_t size = ZJS_MAX_EVENT_NAME_SIZE;
     char event[size];
@@ -303,8 +303,8 @@ static jerry_value_t get_listener_count(const jerry_value_t function_obj,
         return zjs_error("event name is too long");
     }
 
-    ZVAL(map) = zjs_get_property(event_emitter, "map");
-    ZVAL(event_obj) = zjs_get_property(map, event);
+    ZVAL map = zjs_get_property(event_emitter, "map");
+    ZVAL event_obj = zjs_get_property(map, event);
 
     if (!jerry_value_is_object(event_obj)) {
         return jerry_create_number(0);
@@ -330,7 +330,7 @@ static jerry_value_t get_listeners(const jerry_value_t function_obj,
     // args: event name
     ZJS_VALIDATE_ARGS(Z_STRING);
 
-    ZVAL(event_emitter) = zjs_get_property(this, HIDDEN_PROP("event"));
+    ZVAL event_emitter = zjs_get_property(this, HIDDEN_PROP("event"));
 
     jerry_size_t size = ZJS_MAX_EVENT_NAME_SIZE;
     char event[size];
@@ -339,8 +339,8 @@ static jerry_value_t get_listeners(const jerry_value_t function_obj,
         return zjs_error("event name is too long");
     }
 
-    ZVAL(map) = zjs_get_property(event_emitter, "map");
-    ZVAL(event_obj) = zjs_get_property(map, event);
+    ZVAL map = zjs_get_property(event_emitter, "map");
+    ZVAL event_obj = zjs_get_property(map, event);
 
     if (!jerry_value_is_object(event_obj)) {
         return zjs_error("event object not found");
@@ -371,9 +371,9 @@ bool zjs_trigger_event(jerry_value_t obj,
                        zjs_post_event post,
                        void *h)
 {
-    ZVAL(event_emitter) = zjs_get_property(obj, HIDDEN_PROP("event"));
-    ZVAL(map) = zjs_get_property(event_emitter, "map");
-    ZVAL(event_obj) = zjs_get_property(map, event);
+    ZVAL event_emitter = zjs_get_property(obj, HIDDEN_PROP("event"));
+    ZVAL map = zjs_get_property(event_emitter, "map");
+    ZVAL event_obj = zjs_get_property(map, event);
 
     if (!jerry_value_is_object(event_obj)) {
         ERR_PRINT("event object not found\n");
@@ -411,9 +411,9 @@ bool zjs_trigger_event_now(jerry_value_t obj,
                            zjs_post_event post,
                            void *h)
 {
-    ZVAL(event_emitter) = zjs_get_property(obj, HIDDEN_PROP("event"));
-    ZVAL(map) = zjs_get_property(event_emitter, "map");
-    ZVAL(event_obj) = zjs_get_property(map, event);
+    ZVAL event_emitter = zjs_get_property(obj, HIDDEN_PROP("event"));
+    ZVAL map = zjs_get_property(event_emitter, "map");
+    ZVAL event_obj = zjs_get_property(map, event);
 
     if (!jerry_value_is_object(event_obj)) {
         ERR_PRINT("event object not found\n");
@@ -443,12 +443,12 @@ bool zjs_trigger_event_now(jerry_value_t obj,
 
 void zjs_make_event(jerry_value_t obj, jerry_value_t prototype)
 {
-    ZVAL(event_obj) = jerry_create_object();
+    ZVAL event_obj = jerry_create_object();
 
     zjs_obj_add_number(event_obj, DEFAULT_MAX_LISTENERS, "maxListeners");
     zjs_obj_add_number(event_obj, 0, "numEvents");
 
-    ZVAL(map) = jerry_create_object();
+    ZVAL map = jerry_create_object();
     zjs_set_property(event_obj, "map", map);
 
     jerry_value_t proto = zjs_event_emitter_prototype;

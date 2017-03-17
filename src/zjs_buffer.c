@@ -392,7 +392,7 @@ static jerry_value_t zjs_buffer(const jerry_value_t function_obj,
         if (jerry_value_is_object(new_buf)) {
             zjs_buffer_t *buf = zjs_buffer_find(new_buf);
             for (int i = 0; i < len; i++) {
-                ZVAL(item) = jerry_get_property_by_index(array, i);
+                ZVAL item = jerry_get_property_by_index(array, i);
                 if (jerry_value_is_number(item)) {
                     buf->buffer[i] = (uint8_t)jerry_get_number_value(item);
                 } else {
@@ -424,7 +424,7 @@ static jerry_value_t zjs_buffer(const jerry_value_t function_obj,
 
 void zjs_buffer_init()
 {
-    ZVAL(global_obj) = jerry_get_global_object();
+    ZVAL global_obj = jerry_get_global_object();
     zjs_obj_add_function(global_obj, zjs_buffer, "Buffer");
 
     zjs_native_func_t array[] = {

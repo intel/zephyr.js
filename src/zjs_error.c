@@ -53,18 +53,18 @@ static jerry_value_t error_handler(const jerry_value_t function_obj,
 
 void zjs_error_init()
 {
-    ZVAL(global) = jerry_get_global_object();
-    ZVAL(error_func) = zjs_get_property(global, "Error");
+    ZVAL global = jerry_get_global_object();
+    ZVAL error_func = zjs_get_property(global, "Error");
 
     int count = sizeof(error_types) / sizeof(zjs_error_t);
     for (int i=0; i<count; i++) {
-        ZVAL(error_obj) = jerry_construct_object(error_func, NULL, 0);
+        ZVAL error_obj = jerry_construct_object(error_func, NULL, 0);
         if (jerry_value_is_undefined(error_obj)) {
             ERR_PRINT("Error object undefined\n");
         }
 
         // create a copy of this function w/ unique error prototype for each
-        ZVAL(ctor) = jerry_create_external_function(error_handler);
+        ZVAL ctor = jerry_create_external_function(error_handler);
         error_types[i].ctor = ctor;
         zjs_set_property(ctor, "prototype", error_obj);
 
@@ -85,16 +85,16 @@ static char *construct_message(jerry_value_t this, jerry_value_t func,
 {
     jerry_size_t size = 64;
     char name[size];
-    ZVAL(keys_array) = jerry_get_object_keys(this);
+    ZVAL keys_array = jerry_get_object_keys(this);
     if (!jerry_value_is_array(keys_array)) {
         return NULL;
     }
     uint32_t arr_length = jerry_get_array_length(keys_array);
     int i;
     for (i = 0; i < arr_length; ++i) {
-        ZVAL(val) = jerry_get_property_by_index(keys_array, i);
+        ZVAL val = jerry_get_property_by_index(keys_array, i);
         zjs_copy_jstring(val, name, &size);
-        ZVAL(func_val) = zjs_get_property(this, name);
+        ZVAL func_val = zjs_get_property(this, name);
         if (func_val == func) {
             break;
         }
@@ -171,7 +171,7 @@ jerry_value_t zjs_standard_error(zjs_error_type_t type, const char *message)
 #ifdef DEBUG_BUILD
     ZJS_PRINT("[%s] %s\n", error_types[type].name, message);
 #endif
-    ZVAL(msg) = jerry_create_string((jerry_char_t *)message);
+    ZVAL msg = jerry_create_string((jerry_char_t *)message);
     jerry_value_t obj = jerry_construct_object(error_types[type].ctor, &msg, 1);
     jerry_value_set_error_flag(&obj);
     return obj;

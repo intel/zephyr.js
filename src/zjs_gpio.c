@@ -108,12 +108,12 @@ static void zjs_gpio_c_callback(void *h, void *args)
         ERR_PRINT("unexpected callback after close");
         return;
     }
-    ZVAL(onchange_func) =
+    ZVAL onchange_func =
         zjs_get_property(handle->pin_obj, "onchange");
 
     // If pin.onChange exists, call it
     if (jerry_value_is_function(onchange_func)) {
-        ZVAL(event) = jerry_create_object();
+        ZVAL event = jerry_create_object();
         uint32_t val = 0;
         memcpy(&val, args, 4);
         // Put the boolean GPIO trigger value in the object
@@ -162,7 +162,7 @@ static jerry_value_t zjs_gpio_pin_read(const jerry_value_t function_obj,
 
     int newpin;
     struct device *gpiodev;
-    ZVAL(status) = lookup_pin(this, &gpiodev, &newpin);
+    ZVAL status = lookup_pin(this, &gpiodev, &newpin);
     if (!jerry_value_is_undefined(status))
         return status;
 
@@ -207,7 +207,7 @@ static jerry_value_t zjs_gpio_pin_write(const jerry_value_t function_obj,
 
     int newpin;
     struct device *gpiodev;
-    ZVAL(status) = lookup_pin(this, &gpiodev, &newpin);
+    ZVAL status = lookup_pin(this, &gpiodev, &newpin);
     if (!jerry_value_is_undefined(status))
         return status;
 
@@ -290,7 +290,7 @@ static jerry_value_t zjs_gpio_open(const jerry_value_t function_obj,
     struct device *gpiodev;
     int newpin;
 
-    ZVAL(status) = lookup_pin(data, &gpiodev, &newpin);
+    ZVAL status = lookup_pin(data, &gpiodev, &newpin);
     if (!jerry_value_is_undefined(status))
         return status;
 
@@ -359,14 +359,14 @@ static jerry_value_t zjs_gpio_open(const jerry_value_t function_obj,
     }
 
     // create the GPIOPin object
-    ZVAL(pinobj) = jerry_create_object();
+    ZVAL pinobj = jerry_create_object();
     jerry_set_prototype(pinobj, zjs_gpio_pin_prototype);
 
     zjs_obj_add_string(pinobj, dirOut ? ZJS_DIR_OUT : ZJS_DIR_IN, "direction");
     zjs_obj_add_boolean(pinobj, activeLow, "activeLow");
     zjs_obj_add_string(pinobj, edge, "edge");
     zjs_obj_add_string(pinobj, pull, "pull");
-    ZVAL(pin) = zjs_get_property(data, "pin");
+    ZVAL pin = zjs_get_property(data, "pin");
     zjs_set_property(pinobj, "pin", pin);
 
     gpio_handle_t *handle = zjs_malloc(sizeof(gpio_handle_t));

@@ -129,7 +129,7 @@ void zjs_free_value(jerry_value_t *value);
  * NOTE: Be careful to always initialize this value, or else an uninitialized
  *   value will get freed. (Or will compiler catch that?)
  */
-#define ZVAL(name) jerry_value_t name __attribute__ ((__cleanup__(zjs_free_value)))
+#define ZVAL const jerry_value_t __attribute__ ((__cleanup__(zjs_free_value)))
 
 //
 // ztypes (for argument validation)

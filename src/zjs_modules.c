@@ -167,11 +167,11 @@ static jerry_value_t native_require_handler(const jerry_value_t function_obj,
         ERR_PRINT("could not read module %s\n", full_path);
         return NOTSUPPORTED_ERROR("native_require_handler: could not read module script");
     }
-    ZVAL(code_eval) = jerry_parse((jerry_char_t *)str, len, false);
+    ZVAL code_eval = jerry_parse((jerry_char_t *)str, len, false);
     if (jerry_value_has_error_flag(code_eval)) {
         return SYSTEM_ERROR("native_require_handler: could not parse javascript");
     }
-    ZVAL(result) = jerry_run(code_eval);
+    ZVAL result = jerry_run(code_eval);
     if (jerry_value_has_error_flag(result)) {
         return SYSTEM_ERROR("native_require_handler: could not run javascript");
     }
@@ -179,14 +179,14 @@ static jerry_value_t native_require_handler(const jerry_value_t function_obj,
     zjs_free_script(str);
 #endif
 
-    ZVAL(global_obj) = jerry_get_global_object();
-    ZVAL(modules_obj) = zjs_get_property(global_obj, "module");
+    ZVAL global_obj = jerry_get_global_object();
+    ZVAL modules_obj = zjs_get_property(global_obj, "module");
 
     if (!jerry_value_is_object(modules_obj)) {
         return SYSTEM_ERROR("native_require_handler: modules object not found");
     }
 
-    ZVAL(exports_obj) = zjs_get_property(modules_obj, "exports");
+    ZVAL exports_obj = zjs_get_property(modules_obj, "exports");
     if (!jerry_value_is_object(exports_obj)) {
         return SYSTEM_ERROR("native_require_handler: exports object not found");
     }
@@ -196,7 +196,7 @@ static jerry_value_t native_require_handler(const jerry_value_t function_obj,
         module[size-i] = '\0';
     }
 
-    ZVAL(found_obj) = zjs_get_property(exports_obj, module);
+    ZVAL found_obj = zjs_get_property(exports_obj, module);
     if (!jerry_value_is_object(found_obj)) {
         return NOTSUPPORTED_ERROR("native_require_handler: module not found");
     }
@@ -207,7 +207,7 @@ static jerry_value_t native_require_handler(const jerry_value_t function_obj,
 
 void zjs_modules_init()
 {
-    ZVAL(global_obj) = jerry_get_global_object();
+    ZVAL global_obj = jerry_get_global_object();
 
     // create the C handler for require JS call
     zjs_obj_add_function(global_obj, native_require_handler, "require");

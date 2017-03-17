@@ -122,10 +122,10 @@ static void udp_received(struct net_context *context,
     }
     net_addr_ntop(family, addr, addr_str, sizeof(addr_str));
 
-    ZVAL(buf_js) = zjs_buffer_create(recv_len);
+    ZVAL buf_js = zjs_buffer_create(recv_len);
     zjs_buffer_t *buf = zjs_buffer_find(buf_js);
 
-    ZVAL(rinfo) = jerry_create_object();
+    ZVAL rinfo = jerry_create_object();
     zjs_obj_add_number(rinfo, ntohs(NET_UDP_BUF(net_buf)->src_port), "port");
     zjs_obj_add_string(rinfo, family == AF_INET ? "IPv4" : "IPv6", "family");
     zjs_obj_add_string(rinfo, addr_str, "address");
@@ -215,7 +215,7 @@ static void udp_sent(struct net_context *context, int status, void *token,
     DBG_PRINT("udp_sent: %p, st=%d udata=%p\n", context, status, user_data);
 
     if (user_data) {
-        ZVAL(rval) = ZJS_UNDEFINED;
+        ZVAL rval = ZJS_UNDEFINED;
         if (status != 0) {
             char errbuf[8];
             snprintf(errbuf, sizeof(errbuf), "%d", status);
