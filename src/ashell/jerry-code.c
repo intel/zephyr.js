@@ -82,7 +82,7 @@ static void javascript_print_error(jerry_value_t error_value)
         return;
 
     jerry_value_clear_error_flag(&error_value);
-    jerry_value_t err_str_val = jerry_value_to_string(error_value);
+    ZVAL err_str_val = jerry_value_to_string(error_value);
 
     jerry_size_t size = 0;
     char *msg = zjs_alloc_from_jstring(err_str_val, &size);
@@ -94,17 +94,14 @@ static void javascript_print_error(jerry_value_t error_value)
     jerry_port_log(JERRY_LOG_LEVEL_ERROR, err_str);
     jerry_port_log(JERRY_LOG_LEVEL_ERROR, "\n");
     zjs_free(msg);
-    jerry_release_value(err_str_val);
 }
 
 void javascript_eval_code(const char *source_buffer)
 {
-    jerry_value_t ret_val;
-
     jerry_port_default_set_log_level(JERRY_LOG_LEVEL_TRACE);
-    ret_val = jerry_eval((jerry_char_t *) source_buffer,
-                         strnlen(source_buffer, MAX_BUFFER_SIZE),
-                         false);
+    ZVAL ret_val = jerry_eval((jerry_char_t *) source_buffer,
+                              strnlen(source_buffer, MAX_BUFFER_SIZE),
+                              false);
 
     if (jerry_value_has_error_flag(ret_val)) {
         printf("[ERR] failed to evaluate JS\n");
@@ -113,8 +110,6 @@ void javascript_eval_code(const char *source_buffer)
         if (!jerry_value_is_undefined(ret_val))
             javascript_print_value(ret_val);
     }
-
-    jerry_release_value(ret_val);
 }
 
 void restore_zjs_api() {
@@ -232,14 +227,11 @@ void javascript_run_code(const char *file_name)
         return;
 
     /* Execute the parsed source code in the Global scope */
-    jerry_value_t ret_value = jerry_run(parsed_code);
+    ZVAL ret_value = jerry_run(parsed_code);
 
     if (jerry_value_has_error_flag(ret_value)) {
         javascript_print_error(ret_value);
     }
-
-    /* Returned value must be freed */
-    jerry_release_value(ret_value);
 }
 
 void javascript_run_snapshot(const char *file_name)
