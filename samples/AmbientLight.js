@@ -6,7 +6,8 @@
 // Hardware Requirements:
 //   - A Grove Light sensor
 // Wiring:
-//   - Wire the sensor's power to Arduino 3.3V or 5V and ground to GND
+//   - Wire the sensor's power to Arduino 3.3V or 5V and ground to GND (try 5V if you are
+//       seeing inaccurate numbers as 3.3V may not have enough power)
 //   - Wire the signal pin to Arduino A2
 
 // Reference chart for measuring light
