@@ -372,7 +372,7 @@ void zjs_print_error_message(jerry_value_t error)
     }
 }
 
-void zjs_free_value(jerry_value_t *value)
+void zjs_free_value(const jerry_value_t *value)
 {
     jerry_release_value(*value);
 }

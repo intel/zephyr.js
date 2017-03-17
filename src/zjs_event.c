@@ -90,12 +90,11 @@ void zjs_add_event_listener(jerry_value_t obj, const char *event,
     }
 
     ZVAL map = zjs_get_property(event_emitter, "map");
-    ZVAL event_obj = zjs_get_property(map, event);
+    jerry_value_t event_prop = zjs_get_property(map, event);
 
     // Event object to hold callback ID and eventually listener arguments
-    if (!jerry_value_is_object(event_obj)) {
-        event_obj = jerry_create_object();
-    }
+    ZVAL event_obj = jerry_value_is_object(event_obj) ? event_prop :
+        jerry_create_object();
 
     int32_t callback_id = get_callback_id(event_obj);
     callback_id = zjs_add_callback_list(listener, obj, NULL, post_event,

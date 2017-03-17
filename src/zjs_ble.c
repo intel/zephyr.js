@@ -210,7 +210,6 @@ static void zjs_ble_read_c_callback(void *handle, void *argv)
     ble_characteristic_t *chrc = (ble_characteristic_t *)handle;
     ble_handle_t *cb = &chrc->read_cb;
 
-    ZVAL rval;
     ZVAL offset = jerry_create_number(cb->offset);
     ZVAL callback =
         jerry_create_external_function(zjs_ble_read_callback_function);
@@ -218,7 +217,7 @@ static void zjs_ble_read_c_callback(void *handle, void *argv)
     jerry_set_object_native_handle(callback, (uintptr_t)handle, NULL);
 
     jerry_value_t args[2] = {offset, callback};
-    rval = jerry_call_function(cb->js_callback, chrc->chrc_obj, args, 2);
+    ZVAL rval = jerry_call_function(cb->js_callback, chrc->chrc_obj, args, 2);
     if (jerry_value_has_error_flag(rval)) {
         DBG_PRINT("failed to call onReadRequest function\n");
     }
@@ -307,7 +306,7 @@ static void zjs_ble_write_c_callback(void *handle, void *argv)
     ble_characteristic_t *chrc = (ble_characteristic_t *)handle;
     ble_handle_t *cb = &chrc->write_cb;
 
-    ZVAL buf_obj;
+    ZVAL_MUTABLE buf_obj;
     if (cb->buffer && cb->buffer_size > 0) {
         buf_obj = zjs_buffer_create(cb->buffer_size);
         zjs_buffer_t *buf = zjs_buffer_find(buf_obj);
@@ -426,9 +425,7 @@ static void zjs_ble_unsubscribe_c_callback(void *handle, void *argv)
     ble_characteristic_t *chrc = (ble_characteristic_t *)handle;
     ble_notify_handle_t *cb = &chrc->unsubscribe_cb;
 
-    ZVAL rval;
-
-    rval = jerry_call_function(cb->js_callback, chrc->chrc_obj, NULL, 0);
+    ZVAL rval = jerry_call_function(cb->js_callback, chrc->chrc_obj, NULL, 0);
     if (jerry_value_has_error_flag(rval)) {
         DBG_PRINT("failed to call onUnsubscribe function\n");
     }
@@ -439,9 +436,7 @@ static void zjs_ble_notify_c_callback(void *handle, void *argv)
     ble_characteristic_t *chrc = (ble_characteristic_t *)handle;
     ble_notify_handle_t *cb = &chrc->notify_cb;
 
-    ZVAL rval;
-
-    rval = jerry_call_function(cb->js_callback, chrc->chrc_obj, NULL, 0);
+    ZVAL rval = jerry_call_function(cb->js_callback, chrc->chrc_obj, NULL, 0);
     if (jerry_value_has_error_flag(rval)) {
         DBG_PRINT("failed to call onNotify function\n");
     }
@@ -723,8 +718,7 @@ static jerry_value_t zjs_ble_start_advertising(const jerry_value_t function_obj,
     }
 
     for (int i=0; i<arraylen; i++) {
-        ZVAL uuid;
-        uuid = jerry_get_property_by_index(array, i);
+        ZVAL uuid = jerry_get_property_by_index(array, i);
         if (!jerry_value_is_string(uuid)) {
             return zjs_error("zjs_ble_adv_start: invalid uuid argument type");
         }

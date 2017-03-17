@@ -110,7 +110,7 @@ void zjs_print_error_message(jerry_value_t error);
 /**
  * Release a jerry_value_t passed by reference
  */
-void zjs_free_value(jerry_value_t *value);
+void zjs_free_value(const jerry_value_t *value);
 
 /**
  * Macro to declare a jerry_value_t and have it released automatically
@@ -130,6 +130,15 @@ void zjs_free_value(jerry_value_t *value);
  *   value will get freed. (Or will compiler catch that?)
  */
 #define ZVAL const jerry_value_t __attribute__ ((__cleanup__(zjs_free_value)))
+
+/**
+ * A non-const version of ZVAL
+ *
+ * This is for when you need to initialize ZVAL from more than one path. It
+ * should be used sparingly, because this is less safe; it's possible to
+ * overwrite a value and forget to release the old one.
+ */
+#define ZVAL_MUTABLE jerry_value_t __attribute__ ((__cleanup__(zjs_free_value)))
 
 //
 // ztypes (for argument validation)
