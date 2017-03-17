@@ -128,7 +128,7 @@ void zjs_free_value(const jerry_value_t *value);
 /**
  * A non-const version of ZVAL
  *
- * This is for when you need to initialize ZVAL from more than one path. It
+ * This is for when you need to initialize a ZVAL from more than one path. It
  * should be used sparingly, because this is less safe; it's possible to
  * overwrite a value and forget to release the old one.
  */
