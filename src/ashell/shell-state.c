@@ -10,7 +10,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <atomic.h>
-#include <malloc.h>
 #include <misc/printk.h>
 #include <misc/reboot.h>
 #include <ctype.h>

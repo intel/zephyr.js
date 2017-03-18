@@ -21,7 +21,8 @@
 #include <init.h>
 
 #include <misc/printk.h>
-#include <malloc.h>
+
+#include "../zjs_util.h"
 
 int fs_exist(const char *path)
 {
@@ -47,7 +48,7 @@ fs_file_t *fs_open_alloc(const char *filename, const char *mode)
         }
     }
 
-    fs_file_t *file = (fs_file_t *) malloc(sizeof(fs_file_t));
+    fs_file_t *file = (fs_file_t *)zjs_malloc(sizeof(fs_file_t));
     res = fs_open(file, filename);
     if (res) {
         printk("Failed opening file [%d]\n", res);
@@ -69,6 +70,6 @@ ssize_t fs_size(fs_file_t *file)
 int fs_close_alloc(fs_file_t *fp)
 {
     int res = fs_close(fp);
-    free(fp);
+    zjs_free(fp);
     return res;
 }
