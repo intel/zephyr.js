@@ -5,6 +5,8 @@
 
 // The util code is only for the X86 side
 
+#include <stdlib.h>
+
 #include "jerry-api.h"
 #include "zjs_common.h"
 #include "zjs_error.h"
@@ -12,18 +14,17 @@
 #define ZJS_UNDEFINED jerry_create_undefined()
 
 #ifdef ZJS_LINUX_BUILD
-#include <stdlib.h>
 #define zjs_malloc(sz) malloc(sz)
 #define zjs_free(ptr) free((void *)ptr)
 #else
 #ifdef ZJS_TRACE_MALLOC
 #include <zephyr.h>
-#define zjs_malloc(sz) ({void *zjs_ptr = k_malloc(sz); ZJS_PRINT("%s:%d: allocating %lu bytes (%p)\n", __func__, __LINE__, (uint32_t)sz, zjs_ptr); zjs_ptr;})
-#define zjs_free(ptr) (ZJS_PRINT("%s:%d: freeing %p\n", __func__, __LINE__, ptr), k_free(ptr))
+#define zjs_malloc(sz) ({void *zjs_ptr = malloc(sz); ZJS_PRINT("%s:%d: allocating %lu bytes (%p)\n", __func__, __LINE__, (uint32_t)sz, zjs_ptr); zjs_ptr;})
+#define zjs_free(ptr) (ZJS_PRINT("%s:%d: freeing %p\n", __func__, __LINE__, ptr), free(ptr))
 #else
 #include <zephyr.h>
-#define zjs_malloc(sz) k_malloc(sz)
-#define zjs_free(ptr) k_free(ptr)
+#define zjs_malloc(sz) malloc(sz)
+#define zjs_free(ptr) free(ptr)
 #endif  // ZJS_TRACE_MALLOC
 #endif  // ZJS_LINUX_BUILD
 
