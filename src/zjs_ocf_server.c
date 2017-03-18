@@ -27,10 +27,10 @@ struct server_resource {
     oc_resource_t *res;
     char *device_id;
     char *resource_path;
-    uint8_t num_types;
     char **resource_types;
-    uint8_t num_ifaces;
     char **resource_ifaces;
+    uint8_t num_types;
+    uint8_t num_ifaces;
     uint8_t flags;
 };
 
@@ -82,22 +82,21 @@ static void post_ocf_promise(void *handle)
     }
 }
 
-static jerry_value_t make_ocf_error(const char *name, const char *msg, struct server_resource *res)
+static jerry_value_t make_ocf_error(const char *name, const char *msg,
+                                    struct server_resource *res)
 {
     if (res) {
-        jerry_value_t ret = jerry_create_object();
+        ZVAL ret = jerry_create_object();
         if (name) {
             zjs_obj_add_string(ret, name, "name");
         } else {
             ERR_PRINT("error must have a name\n");
-            jerry_release_value(ret);
             return ZJS_UNDEFINED;
         }
         if (msg) {
             zjs_obj_add_string(ret, msg, "message");
         } else {
             ERR_PRINT("error must have a message\n");
-            jerry_release_value(ret);
             return ZJS_UNDEFINED;
         }
         if (res->device_id) {
@@ -108,7 +107,7 @@ static jerry_value_t make_ocf_error(const char *name, const char *msg, struct se
         }
         zjs_obj_add_number(ret, (double)res->error_code, "errorCode");
 
-        return ret;
+        return jerry_acquire_value(ret);
     } else {
         ERR_PRINT("client resource was NULL\n");
         return ZJS_UNDEFINED;
@@ -175,13 +174,11 @@ static jerry_value_t create_resource(const char *path, jerry_value_t resource_in
     if (path) {
         zjs_obj_add_string(res, path, "resourcePath");
     }
-    jerry_value_t properties = zjs_get_property(resource_init, "properties");
 
+    ZVAL properties = zjs_get_property(resource_init, "properties");
     zjs_set_property(res, "properties", properties);
 
     DBG_PRINT("path=%s, obj number=%lu\n", path, res);
-
-    jerry_release_value(properties);
 
     return res;
 }
@@ -271,17 +268,21 @@ static jerry_value_t ocf_respond(const jerry_value_t function_val,
     return promise;
 }
 
-static jerry_value_t create_request(struct server_resource *resource, oc_method_t method, struct ocf_handler *handler)
+static jerry_value_t create_request(struct server_resource *resource,
+                                    oc_method_t method,
+                                    struct ocf_handler *handler)
 {
-
     handler->resp = create_response(resource, method);
+
     jerry_value_t object = jerry_create_object();
-    jerry_value_t target = jerry_create_object();
-    jerry_value_t source = jerry_create_object();
+    ZVAL source = jerry_create_object();
+    ZVAL target = jerry_create_object();
 
     if (resource->res) {
-        zjs_obj_add_string(source, oc_string(resource->res->uri), "resourcePath");
-        zjs_obj_add_string(target, oc_string(resource->res->uri), "resourcePath");
+        zjs_obj_add_string(source, oc_string(resource->res->uri),
+                           "resourcePath");
+        zjs_obj_add_string(target, oc_string(resource->res->uri),
+                           "resourcePath");
     }
 
     // source is the resource requesting the operation
@@ -294,9 +295,6 @@ static jerry_value_t create_request(struct server_resource *resource, oc_method_
 
     jerry_set_object_native_handle(object, (uintptr_t)handler, NULL);
 
-    jerry_release_value(target);
-    jerry_release_value(source);
-
     return object;
 }
 
@@ -305,22 +303,25 @@ static void post_get(void *handler)
     // ZJS_PRINT("POST GET\n");
 }
 
-static void ocf_get_handler(oc_request_t *request, oc_interface_mask_t interface, void *user_data)
+static void ocf_get_handler(oc_request_t *request,
+                            oc_interface_mask_t interface, void *user_data)
 {
     ZJS_PRINT("ocf_get_handler()\n");
-    struct ocf_handler *h = new_ocf_handler((struct server_resource *)user_data);
+    struct ocf_handler *h =
+        new_ocf_handler((struct server_resource *)user_data);
     if (!h) {
         ERR_PRINT("handler was NULL\n");
         return;
     }
-    jerry_value_t argv[2];
-    argv[0] = create_request(h->res, OC_GET, h);
-    argv[1] = jerry_create_boolean(0);
+
     h->req = request;
+
+    ZVAL request_val = create_request(h->res, OC_GET, h);
+    ZVAL flag = jerry_create_boolean(0);
+
+    jerry_value_t argv[2] = {request_val, flag};
     zjs_trigger_event_now(h->res->object, "retrieve", argv, 2, post_get, h);
 
-    jerry_release_value(argv[0]);
-    jerry_release_value(argv[1]);
     zjs_free(h->resp);
     zjs_free(h);
 }
@@ -330,7 +331,8 @@ static void post_put(void *handler)
     // ZJS_PRINT("POST PUT\n");
 }
 
-static void ocf_put_handler(oc_request_t *request, oc_interface_mask_t interface, void *user_data)
+static void ocf_put_handler(oc_request_t *request,
+                            oc_interface_mask_t interface, void *user_data)
 {
     ZJS_PRINT("ocf_put_handler()\n");
     struct ocf_handler *h = new_ocf_handler((struct server_resource *)user_data);
@@ -338,23 +340,20 @@ static void ocf_put_handler(oc_request_t *request, oc_interface_mask_t interface
         ERR_PRINT("handler was NULL\n");
         return;
     }
-    jerry_value_t request_val = create_request(h->res, OC_PUT, h);
-    jerry_value_t props_val = request_to_jerry_value(request);
-    jerry_value_t resource_val = jerry_create_object();
+
+    ZVAL request_val = create_request(h->res, OC_PUT, h);
+    ZVAL props_val = request_to_jerry_value(request);
+    ZVAL resource_val = jerry_create_object();
 
     zjs_set_property(resource_val, "properties", props_val);
     zjs_set_property(request_val, "resource", resource_val);
 
-    jerry_release_value(props_val);
-    jerry_release_value(resource_val);
-
     h->req = request;
-
-    zjs_trigger_event_now(h->res->object, "update", &request_val, 1, post_put, h);
+    zjs_trigger_event_now(h->res->object, "update", &request_val, 1, post_put,
+                          h);
 
     DBG_PRINT("sent PUT response, code=CHANGED\n");
 
-    jerry_release_value(request_val);
     zjs_free(h->resp);
     zjs_free(h);
 }
@@ -428,67 +427,59 @@ static jerry_value_t ocf_register(const jerry_value_t function_val,
     struct ocf_handler *h = NULL;
 
     // Required
-    jerry_value_t resource_path_val = zjs_get_property(argv[0], "resourcePath");
+    ZVAL resource_path_val = zjs_get_property(argv[0], "resourcePath");
     if (!jerry_value_is_string(resource_path_val)) {
-        jerry_release_value(resource_path_val);
         ERR_PRINT("resourcePath not found\n");
         REJECT(promise, "TypeMismatchError", "resourcePath not found", h);
         return promise;
     }
     ZJS_GET_STRING(resource_path_val, resource_path, OCF_MAX_RES_PATH_LEN);
-    jerry_release_value(resource_path_val);
 
-    jerry_value_t res_type_array = zjs_get_property(argv[0], "resourceTypes");
+    ZVAL res_type_array = zjs_get_property(argv[0], "resourceTypes");
     if (!jerry_value_is_array(res_type_array)) {
-        jerry_release_value(res_type_array);
         ERR_PRINT("resourceTypes array not found\n");
-        REJECT(promise, "TypeMismatchError", "resourceTypes array not found", h);
+        REJECT(promise, "TypeMismatchError", "resourceTypes array not found",
+               h);
         return promise;
     }
 
     // Optional
     uint8_t flags = 0;
-    jerry_value_t observable_val = zjs_get_property(argv[0], "observable");
+    ZVAL observable_val = zjs_get_property(argv[0], "observable");
     if (jerry_value_is_boolean(observable_val)) {
         if (jerry_get_boolean_value(observable_val)) {
             flags |= FLAG_OBSERVE;
         }
     }
-    jerry_release_value(observable_val);
 
-    jerry_value_t discoverable_val = zjs_get_property(argv[0], "discoverable");
+    ZVAL discoverable_val = zjs_get_property(argv[0], "discoverable");
     if (jerry_value_is_boolean(discoverable_val)) {
         if (jerry_get_boolean_value(discoverable_val)) {
             flags |= FLAG_DISCOVERABLE;
         }
     }
-    jerry_release_value(discoverable_val);
 
-    jerry_value_t slow_val = zjs_get_property(argv[0], "slow");
+    ZVAL slow_val = zjs_get_property(argv[0], "slow");
     if (jerry_value_is_boolean(slow_val)) {
         if (jerry_get_boolean_value(slow_val)) {
             flags |= FLAG_SLOW;
         }
     }
-    jerry_release_value(slow_val);
 
-    jerry_value_t secure_val = zjs_get_property(argv[0], "secure");
+    ZVAL secure_val = zjs_get_property(argv[0], "secure");
     if (jerry_value_is_boolean(secure_val)) {
         if (jerry_get_boolean_value(secure_val)) {
             flags |= FLAG_SECURE;
         }
     }
-    jerry_release_value(secure_val);
 
     resource_list_t *new = zjs_malloc(sizeof(resource_list_t));
     if (!new) {
-        jerry_release_value(res_type_array);
         REJECT(promise, "InternalError", "Could not allocate resource list", h);
         return promise;
     }
     resource = new_server_resource(resource_path);
     if (!resource) {
-        jerry_release_value(res_type_array);
         REJECT(promise, "InternalError", "Could not allocate resource", h);
         return promise;
     }
@@ -501,54 +492,44 @@ static jerry_value_t ocf_register(const jerry_value_t function_val,
     resource->num_types = jerry_get_array_length(res_type_array);
     resource->resource_types = zjs_malloc(sizeof(char *) * resource->num_types);
     if (!resource->resource_types) {
-        jerry_release_value(res_type_array);
         REJECT(promise, "InternalError", "resourceType alloc failed", h);
         return promise;
     }
 
     for (i = 0; i < resource->num_types; ++i) {
-        jerry_value_t type_val = jerry_get_property_by_index(res_type_array, i);
+        ZVAL type_val = jerry_get_property_by_index(res_type_array, i);
         uint32_t size = OCF_MAX_RES_TYPE_LEN;
         resource->resource_types[i] = zjs_alloc_from_jstring(type_val, &size);
         if (!resource->resource_types[i]) {
-            jerry_release_value(res_type_array);
-            jerry_release_value(type_val);
             REJECT(promise, "InternalError", "resourceType alloc failed", h);
             return promise;
         }
-        jerry_release_value(type_val);
     }
-    jerry_release_value(res_type_array);
 
-    jerry_value_t iface_array = zjs_get_property(argv[0], "interfaces");
+    ZVAL iface_array = zjs_get_property(argv[0], "interfaces");
     if (!jerry_value_is_array(iface_array)) {
-        jerry_release_value(iface_array);
         ERR_PRINT("interfaces array not found\n");
-        REJECT(promise, "TypeMismatchError", "resourceTypes array not found", h);
+        REJECT(promise, "TypeMismatchError", "resourceTypes array not found",
+               h);
         return promise;
     }
 
     resource->num_ifaces = jerry_get_array_length(iface_array);
     resource->resource_ifaces = zjs_malloc(sizeof(char *) * resource->num_ifaces);
     if (!resource->resource_ifaces) {
-        jerry_release_value(iface_array);
         REJECT(promise, "InternalError", "interfaces alloc failed", h);
         return promise;
     }
 
     for (i = 0; i < resource->num_ifaces; ++i) {
-        jerry_value_t val = jerry_get_property_by_index(iface_array, i);
+        ZVAL val = jerry_get_property_by_index(iface_array, i);
         uint32_t size = OCF_MAX_RES_TYPE_LEN;
         resource->resource_ifaces[i] = zjs_alloc_from_jstring(val, &size);
         if (!resource->resource_ifaces[i]) {
-            jerry_release_value(iface_array);
-            jerry_release_value(val);
             REJECT(promise, "InternalError", "resourceType alloc failed", h);
             return promise;
         }
-        jerry_release_value(val);
     }
-    jerry_release_value(iface_array);
 
     // Start OCF. Device/platform/resource properties should all be set after
     if (zjs_ocf_start() < 0) {

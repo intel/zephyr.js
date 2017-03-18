@@ -100,16 +100,16 @@ static jerry_value_t dummy_func(const jerry_value_t function_obj,
 static void test_validate_args()
 {
     // create some dummy objects
-    jerry_value_t obj1 = jerry_create_object();
-    jerry_value_t obj2 = jerry_create_object();
-    jerry_value_t str1 = jerry_create_string("arthur");
-    jerry_value_t str2 = jerry_create_string("ford");
-    jerry_value_t func1 = jerry_create_external_function(dummy_func);
-    jerry_value_t array1 = jerry_create_array(3);
-    jerry_value_t num1 = jerry_create_number(42);
-    jerry_value_t bool1 = jerry_create_boolean(true);
-    jerry_value_t null1 = jerry_create_null();
-    jerry_value_t undef1 = jerry_create_undefined();
+    ZVAL obj1 = jerry_create_object();
+    ZVAL obj2 = jerry_create_object();
+    ZVAL str1 = jerry_create_string("arthur");
+    ZVAL str2 = jerry_create_string("ford");
+    ZVAL func1 = jerry_create_external_function(dummy_func);
+    ZVAL array1 = jerry_create_array(3);
+    ZVAL num1 = jerry_create_number(42);
+    ZVAL bool1 = jerry_create_boolean(true);
+    ZVAL null1 = jerry_create_null();
+    ZVAL undef1 = jerry_create_undefined();
 
     // create expect strings
     const char *expect_none[]  = { NULL };
@@ -274,18 +274,6 @@ static void test_validate_args()
     argv[2] = obj1;
     zjs_assert(zjs_validate_args(expect_more, 3, argv) == 2,
                "optional number and null, required object, pass all");
-
-    // free up the dummy objects
-    jerry_release_value(obj1);
-    jerry_release_value(obj2);
-    jerry_release_value(str1);
-    jerry_release_value(str2);
-    jerry_release_value(func1);
-    jerry_release_value(array1);
-    jerry_release_value(num1);
-    jerry_release_value(bool1);
-    jerry_release_value(null1);
-    jerry_release_value(undef1);
 }
 
 void zjs_run_unit_tests()

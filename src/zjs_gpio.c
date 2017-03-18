@@ -108,11 +108,12 @@ static void zjs_gpio_c_callback(void *h, void *args)
         ERR_PRINT("unexpected callback after close");
         return;
     }
-    jerry_value_t onchange_func = zjs_get_property(handle->pin_obj, "onchange");
+    ZVAL onchange_func =
+        zjs_get_property(handle->pin_obj, "onchange");
 
     // If pin.onChange exists, call it
     if (jerry_value_is_function(onchange_func)) {
-        jerry_value_t event = jerry_create_object();
+        ZVAL event = jerry_create_object();
         uint32_t val = 0;
         memcpy(&val, args, 4);
         // Put the boolean GPIO trigger value in the object
@@ -120,13 +121,9 @@ static void zjs_gpio_c_callback(void *h, void *args)
 
         // Call the JS callback
         jerry_call_function(onchange_func, ZJS_UNDEFINED, &event, 1);
-
-        jerry_release_value(event);
     } else {
         DBG_PRINT(("onChange has not been registered\n"));
     }
-
-    jerry_release_value(onchange_func);
 }
 
 // Callback when a GPIO input fires
@@ -165,10 +162,9 @@ static jerry_value_t zjs_gpio_pin_read(const jerry_value_t function_obj,
 
     int newpin;
     struct device *gpiodev;
-    jerry_value_t status = lookup_pin(this, &gpiodev, &newpin);
+    ZVAL status = lookup_pin(this, &gpiodev, &newpin);
     if (!jerry_value_is_undefined(status))
         return status;
-    jerry_release_value(status);
 
     bool activeLow = false;
     zjs_obj_get_boolean(this, "activeLow", &activeLow);
@@ -211,10 +207,9 @@ static jerry_value_t zjs_gpio_pin_write(const jerry_value_t function_obj,
 
     int newpin;
     struct device *gpiodev;
-    jerry_value_t status = lookup_pin(this, &gpiodev, &newpin);
+    ZVAL status = lookup_pin(this, &gpiodev, &newpin);
     if (!jerry_value_is_undefined(status))
         return status;
-    jerry_release_value(status);
 
     bool activeLow = false;
     zjs_obj_get_boolean(this, "activeLow", &activeLow);
@@ -295,10 +290,9 @@ static jerry_value_t zjs_gpio_open(const jerry_value_t function_obj,
     struct device *gpiodev;
     int newpin;
 
-    jerry_value_t status = lookup_pin(data, &gpiodev, &newpin);
+    ZVAL status = lookup_pin(data, &gpiodev, &newpin);
     if (!jerry_value_is_undefined(status))
         return status;
-    jerry_release_value(status);
 
     int flags = 0;
     bool dirOut = true;
@@ -365,16 +359,15 @@ static jerry_value_t zjs_gpio_open(const jerry_value_t function_obj,
     }
 
     // create the GPIOPin object
-    jerry_value_t pinobj = jerry_create_object();
+    ZVAL pinobj = jerry_create_object();
     jerry_set_prototype(pinobj, zjs_gpio_pin_prototype);
 
     zjs_obj_add_string(pinobj, dirOut ? ZJS_DIR_OUT : ZJS_DIR_IN, "direction");
     zjs_obj_add_boolean(pinobj, activeLow, "activeLow");
     zjs_obj_add_string(pinobj, edge, "edge");
     zjs_obj_add_string(pinobj, pull, "pull");
-    jerry_value_t pin = zjs_get_property(data, "pin");
+    ZVAL pin = zjs_get_property(data, "pin");
     zjs_set_property(pinobj, "pin", pin);
-    jerry_release_value(pin);
 
     gpio_handle_t *handle = zjs_malloc(sizeof(gpio_handle_t));
     memset(handle, 0, sizeof(gpio_handle_t));
@@ -421,11 +414,10 @@ static jerry_value_t zjs_gpio_open(const jerry_value_t function_obj,
             zjs_reject_promise(promise_ret, &handle->open_rval, 1);
         }
 
-        jerry_release_value(pinobj);
         return promise_ret;
     }
 
-    return pinobj;
+    return jerry_acquire_value(pinobj);
 }
 
 static jerry_value_t zjs_gpio_open_sync(const jerry_value_t function_obj,

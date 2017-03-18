@@ -132,9 +132,8 @@ static void print_value(const jerry_value_t value, FILE *out, bool deep,
                 if (i) {
                     fprintf(out, ", ");
                 }
-                jerry_value_t element = jerry_get_property_by_index(value, i);
+                ZVAL element = jerry_get_property_by_index(value, i);
                 print_value(element, out, false, true);
-                jerry_release_value(element);
             }
             fprintf(out, "]");
         }
@@ -187,9 +186,8 @@ static jerry_value_t console_time(const jerry_value_t function_obj,
 
     uint32_t start = zjs_port_timer_get_uptime();
 
-    jerry_value_t num = jerry_create_number(start);
+    ZVAL num = jerry_create_number(start);
     jerry_set_property(gbl_time_obj, argv[0], num);
-    jerry_release_value(num);
     return ZJS_UNDEFINED;
 }
 
@@ -201,17 +199,15 @@ static jerry_value_t console_time_end(const jerry_value_t function_obj,
     // args: label
     ZJS_VALIDATE_ARGS(Z_STRING);
 
-    jerry_value_t num = jerry_get_property(gbl_time_obj, argv[0]);
+    ZVAL num = jerry_get_property(gbl_time_obj, argv[0]);
     jerry_delete_property(gbl_time_obj, argv[0]);
 
     if (!jerry_value_is_number(num)) {
-        jerry_release_value(num);
         return TYPE_ERROR("unexpected value");
     }
 
     uint32_t start = (uint32_t)jerry_get_number_value(num);
     uint32_t milli = zjs_port_timer_get_uptime() - start;
-    jerry_release_value(num);
 
     char *label = zjs_alloc_from_jstring(argv[0], NULL);
     const char *const_label = "unknown";
@@ -247,7 +243,7 @@ static jerry_value_t console_assert(const jerry_value_t function_obj,
 
 void zjs_console_init(void)
 {
-    jerry_value_t console = jerry_create_object();
+    ZVAL console = jerry_create_object();
     zjs_obj_add_function(console, console_log, "log");
     zjs_obj_add_function(console, console_log, "info");
     zjs_obj_add_function(console, console_error, "error");
@@ -256,11 +252,8 @@ void zjs_console_init(void)
     zjs_obj_add_function(console, console_time_end, "timeEnd");
     zjs_obj_add_function(console, console_assert, "assert");
 
-    jerry_value_t global_obj = jerry_get_global_object();
+    ZVAL global_obj = jerry_get_global_object();
     zjs_set_property(global_obj, "console", console);
-
-    jerry_release_value(console);
-    jerry_release_value(global_obj);
 
     // initialize the time object
     gbl_time_obj = jerry_create_object();

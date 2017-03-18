@@ -107,6 +107,33 @@ uint32_t zjs_uncompress_16_to_32(uint16_t num);
 
 void zjs_print_error_message(jerry_value_t error);
 
+/**
+ * Release a jerry_value_t passed by reference
+ */
+void zjs_free_value(const jerry_value_t *value);
+
+/**
+ * Macro to declare a jerry_value_t and have it released automatically
+ *
+ * If you're going to be returning the value from a function, you usually don't
+ * want this, as ownership will transfer to the caller (unless you acquire it on
+ * return). However, if you have error return paths that should release the
+ * value, then it might still be a good idea.
+ *
+ * Also, don't use this for a variable that holds a C copy of a value that was
+ * passed into you, as those are owned by the caller.
+ */
+#define ZVAL const jerry_value_t __attribute__ ((__cleanup__(zjs_free_value)))
+
+/**
+ * A non-const version of ZVAL
+ *
+ * This is for when you need to initialize a ZVAL from more than one path. It
+ * should be used sparingly, because this is less safe; it's possible to
+ * overwrite a value and forget to release the old one.
+ */
+#define ZVAL_MUTABLE jerry_value_t __attribute__ ((__cleanup__(zjs_free_value)))
+
 //
 // ztypes (for argument validation)
 //

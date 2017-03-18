@@ -13,7 +13,6 @@
 
 static jerry_value_t zjs_buffer_prototype;
 
-
 // TODO: Call sites could be replaced with get_object_native_handle directly
 zjs_buffer_t *zjs_buffer_find(const jerry_value_t obj)
 {
@@ -338,20 +337,19 @@ jerry_value_t zjs_buffer_create(uint32_t size)
     //  effects: allocates a JS Buffer object, an underlying C buffer, and a
     //             list item to track it; if any of these fail, free them all
     //             and return undefined, otherwise return the JS object
-    jerry_value_t buf_obj = jerry_create_object();
     void *buf = zjs_malloc(size);
     zjs_buffer_t *buf_item =
         (zjs_buffer_t *)zjs_malloc(sizeof(zjs_buffer_t));
 
     if (!buf || !buf_item) {
         ERR_PRINT("unable to allocate buffer\n");
-        jerry_release_value(buf_obj);
         zjs_free(buf);
         zjs_free(buf_item);
         return ZJS_UNDEFINED;
     }
 
-    buf_item->obj = buf_obj;
+    jerry_value_t buf_obj = jerry_create_object();
+    buf_item->obj = buf_obj;  // weak reference
     buf_item->buffer = buf;
     buf_item->bufsize = size;
 
@@ -393,19 +391,16 @@ static jerry_value_t zjs_buffer(const jerry_value_t function_obj,
         jerry_value_t new_buf = zjs_buffer_create(len);
         if (jerry_value_is_object(new_buf)) {
             zjs_buffer_t *buf = zjs_buffer_find(new_buf);
-            jerry_value_t item;
             for (int i = 0; i < len; i++) {
-                item = jerry_get_property_by_index(array, i);
+                ZVAL item = jerry_get_property_by_index(array, i);
                 if (jerry_value_is_number(item)) {
                     buf->buffer[i] = (uint8_t)jerry_get_number_value(item);
                 } else {
                     ERR_PRINT("non-numeric value in array, treating as 0");
                     buf->buffer[i] = 0;
                 }
-                jerry_release_value(item);
             }
         }
-
         return new_buf;
     }
     else {
@@ -429,9 +424,8 @@ static jerry_value_t zjs_buffer(const jerry_value_t function_obj,
 
 void zjs_buffer_init()
 {
-    jerry_value_t global_obj = jerry_get_global_object();
+    ZVAL global_obj = jerry_get_global_object();
     zjs_obj_add_function(global_obj, zjs_buffer, "Buffer");
-    jerry_release_value(global_obj);
 
     zjs_native_func_t array[] = {
         { zjs_buffer_read_uint8, "readUInt8" },

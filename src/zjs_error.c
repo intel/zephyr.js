@@ -53,28 +53,23 @@ static jerry_value_t error_handler(const jerry_value_t function_obj,
 
 void zjs_error_init()
 {
-    jerry_value_t global = jerry_get_global_object();
-    jerry_value_t error_func = zjs_get_property(global, "Error");
+    ZVAL global = jerry_get_global_object();
+    ZVAL error_func = zjs_get_property(global, "Error");
 
     int count = sizeof(error_types) / sizeof(zjs_error_t);
     for (int i=0; i<count; i++) {
-        jerry_value_t error_obj = jerry_construct_object(error_func, NULL, 0);
+        ZVAL error_obj = jerry_construct_object(error_func, NULL, 0);
         if (jerry_value_is_undefined(error_obj)) {
             ERR_PRINT("Error object undefined\n");
         }
 
         // create a copy of this function w/ unique error prototype for each
-        jerry_value_t ctor = jerry_create_external_function(error_handler);
+        ZVAL ctor = jerry_create_external_function(error_handler);
         error_types[i].ctor = ctor;
         zjs_set_property(ctor, "prototype", error_obj);
 
         zjs_obj_add_object(global, ctor, error_types[i].name);
-
-        jerry_release_value(error_obj);
     }
-
-    jerry_release_value(error_func);
-    jerry_release_value(global);
 }
 
 void zjs_error_cleanup()
@@ -85,30 +80,25 @@ void zjs_error_cleanup()
     }
 }
 
-static char* construct_message(jerry_value_t this, jerry_value_t func,
+static char *construct_message(jerry_value_t this, jerry_value_t func,
                                const char *message)
 {
     jerry_size_t size = 64;
     char name[size];
-    jerry_value_t keys_array = jerry_get_object_keys(this);
+    ZVAL keys_array = jerry_get_object_keys(this);
     if (!jerry_value_is_array(keys_array)) {
         return NULL;
     }
     uint32_t arr_length = jerry_get_array_length(keys_array);
     int i;
     for (i = 0; i < arr_length; ++i) {
-        jerry_value_t val = jerry_get_property_by_index(keys_array, i);
+        ZVAL val = jerry_get_property_by_index(keys_array, i);
         zjs_copy_jstring(val, name, &size);
-        jerry_value_t func_val = zjs_get_property(this, name);
+        ZVAL func_val = zjs_get_property(this, name);
         if (func_val == func) {
-            jerry_release_value(val);
-            jerry_release_value(func_val);
             break;
         }
-        jerry_release_value(val);
-        jerry_release_value(func_val);
     }
-    jerry_release_value(keys_array);
 
     int mlen = strlen(message);
     char *msg = zjs_malloc(mlen + size + 4);
@@ -181,10 +171,8 @@ jerry_value_t zjs_standard_error(zjs_error_type_t type, const char *message)
 #ifdef DEBUG_BUILD
     ZJS_PRINT("[%s] %s\n", error_types[type].name, message);
 #endif
-    jerry_value_t msg = jerry_create_string((jerry_char_t *)message);
+    ZVAL msg = jerry_create_string((jerry_char_t *)message);
     jerry_value_t obj = jerry_construct_object(error_types[type].ctor, &msg, 1);
     jerry_value_set_error_flag(&obj);
-
-    jerry_release_value(msg);
     return obj;
 }
