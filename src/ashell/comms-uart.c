@@ -20,7 +20,6 @@
 #include <stdint.h>
 #include <stdarg.h>
 #include <string.h>
-#include <malloc.h>
 #include <errno.h>
 #include <ctype.h>
 
@@ -47,6 +46,8 @@
 #endif
 
 #include "ihex/kk_ihex_read.h"
+
+#include "../zjs_util.h"
 
 #define FIVE_SECONDS    (5 * sys_clock_ticks_per_sec)
 #define TEN_SECONDS     (10 * sys_clock_ticks_per_sec)
@@ -113,7 +114,7 @@ struct comms_input *fifo_get_isr_buffer()
 {
     void *data = k_fifo_get(&avail_queue, K_NO_WAIT);
     if (!data) {
-        data = (void *)malloc(sizeof(struct comms_input));
+        data = (void *)zjs_malloc(sizeof(struct comms_input));
         memset(data, '*', sizeof(struct comms_input));
         alloc_count++;
         fifo_size++;
@@ -130,7 +131,7 @@ void fifo_cache_clear()
         if (!data)
             return;
 
-        free(data);
+        zjs_free(data);
         fifo_size--;
         free_count++;
     }
@@ -142,7 +143,7 @@ void fifo_cache_clear()
 void fifo_recycle_buffer(struct comms_input *data)
 {
     if (fifo_size > 1) {
-        free(data);
+        zjs_free(data);
         fifo_size--;
         free_count++;
         return;
@@ -154,13 +155,13 @@ void comms_clear(void)
     void *data = NULL;
     do {
         if (data != NULL)
-            free(data);
+            zjs_free(data);
         data = k_fifo_get(&avail_queue, K_NO_WAIT);
     } while (data);
 
     do {
         if (data != NULL)
-            free(data);
+            zjs_free(data);
         data = k_fifo_get(&data_queue, K_NO_WAIT);
     } while (data);
 }

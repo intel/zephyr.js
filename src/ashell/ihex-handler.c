@@ -11,7 +11,6 @@
 #include <nanokernel.h>
 
 #include <stdio.h>
-#include <malloc.h>
 #include <misc/printk.h>
 
 #include "jerry-code.h"

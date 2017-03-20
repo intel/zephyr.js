@@ -21,6 +21,8 @@
 
 #include "ihex-handler.h"
 
+#include "../zjs_util.h"
+
 static const char comms_default_prompt[] = ANSI_FG_YELLOW "acm> " ANSI_FG_RESTORE;
 static const char *comms_prompt = NULL;
 
@@ -410,7 +412,7 @@ uint32_t ashell_process_data(const char *buf, uint32_t len)
     if (shell_line == NULL) {
         DBG("[Process]%d\n", (int)len);
         DBG("[%s]\n", buf);
-        shell_line = (char *)malloc(MAX_LINE);
+        shell_line = (char *)zjs_malloc(MAX_LINE);
         memset(shell_line, 0, MAX_LINE);
         tail = 0;
     }
@@ -508,7 +510,7 @@ uint32_t ashell_process_data(const char *buf, uint32_t len)
     /* Done processing line */
     if (cur == 0 && end == 0 && shell_line != NULL) {
         DBG("[Free]\n");
-        free(shell_line);
+        zjs_free(shell_line);
         shell_line = NULL;
     }
     return processed;

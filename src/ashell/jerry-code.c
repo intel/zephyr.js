@@ -9,7 +9,6 @@
 
 /* Zephyr includes */
 #include <zephyr.h>
-#include <malloc.h>
 #include <string.h>
 #include <ctype.h>
 
@@ -170,7 +169,7 @@ int javascript_parse_code(const char *file_name, bool show_lines)
         goto cleanup;
     }
 
-    buf = (char *)malloc(size);
+    buf = (char *)zjs_malloc(size);
     if (buf == NULL) {
         comms_printf("[ERR] Not enough memory for (%s)\n", file_name);
         goto cleanup;
@@ -217,7 +216,7 @@ int javascript_parse_code(const char *file_name, bool show_lines)
 
 cleanup:
     fs_close_alloc(fp);
-    free(buf);
+    zjs_free(buf);
     return ret;
 }
 
