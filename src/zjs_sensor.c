@@ -216,20 +216,21 @@ static void zjs_sensor_update_reading(jerry_value_t obj,
                                       void *reading)
 {
     // update object's internal properties and trigger onchange event
+    double x, y, z, d;
     switch(channel) {
     case SENSOR_CHAN_ACCEL_XYZ:
-    case SENSOR_CHAN_GYRO_XYZ: ;
+    case SENSOR_CHAN_GYRO_XYZ:
         // reading is a ptr to an array of 3 double values
-        double x = ((double *)reading)[0];
-        double y = ((double *)reading)[1];
-        double z = ((double *)reading)[2];
+        x = ((double *)reading)[0];
+        y = ((double *)reading)[1];
+        z = ((double *)reading)[2];
         zjs_obj_add_readonly_number(obj, x, "x");
         zjs_obj_add_readonly_number(obj, y, "y");
         zjs_obj_add_readonly_number(obj, z, "z");
         break;
-    case SENSOR_CHAN_LIGHT: ;
+    case SENSOR_CHAN_LIGHT:
         // reading is a ptr to double
-        double d = *((double *)reading);
+        d = *((double *)reading);
         zjs_obj_add_readonly_number(obj, d, "illuminance");
         break;
 
