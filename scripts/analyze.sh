@@ -316,13 +316,13 @@ if $buffer && [[ $MODULE != *"BUILD_MODULE_BUFFER"* ]]; then
     MODULES+=" -DBUILD_MODULE_BUFFER"
     echo "export ZJS_BUFFER=y" >> $CONFFILE
 fi
-sensor=$(grep -E Accelerometer\|Gyroscope\|AmbientLightSensor $SCRIPT)
+sensor=$(grep -E Accelerometer\|Gyroscope\|AmbientLightSensor\|TemperatureSensor $SCRIPT)
 if [ $? -eq 0 ] || check_config_file ZJS_SENSOR; then
     >&2 echo Using module: Sensor
     MODULES+=" -DBUILD_MODULE_SENSOR"
     echo "export ZJS_SENSOR=y" >> $CONFFILE
     if [[ $BOARD = "arduino_101" ]] || [[ $ASHELL = "y" ]]; then
-        bmi160=$(grep -E Accelerometer\|Gyroscope $SCRIPT)
+        bmi160=$(grep -E Accelerometer\|Gyroscope\|TemperatureSensor $SCRIPT)
         if [[ $? -eq 0 ]] || [[ $ASHELL = "y" ]]; then
             echo "CONFIG_SENSOR=y" >> $ARCPRJFILE
             echo "CONFIG_GPIO=y" >> $ARCPRJFILE

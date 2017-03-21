@@ -25,7 +25,6 @@
 #define QUEUE_SIZE            10  // max incoming message can handle
 #define SLEEP_TICKS            1  // 10ms sleep time in cpu ticks
 #define AIO_UPDATE_INTERVAL  200  // 2sec interval in between notifications
-#define LIGHT_UPDATE_INTERVAL 10  // 0.1sec interval for light or 10Hz
 
 #define MAX_I2C_BUS 2
 
@@ -65,11 +64,14 @@ static char str[MAX_BUFFER_SIZE];
 #endif
 
 #ifdef BUILD_MODULE_SENSOR
+static uint32_t sensor_poll_freq = 20;  // default poll frequency
 static struct device *bmi160 = NULL;
-static bool accel_trigger = false;
-static bool gyro_trigger = false;
+static bool accel_trigger = false;      // trigger mode
+static bool gyro_trigger = false;       // trigger mode
+static bool temp_poll = false;          // polling mode
 static double accel_last_value[3];
 static double gyro_last_value[3];
+static double temp_last_value;
 #endif
 
 int ipm_send_msg(struct zjs_ipm_message *msg)
@@ -661,6 +663,31 @@ static int stop_gyro_trigger(struct device *dev)
     return 0;
 }
 
+static void fetch_sensor()
+{
+    // ToDo: currently only supports BMI160 temperature
+    // add support for other types of sensors
+    if (temp_poll && bmi160) {
+        if (sensor_sample_fetch(bmi160) < 0) {
+            ERR_PRINT("failed to fetch sample from sensor\n");
+            return;
+        }
+
+        struct sensor_value val;
+        if (sensor_channel_get(bmi160, SENSOR_CHAN_TEMP, &val) < 0) {
+            ERR_PRINT("Temperature channel read error.\n");
+            return;
+        }
+
+        union sensor_reading reading;
+        double dval = convert_sensor_value(&val);
+        if (dval != temp_last_value) {
+            reading.dval = temp_last_value = dval;
+            send_sensor_data(SENSOR_CHAN_TEMP, reading);
+        }
+    }
+}
+
 #ifdef BUILD_MODULE_SENSOR_LIGHT
 static double cube_root_recursive(double num, double low, double high) {
     // calculate approximated cube root value of a number recursively
@@ -715,7 +742,7 @@ static void fetch_light()
 }
 #endif // BUILD_MODULE_SENSOR_LIGHT
 
-static void handle_sensor_bmi160_motion(struct zjs_ipm_message *msg)
+static void handle_sensor_bmi160(struct zjs_ipm_message *msg)
 {
     int freq;
     uint32_t error_code = ERROR_IPM_NONE;
@@ -748,6 +775,13 @@ static void handle_sensor_bmi160_motion(struct zjs_ipm_message *msg)
                              start_gyro_trigger(bmi160, freq) != 0)) {
                 error_code = ERROR_IPM_OPERATION_FAILED;
             }
+        } else if (msg->data.sensor.channel == SENSOR_CHAN_TEMP) {
+            if (!bmi160 || temp_poll) {
+                error_code = ERROR_IPM_OPERATION_FAILED;
+            } else {
+                sensor_poll_freq = msg->data.sensor.frequency;
+                temp_poll = true;
+            }
         }
         break;
     case TYPE_SENSOR_STOP:
@@ -760,6 +794,13 @@ static void handle_sensor_bmi160_motion(struct zjs_ipm_message *msg)
             if (!bmi160 || (gyro_trigger &&
                             stop_gyro_trigger(bmi160) != 0)) {
                 error_code = ERROR_IPM_OPERATION_FAILED;
+            }
+        } else if (msg->data.sensor.channel == SENSOR_CHAN_TEMP) {
+            if (!bmi160 || !temp_poll) {
+                error_code = ERROR_IPM_OPERATION_FAILED;
+            } else {
+                sensor_poll_freq = msg->data.sensor.frequency;
+                temp_poll = false;
             }
         }
         break;
@@ -824,7 +865,7 @@ static void handle_sensor(struct zjs_ipm_message *msg)
     case SENSOR_CHAN_ACCEL_XYZ:
     case SENSOR_CHAN_GYRO_XYZ:
         if (!strncmp(controller, BMI160_NAME, 6)) {
-            handle_sensor_bmi160_motion(msg);
+            handle_sensor_bmi160(msg);
             return;
         }
         break;
@@ -836,6 +877,12 @@ static void handle_sensor(struct zjs_ipm_message *msg)
         }
         break;
 #endif
+    case SENSOR_CHAN_TEMP:
+        if (!strncmp(controller, BMI160_NAME, 6)) {
+            handle_sensor_bmi160(msg);
+            return;
+        }
+        break;
 
      default:
         ERR_PRINT("unsupported sensor channel\n");
@@ -913,9 +960,13 @@ void main(void)
             process_aio_updates();
         }
 #endif
+#ifdef BUILD_MODULE_SENSOR
+        if (tick_count % (uint32_t)(CONFIG_SYS_CLOCK_TICKS_PER_SEC /
+                                    sensor_poll_freq) == 0) {
+            fetch_sensor();
 #ifdef BUILD_MODULE_SENSOR_LIGHT
-        if (tick_count % LIGHT_UPDATE_INTERVAL == 0) {
             fetch_light();
+#endif
         }
 #endif
         tick_count += SLEEP_TICKS;
