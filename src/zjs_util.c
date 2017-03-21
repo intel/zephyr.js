@@ -5,6 +5,20 @@
 // ZJS includes
 #include "zjs_util.h"
 
+static int zjs_malloc_error_count = 0;
+
+void *zjs_malloc_with_retry(size_t size)
+{
+    void *ptr = malloc(size);
+    if (!ptr) {
+        // see if stale JerryScript objects are holding memory
+        jerry_gc();
+        ++zjs_malloc_error_count;
+        ptr = malloc(size);
+    }
+    return ptr;
+}
+
 void zjs_set_property(const jerry_value_t obj, const char *name,
                       const jerry_value_t prop)
 {

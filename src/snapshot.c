@@ -47,7 +47,7 @@ static int generate_snapshot(const char *file_name, uint8_t *buf, int buf_size)
 
 int main(int argc, char *argv[])
 {
-    const char *script = NULL;
+    char *script = NULL;
     uint32_t len;
 
     jerry_init(JERRY_INIT_EMPTY);

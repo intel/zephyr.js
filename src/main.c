@@ -131,7 +131,7 @@ int main(int argc, char *argv[])
 #endif
 {
 #ifndef ZJS_SNAPSHOT_BUILD
-    const char *script = NULL;
+    char *script = NULL;
     jerry_value_t code_eval;
     uint32_t len;
 #endif
