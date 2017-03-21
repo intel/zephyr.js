@@ -24,6 +24,7 @@ void *zjs_malloc_with_retry(size_t size);
 #define zjs_malloc(sz) malloc(sz)
 #define zjs_free(ptr) free(ptr)
 #else
+#include <zephyr.h>
 #ifdef ZJS_TRACE_MALLOC
 #define zjs_malloc(sz) ({void *zjs_ptr = zjs_malloc_with_retry(sz); ZJS_PRINT("%s:%d: allocating %lu bytes (%p)\n", __func__, __LINE__, (uint32_t)sz, zjs_ptr); zjs_ptr;})
 #define zjs_free(ptr) (ZJS_PRINT("%s:%d: freeing %p\n", __func__, __LINE__, ptr), free(ptr))
