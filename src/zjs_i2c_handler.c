@@ -4,7 +4,12 @@
 
 #define I2C_0 0
 #define I2C_1 1
+
+#ifdef CONFIG_BOARD_ARDUINO_101_SSS
+#define MAX_I2C_BUS 1
+#else
 #define MAX_I2C_BUS 2
+#endif
 
 #define I2C_BUS "I2C_"
 
