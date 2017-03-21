@@ -7,7 +7,7 @@
 
 #include "zjs_script.h"
 
-uint8_t zjs_read_script(char *name, const char **script, uint32_t *length)
+uint8_t zjs_read_script(char *name, char **script, uint32_t *length)
 {
     if (name) {
         char *s;
@@ -55,7 +55,7 @@ uint8_t zjs_read_script(char *name, const char **script, uint32_t *length)
     return 0;
 }
 
-void zjs_free_script(const char *script)
+void zjs_free_script(char *script)
 {
     if (script) {
         zjs_free(script);
