@@ -32,7 +32,7 @@ typedef void (*zjs_post_callback_func)(void *handle);
  *
  * @param handle        Handle registered by zjs_add_c_callback()
  */
-typedef void (*zjs_c_callback_func)(void *handle, void *args);
+typedef void (*zjs_c_callback_func)(void *handle, const void *args);
 
 /*
  * Initialize the callback module
@@ -192,7 +192,7 @@ zjs_callback_id zjs_add_c_callback(void *handle, zjs_c_callback_func callback);
  * @param data          Callback arguments
  * @param sz            Size of callback arguments in bytes
  */
-void zjs_call_callback(zjs_callback_id id, void *data, uint32_t sz);
+void zjs_call_callback(zjs_callback_id id, const void *data, uint32_t sz);
 
 /*
  * Service the callback module. Any callback's that have been signaled will

@@ -469,7 +469,7 @@ void print_callbacks(void)
 #define print_callbacks() do {} while (0)
 #endif
 
-void zjs_call_callback(zjs_callback_id id, void *data, uint32_t sz)
+void zjs_call_callback(zjs_callback_id id, const void *data, uint32_t sz)
 {
     if (id == -1 || id > cb_size || !cb_map[id]) {
         ERR_PRINT("callback %d does not exist\n", id);

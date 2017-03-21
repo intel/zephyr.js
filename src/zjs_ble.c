@@ -205,7 +205,7 @@ static jerry_value_t zjs_ble_read_callback_function(const jerry_value_t function
     return ZJS_UNDEFINED;
 }
 
-static void zjs_ble_read_c_callback(void *handle, void *argv)
+static void zjs_ble_read_c_callback(void *handle, const void *argv)
 {
     ble_characteristic_t *chrc = (ble_characteristic_t *)handle;
     ble_handle_t *cb = &chrc->read_cb;
@@ -301,7 +301,7 @@ static jerry_value_t zjs_ble_write_callback_function(const jerry_value_t functio
     return ZJS_UNDEFINED;
 }
 
-static void zjs_ble_write_c_callback(void *handle, void *argv)
+static void zjs_ble_write_c_callback(void *handle, const void *argv)
 {
     ble_characteristic_t *chrc = (ble_characteristic_t *)handle;
     ble_handle_t *cb = &chrc->write_cb;
@@ -402,7 +402,7 @@ static jerry_value_t zjs_ble_update_value_callback_function(const jerry_value_t 
     return zjs_error("updateValueCallback: buffer not found or empty");
 }
 
-static void zjs_ble_subscribe_c_callback(void *handle, void *argv)
+static void zjs_ble_subscribe_c_callback(void *handle, const void *argv)
 {
     ble_characteristic_t *chrc = (ble_characteristic_t *)handle;
     ble_notify_handle_t *cb = &chrc->subscribe_cb;
@@ -418,7 +418,7 @@ static void zjs_ble_subscribe_c_callback(void *handle, void *argv)
     }
 }
 
-static void zjs_ble_unsubscribe_c_callback(void *handle, void *argv)
+static void zjs_ble_unsubscribe_c_callback(void *handle, const void *argv)
 {
     ble_characteristic_t *chrc = (ble_characteristic_t *)handle;
     ble_notify_handle_t *cb = &chrc->unsubscribe_cb;
@@ -429,7 +429,7 @@ static void zjs_ble_unsubscribe_c_callback(void *handle, void *argv)
     }
 }
 
-static void zjs_ble_notify_c_callback(void *handle, void *argv)
+static void zjs_ble_notify_c_callback(void *handle, const void *argv)
 {
     ble_characteristic_t *chrc = (ble_characteristic_t *)handle;
     ble_notify_handle_t *cb = &chrc->notify_cb;
@@ -474,7 +474,7 @@ static void zjs_ble_blvl_ccc_cfg_changed(const struct bt_gatt_attr *attr, uint16
     }
 }
 
-static void zjs_ble_connected_c_callback(void *handle, void *argv)
+static void zjs_ble_connected_c_callback(void *handle, const void *argv)
 {
     char *addr = (char *)argv;
     ZVAL arg = jerry_create_string((jerry_char_t *)addr);
@@ -496,7 +496,7 @@ static void zjs_ble_connected(struct bt_conn *conn, uint8_t err)
     }
 }
 
-static void zjs_ble_disconnected_c_callback(void *handle, void *argv)
+static void zjs_ble_disconnected_c_callback(void *handle, const void *argv)
 {
     char *addr = (char *)argv;
     ZVAL arg = jerry_create_string((jerry_char_t *)addr);
@@ -535,7 +535,7 @@ static struct bt_conn_auth_cb zjs_ble_auth_cb_display = {
         .cancel = zjs_ble_auth_cancel,
 };
 
-static void zjs_ble_ready_c_callback(void *handle, void *argv)
+static void zjs_ble_ready_c_callback(void *handle, const void *argv)
 {
     ZVAL arg = jerry_create_string((jerry_char_t *)"poweredOn");
     zjs_trigger_event(ble_conn.ble_obj, "stateChange", &arg, 1, NULL, NULL);

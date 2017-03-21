@@ -90,8 +90,7 @@ static void javascript_print_error(jerry_value_t error_value)
         err_str = "[Error message too long]";
     }
 
-    jerry_port_log(JERRY_LOG_LEVEL_ERROR, err_str);
-    jerry_port_log(JERRY_LOG_LEVEL_ERROR, "\n");
+    jerry_port_log(JERRY_LOG_LEVEL_ERROR, "%s\n", err_str);
     zjs_free(msg);
 }
 

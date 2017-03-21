@@ -101,7 +101,7 @@ static jerry_value_t lookup_pin(const jerry_value_t pin_obj,
 }
 
 // C callback from task context in response to GPIO input interrupt
-static void zjs_gpio_c_callback(void *h, void *args)
+static void zjs_gpio_c_callback(void *h, const void *args)
 {
     gpio_handle_t *handle = (gpio_handle_t *)h;
     if (handle->closed) {

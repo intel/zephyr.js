@@ -112,7 +112,7 @@ all: linux
 $(BUILD_DIR)/%.o:%.c
 	@mkdir -p $(@D)
 	@echo [CC] $@
-	@gcc -c -o $@ $< $(LINUX_INCLUDES) $(LINUX_DEFINES) $(LINUX_FLAGS)
+	@gcc -c -o $@ $< -Wall -Werror $(LINUX_INCLUDES) $(LINUX_DEFINES) $(LINUX_FLAGS)
 
 .PHONY: linux
 linux: $(BUILD_OBJ)

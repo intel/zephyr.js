@@ -112,7 +112,8 @@ void zjs_make_promise(jerry_value_t obj, zjs_post_promise_func post,
               handle);
 }
 
-void zjs_fulfill_promise(jerry_value_t obj, jerry_value_t argv[], uint32_t argc)
+void zjs_fulfill_promise(jerry_value_t obj, const jerry_value_t argv[],
+                         uint32_t argc)
 {
     zjs_promise_t *handle = NULL;
     ZVAL promise_obj = zjs_get_property(obj, "promise");
@@ -134,7 +135,8 @@ void zjs_fulfill_promise(jerry_value_t obj, jerry_value_t argv[], uint32_t argc)
     }
 }
 
-void zjs_reject_promise(jerry_value_t obj, jerry_value_t argv[], uint32_t argc)
+void zjs_reject_promise(jerry_value_t obj, const jerry_value_t argv[],
+                        uint32_t argc)
 {
     zjs_promise_t *handle = NULL;
     ZVAL promise_obj = zjs_get_property(obj, "promise");
