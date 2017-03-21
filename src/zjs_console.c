@@ -53,8 +53,8 @@ static bool value2str(const jerry_value_t value, char *buf, int maxlen,
     //  returns: true if the representation was complete or false if it
     //             was abbreviated
     if (jerry_value_is_array(value)) {
-        uint32_t len = jerry_get_array_length(value);
-        sprintf(buf, "[Array - length %lu]", len);
+        unsigned int len = jerry_get_array_length(value);
+        sprintf(buf, "[Array - length %u]", len);
         return false;
     }
     else if (jerry_value_is_boolean(value)) {
@@ -71,20 +71,15 @@ static bool value2str(const jerry_value_t value, char *buf, int maxlen,
             double num = jerry_get_number_value(value);
             sprintf(buf, "%f", num);
 #else
-            int32_t num = (int32_t)jerry_get_number_value(value);
-            sprintf(buf, "[Float ~%li]", num);
+            int num = (int)jerry_get_number_value(value);
+            sprintf(buf, "[Float ~%d]", num);
 #endif
         } else if (type == IS_UINT) {
-            uint32_t num = (uint32_t)jerry_get_number_value(value);
-            sprintf(buf, "%lu", num);
+            unsigned int num = jerry_get_number_value(value);
+            sprintf(buf, "%u", num);
         } else if (type == IS_INT) {
-            int32_t num = (int32_t)jerry_get_number_value(value);
-            // Linux and Zephyr print int32_t's differently if %li is used
-#ifdef ZJS_LINUX_BUILD
-            sprintf(buf, "%i", num);
-#else
-            sprintf(buf, "%li", num);
-#endif
+            int num = jerry_get_number_value(value);
+            sprintf(buf, "%d", num);
         }
     }
     else if (jerry_value_is_null(value)) {
@@ -97,7 +92,7 @@ static bool value2str(const jerry_value_t value, char *buf, int maxlen,
     else if (jerry_value_is_string(value)) {
         jerry_size_t size = jerry_get_string_size(value);
         if (size >= maxlen) {
-            sprintf(buf, "[String - length %lu]", size);
+            sprintf(buf, "[String - length %u]", (unsigned int)size);
         }
         else {
             char buffer[++size];
@@ -207,7 +202,7 @@ static jerry_value_t console_time_end(const jerry_value_t function_obj,
     }
 
     uint32_t start = (uint32_t)jerry_get_number_value(num);
-    uint32_t milli = zjs_port_timer_get_uptime() - start;
+    unsigned int milli = zjs_port_timer_get_uptime() - start;
 
     char *label = zjs_alloc_from_jstring(argv[0], NULL);
     const char *const_label = "unknown";
@@ -215,7 +210,8 @@ static jerry_value_t console_time_end(const jerry_value_t function_obj,
         const_label = label;
     }
 
-    ZJS_PRINT("%s: %lums\n", const_label, milli);
+    // this print is part of the expected behavior for the user, don't remove
+    ZJS_PRINT("%s: %ums\n", const_label, milli);
     zjs_free(label);
     return ZJS_UNDEFINED;
 }

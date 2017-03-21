@@ -60,7 +60,7 @@ static jerry_value_t zjs_glcd_call_remote_function(zjs_ipm_message_t *send)
     }
 
     if (reply.error_code != ERROR_IPM_NONE) {
-        ERR_PRINT("error code: %lu\n", reply.error_code);
+        ERR_PRINT("error code: %u\n", (unsigned int)reply.error_code);
         return zjs_error("zjs_glcd_call_remote_function: error received");
     }
 
