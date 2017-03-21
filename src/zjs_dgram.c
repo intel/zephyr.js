@@ -215,7 +215,7 @@ static void udp_sent(struct net_context *context, int status, void *token,
     DBG_PRINT("udp_sent: %p, st=%d udata=%p\n", context, status, user_data);
 
     if (user_data) {
-        ZVAL rval = ZJS_UNDEFINED;
+        ZVAL_MUTABLE rval = ZJS_UNDEFINED;
         if (status != 0) {
             char errbuf[8];
             snprintf(errbuf, sizeof(errbuf), "%d", status);
