@@ -56,7 +56,7 @@ ifneq (,$(filter $(MAKECMDGOALS),ide ashell))
 SNAPSHOT=off
 # if the user passes in SNAPSHOT=on give an error
 ifeq ($(SNAPSHOT), on)
-$(error IDE does not support SNAPSHOT $(SNAPSHOT))
+$(error IDE does not support SNAPSHOT=$(SNAPSHOT))
 endif
 CONFIG ?= fragments/zjs.conf.dev
 DEV=ashell
