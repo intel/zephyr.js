@@ -3,7 +3,7 @@
 #ifndef __zjs_gpio_h__
 #define __zjs_gpio_h__
 
-#include "jerry-api.h"
+#include "jerryscript.h"
 
 extern void (*zjs_gpio_convert_pin)(uint32_t orig, int *dev, int *pin);
 

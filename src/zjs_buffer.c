@@ -5,7 +5,7 @@
 #include <string.h>
 
 // JerryScript includes
-#include "jerry-api.h"
+#include "jerryscript.h"
 
 // ZJS includes
 #include "zjs_util.h"

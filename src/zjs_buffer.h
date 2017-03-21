@@ -3,7 +3,7 @@
 #ifndef __zjs_buffer_h__
 #define __zjs_buffer_h__
 
-#include "jerry-api.h"
+#include "jerryscript.h"
 
 /** Initialize the buffer module, or reinitialize after cleanup */
 void zjs_buffer_init();

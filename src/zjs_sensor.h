@@ -3,7 +3,7 @@
 #ifndef __zjs_sensor_h__
 #define __zjs_sensor_h__
 
-#include "jerry-api.h"
+#include "jerryscript.h"
 
 /** Initialize the sensor module, or reinitialize after cleanup */
 void zjs_sensor_init();

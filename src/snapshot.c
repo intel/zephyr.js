@@ -4,12 +4,12 @@
 #include "zjs_script.h"
 
 // JerryScript includes
-#include "jerry-api.h"
+#include "jerryscript.h"
 
 #define SNAPSHOT_BUFFER_SIZE 51200
 #define SNAPSHOT_SOURCE_FILE "src/zjs_snapshot_gen.c"
 
-static uint8_t snapshot_buf[SNAPSHOT_BUFFER_SIZE];
+static uint32_t snapshot_buf[SNAPSHOT_BUFFER_SIZE];
 
 static int generate_snapshot(const char *file_name, uint8_t *buf, int buf_size)
 {
@@ -24,7 +24,7 @@ static int generate_snapshot(const char *file_name, uint8_t *buf, int buf_size)
 
     fwrite("/* This file was auto-generated */\n\n", 1, 36, f);
     fwrite("#include \"zjs_common.h\"\n\n", 1, 25, f);
-    fwrite("const uint8_t snapshot_bytecode[] = {\n", 1, 38, f);
+    fwrite("const uint32_t snapshot_bytecode[] = {\n", 1, 38, f);
 
     for (int i = 0; i < buf_size; i++)
     {

@@ -3,7 +3,7 @@
 #ifndef __zjs_pwm_h__
 #define __zjs_pwm_h__
 
-#include "jerry-api.h"
+#include "jerryscript.h"
 
 extern void (*zjs_pwm_convert_pin)(uint32_t num, int *dev, int *pin);
 

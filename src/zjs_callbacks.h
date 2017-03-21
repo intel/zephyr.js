@@ -3,7 +3,7 @@
 #ifndef SRC_ZJS_CALLBACKS_H_
 #define SRC_ZJS_CALLBACKS_H_
 
-#include "jerry-api.h"
+#include "jerryscript.h"
 
 typedef int16_t zjs_callback_id;
 

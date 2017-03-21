@@ -3,7 +3,7 @@
 #ifndef __zjs_dgram_h__
 #define __zjs_dgram_h__
 
-#include "jerry-api.h"
+#include "jerryscript.h"
 
 /** Initialize the dgram module, or reinitialize after cleanup */
 jerry_value_t zjs_dgram_init();

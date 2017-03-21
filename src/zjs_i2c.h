@@ -3,7 +3,7 @@
 #ifndef __zjs_i2c_h__
 #define __zjs_i2c_h__
 
-#include "jerry-api.h"
+#include "jerryscript.h"
 
 /**
  * Initialize the i2c module, or reinitialize after cleanup

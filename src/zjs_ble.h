@@ -3,7 +3,7 @@
 #ifndef __zjs_ble_h__
 #define __zjs_ble_h__
 
-#include "jerry-api.h"
+#include "jerryscript.h"
 
 /**
  * Initialize the ble module, or reinitialize after cleanup
