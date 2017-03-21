@@ -212,8 +212,6 @@ ifeq ($(filter ide,$(MAKECMDGOALS)),ide)
 else
 	@echo CONFIG_USB_CDC_ACM=y >> prj.conf
 endif
-else
-	@cat fragments/prj.conf.base >> prj.conf
 endif
 ifeq ($(BOARD), arduino_101)
 	@cat fragments/prj.conf.arduino_101 >> prj.conf
