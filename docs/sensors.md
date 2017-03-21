@@ -27,6 +27,7 @@ specific API functions.
 ```javascript
 interface Sensor {
     readonly attribute SensorState state;   // The current state of Sensor object
+    attribute double frequency;             // The frequency set
     void start();                           // Starts the sensor
     void stop();                            // Stops the sensor
     attribute ChangeCallback onchange;      // Callback handler for change events
@@ -50,7 +51,7 @@ interface SensorErrorEvent {
     attribute Error error;
 };
 
-callback ChangeCallback = void(SensorReading value);
+callback ChangeCallback = void();
 callback ActivateCallback = void();
 callback ErrorCallback = void(SensorErrorEvent error);
 ```
@@ -58,21 +59,15 @@ callback ErrorCallback = void(SensorErrorEvent error);
 ```javascript
 [Constructor(optional AccelerometerOptions accelerometerOptions)]
 interface Accelerometer : Sensor {
-    attribute AccelerometerReading reading;
     attribute boolean includesGravity;
-};
-
-dictionary AccelerometerOptions : SensorOptions  {
-   boolean includeGravity = true;  // not supported, will throw an error if set
-};
-
-interface AccelerometerrReading : SensorReading {
     readonly attribute double x;
     readonly attribute double y;
     readonly attribute double z;
 };
 
-callback ChangeCallback = void(AccelerometerReading value);
+dictionary AccelerometerOptions : SensorOptions  {
+   boolean includeGravity = true;  // not supported, will throw an error if set
+};
 ```
 ####GyroscopeSensor Interface
 ```javascript
@@ -86,25 +81,18 @@ interface GyroscopeSensorReading : SensorReading {
     readonly attribute double y;
     readonly attribute double z;
 };
-
-callback ChangeCallback = void(GyroscopeReading value);
 ```
 ####AmbientLightSensor Interface
 ```javascript
 [Constructor(optional SensorOptions sensorOptions)]
 interface AmbientLightSensor : Sensor {
-    attribute AmbientLightSensorReading reading;
+    readonly attribute unsigned long pin;
+    readonly attribute double illuminance;
 };
 
 dictionary AmbientLightSensorOptions : SensorOptions  {
     unsigned long pin;  // analog pin where the light is connected
 };
-
-interface AmbientLightSensorReading : SensorReading {
-    readonly attribute double illuminance;
-};
-
-callback ChangeCallback = void(AmbientLightSensorReading value);
 ```
 
 API Documentation

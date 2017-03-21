@@ -102,12 +102,12 @@ var gyro = new Gyroscope({
     frequency: updateFrequency
 });
 
-accel.onchange = function(event) {
-    SensorCharacteristic.valueChange(1, event.reading.x, event.reading.y, event.reading.z);
+accel.onchange = function() {
+    SensorCharacteristic.valueChange(1, accel.x, accel.y, accel.z);
 };
 
-gyro.onchange = function(event) {
-    SensorCharacteristic.valueChange(0, event.reading.x, event.reading.y, event.reading.z);
+gyro.onchange = function() {
+    SensorCharacteristic.valueChange(0, gyro.x, gyro.y, gyro.z);
 };
 
 accel.onerror = function(event) {

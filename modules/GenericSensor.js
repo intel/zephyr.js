@@ -93,41 +93,38 @@ function GenericSensor() {
             if (event === "activated") changeFlag = true;
         };
 
-        sensor.onchange = function(event) {
+        sensor.onchange = function() {
             if (changeFlag === true) {
-                assert(typeof event === "object" && event !== null,
-                       "sensor: callback value for 'onchange'");
-
                 if (sensorType === "AmbientLight") {
-                    assert(typeof event.reading.illuminance === "number" &&
-                           typeof event.reading.illuminance !== null,
+                    assert(typeof sensor.illuminance === "number" &&
+                           typeof sensor.illuminance !== null,
                            "sensor: reading value for '" + sensorType + "'");
 
-                    middleNum = event.reading.illuminance;
-                    event.reading.illuminance = middleNum + 1;
-                    assert(event.reading.illuminance === middleNum,
+                    middleNum = sensor.illuminance;
+                    sensor.illuminance = middleNum + 1;
+                    assert(sensor.illuminance === middleNum,
                            "sensor: reading is readonly property");
 
-                    console.log(sensorType + ": " + event.reading.illuminance);
+                    console.log(sensorType + ": " + sensor.illuminance);
                 } else if (sensorType === "Accelerometer" ||
                            sensorType === "Gyroscope") {
-                    assert(typeof event.reading.x === "number" &&
-                           typeof event.reading.x !== null &&
-                           typeof event.reading.y === "number" &&
-                           typeof event.reading.y !== null &&
-                           typeof event.reading.z === "number" &&
-                           typeof event.reading.z !== null,
+                    assert(typeof sensor.x === "number" &&
+                           typeof sensor.x !== null &&
+                           typeof sensor.y === "number" &&
+                           typeof sensor.y !== null &&
+                           typeof sensor.z === "number" &&
+                           typeof sensor.z !== null,
                            "sensor: reading value for '" + sensorType + "'");
 
-                    middleNum = event.reading.x;
-                    event.reading.x = middleNum + 1;
-                    assert(event.reading.x === middleNum,
+                    middleNum = sensor.x;
+                    sensor.x = middleNum + 1;
+                    assert(sensor.x === middleNum,
                            "sensor: reading is readonly property");
 
                     console.log(sensorType + ": " +
-                                " x=" + event.reading.x +
-                                " y=" + event.reading.y +
-                                " z=" + event.reading.z);
+                                " x=" + sensor.x +
+                                " y=" + sensor.y +
+                                " z=" + sensor.z);
                 }
 
                 changeFlag = false;

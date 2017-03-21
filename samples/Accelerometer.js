@@ -12,11 +12,11 @@ var sensor = new Accelerometer({
     frequency: updateFrequency
 });
 
-sensor.onchange = function(event) {
+sensor.onchange = function() {
     console.log("acceleration (m/s^2): " +
-                " x=" + event.reading.x +
-                " y=" + event.reading.y +
-                " z=" + event.reading.z);
+                " x=" + sensor.x +
+                " y=" + sensor.y +
+                " z=" + sensor.z);
 };
 
 sensor.onstatechange = function(event) {

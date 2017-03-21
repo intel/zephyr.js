@@ -35,7 +35,7 @@ var sensor = new AmbientLightSensor({
 });
 
 sensor.onchange = function(event) {
-    var val = event.reading.illuminance;
+    var val = sensor.illuminance;
     if (val <= 1) {
         console.log("(very dark): " + event.reading.illuminance);
     } else if (val > 1 && val <= 50) {
