@@ -407,12 +407,12 @@ static void zjs_sensor_onstop_c_callback(void *h, void *argv)
     jerry_value_t null_val = jerry_create_null();
     switch(handle->channel) {
     case SENSOR_CHAN_ACCEL_XYZ:
-    case SENSOR_CHAN_GYRO_XYZ: ;
+    case SENSOR_CHAN_GYRO_XYZ:
         zjs_set_readonly_property(obj, "x", null_val);
         zjs_set_readonly_property(obj, "y", null_val);
         zjs_set_readonly_property(obj, "z", null_val);
         break;
-    case SENSOR_CHAN_LIGHT: ;
+    case SENSOR_CHAN_LIGHT:
         zjs_set_readonly_property(obj, "illuminance", null_val);
         break;
 
