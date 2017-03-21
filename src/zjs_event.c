@@ -365,7 +365,7 @@ static jerry_value_t get_listeners(const jerry_value_t function_obj,
 
 bool zjs_trigger_event(jerry_value_t obj,
                        const char *event,
-                       const jerry_value_t *argv,
+                       const jerry_value_t argv[],
                        uint32_t argc,
                        zjs_post_event post,
                        void *h)
@@ -405,7 +405,7 @@ bool zjs_trigger_event(jerry_value_t obj,
 
 bool zjs_trigger_event_now(jerry_value_t obj,
                            const char *event,
-                           jerry_value_t argv[],
+                           const jerry_value_t argv[],
                            uint32_t argc,
                            zjs_post_event post,
                            void *h)

@@ -123,8 +123,8 @@ const uint8_t webusb_origin_url_2[] = {
  *
  * @return  0 on success, negative errno code on fail
  */
-int webusb_custom_handler(struct usb_setup_packet *pSetup,
-		int *len, uint8_t **data)
+int webusb_custom_handler(struct usb_setup_packet *pSetup, int32_t *len,
+                          uint8_t **data)
 {
     if (GET_DESC_TYPE(pSetup->wValue) == DESCRIPTOR_TYPE_BOS) {
         *data = (uint8_t *)(&webusb_bos_descriptor);
@@ -145,8 +145,8 @@ int webusb_custom_handler(struct usb_setup_packet *pSetup,
  *
  * @return  0 on success, negative errno code on fail.
  */
-int webusb_vendor_handler(struct usb_setup_packet *pSetup,
-		int *len, uint8_t **data)
+int webusb_vendor_handler(struct usb_setup_packet *pSetup, int32_t *len,
+                          uint8_t **data)
 {
     /* Get Allowed origins request */
     if (pSetup->bRequest == 0x01 && pSetup->wIndex == 0x01) {

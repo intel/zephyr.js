@@ -20,7 +20,7 @@ typedef void (*zjs_post_promise_func)(void *handle);
  * @param handle        Handle passed to post function
  */
 void zjs_make_promise(jerry_value_t obj, zjs_post_promise_func post,
-                         void *handle);
+                      void *handle);
 
 /*
  * Fulfill a promise
@@ -29,7 +29,8 @@ void zjs_make_promise(jerry_value_t obj, zjs_post_promise_func post,
  * @param args          Array of args that will be given to then()
  * @param argc          Number of arguments in args
  */
-void zjs_fulfill_promise(jerry_value_t obj, jerry_value_t args[], uint32_t argc);
+void zjs_fulfill_promise(jerry_value_t obj, const jerry_value_t args[],
+                         uint32_t argc);
 
 /*
  * Reject a promise
@@ -38,6 +39,7 @@ void zjs_fulfill_promise(jerry_value_t obj, jerry_value_t args[], uint32_t argc)
  * @param args          Array of args that will be given to catch()
  * @param argc          Number of arguments in args
  */
-void zjs_reject_promise(jerry_value_t obj, jerry_value_t args[], uint32_t argc);
+void zjs_reject_promise(jerry_value_t obj, const jerry_value_t args[],
+                        uint32_t argc);
 
 #endif /* __zjs_promises_h__ */

@@ -213,7 +213,7 @@ static void zjs_sensor_set_state(jerry_value_t obj, enum sensor_state state)
 
 static void zjs_sensor_update_reading(jerry_value_t obj,
                                       enum sensor_channel channel,
-                                      void *reading)
+                                      const void *reading)
 {
     // update object's internal properties and trigger onchange event
     double x, y, z, d;
@@ -270,7 +270,7 @@ static void zjs_sensor_trigger_error(jerry_value_t obj,
     }
 }
 
-static void zjs_sensor_onchange_c_callback(void *h, void *argv)
+static void zjs_sensor_onchange_c_callback(void *h, const void *argv)
 {
     sensor_handle_t *handle = (sensor_handle_t *)h;
     if (!handle) {
@@ -352,7 +352,7 @@ static void zjs_sensor_callback_free(uintptr_t handle)
     zjs_free((sensor_handle_t *)handle);
 }
 
-static void zjs_sensor_onstart_c_callback(void *h, void *argv)
+static void zjs_sensor_onstart_c_callback(void *h, const void *argv)
 {
     sensor_handle_t *handle = (sensor_handle_t *)h;
     if (!handle) {
@@ -390,7 +390,7 @@ static void zjs_sensor_onstart_c_callback(void *h, void *argv)
     zjs_sensor_set_state(obj, SENSOR_STATE_ACTIVATED);
 }
 
-static void zjs_sensor_onstop_c_callback(void *h, void *argv)
+static void zjs_sensor_onstop_c_callback(void *h, const void *argv)
 {
     sensor_handle_t *handle = (sensor_handle_t *)h;
     if (!handle) {
