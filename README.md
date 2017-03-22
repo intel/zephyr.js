@@ -9,6 +9,27 @@ This code requires a local copy of JerryScript and Zephyr OS source.  We
 will upstream patches to those projects as appropriate, but this repo is for
 everything else.
 
+### Index
+* [Getting Started](#getting-started)
+* [Prerequisites](#prerequisites)
+* [Initial Setup](#initial-setup)
+* [Shell Setup](#shell-setup)
+* [Build and Flash](#build-and-flash)
+* [Next steps](#next-steps)
+* [Contributing](#contributing)
+* [File Descriptions](#file-descriptions)
+* [Subdirectories](#subdirectories)
+* [Increase space on A101](#getting-more-space-on-your-arduino-101)
+* [Building system images](#building-system-images)
+* [Building the Hello World sample](#building-the-hello-world-sample)
+* [Build other samples](#build-other-samples)
+* [JS Minifier](#js-minifier)
+* [FRDM-K64F Platform](#frdm-k64f-platform)
+* [Building and running on Linux/Mac OSX](#building-and-running-on-linux-and-mac-osx)
+* [Supported modules on Linux and Zephyr](#supported-modules-on-linux-and-zephyr)
+* [Networking with QEMU](#networking-with-qemu)
+* [OCF over BLE](#ocf-over-ble)
+
 ## Getting Started
 
 This section will walk you through building and running your first ZJS
@@ -318,7 +339,7 @@ install this earlier, you can do so with the command:
 sudo apt-get install node-uglify
 ```
 
-## FRDM-K64F Platform
+## FRDM K64F Platform
 
 See the
 [Zephyr Project Wiki] (https://wiki.zephyrproject.org/view/NXP_FRDM-K64F)
@@ -376,7 +397,7 @@ Using the same procedure as above, once you hit Reset you should see
 
 Zephyr is a trademark of the Linux Foundation. *Other names and brands may be claimed as the property of others.
 
-## Building and running on Linux/Mac OSX
+## Building and running on Linux and Mac OSX
 In addition to Zephyr there is a "linux" target which does not use Zephyr at all
 and instead uses the host OS. This can be build on Linux or Mac OSX using the
 command:
@@ -423,7 +444,7 @@ on it, specifically the hardware modules (AIO, I2C, GPIO etc.). There are some
 modules which can be used though like Events, Promises, Performance and OCF. This
 list may grow if other modules are ported to the Linux target.
 
-## Supported modules (Linux vs Zephyr)
+## Supported modules on Linux and Zephyr
 There is only partial support for modules on Linux compared to Zephyr. Any hardware
 specific module (I2C, UART, GPIO, ADC etc.) is not supported on Linux. Trying
 to run a Zephyr specific module on Linux will result in the JavaScript not running
@@ -444,6 +465,31 @@ successfully. Below is a complete table of modules and target support.
 | OCF       | <ul><li>- [x] </li></ul> | <ul><li>- [x] </li></ul> |
 |Performance| <ul><li>- [x] </li></ul> | <ul><li>- [x] </li></ul> |
 | Timers    | <ul><li>- [x] </li></ul> | <ul><li>- [x] </li></ul> |
+
+## Networking with QEMU
+QEMU has support for networking features that can be tested on your Linux
+desktop. To do this you will need a separate "net-tools" repo:
+```bash
+git clone git clone https://gerrit.zephyrproject.org/r/net-tools
+```
+Open up 2 terminals to run the tools:
+Terminal 1:
+```bash
+sudo ./net-tools/loop-socat.sh
+```
+Terminal 2:
+```bash
+./net-tools/loop-slip-tap.sh
+```
+Then run QEMU as your normally would e.g.
+```bash
+make BOARD=qemu_x86 JS=samples/OcfServer.js qemu
+```
+
+Note: At this point, this setup is relatively unstable. You may experience
+crashes or things just not working in general. If the behavior does not seem
+normal you can usually fix it by restarting the two scripts and running QEMU
+again.
 
 ## OCF over BLE
 There is a dedicated [document](./docs/ocf-ble.md) for building and running OCF over
