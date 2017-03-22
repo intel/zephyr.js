@@ -4,8 +4,21 @@ ROM ?= 256
 
 # Dump memory information: on = print allocs, full = print allocs + dump pools
 TRACE ?= off
+
 # Generate and run snapshot as byte code instead of running JS directly
+ifneq (,$(filter $(MAKECMDGOALS),ide ashell linux))
+SNAPSHOT=off
+# if the user passes in SNAPSHOT=on for ide, ashell, or linux give an error
+ifeq ($(SNAPSHOT), on)
+$(error ide, ashell, and linux do not support SNAPSHOT=$(SNAPSHOT))
+endif
+else
+# snapshot is enabled by default
 SNAPSHOT ?= on
+ifeq ($(SNAPSHOT), on)
+EXT_JERRY_FLAGS += -DFEATURE_JS_PARSER=OFF
+endif
+endif
 
 ifndef ZJS_BASE
 $(error ZJS_BASE not defined. You need to source zjs-env.sh)
@@ -51,11 +64,13 @@ EXT_JERRY_FLAGS ?=	-DENABLE_ALL_IN_ONE=ON \
 					-DFEATURE_PROFILE=$(ZJS_BASE)/jerry_feature.profile \
 					-DFEATURE_ERROR_MESSAGES=OFF \
 					-DJERRY_LIBM=OFF
-ifneq ($(DEV), ashell)
-ifeq ($(SNAPSHOT), on)
-EXT_JERRY_FLAGS += -DFEATURE_JS_PARSER=OFF
+
+# Settings for ashell builds
+ifneq (,$(filter $(MAKECMDGOALS),ide ashell))
+CONFIG ?= fragments/zjs.conf.dev
+DEV=ashell
 endif
-endif
+
 ifeq ($(BOARD), arduino_101)
 EXT_JERRY_FLAGS += -DENABLE_LTO=ON
 $(info makecmd: $(MAKECMDGOALS))
@@ -72,12 +87,6 @@ $(info $() $() RAM allocation: $(RAM)KB for X86, $(shell echo $$((79 - $(RAM))))
 $(info $() $() ROM allocation: $(ROM)KB for X86, $(shell echo $$((296 - $(ROM))))KB for ARC)
 endif
 endif  # BOARD = arduino_101
-
-# if no config file passed use the ashell default
-ifeq ($(DEV), ashell)
-	CONFIG ?= fragments/zjs.conf.dev
-	SNAPSHOT = off
-endif
 
 # Print callback statistics during runtime
 CB_STATS ?= off
@@ -129,7 +138,8 @@ zephyr: analyze generate jerryscript $(ARC)
 					CB_STATS=$(CB_STATS) \
 					PRINT_FLOAT=$(PRINT_FLOAT) \
 					SNAPSHOT=$(SNAPSHOT) \
-					BLE_ADDR=$(BLE_ADDR)
+					BLE_ADDR=$(BLE_ADDR) \
+					DEV=$(DEV)
 ifeq ($(BOARD), arduino_101)
 	@echo
 	@echo -n Creating dfu images...
@@ -138,6 +148,12 @@ ifeq ($(BOARD), arduino_101)
 	@dd if=$(A101SSBIN) of=$(A101SSBIN).dfu bs=1024 seek=$$(($(ROM) - 144)) 2> /dev/null
 	@echo " done."
 endif
+
+.PHONY: ide
+ide: zephyr
+
+.PHONY: ashell
+ashell: zephyr
 
 # Flash Arduino 101 x86 and arc images
 .PHONY: dfu
@@ -170,10 +186,6 @@ analyze: $(JS)
 	@if [ "$(SNAPSHOT)" = "on" ]; then \
 		echo "ccflags-y += -DZJS_SNAPSHOT_BUILD" >> src/Makefile; \
 	fi
-ifeq ($(DEV), ashell)
-	@cat fragments/prj.mdef.ashell >> prj.mdef
-endif
-
 	@echo "ccflags-y += $(shell ./scripts/analyze.sh $(BOARD) $(JS) $(CONFIG) $(DEV))" | tee -a src/Makefile arc/src/Makefile
 	@sed -i '/This is a generated file/r./zjs.conf.tmp' src/Makefile
 	@# Add the include for the OCF Makefile only if the script is using OCF
@@ -199,8 +211,13 @@ ifeq ($(BOARD), qemu_x86)
 else
 ifeq ($(DEV), ashell)
 	@cat fragments/prj.conf.ashell >> prj.conf
+	@cat fragments/prj.mdef.ashell >> prj.mdef
+ifeq ($(filter ide,$(MAKECMDGOALS)),ide)
+	@echo CONFIG_USB_CDC_ACM=n >> prj.conf
+else
+	@echo CONFIG_USB_CDC_ACM=y >> prj.conf
 endif
-
+endif
 ifeq ($(BOARD), arduino_101)
 	@cat fragments/prj.conf.arduino_101 >> prj.conf
 	@printf "CONFIG_PHYS_RAM_ADDR=0xA800%x\n" $$(((80 - $(RAM)) * 1024)) >> prj.conf
