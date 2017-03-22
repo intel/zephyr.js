@@ -135,7 +135,8 @@ if [ "$VM1" == "y" ]; then
     ROMSIZE=215
 
     # individually test build modules with short names (ten chars or less)
-    SHORTMODULES=(aio ble events gpio grove_lcd i2c k64f_pins ocf pwm uart)
+    SHORTMODULES=(aio ble dgram events gpio grove_lcd i2c k64f_pins ocf pwm \
+                      uart)
     for index in "${!SHORTMODULES[@]}"; do
         MODULE=${SHORTMODULES[index]}
         echo "var module = require('$MODULE');" > $TMPFILE
