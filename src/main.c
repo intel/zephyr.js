@@ -12,7 +12,7 @@
 #include "zjs_util.h"
 
 // JerryScript includes
-#include "jerry-api.h"
+#include "jerryscript.h"
 
 // Platform agnostic modules/headers
 #include "zjs_callbacks.h"
@@ -41,8 +41,8 @@
 #define ZJS_MAX_PRINT_SIZE      512
 
 #ifdef ZJS_SNAPSHOT_BUILD
-extern const uint8_t snapshot_bytecode[];
-extern const int snapshot_len;
+extern const uint32_t snapshot_bytecode[];
+extern const size_t snapshot_len;
 #else
 extern const char *script_gen;
 #endif

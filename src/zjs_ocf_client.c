@@ -2,7 +2,7 @@
 
 #ifdef BUILD_MODULE_OCF
 
-#include "jerry-api.h"
+#include "jerryscript.h"
 
 #include "zjs_util.h"
 #include "zjs_common.h"

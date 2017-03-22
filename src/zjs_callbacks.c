@@ -12,7 +12,7 @@
 #include "zjs_util.h"
 #include "zjs_callbacks.h"
 
-#include "jerry-api.h"
+#include "jerryscript.h"
 
 // this could be defined with config options in the future
 #ifndef ZJS_CALLBACK_BUF_SIZE

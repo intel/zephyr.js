@@ -3,7 +3,7 @@
 #ifndef __zjs_ocf_client__
 #define __zjs_ocf_client__
 
-#include "jerry-api.h"
+#include "jerryscript.h"
 
 /*
  * Initialize the OCF client object

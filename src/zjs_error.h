@@ -3,7 +3,7 @@
 #ifndef __zjs_error_h__
 #define __zjs_error_h__
 
-#include "jerry-api.h"
+#include "jerryscript.h"
 
 typedef enum zjs_error_type {
     NetworkError,

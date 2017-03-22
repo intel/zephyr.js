@@ -3,7 +3,7 @@
 #ifndef __zjs_k64f_pins_h__
 #define __zjs_k64f_pins_h__
 
-#include "jerry-api.h"
+#include "jerryscript.h"
 
 jerry_value_t zjs_k64f_init();
 

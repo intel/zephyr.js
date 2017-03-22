@@ -7,7 +7,7 @@
 
 #include <stdlib.h>
 
-#include "jerry-api.h"
+#include "jerryscript.h"
 #include "zjs_common.h"
 #include "zjs_error.h"
 

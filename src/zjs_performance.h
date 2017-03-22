@@ -3,7 +3,7 @@
 #ifndef __zjs_performance_h__
 #define __zjs_performance_h__
 
-#include "jerry-api.h"
+#include "jerryscript.h"
 
 jerry_value_t zjs_performance_init();
 

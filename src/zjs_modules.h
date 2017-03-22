@@ -7,7 +7,7 @@
 #include <zephyr.h>
 #endif
 
-#include "jerry-api.h"
+#include "jerryscript.h"
 
 #define NUM_SERVICE_ROUTINES 3
 
