@@ -93,7 +93,7 @@ void zjs_add_event_listener(jerry_value_t obj, const char *event,
     jerry_value_t event_prop = zjs_get_property(map, event);
 
     // Event object to hold callback ID and eventually listener arguments
-    ZVAL event_obj = jerry_value_is_object(event_obj) ? event_prop :
+    ZVAL event_obj = jerry_value_is_object(event_prop) ? event_prop :
         jerry_create_object();
 
     int32_t callback_id = get_callback_id(event_obj);
@@ -246,7 +246,7 @@ static jerry_value_t get_event_names(const jerry_value_t function_obj,
 
     ZVAL event_emitter = zjs_get_property(this, HIDDEN_PROP("event"));
     uint32_t num_events = get_num_events(event_emitter);
-    jerry_value_t map = zjs_get_property(event_emitter, "map");
+    ZVAL map = zjs_get_property(event_emitter, "map");
 
     names.idx = 0;
     names.name_array = jerry_create_array(num_events);
@@ -310,7 +310,6 @@ static jerry_value_t get_listener_count(const jerry_value_t function_obj,
     }
 
     int32_t callback_id = get_callback_id(event_obj);
-
     int count = 0;
     if (callback_id != -1) {
         count = zjs_get_num_callbacks(callback_id);
@@ -346,7 +345,6 @@ static jerry_value_t get_listeners(const jerry_value_t function_obj,
     }
 
     int32_t callback_id = get_callback_id(event_obj);
-
     if (callback_id == -1) {
         ERR_PRINT("callback_id not found for '%s'\n", event);
         return ZJS_UNDEFINED;
@@ -354,6 +352,7 @@ static jerry_value_t get_listeners(const jerry_value_t function_obj,
 
     int count;
     int i;
+    // not using ZVAL because this is a pointer to values and one we will return
     jerry_value_t *func_array = zjs_get_callback_func_list(callback_id, &count);
     jerry_value_t ret_array = jerry_create_array(count);
     for (i = 0; i < count; ++i) {
