@@ -15,7 +15,9 @@ endif
 else
 # snapshot is enabled by default
 SNAPSHOT ?= on
+ifeq ($(SNAPSHOT), on)
 EXT_JERRY_FLAGS += -DFEATURE_JS_PARSER=OFF
+endif
 endif
 
 ifndef ZJS_BASE
