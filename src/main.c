@@ -221,9 +221,7 @@ int main(int argc, char *argv[])
 #endif
 
 #ifdef ZJS_LINUX_BUILD
-    if (argc > 1) {
-        zjs_free_script(script);
-    }
+    zjs_free_script(script);
 #endif
 
 #ifdef ZJS_SNAPSHOT_BUILD
