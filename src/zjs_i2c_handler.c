@@ -2,9 +2,6 @@
 #include "zjs_i2c_handler.h"
 #include "zjs_common.h"
 
-#define I2C_0 0
-#define I2C_1 1
-
 #ifdef CONFIG_BOARD_ARDUINO_101_SSS
 #define MAX_I2C_BUS 1
 #else
