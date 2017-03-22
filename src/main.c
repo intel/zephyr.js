@@ -131,7 +131,11 @@ int main(int argc, char *argv[])
 #endif
 {
 #ifndef ZJS_SNAPSHOT_BUILD
+#ifdef ZJS_LINUX_BUILD
     char *script = NULL;
+#else
+    const char *script = NULL;
+#endif
     jerry_value_t code_eval;
     uint32_t len;
 #endif
@@ -187,8 +191,14 @@ int main(int argc, char *argv[])
     // slightly tricky: reuse next section as else clause
 #endif
     {
-        script = script_gen;
         len = strnlen(script_gen, MAX_SCRIPT_SIZE);
+#ifdef ZJS_LINUX_BUILD
+        script = zjs_malloc(len + 1);
+        memcpy(script, script_gen, len);
+        script[len] = '\0';
+#else
+        script = script_gen;
+#endif
         if (len == MAX_SCRIPT_SIZE) {
             ERR_PRINT("Script size too large! Increase MAX_SCRIPT_SIZE.\n");
             goto error;
@@ -202,7 +212,7 @@ int main(int argc, char *argv[])
     zjs_obj_add_function(global_obj, native_print_handler, "print");
     zjs_obj_add_function(global_obj, stop_js_handler, "stopJS");
 #ifndef ZJS_SNAPSHOT_BUILD
-    code_eval = jerry_parse((jerry_char_t *)script, len, false);
+    code_eval = jerry_parse(script, len, false);
     if (jerry_value_has_error_flag(code_eval)) {
         ERR_PRINT("Error parsing javascript\n");
         zjs_print_error_message(code_eval);
