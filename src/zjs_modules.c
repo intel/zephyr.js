@@ -158,7 +158,7 @@ static jerry_value_t native_require_handler(const jerry_value_t function_obj,
     // Linux can pass in the script at runtime, so we have to read in/parse any
     // JS modules now rather than at compile time
     char full_path[size + 9];
-    const char *str;
+    char *str;
     uint32_t len;
     sprintf(full_path, "modules/%s", module);
     full_path[size + 8] = '\0';
