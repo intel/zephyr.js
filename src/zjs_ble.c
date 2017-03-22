@@ -722,11 +722,11 @@ static jerry_value_t zjs_ble_start_advertising(const jerry_value_t function_obj,
         }
 
         const int MAX_UUID_LENGTH = 4;
-        unsigned int size = MAX_UUID_LENGTH + 1;
+        jerry_size_t size = MAX_UUID_LENGTH + 1;
         char ubuf[size];
         zjs_copy_jstring(uuid, ubuf, &size);
         if (size != MAX_UUID_LENGTH) {
-            ERR_PRINT("SIZE: %u\n", size);
+            ERR_PRINT("SIZE: %u\n", (unsigned int)size);
             return zjs_error("zjs_ble_adv_start: unexpected uuid length");
         }
 
