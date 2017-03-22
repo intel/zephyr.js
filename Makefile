@@ -4,8 +4,19 @@ ROM ?= 256
 
 # Dump memory information: on = print allocs, full = print allocs + dump pools
 TRACE ?= off
+
 # Generate and run snapshot as byte code instead of running JS directly
+ifneq (,$(filter $(MAKECMDGOALS),ide ashell linux))
+SNAPSHOT=off
+# if the user passes in SNAPSHOT=on for ide, ashell, or linux give an error
+ifeq ($(SNAPSHOT), on)
+$(error ide, ashell, and linux do not support SNAPSHOT=$(SNAPSHOT))
+endif
+else
+# snapshot is enabled by default
 SNAPSHOT ?= on
+EXT_JERRY_FLAGS += -DFEATURE_JS_PARSER=OFF
+endif
 
 ifndef ZJS_BASE
 $(error ZJS_BASE not defined. You need to source zjs-env.sh)
@@ -51,19 +62,11 @@ EXT_JERRY_FLAGS ?=	-DENABLE_ALL_IN_ONE=ON \
 					-DFEATURE_PROFILE=$(ZJS_BASE)/jerry_feature.profile \
 					-DFEATURE_ERROR_MESSAGES=OFF \
 					-DJERRY_LIBM=OFF
+
 # Settings for ashell builds
 ifneq (,$(filter $(MAKECMDGOALS),ide ashell))
-SNAPSHOT=off
-# if the user passes in SNAPSHOT=on give an error
-ifeq ($(SNAPSHOT), on)
-$(error IDE does not support SNAPSHOT=$(SNAPSHOT))
-endif
 CONFIG ?= fragments/zjs.conf.dev
 DEV=ashell
-endif
-
-ifeq ($(SNAPSHOT), on)
-EXT_JERRY_FLAGS += -DFEATURE_JS_PARSER=OFF
 endif
 
 ifeq ($(BOARD), arduino_101)
