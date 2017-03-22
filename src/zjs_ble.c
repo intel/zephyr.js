@@ -266,8 +266,8 @@ static ssize_t zjs_ble_read_attr_callback(struct bt_conn *conn,
             ERR_PRINT("buffer is empty\n");
             return BT_GATT_ERR(BT_ATT_ERR_NOT_SUPPORTED);
         } else {
-            ERR_PRINT("on read attr error %lu\n",
-                  chrc->read_cb.error_code);
+            ERR_PRINT("on read attr error %u\n",
+                      (unsigned int)chrc->read_cb.error_code);
             return BT_GATT_ERR(chrc->read_cb.error_code);
         }
     }
@@ -726,7 +726,7 @@ static jerry_value_t zjs_ble_start_advertising(const jerry_value_t function_obj,
         char ubuf[size];
         zjs_copy_jstring(uuid, ubuf, &size);
         if (size != MAX_UUID_LENGTH) {
-            ERR_PRINT("SIZE: %lu\n", size);
+            ERR_PRINT("SIZE: %u\n", (unsigned int)size);
             return zjs_error("zjs_ble_adv_start: unexpected uuid length");
         }
 

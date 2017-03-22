@@ -119,7 +119,7 @@ void zjs_fulfill_promise(jerry_value_t obj, const jerry_value_t argv[],
     ZVAL promise_obj = zjs_get_property(obj, "promise");
 
     if (!jerry_value_is_object(promise_obj)) {
-        ERR_PRINT("'promise' not found in object %lu\n", obj);
+        ERR_PRINT("'promise' not found in object\n");
         return;
     }
 
@@ -142,7 +142,7 @@ void zjs_reject_promise(jerry_value_t obj, const jerry_value_t argv[],
     ZVAL promise_obj = zjs_get_property(obj, "promise");
 
     if (!jerry_value_is_object(promise_obj)) {
-        ERR_PRINT("'promise' not found in object %lu\n", obj);
+        ERR_PRINT("'promise' not found in object\n");
         return;
     }
 

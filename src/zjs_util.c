@@ -250,7 +250,7 @@ char *zjs_alloc_from_jstring(jerry_value_t jstr, jerry_size_t *maxlen)
     jerry_size_t size = jerry_get_string_size(jstr);
     char *buffer = zjs_malloc(size + 1);
     if (!buffer) {
-        ERR_PRINT("allocation failed (%lu bytes)\n", size + 1);
+        ERR_PRINT("allocation failed (%u bytes)\n", (unsigned int)(size + 1));
         return NULL;
     }
 
