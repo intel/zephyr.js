@@ -2,6 +2,8 @@
 #include "zjs_i2c_handler.h"
 #include "zjs_common.h"
 
+// The Arduino 101 has two I2C busses, but I2C_SS_1 isn't connected to anything.
+// So we have disabled the ability to connect to it, to avoid user confusion
 #ifdef CONFIG_BOARD_ARDUINO_101_SSS
 #define MAX_I2C_BUS 1
 #else
