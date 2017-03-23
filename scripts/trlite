@@ -4,7 +4,7 @@
 # Author: Geoff Gustafson <geoff@linux.intel.com>
 
 # trlite - a local version of the tests we run in Travis
-#   trlite [-v] [vmname] [startnum]
+#   trlite [-v] [vmname] [startnum] [endnum]
 #
 #   -v turns on verbose output
 #   by default, runs all tests
@@ -23,7 +23,7 @@ TRLDIR=$ZJS_BASE/.trlite
 TMPFILE=/tmp/zjstest.js
 
 if [ "$1" == "-h" -o "$1" == "-?" ]; then
-    echo usage: trlite [-h] [-v] [vmname] [startnum] [
+    echo usage: trlite [-h] [-v] [vmname] [startnum] [endnum]
     echo
     echo positional arguments:
     echo "  vmname    1-4 or zephyr/extra/linux/ashell (default: all)"
