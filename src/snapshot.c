@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 #include <string.h>
 #include "zjs_script.h"
@@ -11,7 +11,7 @@
 
 static uint32_t snapshot_buf[SNAPSHOT_BUFFER_SIZE];
 
-static int generate_snapshot(const char *file_name, uint8_t *buf, int buf_size)
+static int generate_snapshot(const char *file_name, uint32_t *buf, int buf_size)
 {
     // create or overwite the existing the src file that
     // initialize the array to stores the byte code
@@ -22,24 +22,21 @@ static int generate_snapshot(const char *file_name, uint8_t *buf, int buf_size)
         return 1;
     }
 
-    fwrite("/* This file was auto-generated */\n\n", 1, 36, f);
-    fwrite("#include \"zjs_common.h\"\n\n", 1, 25, f);
-    fwrite("const uint32_t snapshot_bytecode[] = {\n", 1, 38, f);
+    fputs("/* This file was auto-generated */\n\n", f);
+    fputs("#include \"zjs_common.h\"\n\n", f);
+    fputs("const uint32_t snapshot_bytecode[] = {\n", f);
 
     for (int i = 0; i < buf_size; i++)
     {
         if (i > 0) {
-            fwrite(",", 1, 1, f);
+            fputs(",", f);
         }
-        char byte[5];
-        snprintf(byte, 5, "0x%02x", snapshot_buf[i]);
-        fwrite(byte, 1, 4, f);
-        DBG_PRINT("%s,", byte);
+        fprintf(f, "0x%08lx", (unsigned long)buf[i]);
     }
 
-    fwrite("\n};\n\n", 1, 5, f);
-    fwrite("const int snapshot_len = sizeof(snapshot_bytecode) / ", 1, 53, f);
-    fwrite("sizeof(snapshot_bytecode[0]);\n", 1, 30, f);
+    fputs("\n};\n\n", f);
+    fputs("const int snapshot_len = sizeof(snapshot_bytecode) / ", f);
+    fputs("sizeof(snapshot_bytecode[0]);\n", f);
     fclose(f);
 
     return 0;
