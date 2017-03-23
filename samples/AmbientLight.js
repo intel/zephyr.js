@@ -1,4 +1,4 @@
-// Copyright (c) 2017, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 // Test code to use the AmbientLightSensor (subclass of Generic Sensor) API
 // to communicate with the Grove Light sensor on the Arduino 101
