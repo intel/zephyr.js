@@ -13,7 +13,7 @@
 #include <ctype.h>
 
 /* JerryScript includes */
-#include "jerry-api.h"
+#include "jerryscript.h"
 #include "jerry-port.h"
 
 #include "file-utils.h"

@@ -311,7 +311,7 @@ if [ $? -eq 0 ] || check_config_file ZJS_SENSOR; then
     >&2 echo Using module: Sensor
     MODULES+=" -DBUILD_MODULE_SENSOR"
     echo "export ZJS_SENSOR=y" >> zjs.conf.tmp
-    if [ $BOARD = "arduino_101" ] || [ $DEV = "ashell" ]; then
+    if [[ $BOARD = "arduino_101" ]] || [[ $DEV = "ashell" ]]; then
         bmi160=$(grep -E Accelerometer\|Gyroscope $SCRIPT)
         if [ $? -eq 0 ] || [ $DEV = "ashell" ]; then
             echo "CONFIG_SENSOR=y" >> arc/prj.conf.tmp
@@ -329,7 +329,7 @@ if [ $? -eq 0 ] || check_config_file ZJS_SENSOR; then
             echo "CONFIG_BMI160_TRIGGER_OWN_THREAD=y" >> arc/prj.conf.tmp
         fi
         bmi160=$(grep -E AmbientLightSensor $SCRIPT)
-        if [ $? -eq 0 ] || [ $DEV = "ashell" ]; then
+        if [[ $? -eq 0 ]] || [[ $DEV = "ashell" ]]; then
             MODULES+=" -DBUILD_MODULE_SENSOR_LIGHT"
             echo "CONFIG_ADC=y" >> arc/prj.conf.tmp
             # Workaround for the Zephyr issue ZEP-1882: ADC doesn't work with
