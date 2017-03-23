@@ -246,7 +246,10 @@ if [ "$VM3" == "y" ]; then
 
     # ashell tests
     git clean -dfx
-    try_command "ashell" make $VERBOSE DEV=ashell ROM=256
+    try_command "ashell" make $VERBOSE ashell ROM=250
+
+    # build ide version
+    try_command "ide" make $VERBOSE ide ROM=250
 fi
 
 # clean up on success

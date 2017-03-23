@@ -39,4 +39,7 @@ obj-y += shell-state.o
 
 obj-y += ../../deps/ihex/kk_ihex_read.o
 
+# Select extended ANSI C/POSIX function set in recent Newlib versions
+ccflags-y += -D_XOPEN_SOURCE=700
+
 ccflags-y += -Wall -Werror
