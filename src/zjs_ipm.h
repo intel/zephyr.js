@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 #ifndef __zjs_ipm_h__
 #define __zjs_ipm_h__
@@ -108,6 +108,7 @@ typedef struct zjs_ipm_message {
         // SENSOR
         struct sensor_data {
             enum sensor_channel channel;
+            char *controller;
             uint32_t pin;
             uint32_t frequency;
             union sensor_reading {
