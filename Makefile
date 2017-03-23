@@ -1,3 +1,5 @@
+# Copyright (c) 2016-2017, Intel Corporation.
+
 BOARD ?= arduino_101
 RAM ?= 55
 ROM ?= 256
