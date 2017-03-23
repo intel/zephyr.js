@@ -22,25 +22,23 @@ static int generate_snapshot(const char *file_name, uint32_t *buf, int buf_size)
         return 1;
     }
 
-    size_t bs = sizeof(char);
-    fwrite("/* This file was auto-generated */\n\n", bs, 36, f);
-    fwrite("#include \"zjs_common.h\"\n\n", bs, 25, f);
-    fwrite("const uint32_t snapshot_bytecode[] = {\n", bs, 38, f);
+    fputs("/* This file was auto-generated */\n\n", f);
+    fputs("#include \"zjs_common.h\"\n\n", f);
+    fputs("const uint32_t snapshot_bytecode[] = {\n", f);
 
     char byte[11];
     for (int i = 0; i < buf_size; i++)
     {
         if (i > 0) {
-            fwrite(",", bs, 1, f);
+            fputs(",", f);
         }
-        snprintf(byte, 11, "0x%08lx", (unsigned long)buf[i]);
-        fwrite(byte, bs, 10, f);
+        fprintf(f, "0x%08lx", (unsigned long)buf[i]);
         DBG_PRINT("%s,", byte);
     }
 
-    fwrite("\n};\n\n", bs, 5, f);
-    fwrite("const int snapshot_len = sizeof(snapshot_bytecode) / ", bs, 53, f);
-    fwrite("sizeof(snapshot_bytecode[0]);\n", bs, 30, f);
+    fputs("\n};\n\n", f);
+    fputs("const int snapshot_len = sizeof(snapshot_bytecode) / ", f);
+    fputs("sizeof(snapshot_bytecode[0]);\n", f);
     fclose(f);
 
     return 0;
