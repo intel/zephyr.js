@@ -26,14 +26,12 @@ static int generate_snapshot(const char *file_name, uint32_t *buf, int buf_size)
     fputs("#include \"zjs_common.h\"\n\n", f);
     fputs("const uint32_t snapshot_bytecode[] = {\n", f);
 
-    char byte[11];
     for (int i = 0; i < buf_size; i++)
     {
         if (i > 0) {
             fputs(",", f);
         }
         fprintf(f, "0x%08lx", (unsigned long)buf[i]);
-        DBG_PRINT("%s,", byte);
     }
 
     fputs("\n};\n\n", f);
