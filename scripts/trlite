@@ -226,15 +226,17 @@ function check_copyright() {
     YEAR=$(date +%G)
     RVAL=0
 
+    echo TRAVIS_COMMIT_RANGE: $TRAVIS_COMMIT_RANGE
     if [ -z $TRAVIS_COMMIT_RANGE ]; then
         NAMES=$(git diff --name-only master)
     else
         # work around issue https://github.com/travis-ci/travis-ci/issues/4596
         NAMES=$(git diff --name-only ${TRAVIS_COMMIT_RANGE/.../..})
     fi
-
+    echo NAMES: $NAMES
+    
     # find intersection of NAMES and SRCFILES (requires sorted lists)
-    MATCHES=$(comm -12 <(echo $NAMES | tr ' ' '\n') <(echo $SRCFILES | tr ' ' '\n'))
+    MATCHES=$(comm -12 <(echo $NAMES | tr ' ' '\n' | sort) <(echo $SRCFILES | tr ' ' '\n'))
 
     for f in $MATCHES; do
         # check for Copyright comment
