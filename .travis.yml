@@ -21,6 +21,7 @@ env:
     - ZEPHYR_SDK_DOWNLOAD_URL=$ZEPHYR_SDK_DOWNLOAD_FOLDER/$ZEPHYR_SDK_SETUP_BINARY
   matrix:
     - TARGET="zephyr"
+    - TARGET="extra"
     - TARGET="linux"
     - TARGET="ashell"
 
