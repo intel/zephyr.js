@@ -27,8 +27,7 @@ assert(buff.length === original, "The length of Buffer is readonly");
 
 // Function: writeUInt8(unsigned char value, unsigned long offset)
 //           unsigned char readUInt8(unsigned long offset)
-var uints = [[-1, 0],
-             [0, 0],
+var uints = [[0, 0],
              [1, 1],
              [1.6, 1],
              [255, 255],
