@@ -231,7 +231,7 @@ function check_copyright() {
         NAMES=$(git diff --name-only master)
     else
         # work around issue https://github.com/travis-ci/travis-ci/issues/4596
-        NAMES=$(git diff --name-only ${TRAVIS_COMMIT_RANGE/.../..})
+        NAMES=$(git diff --name-only $TRAVIS_COMMIT_RANGE)
     fi
     echo NAMES: $NAMES
 
@@ -241,11 +241,11 @@ function check_copyright() {
     for f in $MATCHES; do
         # check for Copyright comment
         if ! $(head -1 $f | grep -q Copyright); then
-            echo No copyright found in first line of $f!
+            echo Error: Add copyright to first line of $f!
             RVAL=1
         # if found, make sure current date is there
         elif ! $(head -1 $f | grep -q $YEAR); then
-            echo Copyright needs to be updated in $f!
+            echo Error: Add $YEAR to copyright in $f!
             RVAL=1
         fi
     done
