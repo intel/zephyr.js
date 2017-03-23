@@ -11,7 +11,7 @@
 
 static uint32_t snapshot_buf[SNAPSHOT_BUFFER_SIZE];
 
-static int generate_snapshot(const char *file_name, uint8_t *buf, int buf_size)
+static int generate_snapshot(const char *file_name, uint32_t *buf, int buf_size)
 {
     // create or overwite the existing the src file that
     // initialize the array to stores the byte code
@@ -22,24 +22,25 @@ static int generate_snapshot(const char *file_name, uint8_t *buf, int buf_size)
         return 1;
     }
 
-    fwrite("/* This file was auto-generated */\n\n", 1, 36, f);
-    fwrite("#include \"zjs_common.h\"\n\n", 1, 25, f);
-    fwrite("const uint32_t snapshot_bytecode[] = {\n", 1, 38, f);
+    size_t bs = sizeof(char);
+    fwrite("/* This file was auto-generated */\n\n", bs, 36, f);
+    fwrite("#include \"zjs_common.h\"\n\n", bs, 25, f);
+    fwrite("const uint32_t snapshot_bytecode[] = {\n", bs, 38, f);
 
+    char byte[11];
     for (int i = 0; i < buf_size; i++)
     {
         if (i > 0) {
-            fwrite(",", 1, 1, f);
+            fwrite(",", bs, 1, f);
         }
-        char byte[5];
-        snprintf(byte, 5, "0x%02x", snapshot_buf[i]);
-        fwrite(byte, 1, 4, f);
+        snprintf(byte, 11, "0x%08lx", (unsigned long)buf[i]);
+        fwrite(byte, bs, 10, f);
         DBG_PRINT("%s,", byte);
     }
 
-    fwrite("\n};\n\n", 1, 5, f);
-    fwrite("const int snapshot_len = sizeof(snapshot_bytecode) / ", 1, 53, f);
-    fwrite("sizeof(snapshot_bytecode[0]);\n", 1, 30, f);
+    fwrite("\n};\n\n", bs, 5, f);
+    fwrite("const int snapshot_len = sizeof(snapshot_bytecode) / ", bs, 53, f);
+    fwrite("sizeof(snapshot_bytecode[0]);\n", bs, 30, f);
     fclose(f);
 
     return 0;
