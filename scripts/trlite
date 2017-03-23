@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (c) 2016, Intel Corporation.
+# Copyright (c) 2016-2017, Intel Corporation.
 # Author: Geoff Gustafson <geoff@linux.intel.com>
 
 # trlite - a local version of the tests we run in Travis
@@ -61,6 +61,9 @@ rm -rf $TRLDIR
 echo Building ZJS tree: "$ZJS_BASE"
 echo Cloning git tree...
 git clone -l $ZJS_BASE $TRLDIR > /dev/null 2>&1
+
+# we need to refer to master later for diffs
+cp $ZJS_BASE/.git/refs/heads/master $TRLDIR/.git/refs/heads
 
 echo Cloning git submodules...
 cd $TRLDIR/deps
@@ -217,6 +220,37 @@ function check_jstring_others() {
     fi
 }
 
+function check_copyright() {
+    SRCFILES=$(find arc modules samples src tests | grep -v outdir | grep "\.js$\|\.[ch]$" | sort)
+
+    YEAR=$(date +%G)
+    RVAL=0
+
+    if [ -z $TRAVIS_COMMIT_RANGE ]; then
+        NAMES=$(git diff --name-only master)
+    else
+        # work around issue https://github.com/travis-ci/travis-ci/issues/4596
+        NAMES=$(git diff --name-only ${TRAVIS_COMMIT_RANGE/.../..})
+    fi
+
+    # find intersection of NAMES and SRCFILES (requires sorted lists)
+    MATCHES=$(comm -12 <(echo $NAMES | tr ' ' '\n') <(echo $SRCFILES | tr ' ' '\n'))
+
+    for f in $MATCHES; do
+        # check for Copyright comment
+        if ! $(head -1 $f | grep -q Copyright); then
+            echo No copyright found in first line of $f!
+            RVAL=1
+        # if found, make sure current date is there
+        elif ! $(head -1 $f | grep -q $YEAR); then
+            echo Copyright needs to be updated in $f!
+            RVAL=1
+        fi
+    done
+
+    return $RVAL
+}
+
 if [ "$VM2" == "y" ]; then
     TESTNUM=0
 
@@ -228,6 +262,9 @@ if [ "$VM2" == "y" ]; then
 
     # ensure no other source file uses jerry-string_to_char_buffer
     try_command "jstring2" check_jstring_others
+
+    # check that updated files have updated copyrights
+    try_command "copyright" check_copyright
 
     # linux build tests
     try_command "linux" make $VERBOSE BOARD=linux
