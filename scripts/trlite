@@ -4,14 +4,15 @@
 # Author: Geoff Gustafson <geoff@linux.intel.com>
 
 # trlite - a local version of the tests we run in Travis
-#   trlite [-v] [vmname] [testnum]
+#   trlite [-v] [vmname] [startnum]
 #
 #   -v turns on verbose output
 #   by default, runs all tests
 #   trlite 1 or trlite zephyr runs just VM #1 "zephyr" tests
-#   trlite 2 or trlite linux  runs just VM #2 "linux"  tests
-#   trlite 3 or trlite ashell runs just VM #3 "ashell" tests
-#   optional testnum is the first subtest to start with (default 1)
+#   trlite 2 or trlite extra  runs just VM #2 "extra"  tests
+#   trlite 3 or trlite linux  runs just VM #3 "linux"  tests
+#   trlite 4 or trlite ashell runs just VM #4 "ashell" tests
+#   optional startnum is the first subtest to start with (default 1)
 
 if [ ! -d "$ZJS_BASE" ]; then
    >&2 echo "ZJS_BASE not defined. You need to source zjs-env.sh."
@@ -22,11 +23,12 @@ TRLDIR=$ZJS_BASE/.trlite
 TMPFILE=/tmp/zjstest.js
 
 if [ "$1" == "-h" -o "$1" == "-?" ]; then
-    echo usage: trlite [-h] [-v] [vmname] [testnum]
+    echo usage: trlite [-h] [-v] [vmname] [startnum] [
     echo
     echo positional arguments:
-    echo "  vmname   vm number 1/2/3 or name zephyr/linux/ashell (default: all)"
-    echo "  testnum  subtest to start with (default: 1)"
+    echo "  vmname    1-4 or zephyr/extra/linux/ashell (default: all)"
+    echo "  startnum  subtest to start with (default: 1)"
+    echo "  endnum    subtest to end with (default: last)"
     echo
     echo optional arguments:
     echo "  -h, -?   show this help message and exit"
@@ -41,18 +43,24 @@ if [ "$1" == "-v" ]; then
 fi
 
 # flags for running tests from the different VMs
-VM1=y
-VM2=y
-VM3=y
+RUN=all
 
-if [ "$1" == "1" -o "$1" == "zephyr" ]; then VM2=n; VM3=n; fi
-if [ "$1" == "2" -o "$1" == "linux" ]; then VM1=n; VM3=n; fi
-if [ "$1" == "3" -o "$1" == "ashell" ]; then VM1=n; VM2=n; fi
+if   [ "$1" == "1" -o "$1" == "zephyr" ]; then RUN=1;
+elif [ "$1" == "2" -o "$1" == "extra" ];  then RUN=2;
+elif [ "$1" == "3" -o "$1" == "linux" ];  then RUN=3;
+elif [ "$1" == "4" -o "$1" == "ashell" ]; then RUN=4; fi
 shift
 
 START=1
 if [[ "$1" =~ ^[0-9]+$ ]]; then
     START=$1
+    shift
+fi
+
+# default to 100 to be higher than any real subtest number
+END=100
+if [[ "$1" =~ ^[0-9]+$ ]]; then
+    END=$1
     shift
 fi
 
@@ -88,7 +96,9 @@ cd $TRLDIR
 patch -p1 < uncommitted.patch > /dev/null
 
 # pause to allow consideration of diffs being applied
-sleep 3
+if [ -z $TRAVIS ]; then
+    sleep 3
+fi
 
 echo Updating submodules...
 make update
@@ -105,7 +115,7 @@ source deps/zephyr/zephyr-env.sh
 function try_command()
 {
     TESTNUM=$((TESTNUM + 1))
-    if [ "$TESTNUM" -lt "$START" ]; then
+    if [ "$TESTNUM" -lt "$START" -o "$TESTNUM" -gt "$END" ]; then
         echo "Skipping test #$TESTNUM"
         return
     fi
@@ -128,7 +138,7 @@ function try_command()
 # Tests from VM #1
 #
 
-if [ "$VM1" == "y" ]; then
+if [ "$RUN" == "all" -o "$RUN" == "1" ]; then
     TESTNUM=0
 
     # A101 build tests spanning all modules
@@ -145,6 +155,14 @@ if [ "$VM1" == "y" ]; then
         echo "var module = require('$MODULE');" > $TMPFILE
         try_command "$MODULE" make $VERBOSE JS=$TMPFILE ROM=$ROMSIZE
     done
+fi
+
+#
+# Tests from VM #2
+#
+
+if [ "$RUN" == "all" -o "$RUN" == "2" ]; then
+    TESTNUM=0
 
     # individually test build modules with long names, supplying short labels
     LONGMODULES=(arduino101_pins performance)
@@ -195,7 +213,7 @@ if [ "$VM1" == "y" ]; then
 fi
 
 #
-# Tests from VM #2
+# Tests from VM #3
 #
 
 function check_jstring_util() {
@@ -252,7 +270,7 @@ function check_copyright() {
     return $RVAL
 }
 
-if [ "$VM2" == "y" ]; then
+if [ "$RUN" == "all" -o "$RUN" == "3" ]; then
     TESTNUM=0
 
     # git check
@@ -275,10 +293,10 @@ if [ "$VM2" == "y" ]; then
 fi
 
 #
-# Tests from VM #3
+# Tests from VM #4
 #
 
-if [ "$VM3" == "y" ]; then
+if [ "$RUN" == "all" -o "$RUN" == "4" ]; then
     TESTNUM=0
 
     # ashell tests
