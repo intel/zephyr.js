@@ -234,7 +234,7 @@ function check_copyright() {
         NAMES=$(git diff --name-only ${TRAVIS_COMMIT_RANGE/.../..})
     fi
     echo NAMES: $NAMES
-    
+
     # find intersection of NAMES and SRCFILES (requires sorted lists)
     MATCHES=$(comm -12 <(echo $NAMES | tr ' ' '\n' | sort) <(echo $SRCFILES | tr ' ' '\n'))
 
