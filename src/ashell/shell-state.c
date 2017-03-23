@@ -138,7 +138,7 @@ int32_t ashell_disk_usage(char *buf)
     ssize_t size = fs_size(file);
     fs_close(file);
 
-    printf("%5ld %s\n", size, filename);
+    printf("%5d %s\n", (unsigned int)size, filename);
     return RET_OK;
 }
 
@@ -220,7 +220,7 @@ int32_t ashell_list_dir(char *buf)
 
     res = fs_opendir(&dp, filename);
     if (res) {
-        printf("Error opening dir [%lu]\n", res);
+        printf("Error opening dir [%d]\n", (int)res);
         return res;
     }
 
@@ -242,8 +242,7 @@ int32_t ashell_list_dir(char *buf)
             for (; *p; ++p)
                 *p = tolower((int)*p);
 
-            printf("%5lu %s\n",
-                   entry.size, entry.name);
+            printf("%5u %s\n", (unsigned int)entry.size, entry.name);
         }
     }
 
