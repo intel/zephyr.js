@@ -66,7 +66,7 @@ if [[ $1 == -j* ]]; then
         PIDS[$i]=$!
     done
 
-    # wait in likely order of completion
+    # wait for children to complete and wait for their filesystem changes
     wait > /dev/null
     sync
 
