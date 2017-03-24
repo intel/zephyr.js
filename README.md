@@ -11,7 +11,6 @@ everything else.
 
 ### Index
 * [Getting Started](#getting-started)
-* [Next steps](#next-steps)
 * [Contributing](#contributing)
 * [Repo Organization](#repo-organization)
 * [Increase space on A101](#getting-more-space-on-your-arduino-101)
@@ -353,7 +352,7 @@ Zephyr is a trademark of the Linux Foundation. *Other names and brands may be cl
 
 ## Building and running on Linux and Mac OSX
 In addition to Zephyr there is a "linux" target which does not use Zephyr at all
-and instead uses the host OS. This can be build on Linux or Mac OSX using the
+and instead uses the host OS. This can be built on Linux or Mac OSX using the
 command:
 
 ```bash
