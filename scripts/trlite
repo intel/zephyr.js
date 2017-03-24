@@ -350,6 +350,14 @@ if [ "$RUN" == "all" -o "$RUN" == "3" ]; then
 
     # linux unit tests
     try_command "unit tests" ./outdir/linux/release/jslinux --unittest
+
+    # linux runtime tests
+    # TODO: Add buffer, it fails in Linux ATM
+    for i in error event promise; do
+        ./outdir/linux/release/jslinux tests/test-$i.js > /tmp/output
+        cat /tmp/output
+        try_command "run tests/test-$i.js" test ! $(grep "FAIL" /tmp/output)
+    done
 fi
 
 #
