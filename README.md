@@ -17,8 +17,7 @@ application on Arduino 101\*.
 ### Prerequisites
 * [Arduino 101 board](https://www.arduino.cc/en/Main/ArduinoBoard101)
 * Ubuntu\* 16.04 host; adapt as necessary for other platforms.
-* If you're behind a proxy, go through all the [usual pain]
-(https://github.com/01org/zephyr.js/wiki/Proxy) to get ssh working to
+* If you're behind a proxy, go through all the [usual pain](https://github.com/01org/zephyr.js/wiki/Proxy) to get ssh working to
 github.com and http working to zephyrproject.org.
 
 ### Initial Setup
@@ -61,7 +60,7 @@ file in the root of the source tree to see what version you're on. If you're on
 the master development branch it will just say 'devel'.
 
 #### Install the Zephyr SDK
-Download the [latest Zephyr SDK] (https://www.zephyrproject.org/downloads), then:
+Download the [latest Zephyr SDK](https://www.zephyrproject.org/downloads), then:
 ```bash
 $ chmod +x /path/to/zephyr-sdk-<VERSION>-setup.run
 $ sudo /path/to/zephyr-sdk-<VERSION>-setup.run
@@ -324,7 +323,7 @@ sudo apt-get install node-uglify
 ## FRDM-K64F Platform
 
 See the
-[Zephyr Project Wiki] (https://wiki.zephyrproject.org/view/NXP_FRDM-K64F)
+[Zephyr Project Wiki](https://wiki.zephyrproject.org/view/NXP_FRDM-K64F)
 for general information about running Zephyr OS on the FRDM-K64F.
 
 The instructions below assume Ubuntu 14.04 on the host PC.
@@ -349,7 +348,7 @@ the cable and then plug it back in later.
 Check your dmesg output or watch your /dev directory to know what device it
 shows up as.
 
-Then, follow [these instructions] (https://developer.mbed.org/handbook/Firmware-FRDM-K64F) to update your firmware.
+Then, follow [these instructions](https://developer.mbed.org/handbook/Firmware-FRDM-K64F) to update your firmware.
 
 Next, you can try to build ZJS for the platform:
 ```bash
@@ -364,7 +363,7 @@ Reset button to run the Zephyr image. You should see "Hello, ZJS world!" output
 on the serial console in less than a second.
 
 If something doesn't work, you may want to establish that you're able to
-upload the K64F [hello world application] (https://developer.mbed.org/platforms/FRDM-K64F/#flash-a-project-binary).
+upload the K64F [hello world application](https://developer.mbed.org/platforms/FRDM-K64F/#flash-a-project-binary).
 
 Then, you could try the Zephyr OS `hello_world` sample to narrow down the
 problem:
