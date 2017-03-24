@@ -24,7 +24,7 @@ setup:
 		mkdir -p $(ZJS_BASE)/outdir/snapshot/; \
 	fi
 
-CORE_SRC +=		src/snapshot.c \
+CORE_SRC +=		tools/snapshot.c \
 			src/zjs_common.c \
 			src/zjs_script.c
 
@@ -37,7 +37,7 @@ JERRY_LIBS += 		-l jerry-core -lm
 
 JERRY_LIB_PATH += 	-L $(JERRY_BASE)/build/lib/
 
-SNAPSHOT_LIBS += $(JERRY_LIBS) -pthread
+SNAPSHOT_LIBS +=	$(JERRY_LIBS) -pthread
 
 SNAPSHOT_DEFINES +=	-DZJS_LINUX_BUILD \
 			-DZJS_PRINT_FLOATS

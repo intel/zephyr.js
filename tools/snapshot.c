@@ -7,39 +7,18 @@
 #include "jerryscript.h"
 
 #define SNAPSHOT_BUFFER_SIZE 51200
-#define SNAPSHOT_SOURCE_FILE "src/zjs_snapshot_gen.c"
 
 static uint32_t snapshot_buf[SNAPSHOT_BUFFER_SIZE];
 
-static int generate_snapshot(const char *file_name, uint32_t *buf, int buf_size)
+static void generate_snapshot(uint32_t *buf, int buf_size)
 {
-    // create or overwite the existing the src file that
-    // initialize the array to stores the byte code
-    // to be executed by jerryscript
-    FILE *f = fopen(file_name, "w+");
-    if (!f) {
-        ERR_PRINT("error opening file\n");
-        return 1;
-    }
-
-    fputs("/* This file was auto-generated */\n\n", f);
-    fputs("#include \"zjs_common.h\"\n\n", f);
-    fputs("const uint32_t snapshot_bytecode[] = {\n", f);
-
     for (int i = 0; i < buf_size; i++)
     {
         if (i > 0) {
-            fputs(",", f);
+            printf(",");
         }
-        fprintf(f, "0x%08lx", (unsigned long)buf[i]);
+        printf("0x%08lx", (unsigned long)buf[i]);
     }
-
-    fputs("\n};\n\n", f);
-    fputs("const int snapshot_len = sizeof(snapshot_bytecode) / ", f);
-    fputs("sizeof(snapshot_bytecode[0]);\n", f);
-    fclose(f);
-
-    return 0;
 }
 
 int main(int argc, char *argv[])
@@ -74,13 +53,10 @@ int main(int argc, char *argv[])
     }
 
     // store the snapshot as byte array in header
-    if (generate_snapshot(SNAPSHOT_SOURCE_FILE, snapshot_buf, size) != 0) {
-        ERR_PRINT("failed to generate %s\n", SNAPSHOT_SOURCE_FILE);
-        return 1;
-    }
+    generate_snapshot(snapshot_buf, size);
 
-    ZJS_PRINT("Source code %lu bytes\n", len);
-    ZJS_PRINT("Byte code %d bytes\n", size);
+    DBG_PRINT("Source code %lu bytes\n", len);
+    DBG_PRINT("Byte code %d bytes\n", size);
 
     return 0;
 }

@@ -236,8 +236,6 @@ endif
 .PHONY: cleanlocal
 cleanlocal:
 	@rm -f src/*.o
-	@rm -f src/zjs_script_gen.c
-	@rm -f src/zjs_snapshot_gen.c
 	@rm -f src/Makefile
 	@rm -f arc/prj.conf
 	@rm -f arc/prj.conf.tmp
@@ -245,6 +243,8 @@ cleanlocal:
 	@rm -f arc/outdir/arduino_101_sss/zephyr.bin.dfu
 	@rm -f outdir/arduino_101/zephyr.bin.dfu
 	@rm -f outdir/jsgen.tmp
+	@rm -f outdir/include/zjs_script_gen.h
+	@rm -f outdir/include/zjs_snapshot_gen.h
 	@rm -f prj.conf
 	@rm -f prj.conf.tmp
 	@rm -f prj.mdef
@@ -273,10 +273,11 @@ pristine: cleanlocal
 # Generate the script file from the JS variable
 .PHONY: generate
 generate: $(JS) setup
+	@mkdir -p outdir/include/
 ifeq ($(SNAPSHOT), on)
 	@echo Building snapshot generator...
 	@if ! [ -e outdir/snapshot/snapshot ]; then \
-		make -f Makefile.snapshot; \
+		make -f tools/Makefile.snapshot; \
 	fi
 	@echo Creating snapshot bytecode from JS application...
 	@if [ -x /usr/bin/uglifyjs ]; then \
@@ -284,7 +285,7 @@ ifeq ($(SNAPSHOT), on)
 	else \
 		cat js.tmp > outdir/jsgen.tmp; \
 	fi
-	@outdir/snapshot/snapshot outdir/jsgen.tmp src/zjs_snapshot_gen.c
+	@outdir/snapshot/snapshot outdir/jsgen.tmp > outdir/include/zjs_snapshot_gen.h
 # SNAPSHOT=on, check if rebuilding JerryScript is needed
 ifeq ("$(wildcard .snapshot.last_build)", "")
 	@rm -rf $(JERRY_BASE)/build/$(BOARD)/
@@ -294,9 +295,9 @@ endif
 else
 	@echo Creating C string from JS application...
 ifeq ($(BOARD), linux)
-	@./scripts/convert.sh $(JS) src/zjs_script_gen.c
+	@./scripts/convert.sh $(JS) outdir/include/zjs_script_gen.h
 else
-	@./scripts/convert.sh js.tmp src/zjs_script_gen.c
+	@./scripts/convert.sh js.tmp outdir/include/zjs_script_gen.h
 endif
 # SNAPSHOT=off, check if rebuilding JerryScript is needed
 ifneq ("$(wildcard .snapshot.last_build)", "")
