@@ -356,7 +356,7 @@ if [ "$RUN" == "all" -o "$RUN" == "3" ]; then
     for i in error event promise; do
         ./outdir/linux/release/jslinux tests/test-$i.js > /tmp/output
         cat /tmp/output
-        try_command "run tests/test-$i.js" test ! $(grep "FAIL" /tmp/output)
+        try_command "run t-$i" test ! $(grep "FAIL" /tmp/output)
     done
 fi
 
