@@ -244,10 +244,12 @@ cleanlocal:
 	@rm -f arc/src/Makefile
 	@rm -f arc/outdir/arduino_101_sss/zephyr.bin.dfu
 	@rm -f outdir/arduino_101/zephyr.bin.dfu
+	@rm -f outdir/jsgen.tmp
 	@rm -f prj.conf
 	@rm -f prj.conf.tmp
 	@rm -f prj.mdef
 	@rm -f zjs.conf.tmp
+	@rm -f js.tmp
 	@rm -f .snapshot.last_build
 
 # Explicit clean
@@ -278,11 +280,11 @@ ifeq ($(SNAPSHOT), on)
 	fi
 	@echo Creating snapshot bytecode from JS application...
 	@if [ -x /usr/bin/uglifyjs ]; then \
-		uglifyjs /tmp/zjs.js -nc -mt > /tmp/gen.tmp; \
+		uglifyjs js.tmp -nc -mt > outdir/jsgen.tmp; \
 	else \
-		cat /tmp/zjs.js > /tmp/gen.tmp; \
+		cat js.tmp > outdir/jsgen.tmp; \
 	fi
-	@outdir/snapshot/snapshot /tmp/gen.tmp src/zjs_snapshot_gen.c
+	@outdir/snapshot/snapshot outdir/jsgen.tmp src/zjs_snapshot_gen.c
 # SNAPSHOT=on, check if rebuilding JerryScript is needed
 ifeq ("$(wildcard .snapshot.last_build)", "")
 	@rm -rf $(JERRY_BASE)/build/$(BOARD)/
@@ -294,7 +296,7 @@ else
 ifeq ($(BOARD), linux)
 	@./scripts/convert.sh $(JS) src/zjs_script_gen.c
 else
-	@./scripts/convert.sh /tmp/zjs.js src/zjs_script_gen.c
+	@./scripts/convert.sh js.tmp src/zjs_script_gen.c
 endif
 # SNAPSHOT=off, check if rebuilding JerryScript is needed
 ifneq ("$(wildcard .snapshot.last_build)", "")

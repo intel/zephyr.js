@@ -26,11 +26,12 @@ OUTPUT=$2
 
 # uglifyjs seems to have vastly different options between versions,
 # this should work with both
+TMPFILE=$(mktemp /tmp/zjs-gen-XXXXXX.js)
 if which uglifyjs &> /dev/null; then
     if uglifyjs --version &> /dev/null; then
-        uglifyjs $INPUT -nc -mt > /tmp/gen.tmp
+        uglifyjs $INPUT -nc -mt > $TMPFILE
     else
-        uglifyjs -nc -mt $INPUT > /tmp/gen.tmp
+        uglifyjs -nc -mt $INPUT > $TMPFILE
     fi
     ERR=$?
     if (($ERR > 0)); then
@@ -39,7 +40,7 @@ if which uglifyjs &> /dev/null; then
     fi
     UGLIFY=1
 else
-    cat $INPUT > /tmp/gen.tmp
+    cat $INPUT > $TMPFILE
     UGLIFY=0
 fi
 
@@ -93,4 +94,4 @@ printf "\n"
 # Terminate the string
 printf "\";" >> $OUTPUT
 
-rm -f /tmp/gen.tmp
+rm -f $TMPFILE

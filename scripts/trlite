@@ -4,8 +4,10 @@
 # Author: Geoff Gustafson <geoff@linux.intel.com>
 
 # trlite - a local version of the tests we run in Travis
-#   trlite [-v] [vmname] [startnum] [endnum]
+#   trlite [-j] [-nN] [-v] [vmname] [startnum] [endnum]
 #
+#   -nN appends N to .trlite directory name
+#   -j runs all tests, with parallel execution (4 threads currently)
 #   -v turns on verbose output
 #   by default, runs all tests
 #   trlite 1 or trlite zephyr runs just VM #1 "zephyr" tests
@@ -15,6 +17,11 @@
 #   optional startnum is the first subtest to test (default 1)
 #   optional endnum is the last subtest to test (default last)
 
+# Putting braces around the whole script like this causes it to be loaded
+#   fully into memory, and thus you can edit and overwrite the script without
+#   screwing up already running copies. This is primarily useful while
+#   debugging the script.
+{
 if [ ! -d "$ZJS_BASE" ]; then
    >&2 echo "ZJS_BASE not defined. You need to source zjs-env.sh."
    exit 1
@@ -35,6 +42,55 @@ if [ "$1" == "-h" -o "$1" == "-?" ]; then
     echo "  -h, -?   show this help message and exit"
     echo "  -v       turn on verbose build output"
     exit 1
+fi
+
+function display_errors()  # NAME, NUM
+{
+    # if clone dir still exists, something failed
+    if [ -d $TRLDIR$2 ]; then
+        echo Failures in $1 tests:
+        echo ----------------------------------------
+        tail -5 $LOGFILE.$2
+        echo \(See $LOGFILE.$2 for more info.\)
+        echo ----------------------------------------
+        echo
+    fi
+}
+
+if [[ $1 == -j* ]]; then
+    LOGFILE=/tmp/trlite-log
+
+    echo Running all trlite tests in four parallel threads...
+    for i in 1 2 3 4; do
+        trlite -n$i $i 1 > $LOGFILE.$i 2>&1 &
+        PIDS[$i]=$!
+    done
+
+    # wait for children to complete and wait for their filesystem changes
+    wait > /dev/null
+    sync
+
+    display_errors zephyr 1
+    display_errors extra  2
+    display_errors linux  3
+    display_errors ashell 4
+
+    for i in 1 2 3 4; do
+        if [ -d $TRLDIR$i ]; then
+            exit 1
+        fi
+    done
+
+    echo SUCCESS: All tests passed!
+    exit 0
+fi
+
+if [[ $1 == -n* ]]; then
+    TRLDIR=$TRLDIR${1:2}
+    TMPFILE=$TMPFILE${1:2}
+    echo TRLDIR: $TRLDIR >> /tmp/foo
+    echo TMPFILE: $TMPFILE >> /tmp/foo
+    shift
 fi
 
 VERBOSE=
@@ -129,7 +185,7 @@ function try_command()
     $*
     CODE=$?
     if [ $CODE -ne 0 ]; then
-        echo Error: Failed in $LABEL \(subtest \#$TESTNUM\) error $? $CODE!
+        echo Error: Failed in $LABEL subtest \#$TESTNUM with code $CODE \(rerun with: trlite $VMNUM $TESTNUM\)!
         exit $CODE
     fi
     echo Success: $LABEL
@@ -140,6 +196,7 @@ function try_command()
 #
 
 if [ "$RUN" == "all" -o "$RUN" == "1" ]; then
+    VMNUM=1
     TESTNUM=0
 
     # A101 build tests spanning all modules
@@ -163,6 +220,7 @@ fi
 #
 
 if [ "$RUN" == "all" -o "$RUN" == "2" ]; then
+    VMNUM=2
     TESTNUM=0
 
     # individually test build modules with long names, supplying short labels
@@ -272,6 +330,7 @@ function check_copyright() {
 }
 
 if [ "$RUN" == "all" -o "$RUN" == "3" ]; then
+    VMNUM=3
     TESTNUM=0
 
     # git check
@@ -298,6 +357,7 @@ fi
 #
 
 if [ "$RUN" == "all" -o "$RUN" == "4" ]; then
+    VMNUM=4
     TESTNUM=0
 
     # ashell tests
@@ -311,3 +371,5 @@ fi
 # clean up on success
 cd $ZJS_BASE
 rm -rf $TRLDIR
+exit 0
+}
