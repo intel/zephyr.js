@@ -9,6 +9,18 @@ This code requires a local copy of JerryScript and Zephyr OS source.  We
 will upstream patches to those projects as appropriate, but this repo is for
 everything else.
 
+### Index
+* [Getting Started](#getting-started)
+* [Contributing](#contributing)
+* [Repo Organization](#repo-organization)
+* [Increase space on A101](#getting-more-space-on-your-arduino-101)
+* [JS Minifier](#js-minifier)
+* [FRDM-K64F Platform](#frdm-k64f-platform)
+* [Building and running on Linux/Mac OSX](#building-and-running-on-linux-and-mac-osx)
+* [Supported modules on Linux and Zephyr](#supported-modules-on-linux-and-zephyr)
+* [Networking with QEMU](#networking-with-qemu)
+* [OCF over BLE](#ocf-over-ble)
+
 ## Getting Started
 
 This section will walk you through building and running your first ZJS
@@ -224,7 +236,9 @@ least two plus-ones (+1) , "Look Good To Me (LGTM)" or other positive signals
 for the project members. Once you have gained the required signals the project
 maintainers will merge the PR.
 
-## File Descriptions
+## Repo Organization
+
+### File Descriptions
 * `zjs-env.sh` - Source this file to set environment variables and path to be
 able to use tools from ```scripts/``` anywhere.
 * `prj.conf` - The main configuration file for a Zephyr application; overrides
@@ -233,7 +247,7 @@ assemble the prj.conf file at build time from other fragments.
 * `prj.mdef` - Another configuration file for a Zephyr application; we use it to
 configure the heap size available to the ZJS API.
 
-## Subdirectories
+### Subdirectories
 - `arc/` - Contains sensor subsystem code for ARC side of the Arduino 101.
 - `deps/` - Contains dependency repos and scripts for working with them.
 - `docs/` - Documentation in Markdown format (use API.md as index).
@@ -270,46 +284,6 @@ few modules you require in the ARC build.
 
 The RAM and ROM sizes being used are now displayed at the top of the make
 output when you do build for Arduino 101.
-
-## Building system images
-The ZJS project uses a top-level Makefile to control the building of code from
-he project itself as well as the JerryScript and Zephyr projects it depends on.
-
-To see the available make commands, type:
-
-```bash
-$ make help
-```
-
-On Arduino 101, there are two embedded microcontrollers, an X86 and an ARC one.
-If you only need the x86 side, you can disable ARC with CONFIG_ARC_INIT=n in
-the Zephyr prj.conf. Otherwise, you need a working image running on it.
-
-## Build the *Hello World* sample
-```bash
-$ make JS=samples/HelloWorld.js
-```
-
-This will build both an X86 and an ARC image, resulting in
-`outdir/arduino_101/zephyr.bin` and `arc/outdir/arduino_101_sss/zephyr.bin`
-as the final output. Then adjusted versions are created with a `.dfu` suffix.
-To flash them to your device with dfu-util, first press the Master Reset button
-on your Arduino 101, and about three seconds later type:
-
-```bash
-$ make dfu
-```
-
-There is a window of about five seconds where the DFU server is available,
-starting a second or two after the device resets.
-
-Now both images on your device have been updated. Press the Master Reset button
-one more time to boot your new images.
-
-## Build other samples
-The other samples may require some hardware to be set up and connected; read
-the top of each JS file, but then simply pass in the path to the JS file to make
-as with `HelloWorld.js` above.
 
 ## JS Minifier
 
@@ -378,9 +352,9 @@ Using the same procedure as above, once you hit Reset you should see
 
 Zephyr is a trademark of the Linux Foundation. *Other names and brands may be claimed as the property of others.
 
-## Building and running on Linux/Mac OSX
+## Building and running on Linux and Mac OSX
 In addition to Zephyr there is a "linux" target which does not use Zephyr at all
-and instead uses the host OS. This can be build on Linux or Mac OSX using the
+and instead uses the host OS. This can be built on Linux or Mac OSX using the
 command:
 
 ```bash
@@ -425,7 +399,7 @@ on it, specifically the hardware modules (AIO, I2C, GPIO etc.). There are some
 modules which can be used though like Events, Promises, Performance and OCF. This
 list may grow if other modules are ported to the Linux target.
 
-## Supported modules (Linux vs Zephyr)
+## Supported modules on Linux and Zephyr
 There is only partial support for modules on Linux compared to Zephyr. Any hardware
 specific module (I2C, UART, GPIO, ADC etc.) is not supported on Linux. Trying
 to run a Zephyr specific module on Linux will result in the JavaScript not running
@@ -446,6 +420,34 @@ successfully. Below is a complete table of modules and target support.
 | OCF       | <ul><li>- [x] </li></ul> | <ul><li>- [x] </li></ul> |
 |Performance| <ul><li>- [x] </li></ul> | <ul><li>- [x] </li></ul> |
 | Timers    | <ul><li>- [x] </li></ul> | <ul><li>- [x] </li></ul> |
+
+## Networking with QEMU
+QEMU has support for networking features that can be tested on your Linux
+desktop. To do this you will need a separate "net-tools" repo:
+```bash
+git clone git clone https://gerrit.zephyrproject.org/r/net-tools
+```
+Open up 2 terminals to run the tools:
+Terminal 1:
+```bash
+sudo ./net-tools/loop-socat.sh
+```
+Terminal 2:
+```bash
+./net-tools/loop-slip-tap.sh
+```
+Then run QEMU as your normally would e.g.
+```bash
+make BOARD=qemu_x86 JS=samples/OcfServer.js qemu
+```
+
+Note: At this point, this setup is relatively unstable. You may experience
+crashes or things just not working in general. If the behavior does not seem
+normal you can usually fix it by restarting the two scripts and running QEMU
+again.
+
+The original instructions document can be found on the Zephyr website
+(here)[https://www.zephyrproject.org/doc/subsystems/networking/qemu_setup.html]
 
 ## OCF over BLE
 There is a dedicated [document](./docs/ocf-ble.md) for building and running OCF over
