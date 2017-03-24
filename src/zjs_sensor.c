@@ -17,6 +17,7 @@
 
 #define ZJS_SENSOR_TIMEOUT_TICKS 5000
 #define DEFAULT_SAMPLING_FREQUENCY 20
+#define BMI160_CONTROLLER "bmi160"
 
 static struct k_sem sensor_sem;
 
@@ -35,6 +36,7 @@ typedef struct sensor_handle {
     zjs_callback_id onstart_cb_id;
     zjs_callback_id onstop_cb_id;
     enum sensor_channel channel;
+    char *controller;
     int frequency;
     enum sensor_state state;
     jerry_value_t sensor_obj;
@@ -365,6 +367,8 @@ static void zjs_sensor_onstart_c_callback(void *h, const void *argv)
     send.type = TYPE_SENSOR_START;
     send.data.sensor.channel = handle->channel;
     send.data.sensor.frequency = handle->frequency;
+    send.data.sensor.controller = handle->controller;
+
     if (handle->channel == SENSOR_CHAN_LIGHT) {
         // AmbientLightSensor needs provide AIO pin value
         uint32_t pin;
@@ -402,6 +406,7 @@ static void zjs_sensor_onstop_c_callback(void *h, const void *argv)
     zjs_ipm_message_t send;
     send.type = TYPE_SENSOR_STOP;
     send.data.sensor.channel = handle->channel;
+    send.data.sensor.controller = handle->controller;
 
     ZVAL reading_val = jerry_create_null();
     jerry_value_t null_val = jerry_create_null();
@@ -505,21 +510,31 @@ static jerry_value_t zjs_sensor_create(const jerry_value_t function_obj,
     ZJS_VALIDATE_ARGS(expect);
 
     double frequency = DEFAULT_SAMPLING_FREQUENCY;
+    char *controller = "";
     uint32_t pin;
 
-    zjs_ipm_message_t send;
-    send.type = TYPE_SENSOR_INIT;
-    send.data.sensor.channel = channel;
-    int error = zjs_sensor_call_remote_function(&send);
-    if (error != ERROR_IPM_NONE) {
-        return zjs_error("zjs_sensor_create failed to init\n");
-    }
-
     // initialize object and default values
-    jerry_value_t sensor_obj = jerry_create_object();
+    ZVAL sensor_obj = jerry_create_object();
 
     if (argc >= 1) {
         jerry_value_t options = argv[0];
+        const int BUFLEN = 20;
+        char buffer[BUFLEN];
+
+        if (!zjs_obj_get_string(options, "controller", buffer, BUFLEN)) {
+            switch(channel) {
+            case SENSOR_CHAN_ACCEL_XYZ:
+            case SENSOR_CHAN_GYRO_XYZ:
+            case SENSOR_CHAN_TEMP:
+                controller = BMI160_CONTROLLER;
+                break;
+
+            default:
+                controller = "";
+            }
+        } else {
+            controller = buffer;
+        }
 
         double option_freq;
         if (zjs_obj_get_double(options, "frequency", &option_freq)) {
@@ -547,7 +562,7 @@ static jerry_value_t zjs_sensor_create(const jerry_value_t function_obj,
         }
 
         // initialize default sensor readings to null
-        jerry_value_t null_val = jerry_create_null();
+        ZVAL null_val = jerry_create_null();
         if (channel == SENSOR_CHAN_ACCEL_XYZ ||
             channel == SENSOR_CHAN_GYRO_XYZ) {
             zjs_set_readonly_property(sensor_obj, "x", null_val);
@@ -559,7 +574,16 @@ static jerry_value_t zjs_sensor_create(const jerry_value_t function_obj,
             }
             zjs_set_readonly_property(sensor_obj, "illuminance", null_val);
         }
-        jerry_release_value(null_val);
+    }
+
+    zjs_ipm_message_t send;
+    send.type = TYPE_SENSOR_INIT;
+    send.data.sensor.channel = channel;
+    send.data.sensor.controller = controller;
+
+    int error = zjs_sensor_call_remote_function(&send);
+    if (error != ERROR_IPM_NONE) {
+        return zjs_error("zjs_sensor_create failed to init\n");
     }
 
     zjs_obj_add_number(sensor_obj, frequency, "frequency");
@@ -573,8 +597,13 @@ static jerry_value_t zjs_sensor_create(const jerry_value_t function_obj,
                                                zjs_sensor_onstart_c_callback);
     handle->onstop_cb_id = zjs_add_c_callback(handle,
                                               zjs_sensor_onstop_c_callback);
+
+    int len = strlen(controller);
     handle->channel = channel;
     handle->frequency = frequency;
+    handle->controller = zjs_malloc(len + 1);
+    memcpy(handle->controller, controller, len);
+    handle->controller[len] = '\0';
     handle->sensor_obj = jerry_acquire_value(sensor_obj);
 
     // watch for the object getting garbage collected, and clean up

@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 // Zephyr includes
 #include <zephyr.h>
@@ -33,6 +33,12 @@
 #define MAX_I2C_BUS 2
 
 #define MAX_BUFFER_SIZE 256
+
+#ifdef CONFIG_BMI160_NAME
+#define BMI160_NAME CONFIG_BMI160_NAME
+#else
+#define BMI160_NAME "bmi160"
+#endif
 
 static struct k_sem arc_sem;
 static struct zjs_ipm_message msg_queue[QUEUE_SIZE];
@@ -81,8 +87,15 @@ size_t strnlen(const char *str, size_t max_len) {
     return len;
 }
 
-static int ipm_send_error_reply(struct zjs_ipm_message *msg,
-                                uint32_t error_code)
+int ipm_send_msg(struct zjs_ipm_message *msg)
+{
+    msg->flags &= ~MSG_ERROR_FLAG;
+    msg->error_code = ERROR_IPM_NONE;
+    return zjs_ipm_send(msg->id, msg);
+}
+
+static int ipm_send_error(struct zjs_ipm_message *msg,
+                          uint32_t error_code)
 {
     msg->flags |= MSG_ERROR_FLAG;
     msg->error_code = error_code;
@@ -168,7 +181,7 @@ static void handle_aio(struct zjs_ipm_message *msg)
 
     if (pin < ARC_AIO_MIN || pin > ARC_AIO_MAX) {
         ERR_PRINT("pin #%lu out of range\n", pin);
-        ipm_send_error_reply(msg, ERROR_IPM_INVALID_PARAMETER);
+        ipm_send_error(msg, ERROR_IPM_INVALID_PARAMETER);
         return;
     }
 
@@ -200,13 +213,13 @@ static void handle_aio(struct zjs_ipm_message *msg)
     }
 
     if (error_code != ERROR_IPM_NONE) {
-        ipm_send_error_reply(msg, error_code);
+        ipm_send_error(msg, error_code);
         return;
     }
 
     msg->data.aio.pin = pin;
     msg->data.aio.value = reply_value;
-    zjs_ipm_send(msg->id, msg);
+    ipm_send_msg(msg);
 }
 
 static void process_aio_updates()
@@ -224,7 +237,7 @@ static void process_aio_updates()
                 msg.user_data = pin_user_data[i];
                 msg.data.aio.pin = ARC_AIO_MIN+i;
                 msg.data.aio.value = pin_values[i];
-                zjs_ipm_send(msg.id, &msg);
+                ipm_send_msg(&msg);
             }
             pin_last_values[i] = pin_values[i];
         }
@@ -273,12 +286,11 @@ static void handle_i2c(struct zjs_ipm_message *msg)
     }
 
     if (error_code != ERROR_IPM_NONE) {
-        ipm_send_error_reply(msg, error_code);
+        ipm_send_error(msg, error_code);
         return;
     }
 
-    msg->error_code = error_code;
-    zjs_ipm_send(msg->id, msg);
+    ipm_send_msg(msg);
 }
 #endif
 
@@ -291,7 +303,7 @@ static void handle_glcd(struct zjs_ipm_message *msg)
 
     if (msg->type != TYPE_GLCD_INIT && !glcd) {
         ERR_PRINT("Grove LCD device not found\n");
-        ipm_send_error_reply(msg, ERROR_IPM_OPERATION_FAILED);
+        ipm_send_error(msg, ERROR_IPM_OPERATION_FAILED);
         return;
     }
 
@@ -359,11 +371,11 @@ static void handle_glcd(struct zjs_ipm_message *msg)
     }
 
     if (error_code != ERROR_IPM_NONE) {
-        ipm_send_error_reply(msg, error_code);
+        ipm_send_error(msg, error_code);
         return;
     }
 
-    zjs_ipm_send(msg->id, msg);
+    ipm_send_msg(msg);
 }
 #endif
 
@@ -409,7 +421,7 @@ static void send_sensor_data(enum sensor_channel channel,
     msg.error_code = ERROR_IPM_NONE;
     msg.data.sensor.channel = channel;
     memcpy(&msg.data.sensor.reading, &reading, sizeof(union sensor_reading));
-    zjs_ipm_send(MSG_ID_SENSOR, &msg);
+    ipm_send_msg(&msg);
 }
 
 #define ABS(x) ((x) >= 0) ? (x) : -(x)
@@ -683,7 +695,7 @@ static double cube_root(double num) {
     return cube_root_recursive(num, 0, num);
 }
 
-static void process_light_updates()
+static void fetch_light()
 {
     for (int i=0; i<=5; i++) {
         if (light_send_updates[i]) {
@@ -718,27 +730,24 @@ static void process_light_updates()
 }
 #endif // BUILD_MODULE_SENSOR_LIGHT
 
-static void handle_sensor(struct zjs_ipm_message *msg)
+static void handle_sensor_bmi160_motion(struct zjs_ipm_message *msg)
 {
     int freq;
     uint32_t error_code = ERROR_IPM_NONE;
 
     switch(msg->type) {
     case TYPE_SENSOR_INIT:
-        if (msg->data.sensor.channel == SENSOR_CHAN_ACCEL_XYZ ||
-            msg->data.sensor.channel == SENSOR_CHAN_GYRO_XYZ) {
-            if (!bmi160) {
-                bmi160 = device_get_binding("bmi160");
+        if (!bmi160) {
+            bmi160 = device_get_binding(BMI160_NAME);
 
-                if (!bmi160) {
-                    error_code = ERROR_IPM_OPERATION_FAILED;
-                    ERR_PRINT("failed to initialize BMI160 sensor\n");
-                } else {
-                    if (auto_calibration(bmi160) != 0) {
-                        ERR_PRINT("failed to perform auto calibration\n");
-                    }
-                    DBG_PRINT("BMI160 sensor initialized\n");
+            if (!bmi160) {
+                error_code = ERROR_IPM_OPERATION_FAILED;
+                ERR_PRINT("failed to initialize BMI160 sensor\n");
+            } else {
+                if (auto_calibration(bmi160) != 0) {
+                    ERR_PRINT("failed to perform auto calibration\n");
                 }
+                DBG_PRINT("BMI160 sensor initialized\n");
             }
         }
         break;
@@ -754,20 +763,6 @@ static void handle_sensor(struct zjs_ipm_message *msg)
                              start_gyro_trigger(bmi160, freq) != 0)) {
                 error_code = ERROR_IPM_OPERATION_FAILED;
             }
-#ifdef BUILD_MODULE_SENSOR_LIGHT
-        } else if (msg->data.sensor.channel == SENSOR_CHAN_LIGHT) {
-            uint32_t pin = msg->data.sensor.pin;
-            if (pin < ARC_AIO_MIN || pin > ARC_AIO_MAX) {
-                ERR_PRINT("pin #%lu out of range\n", pin);
-                error_code = ERROR_IPM_OPERATION_FAILED;
-            } else {
-                DBG_PRINT("start ambient light %lu\n", msg->data.sensor.pin);
-                light_send_updates[pin - ARC_AIO_MIN] = 1;
-            }
-#endif
-        } else {
-            ERR_PRINT("invalid sensor channel\n");
-            error_code = ERROR_IPM_NOT_SUPPORTED;
         }
         break;
     case TYPE_SENSOR_STOP:
@@ -781,20 +776,6 @@ static void handle_sensor(struct zjs_ipm_message *msg)
                             stop_gyro_trigger(bmi160) != 0)) {
                 error_code = ERROR_IPM_OPERATION_FAILED;
             }
-#ifdef BUILD_MODULE_SENSOR_LIGHT
-        } else if (msg->data.sensor.channel == SENSOR_CHAN_LIGHT) {
-            uint32_t pin = msg->data.sensor.pin;
-            if (pin < ARC_AIO_MIN || pin > ARC_AIO_MAX) {
-                ERR_PRINT("pin #%lu out of range\n", pin);
-                error_code = ERROR_IPM_OPERATION_FAILED;
-            } else {
-                DBG_PRINT("stop ambient light %lu\n", msg->data.sensor.pin);
-                light_send_updates[pin - ARC_AIO_MIN] = 0;
-            }
-#endif
-        } else {
-            ERR_PRINT("invalid sensor channel\n");
-            error_code = ERROR_IPM_NOT_SUPPORTED;
         }
         break;
     default:
@@ -803,11 +784,79 @@ static void handle_sensor(struct zjs_ipm_message *msg)
     }
 
     if (error_code != ERROR_IPM_NONE) {
-        ipm_send_error_reply(msg, error_code);
+        ipm_send_error(msg, error_code);
+        return;
+    }
+    ipm_send_msg(msg);
+}
+
+#ifdef BUILD_MODULE_SENSOR_LIGHT
+static void handle_sensor_light(struct zjs_ipm_message *msg) {
+    uint32_t pin;
+    uint32_t error_code = ERROR_IPM_NONE;
+
+    switch(msg->type) {
+    case TYPE_SENSOR_INIT:
+        // INIT
+        break;
+    case TYPE_SENSOR_START:
+        pin = msg->data.sensor.pin;
+        if (pin < ARC_AIO_MIN || pin > ARC_AIO_MAX) {
+            ERR_PRINT("pin #%lu out of range\n", pin);
+            error_code = ERROR_IPM_OPERATION_FAILED;
+        } else {
+            DBG_PRINT("start ambient light %lu\n", msg->data.sensor.pin);
+            light_send_updates[pin - ARC_AIO_MIN] = 1;
+        }
+        break;
+    case TYPE_SENSOR_STOP:
+        pin = msg->data.sensor.pin;
+        if (pin < ARC_AIO_MIN || pin > ARC_AIO_MAX) {
+            ERR_PRINT("pin #%lu out of range\n", pin);
+            error_code = ERROR_IPM_OPERATION_FAILED;
+        } else {
+            DBG_PRINT("stop ambient light %lu\n", msg->data.sensor.pin);
+            light_send_updates[pin - ARC_AIO_MIN] = 0;
+        }
+        break;
+    default:
+        ERR_PRINT("unsupported sensor message type %lu\n", msg->type);
+        error_code = ERROR_IPM_NOT_SUPPORTED;
+    }
+
+    if (error_code != ERROR_IPM_NONE) {
+        ipm_send_error(msg, error_code);
+        return;
+    }
+    ipm_send_msg(msg);
+}
+#endif
+
+static void handle_sensor(struct zjs_ipm_message *msg)
+{
+    char *controller = msg->data.sensor.controller;
+    switch(msg->data.sensor.channel) {
+    case SENSOR_CHAN_ACCEL_XYZ:
+    case SENSOR_CHAN_GYRO_XYZ:
+        if (!strncmp(controller, BMI160_NAME, 6)) {
+            handle_sensor_bmi160_motion(msg);
+            return;
+        }
+        break;
+#ifdef BUILD_MODULE_SENSOR_LIGHT
+    case SENSOR_CHAN_LIGHT:
+            handle_sensor_light(msg);
+            return;
+#endif
+
+     default:
+        ERR_PRINT("unsupported sensor channel\n");
+        ipm_send_error(msg, ERROR_IPM_NOT_SUPPORTED);
         return;
     }
 
-    zjs_ipm_send(msg->id, msg);
+    ERR_PRINT("unsupported sensor driver\n");
+    ipm_send_error(msg, ERROR_IPM_NOT_SUPPORTED);
 }
 #endif // BUILD_MODULE_SENSOR
 
@@ -843,7 +892,7 @@ static void process_messages()
        default:
            ERR_PRINT("unsupported ipm message id: %lu, check ARC modules\n",
                      msg->id);
-           ipm_send_error_reply(msg, ERROR_IPM_NOT_SUPPORTED);
+           ipm_send_error(msg, ERROR_IPM_NOT_SUPPORTED);
        }
 
        msg->id = MSG_ID_DONE;
@@ -878,7 +927,7 @@ void main(void)
 #endif
 #ifdef BUILD_MODULE_SENSOR_LIGHT
         if (tick_count % LIGHT_UPDATE_INTERVAL == 0) {
-            process_light_updates();
+            fetch_light();
         }
 #endif
         tick_count += SLEEP_TICKS;
