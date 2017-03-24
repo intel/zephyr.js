@@ -12,7 +12,7 @@ static uint32_t snapshot_buf[SNAPSHOT_BUFFER_SIZE];
 
 static void generate_snapshot(uint32_t *buf, int buf_size)
 {
-    for (int i = 0; i < buf_size; i++)
+    for (int i = 0; i < buf_size / sizeof(uint32_t); i++)
     {
         if (i > 0) {
             printf(",");

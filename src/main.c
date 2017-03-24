@@ -44,7 +44,7 @@
 const uint32_t snapshot_bytecode[] = {
 #include "zjs_snapshot_gen.h"
 };
-const size_t snapshot_len = sizeof(snapshot_bytecode) / sizeof(uint32_t);
+const size_t snapshot_len = sizeof(snapshot_bytecode);
 #else
 const char script_jscode[] = {
 #include "zjs_script_gen.h"
