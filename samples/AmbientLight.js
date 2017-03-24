@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 // Test code to use the AmbientLightSensor (subclass of Generic Sensor) API
 // to communicate with the Grove Light sensor on the Arduino 101
@@ -34,24 +34,24 @@ var sensor = new AmbientLightSensor({
     pin: pins.A2
 });
 
-sensor.onchange = function(event) {
+sensor.onchange = function() {
     var val = sensor.illuminance;
     if (val <= 1) {
-        console.log("(very dark): " + event.reading.illuminance);
+        console.log("(very dark): " + sensor.illuminance);
     } else if (val > 1 && val <= 50) {
-        console.log("(very dim): " + event.reading.illuminance);
+        console.log("(very dim): " + sensor.illuminance);
     } else if (val > 50 && val <= 100) {
-        console.log("(dim): " + event.reading.illuminance);
+        console.log("(dim): " + sensor.illuminance);
     } else if (val > 100 && val <= 300) {
-        console.log("(average-lit): " + event.reading.illuminance);
+        console.log("(average-lit): " + sensor.illuminance);
     } else if (val > 300 && val <= 500) {
-        console.log("(well-lit): " + event.reading.illuminance);
+        console.log("(well-lit): " + sensor.illuminance);
     } else if (val > 500 && val <= 1000) {
-        console.log("(overcast day): " + event.reading.illuminance);
+        console.log("(overcast day): " + sensor.illuminance);
     } else if (val > 1000 && val <= 10000) {
-        console.log("(day light): " + event.reading.illuminance);
+        console.log("(day light): " + sensor.illuminance);
     } else
-        console.log("(full brightness): " + event.reading.illuminance);
+        console.log("(full brightness): " + sensor.illuminance);
 };
 
 sensor.onstatechange = function(event) {

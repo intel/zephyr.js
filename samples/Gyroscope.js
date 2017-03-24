@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 // Test code to use the Gyroscope (subclass of Generic Sensor) API
 // to communicate with the BMI160 inertia sensor on the Arduino 101
