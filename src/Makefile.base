@@ -86,7 +86,7 @@ obj-$(CONFIG_BOARD_ARDUINO_101) += \
 obj-$(CONFIG_BOARD_FRDM_K64F) += \
 	zjs_k64f_pins.o
 
-ifeq ($(DEV), ashell)
+ifeq ($(ASHELL), y)
 $(info Insecure Mode (development))
 export JERRY_INCLUDE = $(JERRY_BASE)/jerry-core/
 obj-y += ashell/
