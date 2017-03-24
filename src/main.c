@@ -41,10 +41,14 @@
 #define ZJS_MAX_PRINT_SIZE      512
 
 #ifdef ZJS_SNAPSHOT_BUILD
-extern const uint32_t snapshot_bytecode[];
-extern const size_t snapshot_len;
+const uint32_t snapshot_bytecode[] = {
+#include "zjs_snapshot_gen.h"
+};
+const size_t snapshot_len = sizeof(snapshot_bytecode) / sizeof(uint32_t);
 #else
-extern const char *script_gen;
+const char script_jscode[] = {
+#include "zjs_script_gen.h"
+};
 #endif
 
 // native eval handler
@@ -191,13 +195,13 @@ int main(int argc, char *argv[])
     // slightly tricky: reuse next section as else clause
 #endif
     {
-        len = strnlen(script_gen, MAX_SCRIPT_SIZE);
+        len = strnlen(script_jscode, MAX_SCRIPT_SIZE);
 #ifdef ZJS_LINUX_BUILD
         script = zjs_malloc(len + 1);
-        memcpy(script, script_gen, len);
+        memcpy(script, script_jscode, len);
         script[len] = '\0';
 #else
-        script = script_gen;
+        script = script_jscode;
 #endif
         if (len == MAX_SCRIPT_SIZE) {
             ERR_PRINT("Script size too large! Increase MAX_SCRIPT_SIZE.\n");

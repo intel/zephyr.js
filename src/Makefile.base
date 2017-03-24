@@ -60,12 +60,6 @@ obj-$(ZJS_OCF) += zjs_ocf_client.o \
                   zjs_ocf_common.o \
                   zjs_ocf_ble.o
 
-ifeq ($(SNAPSHOT), on)
-obj-y += zjs_snapshot_gen.o
-else
-obj-y += zjs_script_gen.o
-endif
-
 # skip for now for frdm_k64f
 ifeq ($(BOARD), arduino_101)
 	obj-$(ZJS_AIO) += zjs_aio.o

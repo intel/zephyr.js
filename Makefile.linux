@@ -27,15 +27,10 @@ CORE_SRC +=	src/zjs_buffer.c \
 		src/zjs_unit_tests.c \
 		src/zjs_util.c
 
-ifeq ($(SNAPSHOT), on)
-CORE_SRC +=	src/zjs_snapshot_gen.c
-else
-CORE_SRC +=	src/zjs_script_gen.c
-endif
-
 CORE_OBJ =	$(CORE_SRC:%.c=%.o)
 
 LINUX_INCLUDES += 	-Isrc/ \
+			-I$(ZJS_BASE)/outdir/include \
 			-I$(JERRY_BASE)/jerry-core
 
 JERRY_LIBS += 		-l jerry-core -lm

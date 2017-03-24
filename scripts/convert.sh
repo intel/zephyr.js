@@ -54,9 +54,7 @@ else
     FLAGS="-r -N 1"
 fi
 
-printf "/* This file was auto-generated */\n\n" > $OUTPUT
-printf "#include \"zjs_common.h\"\n\n" >> $OUTPUT
-printf "const char *script_gen = \"" >> $OUTPUT
+printf "\"" > $OUTPUT
 
 last_char=0
 
@@ -87,11 +85,11 @@ do
     last_char=$char
     COUNT=$((COUNT+1))
     percent $COUNT $SIZE "'$char"
-done < /tmp/gen.tmp
+done < $TMPFILE
 
 printf "\n"
 
 # Terminate the string
-printf "\";" >> $OUTPUT
+printf "\"" >> $OUTPUT
 
 rm -f $TMPFILE
