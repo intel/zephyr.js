@@ -15,7 +15,7 @@ if [ ! -e $2 ]; then
     exit
 fi
 
-JSTMPFILE=/tmp/zjs-analyze.js.$$
+JSTMPFILE=js.tmp
 if [ -f $JSTMPFILE ]; then
     rm $JSTMPFILE
 fi
@@ -47,7 +47,7 @@ function check_for_js_require()
 
     for file in $js_files
     do
-         >&2 echo "Javascript module included : $file"
+         >&2 echo "JavaScript module included: $file"
          # Add the module JS to the temporary JS file
          cat "$ZJS_BASE/modules/$file" >> $JSTMPFILE
     done
