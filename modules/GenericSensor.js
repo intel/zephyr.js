@@ -67,6 +67,11 @@ function GenericSensor() {
         currentState = sensor.state;
         defaultState = sensor.state;
 
+        assert(typeof currentState === "string" && currentState !== null,
+               "sensor: current state as '" + currentState + "'");
+
+        console.log("currentstate: " + currentState);
+
         middleState = sensor.state;
         sensor.state = middleState + "love";
         assert(sensor.state === middleState,
@@ -163,9 +168,11 @@ function GenericSensor() {
                    stopState === "idle" &&
                    startState === "activated",
                    "sensor: be stopped");
-
-            result();
         }, 20000);
+
+        setTimeout(function() {
+            result();
+        }, 25000);
     }
 
     return genericSensor;
