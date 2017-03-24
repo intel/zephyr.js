@@ -601,8 +601,8 @@ static const struct ashell_cmd commands[] =
     ASHELL_COMMAND("rm",    "[FILE] Remove file or directory"                ,ashell_remove_file),
     ASHELL_COMMAND("mv",    "[SOURCE] [DEST] Move a file to destination"     ,ashell_rename),
 
-    ASHELL_COMMAND("rmdir", "[TODO]"                                         ,ashell_remove_dir),
-    ASHELL_COMMAND("mkdir", "[TODO]"                                         ,ashell_make_dir),
+//    ASHELL_COMMAND("rmdir", "[TODO]"                                         ,ashell_remove_dir),
+//    ASHELL_COMMAND("mkdir", "[TODO]"                                         ,ashell_make_dir),
     ASHELL_COMMAND("test",  "Runs your current test"                         ,ashell_test),
     ASHELL_COMMAND("error", "Prints an error using JerryScript"              ,ashell_error),
     ASHELL_COMMAND("ping",  "Prints '[PONG]' to check that we are alive"     ,ashell_ping),

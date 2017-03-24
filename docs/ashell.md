@@ -77,19 +77,25 @@ acm> help
 
 Commands list:
     help This help
-    eval Evaluate JavaScript in real-time
+    eval Evaluate JavaScript in realtime
    clear Clear the terminal screen
     load [FILE] Saves the input text into a file
      run [FILE] Runs the JavaScript program in the file
+   parse [FILE] Check if the JS syntax is correct
     stop Stops current JavaScript execution
       ls [FILE] List directory contents or file stat
-     cat [FILE] Print the file contents on the stdout
+     cat [FILE] Print the file contents of a file
       du [FILE] Estimate file space usage
       rm [FILE] Remove file or directory
       mv [SOURCE] [DEST] Move a file to destination
+    test Runs your current test
+   error Prints an error using JerryScript
+    ping Prints '[PONG]' to check that we are alive
+      at OK used by the driver when initializing
      set Sets the input mode for 'load' accept data
         transfer raw
         transfer ihex
+     get Get states on the shell
   reboot Reboots the device
 ```
 
@@ -102,7 +108,6 @@ The shell prompt will change to 'js>'
 
 ```
 acm> eval
-
 Ready to evaluate JavaScript.
         Ctrl+X or Ctrl+C to return to shell.
 js>
