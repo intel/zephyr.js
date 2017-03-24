@@ -77,7 +77,7 @@ acm> help
 
 Commands list:
     help This help
-    eval Evaluate JavaScript in realtime
+    eval Evaluate JavaScript in real time
    clear Clear the terminal screen
     load [FILE] Saves the input text into a file
      run [FILE] Runs the JavaScript program in the file

@@ -588,7 +588,7 @@ int32_t ashell_check_control(const char *buf, uint32_t len)
 static const struct ashell_cmd commands[] =
 {
     ASHELL_COMMAND("help",  "This help", ashell_help),
-    ASHELL_COMMAND("eval",  "Evaluate JavaScript in realtime"                ,ashell_js_immediate_mode),
+    ASHELL_COMMAND("eval",  "Evaluate JavaScript in real time"                ,ashell_js_immediate_mode),
     ASHELL_COMMAND("clear", "Clear the terminal screen"                      ,ashell_clear),
     ASHELL_COMMAND("load",  "[FILE] Saves the input text into a file"        ,ashell_read_data),
     ASHELL_COMMAND("run",   "[FILE] Runs the JavaScript program in the file" ,ashell_run_javascript),
