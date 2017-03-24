@@ -1,3 +1,5 @@
+// Copyright (c) 2017, Intel Corporation.
+
 var fs = require('fs');
 
 console.log('File System sample');
