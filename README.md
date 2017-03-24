@@ -33,8 +33,11 @@ default with Ubuntu:
 
 ```bash
 $ sudo apt-get update
-$ sudo apt-get install cmake dfu-util git screen sysvbanner uglifyjs
+$ sudo apt-get install cmake dfu-util git python-yaml screen sysvbanner uglifyjs
 ```
+
+Note: python-yaml is a recent requirement for the frdm-k64f build due to some
+change in Zephyr, so it could be left out currently if you don't use k64f.
 
 Note: sysvbanner is just used to identify tests as they run in the trlite test
 build script, so it could be left out.
