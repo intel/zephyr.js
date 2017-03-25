@@ -360,6 +360,8 @@ help:
 	@echo "Build targets:"
 	@echo "    all:       Build for either Zephyr or Linux depending on BOARD"
 	@echo "    zephyr:    Build Zephyr for the given BOARD (A101 is default)"
+	@echo "    ide        Build Zephyr in development mode for the IDE"
+	@echo "    ashell     Build Zephyr in development mode for the command line"
 	@echo "    arc:       Build just the ARC Zephyr target for Arduino 101"
 	@echo "    linux:     Build the Linux target"
 	@echo "    dfu:       Flash x86 and arc images to A101 with dfu-util"
