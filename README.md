@@ -378,20 +378,16 @@ jslinux e.g.:
 If a script is passed in on the command line it will take the priority over any
 script bundled with the executable (using `JS=`).
 
-By default jslinux will run forever (as Zephyr does) but if this is not desired,
-there are two flags which can be used to cause jslinux to exit under certain
-conditions. The first is the `--autoexit` flag. If this flag is used, jslinux
-will continually check to see if there are any pending events, like timers,
-callbacks or service functions. If there have no been any events processed on the
-last and most current loop cycle it will exit. The second flag (`-t`) will cause
-jslinux to exit after a specified timeout in milliseconds. This flag can be used like:
+By default jslinux will exit when there are no pending events but if this is
+not desired, there are two flags which can be used to cause jslinux to run
+longer (or forever). The first is the `--noexit` flag. If this flag is used,
+jslinux will run indefinitely. The second flag (`-t`) will cause jslinux to
+run until a specified timeout (in milliseconds) is met.
+This flag can be used like:
 
 ```bash
 ./jslinux -t <ms>
 ```
-
-The `--autoexit` and `-t <ms>` flags can be used together, which will cause
-jslinux to exit on whichever condition is met first.
 
 It should be noted that the Linux target has only very partial support to hardware
 compared to Zephyr. This target runs the core code, but most modules do not run
