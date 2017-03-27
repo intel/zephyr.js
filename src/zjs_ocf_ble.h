@@ -3,7 +3,9 @@
 #ifndef SRC_ZJS_OCF_BLE_H_
 #define SRC_ZJS_OCF_BLE_H_
 
+#ifndef ZJS_LINUX_BUILD
 #include <bluetooth/storage.h>
+#endif
 
 #include "zjs_util.h"
 

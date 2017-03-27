@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 #ifdef BUILD_MODULE_OCF
 
@@ -11,6 +11,7 @@
 #include "zjs_ocf_server.h"
 #include "zjs_ocf_common.h"
 #include "zjs_ocf_encoder.h"
+#include "zjs_ocf_ble.h"
 
 #include "oc_api.h"
 #include <stdio.h>
@@ -457,7 +458,7 @@ jerry_value_t zjs_ocf_init()
     zjs_set_property(ocf_object, "server", server);
 #endif
 
-#ifdef ZJS_CONFIG_BLE_ADDRESS
+#ifndef ZJS_LINUX_BUILD
     zjs_obj_add_function(ocf_object, zjs_ocf_set_ble_address, "setBleAddress");
 #endif
     return ocf_object;

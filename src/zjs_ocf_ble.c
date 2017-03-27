@@ -59,6 +59,7 @@ jerry_value_t zjs_ocf_set_ble_address(const jerry_value_t function_val,
                                       const jerry_value_t argv[],
                                       const jerry_length_t argc)
 {
+#ifndef ZJS_CONFIG_BLE_ADDRESS
     // args: address
     ZJS_VALIDATE_ARGS(Z_STRING);
 
@@ -78,7 +79,7 @@ jerry_value_t zjs_ocf_set_ble_address(const jerry_value_t function_val,
     DBG_PRINT("BLE addr is set to: %s\n", addr);
     BT_ADDR_SET_STATIC(&id_addr.a);
     bt_storage_register(&storage);
-
+#endif
     return ZJS_UNDEFINED;
 }
 

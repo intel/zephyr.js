@@ -76,6 +76,10 @@ Zephyr boards with BLE capabilities (e.g. Arduino 101).
 The `address` parameter should be a MAC address string in the format
 `XX:XX:XX:XX:XX:XX` where each character is in HEX format (0-9, A-F).
 
+Note: If the image was built with the `BLE_ADDR` flag, this API has
+no effect. Using the `BLE_ADDR` hard codes the supplied address into
+the image which cannot be changed.
+
 OCF Server
 ----------
 ```javascript
