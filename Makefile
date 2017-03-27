@@ -115,6 +115,14 @@ else
 all: zephyr
 endif
 
+.PHONY: check
+check:
+	trlite -l
+
+.PHONY: quickcheck
+quickcheck:
+	trlite -l 3
+
 A101BIN = outdir/arduino_101/zephyr.bin
 A101SSBIN = arc/outdir/arduino_101_sss/zephyr.bin
 

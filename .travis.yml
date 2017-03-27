@@ -44,4 +44,4 @@ before_script: >
   fi
 
 script: >
-  trlite $TARGET
+  trlite -l $TARGET

@@ -6,8 +6,10 @@
 # trlite - a local version of the tests we run in Travis
 #   trlite [-j] [-nN] [-v] [vmname] [startnum] [endnum]
 #
-#   -nN appends N to .trlite directory name
+#   (for now, options much appear in specified order)
+#   -l runs tests in current directory instead of a clean one
 #   -j runs all tests, with parallel execution (4 threads currently)
+#   -nN appends N to .trlite directory name
 #   -v turns on verbose output
 #   by default, runs all tests
 #   trlite 1 or trlite zephyr runs just VM #1 "zephyr" tests
@@ -27,7 +29,15 @@ if [ ! -d "$ZJS_BASE" ]; then
    exit 1
 fi
 
-TRLDIR=$ZJS_BASE/.trlite
+RUNLOCAL=n
+
+if [ "$1" == "-l" ]; then
+    RUNLOCAL=y
+    shift
+else
+    TRLDIR=$ZJS_BASE/.trlite
+fi
+
 TMPFILE=/tmp/zjstest.js
 
 if [ "$1" == "-h" -o "$1" == "-?" ]; then
@@ -58,6 +68,11 @@ function display_errors()  # NAME, NUM
 }
 
 if [[ $1 == -j* ]]; then
+    if [ "$RUNLOCAL" == "y" ]; then
+        echo Error: -j mode cannot be used with -l
+        exit 1
+    fi
+
     LOGFILE=/tmp/trlite-log
 
     echo Running all trlite tests in four parallel threads...
@@ -86,6 +101,11 @@ if [[ $1 == -j* ]]; then
 fi
 
 if [[ $1 == -n* ]]; then
+    if [ "$RUNLOCAL" == "y" ]; then
+        echo Error: -j mode cannot be used with -l
+        exit 1
+    fi
+
     TRLDIR=$TRLDIR${1:2}
     TMPFILE=$TMPFILE${1:2}
     echo TRLDIR: $TRLDIR >> /tmp/foo
@@ -121,50 +141,55 @@ if [[ "$1" =~ ^[0-9]+$ ]]; then
     shift
 fi
 
-rm -rf $TRLDIR
-
 echo Building ZJS tree: "$ZJS_BASE"
-echo Cloning git tree...
-git clone -l $ZJS_BASE $TRLDIR > /dev/null 2>&1
 
-# we need to refer to master later for diffs
-cp $ZJS_BASE/.git/refs/heads/master $TRLDIR/.git/refs/heads
+if [ "$RUNLOCAL" != "y" ]; then
+    rm -rf $TRLDIR
 
-echo Cloning git submodules...
-cd $TRLDIR/deps
-for i in */; do
-    git clone -l ../../deps/$i/.git $i > /dev/null 2>&1
+    echo Cloning git tree...
+    git clone -l $ZJS_BASE $TRLDIR > /dev/null 2>&1
 
-    # clone submodules of submodules
-    if [ -d $i/deps/ ]; then
-        cd $i/deps
-        for j in */; do
-            git clone -l ../../../../deps/$i/deps/$j/.git $j > /dev/null 2>&1
-        done
-        cd ../..
+    # we need to refer to master later for diffs
+    cp $ZJS_BASE/.git/refs/heads/master $TRLDIR/.git/refs/heads
+
+    echo Cloning git submodules...
+    cd $TRLDIR/deps
+    for i in */; do
+        git clone -l ../../deps/$i/.git $i > /dev/null 2>&1
+
+        # clone submodules of submodules
+        if [ -d $i/deps/ ]; then
+            cd $i/deps
+            for j in */; do
+                git clone -l ../../../../deps/$i/deps/$j/.git $j > /dev/null 2>&1
+            done
+            cd ../..
+        fi
+    done
+
+    echo Preserving uncommitted changes:
+    cd $ZJS_BASE
+    git --no-pager diff HEAD --stat
+    git diff HEAD > $TRLDIR/uncommitted.patch
+    cd $TRLDIR
+    patch -p1 < uncommitted.patch > /dev/null
+
+    # pause to allow consideration of diffs being applied
+    if [ -z $TRAVIS ]; then
+        sleep 3
     fi
-done
 
-echo Preserving uncommitted changes:
-cd $ZJS_BASE
-git --no-pager diff HEAD --stat
-git diff HEAD > $TRLDIR/uncommitted.patch
-cd $TRLDIR
-patch -p1 < uncommitted.patch > /dev/null
+    echo Updating submodules...
+    make update
 
-# pause to allow consideration of diffs being applied
-if [ -z $TRAVIS ]; then
-    sleep 3
+    source zjs-env.sh
+    source deps/zephyr/zephyr-env.sh
+else
+    cd $ZJS_BASE
 fi
-
-echo Updating submodules...
-make update
 
 echo
 echo Running tests...
-
-source zjs-env.sh
-source deps/zephyr/zephyr-env.sh
 
 # requires: first arg is a <=10-char label, second arg is command
 #  effects: runs banner with label, then runs the command; if it fails, prints
@@ -377,7 +402,9 @@ if [ "$RUN" == "all" -o "$RUN" == "4" ]; then
 fi
 
 # clean up on success
-cd $ZJS_BASE
-rm -rf $TRLDIR
+if [ "$RUNLOCAL" != "y" ]; then
+    cd $ZJS_BASE
+    rm -rf $TRLDIR
+fi
 exit 0
 }
