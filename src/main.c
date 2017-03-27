@@ -189,7 +189,7 @@ int main(int argc, char *argv[])
         }
         if (zjs_read_script(argv[1], &script, &len)) {
             ERR_PRINT("could not read script file %s\n", argv[1]);
-            return -1;
+            goto error;
         }
     } else
     // slightly tricky: reuse next section as else clause
@@ -279,7 +279,7 @@ int main(int argc, char *argv[])
                 ZJS_PRINT("\njslinux: no more timers or callbacks found, exiting!\n");
                 ZJS_PRINT("   * to run your script indefinitely, use --noexit\n");
                 ZJS_PRINT("   * to run your script for a set timeout, use -t <ms>\n");
-                goto error;
+                return 0;
             }
         }
         if (exit_after != 0) {
@@ -290,13 +290,12 @@ int main(int argc, char *argv[])
                     ((now.tv_nsec / 1000000) - (exit_timer.tv_nsec / 1000000));
             if (elapsed >= exit_after) {
                 ZJS_PRINT("%lu milliseconds have passed, exiting!\n", elapsed);
-                goto error;
+                return 0;
             }
         }
         last_serviced = serviced;
 #endif
     }
-
 error:
 #ifdef ZJS_LINUX_BUILD
     return 1;
