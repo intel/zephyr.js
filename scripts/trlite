@@ -4,10 +4,10 @@
 # Author: Geoff Gustafson <geoff@linux.intel.com>
 
 # trlite - a local version of the tests we run in Travis
-#   trlite [-j] [-nN] [-v] [vmname] [startnum] [endnum]
+#   trlite [-l] [-j] [-nN] [-v] [vmname] [startnum] [endnum]
 #
-#   (for now, options much appear in specified order)
-#   -l runs tests in current directory instead of a clean one
+#   (for now, options must appear in specified order)
+#   -l runs tests in ZJS_BASE instead of a clean git clone
 #   -j runs all tests, with parallel execution (4 threads currently)
 #   -nN appends N to .trlite directory name
 #   -v turns on verbose output
@@ -102,7 +102,7 @@ fi
 
 if [[ $1 == -n* ]]; then
     if [ "$RUNLOCAL" == "y" ]; then
-        echo Error: -j mode cannot be used with -l
+        echo Error: -n mode cannot be used with -l
         exit 1
     fi
 
