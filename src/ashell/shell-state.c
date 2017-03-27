@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 /**
  * @file
@@ -588,7 +588,7 @@ int32_t ashell_check_control(const char *buf, uint32_t len)
 static const struct ashell_cmd commands[] =
 {
     ASHELL_COMMAND("help",  "This help", ashell_help),
-    ASHELL_COMMAND("eval",  "Evaluate JavaScript in realtime"                ,ashell_js_immediate_mode),
+    ASHELL_COMMAND("eval",  "Evaluate JavaScript in real time"                ,ashell_js_immediate_mode),
     ASHELL_COMMAND("clear", "Clear the terminal screen"                      ,ashell_clear),
     ASHELL_COMMAND("load",  "[FILE] Saves the input text into a file"        ,ashell_read_data),
     ASHELL_COMMAND("run",   "[FILE] Runs the JavaScript program in the file" ,ashell_run_javascript),
@@ -601,8 +601,8 @@ static const struct ashell_cmd commands[] =
     ASHELL_COMMAND("rm",    "[FILE] Remove file or directory"                ,ashell_remove_file),
     ASHELL_COMMAND("mv",    "[SOURCE] [DEST] Move a file to destination"     ,ashell_rename),
 
-    ASHELL_COMMAND("rmdir", "[TODO]"                                         ,ashell_remove_dir),
-    ASHELL_COMMAND("mkdir", "[TODO]"                                         ,ashell_make_dir),
+//    ASHELL_COMMAND("rmdir", "[TODO]"                                         ,ashell_remove_dir),
+//    ASHELL_COMMAND("mkdir", "[TODO]"                                         ,ashell_make_dir),
     ASHELL_COMMAND("test",  "Runs your current test"                         ,ashell_test),
     ASHELL_COMMAND("error", "Prints an error using JerryScript"              ,ashell_error),
     ASHELL_COMMAND("ping",  "Prints '[PONG]' to check that we are alive"     ,ashell_ping),
