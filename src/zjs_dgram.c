@@ -134,7 +134,7 @@ static void udp_received(struct net_context *context,
     net_nbuf_unref(net_buf);
 
     jerry_value_t args[2] = {buf_js, rinfo};
-    zjs_signal_callback(handle->message_cb_id, args, 2);
+    zjs_signal_callback(handle->message_cb_id, args, sizeof(args));
 }
 
 static jerry_value_t zjs_dgram_createSocket(const jerry_value_t function_obj,
@@ -227,7 +227,7 @@ static void udp_sent(struct net_context *context, int status, void *token,
 
         zjs_callback_id id = zjs_add_callback_once((jerry_value_t)user_data,
                                                    ZJS_UNDEFINED, NULL, NULL);
-        zjs_signal_callback(id, &rval, 1);
+        zjs_signal_callback(id, &rval, sizeof(rval));
     }
 }
 
