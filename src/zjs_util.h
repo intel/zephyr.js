@@ -172,6 +172,7 @@ enum {
 
 int zjs_validate_args(const char *expectations[], const jerry_length_t argc,
                       const jerry_value_t argv[]);
+
 /**
  * Macro to validate existing argv based on a list of expected argument types.
  *
@@ -190,12 +191,11 @@ int zjs_validate_args(const char *expectations[], const jerry_length_t argc,
  *   function type. (Implicitly, argc will have to be at least 2.) Arguments
  *   beyond what are specified are allowed and ignored.
  */
-#define ZJS_VALIDATE_ARGS_FULL(optcount, offset, ...)                   \
-    const char *zjs_expectations[] = { __VA_ARGS__, NULL };             \
-    int optcount = zjs_validate_args(zjs_expectations, argc - offset,   \
-                                     argv + offset);                    \
-    if (optcount <= ZJS_INVALID_ARG) {                                  \
-        return TYPE_ERROR("invalid arguments");                         \
+#define ZJS_VALIDATE_ARGS_FULL(optcount, offset, ...)                       \
+    int optcount = zjs_validate_args((const char *[]){ __VA_ARGS__, NULL }, \
+                                     argc - offset, argv + offset);         \
+    if (optcount <= ZJS_INVALID_ARG) {                                      \
+        return TYPE_ERROR("invalid arguments");                             \
     }
 
 // Use this if you need an offset
@@ -209,5 +209,16 @@ int zjs_validate_args(const char *expectations[], const jerry_length_t argc,
 // Normally use this as a shortcut
 #define ZJS_VALIDATE_ARGS(...)                      \
     ZJS_VALIDATE_ARGS_FULL(zjs_validate_rval, 0, __VA_ARGS__)
+
+/**
+ * Macro to check if the argument list was expected, but not return an error.
+ * This is useful if you want to reject a promise based on bad arguments instead
+ * of automatically returning an error.
+ *
+ * NOTE: Expects argc and argv to exist as in a JerryScript native function
+ */
+#define ZJS_CHECK_ARGS(...) \
+        (zjs_validate_args((const char *[]){ __VA_ARGS__, NULL }, argc, argv) \
+                <= ZJS_INVALID_ARG) ? 1 : 0
 
 #endif  // __zjs_util_h__
