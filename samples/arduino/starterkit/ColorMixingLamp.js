@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 // Reimplementation of Arduino Starter Kit's ColorMixingLamp example
 //   - Lights up an RGB LED based on the ambient light color detected by three

@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 // Test code for Arduino 101 that replicates the WebBluetooth demo
 // using BLE to advertise temperature changes and allow LED color changes

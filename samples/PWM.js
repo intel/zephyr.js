@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 // Test code for Arduino 101 that uses the PWM on IO3 to set an LED's blink
 // pattern to on for 1s, then off 1/2s, indefinitely. Another PWM on IO5 sets
