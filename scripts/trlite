@@ -281,7 +281,6 @@ if [ "$RUN" == "all" -o "$RUN" == "2" ]; then
     try_command "ram" make $VERBOSE RAM=70
 
     # k64f build tests
-    git clean -dfx
     try_command "k64f_hello" make $VERBOSE BOARD=frdm_k64f
 fi
 
@@ -383,7 +382,6 @@ if [ "$RUN" == "all" -o "$RUN" == "4" ]; then
     TESTNUM=0
 
     # ashell tests
-    git clean -dfx
     try_command "ashell" make $VERBOSE ashell ROM=250
 
     # build ide version
