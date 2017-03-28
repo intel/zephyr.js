@@ -227,17 +227,37 @@ if [ "$RUN" == "all" -o "$RUN" == "1" ]; then
     # A101 build tests spanning all modules
     try_command "helloworld" make $VERBOSE
 
-    # set this large enough to handle the biggest individual module (OCF now)
-    ROMSIZE=215
+    MODULES=(aio arduino101_pins ble dgram events gpio grove_lcd i2c k64f_pins \
+             ocf performance pwm uart)
 
     # individually test build modules with short names (ten chars or less)
-    SHORTMODULES=(aio ble dgram events gpio grove_lcd i2c k64f_pins ocf pwm \
-                      uart)
-    for index in "${!SHORTMODULES[@]}"; do
-        MODULE=${SHORTMODULES[index]}
-        echo "var module = require('$MODULE');" > $TMPFILE
-        try_command "$MODULE" make $VERBOSE JS=$TMPFILE ROM=$ROMSIZE
+    MODNUM=0
+    rm $TMPFILE
+    for index in "${!MODULES[@]}"; do
+        MODNUM=$((MODNUM + 1))
+        MODULE=${MODULES[index]}
+        echo "var module$MODNUM = require('$MODULE');" >> $TMPFILE
     done
+
+    # add sensor modules
+    SENSORS=(Accelerometer Gyroscope AmbientLightSensor)
+    SENSORNUM=0
+    for index in "${!SENSORS[@]}"; do
+        SENSORNUM=$((SENSORNUM + 1))
+        MODULE=${SENSORS[index]}
+        echo "var sensor$SENSORNUM = $MODULE({});" >> $TMPFILE
+    done
+
+    # add use of built-in modules
+    echo "var buf = new Buffer(10);" >> $TMPFILE
+    echo "setTimeout(function() {}, 10);" >> $TMPFILE
+
+    try_command "modules" make $VERBOSE JS=$TMPFILE ROM=250
+
+    # individually test special modules
+    echo "console.log(3.14159);" > $TMPFILE
+    try_command "console" make $VERBOSE JS=$TMPFILE
+    try_command "floats" make $VERBOSE JS=$TMPFILE PRINT_FLOAT=on
 fi
 
 #
@@ -247,37 +267,6 @@ fi
 if [ "$RUN" == "all" -o "$RUN" == "2" ]; then
     VMNUM=2
     TESTNUM=0
-
-    # individually test build modules with long names, supplying short labels
-    LONGMODULES=(arduino101_pins performance)
-    LONGLABELS=(a101_pins perf)
-    for index in "${!LONGMODULES[@]}"; do
-        MODULE=${LONGMODULES[index]}
-        LABEL=${LONGLABELS[index]}
-        echo "var module = require('$MODULE');" > $TMPFILE
-        try_command "$LABEL" make $VERBOSE JS=$TMPFILE
-    done
-
-    # individually test A101 sensors
-    SENSORS=(Accelerometer Gyroscope AmbientLightSensor)
-    SENSORLABELS=(accelerom gyroscope ambient)
-    for index in "${!SENSORS[@]}"; do
-        MODULE=${SENSORS[index]}
-        LABEL=${SENSORLABELS[index]}
-        echo "var sensor = $MODULE({});" > $TMPFILE
-        try_command "$LABEL" make $VERBOSE JS=$TMPFILE
-    done
-
-    # individually test special modules
-    echo "var buf = new Buffer(10);" > $TMPFILE
-    try_command "buffer" make $VERBOSE JS=$TMPFILE
-
-    echo "console.log(3.14159);" > $TMPFILE
-    try_command "console" make $VERBOSE JS=$TMPFILE
-    try_command "floats" make $VERBOSE JS=$TMPFILE PRINT_FLOAT=on
-
-    echo "setTimeout(function() {}, 10);" > $TMPFILE
-    try_command "timers" make $VERBOSE JS=$TMPFILE
 
     # test key sample code
     try_command "btgrove" make $VERBOSE JS=samples/WebBluetoothGroveLcdDemo.js ROM=256
