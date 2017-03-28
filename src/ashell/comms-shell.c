@@ -451,6 +451,7 @@ uint32_t ashell_process_data(const char *buf, uint32_t len)
         if (!isprint(byte)) {
             switch (byte) {
             case ASCII_DEL:
+            case ASCII_BKSP:
                 if (cur > 0) {
                     del_char(&shell_line[--cur], end);
                 }
