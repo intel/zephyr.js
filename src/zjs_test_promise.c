@@ -13,6 +13,7 @@ typedef struct dummy_handle {
 
 #define TEST_VAL       42
 
+/*
 static void post_promise(void *handle)
 {
     if (handle) {
@@ -22,20 +23,18 @@ static void post_promise(void *handle)
         }
         zjs_free(h);
     }
-}
+}*/
 
 static jerry_value_t create_promise(const jerry_value_t function_obj,
                                     const jerry_value_t this,
                                     const jerry_value_t argv[],
                                     const jerry_length_t argc)
 {
-    dummy_handle_t *handle = zjs_malloc(sizeof(dummy_handle_t));
-    handle->value = TEST_VAL;
+    //dummy_handle_t *handle = zjs_malloc(sizeof(dummy_handle_t));
+    //handle->value = TEST_VAL;
 
-    jerry_value_t promise = jerry_create_object();
+    jerry_value_t promise = zjs_make_promise();
     ZJS_PRINT("Testing promise, object = %u\n", promise);
-
-    zjs_make_promise(promise, post_promise, handle);
 
     return promise;
 }
@@ -48,7 +47,7 @@ static jerry_value_t test_fulfill(const jerry_value_t function_obj,
     // args: promise object
     ZJS_VALIDATE_ARGS(Z_OBJECT);
 
-    zjs_fulfill_promise(argv[0], NULL, 0);
+    zjs_fulfill_promise(argv[0], ZJS_UNDEFINED);
     return ZJS_UNDEFINED;
 }
 
@@ -60,7 +59,7 @@ static jerry_value_t test_reject(const jerry_value_t function_obj,
     // args: promise object
     ZJS_VALIDATE_ARGS(Z_OBJECT);
 
-    zjs_reject_promise(argv[0], NULL, 0);
+    zjs_reject_promise(argv[0], ZJS_UNDEFINED);
     return ZJS_UNDEFINED;
 }
 
