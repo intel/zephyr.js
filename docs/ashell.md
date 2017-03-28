@@ -21,7 +21,7 @@ This command will enable the shell compilation for use with the IDE:
 `make ide`
 
 To use the shell via the command line use:
-'make ashell'
+`make ashell`
 
 Dev mode will append all the functionality from ZJS, so it might not fit in ROM.
 
@@ -112,7 +112,7 @@ The shell prompt will change to 'js>'
 ```
 acm> eval
 Ready to evaluate JavaScript.
-        Ctrl+X or Ctrl+C to return to shell.
+        Ctrl+D to return to shell.
 js>
 ```
 
@@ -162,7 +162,7 @@ acm> load test.js
 Saving to 'test.js'
 Ready for JavaScript.
         Ctrl+Z to finish transfer.
-        Ctrl+X or Ctrl+C to cancel.
+        Ctrl+X to cancel.
 RAW>
 ```
 
