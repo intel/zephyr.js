@@ -140,7 +140,7 @@ static void zjs_gpio_zephyr_callback(struct device *port,
         !handle->edge_both) {
         // Signal the C callback, where we call the JS callback
         zjs_signal_callback(handle->callbackId, &handle->value,
-                            sizeof(uint32_t));
+                            sizeof(handle->value));
         handle->last = handle->value;
     }
 }

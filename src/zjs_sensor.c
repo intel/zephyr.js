@@ -268,7 +268,7 @@ static void zjs_sensor_trigger_error(jerry_value_t obj,
         zjs_set_property(error_obj, "message", message_val);
         zjs_set_property(event, "error", error_obj);
         zjs_callback_id id = zjs_add_callback_once(func, obj, NULL, NULL);
-        zjs_signal_callback(id, &event, 1);
+        zjs_signal_callback(id, &event, sizeof(event));
     }
 }
 

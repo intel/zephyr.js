@@ -492,7 +492,7 @@ static void zjs_ble_connected(struct bt_conn *conn, uint8_t err)
         char addr[BT_ADDR_LE_STR_LEN];
         bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
         ble_conn.default_conn = bt_conn_ref(conn);
-        zjs_signal_callback(ble_conn.connected_cb_id, &addr, sizeof(addr));
+        zjs_signal_callback(ble_conn.connected_cb_id, addr, sizeof(addr));
     }
 }
 
@@ -513,7 +513,7 @@ static void zjs_ble_disconnected(struct bt_conn *conn, uint8_t reason)
         bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
         bt_conn_unref(ble_conn.default_conn);
         ble_conn.default_conn = NULL;
-        zjs_signal_callback(ble_conn.disconnected_cb_id, &addr, sizeof(addr));
+        zjs_signal_callback(ble_conn.disconnected_cb_id, addr, sizeof(addr));
     }
 }
 

@@ -267,8 +267,7 @@ static jerry_value_t zjs_open(const jerry_value_t function_obj,
         args[0] = jerry_create_number(handle->error);
         args[1] = handle->fd_val;
 
-        zjs_signal_callback(id, args, sizeof(jerry_value_t) * 2);
-
+        zjs_signal_callback(id, args, sizeof(args))
         return ZJS_UNDEFINED;
     }
 #endif
@@ -323,7 +322,7 @@ static jerry_value_t zjs_close(const jerry_value_t function_obj,
                                                    NULL);
 
         jerry_value_t error = jerry_create_number(handle->error);
-        zjs_signal_callback(id, &error, sizeof(jerry_value_t));
+        zjs_signal_callback(id, &error, sizeof(error));
     }
 #endif
 
@@ -383,7 +382,7 @@ static jerry_value_t zjs_unlink(const jerry_value_t function_obj,
                                                    NULL);
 
         jerry_value_t error = jerry_create_number(ret);
-        zjs_signal_callback(id, &error, sizeof(jerry_value_t));
+        zjs_signal_callback(id, &error, sizeof(error));
     }
 #endif
 
@@ -488,7 +487,7 @@ static jerry_value_t zjs_read(const jerry_value_t function_obj,
                                                    this,
                                                    NULL,
                                                    NULL);
-        zjs_signal_callback(id, args, sizeof(jerry_value_t) * 3);
+        zjs_signal_callback(id, args, sizeof(args));
 
         return ZJS_UNDEFINED;
     }
@@ -603,7 +602,7 @@ static jerry_value_t zjs_write(const jerry_value_t function_obj,
 
         zjs_callback_id id = zjs_add_callback_once(argv[cbindex], this, NULL,
                                                    NULL);
-        zjs_signal_callback(id, args, sizeof(jerry_value_t) * 3);
+        zjs_signal_callback(id, args, sizeof(args));
 
         return ZJS_UNDEFINED;
     }
@@ -843,7 +842,7 @@ static jerry_value_t zjs_readdir(const jerry_value_t function_obj,
         args[0] = jerry_create_number(res);
         args[1] = array;
 
-        zjs_signal_callback(id, args, sizeof(jerry_value_t) * 2);
+        zjs_signal_callback(id, args, sizeof(args));
 
         return ZJS_UNDEFINED;
     }
@@ -907,7 +906,7 @@ static jerry_value_t zjs_stat(const jerry_value_t function_obj,
                                                    this,
                                                    NULL,
                                                    NULL);
-        zjs_signal_callback(id, args, sizeof(jerry_value_t) * 2);
+        zjs_signal_callback(id, args, sizeof(args));
 
         return ZJS_UNDEFINED;
     }
@@ -996,8 +995,7 @@ Finished:
         zjs_callback_id id = zjs_add_callback_once(argv[2], this, NULL, NULL);
 
         jerry_value_t err = jerry_create_number(error);
-
-        zjs_signal_callback(id, &err, sizeof(jerry_value_t));
+        zjs_signal_callback(id, &err, sizeof(err));
     }
 #endif
     if (data && !is_buf) {

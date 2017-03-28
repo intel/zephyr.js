@@ -142,8 +142,7 @@ static void ipm_msg_receive_callback(void *context, uint32_t id,
         case TYPE_AIO_PIN_EVENT_VALUE_CHANGE:
             handle->value = (double)pin_value;
             ZVAL num = jerry_create_number(handle->value);
-            zjs_signal_callback(handle->callback_id, &num,
-                                sizeof(jerry_value_t));
+            zjs_signal_callback(handle->callback_id, &num, sizeof(num));
             break;
         case TYPE_AIO_PIN_SUBSCRIBE:
             DBG_PRINT("subscribed to events on pin %lu\n", pin);
