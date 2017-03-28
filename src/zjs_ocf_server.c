@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 #ifdef BUILD_MODULE_OCF
 
@@ -150,9 +150,10 @@ struct server_resource *new_server_resource(char *path)
     struct server_resource *resource = zjs_malloc(sizeof(struct server_resource));
     memset(resource, 0, sizeof(struct server_resource));
 
-    resource->resource_path = zjs_malloc(strlen(path));
-    memcpy(resource->resource_path, path, strlen(path));
-    resource->resource_path[strlen(path)] = '\0';
+    uint32_t len = strlen(path);
+    resource->resource_path = zjs_malloc(len + 1);
+    strncpy(resource->resource_path, path, len);
+    resource->resource_path[len] = '\0';
 
     return resource;
 }
