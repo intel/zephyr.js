@@ -76,8 +76,17 @@ fs.closeSync(fd);
 // test reading past end of file
 fd = fs.openSync('testfile.txt', 'r');
 rbuf = new Buffer(12);
+// write known bytes into the end, these should not be overwritten
+rbuf.writeUInt8(0xde, 9);
+rbuf.writeUInt8(0xde, 10);
+rbuf.writeUInt8(0xde, 11);
 rlen = fs.readSync(fd, rbuf, 0, 12, 0);
 assert((rlen < rbuf.length), "try reading past end of file");
+assert((rbuf.readUInt8(9) == 0xde), "data[9] was unchanged");
+assert((rbuf.readUInt8(10) == 0xde), "data[10] was unchanged");
+assert((rbuf.readUInt8(11) == 0xde), "data[11] was unchanged");
+// terminate the string so it can be compared
+rbuf.writeUInt8(0x00, 9);
 assert((rbuf.toString('ascii') == "testwrite"),
     "read data that existed in r file: " + rbuf.toString('ascii'));
 
