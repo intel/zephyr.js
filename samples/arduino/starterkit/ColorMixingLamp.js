@@ -43,11 +43,6 @@ var blueSensor = aio.open({
     pin: pins.A2
 });
 
-// initialize the period of the PWMs to 256 hardware cycles
-redLED.setPeriodCycles(256);
-greenLED.setPeriodCycles(256);
-blueLED.setPeriodCycles(256);
-
 setInterval(function () {
     var redValue = redSensor.read();
     var greenValue = greenSensor.read();
@@ -70,9 +65,9 @@ setInterval(function () {
                 "\tGreen: " + greenValue +
                 "\tBlue: " + blueValue);
 
-    redLED.setPulseWidthCycles(redValue);
-    greenLED.setPulseWidthCycles(greenValue);
-    blueLED.setPulseWidthCycles(blueValue);
+    redLED.setCycles(256, redValue);
+    greenLED.setCycles(256, greenValue);
+    blueLED.setCycles(256, blueValue);
 
     // FIXME: Currently, ZJS only reads analog pins once per second, so there's
     // no point in checking more often. This should be fixed soon.
