@@ -236,6 +236,23 @@ least two plus-ones (+1) , "Look Good To Me (LGTM)" or other positive signals
 for the project members. Once you have gained the required signals the project
 maintainers will merge the PR.
 
+### Travis and local sanity checking
+
+We run a series of tests on each pull request and merged commit using Travis.
+This relies on a script in the repo called `trlite`. One easy way to run these
+tests on your local $ZJS_BASE git tree is to use `make check` or
+`make quickcheck` for a faster subset of the tests. These run with your code as
+it stands in your tree. This will not catch a problem like you failing to
+add a new file to your commit.
+
+For a slightly safer sanity check, which might catch that kind of problem, you
+can run `trlite` directly or `trlite linux` for the "quick subset". This will
+clone a second copy of your git tree into a .trlite subdirectory, apply changes
+that `git diff` knows about, and run the build tests. Another option `trlite -j`
+will cause it to run four threads of tests to speed up execution; these will
+use four directories named `.trlite[1-4]`. If there is a test failure, the
+affected `.trlite*` trees are left in place so that you can investigate.
+
 ## Repo Organization
 
 ### File Descriptions
