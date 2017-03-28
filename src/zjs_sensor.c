@@ -10,6 +10,7 @@
 #include <string.h>
 
 // ZJS includes
+#include "zjs_common.h"
 #include "zjs_sensor.h"
 #include "zjs_callbacks.h"
 #include "zjs_ipm.h"
@@ -19,8 +20,6 @@
 #define DEFAULT_SAMPLING_FREQUENCY 20
 
 #define SENSOR_MAX_CONTROLLER_LEN 16
-#define BMI160_CONTROLLER "bmi160"
-#define ANALOG_CONTROLLER "ADC_0"
 
 static struct k_sem sensor_sem;
 
@@ -533,10 +532,10 @@ static jerry_value_t zjs_sensor_create(const jerry_value_t function_obj,
             case SENSOR_CHAN_ACCEL_XYZ:
             case SENSOR_CHAN_GYRO_XYZ:
             case SENSOR_CHAN_TEMP:
-                snprintf(controller, size, BMI160_CONTROLLER);
+                snprintf(controller, size, BMI160_DEVICE_NAME);
                 break;
             case SENSOR_CHAN_LIGHT:
-                snprintf(controller, size, ANALOG_CONTROLLER);
+                snprintf(controller, size, ADC_DEVICE_NAME);
                 break;
 
             default:

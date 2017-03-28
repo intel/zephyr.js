@@ -27,9 +27,6 @@
 #define AIO_UPDATE_INTERVAL  200  // 2sec interval in between notifications
 #define LIGHT_UPDATE_INTERVAL 10  // 0.1sec interval for light or 10Hz
 
-#define ADC_DEVICE_NAME "ADC_0"
-#define ADC_BUFFER_SIZE 2
-
 #define MAX_I2C_BUS 2
 
 #define MAX_BUFFER_SIZE 256
@@ -37,7 +34,7 @@
 #ifdef CONFIG_BMI160_NAME
 #define BMI160_NAME CONFIG_BMI160_NAME
 #else
-#define BMI160_NAME "bmi160"
+#define BMI160_NAME BMI160_DEVICE_NAME
 #endif
 
 static struct k_sem arc_sem;
