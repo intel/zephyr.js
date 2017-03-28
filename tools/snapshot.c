@@ -29,12 +29,12 @@ int main(int argc, char *argv[])
     jerry_init(JERRY_INIT_EMPTY);
 
     if (argc <= 1) {
-        ERR_PRINT("missing script file\n");
+        fprintf(stderr, "missing script file\n");
         return 1;
     }
 
     if (zjs_read_script(argv[1], &script, &len)) {
-        ERR_PRINT("could not read script file %s\n", argv[1]);
+        fprintf(stderr, "could not read script file %s\n", argv[1]);
         return 1;
     }
 
@@ -48,15 +48,12 @@ int main(int argc, char *argv[])
     zjs_free_script(script);
 
     if (size == 0) {
-        ERR_PRINT("JerryScript: failed to parse JS and create snapshot\n");
+        fprintf(stderr, "JerryScript: failed to parse JS and create snapshot\n");
         return 1;
     }
 
     // store the snapshot as byte array in header
     generate_snapshot(snapshot_buf, size);
-
-    DBG_PRINT("Source code %lu bytes\n", len);
-    DBG_PRINT("Byte code %d bytes\n", size);
 
     return 0;
 }
