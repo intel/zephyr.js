@@ -379,9 +379,13 @@ static jerry_value_t zjs_buffer(const jerry_value_t function_obj,
     ZJS_VALIDATE_ARGS(Z_NUMBER Z_ARRAY Z_STRING);
 
     if (jerry_value_is_number(argv[0])) {
+        double dnum = jerry_get_number_value(argv[0]);
+        if (dnum < 0) {
+            dnum = 0;
+        }
+
         // treat a number argument as a length
-        uint32_t size = (uint32_t)jerry_get_number_value(argv[0]);
-        return zjs_buffer_create(size);
+        return zjs_buffer_create((uint32_t)dnum);
     }
     else if (jerry_value_is_array(argv[0])) {
         // treat array argument as byte initializers
