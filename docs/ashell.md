@@ -17,8 +17,11 @@ due the constraints of the micro-controller.
 Compilation
 ------------
 
-This command will enable the shell compilation:
-`make DEV=ashell`
+This command will enable the shell compilation for use with the IDE:
+`make ide`
+
+To use the shell via the command line use:
+'make ashell'
 
 Dev mode will append all the functionality from ZJS, so it might not fit in ROM.
 

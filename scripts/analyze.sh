@@ -28,7 +28,7 @@ MODULES=''
 BOARD=$1
 SCRIPT=$2
 CONFIG=$3
-DEV=$4
+ASHELL=$4
 SDK_VERSION=$(cat ${ZEPHYR_SDK_INSTALL_DIR}/sdk_version)
 
 echo "# Modules found in $SCRIPT:" > $PRJFILE
@@ -203,7 +203,7 @@ if check_for_require uart || check_config_file ZJS_UART; then
         echo "CONFIG_USB_DW=y" >> $PRJFILE
         echo "CONFIG_USB_DEVICE_STACK=y" >> $PRJFILE
         echo "CONFIG_SYS_LOG_USB_DW_LEVEL=0" >> $PRJFILE
-        if [ "$DEV" != "ashell" ]; then
+        if [ "$ASHELL" != "y" ]; then
             echo "CONFIG_USB_CDC_ACM=y" >> $PRJFILE
         fi
         echo "CONFIG_SYS_LOG_USB_LEVEL=0" >> $PRJFILE
@@ -314,9 +314,9 @@ if [ $? -eq 0 ] || check_config_file ZJS_SENSOR; then
     >&2 echo Using module: Sensor
     MODULES+=" -DBUILD_MODULE_SENSOR"
     echo "export ZJS_SENSOR=y" >> $CONFFILE
-    if [[ $BOARD = "arduino_101" ]] || [[ $DEV = "ashell" ]]; then
+    if [[ $BOARD = "arduino_101" ]] || [[ $ASHELL = "y" ]]; then
         bmi160=$(grep -E Accelerometer\|Gyroscope $SCRIPT)
-        if [[ $? -eq 0 ]] || [[ $DEV = "ashell" ]]; then
+        if [[ $? -eq 0 ]] || [[ $ASHELL = "y" ]]; then
             echo "CONFIG_SENSOR=y" >> $ARCPRJFILE
             echo "CONFIG_GPIO=y" >> $ARCPRJFILE
             echo "CONFIG_SPI=y" >> $ARCPRJFILE
@@ -332,7 +332,7 @@ if [ $? -eq 0 ] || check_config_file ZJS_SENSOR; then
             echo "CONFIG_BMI160_TRIGGER_OWN_THREAD=y" >> $ARCPRJFILE
         fi
         grovelight=$(grep -E AmbientLightSensor $SCRIPT)
-        if [[ $? -eq 0 ]] || [[ $DEV = "ashell" ]]; then
+        if [[ $? -eq 0 ]] || [[ $ASHELL = "y" ]]; then
             MODULES+=" -DBUILD_MODULE_SENSOR_LIGHT"
             echo "CONFIG_ADC=y" >> $ARCPRJFILE
             # Workaround for the Zephyr issue ZEP-1882: ADC doesn't work with

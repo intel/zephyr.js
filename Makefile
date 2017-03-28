@@ -22,6 +22,10 @@ EXT_JERRY_FLAGS += -DFEATURE_JS_PARSER=OFF
 endif
 endif
 
+ifneq (,$(DEV))
+$(error DEV= is no longer supported, please use make ide or make ashell)
+endif
+
 ifndef ZJS_BASE
 $(error ZJS_BASE not defined. You need to source zjs-env.sh)
 endif
@@ -70,7 +74,7 @@ EXT_JERRY_FLAGS ?=	-DENABLE_ALL_IN_ONE=ON \
 # Settings for ashell builds
 ifneq (,$(filter $(MAKECMDGOALS),ide ashell))
 CONFIG ?= fragments/zjs.conf.dev
-DEV=ashell
+ASHELL=y
 endif
 
 ifeq ($(BOARD), arduino_101)
@@ -141,7 +145,7 @@ zephyr: analyze generate jerryscript $(ARC)
 					PRINT_FLOAT=$(PRINT_FLOAT) \
 					SNAPSHOT=$(SNAPSHOT) \
 					BLE_ADDR=$(BLE_ADDR) \
-					DEV=$(DEV)
+					ASHELL=$(ASHELL)
 ifeq ($(BOARD), arduino_101)
 	@echo
 	@echo -n Creating dfu images...
@@ -188,7 +192,7 @@ analyze: $(JS)
 	@if [ "$(SNAPSHOT)" = "on" ]; then \
 		echo "ccflags-y += -DZJS_SNAPSHOT_BUILD" >> src/Makefile; \
 	fi
-	@echo "ccflags-y += $(shell ./scripts/analyze.sh $(BOARD) $(JS) $(CONFIG) $(DEV))" | tee -a src/Makefile arc/src/Makefile
+	@echo "ccflags-y += $(shell ./scripts/analyze.sh $(BOARD) $(JS) $(CONFIG) $(ASHELL))" | tee -a src/Makefile arc/src/Makefile
 	@sed -i '/This is a generated file/r./zjs.conf.tmp' src/Makefile
 	@# Add the include for the OCF Makefile only if the script is using OCF
 	@if grep BUILD_MODULE_OCF src/Makefile; then \
@@ -211,7 +215,7 @@ setup:
 ifeq ($(BOARD), qemu_x86)
 	@cat fragments/prj.conf.qemu_x86 >> prj.conf
 else
-ifeq ($(DEV), ashell)
+ifeq ($(ASHELL), y)
 	@cat fragments/prj.conf.ashell >> prj.conf
 	@cat fragments/prj.mdef.ashell >> prj.mdef
 ifeq ($(filter ide,$(MAKECMDGOALS)),ide)
@@ -361,6 +365,8 @@ help:
 	@echo "Build targets:"
 	@echo "    all:       Build for either Zephyr or Linux depending on BOARD"
 	@echo "    zephyr:    Build Zephyr for the given BOARD (A101 is default)"
+	@echo "    ide        Build Zephyr in development mode for the IDE"
+	@echo "    ashell     Build Zephyr in development mode for the command line"
 	@echo "    arc:       Build just the ARC Zephyr target for Arduino 101"
 	@echo "    linux:     Build the Linux target"
 	@echo "    dfu:       Flash x86 and arc images to A101 with dfu-util"
