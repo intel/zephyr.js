@@ -1,33 +1,7 @@
 // Copyright (c) 2017, Intel Corporation.
 
 var fs = require('fs');
-
-var total = 0;
-var passed = 0;
-var pass = true;
-
-function assert(actual, description) {
-    total += 1;
-
-    var label = "\033[1m\033[31mFAIL\033[0m";
-    if (actual === true) {
-        passed += 1;
-        label = "\033[1m\033[32mPASS\033[0m";
-    }
-
-    console.log(label + " - " + description);
-}
-
-function expectThrow(description, func) {
-    var threw = false;
-    try {
-        func();
-    }
-    catch (err) {
-        threw = true;
-    }
-    assert(threw, description);
-}
+var assert = require("Assert.js");
 
 // Clean up any test files left from previous tests
 var stats = fs.statSync('testfile.txt');
@@ -56,13 +30,13 @@ if (!fd_stats.isFile()) {
 assert(success, "remove file");
 
 //test invalid file open (on a non-existing file)
-expectThrow("open(r) on non-existing file", function () {
+assert.throws(function () {
     fd = fs.openSync('testfile.txt', 'r');
-});
+}, "open(r) on non-existing file");
 
-expectThrow("open(r+) on non-existing file", function () {
+assert.throws(function () {
     fd = fs.openSync('testfile.txt', 'r+');
-});
+}, "open(r+) on non-existing file");
 
 // Test appending options
 fs.writeFileSync("testfile.txt", new Buffer("test"));
@@ -70,10 +44,10 @@ fs.writeFileSync("testfile.txt", new Buffer("test"));
 fd = fs.openSync('testfile.txt', 'a');
 
 // test reading from 'a' file
-expectThrow("can't read from append file", function() {
+assert.throws(function() {
     var rbuf = new Buffer(wbuf.length);
     var rlen = fs.readSync(fd, rbuf, 0, rbuf.length, 0);
-});
+}, "can't read from append file");
 
 // test writing to end of 'a' file
 var wbuf = new Buffer('write');
@@ -108,9 +82,9 @@ assert((rbuf.toString('ascii') == "testwrite"),
     "read data that existed in r file: " + rbuf.toString('ascii'));
 
 // test write to read only file
-expectThrow("tried writing to read only file", function() {
+assert.throws(function() {
     fs.writeSync(fd, new Buffer("dummy"), 0, 5, 0);
-});
+}, "tried writing to read only file");
 
 fs.closeSync(fd);
 
@@ -220,4 +194,4 @@ fs.unlinkSync('tf3.txt');
 
 fs.unlinkSync('testfile.txt');
 
-console.log("TOTAL: " + passed + " of " + total + " passed");
+assert.result();
