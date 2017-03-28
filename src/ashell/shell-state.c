@@ -53,12 +53,12 @@ const char MSG_EXIT[] = ANSI_FG_GREEN "Back to shell!";
 
 const char READY_FOR_RAW_DATA[] =
     "Ready for JavaScript. \r\n" \
-    "\tCtrl+Z or Ctrl+D to finish transfer.\r\n" \
-    "\tCtrl+X or Ctrl+C to cancel.";
+    "\tCtrl+Z to finish transfer.\r\n" \
+    "\tCtrl+X to cancel.";
 
 const char MSG_IMMEDIATE_MODE[] =
     "Ready to evaluate JavaScript.\r\n" \
-    "\tCtrl+D or Ctrl+C to return to shell.";
+    "\tCtrl+D to return to shell.";
 
 const char hex_prompt[] = "[HEX]\r\n";
 const char raw_prompt[] = ANSI_FG_YELLOW "RAW> " ANSI_FG_RESTORE;
