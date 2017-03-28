@@ -42,9 +42,12 @@ API Documentation
 -----------------
 ### Buffer constructor
 
-`Buffer(unsigned long length);`
+`Buffer(unsigned long size);`
 
-The `length` argument specifies the length in bytes of the Buffer object.
+The `size` argument specifies the length in bytes of the array that the Buffer
+represents. If a negative length is passed, a 0-length Buffer will be returned.
+If the size is too long and there is not enough available memory, an error will
+be thrown.
 
 ### Buffer.readUInt family
 
