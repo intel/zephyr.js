@@ -22,6 +22,10 @@ EXT_JERRY_FLAGS += -DFEATURE_JS_PARSER=OFF
 endif
 endif
 
+ifneq (,$(DEV))
+$(error DEV= is no longer supported, please use make ide or make ashell)
+endif
+
 ifndef ZJS_BASE
 $(error ZJS_BASE not defined. You need to source zjs-env.sh)
 endif
