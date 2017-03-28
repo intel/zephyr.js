@@ -419,22 +419,31 @@ successfully. Below is a complete table of modules and target support.
 
 ## Networking with QEMU
 QEMU has support for networking features that can be tested on your Linux
-desktop. To do this you will need a separate "net-tools" repo:
+desktop. To do this you will need to build a separate "net-tools" project:
 ```bash
-git clone git clone https://gerrit.zephyrproject.org/r/net-tools
+$ git clone https://gerrit.zephyrproject.org/r/net-tools
+$ cd net-tools
+$ make
 ```
+
 Open up 2 terminals to run the tools:
 Terminal 1:
 ```bash
-sudo ./net-tools/loop-socat.sh
+$ sudo ./net-tools/loop-socat.sh
 ```
+
+If this fails, you may need to install the socat package:
+```bash
+$ sudo apt-get install socat
+```
+
 Terminal 2:
 ```bash
-./net-tools/loop-slip-tap.sh
+$ ./net-tools/loop-slip-tap.sh
 ```
 Then run QEMU as your normally would e.g.
 ```bash
-make BOARD=qemu_x86 JS=samples/OcfServer.js qemu
+$ make BOARD=qemu_x86 JS=samples/OcfServer.js qemu
 ```
 
 Note: At this point, this setup is relatively unstable. You may experience
