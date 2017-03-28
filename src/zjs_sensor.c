@@ -10,6 +10,7 @@
 #include <string.h>
 
 // ZJS includes
+#include "zjs_common.h"
 #include "zjs_sensor.h"
 #include "zjs_callbacks.h"
 #include "zjs_ipm.h"
@@ -17,7 +18,8 @@
 
 #define ZJS_SENSOR_TIMEOUT_TICKS 5000
 #define DEFAULT_SAMPLING_FREQUENCY 20
-#define BMI160_CONTROLLER "bmi160"
+
+#define SENSOR_MAX_CONTROLLER_LEN 16
 
 static struct k_sem sensor_sem;
 
@@ -83,6 +85,8 @@ static void zjs_sensor_free_handles(sensor_handle_t *handle)
     while (handle != NULL) {
         tmp = handle;
         handle = handle->next;
+        if (handle->controller)
+            zjs_free(handle->controller);
         jerry_release_value(tmp->sensor_obj);
         zjs_free(tmp);
     }
@@ -510,7 +514,8 @@ static jerry_value_t zjs_sensor_create(const jerry_value_t function_obj,
     ZJS_VALIDATE_ARGS(expect);
 
     double frequency = DEFAULT_SAMPLING_FREQUENCY;
-    char *controller = "";
+    size_t size = SENSOR_MAX_CONTROLLER_LEN;
+    char controller[size];
     uint32_t pin;
 
     // initialize object and default values
@@ -518,22 +523,27 @@ static jerry_value_t zjs_sensor_create(const jerry_value_t function_obj,
 
     if (argc >= 1) {
         jerry_value_t options = argv[0];
-        const int BUFLEN = 20;
-        char buffer[BUFLEN];
+        ZVAL controller_val = zjs_get_property(options, "controller");
 
-        if (!zjs_obj_get_string(options, "controller", buffer, BUFLEN)) {
+        if (jerry_value_is_string(controller_val)) {
+            zjs_copy_jstring(controller_val, controller, &size);
+        } else {
             switch(channel) {
             case SENSOR_CHAN_ACCEL_XYZ:
             case SENSOR_CHAN_GYRO_XYZ:
             case SENSOR_CHAN_TEMP:
-                controller = BMI160_CONTROLLER;
+                snprintf(controller, size, BMI160_DEVICE_NAME);
+                break;
+            case SENSOR_CHAN_LIGHT:
+                snprintf(controller, size, ADC_DEVICE_NAME);
                 break;
 
             default:
-                controller = "";
+                // should not get here
+                return zjs_error("Sensor not supported");
             }
-        } else {
-            controller = buffer;
+
+            DBG_PRINT("controller not set, default to %s\n", controller);
         }
 
         double option_freq;

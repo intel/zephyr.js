@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 #ifndef __zjs_common_h__
 #define __zjs_common_h__
@@ -45,10 +45,12 @@ int zjs_get_ms(void);
 #define MAX_SCRIPT_SIZE 8192
 
 #if defined(CONFIG_BOARD_ARDUINO_101) || defined(CONFIG_BOARD_ARDUINO_101_SSS)
+#define ADC_DEVICE_NAME "ADC_0"
+#define ADC_BUFFER_SIZE 2
 #define ARC_AIO_MIN 9
 #define ARC_AIO_MAX 14
-// ARC_AIO_LEN = ARC_AIO_MAX - ARC_AIO_MIN + 1
 #define ARC_AIO_LEN 6
+#define BMI160_DEVICE_NAME "bmi160"
 #endif
 
 #endif  // __zjs_common_h__
