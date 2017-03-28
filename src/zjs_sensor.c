@@ -526,8 +526,7 @@ static jerry_value_t zjs_sensor_create(const jerry_value_t function_obj,
         jerry_value_t options = argv[0];
         ZVAL controller_val = zjs_get_property(options, "controller");
 
-        if (!jerry_value_is_undefined(controller_val) &&
-            jerry_value_is_string(controller_val)) {
+        if (jerry_value_is_string(controller_val)) {
             zjs_copy_jstring(controller_val, controller, &size);
         } else {
             switch(channel) {
