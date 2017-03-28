@@ -845,8 +845,11 @@ static void handle_sensor(struct zjs_ipm_message *msg)
         break;
 #ifdef BUILD_MODULE_SENSOR_LIGHT
     case SENSOR_CHAN_LIGHT:
+        if (!strncmp(controller, ADC_DEVICE_NAME, 5)) {
             handle_sensor_light(msg);
             return;
+        }
+        break;
 #endif
 
      default:
