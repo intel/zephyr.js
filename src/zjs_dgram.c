@@ -164,7 +164,7 @@ static jerry_value_t zjs_dgram_createSocket(const jerry_value_t function_obj,
     jerry_value_t sockobj = jerry_create_object();
     jerry_set_prototype(sockobj, zjs_dgram_socket_prototype);
 
-    dgram_handle_t *handle = zjs_malloc(sizeof(handle));
+    dgram_handle_t *handle = zjs_malloc(sizeof(dgram_handle_t));
     if (!handle)
         return zjs_error("createSocket: OOM");
     handle->udp_sock = udp_sock;
