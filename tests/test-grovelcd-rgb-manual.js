@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 console.log("test RGB color");
 
@@ -59,6 +59,7 @@ var colorGradient = setInterval(function () {
             console.log("Testing completed");
 
             clearInterval(colorGradient);
+            return;
         }
 
         redFlag = colorNum[colorCount][0];
