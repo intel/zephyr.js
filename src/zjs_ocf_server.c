@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 #ifdef BUILD_MODULE_OCF
 
@@ -148,11 +148,20 @@ static jerry_value_t request_to_jerry_value(oc_request_t *request)
 struct server_resource *new_server_resource(char *path)
 {
     struct server_resource *resource = zjs_malloc(sizeof(struct server_resource));
+    if (!resource) {
+        ERR_PRINT("new resource could not be allocated\n");
+        return NULL;
+    }
     memset(resource, 0, sizeof(struct server_resource));
 
-    resource->resource_path = zjs_malloc(strlen(path));
-    memcpy(resource->resource_path, path, strlen(path));
-    resource->resource_path[strlen(path)] = '\0';
+    uint32_t len = strlen(path);
+    resource->resource_path = zjs_malloc(len + 1);
+    if (!resource->resource_path) {
+        ERR_PRINT("resource path could not be allocated\n");
+        zjs_free(resource);
+        return NULL;
+    }
+    strncpy(resource->resource_path, path, len + 1);
 
     return resource;
 }
