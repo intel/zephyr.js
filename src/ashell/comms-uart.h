@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 #ifndef __comms_uart_h__
 #define __comms_uart_h__
@@ -12,6 +12,7 @@
 /* Escape */
 #define ASCII_ESC                0x1b
 #define ASCII_DEL                0x7f
+#define ASCII_BKSP               0x08
 
 /* CTLR-X */
 #define ASCII_CANCEL             0x18
