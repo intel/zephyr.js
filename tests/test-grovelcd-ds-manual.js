@@ -1,4 +1,4 @@
-// Copyright (c) 2017, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 console.log("test GroveLCD display");
 
