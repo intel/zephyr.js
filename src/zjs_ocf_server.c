@@ -148,12 +148,20 @@ static jerry_value_t request_to_jerry_value(oc_request_t *request)
 struct server_resource *new_server_resource(char *path)
 {
     struct server_resource *resource = zjs_malloc(sizeof(struct server_resource));
+    if (!resource) {
+        ERR_PRINT("new resource could not be allocated\n");
+        return NULL;
+    }
     memset(resource, 0, sizeof(struct server_resource));
 
     uint32_t len = strlen(path);
     resource->resource_path = zjs_malloc(len + 1);
-    strncpy(resource->resource_path, path, len);
-    resource->resource_path[len] = '\0';
+    if (!resource->resource_path) {
+        ERR_PRINT("resource path could not be allocated\n");
+        zjs_free(resource);
+        return NULL;
+    }
+    strncpy(resource->resource_path, path, len + 1);
 
     return resource;
 }
