@@ -263,11 +263,9 @@ static jerry_value_t zjs_open(const jerry_value_t function_obj,
     if (async) {
         ZVAL err = jerry_create_number(handle->error);
         ZVAL fd_val = jerry_create_number(handle->fd);
-
         jerry_value_t args[] = {err, fd_val};
 
         zjs_callback_id id = zjs_add_callback_once(argv[2], this, handle, NULL);
-
         zjs_signal_callback(id, args, sizeof(args));
         return ZJS_UNDEFINED;
     }
@@ -317,12 +315,12 @@ static jerry_value_t zjs_close(const jerry_value_t function_obj,
 
 #ifdef ZJS_FS_ASYNC_APIS
     if (async) {
+        ZVAL error = jerry_create_number(handle->error);
+
         zjs_callback_id id = zjs_add_callback_once(argv[1],
                                                    this,
                                                    handle,
                                                    NULL);
-
-        ZVAL error = jerry_create_number(handle->error);
         zjs_signal_callback(id, &error, sizeof(error));
     }
 #endif
@@ -377,12 +375,12 @@ static jerry_value_t zjs_unlink(const jerry_value_t function_obj,
 
 #ifdef ZJS_FS_ASYNC_APIS
     if (async) {
+        ZVAL error = jerry_create_number(ret);
+
         zjs_callback_id id = zjs_add_callback_once(argv[1],
                                                    this,
                                                    NULL,
                                                    NULL);
-
-        ZVAL error = jerry_create_number(ret);
         zjs_signal_callback(id, &error, sizeof(error));
     }
 #endif
@@ -481,7 +479,6 @@ static jerry_value_t zjs_read(const jerry_value_t function_obj,
     if (async) {
         ZVAL err_val = jerry_create_number(err);
         ZVAL ret_val = jerry_create_number(ret);
-
         jerry_value_t args[] = {err_val, ret_val, argv[1]};
 
         zjs_callback_id id = zjs_add_callback_once(argv[5],
@@ -489,7 +486,6 @@ static jerry_value_t zjs_read(const jerry_value_t function_obj,
                                                    NULL,
                                                    NULL);
         zjs_signal_callback(id, args, sizeof(args));
-
         return ZJS_UNDEFINED;
     }
 #endif
@@ -598,13 +594,11 @@ static jerry_value_t zjs_write(const jerry_value_t function_obj,
     if (async) {
         ZVAL err = jerry_create_number(0);
         ZVAL bytes = jerry_create_number(written);
-
         jerry_value_t args[] = {err, bytes, argv[1]};
 
         zjs_callback_id id = zjs_add_callback_once(argv[cbindex], this, NULL,
                                                    NULL);
         zjs_signal_callback(id, args, sizeof(args));
-
         return ZJS_UNDEFINED;
     }
 #endif
@@ -841,9 +835,7 @@ static jerry_value_t zjs_readdir(const jerry_value_t function_obj,
                                                this,
                                                NULL,
                                                NULL);
-
         zjs_signal_callback(id, args, sizeof(args));
-
         return ZJS_UNDEFINED;
     }
 #endif
@@ -899,7 +891,6 @@ static jerry_value_t zjs_stat(const jerry_value_t function_obj,
     if (async) {
         ZVAL ret_val = jerry_create_number(ret);
         ZVAL stats = create_stats_obj(&entry);
-
         jerry_value_t args[] = {ret_val, stats};
 
         zjs_callback_id id = zjs_add_callback_once(argv[1],
@@ -907,7 +898,6 @@ static jerry_value_t zjs_stat(const jerry_value_t function_obj,
                                                    NULL,
                                                    NULL);
         zjs_signal_callback(id, args, sizeof(args));
-
         return ZJS_UNDEFINED;
     }
 #endif
@@ -995,7 +985,6 @@ Finished:
         ZVAL err = jerry_create_number(error);
 
         zjs_callback_id id = zjs_add_callback_once(argv[2], this, NULL, NULL);
-
         zjs_signal_callback(id, &err, sizeof(err));
     }
 #endif

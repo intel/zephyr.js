@@ -250,7 +250,7 @@ if check_for_require fs || check_config_file ZJS_FS; then
     >&2 echo Using module: FS
     OBJ_NAME=$(grep "require *( *['\"]fs['\"] *)*;" $SCRIPT | cut -d'=' -f1 | cut -d' ' -f2)
 
-    if grep "$OBJ_NAME\..*(" tests/test-fs-async.js | grep -q -v "Sync"; then
+    if grep "$OBJ_NAME\..*(" $SCRIPT | grep -q -v "Sync"; then
         MODULES+=" -DZJS_FS_ASYNC_APIS"
     fi
 
