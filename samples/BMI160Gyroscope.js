@@ -5,7 +5,7 @@
 // and monitor the rate of rotation around the the X, Y and Z axis
 console.log("Gyroscope test...");
 
-var updateFrequency = 20 // maximum is 100Hz, but in ashell maximum is 20Hz
+var updateFrequency = 20; // maximum is 100Hz, but in ashell maximum is 20Hz
 
 var sensor = new Gyroscope({
     frequency: updateFrequency
