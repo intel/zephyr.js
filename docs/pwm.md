@@ -95,6 +95,8 @@ Sets the repeat period and pulse width for the signal, in terms of hardware
 cycles. One hardware cycle is the minimum amount of time the hardware supports
 having the pulse signal on (high).
 
+Throws an error if pulseWidth is greater than period.
+
 This version of the API is useful when the duty cycle is what matters (e.g.
 using the 'analog' model of PWM control described in the
 [Introduction](#introduction)). For example, a period of 2 with a pulse width of
@@ -111,6 +113,8 @@ The actual resolution available will depend on the hardware, so the value you
 provide may get rounded.
 *TODO: We could probably have the period attribute show the actual setting for
 the device when it is read back.*
+
+Throws an error if pulseWidth is greater than period.
 
 This version of the API is useful when the timing of the pulse matters (e.g.
 the 'servo' model of PWM control described in the
