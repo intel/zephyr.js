@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2017, Intel Corporation.
 
 console.log("test GroveLCD display");
 
@@ -43,6 +43,7 @@ var timer = setInterval(function () {
         console.log("Testing completed");
 
         clearInterval(timer);
+        return;
     }
 
     if (index[count].length === 3) {
