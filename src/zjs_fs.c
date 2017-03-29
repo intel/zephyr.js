@@ -980,7 +980,7 @@ static jerry_value_t zjs_write_file(const jerry_value_t function_obj,
     ssize_t written = fs_write(&fp, data, length);
 
     if (written != length) {
-        ERR_PRINT("could not write %lu bytes, only %lu were written\n", length, written);
+        ERR_PRINT("could not write %u bytes, only %u were written\n", length, written);
         error = -1;
     }
 
