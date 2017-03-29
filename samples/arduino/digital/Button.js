@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 // Reimplementation of Arduino - Digital - Button example
 //   - Turns on an LED whenever a button is being pressed
@@ -16,15 +16,8 @@ console.log("Starting Button example...");
 var gpio = require("gpio");
 var pins = require("arduino101_pins");
 
-var led = gpio.open({
-    pin: pins.LED0,
-    direction: 'out'
-});
-var button = gpio.open({
-    pin: pins.IO4,
-    direction: 'in',
-    edge: 'any'
-});
+var led = gpio.open({pin: pins.LED0, direction: 'out', activeLow: true});
+var button = gpio.open({pin: pins.IO4, direction: 'in', edge: 'any'});
 
 button.onchange = function(event) {
     led.write(event.value);

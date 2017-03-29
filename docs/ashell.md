@@ -231,3 +231,6 @@ Problems and known issues
 
 ZJS will only execute timeouts or events on the first run. Sometimes there is
 a duplicated character written to the ACM.
+
+LED2 on Arduino 101 is not available in ashell mode because the GPIO it is tied
+to is being used for SPI to talk to the flash filesystem instead.

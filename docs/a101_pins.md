@@ -74,13 +74,15 @@ inputs or outputs.
 The Arduino 101 has three onboard LEDs that you can access as additional GPIO
 outputs.
 
-LED0 controls an onboard green LED. It is active high, and it is an alias for
-IO13, so in other words, LED0 displays the current state of IO13. So don't try
-to use both names.
+LED0 controls an onboard red fault LED. It is active *low*.
 
-LED1 controls another onboard green LED. It is active *low*.
+LED1 controls an onboard green LED. It is active *low*.
 
-LED2 controls an onboard red fault LED. It is active *low*.
+LED2 controls another onboard green LED. It is active high, and it is an alias
+for IO13, so in other words, LED0 displays the current state of IO13. So don't
+try to use both names. Also, if SPI is enabled this reconfigures the GPIO that
+controls LED2 and it will not be available. The flash filesystem uses SPI, so
+LED2 is not available when you use ashell or filesystem APIs.
 
 ### PWM Pins
 

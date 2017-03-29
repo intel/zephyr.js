@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 // Sample to drive an RGB LED, namely this one:
 //   http://www.mouser.com/ds/2/216/WP154A4SUREQBFZGW-67444.pdf
@@ -20,7 +20,7 @@ var gpio = require("gpio");
 var pins = require("arduino101_pins");
 
 // LED0 is an onboard LED on the Arduino101
-var led = gpio.open({pin: pins.LED0, direction: 'out'});
+var led = gpio.open({pin: pins.LED0, direction: 'out', activeLow: true});
 
 var red = gpio.open({pin: pins.IO2, direction: 'out'});
 var green = gpio.open({pin: pins.IO7, direction: 'out'});

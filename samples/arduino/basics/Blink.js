@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 // Reimplementation of Arduino - Basics - Blink example
 //   - Toggles an onboard LED on and off every second
@@ -24,12 +24,9 @@ console.log("Starting Blink example...");
 var gpio = require("gpio");
 var pins = require("arduino101_pins");
 
-// pin 8 is one of the onboard LEDs on the Arduino 101
+// LED0 is one of the onboard LEDs on the Arduino 101
 // 'out' direction is default, could be left out
-var pin = gpio.open({
-    pin: pins.LED0,
-    direction: 'out'
-});
+var pin = gpio.open({pin: pins.LED0, direction: 'out', activeLow: true});
 
 // remember the current state of the LED
 var toggle = false;

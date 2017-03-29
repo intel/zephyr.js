@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 // Test code for Arduino 101 that uses two buttons on IO2 and IO4 to control
 // the two onboard LEDs.
@@ -17,13 +17,13 @@ console.log("Button enable test...");
 var gpio = require("gpio");
 var pins = require("arduino101_pins");
 
-var led1 = gpio.open({ pin: pins.LED0, activeLow: false });
-var led2 = gpio.open({ pin: pins.LED1, activeLow: true });
-var btn1 = gpio.open({ pin: pins.IO2, direction: 'in', edge: 'any' });
-var btn2 = gpio.open({ pin: pins.IO4, direction: 'in', edge: 'any' });
+var led1 = gpio.open({pin: pins.LED1, activeLow: true});
+var led2 = gpio.open({pin: pins.LED2, activeLow: false});
+var btn1 = gpio.open({pin: pins.IO2, direction: 'in', edge: 'any'});
+var btn2 = gpio.open({pin: pins.IO4, direction: 'in', edge: 'any'});
 
 // turn off LED #2 initially
-led2.write(false);
+led1.write(false);
 
 btn1.onchange = function (event) {
     var value = btn1.read();

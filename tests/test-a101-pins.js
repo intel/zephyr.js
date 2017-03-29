@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 // Test Arduino101Pins API
 
@@ -43,9 +43,9 @@ for(var i = 0; i < GPIOPins.length; i++) {
 }
 
 // LEDs
-var LEDs = [["LED0", false],
-            ["LED1", true ],
-            ["LED2", true ]];
+var LEDs = [["LED0", true],
+            ["LED1", true],
+            ["LED2", false]];
 for(var i = 0; i < LEDs.length; i++) {
     var pinName = LEDs[i][0];
 
@@ -53,7 +53,7 @@ for(var i = 0; i < LEDs.length; i++) {
 
     // activeLow
     var lowFlag = LEDs[i][1];
-    var pin = gpio.open({ pin: pins[pinName], activeLow: lowFlag });
+    var pin = gpio.open({pin: pins[pinName], activeLow: lowFlag});
     var pinValue = pin.read();
     var lowStr = lowFlag ? "high" : "low";
     assert(pinValue,
@@ -63,9 +63,9 @@ for(var i = 0; i < LEDs.length; i++) {
     assert(pin.read() != pinValue,
           "Arduino101Pins: " + pinName + " output");
 
-    if (pinName == "LED0") {
+    if (pinName == "LED2") {
         pinValue = pin.read();
-        var io13 = gpio.open({ pin: pins.IO13, activeLow: lowFlag });
+        var io13 = gpio.open({pin: pins.IO13, activeLow: lowFlag});
         io13.write(!pinValue);
         assert(pin.read() != pinValue,
             "Arduino101Pins: " + pinName + " displays current state of IO13");
