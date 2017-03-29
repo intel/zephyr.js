@@ -72,18 +72,6 @@ static double accel_last_value[3];
 static double gyro_last_value[3];
 #endif
 
-// add strnlen() support for security since it is missing
-// in Zephyr's minimal libc implementation
-size_t strnlen(const char *str, size_t max_len) {
-    size_t len;
-    for (len = 0; len < max_len; len++) {
-        if (!*str)
-            break;
-        str++;
-    }
-    return len;
-}
-
 int ipm_send_msg(struct zjs_ipm_message *msg)
 {
     msg->flags &= ~MSG_ERROR_FLAG;
@@ -325,7 +313,7 @@ static void handle_glcd(struct zjs_ipm_message *msg)
             ERR_PRINT("buffer not found\n");
         } else {
             snprintf(str, MAX_BUFFER_SIZE, "%s", buffer);
-            glcd_print(glcd, str, strnlen(str, MAX_BUFFER_SIZE));
+            glcd_print(glcd, str, strlen(str));
             DBG_PRINT("Grove LCD print: %s\n", str);
         }
         break;
