@@ -29,10 +29,15 @@ pinA = pwm.open({ channel: pins.IO3, period: 3, pulseWidth: 1 });
 assert(pinA !== null && typeof pinA === "object",
        "open: with period and pulseWidth");
 
-// set pulse width greater than period; impl will make them equal
-pinA.setMilliseconds(3000, 5000);
-assert(pinA.period == pinA.pulseWidth,
-       "pwmpin: set pulseWidth greater than period");
+// set pulse width greater than period
+assert.throws(function() {
+    pinA.setMilliseconds(3000, 5000);
+}, "pwmpin: set pulseWidth greater than period");
+
+// set pulse width greater than period
+assert.throws(function() {
+    pinA.setCycles(3000, 5000);
+}, "pwmpin: set pulseWidth greater than period (cycles)");
 
 pinA.setMilliseconds(3000, 1000);
 msTimer = setInterval(function () {

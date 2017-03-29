@@ -92,8 +92,8 @@ static jerry_value_t zjs_pwm_pin_set_cycles(const jerry_value_t function_obj,
     double pulseWidthHW = jerry_get_number_value(argv[1]);
 
     if (pulseWidthHW > periodHW) {
-        ERR_PRINT("pulseWidth was greater than period\n");
-        pulseWidthHW = periodHW;
+        DBG_PRINT("pulseWidth was greater than period\n");
+        return zjs_error("pulseWidth must not be greater than period");
     }
 
     // update the JS object
@@ -124,8 +124,8 @@ static jerry_value_t zjs_pwm_pin_set_ms(const jerry_value_t function_obj,
     double pulseWidth = jerry_get_number_value(argv[1]);
 
     if (pulseWidth > period) {
-        ERR_PRINT("pulseWidth was greater than period\n");
-        pulseWidth = period;
+        DBG_PRINT("pulseWidth was greater than period\n");
+        return zjs_error("pulseWidth must not be greater than period");
     }
 
     // store the values in the pwm object
