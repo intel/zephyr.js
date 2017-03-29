@@ -59,6 +59,7 @@ var colorGradient = setInterval(function () {
             console.log("Testing completed");
 
             clearInterval(colorGradient);
+            return;
         }
 
         redFlag = colorNum[colorCount][0];

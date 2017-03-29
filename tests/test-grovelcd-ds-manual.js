@@ -43,6 +43,7 @@ var timer = setInterval(function () {
         console.log("Testing completed");
 
         clearInterval(timer);
+        return;
     }
 
     if (index[count].length === 3) {
