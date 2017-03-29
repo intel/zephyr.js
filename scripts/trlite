@@ -327,6 +327,18 @@ function check_copyright() {
     # find intersection of NAMES and SRCFILES (requires sorted lists)
     MATCHES=$(comm -12 <(echo $NAMES | tr ' ' '\n' | sort) <(echo $SRCFILES | tr ' ' '\n'))
 
+    # assist Intel contributors by reminding them to update copyrights
+    if [ -z $TRAVIS_COMMIT ]; then
+        EMAIL=$(git config user.email)
+    else
+        EMAIL=$(git show --format="%aE" -s $TRAVIS_COMMIT)
+    fi
+    if echo $EMAIL | grep -q "[@.]intel.com"; then
+        INTEL=y
+    else
+        INTEL=
+    fi
+
     for f in $MATCHES; do
         # check for Copyright comment
         if ! $(head -1 $f | grep -q Copyright); then
@@ -334,8 +346,12 @@ function check_copyright() {
             RVAL=1
         # if found, make sure current date is there
         elif ! $(head -1 $f | grep -q $YEAR); then
-            echo Error: Add $YEAR to copyright in $f!
-            RVAL=1
+            if [ "$INTEL" ]; then
+                if head -1 $f | grep -q Intel; then
+                    echo Error: Add $YEAR to copyright in $f!
+                    RVAL=1
+                fi
+            fi
         fi
     done
 
