@@ -102,9 +102,12 @@ void zjs_remove_callback(zjs_callback_id id);
  */
 void zjs_remove_all_callbacks();
 
-void signal_callback_priv(zjs_callback_id id, const void *args, uint32_t size
+void signal_callback_priv(zjs_callback_id id,
+                          const void *args,
+                          uint32_t size
 #ifdef DEBUG_BUILD
-        , const char *file, const char *func);
+                          , const char *file,
+                          const char *func);
 #else
 );
 #endif
@@ -184,15 +187,15 @@ zjs_callback_id add_callback_priv(jerry_value_t js_func,
 #endif
 
 zjs_callback_id add_callback_list_priv(jerry_value_t js_func,
-                                      jerry_value_t this,
-                                      void *handle,
-                                      zjs_post_callback_func post,
-                                      zjs_callback_id id
+                                       jerry_value_t this,
+                                       void *handle,
+                                       zjs_post_callback_func post,
+                                       zjs_callback_id id
 #ifdef DEBUG_BUILD
-                                      , const char *file,
-                                      const char *func);
+                                       , const char *file,
+                                       const char *func);
 #else
-                                      );
+                                       );
 #endif
 
 #ifndef DEBUG_BUILD

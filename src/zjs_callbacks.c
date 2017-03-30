@@ -423,9 +423,12 @@ void zjs_remove_all_callbacks()
 }
 
 // INTERRUPT SAFE FUNCTION: No JerryScript VM, allocs, or release prints!
-void signal_callback_priv(zjs_callback_id id, const void *args, uint32_t size
+void signal_callback_priv(zjs_callback_id id,
+                          const void *args,
+                          uint32_t size
 #ifdef DEBUG_BUILD
-        , const char *file, const char *func)
+                          , const char *file,
+                          const char *func)
 #else
 )
 #endif
