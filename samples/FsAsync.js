@@ -30,9 +30,10 @@ fs.open('file.txt', 'w', function(err, fd) {
     console.log('opened file error=' + err);
 });
 
-fs.writeFile('string.txt', 'string data', {}, function(err) {
+fs.writeFile('string.txt', 'string data', function(err) {
     console.log('wrote string data file error=' + err);
 });
+
 fs.writeFile('buffer.txt', new Buffer('buffer data'), function(err) {
     console.log('wrote buffer data file error=' + err);
 });

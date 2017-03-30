@@ -252,7 +252,7 @@ if [ "$RUN" == "all" -o "$RUN" == "1" ]; then
     echo "var buf = new Buffer(10);" >> $TMPFILE
     echo "setTimeout(function() {}, 10);" >> $TMPFILE
 
-    try_command "modules" make $VERBOSE JS=$TMPFILE ROM=250
+    try_command "modules" make $VERBOSE JS=$TMPFILE ROM=256
 
     # individually test special modules
     echo "console.log(3.14159);" > $TMPFILE
@@ -398,10 +398,10 @@ if [ "$RUN" == "all" -o "$RUN" == "4" ]; then
     TESTNUM=0
 
     # ashell tests
-    try_command "ashell" make $VERBOSE ashell ROM=250
+    try_command "ashell" make $VERBOSE ashell ROM=256
 
     # build ide version
-    try_command "ide" make $VERBOSE ide ROM=250
+    try_command "ide" make $VERBOSE ide ROM=256
 fi
 
 # clean up on success
