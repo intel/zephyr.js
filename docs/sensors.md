@@ -125,6 +125,6 @@ Stop the sensor instance, the sensor will stop reporting new readings.
 
 Sample Apps
 -----------
-* [Accelerometer sample](../samples/Accelerometer.js)
-* [Gyroscope sample](../samples/Gyroscope.js)
+* [Accelerometer sample](../samples/BMI160Accelerometer.js)
+* [Gyroscope sample](../samples/BMI160Gyroscope.js)
 * [Ambient Light sample](../samples/AmbientLight.js)

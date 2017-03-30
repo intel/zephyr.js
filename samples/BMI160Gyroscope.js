@@ -3,9 +3,9 @@
 // Test code to use the Gyroscope (subclass of Generic Sensor) API
 // to communicate with the BMI160 inertia sensor on the Arduino 101
 // and monitor the rate of rotation around the the X, Y and Z axis
-console.log("Gyroscope test...");
+console.log("BMI160 gyroscope test...");
 
-var updateFrequency = 20 // maximum is 100Hz, but in ashell maximum is 20Hz
+var updateFrequency = 20; // maximum is 100Hz, but in ashell maximum is 20Hz
 
 var sensor = new Gyroscope({
     frequency: updateFrequency
