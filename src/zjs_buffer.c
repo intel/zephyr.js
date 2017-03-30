@@ -89,7 +89,9 @@ static jerry_value_t zjs_buffer_write_bytes(const jerry_value_t this,
     // args: value[, offset]
     ZJS_VALIDATE_ARGS(Z_NUMBER, Z_OPTIONAL Z_NUMBER);
 
-    uint32_t value = (uint32_t)(int32_t)jerry_get_number_value(argv[0]);
+    // technically negatives aren't supported but this makes them behave better
+    double dval = jerry_get_number_value(argv[0]);
+    uint32_t value = (uint32_t)(dval < 0 ? (int32_t)dval : dval);
 
     uint32_t offset = 0;
     if (argc > 1)

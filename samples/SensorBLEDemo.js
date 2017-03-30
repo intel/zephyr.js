@@ -42,9 +42,9 @@ SensorCharacteristic.valueChange = function(isAccel, x, y, z) {
     var data = new Buffer(13);
     data.writeUInt8(isAccel, 0);
 
-    data.writeUInt32BE(xval, 1, true);
-    data.writeUInt32BE(yval, 5, true);
-    data.writeUInt32BE(zval, 9, true);
+    data.writeUInt32BE(xval, 1);
+    data.writeUInt32BE(yval, 5);
+    data.writeUInt32BE(zval, 9);
 
     if (this._onChange) {
         this._onChange(data);
