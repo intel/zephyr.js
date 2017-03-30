@@ -35,7 +35,7 @@ function onfound(resource) {
     t1 = setInterval(function() {
         console.log("Updating/Retrieving...");
         lightOn = lightOn ? false : true;
-        resource.state = lightOn;
+        resource.properties.state = lightOn;
         client.update(resource).then(function(resource) {
             console.log("update successful");
             client.retrieve(resource.deviceId, { observable: false }).then(function(res) {

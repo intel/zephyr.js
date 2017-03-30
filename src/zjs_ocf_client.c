@@ -261,6 +261,8 @@ static jerry_value_t create_resource(const char *device_id, const char *path)
     if (path) {
         zjs_obj_add_string(resource, path, "resourcePath");
     }
+    ZVAL props = jerry_create_object();
+    zjs_set_property(resource, "properties", props);
 
     DBG_PRINT("id=%s, path=%s, obj number=%lu\n", device_id, path, resource);
 
@@ -710,11 +712,12 @@ static jerry_value_t ocf_update(const jerry_value_t function_val,
                     put_finished,
                     LOW_QOS,
                     h)) {
+        ZVAL props = zjs_get_property(argv[0], "properties");
         void *ret;
         // Start the root encoding object
         zjs_rep_start_root_object();
         // Encode all properties from resource (argv[0])
-        ret = zjs_ocf_props_setup(argv[0], &g_encoder, true);
+        ret = zjs_ocf_props_setup(props, &g_encoder, true);
         zjs_rep_end_root_object();
         // Free property return handle
         zjs_ocf_free_props(ret);
