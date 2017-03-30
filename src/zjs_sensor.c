@@ -245,7 +245,7 @@ static void zjs_sensor_update_reading(jerry_value_t obj,
         return;
     }
 
-    uint32_t timestamp = k_uptime_get();
+    uint64_t timestamp = k_uptime_get();
     zjs_obj_add_readonly_number(obj, ((double)timestamp), "timestamp");
 
     ZVAL func = zjs_get_property(obj, "onchange");
