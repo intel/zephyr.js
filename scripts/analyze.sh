@@ -130,7 +130,8 @@ if check_for_require ocf || check_config_file ZJS_OCF; then
         if grep -q "$OCF_OBJ.client" $SCRIPT; then
             >&2 echo Using module: OCF client
             MODULES+=" -DOC_CLIENT"
-        elif grep -q "$OCF_OBJ.server" $SCRIPT; then
+        fi
+        if grep -q "$OCF_OBJ.server" $SCRIPT; then
             >&2 echo Using module: OCF server
             MODULES+=" -DOC_SERVER"
         fi
