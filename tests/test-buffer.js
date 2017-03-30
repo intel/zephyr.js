@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 // Buffer Testing
 
@@ -13,10 +13,17 @@ var lens = [[-1, 0],
             [4294967295, 4294967295],
             [4294967296, 4294967295]];
 for(var i = 0; i < lens.length; i++) {
-    buff = new Buffer(lens[i][0]);
-    assert(buff.length === lens[i][1],
-           "The length of Buffer(" + lens[i][0] + ") expected:" + lens[i][1] +
-           " got:" + buff.length);
+    try {
+        buff = new Buffer(lens[i][0]);
+        assert(buff.length === lens[i][1],
+               "The length of Buffer(" + lens[i][0] + ") expected:" +
+               lens[i][1] + " got:" + buff.length);
+    } catch (error) {
+        console.log("Buffer: too long or not enough available memory");
+        assert(typeof buff === "undefined",
+               "The length of Buffer(" + lens[i][0] +
+               ") expected: 'undefined'" + " got:" + typeof buff);
+    }
 }
 
 buff = new Buffer(8);
