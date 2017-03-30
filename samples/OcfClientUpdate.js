@@ -1,10 +1,11 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 // Sample client that works with the linux server found in iotivity-constrained
 // This sample will find the resource, then periodically retrieve and update
 // the resource
 
 var client = require('ocf').client;
+
 
 console.log("Started OCF client");
 
