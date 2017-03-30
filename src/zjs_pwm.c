@@ -11,6 +11,8 @@
 #include "zjs_pwm.h"
 #include "zjs_util.h"
 
+static jerry_value_t zjs_pwm_pin_prototype;
+
 static const char *ZJS_POLARITY_NORMAL = "normal";
 static const char *ZJS_POLARITY_REVERSE = "reverse";
 
@@ -25,7 +27,8 @@ static struct device *zjs_pwm_dev[PWM_DEV_COUNT];
 void (*zjs_pwm_convert_pin)(uint32_t orig, int *dev, int *pin) =
     zjs_default_convert_pin;
 
-static void zjs_pwm_set(jerry_value_t obj, double period, double pulseWidth)
+static void zjs_pwm_set_cycles(jerry_value_t obj, uint32_t periodHW,
+                               uint32_t pulseWidthHW)
 {
     uint32_t orig_chan;
     zjs_obj_get_uint32(obj, "channel", &orig_chan);
@@ -33,181 +36,106 @@ static void zjs_pwm_set(jerry_value_t obj, double period, double pulseWidth)
     int devnum, channel;
     zjs_pwm_convert_pin(orig_chan, &devnum, &channel);
 
-    if (pulseWidth > period) {
-        ERR_PRINT("pulseWidth was greater than period\n");
-        pulseWidth = period;
+    const int BUFLEN = 10;
+    char buffer[BUFLEN];
+    if (zjs_obj_get_string(obj, "polarity", buffer, BUFLEN)) {
+        if (!strncmp(buffer, ZJS_POLARITY_REVERSE, BUFLEN)) {
+            pulseWidthHW = periodHW - pulseWidthHW;
+        }
     }
+
+    DBG_PRINT("Setting [cycles] channel=%d dev=%d, period=%lu, pulse=%lu\n",
+              channel, devnum, (uint32_t)periodHW, (uint32_t)pulseWidthHW);
+    pwm_pin_set_cycles(zjs_pwm_dev[devnum], channel, periodHW, pulseWidthHW);
+}
+
+static void zjs_pwm_set_ms(jerry_value_t obj, double period, double pulseWidth)
+{
+    uint32_t orig_chan;
+    zjs_obj_get_uint32(obj, "channel", &orig_chan);
+
+    int devnum, channel;
+    zjs_pwm_convert_pin(orig_chan, &devnum, &channel);
 
     const int BUFLEN = 10;
     char buffer[BUFLEN];
     if (zjs_obj_get_string(obj, "polarity", buffer, BUFLEN)) {
-        if (!strcmp(buffer, ZJS_POLARITY_REVERSE)) {
+        if (!strncmp(buffer, ZJS_POLARITY_REVERSE, BUFLEN)) {
             pulseWidth = period - pulseWidth;
         }
     }
 
-    DBG_PRINT("Setting [uSec] channel=%u dev=%u, period=%lu, pulse=%lu\n",
+    DBG_PRINT("Setting [uSec] channel=%d dev=%d, period=%lu, pulse=%lu\n",
               channel, devnum, (uint32_t)(period * 1000),
               (uint32_t)(pulseWidth * 1000));
     pwm_pin_set_usec(zjs_pwm_dev[devnum], channel, (uint32_t)(period * 1000),
                      (uint32_t)(pulseWidth * 1000));
 }
 
-static void zjs_pwm_set_cycles(jerry_value_t obj, uint32_t periodHW,
-                               uint32_t pulseWidthHW)
-{
-    DBG_PRINT("periodHW: %lu, pulseWidthHW: %lu\n", periodHW, pulseWidthHW);
-    uint32_t orig_chan;
-    zjs_obj_get_uint32(obj, "channel", &orig_chan);
-
-    int devnum, channel;
-    zjs_pwm_convert_pin(orig_chan, &devnum, &channel);
-
-    if (pulseWidthHW > periodHW) {
-        ERR_PRINT("pulseWidth was greater than period\n");
-        pulseWidthHW = periodHW;
-    }
-
-    const int BUFLEN = 10;
-    char buffer[BUFLEN];
-    if (zjs_obj_get_string(obj, "polarity", buffer, BUFLEN)) {
-        if (!strcmp(buffer, ZJS_POLARITY_REVERSE)) {
-            pulseWidthHW = periodHW - pulseWidthHW;
-        }
-    }
-
-    DBG_PRINT("Setting [cycles] channel=%u dev=%u, period=%lu, pulse=%lu\n",
-              channel, devnum, (uint32_t)periodHW, (uint32_t)pulseWidthHW);
-    pwm_pin_set_cycles(zjs_pwm_dev[devnum], channel, periodHW, pulseWidthHW);
-}
-
-static void zjs_pwm_set_period_cycles(jerry_value_t obj, double periodHW)
-{
-    // requires: obj is a PWM pin object, period is in hardware cycles
-    //  effects: sets the PWM pin to the given period, records the period
-    //             in the object
-    double pulseWidth;
-    zjs_obj_get_double(obj, "pulseWidth", &pulseWidth);
-
-    // update the JS object
-    double period = periodHW / sys_clock_hw_cycles_per_sec * 1000;
-    zjs_obj_add_number(obj, period, "period");
-
-    double pulseWidthHW = pulseWidth * sys_clock_hw_cycles_per_sec / 1000;
-
-    zjs_pwm_set_cycles(obj, periodHW, pulseWidthHW);
-}
-
-static jerry_value_t zjs_pwm_pin_set_period_cycles(const jerry_value_t function_obj,
-                                                   const jerry_value_t this,
-                                                   const jerry_value_t argv[],
-                                                   const jerry_length_t argc)
-{
-    // requires: this is a PWMPin object from zjs_pwm_open, takes one
-    //             argument, the period in hardware cycles, dependent on the
-    //             underlying hardware (31.25ns each for Arduino 101)
-    //  effects: updates the period of this PWM pin, using the finest grain
-    //             units provided by the platform, providing the widest range
-
-    // args: period in cycles
-    ZJS_VALIDATE_ARGS(Z_NUMBER);
-
-    double periodHW = jerry_get_number_value(argv[0]);
-
-    zjs_pwm_set_period_cycles(this, periodHW);
-    return ZJS_UNDEFINED;
-}
-
-static jerry_value_t zjs_pwm_pin_set_period(const jerry_value_t function_obj,
+static jerry_value_t zjs_pwm_pin_set_cycles(const jerry_value_t function_obj,
                                             const jerry_value_t this,
                                             const jerry_value_t argv[],
                                             const jerry_length_t argc)
 {
-    // requires: this is a PWMPin object from zjs_pwm_open, takes one
-    //             argument, the period in milliseconds (float)
+    // requires: this is a PWMPin object from zjs_pwm_open, takes two arguments:
+    //             the period in hardware cycles, dependent on the underlying
+    //             hardware (31.25ns each for Arduino 101), and the pulse width
+    //             in hardware cycles
+    //  effects: updates the period and pulse width of this PWM pin, using the
+    //             finest grain units provided by the platform, providing the
+    //             widest range
+
+    // args: period in cycles, pulse width in cycles
+    ZJS_VALIDATE_ARGS(Z_NUMBER, Z_NUMBER);
+
+    double periodHW = jerry_get_number_value(argv[0]);
+    double pulseWidthHW = jerry_get_number_value(argv[1]);
+
+    if (pulseWidthHW > periodHW) {
+        DBG_PRINT("pulseWidth was greater than period\n");
+        return zjs_error("pulseWidth must not be greater than period");
+    }
+
+    // update the JS object
+    double period = periodHW / sys_clock_hw_cycles_per_sec * 1000;
+    double pulseWidth = pulseWidthHW / sys_clock_hw_cycles_per_sec * 1000;
+    zjs_obj_add_number(this, period, "period");
+    zjs_obj_add_number(this, pulseWidth, "pulseWidth");
+
+    zjs_pwm_set_cycles(this, periodHW, pulseWidthHW);
+    return ZJS_UNDEFINED;
+}
+
+static jerry_value_t zjs_pwm_pin_set_ms(const jerry_value_t function_obj,
+                                        const jerry_value_t this,
+                                        const jerry_value_t argv[],
+                                        const jerry_length_t argc)
+{
+    // requires: this is a PWMPin object from zjs_pwm_open, takes two arguments:
+    //             the period in milliseconds (float), and the pulse width in
+    //             milliseconds (float)
     //  effects: updates the period of this PWM pin, getting as close as
     //             possible to what is requested given hardware constraints
 
-    // args: period in milliseconds
-    ZJS_VALIDATE_ARGS(Z_NUMBER);
-
-    double pulseWidth;
-    if (!zjs_obj_get_double(this, "pulseWidth", &pulseWidth)) {
-        return zjs_error("zjs_pwm_pin_set_period: pulseWidth was not initialized");
-    }
+    // args: period in milliseconds, pulse width in milliseconds
+    ZJS_VALIDATE_ARGS(Z_NUMBER, Z_NUMBER);
 
     double period = jerry_get_number_value(argv[0]);
-    // store the period in the pwm object
+    double pulseWidth = jerry_get_number_value(argv[1]);
+
+    if (pulseWidth > period) {
+        DBG_PRINT("pulseWidth was greater than period\n");
+        return zjs_error("pulseWidth must not be greater than period");
+    }
+
+    // store the values in the pwm object
     zjs_obj_add_number(this, period, "period");
+    zjs_obj_add_number(this, period, "pulseWidth");
 
     DBG_PRINT("period: %lu, pulse: %lu\n", (uint32_t)period,
               (uint32_t)pulseWidth);
 
-    zjs_pwm_set(this, period, pulseWidth);
-
-    return ZJS_UNDEFINED;
-}
-
-static void zjs_pwm_set_pulse_width_cycles(jerry_value_t obj,
-                                           double pulseWidthHW)
-{
-    // requires: obj is a PWM pin object, pulseWidth is in hardware cycles
-    //  effects: sets the PWM pin to the given pulse width, records the pulse
-    //             width in the object
-    double period;
-    zjs_obj_get_double(obj, "period", &period);
-
-    // update the JS object
-    double pulseWidth = pulseWidthHW / sys_clock_hw_cycles_per_sec * 1000;
-    zjs_obj_add_number(obj, pulseWidth, "pulseWidth");
-
-    double periodHW = period * sys_clock_hw_cycles_per_sec / 1000;
-
-    zjs_pwm_set_cycles(obj, periodHW, pulseWidthHW);
-}
-
-static jerry_value_t zjs_pwm_pin_set_pulse_width_cycles(const jerry_value_t function_obj,
-                                                        const jerry_value_t this,
-                                                        const jerry_value_t argv[],
-                                                        const jerry_length_t argc)
-{
-    // requires: this is a PWMPin object from zjs_pwm_open, takes one
-    //             argument, the pulse width in hardware cycles, dependent on
-    //             the underlying hardware (31.25ns each for Arduino 101)
-    //  effects: updates the pulse width of this PWM pin
-
-    // args: pulse width in cycles
-    ZJS_VALIDATE_ARGS(Z_NUMBER);
-
-    double pulseWidth = jerry_get_number_value(argv[0]);
-    // store the pulseWidth in the pwm object
-    zjs_obj_add_number(this, pulseWidth, "pulseWidth");
-
-    zjs_pwm_set_pulse_width_cycles(this, pulseWidth);
-    return ZJS_UNDEFINED;
-}
-
-static jerry_value_t zjs_pwm_pin_set_pulse_width(const jerry_value_t function_obj,
-                                                 const jerry_value_t this,
-                                                 const jerry_value_t argv[],
-                                                 const jerry_length_t argc)
-{
-    // requires: this is a PWMPin object from zjs_pwm_open, takes one
-    //             argument, the pulse width in milliseconds (float)
-    //  effects: updates the pulse width of this PWM pin
-
-    // args: pulse width in milliseconds
-    ZJS_VALIDATE_ARGS(Z_NUMBER);
-
-    double period;
-    zjs_obj_get_double(this, "period", &period);
-
-    double pulseWidth = jerry_get_number_value(argv[0]);
-    // store the pulseWidth in the pwm object
-    zjs_obj_add_number(this, pulseWidth, "pulseWidth");
-
-    zjs_pwm_set(this, period, pulseWidth);
-
+    zjs_pwm_set_ms(this, period, pulseWidth);
     return ZJS_UNDEFINED;
 }
 
@@ -254,18 +182,14 @@ static jerry_value_t zjs_pwm_open(const jerry_value_t function_obj,
 
     // create the PWMPin object
     jerry_value_t pin_obj = jerry_create_object();
-    zjs_obj_add_function(pin_obj, zjs_pwm_pin_set_period, "setPeriod");
-    zjs_obj_add_function(pin_obj, zjs_pwm_pin_set_period_cycles,
-                         "setPeriodCycles");
-    zjs_obj_add_function(pin_obj, zjs_pwm_pin_set_pulse_width, "setPulseWidth");
-    zjs_obj_add_function(pin_obj, zjs_pwm_pin_set_pulse_width_cycles,
-                         "setPulseWidthCycles");
+    jerry_set_prototype(pin_obj, zjs_pwm_pin_prototype);
+
     zjs_obj_add_number(pin_obj, channel, "channel");
     zjs_obj_add_number(pin_obj, period, "period");
     zjs_obj_add_number(pin_obj, pulseWidth, "pulseWidth");
     zjs_obj_add_string(pin_obj, polarity, "polarity");
 
-    zjs_pwm_set(pin_obj, period, pulseWidth);
+    zjs_pwm_set_ms(pin_obj, period, pulseWidth);
 
     // TODO: When we implement close, we should release the reference on this
     return pin_obj;
@@ -285,9 +209,24 @@ jerry_value_t zjs_pwm_init()
         }
     }
 
+    // create PWM pin prototype object
+    zjs_native_func_t array[] = {
+        { zjs_pwm_pin_set_ms, "setMilliseconds" },
+        { zjs_pwm_pin_set_cycles, "setCycles" },
+        { NULL, NULL }
+    };
+    zjs_pwm_pin_prototype = jerry_create_object();
+    zjs_obj_add_functions(zjs_pwm_pin_prototype, array);
+
     // create PWM object
     jerry_value_t pwm_obj = jerry_create_object();
     zjs_obj_add_function(pwm_obj, zjs_pwm_open, "open");
     return pwm_obj;
 }
+
+void zjs_pwm_cleanup()
+{
+    jerry_release_value(zjs_pwm_pin_prototype);
+}
+
 #endif // BUILD_MODULE_PWM

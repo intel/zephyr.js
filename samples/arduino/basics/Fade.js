@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 // Reimplementation of Arduino - Basics - Fade example
 //   - Fades LEDs in and out using PWM
@@ -31,18 +31,16 @@ var pins = require("arduino101_pins");
 var led1 = pwm.open({
     channel: pins.IO3
 });
-led1.setPeriodCycles(256);
 
 var led2 = pwm.open({
     channel: pins.IO5,
     polarity: "reverse"
 });
-led2.setPeriodCycles(256);
 
 // update the brightness every 30ms
 setInterval(function () {
-    led1.setPulseWidthCycles(brightness);
-    led2.setPulseWidthCycles(brightness);
+    led1.setCycles(256, brightness);
+    led2.setCycles(256, brightness);
 
     // adjust the brightness for next time
     brightness += fadeAmount;

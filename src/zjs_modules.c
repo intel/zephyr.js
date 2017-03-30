@@ -79,7 +79,7 @@ module_t zjs_modules_array[] = {
     { "grove_lcd", zjs_grove_lcd_init, zjs_grove_lcd_cleanup },
 #endif
 #ifdef BUILD_MODULE_PWM
-    { "pwm", zjs_pwm_init },
+    { "pwm", zjs_pwm_init, zjs_pwm_cleanup },
 #endif
 #ifdef BUILD_MODULE_I2C
     { "i2c", zjs_i2c_init },

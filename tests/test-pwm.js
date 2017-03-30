@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 console.log("Wire IO3 to IO2");
 
@@ -25,22 +25,21 @@ assert.throws(function () {
 var msTrue = 0;
 var msFalse = 0;
 
-assert.throws(function () {
-    pinA.setPulseWidth(300);
-}, "pwmpin: set pulseWidth without period");
-
 pinA = pwm.open({ channel: pins.IO3, period: 3, pulseWidth: 1 });
 assert(pinA !== null && typeof pinA === "object",
        "open: with period and pulseWidth");
 
-pinA.setPeriod(3000);
-
-assert.throws(function () {
-    pinA.setPulseWidth(3000);
+// set pulse width greater than period
+assert.throws(function() {
+    pinA.setMilliseconds(3000, 5000);
 }, "pwmpin: set pulseWidth greater than period");
 
-pinA.setPulseWidth(1000);
+// set pulse width greater than period
+assert.throws(function() {
+    pinA.setCycles(3000, 5000);
+}, "pwmpin: set pulseWidth greater than period (cycles)");
 
+pinA.setMilliseconds(3000, 1000);
 msTimer = setInterval(function () {
     if (pinB.read()) {
         msTrue = msTrue + 1;
@@ -57,17 +56,17 @@ setTimeout(function () {
     clearInterval(msTimer);
 
     assert.throws(function () {
-        pinA.setPeriod("Value");
+        pinA.setMilliseconds("Value", 1000);
     }, "pwmpin: set period with invalid value");
 
     assert.throws(function () {
-        pinA.setPulseWidth("Value");
+        pinA.setMilliseconds(1000, "Value");
     }, "pwmpin: set pulseWidth with invalid value");
 
     // set Period and PulseWidth with cycle
     // duty cycle: 70%
     var cyclesTrue = 0;
-    var cyclesFlase = 0;
+    var cyclesFalse = 0;
     var cyclesCount = 0;
     var periodCount = 0;
     var Flag = false;
@@ -75,8 +74,7 @@ setTimeout(function () {
     pinA = pwm.open({ channel: pins.IO3, polarity: "reverse" });
     assert(pinA !== null && typeof pinA === "object", "open: reverse polarity");
 
-    pinA.setPeriodCycles(10000000);
-    pinA.setPulseWidthCycles(3000000);
+    pinA.setCycles(10000000, 3000000);
 
     cycleTimer = setInterval(function () {
        Flag = pinB.read();
@@ -87,7 +85,7 @@ setTimeout(function () {
            if (oldFlag) {
                cyclesTrue = cyclesTrue + cyclesCount;
            } else {
-               cyclesFlase = cyclesFlase + cyclesCount;
+               cyclesFalse = cyclesFalse + cyclesCount;
            }
 
            oldFlag = Flag;
@@ -98,7 +96,7 @@ setTimeout(function () {
            }
 
            if (periodCount === 3) {
-               assert((10 < cyclesFlase) && (cyclesFlase < 14) &&
+               assert((10 < cyclesFalse) && (cyclesFalse < 14) &&
                       (28 < cyclesTrue) && (cyclesTrue < 32),
                       "pwmpin: set periodCycles and pulseWidthCycles");
 
@@ -111,9 +109,9 @@ setTimeout(function () {
 }, 3040);
 
 assert.throws(function () {
-    pinA.setPeriodCycles("Value");
-}, "pwmpin: set periodCycles with invalid value");
+    pinA.setCycles("Value", 1000);
+}, "pwmpin: set period cycles with invalid value");
 
 assert.throws(function () {
-    pinA.setPulseWidthCycles("Value");
-}, "pwmpin: set pulseWidthCycles with invalid value");
+    pinA.setCycles(1000, "Value");
+}, "pwmpin: set pulseWidth cycles with invalid value");

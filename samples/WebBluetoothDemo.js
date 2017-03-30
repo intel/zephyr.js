@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 // Test code for Arduino 101 that replicates the WebBluetooth demo
 // using BLE to advertise temperature changes and allow LED color changes
@@ -100,7 +100,7 @@ ColorCharacteristic._value.writeUInt8(0, 1);
 ColorCharacteristic._value.writeUInt8(0, 2);
 
 ColorCharacteristic.ledR = pwm.open({
-    channel: pins.IO3, period: 0.256, pulseWidth: 255 / 1000
+    channel: pins.IO3, period: 0.256, pulseWidth: 0.255
 });
 ColorCharacteristic.ledG = pwm.open({
     channel: pins.IO5, period: 0.256, pulseWidth: 0
@@ -129,9 +129,9 @@ ColorCharacteristic.onWriteRequest = function(data, offset, withoutResponse,
         return;
     }
 
-    this.ledR.setPulseWidth(this._value.readUInt8(0) / 1000);
-    this.ledG.setPulseWidth(this._value.readUInt8(1) / 1000);
-    this.ledB.setPulseWidth(this._value.readUInt8(2) / 1000);
+    this.ledR.setCycles(256, this._value.readUInt8(0));
+    this.ledG.setCycles(256, this._value.readUInt8(1));
+    this.ledB.setCycles(256, this._value.readUInt8(2));
     // TODO: probably only supposed to call this if withoutResponse is false?
     callback(this.RESULT_SUCCESS);
 };
