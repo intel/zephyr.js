@@ -1,4 +1,5 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
+
 #ifdef BUILD_MODULE_A101
 // Zephyr includes
 #include <zephyr.h>
@@ -86,9 +87,13 @@ jerry_value_t zjs_a101_init()
     zjs_obj_add_number(obj, 8,  "IO13");  // output also displayed on LED0
 
     // These are onboard LEDs
-    zjs_obj_add_number(obj, 8,  "LED0");
+    zjs_obj_add_number(obj, 26, "LED0");  // active low, red fault LED
     zjs_obj_add_number(obj, 12, "LED1");  // active low
-    zjs_obj_add_number(obj, 26, "LED2");  // active low, red fault LED
+    // LED2 is unavailable when SPI is in use because that reconfigures pin
+    //   IO13 which this is tied to. The filesystem uses SPI to talk to the
+    //   flash chip, so when you use filesystem APIs or ashell (which always
+    //   uses the filesystem) this LED will not work.
+    zjs_obj_add_number(obj, 8,  "LED2");
 
     // These cannot currently be used as GPIOs because they are controlled by
     // the ARC side and we don't have support for that. But they can be used as

@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 // This is an asynchronous version of ButtonLEDs.js, calling gpio.openAsync
 
@@ -13,19 +13,19 @@ console.log("Async GPIO test with two LEDs and a button...");
 var gpio = require("gpio");
 var pins = require("arduino101_pins");
 
-// pins 8 (LED0) and 12 (LED1) are onboard LEDs on Arduino 101
+// LED1 and LED2 are onboard LEDs on Arduino 101
 var pinA = null;
 var pinB = null;
 
-gpio.openAsync({ pin: pins.LED0, activeLow: false }).then(function(pin) {
+gpio.openAsync({pin: pins.LED1, activeLow: true}).then(function(pin) {
     pinA = pin;
 });
 
-gpio.openAsync({ pin: pins.LED1, activeLow: true }).then(function(pin) {
+gpio.openAsync({pin: pins.LED2, activeLow: false}).then(function(pin) {
     pinB = pin;
 });
 
-gpio.openAsync({ pin: pins.IO4, direction: 'in', edge: 'rising' }).then(function(pin) {
+gpio.openAsync({pin: pins.IO4, direction: 'in', edge: 'rising'}).then(function(pin) {
     // tick is the delay between blinks
     var tick = 1000, toggle = false;
 

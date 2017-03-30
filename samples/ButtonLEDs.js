@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 // Test code for Arduino 101 that uses the two onboard LEDs for output, and
 // expects a button or similar input connected to IO4. Blinks the LEDs on and
@@ -11,10 +11,10 @@ console.log("GPIO test with two LEDs and a button...");
 var gpio = require("gpio");
 var pins = require("arduino101_pins");
 
-// pins 8 (LED0) and 12 (LED1) are onboard LEDs on Arduino 101
-var pinA = gpio.open({ pin: pins.LED0, activeLow: false });
-var pinB = gpio.open({ pin: pins.LED1, activeLow: true });
-var pinIn = gpio.open({ pin: pins.IO4, direction: 'in', edge: 'rising' });
+// LED1 and LED2 are onboard LEDs on Arduino 101
+var pinA = gpio.open({pin: pins.LED1, activeLow: true});
+var pinB = gpio.open({pin: pins.LED2, activeLow: false});
+var pinIn = gpio.open({pin: pins.IO4, direction: 'in', edge: 'rising'});
 
 // tick is the delay between blinks
 var tick = 1000, toggle = false;

@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 // Reimplementation of Arduino - Basics - Blink example
 //   - Toggles onboard LEDs as if they were a traffic light
@@ -26,9 +26,9 @@ console.log("Starting TrafficLight example...");
 var gpio = require("gpio");
 var pins = require("arduino101_pins");
 
-var red    = gpio.open({pin: pins.LED2, direction: 'out', activeLow: true});
+var red    = gpio.open({pin: pins.LED0, direction: 'out', activeLow: true});
 var yellow = gpio.open({pin: pins.LED1, direction: 'out', activeLow: true});
-var green  = gpio.open({pin: pins.LED0, direction: 'out', activeLow: false});
+var green  = gpio.open({pin: pins.LED2, direction: 'out', activeLow: false});
 
 var elapsed = 0;
 
