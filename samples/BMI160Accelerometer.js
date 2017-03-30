@@ -3,7 +3,7 @@
 // Test code to use the Accelerometer (subclass of Generic Sensor) API
 // to communicate with the BMI160 inertia sensor on the Arduino 101
 // and obtaining information about acceleration applied to the X, Y and Z axis
-console.log("Accelerometer test...");
+console.log("BMI160 accelerometer test...");
 
 var updateFrequency = 20; // maximum is 100Hz, but in ashell maximum is 20Hz
 
