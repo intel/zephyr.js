@@ -228,7 +228,7 @@ if [ "$RUN" == "all" -o "$RUN" == "1" ]; then
     try_command "helloworld" make $VERBOSE
 
     MODULES=(aio arduino101_pins ble dgram events gpio grove_lcd i2c k64f_pins \
-             ocf performance pwm uart)
+             performance pwm uart)
 
     # individually test build modules with short names (ten chars or less)
     MODNUM=0
@@ -252,7 +252,13 @@ if [ "$RUN" == "all" -o "$RUN" == "1" ]; then
     echo "var buf = new Buffer(10);" >> $TMPFILE
     echo "setTimeout(function() {}, 10);" >> $TMPFILE
 
-    try_command "modules" make $VERBOSE JS=$TMPFILE ROM=256
+    try_command "modules" make $VERBOSE JS=$TMPFILE ROM=250
+
+    # OCF test
+    echo "var ocf = require('ocf');" > $TMPFILE
+    echo "var client = ocf.client;" >> $TMPFILE
+    echo "var server = ocf.server;" >> $TMPFILE
+    try_command "ocf" make $VERBOSE JS=$TMPFILE ROM=250
 
     # individually test special modules
     echo "console.log(3.14159);" > $TMPFILE
