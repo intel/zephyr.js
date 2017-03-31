@@ -245,6 +245,9 @@ static void zjs_sensor_update_reading(jerry_value_t obj,
         return;
     }
 
+    uint64_t timestamp = k_uptime_get();
+    zjs_obj_add_readonly_number(obj, ((double)timestamp), "timestamp");
+
     ZVAL func = zjs_get_property(obj, "onchange");
     if (jerry_value_is_function(func)) {
         ZVAL event = jerry_create_object();
@@ -569,20 +572,10 @@ static jerry_value_t zjs_sensor_create(const jerry_value_t function_obj,
                 zjs_obj_add_readonly_boolean(sensor_obj, option_gravity,
                                              "includeGravity");
             }
-        }
-
-        // initialize default sensor readings to null
-        ZVAL null_val = jerry_create_null();
-        if (channel == SENSOR_CHAN_ACCEL_XYZ ||
-            channel == SENSOR_CHAN_GYRO_XYZ) {
-            zjs_set_readonly_property(sensor_obj, "x", null_val);
-            zjs_set_readonly_property(sensor_obj, "y", null_val);
-            zjs_set_readonly_property(sensor_obj, "z", null_val);
         } else if (channel == SENSOR_CHAN_LIGHT) {
             if (zjs_obj_get_uint32(options, "pin", &pin)) {
                 zjs_obj_add_readonly_number(sensor_obj, pin, "pin");
             }
-            zjs_set_readonly_property(sensor_obj, "illuminance", null_val);
         }
     }
 
@@ -596,6 +589,17 @@ static jerry_value_t zjs_sensor_create(const jerry_value_t function_obj,
         return zjs_error("zjs_sensor_create failed to init\n");
     }
 
+    // initialize default sensor readings to null
+    ZVAL null_val = jerry_create_null();
+    zjs_set_readonly_property(sensor_obj, "timestamp", null_val);
+    if (channel == SENSOR_CHAN_ACCEL_XYZ ||
+        channel == SENSOR_CHAN_GYRO_XYZ) {
+        zjs_set_readonly_property(sensor_obj, "x", null_val);
+        zjs_set_readonly_property(sensor_obj, "y", null_val);
+        zjs_set_readonly_property(sensor_obj, "z", null_val);
+    } else if (channel == SENSOR_CHAN_LIGHT) {
+        zjs_set_readonly_property(sensor_obj, "illuminance", null_val);
+    }
     zjs_obj_add_number(sensor_obj, frequency, "frequency");
     zjs_obj_add_readonly_string(sensor_obj, "unconnected", "state");
     jerry_set_prototype(sensor_obj, zjs_sensor_prototype);
