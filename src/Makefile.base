@@ -78,7 +78,8 @@ obj-$(CONFIG_BOARD_ARDUINO_101) += \
 	zjs_ipm.o
 
 obj-$(CONFIG_BOARD_FRDM_K64F) += \
-	zjs_k64f_pins.o
+	zjs_k64f_pins.o \
+	zjs_pinmux.o
 
 ifeq ($(ASHELL), y)
 $(info Insecure Mode (development))
