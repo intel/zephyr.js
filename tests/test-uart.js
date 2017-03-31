@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 // Testing UART APIs
 
@@ -43,17 +43,24 @@ board.init({ port: "tty0", baud: 115200 }).then(function (uart) {
 
     uart.write(new Buffer("write: " + true + "\r\n")).then(function () {
         assert(true, "uart: write data with boolean");
+
+        assert.result();
     }).catch(function (error) {
         assert(false, "uart: write data with boolean");
-    });
-
-    uart.write("write error value test\r\n").then(function () {
-    }).catch(function (error) {
-        assert(error !== null && typeof error === "object",
-                    "uart: catch error for UART.write");
 
         assert.result();
     });
+
+    try {
+        uart.write("write error value test\r\n").then(function () {
+        }).catch(function (error) {
+        });
+
+        assert(false, "uart: write error value");
+    } catch (error) {
+        assert(typeof error === "object" && !!error,
+               "uart: write error value");
+    }
 }).catch(function (error) {
     assert(false, "uart: set init as tty0 and 115200");
 });
