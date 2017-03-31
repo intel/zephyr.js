@@ -123,9 +123,9 @@ static void udp_received(struct net_context *context,
     net_addr_ntop(family, addr, addr_str, sizeof(addr_str));
 
     zjs_buffer_t *buf;
-    ZVAL buf_js = zjs_buffer_create(recv_len, &buf);
+    ZVAL_MUTABLE buf_js = zjs_buffer_create(recv_len, &buf);
+    ZVAL rinfo = jerry_create_object();
     if (buf) {
-        ZVAL rinfo = jerry_create_object();
         zjs_obj_add_number(rinfo, ntohs(NET_UDP_BUF(net_buf)->src_port),
                            "port");
         zjs_obj_add_string(rinfo, family == AF_INET ? "IPv4" : "IPv6",
