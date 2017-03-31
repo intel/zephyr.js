@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -101,9 +101,7 @@ static void test_validate_args()
 {
     // create some dummy objects
     ZVAL obj1 = jerry_create_object();
-    ZVAL obj2 = jerry_create_object();
-    ZVAL str1 = jerry_create_string("arthur");
-    ZVAL str2 = jerry_create_string("ford");
+    ZVAL str1 = jerry_create_string((jerry_char_t *)"arthur");
     ZVAL func1 = jerry_create_external_function(dummy_func);
     ZVAL array1 = jerry_create_array(3);
     ZVAL num1 = jerry_create_number(42);

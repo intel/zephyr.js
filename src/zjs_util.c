@@ -309,7 +309,18 @@ void zjs_default_convert_pin(uint32_t orig, int *dev, int *pin) {
 // when accuracy isn't as important as space
 uint16_t zjs_compress_32_to_16(uint32_t num)
 {
+    if (num == 0) {
+        // GCC states that can't use __builtin_clz
+        // if x is 0, because the result is undefined
+        return 0;
+    }
+
     int zeroes = __builtin_clz(num);
+
+    if (sizeof(unsigned long) > 4) {
+        zeroes -= (sizeof(unsigned long) - 4) * 8;
+    }
+
     if (zeroes >= 17)
         return (uint16_t)num;
 

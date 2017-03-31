@@ -37,7 +37,11 @@ JERRY_LIBS += 		-l jerry-core -lm
 
 JERRY_LIB_PATH += 	-L $(JERRY_BASE)/build/lib/
 
-SNAPSHOT_LIBS +=	$(JERRY_LIBS) -pthread
+SNAPSHOT_LIBS +=	$(JERRY_LIBS)
+
+ifeq ($(shell uname -s), Linux)
+SNAPSHOT_LIBS +=	-pthread
+endif
 
 SNAPSHOT_DEFINES +=	-DZJS_LINUX_BUILD \
 			-DZJS_PRINT_FLOATS
@@ -51,10 +55,6 @@ SNAPSHOT_FLAGS += 	-fno-asynchronous-unwind-tables \
 			-fno-stack-protector \
 			-ffunction-sections \
 			-fdata-sections \
-			-Wno-unused-but-set-variable \
-			-fno-reorder-functions \
-			-fno-defer-pop \
-			-Wno-pointer-sign \
 			-fno-strict-overflow \
 			-Werror=implicit-int \
 			-Wall \
@@ -83,7 +83,7 @@ snapshot_copy:
 snapshot: setup snapshot_copy $(BUILD_OBJ)
 	@echo "Building for snapshot $(BUILD_OBJ)"
 	cd deps/jerryscript; python ./tools/build.py $(JERRY_FLAGS) $(VERBOSE);
-	gcc $(SNAPSHOT_INCLUDES) $(JERRY_LIB_PATH) -static -o $(BUILD_DIR)/snapshot $(BUILD_OBJ) $(SNAPSHOT_FLAGS) $(CFLAGS) $(SNAPSHOT_DEFINES) $(SNAPSHOT_LIBS)
+	gcc $(SNAPSHOT_INCLUDES) $(JERRY_LIB_PATH) -o $(BUILD_DIR)/snapshot $(BUILD_OBJ) $(SNAPSHOT_FLAGS) $(CFLAGS) $(SNAPSHOT_DEFINES) $(SNAPSHOT_LIBS)
 
 .PHONY: clean
 clean:

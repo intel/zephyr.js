@@ -1,5 +1,7 @@
 # Copyright (c) 2016-2017, Intel Corporation.
 
+OS := $(shell uname)
+
 BOARD ?= arduino_101
 RAM ?= 55
 ROM ?= 256
@@ -78,7 +80,9 @@ ASHELL=y
 endif
 
 ifeq ($(BOARD), arduino_101)
+ifneq ($(OS), Darwin)
 EXT_JERRY_FLAGS += -DENABLE_LTO=ON
+endif
 $(info makecmd: $(MAKECMDGOALS))
 ifeq ($(MAKECMDGOALS),)
 TARGETS=all
@@ -202,7 +206,11 @@ analyze: $(JS)
 		echo "ccflags-y += -DZJS_SNAPSHOT_BUILD" >> src/Makefile; \
 	fi
 	@echo "ccflags-y += $(shell ./scripts/analyze.sh $(BOARD) $(JS) $(CONFIG) $(ASHELL))" | tee -a src/Makefile arc/src/Makefile
-	@sed -i '/This is a generated file/r./zjs.conf.tmp' src/Makefile
+	@if [ "$(OS)" = "Darwin" ]; then \
+		sed -i.bu '/This is a generated file/r./zjs.conf.tmp' src/Makefile; \
+	else \
+		sed -i '/This is a generated file/r./zjs.conf.tmp' src/Makefile; \
+	fi
 	@# Add the include for the OCF Makefile only if the script is using OCF
 	@if grep BUILD_MODULE_OCF src/Makefile; then \
 		echo "CONFIG_BLUETOOTH_DEVICE_NAME=\"$(DEVICE_NAME)\"" >> prj.conf.tmp; \
@@ -225,7 +233,11 @@ setup:
 	@cat fragments/prj.conf.base >> prj.conf
 
 ifeq ($(BOARD), qemu_x86)
+ifeq ($(OS), Darwin)
+	@cat fragments/prj.conf.qemu_x86_osx >> prj.conf
+else
 	@cat fragments/prj.conf.qemu_x86 >> prj.conf
+endif
 else
 ifeq ($(ASHELL), y)
 	@cat fragments/prj.conf.ashell >> prj.conf
@@ -238,6 +250,11 @@ endif
 endif
 ifeq ($(BOARD), arduino_101)
 	@cat fragments/prj.conf.arduino_101 >> prj.conf
+ifeq ($(OS), Darwin)
+	# work around for OSX where the xtool toolchain do not
+	# support iamcu instruction set on the Arduino 101
+	@echo "CONFIG_X86_IAMCU=n" >> prj.conf
+endif
 	@printf "CONFIG_PHYS_RAM_ADDR=0xA800%x\n" $$(((80 - $(RAM)) * 1024)) >> prj.conf
 	@echo "CONFIG_RAM_SIZE=$(RAM)" >> prj.conf
 	@echo "CONFIG_ROM_SIZE=$(ROM)" >> prj.conf
@@ -346,10 +363,18 @@ arc: analyze
 	fi
 	@printf "CONFIG_SRAM_SIZE=%d\n" $$((79 - $(RAM))) >> arc/prj.conf
 	@printf "CONFIG_FLASH_BASE_ADDRESS=0x400%x\n" $$((($(ROM) + 64) * 1024)) >> arc/prj.conf
-	@cd arc; make BOARD=arduino_101_sss
+	@if [ "$(OS)" = "Darwin" ]; then \
+		cd arc; make BOARD=arduino_101_sss CROSS_COMPILE=$(ARC_CROSS_COMPILE); \
+	else \
+		cd arc; make BOARD=arduino_101_sss; \
+	fi
 ifeq ($(BOARD), arduino_101)
 	@echo
+ifeq ($(OS), Darwin)
+	@if test $$(((296 - $(ROM)) * 1024)) -lt $$(stat -f "%z" $(A101SSBIN)); then echo Error: ARC image \($$(stat -f "%z" $(A101SSBIN)) bytes\) will not fit in available $$(((296 - $(ROM))))KB space. Try decreasing ROM.; return 1; fi
+else
 	@if test $$(((296 - $(ROM)) * 1024)) -lt $$(stat --printf="%s" $(A101SSBIN)); then echo Error: ARC image \($$(stat --printf="%s" $(A101SSBIN)) bytes\) will not fit in available $$(((296 - $(ROM))))KB space. Try decreasing ROM.; return 1; fi
+endif
 endif
 
 # Run debug server over JTAG

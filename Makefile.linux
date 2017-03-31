@@ -37,7 +37,11 @@ JERRY_LIBS += 		-l jerry-core -lm
 
 JERRY_LIB_PATH += 	-L $(JERRY_BASE)/build/lib/
 
-LINUX_LIBS += $(JERRY_LIBS) -pthread
+LINUX_LIBS +=		$(JERRY_LIBS)
+
+ifeq ($(shell uname -s), Linux)
+LINUX_LIBS +=		-pthread
+endif
 
 LINUX_DEFINES +=	-DZJS_LINUX_BUILD \
 			-DBUILD_MODULE_EVENTS \
@@ -56,8 +60,6 @@ LINUX_FLAGS += 	-fno-asynchronous-unwind-tables \
 		-fno-stack-protector \
 		-ffunction-sections \
 		-fdata-sections \
-		-fno-defer-pop \
-		-Wno-pointer-sign \
 		-fno-strict-overflow \
 		-Werror=implicit-int \
 		-Wall \

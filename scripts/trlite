@@ -298,7 +298,7 @@ function check_jstring_util() {
     CALLCOUNT=$(grep jerry_string_to_char_buffer src/zjs_util.c | wc -l)
 
     # make sure there are exactly two calls to the function
-    if [ "$CALLCOUNT" != "2" ]; then
+    if [ $CALLCOUNT != "2" ]; then
         echo "Error: Expected two calls to jerry_string_to_char_buffer in zjs_util.c!"
         echo "Use zjs_copy_jstring and zjs_alloc_from_jstring instead."
         return 1;
