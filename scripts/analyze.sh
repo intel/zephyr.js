@@ -251,10 +251,11 @@ if check_for_require fs || check_config_file ZJS_FS; then
     >&2 echo Using module: FS
     OBJ_NAME=$(grep "require *( *['\"]fs['\"] *)*;" $SCRIPT | cut -d'=' -f1 | cut -d' ' -f2)
 
-    if grep "$OBJ_NAME\..*(" $SCRIPT | grep -q -v "Sync"; then
-        MODULES+=" -DZJS_FS_ASYNC_APIS"
+    if [ "$OBJ_NAME" != "" ]; then
+        if grep "$OBJ_NAME\..*(" $SCRIPT | grep -q -v "Sync"; then
+            MODULES+=" -DZJS_FS_ASYNC_APIS"
+        fi
     fi
-
     MODULES+=" -DBUILD_MODULE_FS -DBUILD_MODULE_BUFFER"
     if [ $BOARD = "arduino_101" ]; then
         echo "CONFIG_FS_FAT_FLASH_DISK_W25QXXDV=y" >> $PRJFILE
