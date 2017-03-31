@@ -186,9 +186,9 @@ function onfound(resource) {
     }, 13000);
 
     setTimeout(function() {
-        client.update(resource).then(function(resource) {
-            resource.properties.state = false;
+        resource.properties.state = false;
 
+        client.update(resource).then(function(resource) {
             client.retrieve(resource.deviceId).then(function(res) {
                 assert(res.properties.state === false,
                        "OCFClient: update resource properties data");
