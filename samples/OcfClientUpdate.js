@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 // Sample client that works with the linux server found in iotivity-constrained
 // This sample will find the resource, then periodically retrieve and update
@@ -35,7 +35,7 @@ function onfound(resource) {
     t1 = setInterval(function() {
         console.log("Updating/Retrieving...");
         lightOn = lightOn ? false : true;
-        resource.state = lightOn;
+        resource.properties.state = lightOn;
         client.update(resource).then(function(resource) {
             console.log("update successful");
             client.retrieve(resource.deviceId, { observable: false }).then(function(res) {
