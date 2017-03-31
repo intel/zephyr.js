@@ -59,6 +59,7 @@ function GenericSensor() {
     var changeFlag = false;
     var errorFlag = true;
     var defaultState, startState, stopState, middleState, middleNum;
+    var middleNumX, middleNumY, middleNumZ, tmpTimestamp;
 
     genericSensor.test = function(sensor, sensorType) {
         assert(typeof sensor === "object" && sensor !== null,
@@ -99,10 +100,21 @@ function GenericSensor() {
         };
 
         sensor.onchange = function() {
+            tmpTimestamp = sensor.timestamp;
+
             if (changeFlag === true) {
+                assert(typeof sensor.timestamp === "number" &&
+                       sensor.timestamp !== null,
+                       "sensor: timestamp value is defined");
+
+                middleNum = sensor.timestamp;
+                sensor.timestamp = middleNum + 1;
+                assert(sensor.timestamp === middleNum,
+                       "sensor: timestamp is readonly property");
+
                 if (sensorType === "AmbientLight") {
                     assert(typeof sensor.illuminance === "number" &&
-                           typeof sensor.illuminance !== null,
+                           sensor.illuminance !== null,
                            "sensor: reading value for '" + sensorType + "'");
 
                     middleNum = sensor.illuminance;
@@ -110,22 +122,30 @@ function GenericSensor() {
                     assert(sensor.illuminance === middleNum,
                            "sensor: reading is readonly property");
 
+                    console.log("sensor.timestamp: " + sensor.timestamp);
                     console.log(sensorType + ": " + sensor.illuminance);
                 } else if (sensorType === "Accelerometer" ||
                            sensorType === "Gyroscope") {
                     assert(typeof sensor.x === "number" &&
-                           typeof sensor.x !== null &&
+                           sensor.x !== null &&
                            typeof sensor.y === "number" &&
-                           typeof sensor.y !== null &&
+                           sensor.y !== null &&
                            typeof sensor.z === "number" &&
-                           typeof sensor.z !== null,
+                           sensor.z !== null,
                            "sensor: reading value for '" + sensorType + "'");
 
-                    middleNum = sensor.x;
-                    sensor.x = middleNum + 1;
-                    assert(sensor.x === middleNum,
+                    middleNumX = sensor.x;
+                    sensor.x = middleNumX + 1;
+                    middleNumY = sensor.y;
+                    sensor.y = middleNumY + 1;
+                    middleNumZ = sensor.z;
+                    sensor.z = middleNumZ + 1;
+                    assert(sensor.x === middleNumX &&
+                           sensor.y === middleNumY &&
+                           sensor.z === middleNumZ,
                            "sensor: reading is readonly property");
 
+                    console.log("sensor.timestamp: " + sensor.timestamp);
                     console.log(sensorType + ": " +
                                 " x=" + sensor.x +
                                 " y=" + sensor.y +
@@ -171,6 +191,9 @@ function GenericSensor() {
         }, 20000);
 
         setTimeout(function() {
+            assert(tmpTimestamp === sensor.timestamp,
+                       "sensor: timestamp value is latest reading value");
+
             result();
         }, 25000);
     }
