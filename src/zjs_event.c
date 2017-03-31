@@ -374,7 +374,7 @@ bool zjs_trigger_event(jerry_value_t obj,
     ZVAL event_obj = zjs_get_property(map, event);
 
     if (!jerry_value_is_object(event_obj)) {
-        ERR_PRINT("event object not found\n");
+        DBG_PRINT("event object not found\n");
         return false;
     }
 
