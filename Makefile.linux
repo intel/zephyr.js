@@ -56,8 +56,7 @@ LINUX_FLAGS += 	-fno-asynchronous-unwind-tables \
 		-fno-stack-protector \
 		-ffunction-sections \
 		-fdata-sections \
-		-fno-defer-pop \
-		-Wno-pointer-sign \
+		-Wno-error \
 		-fno-strict-overflow \
 		-Werror=implicit-int \
 		-Wall \

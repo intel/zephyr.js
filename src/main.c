@@ -118,7 +118,7 @@ uint8_t process_cmd_line(int argc, char *argv[])
             } else {
                 char *str_time = argv[i + 1];
                 exit_after = atoi(str_time);
-                ZJS_PRINT("jslinux will terminate after %lu milliseconds\n",
+                ZJS_PRINT("jslinux will terminate after %u milliseconds\n",
                           exit_after);
                 clock_gettime(CLOCK_MONOTONIC, &exit_timer);
             }
@@ -289,7 +289,7 @@ int main(int argc, char *argv[])
             uint32_t elapsed = (1000 * (now.tv_sec - exit_timer.tv_sec)) +
                     ((now.tv_nsec / 1000000) - (exit_timer.tv_nsec / 1000000));
             if (elapsed >= exit_after) {
-                ZJS_PRINT("%lu milliseconds have passed, exiting!\n", elapsed);
+                ZJS_PRINT("%u milliseconds have passed, exiting!\n", elapsed);
                 return 0;
             }
         }
