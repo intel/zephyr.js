@@ -69,53 +69,6 @@ jerry_value_t *zjs_get_callback_func_list(zjs_callback_id id, int *count);
 bool zjs_remove_callback_list_func(zjs_callback_id id, jerry_value_t js_func);
 
 /*
- * Create/add a function to a callback list. If the 'id' parameter is -1, a new
- * callback list will be created. If the 'id' parameter matches an existing
- * callback list, the JS callback function will be added to the list.
- *
- * @param js_func       JS function to be added to the callback list
- * @param handle        Module specific handle, given to pre/post
- * @param post          Function called after the JS function (explained above)
- * @param id            ID for this callback list (-1 if its a new list)
- *
- * @return              New callback ID for this list (or existing ID)
- */
-zjs_callback_id zjs_add_callback_list(jerry_value_t js_func,
-                                      jerry_value_t this,
-                                      void *handle,
-                                      zjs_post_callback_func post,
-                                      zjs_callback_id id);
-
-/*
- * Add/register a callback function
- *
- * @param js_func       JS function to be called (this could be native too)
- * @param handle        Module specific handle, given to pre/post
- * @param post          Function called after the JS function (explained above)
- *
- * @return              ID associated with this callback, use this ID to reference this CB
- */
-zjs_callback_id zjs_add_callback(jerry_value_t js_func,
-                                 jerry_value_t this,
-                                 void *handle,
-                                 zjs_post_callback_func post);
-
-/*
- * Add a JS callback that will only get called once. After it is called it will
- * be automatically removed.
- *
- * @param js_func       JS function to be called (this could be native too)
- * @param handle        Module specific handle, given to pre/post
- * @param post          Function called after the JS function (explained above)
- *
- * @return              ID associated with this callback, use this ID to reference this CB
- */
-zjs_callback_id zjs_add_callback_once(jerry_value_t js_func,
-                                      jerry_value_t this,
-                                      void *handle,
-                                      zjs_post_callback_func post);
-
-/*
  * Change a callbacks JS function
  *
  * @param id            ID of callback
@@ -149,6 +102,17 @@ void zjs_remove_callback(zjs_callback_id id);
  */
 void zjs_remove_all_callbacks();
 
+void signal_callback_priv(zjs_callback_id id,
+                          const void *args,
+                          uint32_t size
+#ifdef DEBUG_BUILD
+                          , const char *file,
+                          const char *func);
+#else
+);
+#endif
+
+#ifndef DEBUG_BUILD
 /*
  * Signal the system to make a callback. The callback will not be called
  * immediately, but rather once the system has time to service the callback
@@ -170,7 +134,90 @@ void zjs_remove_all_callbacks();
  * @param args          Arguments given to the JS/C callback
  * @param size          Size of arguments (in bytes)
  */
-void zjs_signal_callback(zjs_callback_id id, const void *args, uint32_t size);
+#define zjs_signal_callback(id, args, size) \
+    signal_callback_priv(id, args, size)
+#else
+#define zjs_signal_callback(id, args, size) \
+    signal_callback_priv(id, args, size, __FILE__, __func__)
+#endif
+
+
+zjs_callback_id add_callback_priv(jerry_value_t js_func,
+                                  jerry_value_t this,
+                                  void *handle,
+                                  zjs_post_callback_func post,
+                                  uint8_t once
+#ifdef DEBUG_BUILD
+                                  , const char *file,
+                                  const char *func);
+#else
+                                  );
+#endif
+
+#ifndef DEBUG_BUILD
+/*
+* Add/register a callback function
+*
+* @param js_func       JS function to be called (this could be native too)
+* @param handle        Module specific handle, given to pre/post
+* @param post          Function called after the JS function (explained above)
+*
+* @return              ID associated with this callback, use this ID to reference this CB
+*/
+#define zjs_add_callback(func, this, handle, post) \
+    add_callback_priv(func, this, handle, post, 0)
+
+/*
+* Add a JS callback that will only get called once. After it is called it will
+* be automatically removed.
+*
+* @param js_func       JS function to be called (this could be native too)
+* @param handle        Module specific handle, given to pre/post
+* @param post          Function called after the JS function (explained above)
+*
+* @return              ID associated with this callback, use this ID to reference this CB
+*/
+#define zjs_add_callback_once(func, this, handle, post) \
+    add_callback_priv(func, this, handle, post, 1);
+#else
+#define zjs_add_callback(func, this, handle, post) \
+    add_callback_priv(func, this, handle, post, 0, __FILE__, __func__)
+#define zjs_add_callback_once(func, this, handle, post) \
+    add_callback_priv(func, this, handle, post, 1, __FILE__, __func__);
+#endif
+
+zjs_callback_id add_callback_list_priv(jerry_value_t js_func,
+                                       jerry_value_t this,
+                                       void *handle,
+                                       zjs_post_callback_func post,
+                                       zjs_callback_id id
+#ifdef DEBUG_BUILD
+                                       , const char *file,
+                                       const char *func);
+#else
+                                       );
+#endif
+
+#ifndef DEBUG_BUILD
+/*
+* Create/add a function to a callback list. If the 'id' parameter is -1, a new
+* callback list will be created. If the 'id' parameter matches an existing
+* callback list, the JS callback function will be added to the list.
+*
+* @param js_func       JS function to be added to the callback list
+* @param handle        Module specific handle, given to pre/post
+* @param post          Function called after the JS function (explained above)
+* @param id            ID for this callback list (-1 if its a new list)
+*
+* @return              New callback ID for this list (or existing ID)
+*/
+#define zjs_add_callback_list(js_func, this, handle, post, id) \
+    add_callback_list_priv(js_func, this, handle, post, id)
+#else
+#define zjs_add_callback_list(js_func, this, handle, post, id) \
+    add_callback_list_priv(js_func, this, handle, post, id, __FILE__, __func__);
+#endif
+
 
 /*
  * Add/register a C callback
