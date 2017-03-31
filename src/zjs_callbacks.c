@@ -100,12 +100,11 @@ static void set_info_string(char **str, const char *file, const char *func)
     uint32_t file_len = strlen(file);
     uint32_t func_len = strlen(func);
     *str = zjs_malloc(file_len + func_len + 4);
-    strncpy(*str, file, file_len);
-    (*str)[file_len] = ':';
-    strncpy(*str + file_len + 1, func, func_len);
-    (*str)[file_len + func_len + 1] = '(';
-    (*str)[file_len + func_len + 2] = ')';
-    (*str)[file_len + func_len + 3] = '\0';
+    if (!(*str)) {
+        ERR_PRINT("failed to create file/func info string\n");
+        return;
+    }
+    snprintf(*str, file_len + func_len + 4, "%s:%s()", file, func);
 }
 #endif
 
