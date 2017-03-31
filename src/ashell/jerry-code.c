@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 /**
  * @file
@@ -14,7 +14,7 @@
 
 /* JerryScript includes */
 #include "jerry-port.h"
-
+#include "jerry-code.h"
 #include "file-utils.h"
 
 /* Zephyr.js init everything */
@@ -32,7 +32,53 @@ void jerry_port_default_set_log_level(jerry_log_level_t level); /** Inside jerry
 
 static jerry_value_t parsed_code = 0;
 
-#define MAX_BUFFER_SIZE 4096
+typedef struct requires_list {
+    char *file_name;
+    struct requires_list *next;
+} requires_list_t;
+
+static requires_list_t *req_list = NULL;
+static requires_list_t *loaded_list = NULL;
+
+static bool is_loaded(const char *file_name)
+{
+    if(loaded_list) {
+        requires_list_t *cur = loaded_list;
+        while (cur) {
+            if (strcmp(file_name, cur->file_name) != 0) {
+                cur = cur->next;
+            }
+            else {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+static void push_to_list(requires_list_t **list, const char *item)
+{
+    requires_list_t *new = zjs_malloc(sizeof(requires_list_t));
+    size_t len = strlen(item) + 1;
+    new->file_name = (char*)zjs_malloc(len);
+    strncpy(new->file_name, item, len);
+    new->file_name[len] = '\0';
+    new->next = *list;
+    *list = new;
+}
+
+static void free_list(requires_list_t *list)
+{
+    if (list) {
+        requires_list_t *cur = list;
+        while (cur) {
+            zjs_free(cur->file_name);
+            list = list->next;
+            zjs_free(cur);
+            cur = list;
+        }
+    }
+}
 
 static void javascript_print_value(const jerry_value_t value)
 {
@@ -74,6 +120,100 @@ static void javascript_print_value(const jerry_value_t value)
     jerry_port_console("\n");
 }
 
+static int read_file(const char *file_name, char **file_buf)
+{
+    fs_file_t *fp = fs_open_alloc(file_name, "r");
+
+    if (fp == NULL)
+        return 0;
+
+    ssize_t size = fs_size(fp);
+    if (size == 0) {
+        comms_printf("[ERR] Empty file (%s)\n", file_name);
+        fs_close_alloc(fp);
+        return 0;
+    }
+
+    *file_buf = (char *)zjs_malloc(size);
+    if (*file_buf == NULL) {
+        comms_printf("[ERR] Not enough memory for (%s)\n", file_name);
+        fs_close_alloc(fp);
+        return 0;
+    }
+
+    ssize_t brw = fs_read(fp, *file_buf, size);
+
+    if (brw != size) {
+        comms_printf("[ERR] Failed loading code %s\n", file_name);
+        fs_close_alloc(fp);
+        return 0;
+    }
+
+    return size;
+}
+
+static void find_requires(char *filebuf)
+{
+    char *ptr1 = filebuf;
+    char *ptr2 = NULL;
+    char *filestr = NULL;
+    char *ext_check = NULL;
+    while(ptr1 != NULL){
+
+        // Find next instance of "require"
+        ptr1 = strstr(ptr1, "require");
+
+        if (ptr1 != NULL) {
+            // Find the text between the two " " after require
+            ptr1 = strchr(ptr1, '"')+1;
+            ptr2 = strchr(ptr1, '"');
+            size_t len = ptr2-ptr1;
+
+            // Allocate the memory for the string
+            filestr = (char*)zjs_malloc(len+1);
+            strncpy(filestr, ptr1, len);
+            filestr[len] = '\0';
+
+            // Check that this is a *.js require and not a zephyr require
+            // Also check that the file hasn't already been loaded
+            ext_check = &filestr[len-3];
+
+            if (strcmp(ext_check, ".js") == 0 && !is_loaded(filestr))
+            {
+                push_to_list(&req_list, filestr);
+            }
+            zjs_free(filestr);
+            filestr = NULL;
+        }
+    }
+}
+
+static void load_require_modules(char *file_buffer)
+{
+    // Check if the file we've been asked to run requires any JS modules
+    find_requires(file_buffer);
+
+    // If it does, check if they have requires as well, and then eval the code
+    while (req_list) {
+        char *req_file_buffer = NULL;
+        uint file_size = read_file(req_list->file_name, &req_file_buffer);
+
+        if (file_size > 0)
+        {
+            find_requires(req_file_buffer);
+            javascript_eval_code(req_file_buffer, file_size);
+            zjs_free(req_file_buffer);
+            // Add file to the loaded list
+            push_to_list(&loaded_list, req_list->file_name);
+        }
+        // Go to the next item in the require list
+        requires_list_t *cur = req_list;
+        zjs_free(cur->file_name);
+        req_list = req_list->next;
+        zjs_free(cur);
+    }
+}
+
 static void javascript_print_error(jerry_value_t error_value)
 {
     if (!jerry_value_has_error_flag(error_value))
@@ -93,11 +233,11 @@ static void javascript_print_error(jerry_value_t error_value)
     zjs_free(msg);
 }
 
-void javascript_eval_code(const char *source_buffer)
+void javascript_eval_code(const char *source_buffer, size_t size)
 {
     jerry_port_default_set_log_level(JERRY_LOG_LEVEL_TRACE);
     ZVAL ret_val = jerry_eval((jerry_char_t *) source_buffer,
-                              strnlen(source_buffer, MAX_BUFFER_SIZE),
+                              size,
                               false);
 
     if (jerry_value_has_error_flag(ret_val)) {
@@ -202,6 +342,11 @@ int javascript_parse_code(const char *file_name, bool show_lines)
         comms_println("[END]");
     }
 
+    // Find and load all required js modules
+    load_require_modules(buf);
+    free_list(req_list);
+    free_list(loaded_list);
+
     /* Setup Global scope code */
     parsed_code = jerry_parse((const jerry_char_t *) buf, size, false);
     if (jerry_value_has_error_flag(parsed_code)) {
@@ -229,9 +374,4 @@ void javascript_run_code(const char *file_name)
     if (jerry_value_has_error_flag(ret_value)) {
         javascript_print_error(ret_value);
     }
-}
-
-void javascript_run_snapshot(const char *file_name)
-{
-
 }
