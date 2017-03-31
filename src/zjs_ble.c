@@ -308,11 +308,14 @@ static void zjs_ble_write_c_callback(void *handle, const void *argv)
 
     ZVAL_MUTABLE buf_obj;
     if (cb->buffer && cb->buffer_size > 0) {
-        buf_obj = zjs_buffer_create(cb->buffer_size);
-        zjs_buffer_t *buf = zjs_buffer_find(buf_obj);
-
+        zjs_buffer_t *buf;
+        buf_obj = zjs_buffer_create(cb->buffer_size, &buf);
         if (buf) {
             memcpy(buf->buffer, cb->buffer, cb->buffer_size);
+        }
+        else {
+            // can't pass object with error flag as a JS arg
+            jerry_value_clear_error_flag(&buf_obj);
         }
     }
     else {

@@ -51,43 +51,36 @@ static jerry_value_t zjs_i2c_read_base(const jerry_value_t this,
     uint32_t bus;
     zjs_obj_get_uint32(this, "bus", &bus);
     uint32_t address = (uint32_t)jerry_get_number_value(argv[0]);
-    ZVAL buf_obj = zjs_buffer_create(size);
     zjs_buffer_t *buf;
-
-    if (jerry_value_is_object(buf_obj)) {
-        buf = zjs_buffer_find(buf_obj);
-
-        if (!burst && (register_addr != 0)) {
-            // i2c_read checks the first byte for the register address
-            // i2c_burst_read doesn't
-            buf->buffer[0] = (uint8_t)register_addr;
+    jerry_value_t buf_obj = zjs_buffer_create(size, &buf);
+    if (buf) {
+        if (!burst) {
+            if (register_addr != 0) {
+                // i2c_read checks the first byte for the register address
+                // i2c_burst_read doesn't
+                buf->buffer[0] = (uint8_t)register_addr;
+            }
+            int error_msg = zjs_i2c_handle_read((uint8_t)bus,
+                                                buf->buffer,
+                                                buf->bufsize,
+                                                (uint16_t)address);
+            if (error_msg != 0) {
+                ERR_PRINT("i2c_read failed with error %i\n", error_msg);
+            }
         }
-    }
-    else {
-        return zjs_error("zjs_i2c_read_base: buffer creation failed");
-    }
-
-    if (!burst) {
-        int error_msg = zjs_i2c_handle_read((uint8_t)bus,
-                                            buf->buffer,
-                                            buf->bufsize,
-                                            (uint16_t)address);
-        if (error_msg != 0) {
-            ERR_PRINT("i2c_read failed with error %i\n", error_msg);
-        }
-    }
-    else {
-        int error_msg = zjs_i2c_handle_burst_read((uint8_t)bus,
-                                                  buf->buffer,
-                                                  buf->bufsize,
-                                                  (uint16_t)address,
-                                                  (uint16_t)register_addr);
-        if (error_msg != 0) {
-            ERR_PRINT("i2c_read failed with error %i\n", error_msg);
+        else {
+            int error_msg = zjs_i2c_handle_burst_read((uint8_t)bus,
+                                                      buf->buffer,
+                                                      buf->bufsize,
+                                                      (uint16_t)address,
+                                                      (uint16_t)register_addr);
+            if (error_msg != 0) {
+                ERR_PRINT("i2c_read failed with error %i\n", error_msg);
+            }
         }
     }
 
-    return jerry_acquire_value(buf_obj);
+    return buf_obj;
 }
 
 static jerry_value_t zjs_i2c_read(const jerry_value_t function_obj,

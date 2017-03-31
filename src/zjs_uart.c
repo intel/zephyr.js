@@ -107,11 +107,13 @@ static void uart_c_callback(void *h, const void *args)
         return;
     }
     if (handle->size >= handle->min) {
-        handle->buf_obj = zjs_buffer_create(handle->size);
-        zjs_buffer_t *buffer = zjs_buffer_find(handle->buf_obj);
+        zjs_buffer_t *buffer;
+        handle->buf_obj = zjs_buffer_create(handle->size, &buffer);
 
-        memcpy(buffer->buffer, args, handle->size);
+        if (buffer) {
+            memcpy(buffer->buffer, args, handle->size);
 
+        }
         zjs_trigger_event_now(handle->uart_obj, "read", &handle->buf_obj, 1,
                               post_event, NULL);
 

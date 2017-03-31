@@ -122,16 +122,23 @@ static void udp_received(struct net_context *context,
     }
     net_addr_ntop(family, addr, addr_str, sizeof(addr_str));
 
-    ZVAL buf_js = zjs_buffer_create(recv_len);
-    zjs_buffer_t *buf = zjs_buffer_find(buf_js);
+    zjs_buffer_t *buf;
+    ZVAL buf_js = zjs_buffer_create(recv_len, &buf);
+    if (buf) {
+        ZVAL rinfo = jerry_create_object();
+        zjs_obj_add_number(rinfo, ntohs(NET_UDP_BUF(net_buf)->src_port),
+                           "port");
+        zjs_obj_add_string(rinfo, family == AF_INET ? "IPv4" : "IPv6",
+                           "family");
+        zjs_obj_add_string(rinfo, addr_str, "address");
 
-    ZVAL rinfo = jerry_create_object();
-    zjs_obj_add_number(rinfo, ntohs(NET_UDP_BUF(net_buf)->src_port), "port");
-    zjs_obj_add_string(rinfo, family == AF_INET ? "IPv4" : "IPv6", "family");
-    zjs_obj_add_string(rinfo, addr_str, "address");
-
-    net_buf_gather(net_buf, buf->buffer);
-    net_nbuf_unref(net_buf);
+        net_buf_gather(net_buf, buf->buffer);
+        net_nbuf_unref(net_buf);
+    }
+    else {
+        // can't pass object with error flag as a JS arg
+        jerry_value_clear_error_flag(&buf_js);
+    }
 
     jerry_value_t args[2] = {buf_js, rinfo};
     zjs_signal_callback(handle->message_cb_id, args, sizeof(args));
