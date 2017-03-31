@@ -6,7 +6,6 @@
 
 var client = require('ocf').client;
 
-
 console.log("Started OCF client");
 
 client.on('error', function(error) {
