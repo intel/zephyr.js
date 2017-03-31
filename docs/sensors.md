@@ -12,11 +12,13 @@ ZJS Generic Sensor API implements the W3C Sensor API, and it's intended to
 provide a consistent API that allows apps to communicate with sensors like
 accelerometer and gyroscope. Since the W3C Sensor API is still a draft spec,
 our implementation only provide a subset of the API and the API could be
-slightly different, but we try to follow the latest spec as closely as possible.
+slightly different, but we try to follow the latest spec as closely as
+possible.
 
-The currently supported hardware are Arduino 101s with its built-in BMI160
-accelerometer and gyroscope, also ambient light sensor that can be connected
-using analog pin.
+Note: The currently supported hardware is Arduino 101 with its built-in
+BMI160 chip with accelerometer, gyroscope, and temperature.  The supported
+ambient light sensor is the Grove light sensor that comes with the
+Grove starter kit, that can be connected using an analog pin.
 
 Web IDL
 -------
@@ -26,17 +28,18 @@ specific API functions.
 ####Sensor Interface
 ```javascript
 interface Sensor {
-    readonly attribute SensorState state;   // The current state of Sensor object
-    attribute double frequency;             // The frequency set
-    void start();                           // Starts the sensor
-    void stop();                            // Stops the sensor
-    attribute ChangeCallback onchange;      // Callback handler for change events
-    attribute ActivateCallback onactivate;  // Callback handler for activate events
-    attribute ErrorCallback onerror;        // Callback handler for error events
+    readonly attribute SensorState state;   // current state of Sensor object
+    readonly attribute double timestamp;    // timestamp of the latest reading in milliseconds
+    attribute double frequency;             // sampling frequency in hertz
+    void start();                           // starts the sensor
+    void stop();                            // stops the sensor
+    attribute ChangeCallback onchange;      // callback handler for change events
+    attribute ActivateCallback onactivate;  // callback handler for activate events
+    attribute ErrorCallback onerror;        // callback handler for error events
 };
 
 dictionary SensorOptions {
-    double frequency;  // The requested polling frequency, default is 20 if unset
+    double frequency;  // desire frequency, default is 20 if unset
 };
 
 enum SensorState {
@@ -66,20 +69,21 @@ interface Accelerometer : Sensor {
 };
 
 dictionary AccelerometerOptions : SensorOptions  {
-   boolean includeGravity = true;  // not supported, will throw an error if set
+    string controller;       // controller name, default to "bmi160"
+    boolean includeGravity;  // not supported currently
 };
 ```
 ####GyroscopeSensor Interface
 ```javascript
 [Constructor(optional SensorOptions sensorOptions)]
 interface GyroscopeSensor : Sensor {
-    attribute GyroscopeSensorReading reading;
-};
-
-interface GyroscopeSensorReading : SensorReading {
     readonly attribute double x;
     readonly attribute double y;
     readonly attribute double z;
+};
+
+dictionary GyroscopeOptions : SensorOptions  {
+    string controller;  // controller name, default to "bmi160"
 };
 ```
 ####AmbientLightSensor Interface
@@ -91,7 +95,19 @@ interface AmbientLightSensor : Sensor {
 };
 
 dictionary AmbientLightSensorOptions : SensorOptions  {
+    string controller;  // controller name, default to "ADC_0"
     unsigned long pin;  // analog pin where the light is connected
+};
+```
+####TemperatureSensor Interface
+```javascript
+[Constructor(optional SensorOptions sensorOptions)]
+interface TemperatureSensor : Sensor {
+    readonly attribute double celsius;
+};
+
+dictionary TemperatureSensorOptions : SensorOptions  {
+    string controller;  // controller name, default to "bmi160"
 };
 ```
 
@@ -128,3 +144,4 @@ Sample Apps
 * [Accelerometer sample](../samples/BMI160Accelerometer.js)
 * [Gyroscope sample](../samples/BMI160Gyroscope.js)
 * [Ambient Light sample](../samples/AmbientLight.js)
+* [Temperature sample](../samples/BMI160Temperature.js)

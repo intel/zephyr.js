@@ -48,6 +48,7 @@ typedef struct sensor_handle {
 static sensor_handle_t *accel_handles = NULL;
 static sensor_handle_t *gyro_handles = NULL;
 static sensor_handle_t *light_handles = NULL;
+static sensor_handle_t *temp_handles = NULL;
 
 static sensor_handle_t *zjs_sensor_alloc_handle(enum sensor_channel channel)
 {
@@ -65,6 +66,8 @@ static sensor_handle_t *zjs_sensor_alloc_handle(enum sensor_channel channel)
         head = &gyro_handles;
     } else if (channel == SENSOR_CHAN_LIGHT) {
         head = &light_handles;
+    } else if (channel == SENSOR_CHAN_TEMP) {
+        head = &temp_handles;
     } else {
         ERR_PRINT("invalid channel\n");
         zjs_free(handle);
@@ -239,6 +242,11 @@ static void zjs_sensor_update_reading(jerry_value_t obj,
         d = *((double *)reading);
         zjs_obj_add_readonly_number(obj, d, "illuminance");
         break;
+    case SENSOR_CHAN_TEMP:
+        // reading is a ptr to double
+        d = *((double *)reading);
+        zjs_obj_add_readonly_number(obj, d, "celsius");
+        break;
 
     default:
         ERR_PRINT("unsupported sensor type\n");
@@ -311,6 +319,9 @@ static void zjs_sensor_signal_callbacks(struct sensor_data *data)
         break;
     case SENSOR_CHAN_LIGHT:
         handles = light_handles;
+        break;
+    case SENSOR_CHAN_TEMP:
+        handles = temp_handles;
         break;
 
     default:
@@ -426,6 +437,8 @@ static void zjs_sensor_onstop_c_callback(void *h, const void *argv)
         break;
     case SENSOR_CHAN_LIGHT:
         zjs_set_readonly_property(obj, "illuminance", null_val);
+    case SENSOR_CHAN_TEMP:
+        zjs_set_readonly_property(obj, "celsius", null_val);
         break;
 
     default:
@@ -551,7 +564,10 @@ static jerry_value_t zjs_sensor_create(const jerry_value_t function_obj,
 
         double option_freq;
         if (zjs_obj_get_double(options, "frequency", &option_freq)) {
-            if (option_freq < 1) {
+            if (option_freq < 1 || (option_freq > 100 &&
+                                    channel != SENSOR_CHAN_ACCEL_XYZ &&
+                                    channel != SENSOR_CHAN_GYRO_XYZ) ) {
+                // limit frequency to 100 max unless it's accel/gyro
                 ERR_PRINT("unsupported frequency, default to %dHz\n",
                           DEFAULT_SAMPLING_FREQUENCY);
             } else {
@@ -599,7 +615,10 @@ static jerry_value_t zjs_sensor_create(const jerry_value_t function_obj,
         zjs_set_readonly_property(sensor_obj, "z", null_val);
     } else if (channel == SENSOR_CHAN_LIGHT) {
         zjs_set_readonly_property(sensor_obj, "illuminance", null_val);
+    } else if (channel == SENSOR_CHAN_TEMP) {
+        zjs_set_readonly_property(sensor_obj, "celsius", null_val);
     }
+
     zjs_obj_add_number(sensor_obj, frequency, "frequency");
     zjs_obj_add_readonly_string(sensor_obj, "unconnected", "state");
     jerry_set_prototype(sensor_obj, zjs_sensor_prototype);
@@ -673,6 +692,21 @@ static jerry_value_t zjs_light_create(const jerry_value_t function_obj,
                              SENSOR_CHAN_LIGHT);
 }
 
+static jerry_value_t zjs_temp_create(const jerry_value_t function_obj,
+                                     const jerry_value_t this,
+                                     const jerry_value_t argv[],
+                                     const jerry_length_t argc)
+{
+    // requires: arg 0 is an object containing sensor options:
+    //             frequency (double) - sampling frequency
+    //  effects: Creates a TemperatureSensor object to the local sensor
+    return zjs_sensor_create(function_obj,
+                             this,
+                             argv,
+                             argc,
+                             SENSOR_CHAN_TEMP);
+}
+
 void zjs_sensor_init()
 {
     zjs_ipm_init();
@@ -693,6 +727,7 @@ void zjs_sensor_init()
     zjs_obj_add_function(global_obj, zjs_accel_create, "Accelerometer");
     zjs_obj_add_function(global_obj, zjs_gyro_create, "Gyroscope");
     zjs_obj_add_function(global_obj, zjs_light_create, "AmbientLightSensor");
+    zjs_obj_add_function(global_obj, zjs_temp_create, "TemperatureSensor");
 }
 
 void zjs_sensor_cleanup()
@@ -705,6 +740,9 @@ void zjs_sensor_cleanup()
     }
     if (light_handles) {
         zjs_sensor_free_handles(light_handles);
+    }
+    if (temp_handles) {
+        zjs_sensor_free_handles(temp_handles);
     }
 
     jerry_release_value(zjs_sensor_prototype);

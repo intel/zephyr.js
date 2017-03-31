@@ -240,7 +240,7 @@ if [ "$RUN" == "all" -o "$RUN" == "1" ]; then
     done
 
     # add sensor modules
-    SENSORS=(Accelerometer Gyroscope AmbientLightSensor)
+    SENSORS=(Accelerometer Gyroscope AmbientLightSensor TemperatureSensor)
     SENSORNUM=0
     for index in "${!SENSORS[@]}"; do
         SENSORNUM=$((SENSORNUM + 1))
