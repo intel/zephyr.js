@@ -153,7 +153,8 @@ zephyr: analyze generate jerryscript $(ARC)
 					PRINT_FLOAT=$(PRINT_FLOAT) \
 					SNAPSHOT=$(SNAPSHOT) \
 					BLE_ADDR=$(BLE_ADDR) \
-					ASHELL=$(ASHELL)
+					ASHELL=$(ASHELL) \
+					NETWORK_BUILD=$(NET_BUILD)
 ifeq ($(BOARD), arduino_101)
 	@echo
 	@echo -n Creating dfu images...
@@ -206,6 +207,9 @@ analyze: $(JS)
 	@if grep BUILD_MODULE_OCF src/Makefile; then \
 		echo "CONFIG_BLUETOOTH_DEVICE_NAME=\"$(DEVICE_NAME)\"" >> prj.conf.tmp; \
 		echo "include \$$(ZJS_BASE)/Makefile.ocf_zephyr" >> src/Makefile; \
+	fi
+	@if grep BUILD_MODULE_DGRAM src/Makefile; then \
+		echo "CONFIG_BLUETOOTH_DEVICE_NAME=\"$(DEVICE_NAME)\"" >> prj.conf.tmp; \
 	fi
 
 # Update dependency repos

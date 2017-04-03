@@ -17,6 +17,13 @@ ccflags-y += -I$(JERRY_BASE)/jerry-core
 ccflags-y += -I$(ZEPHYR_BASE)/drivers
 ccflags-y += -I$(ZJS_BASE)/outdir/include
 
+ifneq (,$(filter $(ZJS_DGRAM) $(ZJS_OCF), y))
+ifeq ($(BOARD), arduino_101)
+obj-y += ../deps/zephyr/samples/bluetooth/gatt/ipss.o
+ccflags-y += -I${ZEPHYR_BASE}/samples/bluetooth
+endif
+endif
+
 ifeq ($(VARIANT), debug)
 ccflags-y += -DDEBUG_BUILD
 ccflags-y += -g

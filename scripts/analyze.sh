@@ -109,10 +109,26 @@ if check_for_require dgram || check_config_file ZJS_DGRAM; then
 
     # Debug options
     echo "CONFIG_TEST_RANDOM_GENERATOR=y" >> $PRJFILE
-    echo "CONFIG_NET_SLIP_TAP=y" >> $PRJFILE
     echo "CONFIG_PRINTK=y" >> $PRJFILE
     echo "CONFIG_NET_LOG=y" >> $PRJFILE
     echo "CONFIG_NET_STATISTICS=y" >> $PRJFILE
+
+    if [ $BOARD = "qemu_x86" ]; then
+        echo "CONFIG_NET_SLIP_TAP=y" >> $PRJFILE
+    # BLE Options
+    elif [ $BOARD = "arduino_101" ]; then
+        echo "CONFIG_BLUETOOTH=y" >> $PRJFILE
+        echo "CONFIG_BLUETOOTH_SMP=y" >> $PRJFILE
+        echo "CONFIG_BLUETOOTH_SIGNING=y" >> $PRJFILE
+        echo "CONFIG_BLUETOOTH_PERIPHERAL=y" >> $PRJFILE
+        echo "CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL=y" >> $PRJFILE
+        echo "CONFIG_NETWORKING_WITH_6LOWPAN=y" >> $PRJFILE
+        echo "CONFIG_6LOWPAN_COMPRESSION_IPHC=y" >> $PRJFILE
+        echo "CONFIG_NET_L2_BLUETOOTH_ZEP1656=y" >> $PRJFILE
+        echo "CONFIG_NET_L2_BLUETOOTH=y" >> $PRJFILE
+    elif [ $BOARD = "frdm_k64f" ]; then
+        echo "CONFIG_NET_L2_ETHERNET=y" >> $PRJFILE
+    fi
 fi
 
 if check_for_require events || check_config_file ZJS_EVENTS; then
