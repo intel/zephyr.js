@@ -34,8 +34,10 @@ typedef enum {
 
 struct client_resource {
     char *device_id;
-    char *resource_type;
     char *resource_path;
+    char *resource_type;
+    jerry_value_t types_array;
+    jerry_value_t iface_array;
     oc_server_handle_t server;
     resource_state state;
     jerry_value_t client;
@@ -251,18 +253,21 @@ static struct client_resource *find_resource_by_path(const char *path)
 /*
  * Create a new resource object
  */
-static jerry_value_t create_resource(const char *device_id, const char *path)
+static jerry_value_t create_resource(struct client_resource *client)
 {
     jerry_value_t resource = jerry_create_object();
 
-    if (device_id) {
-        zjs_obj_add_string(resource, device_id, "deviceId");
+    if (client->device_id) {
+        zjs_obj_add_string(resource, client->device_id, "deviceId");
     }
-    if (path) {
-        zjs_obj_add_string(resource, path, "resourcePath");
+    if (client->resource_path) {
+        zjs_obj_add_string(resource, client->resource_path, "resourcePath");
     }
     ZVAL props = jerry_create_object();
     zjs_set_property(resource, "properties", props);
+
+    zjs_set_property(resource, "resourceTypes", client->types_array);
+    zjs_set_property(resource, "interfaces", client->iface_array);
 
     DBG_PRINT("id=%s, path=%s, obj number=%lu\n", device_id, path, resource);
 
@@ -290,6 +295,8 @@ static void free_client(const uintptr_t native_p)
         if (client->resource_type) {
             zjs_free(client->resource_type);
         }
+        jerry_release_value(client->types_array);
+        jerry_release_value(client->iface_array);
         zjs_free(client);
     }
 }
@@ -424,8 +431,58 @@ Found:
                 memcpy(cur->resource_path, uri, uri_len);
                 cur->resource_path[uri_len] = '\0';
             }
+            /*
+             * Add the array of resource types to newly discovered resource
+             */
+            uint32_t sz = oc_string_array_get_allocated_size(types);
+            cur->types_array = jerry_create_array(sz);
 
-            ZVAL res = create_resource(cur->device_id, cur->resource_path);
+            for (i = 0; i < sz; i++) {
+                char *t = oc_string_array_get_item(types, i);
+                ZVAL val = jerry_create_string(t);
+                jerry_set_property_by_index(cur->types_array, i, val);
+            }
+            /*
+             * Add array of interfaces
+             */
+            sz = 0;
+            // count up set ifaces
+            for (i = 1; i < 8; ++i) {
+                if ((1 << i) & interfaces) {
+                    sz++;
+                }
+            }
+            cur->iface_array = jerry_create_array(sz);
+            if (interfaces & OC_IF_BASELINE) {
+                ZVAL val = jerry_create_string("oic.if.baseline");
+                jerry_set_property_by_index(cur->iface_array, --sz, val);
+            }
+            if (interfaces & OC_IF_LL) {
+                ZVAL val = jerry_create_string("oic.if.ll");
+                jerry_set_property_by_index(cur->iface_array, --sz, val);
+            }
+            if (interfaces & OC_IF_B) {
+                ZVAL val = jerry_create_string("oic.if.b");
+                jerry_set_property_by_index(cur->iface_array, --sz, val);
+            }
+            if (interfaces & OC_IF_R) {
+                ZVAL val = jerry_create_string("oic.if.r");
+                jerry_set_property_by_index(cur->iface_array, --sz, val);
+            }
+            if (interfaces & OC_IF_RW) {
+                ZVAL val = jerry_create_string("oic.if.rw");
+                jerry_set_property_by_index(cur->iface_array, --sz, val);
+            }
+            if (interfaces & OC_IF_A) {
+                ZVAL val = jerry_create_string("oic.if.a");
+                jerry_set_property_by_index(cur->iface_array, --sz, val);
+            }
+            if (interfaces & OC_IF_S) {
+                ZVAL val = jerry_create_string("oic.if.s");
+                jerry_set_property_by_index(cur->iface_array, --sz, val);
+            }
+
+            ZVAL res = create_resource(cur);
             zjs_trigger_event(cur->client, "resourcefound", &res, 1, NULL,
                               NULL);
             zjs_fulfill_promise(h->promise_obj, &res, 1);
@@ -528,8 +585,7 @@ static void ocf_get_handler(oc_client_response_t *data)
         if (h && h->res) {
             struct client_resource *resource = h->res;
             if (data->code == OC_STATUS_OK) {
-                ZVAL resource_val = create_resource(resource->device_id,
-                                                    resource->resource_path);
+                ZVAL resource_val = create_resource(resource);
                 ZVAL properties_val = get_props_from_response(data);
 
                 zjs_set_property(resource_val, "properties", properties_val);
@@ -664,8 +720,7 @@ static void put_finished(oc_client_response_t *data)
             if (data->code == OC_STATUS_CHANGED) {
                 DBG_PRINT("PUT response OK, device_id=%s\n",
                           resource->device_id);
-                ZVAL resource_val = create_resource(resource->device_id,
-                                                    resource->resource_path);
+                ZVAL resource_val = create_resource(resource);
                 zjs_fulfill_promise(h->promise_obj, &resource_val, 1);
             } else {
                 ERR_PRINT("PUT response code %d\n", data->code);
@@ -852,6 +907,10 @@ static void ocf_get_platform_info_handler(oc_client_response_t *data)
                     zjs_obj_add_readonly_string(platform_info, oc_string(rep->value.string), "osVersion");
                 } else if (strcmp(oc_string(rep->name), "mnfv") == 0) {
                     zjs_obj_add_readonly_string(platform_info, oc_string(rep->value.string), "firmwareVersion");
+                } else if (strcmp(oc_string(rep->name), "mnml") == 0) {
+                    zjs_obj_add_readonly_string(platform_info, oc_string(rep->value.string), "manufacturerURL");
+                } else if (strcmp(oc_string(rep->name), "mnsl") == 0) {
+                    zjs_obj_add_readonly_string(platform_info, oc_string(rep->value.string), "supportURL");
                 }
                 DBG_PRINT("%s\n", oc_string(rep->value.string));
                 break;
