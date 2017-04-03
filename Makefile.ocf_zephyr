@@ -61,8 +61,7 @@ obj-y += ../$(OCF_ROOT)/deps/tinycbor/src/cborencoder_close_container_checked.o 
          ../$(OCF_ROOT)/port/zephyr/src/random.o \
          ../$(OCF_ROOT)/port/zephyr/src/clock.o \
          ../$(OCF_ROOT)/port/zephyr/src/abort.o \
-         ../$(OCF_ROOT)/port/zephyr/src/storage.o \
-         ../deps/zephyr/samples/bluetooth/gatt/ipss.o
+         ../$(OCF_ROOT)/port/zephyr/src/storage.o
 
 ifeq ($(SECURE), 1)
 obj-y += ../$(OCF_ROOT)/deps/tinydtls/ccm.o \
