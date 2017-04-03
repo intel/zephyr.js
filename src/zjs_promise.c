@@ -128,6 +128,7 @@ void zjs_fulfill_promise(jerry_value_t obj, const jerry_value_t argv[],
         zjs_signal_callback(handle->then_id, argv,
                             argc * sizeof(jerry_value_t));
         zjs_remove_callback(handle->catch_id);
+        handle->catch_id = -1;
         DBG_PRINT("fulfilling promise, obj=%lu, then_id=%d, argv=%p, nargs=%lu\n",
                   obj, handle->then_id, argv, argc);
     } else {
@@ -151,6 +152,7 @@ void zjs_reject_promise(jerry_value_t obj, const jerry_value_t argv[],
         zjs_signal_callback(handle->catch_id, argv,
                             argc * sizeof(jerry_value_t));
         zjs_remove_callback(handle->then_id);
+        handle->then_id = -1;
         DBG_PRINT("rejecting promise, obj=%lu, catch_id=%d, argv=%p, nargs=%lu\n",
                   obj, handle->catch_id, argv, argc);
     } else {
