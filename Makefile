@@ -208,6 +208,9 @@ analyze: $(JS)
 		echo "CONFIG_BLUETOOTH_DEVICE_NAME=\"$(DEVICE_NAME)\"" >> prj.conf.tmp; \
 		echo "include \$$(ZJS_BASE)/Makefile.ocf_zephyr" >> src/Makefile; \
 	fi
+	@if grep BUILD_MODULE_DGRAM src/Makefile; then \
+		echo "CONFIG_BLUETOOTH_DEVICE_NAME=\"$(DEVICE_NAME)\"" >> prj.conf.tmp; \
+	fi
 
 # Update dependency repos
 .PHONY: update
