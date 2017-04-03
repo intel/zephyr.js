@@ -29,7 +29,7 @@ var testpins = [pins.D1, pins.D2, pins.D3, pins.D4, pins.D5, pins.D6, pins.D7,
                 pins.D8, pins.D9, pins.D10, pins.D11, pins.D12, pins.D13,
                 pins.D14, pins.D15];
 var pincount = testpins.length;
-var gpios = []
+var gpios = [];
 for (var i = 0; i < pincount; i++) {
     gpios[i] = gpio.open({pin: testpins[i]});
 }

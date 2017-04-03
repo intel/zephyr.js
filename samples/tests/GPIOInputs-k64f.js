@@ -31,7 +31,7 @@ var testpins = [pins.D1, pins.D2, pins.D3, pins.D4, pins.D5, pins.D6, pins.D7,
 var pincount = testpins.length;
 
 var count = 1;
-var gpios = []
+var gpios = [];
 for (var i = 0; i < pincount; i++) {
     gpios[i] = gpio.open({pin: testpins[i], direction: 'in', edge: 'rising'});
     gpios[i].onchange = function(event) {
