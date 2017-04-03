@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 // Zephyr includes
 #include <zephyr.h>
@@ -52,19 +52,22 @@ jerry_value_t zjs_k64f_init()
     zjs_obj_add_number(obj, PTC + 16, "D0");  // verified I/O
     zjs_obj_add_number(obj, PTC + 17, "D1");  // verified I/O
     zjs_obj_add_number(obj, PTB +  9, "D2");  // verified I/O
-    zjs_obj_add_number(obj, PTA +  1, "D3");  // I/O if preserve jtag off
+    zjs_obj_add_number(obj, PTA +  1, "D3");  // verified I/O
     zjs_obj_add_number(obj, PTB + 23, "D4");  // verified I/O
-    zjs_obj_add_number(obj, PTA +  2, "D5");  // I/O if preserve jtag off
+    zjs_obj_add_number(obj, PTA +  2, "D5");  // verified I/O
     zjs_obj_add_number(obj, PTC +  2, "D6");  // verified I/O
     zjs_obj_add_number(obj, PTC +  3, "D7");  // verified I/O
-    zjs_obj_add_number(obj, PTC + 12, "D8");  // PTA0 for Rev <= D (ver. I/O)
+
+    // currently not working on rev E3; used to work as input/output
+    zjs_obj_add_number(obj, PTC + 12, "D8");  // PTA0 for Rev <= D
+
     zjs_obj_add_number(obj, PTC +  4, "D9");  // verified I/O
     zjs_obj_add_number(obj, PTD +  0, "D10");  // verified I/O
     zjs_obj_add_number(obj, PTD +  2, "D11");  // verified I/O
     zjs_obj_add_number(obj, PTD +  3, "D12");  // verified I/O
     zjs_obj_add_number(obj, PTD +  1, "D13");  // verified I/O
-    zjs_obj_add_number(obj, PTE + 25, "D14");  // works as input, not output
-    zjs_obj_add_number(obj, PTE + 24, "D15");  // works as input, not output
+    zjs_obj_add_number(obj, PTE + 25, "D14");  // verified I/O
+    zjs_obj_add_number(obj, PTE + 24, "D15");  // verified I/O
 
     // These are for onboard RGB LED
     zjs_obj_add_number(obj, PTB + 22, "LEDR");  // verified

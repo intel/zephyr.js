@@ -114,10 +114,14 @@ static void zjs_gpio_c_callback(void *h, const void *args)
     // If pin.onChange exists, call it
     if (jerry_value_is_function(onchange_func)) {
         ZVAL event = jerry_create_object();
-        uint32_t val = 0;
-        memcpy(&val, args, 4);
+        uint32_t *the_args = (uint32_t *)args;
         // Put the boolean GPIO trigger value in the object
-        zjs_obj_add_boolean(event, val, "value");
+        zjs_obj_add_boolean(event, the_args[0], "value");
+        zjs_obj_add_number(event, the_args[1], "pins");
+        // TODO: This "pins" value is pretty useless to the JS script as is,
+        //   because it is a bitmask of activated zephyr pins; need to map this
+        //   back to JS pin values somehow. So leaving undocumented for now.
+        //   This is more complex on k64f because of five GPIO ports.
 
         // Call the JS callback
         jerry_call_function(onchange_func, ZJS_UNDEFINED, &event, 1);
@@ -138,9 +142,9 @@ static void zjs_gpio_zephyr_callback(struct device *port,
     gpio_pin_read(port, handle->pin, &handle->value);
     if ((handle->edge_both && handle->value != handle->last) ||
         !handle->edge_both) {
+        uint32_t args[] = {handle->value, pins};
         // Signal the C callback, where we call the JS callback
-        zjs_signal_callback(handle->callbackId, &handle->value,
-                            sizeof(handle->value));
+        zjs_signal_callback(handle->callbackId, args, sizeof(args));
         handle->last = handle->value;
     }
 }

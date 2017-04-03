@@ -239,6 +239,9 @@ ifeq ($(BOARD), arduino_101)
 	@echo "CONFIG_ROM_SIZE=$(ROM)" >> prj.conf
 	@printf "CONFIG_SS_RESET_VECTOR=0x400%x\n" $$((($(ROM) + 64) * 1024)) >> prj.conf
 endif
+ifeq ($(BOARD), frdm_k64f)
+	@cat fragments/prj.conf.frdm_k64f >> prj.conf
+endif
 endif
 # Append script specific modules to prj.conf
 	@if [ -e prj.conf.tmp ]; then \
