@@ -5,6 +5,10 @@
 // Zephyr includes
 #include <net/net_context.h>
 #include <net/nbuf.h>
+#if defined(CONFIG_NET_L2_BLUETOOTH)
+#include <bluetooth/bluetooth.h>
+#include <gatt/ipss.h>
+#endif
 
 // ZJS includes
 #include "zjs_util.h"
@@ -325,6 +329,14 @@ static jerry_value_t zjs_dgram_sock_close(const jerry_value_t function_obj,
 
 jerry_value_t zjs_dgram_init()
 {
+#if defined(CONFIG_NET_L2_BLUETOOTH)
+    if (bt_enable(NULL)) {
+        ERR_PRINT("Bluetooth init failed");
+        return ZJS_UNDEFINED;
+    }
+    ipss_init();
+    ipss_advertise();
+#endif
     // TODO: Interface address initialization doesn't belong to this module
     static struct in_addr in4addr_my = { { { 192, 0, 2, 1 } } };
     // 2001:db8::1

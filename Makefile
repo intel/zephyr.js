@@ -153,7 +153,8 @@ zephyr: analyze generate jerryscript $(ARC)
 					PRINT_FLOAT=$(PRINT_FLOAT) \
 					SNAPSHOT=$(SNAPSHOT) \
 					BLE_ADDR=$(BLE_ADDR) \
-					ASHELL=$(ASHELL)
+					ASHELL=$(ASHELL) \
+					NETWORK_BUILD=$(NET_BUILD)
 ifeq ($(BOARD), arduino_101)
 	@echo
 	@echo -n Creating dfu images...
