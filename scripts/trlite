@@ -275,7 +275,7 @@ if [ "$RUN" == "all" -o "$RUN" == "2" ]; then
     TESTNUM=0
 
     # test key sample code
-    try_command "btgrove" make $VERBOSE JS=samples/WebBluetoothGroveLcdDemo.js ROM=256
+    try_command "btgrove" make $VERBOSE JS=samples/WebBluetoothGroveLcdDemo.js ROM=250
 
     # test snapshot off
     try_command "snapoff" make $VERBOSE SNAPSHOT=off
@@ -404,10 +404,10 @@ if [ "$RUN" == "all" -o "$RUN" == "4" ]; then
     TESTNUM=0
 
     # ashell tests
-    try_command "ashell" make $VERBOSE ashell ROM=256
+    try_command "ashell" make $VERBOSE ashell ROM=250
 
     # build ide version
-    try_command "ide" make $VERBOSE ide ROM=256
+    try_command "ide" make $VERBOSE ide ROM=250
 fi
 
 # clean up on success
