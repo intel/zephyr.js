@@ -109,10 +109,17 @@ if check_for_require dgram || check_config_file ZJS_DGRAM; then
 
     # Debug options
     echo "CONFIG_TEST_RANDOM_GENERATOR=y" >> $PRJFILE
-    echo "CONFIG_NET_SLIP_TAP=y" >> $PRJFILE
     echo "CONFIG_PRINTK=y" >> $PRJFILE
     echo "CONFIG_NET_LOG=y" >> $PRJFILE
     echo "CONFIG_NET_STATISTICS=y" >> $PRJFILE
+
+    # Board-specific network drivers
+    if [ $BOARD = "qemu_x86" ]; then
+        echo "CONFIG_NET_SLIP=y" >> $PRJFILE
+        echo "CONFIG_NET_SLIP_TAP=y" >> $PRJFILE
+    elif [ $BOARD = "frdm_k64f" ]; then
+        echo "CONFIG_NET_L2_ETHERNET=y" >> $PRJFILE
+    fi
 fi
 
 if check_for_require events || check_config_file ZJS_EVENTS; then
