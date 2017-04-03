@@ -333,21 +333,23 @@ static jerry_value_t zjs_buffer_write_string(const jerry_value_t function_obj,
     return jerry_create_number(length);
 }
 
-jerry_value_t zjs_buffer_create(uint32_t size)
+jerry_value_t zjs_buffer_create(uint32_t size, zjs_buffer_t **ret_buf)
 {
     // requires: size is size of desired buffer, in bytes
     //  effects: allocates a JS Buffer object, an underlying C buffer, and a
-    //             list item to track it; if any of these fail, free them all
-    //             and return undefined, otherwise return the JS object
+    //             list item to track it; if any of these fail, return an error;
+    //             otherwise return the JS object
     void *buf = zjs_malloc(size);
     zjs_buffer_t *buf_item =
         (zjs_buffer_t *)zjs_malloc(sizeof(zjs_buffer_t));
 
     if (!buf || !buf_item) {
-        ERR_PRINT("unable to allocate buffer\n");
         zjs_free(buf);
         zjs_free(buf_item);
-        return ZJS_UNDEFINED;
+        if (ret_buf) {
+            *ret_buf = NULL;
+        }
+        return zjs_error("out of memory");
     }
 
     jerry_value_t buf_obj = jerry_create_object();
@@ -387,16 +389,16 @@ static jerry_value_t zjs_buffer(const jerry_value_t function_obj,
         }
 
         // treat a number argument as a length
-        return zjs_buffer_create((uint32_t)dnum);
+        return zjs_buffer_create((uint32_t)dnum, NULL);
     }
     else if (jerry_value_is_array(argv[0])) {
         // treat array argument as byte initializers
         jerry_value_t array = argv[0];
         uint32_t len = jerry_get_array_length(array);
 
-        jerry_value_t new_buf = zjs_buffer_create(len);
-        if (jerry_value_is_object(new_buf)) {
-            zjs_buffer_t *buf = zjs_buffer_find(new_buf);
+        zjs_buffer_t *buf;
+        jerry_value_t new_buf = zjs_buffer_create(len, &buf);
+        if (buf) {
             for (int i = 0; i < len; i++) {
                 ZVAL item = jerry_get_property_by_index(array, i);
                 if (jerry_value_is_number(item)) {
@@ -414,12 +416,12 @@ static jerry_value_t zjs_buffer(const jerry_value_t function_obj,
         jerry_size_t size = 0;
         char *str = zjs_alloc_from_jstring(argv[0], &size);
         if (!str) {
-            return zjs_error("zjs_buffer: could not allocate string");
+            return zjs_error("could not allocate string");
         }
 
-        jerry_value_t new_buf = zjs_buffer_create(size);
-        if (jerry_value_is_object(new_buf)) {
-            zjs_buffer_t *buf = zjs_buffer_find(new_buf);
+        zjs_buffer_t *buf;
+        jerry_value_t new_buf = zjs_buffer_create(size, &buf);
+        if (buf) {
             memcpy(buf->buffer, str, size);
         }
 
