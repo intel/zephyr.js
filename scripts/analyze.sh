@@ -322,6 +322,12 @@ if check_for_require arduino101_pins || check_config_file ZJS_ARDUINO101_PINS; t
     echo "export ZJS_ARDUINO101_PINS=y" >> $CONFFILE
 fi
 
+if check_for_require test_promise; then
+    >&2 echo Using module: test_promise
+    MODULES+=" -DBUILD_MODULE_TEST_PROMISE"
+    echo "export ZJS_TEST_PROMISE=y" >> $CONFFILE
+fi
+
 interval=$(grep "setInterval\|setTimeout\|setImmediate" $SCRIPT)
 if [ $? -eq 0 ] || check_config_file ZJS_TIMERS; then
     MODULES+=" -DBUILD_MODULE_TIMER"

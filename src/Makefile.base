@@ -66,6 +66,7 @@ obj-$(ZJS_OCF) += zjs_ocf_client.o \
                   zjs_ocf_server.o \
                   zjs_ocf_common.o \
                   zjs_ocf_ble.o
+obj-$(ZJS_TEST_PROMISE) += zjs_test_promise.o
 
 # skip for now for frdm_k64f
 ifeq ($(BOARD), arduino_101)
