@@ -25,14 +25,19 @@ env:
     - TARGET="linux"
     - TARGET="ashell"
 
+cache:
+  directories:
+    - $ZEPHYR_SDK_INSTALL_DIR
+
 before_install:
   - sudo apt-get update -qq
   - sudo apt-get install make gcc g++ python3-ply ncurses-dev uglifyjs sysvbanner -qq
 
 install: >
-  if [ "$TARGET" != "linux" ]; then
+  if [ "$TARGET" != "linux" -a "$(cat $ZEPHYR_SDK_INSTALL_DIR/sdk_version)" != "$ZEPHYR_SDK_VERSION" ]; then
     wget $ZEPHYR_SDK_DOWNLOAD_URL &&
     chmod +x $ZEPHYR_SDK_SETUP_BINARY &&
+    rm -rf $ZEPHYR_SDK_INSTALL_DIR &&
     ./$ZEPHYR_SDK_SETUP_BINARY --quiet -- -y -d $ZEPHYR_SDK_INSTALL_DIR > /dev/null;
   fi
 
