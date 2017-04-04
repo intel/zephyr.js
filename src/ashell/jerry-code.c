@@ -237,7 +237,7 @@ static void load_require_modules(char *file_buffer)
         // Read the file into a buffer so we can scan it
         req_file_buffer = read_file(cur->file_name, &file_size);
 
-        if (file_size > 0 && req_file_buffer) {
+        if (req_file_buffer && file_size > 0) {
             add_requires(&cur, req_file_buffer);
             cur->reqs_checked = true;
             zjs_free(req_file_buffer);
@@ -329,68 +329,47 @@ int javascript_parse_code(const char *file_name, bool show_lines)
     javascript_stop();
     jerry_port_default_set_log_level(JERRY_LOG_LEVEL_TRACE);
     char *buf = NULL;
+    ssize_t size;
 
-    fs_file_t *fp = fs_open_alloc(file_name, "r");
+    buf = read_file(file_name, &size);
 
-    if (fp == NULL)
-        return ret;
+    if (buf && size > 0) {
+        if (show_lines) {
+            comms_printf("[READ] %d\n", (int)size);
 
-    ssize_t size = fs_size(fp);
-    if (size == 0) {
-        comms_printf("[ERR] Empty file (%s)\n", file_name);
-        goto cleanup;
-    }
-
-    buf = (char *)zjs_malloc(size);
-    if (buf == NULL) {
-        comms_printf("[ERR] Not enough memory for (%s)\n", file_name);
-        goto cleanup;
-    }
-
-    ssize_t brw = fs_read(fp, buf, size);
-
-    if (brw != size) {
-        comms_printf("[ERR] Failed loading code %s\n", file_name);
-        goto cleanup;
-    }
-
-    if (show_lines) {
-        comms_printf("[READ] %d\n", (int)brw);
-
-        // Print buffer test
-        int line = 0;
-        comms_println("[START]");
-        comms_printf("%5d  ", line++);
-        for (int t = 0; t < brw; t++) {
-            uint8_t byte = buf[t];
-            if (byte == '\n' || byte == '\r') {
-                comms_write_buf("\r\n", 2);
-                comms_printf("%5d  ", line++);
-            } else {
-                if (!isprint(byte)) {
-                    comms_printf("(%x)", byte);
-                } else
-                    comms_writec(byte);
+            // Print buffer test
+            int line = 0;
+            comms_println("[START]");
+            comms_printf("%5d  ", line++);
+            for (int t = 0; t < size; t++) {
+                uint8_t byte = buf[t];
+                if (byte == '\n' || byte == '\r') {
+                    comms_write_buf("\r\n", 2);
+                    comms_printf("%5d  ", line++);
+                } else {
+                    if (!isprint(byte)) {
+                        comms_printf("(%x)", byte);
+                    } else
+                        comms_writec(byte);
+                }
             }
+            comms_println("[END]");
         }
-        comms_println("[END]");
+
+        // Find and load all required js modules
+        load_require_modules(buf);
+
+        /* Setup Global scope code */
+        parsed_code = jerry_parse((const jerry_char_t *) buf, size, false);
+        if (jerry_value_has_error_flag(parsed_code)) {
+            printf("[ERR] Could not parse JS\n");
+            javascript_print_error(parsed_code);
+            jerry_release_value(parsed_code);
+        } else {
+            ret = 0;
+        }
     }
 
-    // Find and load all required js modules
-    load_require_modules(buf);
-
-    /* Setup Global scope code */
-    parsed_code = jerry_parse((const jerry_char_t *) buf, size, false);
-    if (jerry_value_has_error_flag(parsed_code)) {
-        printf("[ERR] Could not parse JS\n");
-        javascript_print_error(parsed_code);
-        jerry_release_value(parsed_code);
-    } else {
-        ret = 0;
-    }
-
-cleanup:
-    fs_close_alloc(fp);
     zjs_free(buf);
     return ret;
 }
