@@ -6,7 +6,7 @@
 #define MAX_BUFFER_SIZE 4096
 
 void javascript_run_code(const char *file_name);
-void javascript_eval_code(const char *source_buffer, size_t size);
+void javascript_eval_code(const char *source_buffer, ssize_t size);
 int javascript_parse_code(const char *file_name, bool show_lines);
 void javascript_stop();
 
