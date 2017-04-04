@@ -5,7 +5,7 @@ web runtime environment with JavaScript APIs for the Zephyr operating system,
 based on the JerryScript engine. It is intended for systems with little memory
 where Node.js with V8 is too big.
 
-This code requires a local copy of JerryScript and Zephyr OS source.  We
+This code requires a local copy of JerryScript and Zephyr OS source. We
 will upstream patches to those projects as appropriate, but this repo is for
 everything else.
 
@@ -384,7 +384,7 @@ The executable will be outputted to `outdir/linux/<variant>/jslinux`. Where
 Zephyr target by passing in `VARIANT=` when running `make`. The default is
 release.
 
-Note. To build on Mac OSX using BOARD=linux, see instructions in the next section.
+Note: To build on Mac OSX using BOARD=linux, see instructions in the next section.
 
 What makes the linux target convenient is that a JS script does not have to be
 bundled with the final executable. By default `samples/HelloWorld.js` will be
@@ -417,24 +417,25 @@ list may grow if other modules are ported to the Linux target.
 
 ## Building and running on Mac OSX
 
-Mac support is still limited at this point, as Zephyr does not provide the SDK/toolchain
+Mac support is still limited at this point. As Zephyr does not provide the SDK/toolchain
 to compile on Mac OSX natively, you will have to build your own or use a 3rd-party toolchain.
-Currently the targets we support building on MAC are "linux", "qemu_x86", with limited
+Currently the targets we support building on Mac are "linux", "qemu_x86", with limited
 support for "arduino_101" and "frdm-k64f" boards. You'll need to have a recent version of
-OSX and XCode command line tools from App store to get you started, depending on your
-system setup and targt, you might have to perform additional steps, but if you run
-into build issues, you should first make sure the you can build Zephyr native apps on Mac
-using the toolchain you installed, once you verify that it works, then our project should
-also build and link correctly, but we'll try to update the document as we find these kind
-of issues. Currently we enable Travis CI to building the linux target only against the
-latest OSX (10.12) and XCode Command Line Tools (provided by XCode SDK) for sanity check purposes.
+OSX and XCode command line tools from App store to get you started. Depending on your
+system setup and target, you might have to perform additional steps, but if you run
+into build issues, you should first make sure that you can build Zephyr native apps on Mac
+using the toolchain you installed. Once you verify that it works, then our project should
+also build and link correctly, but we'll try to update the document as we find these kinds
+of issues. Currently we enable Travis CI to build the linux target only against the
+latest OSX (10.12) and XCode Command Line Tools (provided by XCode SDK) for sanity check
+purposes.
 
-### Setup
+### Set up
 The basic requirement for building Zephyr boards is that you'll need to install and
 setup the correct cross-compiler toolchain on your Mac for the boards you are trying to
-build.  You need to install crosstool-ng, which allows you to build the x86 images,
-you can run on the qemu, and for Arduino 101, you'll also need to install the ARC compiler,
-which can be found by installing the Arduino IDE for mac, this is used to build the ARC
+build. You need to install crosstool-ng, which allows you to build the x86 images
+you can run on QEMU, and for Arduino 101, you need to install the ARC compiler,
+which can be found by installing the Arduino IDE for Mac, this is used to build the ARC
 support image.
 
 Requirements:
@@ -455,7 +456,7 @@ To install XCode Command Line Tools, open a terminal and type:
 $ xcode-select --install
 ```
 
-It should popup a window to ask you to install the tools. You'll then setup the environment variables
+It should pop up a window to ask you to install the tools. You'll then set up the environment variables
 ```bash
 $ cd zephyr.js
 $ source zjs-env.sh
@@ -463,20 +464,20 @@ $ make update
 $ source deps/zephyr/zephyr-env.sh
 ```
 
-### Buildig Linux target
-You can build linux target on Mac OSX using BOARD=linux, follow instructions on "Building and running on Linux", this will create the jslinux ouput.
+### Building Linux target
+You can build the "linux" target on Mac OSX using BOARD=linux, follow instructions for "Building and running on Linux". This will create the jslinux ouput.
 
 ### Building QEMU and Arduino 101 targets
-You can build QEMU with BOARD=qemu_x86 and Arduino 101 with BOARD=arduino_101, you'll need to install crosstool-ng and ARC compiler from Arduino IDE. (Note. there's a linker issue currently with crosstool-ng when building Arduino 101 see [here](https://jira.zephyrproject.org/browse/ZEP-1994), but qemu_x86 should work)
+You can build QEMU with BOARD=qemu_x86 and Arduino 101 with BOARD=arduino_101, you'll need to install crosstool-ng and ARC compiler from Arduino IDE. (**Note** there's a linker issue currently with crosstool-ng when building Arduino 101 see [here](https://jira.zephyrproject.org/browse/ZEP-1994), but qemu_x86 should work)
 
-You'll need to install Homebrew first so you can install crosstool-ng, follow the Zephyr instructions [here](https://www.zephyrproject.org/doc/getting_started/installation_mac.html)
+You'll need to install Homebrew first so you can install crosstool-ng. Follow the Zephyr instructions [here](https://www.zephyrproject.org/doc/getting_started/installation_mac.html)
 
-After installing crosstool-ng, create and mount the image using our script
+After installing crosstool-ng, create and mount the image using our script:
 ```bash
 $ osxmountzephyr.sh
 ```
 
-This will create a image mounted under /Volumes/CrossToolNG, you can then configure crosstool-ng
+This will create an image mounted under /Volumes/CrossToolNG.  You can then configure crosstool-ng:
 ```bash
 cd /Volumes/CrossToolNG
 mkdir build
@@ -484,12 +485,12 @@ cd build
 cp ${ZEPHYR_BASE}/scripts/cross_compiler/x86.config .config
 ```
 
-You can create a toolchain configuration or customize an existing configuration yourself using the configuration menus
+You can create a toolchain configuration or customize an existing configuration yourself using the configuration menus:
 ```bash
 ct-ng menuconfig
 ```
 
-After you are done, edit the generated .config, find and make ure you .config have these settings, or you will run into build errors later
+After you are done, edit the generated .config, and make sure you have these settings, or you will run into build errors later:
 ```bash
 ...
 CT_LOCAL_TARBALLS_DIR="/Volumes/CrossToolNG/src"
@@ -503,19 +504,19 @@ CT_CC_STATIC_LIBSTDCXX=n
 ...
 ```
 
-Now you can build crosstool-ng, it will take 15~20 mins.
+Now you can build crosstool-ng. It will take 15~20 mins:
 ```bash
 ct-ng build
 ```
 
-When finished, you should have the toolchain setup in /Volumes/CrossToolNG/x-tools directory,
-now go back to the project's directory and set some environment variables
+When finished, you should have the toolchain setup in /Volumes/CrossToolNG/x-tools directory.
+now go back to the project's directory and set some environment variables:
 ```bash
 export ZEPHYR_GCC_VARIANT=xtools
 export XTOOLS_TOOLCHAIN_PATH=/Volumes/CrossToolNG/x-tools
 ```
 
-To use the same toolchain in new sessions in the future you can set the variables in the file $HOME/.zephyrrc, for example:
+To use the same toolchain in future sessions, you can set the variables in the file $HOME/.zephyrrc. For example:
 ```bash
 $ cat <<EOF > ~/.zephyrrc
 export XTOOLS_TOOLCHAIN_PATH=/Volumes/CrossToolNG/x-tools
@@ -523,7 +524,7 @@ export ZEPHYR_GCC_VARIANT=xtools
 EOF
 ```
 
-Now, you can build and run on qemu using this command:
+Now, you can build and run on QEMU using this command:
 ```bash
 make JS=samples/HelloWorld.js BOARD=qemu_x86 qemu
 ```
@@ -538,19 +539,19 @@ Hello, ZJS world!
 ```
 
 To build for Arduino 101, you'll need to download the latest Arduino IDE
-[here](https://www.arduino.cc/en/guide/macOSX), once you have the IDE installed,
+[here](https://www.arduino.cc/en/guide/macOSX). Once you have the IDE installed,
 open the IDE and click on Tools->Board->Board Manager, and install the latest
-version of the board support package "Intel Curie Boards", this will install the
+version of the board support package "Intel Curie Boards". This will install the
  arc-elf compiler located in the following directory:
 
-$HOME/Library/Arduino15/packages/Intel/tools/arc-elf32/
+`$HOME/Library/Arduino15/packages/Intel/tools/arc-elf32/`
 
-Then copy the compiler to the where you installed crosstool-ng toolcain:
+Then copy the compiler to where you installed the crosstool-ng toolchain:
 ```bash
 cp –pR $HOME/Library/Arduino15/packages/Intel/tools/arc-elf32 /Volumes/CrossToolNG/
 ```
 
-The compiler is in a subdirectory, for example, 1.6.9+1.0.1, you'll need
+The compiler is in a subdirectory, such as 1.6.9+1.0.1. You'll need
 to pass this to make to find the right bin file.
 
 You can now build for Arduino 101 (without setting BOARD=, it builds arduino_101 by default)
@@ -558,21 +559,20 @@ You can now build for Arduino 101 (without setting BOARD=, it builds arduino_101
 make JS=samples/HelloWorld.js ARC_CROSS_COMPILE=/Volumes/CrossToolNG/arc-elf32/1.6.9+1.0.1/bin/arc-elf32-
 ```
 
-Note. There's currently a bug that you'll run into a linker issue using the latest Zephyr (1.7.0),
-we filed a bug upstream to track this, we'll update this document once that is fixed. 
+**Note** There's currently a bug that you'll run into a linker issue using the latest Zephyr (1.7.0).
+We filed a bug upstream to track this; we'll update this document once that is fixed.
 
 ### Other targets like FRDM-K64F or possibly other ARM boards on Mac
-This also have limited support currently, the requiremenet here is that you'll
+These also have limited support currently. The requiremenet is that you'll
 need to install the GCC ARM Embedded cross compiler [here](https://developer.arm.com/open-source/gnu-toolchain/gnu-rm/downloads)
 
 After you download it, set these environment variables:
-
 ```bash
 $ export GCCARMEMB_TOOLCHAIN_PATH="~/Downloads/gcc-arm-none-eabi-6-2017-q1-update/"
 $ export ZEPHYR_GCC_VARIANT=gccarmemb
 ```
 
-Then you can build it like:
+Then you can build like this:
 ```bash
 make JS=samples/HelloWorld.js BOARD=frdm_k64f CROSS_COMPILE=~/Downloads/gcc-arm-none-eabi-6-2017-q1-update/bin/arm-none-eabi-
 ```
