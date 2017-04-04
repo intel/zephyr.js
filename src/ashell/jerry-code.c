@@ -134,8 +134,7 @@ static void javascript_print_value(const jerry_value_t value)
     jerry_port_console("\n");
 }
 
-//static int read_file(const char *file_name, char **file_buf)
-static char* read_file(const char *file_name, size_t *size)
+static char* read_file(const char *file_name, ssize_t *size)
 {
     char *file_buf = NULL;
     fs_file_t *fp = fs_open_alloc(file_name, "r");
@@ -173,7 +172,7 @@ static void eval_list()
 {
     // This assumes the list is in the correct order for calling eval
     if (req_list) {
-        size_t file_size;
+        ssize_t file_size;
         char *req_file_buffer = NULL;
         requires_list_t *cur = req_list;
         while (cur) {
@@ -227,7 +226,7 @@ static void add_requires(requires_list_t **list, char *filebuf)
 
 static void load_require_modules(char *file_buffer)
 {
-    size_t file_size;
+    ssize_t file_size;
     char *req_file_buffer = NULL;
     // Check if the file we've been asked to run requires any JS modules
     add_requires(&req_list, file_buffer);
@@ -270,7 +269,7 @@ static void javascript_print_error(jerry_value_t error_value)
     zjs_free(msg);
 }
 
-void javascript_eval_code(const char *source_buffer, size_t size)
+void javascript_eval_code(const char *source_buffer, ssize_t size)
 {
     jerry_port_default_set_log_level(JERRY_LOG_LEVEL_TRACE);
     ZVAL ret_val = jerry_eval((jerry_char_t *) source_buffer, size, false);
