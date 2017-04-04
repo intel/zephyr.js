@@ -339,6 +339,21 @@ jerry_value_t zjs_buffer_create(uint32_t size, zjs_buffer_t **ret_buf)
     //  effects: allocates a JS Buffer object, an underlying C buffer, and a
     //             list item to track it; if any of these fail, return an error;
     //             otherwise return the JS object
+
+    // follow Node's Buffer.kMaxLength limits though we don't expose that
+    uint32_t maxLength = (1UL << 31) - 1;
+    if (sizeof(size_t) == 4) {
+        // detected 32-bit architecture
+        maxLength = (1 << 30) - 1;
+    }
+    if (size > maxLength) {
+#ifdef DEBUG_BUILD
+        return RANGE_ERROR("size greater than max length");
+#else
+        return RANGE_ERROR("");
+#endif
+    }
+
     void *buf = zjs_malloc(size);
     zjs_buffer_t *buf_item =
         (zjs_buffer_t *)zjs_malloc(sizeof(zjs_buffer_t));
@@ -384,12 +399,20 @@ static jerry_value_t zjs_buffer(const jerry_value_t function_obj,
 
     if (jerry_value_is_number(argv[0])) {
         double dnum = jerry_get_number_value(argv[0]);
+        uint32_t unum;
         if (dnum < 0) {
-            dnum = 0;
+            unum = 0;
+        }
+        else if (dnum > 0xffffffff) {
+            unum = 0xffffffff;
+        }
+        else {
+            // round to the nearest integer
+            unum = (uint32_t)(dnum + 0.5);
         }
 
         // treat a number argument as a length
-        return zjs_buffer_create((uint32_t)dnum, NULL);
+        return zjs_buffer_create(unum, NULL);
     }
     else if (jerry_value_is_array(argv[0])) {
         // treat array argument as byte initializers

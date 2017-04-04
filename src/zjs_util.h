@@ -29,7 +29,7 @@ void *zjs_malloc_with_retry(size_t size);
 #define zjs_malloc(sz) ({void *zjs_ptr = zjs_malloc_with_retry(sz); ZJS_PRINT("%s:%d: allocating %lu bytes (%p)\n", __func__, __LINE__, (uint32_t)sz, zjs_ptr); zjs_ptr;})
 #define zjs_free(ptr) (ZJS_PRINT("%s:%d: freeing %p\n", __func__, __LINE__, ptr), free(ptr))
 #else
-#define zjs_malloc(sz) ({void *zjs_ptr = zjs_malloc_with_retry(sz); if (!zjs_ptr) {ERR_PRINT("malloc failed");} zjs_ptr;})
+#define zjs_malloc(sz) ({void *zjs_ptr = zjs_malloc_with_retry(sz); if (!zjs_ptr) {ERR_PRINT("malloc failed\n");} zjs_ptr;})
 #define zjs_free(ptr) free(ptr)
 #endif  // ZJS_TRACE_MALLOC
 #endif  // ZJS_LINUX_BUILD
