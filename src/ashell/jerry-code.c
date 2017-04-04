@@ -161,6 +161,7 @@ static char* read_file(const char *file_name, ssize_t *size)
     if (brw != *size) {
         comms_printf("[ERR] Failed loading code %s\n", file_name);
         fs_close_alloc(fp);
+        zjs_free(file_buf);
         return NULL;
     }
 
