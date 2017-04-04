@@ -33,7 +33,7 @@ static jerry_value_t create_promise(const jerry_value_t function_obj,
     handle->value = TEST_VAL;
 
     jerry_value_t promise = jerry_create_object();
-    ZJS_PRINT("Testing promise, object = %u\n", (unsigned long)promise);
+    ZJS_PRINT("Testing promise, object = %u\n", (unsigned int)promise);
 
     zjs_make_promise(promise, post_promise, handle);
 
