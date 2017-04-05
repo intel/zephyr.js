@@ -39,17 +39,17 @@ static struct shell_state_config shell = {
     .state_flags = kShellTransferRaw
 };
 
-const char ERROR_NOT_RECOGNIZED[] = "Unknown command\n";
-const char ERROR_NOT_ENOUGH_ARGUMENTS[] = "Not enough arguments\n";
-const char ERROR_FILE_NOT_FOUND[] = "File not found\n";
-const char ERROR_EXCEDEED_SIZE[] = "String too long\n";
+const char ERROR_NOT_RECOGNIZED[] = "Unknown command";
+const char ERROR_NOT_ENOUGH_ARGUMENTS[] = "Not enough arguments";
+const char ERROR_FILE_NOT_FOUND[] = "File not found";
+const char ERROR_EXCEDEED_SIZE[] = "String too long";
 
 const char MSG_FILE_SAVED[] =
      ANSI_FG_GREEN "Saving file. " ANSI_FG_RESTORE
-     "run the 'run' command to see the result\n";
+     "run the 'run' command to see the result";
 
-const char MSG_FILE_ABORTED[] = ANSI_FG_RED "Aborted!\n";
-const char MSG_EXIT[] = ANSI_FG_GREEN "Back to shell!\n";
+const char MSG_FILE_ABORTED[] = ANSI_FG_RED "Aborted!";
+const char MSG_EXIT[] = ANSI_FG_GREEN "Back to shell!";
 
 const char READY_FOR_RAW_DATA[] =
     "Ready for JavaScript. \r\n" \
@@ -88,7 +88,7 @@ int32_t ashell_get_filename_buffer(const char *buf, char *destination)
 
     if (arg_len == 0) {
         *destination = '\0';
-        comms_printf(ERROR_NOT_ENOUGH_ARGUMENTS);
+        comms_println(ERROR_NOT_ENOUGH_ARGUMENTS);
         return RET_ERROR;
     }
 
@@ -102,7 +102,7 @@ static int8_t file_exists(const char *buf, char *filename)
     }
 
     if (!fs_exist(filename)) {
-        printf(ERROR_FILE_NOT_FOUND);
+        comms_println(ERROR_FILE_NOT_FOUND);
         return RET_ERROR;
     }
     return RET_OK;
