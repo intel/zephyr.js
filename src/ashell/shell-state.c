@@ -39,17 +39,17 @@ static struct shell_state_config shell = {
     .state_flags = kShellTransferRaw
 };
 
-const char ERROR_NOT_RECOGNIZED[] = "Unknown command";
-const char ERROR_NOT_ENOUGH_ARGUMENTS[] = "Not enough arguments";
-const char ERROR_FILE_NOT_FOUND[] = "File not found";
-const char ERROR_EXCEDEED_SIZE[] = "String too long";
+const char ERROR_NOT_RECOGNIZED[] = "Unknown command\n";
+const char ERROR_NOT_ENOUGH_ARGUMENTS[] = "Not enough arguments\n";
+const char ERROR_FILE_NOT_FOUND[] = "File not found\n";
+const char ERROR_EXCEDEED_SIZE[] = "String too long\n";
 
 const char MSG_FILE_SAVED[] =
      ANSI_FG_GREEN "Saving file. " ANSI_FG_RESTORE
-     "run the 'run' command to see the result";
+     "run the 'run' command to see the result\n";
 
-const char MSG_FILE_ABORTED[] = ANSI_FG_RED "Aborted!";
-const char MSG_EXIT[] = ANSI_FG_GREEN "Back to shell!";
+const char MSG_FILE_ABORTED[] = ANSI_FG_RED "Aborted!\n";
+const char MSG_EXIT[] = ANSI_FG_GREEN "Back to shell!\n";
 
 const char READY_FOR_RAW_DATA[] =
     "Ready for JavaScript. \r\n" \
@@ -95,6 +95,19 @@ int32_t ashell_get_filename_buffer(const char *buf, char *destination)
     return arg_len;
 }
 
+static int8_t file_exists(const char *buf, char *filename)
+{
+    if (ashell_get_filename_buffer(buf, filename) <= 0) {
+        return RET_ERROR;
+    }
+
+    if (!fs_exist(filename)) {
+        printf(ERROR_FILE_NOT_FOUND);
+        return RET_ERROR;
+    }
+    return RET_OK;
+}
+
 int32_t ashell_remove_file(char *buf)
 {
     char filename[MAX_FILENAME_SIZE];
@@ -125,7 +138,7 @@ int32_t ashell_make_dir(char *buf)
 int32_t ashell_disk_usage(char *buf)
 {
     char filename[MAX_FILENAME_SIZE];
-    if (ashell_get_filename_buffer(buf, filename) <= 0) {
+    if (file_exists(buf, filename) != RET_OK) {
         return RET_ERROR;
     }
 
@@ -267,12 +280,7 @@ int32_t ashell_print_file(char *buf)
     if (hidden)
         printk(" Print hidden \n");
 
-    if (ashell_get_filename_buffer(buf, filename) <= 0) {
-        return RET_ERROR;
-    }
-
-    if (!fs_exist(filename)) {
-        printf(ERROR_FILE_NOT_FOUND);
+    if (file_exists(buf, filename) != RET_OK) {
         return RET_ERROR;
     }
 
@@ -321,7 +329,7 @@ int32_t ashell_print_file(char *buf)
 int32_t ashell_parse_javascript(char *buf)
 {
     char filename[MAX_FILENAME_SIZE];
-    if (ashell_get_filename_buffer(buf, filename) <= 0) {
+    if (file_exists(buf, filename) != RET_OK) {
         return RET_ERROR;
     }
 
@@ -334,7 +342,7 @@ int32_t ashell_parse_javascript(char *buf)
 int32_t ashell_run_javascript(char *buf)
 {
     char filename[MAX_FILENAME_SIZE];
-    if (ashell_get_filename_buffer(buf, filename) <= 0) {
+    if (file_exists(buf, filename) != RET_OK) {
         return RET_ERROR;
     }
 
