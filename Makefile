@@ -269,7 +269,6 @@ cleanlocal:
 	@rm -f prj.mdef
 	@rm -f zjs.conf.tmp
 	@rm -f js.tmp
-	@rm -f .snapshot.last_build
 
 # Explicit clean
 .PHONY: clean
