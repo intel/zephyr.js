@@ -210,9 +210,9 @@ HEX> run test.js
 Connect using serial console
 ----------------------------
 If you want to interact with the ashell using serial console instead of
-browser IDE, use `make ashell`
+browser IDE, use: `make ashell`
 
-* Then use the following command to connect to the ashell from a terminal
+* Then use the following command to connect to the ashell from a terminal:
 
   ```bash
   $ screen /dev/ttyACM0 115200
