@@ -1,9 +1,5 @@
 language: generic # setting language to C will override cross-compiler and fail
 
-compiler:
-  - gcc
-  - clang
-
 sudo: required
 dist: trusty
 
@@ -23,33 +19,19 @@ env:
     - ZEPHYR_SDK_DOWNLOAD_FOLDER=https://nexus.zephyrproject.org/content/repositories/releases/org/zephyrproject/zephyr-sdk/$ZEPHYR_SDK_VERSION-i686
     - ZEPHYR_SDK_SETUP_BINARY=zephyr-sdk-$ZEPHYR_SDK_VERSION-i686-setup.run
     - ZEPHYR_SDK_DOWNLOAD_URL=$ZEPHYR_SDK_DOWNLOAD_FOLDER/$ZEPHYR_SDK_SETUP_BINARY
-matrix:
-  include:
-    - os: linux
-      env: TARGET="zephyr"
-    - os: linux
-      env: TARGET="extra"
-    - os: linux
-      env: TARGET="linux"
-    - os: linux
-      env: TARGET="ashell"
-    - os: osx
-      osx_image: xcode8.3
-      env: TARGET="linux"
+  matrix:
+    - TARGET="zephyr"
+    - TARGET="extra"
+    - TARGET="linux"
+    - TARGET="ashell"
 
 cache:
   directories:
     - $ZEPHYR_SDK_INSTALL_DIR
 
 before_install:
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
-      sudo apt-get update -qq &&
-      sudo apt-get install make gcc g++ python3-ply ncurses-dev uglifyjs sysvbanner -qq;
-    fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
-      brew update &&
-      brew install python3;
-    fi
+  - sudo apt-get update -qq
+  - sudo apt-get install make gcc g++ python3-ply ncurses-dev uglifyjs sysvbanner -qq
 
 install: >
   if [ "$TARGET" != "linux" -a "$(cat $ZEPHYR_SDK_INSTALL_DIR/sdk_version)" != "$ZEPHYR_SDK_VERSION" ]; then
