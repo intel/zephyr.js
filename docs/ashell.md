@@ -210,13 +210,9 @@ HEX> run test.js
 Connect using serial console
 ----------------------------
 If you want to interact with the ashell using serial console instead of
-browser IDE, you just need to enable USB CDC ACM device class driver
-and rebuild the image.
+browser IDE, use: `make ashell`
 
-* Set 'CONFIG_USB_CDC_ACM=y' in fragments/prj.conf.arduino_101_dev to
-enable USB CDC ACM device class driver.
-
-* Use the following command to connect to the ashell from a terminal
+* Then use the following command to connect to the ashell from a terminal:
 
   ```bash
   $ screen /dev/ttyACM0 115200
