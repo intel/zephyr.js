@@ -95,19 +95,6 @@ int32_t ashell_get_filename_buffer(const char *buf, char *destination)
     return arg_len;
 }
 
-static int8_t file_exists(const char *buf, char *filename)
-{
-    if (ashell_get_filename_buffer(buf, filename) <= 0) {
-        return RET_ERROR;
-    }
-
-    if (!fs_exist(filename)) {
-        comms_println(ERROR_FILE_NOT_FOUND);
-        return RET_ERROR;
-    }
-    return RET_OK;
-}
-
 int32_t ashell_remove_file(char *buf)
 {
     char filename[MAX_FILENAME_SIZE];
@@ -138,7 +125,7 @@ int32_t ashell_make_dir(char *buf)
 int32_t ashell_disk_usage(char *buf)
 {
     char filename[MAX_FILENAME_SIZE];
-    if (file_exists(buf, filename) != RET_OK) {
+    if (ashell_get_filename_buffer(buf, filename) <= 0) {
         return RET_ERROR;
     }
 
@@ -280,7 +267,7 @@ int32_t ashell_print_file(char *buf)
     if (hidden)
         printk(" Print hidden \n");
 
-    if (file_exists(buf, filename) != RET_OK) {
+    if (ashell_get_filename_buffer(buf, filename) <= 0) {
         return RET_ERROR;
     }
 
@@ -329,7 +316,7 @@ int32_t ashell_print_file(char *buf)
 int32_t ashell_parse_javascript(char *buf)
 {
     char filename[MAX_FILENAME_SIZE];
-    if (file_exists(buf, filename) != RET_OK) {
+    if (ashell_get_filename_buffer(buf, filename) <= 0) {
         return RET_ERROR;
     }
 
@@ -342,7 +329,7 @@ int32_t ashell_parse_javascript(char *buf)
 int32_t ashell_run_javascript(char *buf)
 {
     char filename[MAX_FILENAME_SIZE];
-    if (file_exists(buf, filename) != RET_OK) {
+    if (ashell_get_filename_buffer(buf, filename) <= 0) {
         return RET_ERROR;
     }
 
