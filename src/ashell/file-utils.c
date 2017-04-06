@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 /**
 * @file
@@ -46,6 +46,11 @@ fs_file_t *fs_open_alloc(const char *filename, const char *mode)
                 return NULL;
             }
         }
+    }
+    else {
+        /* Return NULL if trying to read from a nonexistent file */
+        if (!fs_exist(filename))
+            return NULL;
     }
 
     fs_file_t *file = (fs_file_t *)zjs_malloc(sizeof(fs_file_t));

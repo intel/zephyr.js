@@ -88,7 +88,7 @@ int32_t ashell_get_filename_buffer(const char *buf, char *destination)
 
     if (arg_len == 0) {
         *destination = '\0';
-        comms_printf(ERROR_NOT_ENOUGH_ARGUMENTS);
+        comms_println(ERROR_NOT_ENOUGH_ARGUMENTS);
         return RET_ERROR;
     }
 
@@ -268,11 +268,6 @@ int32_t ashell_print_file(char *buf)
         printk(" Print hidden \n");
 
     if (ashell_get_filename_buffer(buf, filename) <= 0) {
-        return RET_ERROR;
-    }
-
-    if (!fs_exist(filename)) {
-        printf(ERROR_FILE_NOT_FOUND);
         return RET_ERROR;
     }
 
