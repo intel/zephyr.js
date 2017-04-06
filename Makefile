@@ -144,9 +144,16 @@ rom_report: zephyr
 					SNAPSHOT=$(SNAPSHOT) \
 					rom_report
 
+# choose name of jerryscript library based on snapshot feature
+ifeq ($(SNAPSHOT), on)
+JERRYLIB=outdir/$(BOARD)/libjerry-core-snapshot.a
+else
+JERRYLIB=outdir/$(BOARD)/libjerry-core-parser.a
+endif
+
 # Build for zephyr, default target
 .PHONY: zephyr
-zephyr: analyze generate jerryscript $(ARC)
+zephyr: analyze generate $(JERRYLIB) $(ARC)
 	@make -f Makefile.zephyr	BOARD=$(BOARD) \
 					VARIANT=$(VARIANT) \
 					CB_STATS=$(CB_STATS) \
@@ -177,11 +184,12 @@ dfu:
 	dfu-util -a sensor_core -D $(A101SSBIN).dfu
 
 # Build JerryScript as a library (libjerry-core.a)
-jerryscript:
+$(JERRYLIB):
 	@echo "Building" $@
+	@rm -rf $(JERRY_BASE)/build/$(BOARD)/
 	$(MAKE) -C $(JERRY_BASE) -f targets/zephyr/Makefile.zephyr BOARD=$(BOARD) EXT_JERRY_FLAGS="$(EXT_JERRY_FLAGS)" jerry
 	mkdir -p outdir/$(BOARD)/
-	cp $(JERRY_BASE)/build/$(BOARD)/obj-$(BOARD)/lib/libjerry-core.a outdir/$(BOARD)/
+	cp $(JERRY_BASE)/build/$(BOARD)/obj-$(BOARD)/lib/libjerry-core.a $(JERRYLIB)
 
 # Give an error if we're asked to create the JS file
 $(JS):
@@ -269,7 +277,6 @@ cleanlocal:
 	@rm -f prj.mdef
 	@rm -f zjs.conf.tmp
 	@rm -f js.tmp
-	@rm -f .snapshot.last_build
 
 # Explicit clean
 .PHONY: clean
@@ -278,7 +285,7 @@ ifeq ($(BOARD), linux)
 	@make -f Makefile.linux clean
 else
 	@rm -rf $(JERRY_BASE)/build/$(BOARD)/;
-	@rm -f outdir/$(BOARD)/libjerry-core.a;
+	@rm -f outdir/$(BOARD)/libjerry-core*.a;
 	@make -f Makefile.zephyr clean BOARD=$(BOARD);
 	@cd arc/; make clean;
 endif
@@ -305,12 +312,6 @@ ifeq ($(SNAPSHOT), on)
 		cat js.tmp > outdir/jsgen.tmp; \
 	fi
 	@outdir/snapshot/snapshot outdir/jsgen.tmp > outdir/include/zjs_snapshot_gen.h
-# SNAPSHOT=on, check if rebuilding JerryScript is needed
-ifeq ("$(wildcard .snapshot.last_build)", "")
-	@rm -rf $(JERRY_BASE)/build/$(BOARD)/
-	@rm -f outdir/$(BOARD)/libjerry-core.a
-endif
-	echo "" > .snapshot.last_build
 else
 	@echo Creating C string from JS application...
 ifeq ($(BOARD), linux)
@@ -318,12 +319,6 @@ ifeq ($(BOARD), linux)
 else
 	@./scripts/convert.sh js.tmp outdir/include/zjs_script_gen.h
 endif
-# SNAPSHOT=off, check if rebuilding JerryScript is needed
-ifneq ("$(wildcard .snapshot.last_build)", "")
-	@rm -rf $(JERRY_BASE)/build/$(BOARD)/
-	@rm -f outdir/$(BOARD)/libjerry-core.a
-endif
-	@rm -f .snapshot.last_build
 endif
 
 NET_BUILD=$(shell grep -q -E "BUILD_MODULE_OCF|BUILD_MODULE_DGRAM" src/Makefile && echo y)
