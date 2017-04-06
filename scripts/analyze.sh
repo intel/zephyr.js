@@ -29,7 +29,10 @@ BOARD=$1
 SCRIPT=$2
 CONFIG=$3
 ASHELL=$4
+
+if [ -n "$ZEPHYR_SDK_INSTALL_DIR" ]; then
 SDK_VERSION=$(cat ${ZEPHYR_SDK_INSTALL_DIR}/sdk_version)
+fi
 
 echo "# Modules found in $SCRIPT:" > $PRJFILE
 echo "# Modules found in $SCRIPT:" > $ARCPRJFILE
