@@ -9,7 +9,11 @@ MDEF_FILE = prj.mdef
 BOARD ?= arduino_101
 CONF_FILE ?= prj.conf
 
-KBUILD_ZEPHYR_APP = libjerry-core.a
+ifeq ($(SNAPSHOT), on)
+KBUILD_ZEPHYR_APP = libjerry-core-snapshot.a
+else
+KBUILD_ZEPHYR_APP = libjerry-core-parser.a
+endif
 
 obj-y += src/
 
