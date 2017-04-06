@@ -161,7 +161,7 @@ jerry_value_t zjs_custom_error(const char *name, const char *message)
 jerry_value_t zjs_standard_error(zjs_error_type_t type, const char *message)
 {
     int count = sizeof(error_types) / sizeof(zjs_error_t);
-    if (type >= count) {
+    if ((unsigned int)type >= count) {
 #ifdef DEBUG_BUILD
         ZJS_PRINT("[Error] %s\n", message);
 #endif
