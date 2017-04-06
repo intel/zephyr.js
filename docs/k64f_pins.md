@@ -75,14 +75,10 @@ API Documentation
 
 The FRDM-K64F has 16 general purpose I/O pins, D0 - D15.
 
-D3 and D5 are used for JTAG communication by default in Zephyr. You can disable
-this by setting CONFIG_PRESERVE_JTAG_IO_PINS=n in prj.conf, and then use them
-as other GPIOs. For board revisions up to 'D", the same applies to pin D8.
+Note: Pin D8 currently doesn't work as an input or output; we haven't
+determined why.
 
-D14 and D15 can be used as GPIO inputs but not outputs currently.
-
-The rest (D0 - D2, D4, D6 - D14) can all be used as either GPIO inputs or
-outputs.
+The rest (D0 - D7, D9 - D15) can all be used as either GPIO inputs or outputs.
 
 ### LEDs
 
