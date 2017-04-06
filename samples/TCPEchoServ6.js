@@ -1,4 +1,4 @@
-// Copyright (c) 2017, Linaro Limited.
+// Copyright (c) 2017, Intel Corporation.
 
 // Sample for "net" module implementing an IPv6 TCP echo server.
 // To run it on the Arduino 101, you'll need to connect via BLE with your
