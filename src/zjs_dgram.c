@@ -14,6 +14,7 @@
 #include "zjs_util.h"
 #include "zjs_buffer.h"
 #include "zjs_callbacks.h"
+#include "zjs_net_config.h"
 
 static jerry_value_t zjs_dgram_socket_prototype;
 
@@ -336,21 +337,7 @@ static jerry_value_t zjs_dgram_sock_close(const jerry_value_t function_obj,
 
 jerry_value_t zjs_dgram_init()
 {
-#if defined(CONFIG_NET_L2_BLUETOOTH)
-    if (bt_enable(NULL)) {
-        ERR_PRINT("Bluetooth init failed");
-        return ZJS_UNDEFINED;
-    }
-    ipss_init();
-    ipss_advertise();
-#endif
-    // TODO: Interface address initialization doesn't belong to this module
-    static struct in_addr in4addr_my = { { { 192, 0, 2, 1 } } };
-    // 2001:db8::1
-    static struct in6_addr in6addr_my = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
-                                              0, 0, 0, 0, 0, 0, 0, 0x1 } } };
-    net_if_ipv4_addr_add(net_if_get_default(), &in4addr_my, NET_ADDR_MANUAL, 0);
-    net_if_ipv6_addr_add(net_if_get_default(), &in6addr_my, NET_ADDR_MANUAL, 0);
+    zjs_net_config();
 
     // create socket prototype object
     zjs_native_func_t array[] = {

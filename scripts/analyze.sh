@@ -97,6 +97,7 @@ if check_for_require dgram || check_config_file ZJS_DGRAM; then
     MODULES+=" -DBUILD_MODULE_DGRAM -DBUILD_MODULE_BUFFER"
     echo "export ZJS_DGRAM=y" >> $CONFFILE
     echo "export ZJS_BUFFER=y" >> $CONFFILE
+    echo "export ZJS_NET_CONFIG=y" >> $CONFFILE
     echo "CONFIG_NETWORKING=y" >> $PRJFILE
     echo "CONFIG_NET_IPV6=y" >> $PRJFILE
     echo "CONFIG_NET_IPV4=y" >> $PRJFILE
@@ -190,6 +191,7 @@ if check_for_require ocf || check_config_file ZJS_OCF; then
 
     echo "export ZJS_OCF=y" >> $CONFFILE
     echo "export ZJS_EVENTS=y" >> $CONFFILE
+    echo "export ZJS_NET_CONFIG=y" >> $CONFFILE
 fi
 
 if check_for_require gpio || check_config_file ZJS_GPIO; then

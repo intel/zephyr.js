@@ -1,6 +1,49 @@
-// Copyright (c) 2016-2017, Intel Corporation.
+// Copyright (c) 2017, Intel Corporation.
 
-#include "zjs_ocf_ble.h"
+#include <net/net_context.h>
+#include <net/nbuf.h>
+#include <net/net_if.h>
+#if defined(CONFIG_NET_L2_BLUETOOTH)
+#include <bluetooth/bluetooth.h>
+#include <gatt/ipss.h>
+#endif
+#include "zjs_util.h"
+#include "zjs_net_config.h"
+
+static uint8_t net_enabled = 0;
+#if defined(CONFIG_NET_L2_BLUETOOTH)
+static uint8_t ble_enabled = 0;
+#endif
+
+void zjs_net_config(void)
+{
+#if defined(CONFIG_NET_L2_BLUETOOTH)
+    if (!ble_enabled) {
+        zjs_init_ble_address();
+        if (bt_enable(NULL)) {
+            ERR_PRINT("Bluetooth init failed");
+            return;
+        }
+        ipss_init();
+        ipss_advertise();
+        ble_enabled = 1;
+    }
+#endif
+    if (!net_enabled) {
+        // TODO: Provide way to configure IP address/DHCP if desired
+#ifdef CONFIG_NET_IPV4
+        static struct in_addr in4addr_my = { { { 192, 0, 2, 1 } } };
+        net_if_ipv4_addr_add(net_if_get_default(), &in4addr_my, NET_ADDR_MANUAL, 0);
+#endif
+#ifdef CONFIG_NET_IPV6
+        // 2001:db8::1
+        static struct in6_addr in6addr_my = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+                                                  0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+        net_if_ipv6_addr_add(net_if_get_default(), &in6addr_my, NET_ADDR_MANUAL, 0);
+#endif
+        net_enabled = 1;
+    }
+}
 
 static bt_addr_le_t id_addr;
 #ifdef ZJS_CONFIG_BLE_ADDRESS
@@ -54,10 +97,10 @@ static int str2bt_addr_le(const char *str, const char *type, bt_addr_le_t *addr)
     return 0;
 }
 
-jerry_value_t zjs_ocf_set_ble_address(const jerry_value_t function_val,
-                                      const jerry_value_t this,
-                                      const jerry_value_t argv[],
-                                      const jerry_length_t argc)
+jerry_value_t zjs_set_ble_address(const jerry_value_t function_val,
+                                  const jerry_value_t this,
+                                  const jerry_value_t argv[],
+                                  const jerry_length_t argc)
 {
 #ifndef ZJS_CONFIG_BLE_ADDRESS
     // args: address
@@ -83,7 +126,7 @@ jerry_value_t zjs_ocf_set_ble_address(const jerry_value_t function_val,
     return ZJS_UNDEFINED;
 }
 
-void zjs_init_ocf_ble()
+void zjs_init_ble_address()
 {
 #ifdef ZJS_CONFIG_BLE_ADDRESS
     static const struct bt_storage storage = {

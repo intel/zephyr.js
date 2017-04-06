@@ -13,10 +13,6 @@ ccflags-y += -I$(OCF_ROOT)/port/zephyr/src \
 ccflags-y += -DWITH_OCF  \
              -DNDEBUG
 
-ifneq ($(BLE_ADDR), none)
-ccflags-y += -DZJS_CONFIG_BLE_ADDRESS=\"$(BLE_ADDR)\"
-endif
-
 ifeq ($(VARIANT), debug)
 ccflags-y += -DOC_DEBUG
 endif
