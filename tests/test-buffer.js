@@ -19,18 +19,18 @@ for (var i = 0; i < lens.length; i++) {
 }
 
 // determine whether it's 32- or 64-bit platform
-var bits32 = true;
+var bits32 = false;
 try {
     buff = new Buffer(0x7fffffff);
-    assert(true, "64 bit system (2^31-1 length buffer allowed)");
-    bits32 = false;
+    assert(true, "64-bit system (2^31-1 length buffer allowed)");
 }
 catch (e) {
     if (e instanceof RangeError) {
-        assert(true, "32 bit system (2^31-1 length buffer out of range)");
+        assert(true, "32-bit system (2^31-1 length buffer out of range)");
+        bits32 = true;
     }
     else {
-        assert(false, "64 bit system shouldn't be out of memory");
+        assert(false, "while testing range: " + e);
     }
 }
 
