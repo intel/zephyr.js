@@ -317,10 +317,6 @@ uint16_t zjs_compress_32_to_16(uint32_t num)
 
     int zeroes = __builtin_clz(num);
 
-    if (sizeof(unsigned long) > 4) {
-        zeroes -= (sizeof(unsigned long) - 4) * 8;
-    }
-
     if (zeroes >= 17)
         return (uint16_t)num;
 
