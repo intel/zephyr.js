@@ -72,10 +72,7 @@ static void zjs_pwm_set_ms(jerry_value_t obj, double period, double pulseWidth)
                      (uint32_t)(pulseWidth * 1000));
 }
 
-static jerry_value_t zjs_pwm_pin_set_cycles(const jerry_value_t function_obj,
-                                            const jerry_value_t this,
-                                            const jerry_value_t argv[],
-                                            const jerry_length_t argc)
+static ZJS_DECL_FUNC(zjs_pwm_pin_set_cycles)
 {
     // requires: this is a PWMPin object from zjs_pwm_open, takes two arguments:
     //             the period in hardware cycles, dependent on the underlying
@@ -106,10 +103,7 @@ static jerry_value_t zjs_pwm_pin_set_cycles(const jerry_value_t function_obj,
     return ZJS_UNDEFINED;
 }
 
-static jerry_value_t zjs_pwm_pin_set_ms(const jerry_value_t function_obj,
-                                        const jerry_value_t this,
-                                        const jerry_value_t argv[],
-                                        const jerry_length_t argc)
+static ZJS_DECL_FUNC(zjs_pwm_pin_set_ms)
 {
     // requires: this is a PWMPin object from zjs_pwm_open, takes two arguments:
     //             the period in milliseconds (float), and the pulse width in
@@ -139,10 +133,7 @@ static jerry_value_t zjs_pwm_pin_set_ms(const jerry_value_t function_obj,
     return ZJS_UNDEFINED;
 }
 
-static jerry_value_t zjs_pwm_open(const jerry_value_t function_obj,
-                                  const jerry_value_t this,
-                                  const jerry_value_t argv[],
-                                  const jerry_length_t argc)
+static ZJS_DECL_FUNC(zjs_pwm_open)
 {
     // requires: arg 0 is an object with these members: channel (int), period in
     //             hardware cycles (defaults to 255), pulse width in hardware

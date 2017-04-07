@@ -8,10 +8,7 @@
 #include <sys/time.h>
 #endif
 
-static jerry_value_t zjs_performance_now(const jerry_value_t function_obj,
-                                         const jerry_value_t this,
-                                         const jerry_value_t argv[],
-                                         const jerry_length_t argc)
+static ZJS_DECL_FUNC(zjs_performance_now)
 {
     if (argc != 0)
         return zjs_error("performance.now: no args expected");

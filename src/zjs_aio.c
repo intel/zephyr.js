@@ -158,10 +158,7 @@ static void ipm_msg_receive_callback(void *context, uint32_t id,
     }
 }
 
-static jerry_value_t zjs_aio_pin_read(const jerry_value_t function_obj,
-                                      const jerry_value_t this,
-                                      const jerry_value_t argv[],
-                                      const jerry_length_t argc)
+static ZJS_DECL_FUNC(zjs_aio_pin_read)
 {
     uint32_t pin;
     zjs_obj_get_uint32(this, "pin", &pin);
@@ -180,10 +177,7 @@ static jerry_value_t zjs_aio_pin_read(const jerry_value_t function_obj,
     return result;
 }
 
-static jerry_value_t zjs_aio_pin_close(const jerry_value_t function_obj,
-                                       const jerry_value_t this,
-                                       const jerry_value_t argv[],
-                                       const jerry_length_t argc)
+static ZJS_DECL_FUNC(zjs_aio_pin_close)
 {
     uint32_t pin;
     zjs_obj_get_uint32(this, "pin", &pin);
@@ -200,10 +194,7 @@ static jerry_value_t zjs_aio_pin_close(const jerry_value_t function_obj,
     return ZJS_UNDEFINED;
 }
 
-static jerry_value_t zjs_aio_pin_on(const jerry_value_t function_obj,
-                                    const jerry_value_t this,
-                                    const jerry_value_t argv[],
-                                    const jerry_length_t argc)
+static ZJS_DECL_FUNC(zjs_aio_pin_on)
 {
     // args: event name, callback
     ZJS_VALIDATE_ARGS(Z_STRING, Z_FUNCTION Z_NULL);
@@ -245,10 +236,7 @@ static jerry_value_t zjs_aio_pin_on(const jerry_value_t function_obj,
 }
 
 // Asynchronous Operations
-static jerry_value_t zjs_aio_pin_read_async(const jerry_value_t function_obj,
-                                            const jerry_value_t this,
-                                            const jerry_value_t argv[],
-                                            const jerry_length_t argc)
+static ZJS_DECL_FUNC(zjs_aio_pin_read_async)
 {
     // args: callback
     ZJS_VALIDATE_ARGS(Z_FUNCTION);
@@ -270,10 +258,7 @@ static jerry_value_t zjs_aio_pin_read_async(const jerry_value_t function_obj,
     return ZJS_UNDEFINED;
 }
 
-static jerry_value_t zjs_aio_open(const jerry_value_t function_obj,
-                                  const jerry_value_t this,
-                                  const jerry_value_t argv[],
-                                  const jerry_length_t argc)
+static ZJS_DECL_FUNC(zjs_aio_open)
 {
     // args: initialization object
     ZJS_VALIDATE_ARGS(Z_OBJECT);

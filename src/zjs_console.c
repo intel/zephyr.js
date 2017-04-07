@@ -138,11 +138,7 @@ static void print_value(const jerry_value_t value, FILE *out, bool deep,
     }
 }
 
-static jerry_value_t do_print(const jerry_value_t function_obj,
-                              const jerry_value_t this,
-                              const jerry_value_t argv[],
-                              const jerry_length_t argc,
-                              FILE *out)
+static ZJS_DECL_FUNC_ARGS(do_print, FILE *out)
 {
     for (int i = 0; i < argc; i++) {
         if (i) {
@@ -155,26 +151,17 @@ static jerry_value_t do_print(const jerry_value_t function_obj,
     return ZJS_UNDEFINED;
 }
 
-static jerry_value_t console_log(const jerry_value_t function_obj,
-                                 const jerry_value_t this,
-                                 const jerry_value_t argv[],
-                                 const jerry_length_t argc)
+static ZJS_DECL_FUNC(console_log)
 {
-    return do_print(function_obj, this, argv, argc, stdout);
+    return ZJS_CHAIN_FUNC_ARGS(do_print, stdout);
 }
 
-static jerry_value_t console_error(const jerry_value_t function_obj,
-                                   const jerry_value_t this,
-                                   const jerry_value_t argv[],
-                                   const jerry_length_t argc)
+static ZJS_DECL_FUNC(console_error)
 {
-    return do_print(function_obj, this, argv, argc, stderr);
+    return ZJS_CHAIN_FUNC_ARGS(do_print, stderr);
 }
 
-static jerry_value_t console_time(const jerry_value_t function_obj,
-                                  const jerry_value_t this,
-                                  const jerry_value_t argv[],
-                                  const jerry_length_t argc)
+static ZJS_DECL_FUNC(console_time)
 {
     // args: label
     ZJS_VALIDATE_ARGS(Z_STRING);
@@ -186,10 +173,7 @@ static jerry_value_t console_time(const jerry_value_t function_obj,
     return ZJS_UNDEFINED;
 }
 
-static jerry_value_t console_time_end(const jerry_value_t function_obj,
-                                      const jerry_value_t this,
-                                      const jerry_value_t argv[],
-                                      const jerry_length_t argc)
+static ZJS_DECL_FUNC(console_time_end)
 {
     // args: label
     ZJS_VALIDATE_ARGS(Z_STRING);
@@ -216,10 +200,7 @@ static jerry_value_t console_time_end(const jerry_value_t function_obj,
     return ZJS_UNDEFINED;
 }
 
-static jerry_value_t console_assert(const jerry_value_t function_obj,
-                                    const jerry_value_t this,
-                                    const jerry_value_t argv[],
-                                    const jerry_length_t argc)
+static ZJS_DECL_FUNC(console_assert)
 {
     // args: validity[, output]
     ZJS_VALIDATE_ARGS(Z_BOOL, Z_OPTIONAL Z_ANY);

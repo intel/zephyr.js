@@ -83,10 +83,7 @@ static jerry_value_t zjs_i2c_read_base(const jerry_value_t this,
     return buf_obj;
 }
 
-static jerry_value_t zjs_i2c_read(const jerry_value_t function_obj,
-                                  const jerry_value_t this,
-                                  const jerry_value_t argv[],
-                                  const jerry_length_t argc)
+static ZJS_DECL_FUNC(zjs_i2c_read)
 {
     // requires: Requires two arguments and has an optional third.
     //           arg[0] - Address of the I2C device you wish to read from.
@@ -100,10 +97,7 @@ static jerry_value_t zjs_i2c_read(const jerry_value_t function_obj,
     return zjs_i2c_read_base(this, argv, argc, false);
 }
 
-static jerry_value_t zjs_i2c_burst_read(const jerry_value_t function_obj,
-                                        const jerry_value_t this,
-                                        const jerry_value_t argv[],
-                                        const jerry_length_t argc)
+static ZJS_DECL_FUNC(zjs_i2c_burst_read)
 {
     // requires: Requires two arguments and has an optional third.
     //           arg[0] - Address of the I2C device you wish to read from.
@@ -118,10 +112,7 @@ static jerry_value_t zjs_i2c_burst_read(const jerry_value_t function_obj,
     return zjs_i2c_read_base(this, argv, argc, true);
 }
 
-static jerry_value_t zjs_i2c_write(const jerry_value_t function_obj,
-                                   const jerry_value_t this,
-                                   const jerry_value_t argv[],
-                                   const jerry_length_t argc)
+static ZJS_DECL_FUNC(zjs_i2c_write)
 {
     // requires: Requires two arguments and has an optional third.
     //           arg[0] - Address of the I2C device you wish to write to.
@@ -165,28 +156,19 @@ static jerry_value_t zjs_i2c_write(const jerry_value_t function_obj,
     return jerry_create_number(error_msg);
 }
 
-static jerry_value_t zjs_i2c_abort(const jerry_value_t function_obj,
-                                   const jerry_value_t this,
-                                   const jerry_value_t argv[],
-                                   const jerry_length_t argc)
+static ZJS_DECL_FUNC(zjs_i2c_abort)
 {
     // Not implemented yet
     return ZJS_UNDEFINED;
 }
 
-static jerry_value_t zjs_i2c_close(const jerry_value_t function_obj,
-                                   const jerry_value_t this,
-                                   const jerry_value_t argv[],
-                                   const jerry_length_t argc)
+static ZJS_DECL_FUNC(zjs_i2c_close)
 {
     // Not implemented yet
     return ZJS_UNDEFINED;
 }
 
-static jerry_value_t zjs_i2c_open(const jerry_value_t function_obj,
-                                  const jerry_value_t this,
-                                  const jerry_value_t argv[],
-                                  const jerry_length_t argc)
+static ZJS_DECL_FUNC(zjs_i2c_open)
 {
     // requires: Requires two arguments
     //           arg[0] - I2C bus number you want to open a connection to.

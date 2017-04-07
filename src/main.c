@@ -49,19 +49,13 @@ const char script_jscode[] = {
 #endif
 
 // native eval handler
-static jerry_value_t native_eval_handler(const jerry_value_t function_obj,
-                                         const jerry_value_t this,
-                                         const jerry_value_t argv[],
-                                         const jerry_length_t argc)
+static ZJS_DECL_FUNC(native_eval_handler)
 {
     return zjs_error("eval not supported");
 }
 
 // native print handler
-static jerry_value_t native_print_handler(const jerry_value_t function_obj,
-                                          const jerry_value_t this,
-                                          const jerry_value_t argv[],
-                                          const jerry_length_t argc)
+static ZJS_DECL_FUNC(native_print_handler)
 {
     if (argc < 1 || !jerry_value_is_string(argv[0]))
         return zjs_error("print: missing string argument");
@@ -76,10 +70,7 @@ static jerry_value_t native_print_handler(const jerry_value_t function_obj,
     return ZJS_UNDEFINED;
 }
 
-static jerry_value_t stop_js_handler(const jerry_value_t function_obj,
-                                     const jerry_value_t this,
-                                     const jerry_value_t argv[],
-                                     const jerry_length_t argc)
+static ZJS_DECL_FUNC(stop_js_handler)
 {
     #ifdef CONFIG_BOARD_ARDUINO_101
     zjs_ipm_free_callbacks();

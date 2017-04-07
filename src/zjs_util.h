@@ -115,6 +115,59 @@ uint32_t zjs_uncompress_16_to_32(uint16_t num);
 void zjs_print_error_message(jerry_value_t error);
 
 /**
+ * Macro to declare a standard JerryScript external function in a shorter form
+ *
+ * @param name  The name of the function to declare
+ *
+ * Note: This hides the fact that you have function_obj, this, argv, and argc
+ *   variables available in the function.
+ *
+ * Example:
+ * static ZJS_DECL_FUNC(zjs_my_api)
+ * {
+ *     // do something useful; often using those hidden args
+ *     return ZJS_UNDEFINED;
+ * };
+ */
+#define ZJS_DECL_FUNC(name)                               \
+    jerry_value_t name(const jerry_value_t function_obj,  \
+                       const jerry_value_t this,          \
+                       const jerry_value_t argv[],        \
+                       const jerry_length_t argc)
+
+/**
+ * Macro to declare a function that takes the JerryScript args plus more
+ *
+ * @param name  The name of the function to declare
+ * @param ...   List of other arguments to declare after the standard ones
+ *
+ * Example:
+ * static ZJS_DECL_FUNC_ARGS(zjs_my_api_with_args, int mode)
+ * {
+ *     // do something useful, using mode and often the hidden args
+ *     return ZJS_UNDEFINED;
+ * };
+ */
+#define ZJS_DECL_FUNC_ARGS(name, ...)                     \
+    jerry_value_t name(const jerry_value_t function_obj,  \
+                       const jerry_value_t this,          \
+                       const jerry_value_t argv[],        \
+                       const jerry_length_t argc,         \
+                       __VA_ARGS__)
+
+/**
+ * Macro to call a function declared with ZJS_DECL_FUNC_ARGS from another API
+ *
+ * @param name  The name of the function to call
+ * @param ...   List of other arguments to pass
+ *
+ * Example:
+ * jerry_value_t rval = ZJS_CHAIN_FUNC_ARGS(zjs_my_api_with_args, 1);
+ */
+#define ZJS_CHAIN_FUNC_ARGS(name, ...)                 \
+    name(function_obj, this, argv, argc, __VA_ARGS__)
+
+/**
  * Release a jerry_value_t passed by reference
  */
 void zjs_free_value(const jerry_value_t *value);

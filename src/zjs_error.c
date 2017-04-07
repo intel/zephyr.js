@@ -21,10 +21,7 @@ static zjs_error_t error_types[] = {
     { "TypeError" },
 };
 
-static jerry_value_t error_handler(const jerry_value_t function_obj,
-                                   const jerry_value_t this,
-                                   const jerry_value_t argv[],
-                                   const jerry_length_t argc)
+static ZJS_DECL_FUNC(error_handler)
 {
     // args: message
     ZJS_VALIDATE_ARGS(Z_OPTIONAL Z_STRING);

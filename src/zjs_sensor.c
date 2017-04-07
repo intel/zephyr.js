@@ -469,10 +469,7 @@ static void zjs_sensor_onstop_c_callback(void *h, const void *argv)
     }
 }
 
-static jerry_value_t zjs_sensor_start(const jerry_value_t function_obj,
-                                      const jerry_value_t this,
-                                      const jerry_value_t argv[],
-                                      const jerry_length_t argc)
+static ZJS_DECL_FUNC(zjs_sensor_start)
 {
     // requires: this is a Sensor object from takes no args
     //  effects: activates the sensor and start monitoring changes
@@ -491,10 +488,7 @@ static jerry_value_t zjs_sensor_start(const jerry_value_t function_obj,
     return ZJS_UNDEFINED;
 }
 
-static jerry_value_t zjs_sensor_stop(const jerry_value_t function_obj,
-                                     const jerry_value_t this,
-                                     const jerry_value_t argv[],
-                                     const jerry_length_t argc)
+static ZJS_DECL_FUNC(zjs_sensor_stop)
 {
     // requires: this is a Sensor object from takes no args
     //  effects: de-activates the sensor and stop monitoring changes
@@ -515,11 +509,7 @@ static jerry_value_t zjs_sensor_stop(const jerry_value_t function_obj,
     return ZJS_UNDEFINED;
 }
 
-static jerry_value_t zjs_sensor_create(const jerry_value_t function_obj,
-                                       const jerry_value_t this,
-                                       const jerry_value_t argv[],
-                                       const jerry_length_t argc,
-                                       enum sensor_channel channel)
+static ZJS_DECL_FUNC_ARGS(zjs_sensor_create, enum sensor_channel channel)
 {
     // args: [initialization object]
     char *expect = Z_OPTIONAL Z_OBJECT;
@@ -646,65 +636,37 @@ static jerry_value_t zjs_sensor_create(const jerry_value_t function_obj,
     return sensor_obj;
 }
 
-static jerry_value_t zjs_accel_create(const jerry_value_t function_obj,
-                                      const jerry_value_t this,
-                                      const jerry_value_t argv[],
-                                      const jerry_length_t argc)
+static ZJS_DECL_FUNC(zjs_accel_create)
 {
     // requires: arg 0 is an object containing sensor options:
     //             frequency (double) - sampling frequency
     //             includeGravity (bool) - whether you want gravity included
     //  effects: Creates a Accelerometer object to the local sensor
-    return zjs_sensor_create(function_obj,
-                             this,
-                             argv,
-                             argc,
-                             SENSOR_CHAN_ACCEL_XYZ);
+    return ZJS_CHAIN_FUNC_ARGS(zjs_sensor_create, SENSOR_CHAN_ACCEL_XYZ);
 }
 
-static jerry_value_t zjs_gyro_create(const jerry_value_t function_obj,
-                                     const jerry_value_t this,
-                                     const jerry_value_t argv[],
-                                     const jerry_length_t argc)
+static ZJS_DECL_FUNC(zjs_gyro_create)
 {
     // requires: arg 0 is an object containing sensor options:
     //             frequency (double) - sampling frequency
     //  effects: Creates a Gyroscope object to the local sensor
-    return zjs_sensor_create(function_obj,
-                             this,
-                             argv,
-                             argc,
-                             SENSOR_CHAN_GYRO_XYZ);
+    return ZJS_CHAIN_FUNC_ARGS(zjs_sensor_create, SENSOR_CHAN_GYRO_XYZ);
 }
 
-static jerry_value_t zjs_light_create(const jerry_value_t function_obj,
-                                      const jerry_value_t this,
-                                      const jerry_value_t argv[],
-                                      const jerry_length_t argc)
+static ZJS_DECL_FUNC(zjs_light_create)
 {
     // requires: arg 0 is an object containing sensor options:
     //             frequency (double) - sampling frequency
     //  effects: Creates a AmbientLightSensor object to the local sensor
-    return zjs_sensor_create(function_obj,
-                             this,
-                             argv,
-                             argc,
-                             SENSOR_CHAN_LIGHT);
+    return ZJS_CHAIN_FUNC_ARGS(zjs_sensor_create, SENSOR_CHAN_LIGHT);
 }
 
-static jerry_value_t zjs_temp_create(const jerry_value_t function_obj,
-                                     const jerry_value_t this,
-                                     const jerry_value_t argv[],
-                                     const jerry_length_t argc)
+static ZJS_DECL_FUNC(zjs_temp_create)
 {
     // requires: arg 0 is an object containing sensor options:
     //             frequency (double) - sampling frequency
     //  effects: Creates a TemperatureSensor object to the local sensor
-    return zjs_sensor_create(function_obj,
-                             this,
-                             argv,
-                             argc,
-                             SENSOR_CHAN_TEMP);
+    return ZJS_CHAIN_FUNC_ARGS(zjs_sensor_create, SENSOR_CHAN_TEMP);
 }
 
 void zjs_sensor_init()
