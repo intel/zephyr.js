@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 console.log("Test K64f_pins APIs");
 
@@ -22,8 +22,8 @@ for (var i = 0; i < GPIOPins.length; i++) {
 
     checkDefined(pinName);
 
-    // D3, D5, D8 are defined but unusable as GPIOs currently
-    if (pinName == "D3" || pinName == "D5" || pinName == "D8") continue;
+    // D8 are defined but unusable as GPIOs currently
+    if (pinName == "D8") continue;
 
     // GPIOPins as input pins
     var pin = gpio.open({ pin: pins[pinName], direction: "in" });
@@ -35,12 +35,7 @@ for (var i = 0; i < GPIOPins.length; i++) {
     pinValue = pin.read();
     pin.write(!pinValue);
 
-    // D14, D15 can be used as GPIO inputs but not outputs currently
-    if (pinName == "D14" || pinName == "D15") {
-        assert(pin.read() == pinValue, "K64f_pins: " + pinName + " not output");
-    } else {
-        assert(pin.read() != pinValue, "K64f_pins: " + pinName + " output");
-    }
+    assert(pin.read() != pinValue, "K64f_pins: " + pinName + " output");
 }
 
 // LEDs
