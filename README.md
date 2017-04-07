@@ -44,8 +44,8 @@ First, install these packages that you will need beyond those installed by
 default with Ubuntu:
 
 ```bash
-$ sudo apt-get update
-$ sudo apt-get install cmake dfu-util git python-yaml screen sysvbanner uglifyjs
+sudo apt-get update
+sudo apt-get install cmake dfu-util git python-yaml screen sysvbanner uglifyjs
 ```
 
 Note: python-yaml is a recent requirement for the frdm-k64f build due to some
@@ -57,14 +57,14 @@ build script, so it could be left out.
 #### Clone the ZJS repo
 Next, clone this git repo:
 ```bash
-$ git clone http://github.com/01org/zephyr.js.git
+git clone http://github.com/01org/zephyr.js.git
 ```
 
 #### Check out the desired version
 If you want to use a stable release version, the latest is 0.2:
 
 ```bash
-$ git checkout v0.2
+git checkout v0.2
 ```
 
 If you do nothing and remain on master, you will be looking at the very latest
@@ -75,8 +75,8 @@ the master development branch it will just say 'devel'.
 #### Install the Zephyr SDK
 Download the [latest Zephyr SDK](https://www.zephyrproject.org/downloads), then:
 ```bash
-$ chmod +x /path/to/zephyr-sdk-<VERSION>-setup.run
-$ sudo /path/to/zephyr-sdk-<VERSION>-setup.run
+chmod +x /path/to/zephyr-sdk-<VERSION>-setup.run
+sudo /path/to/zephyr-sdk-<VERSION>-setup.run
 ```
 
 Follow the prompts, but the defaults should be fine.
@@ -91,14 +91,14 @@ export ZEPHYR_SDK_INSTALL_DIR=/opt/zephyr-sdk
 
 Then source the .bashrc :
 ```bash
-$ source ~/.bashrc
+source ~/.bashrc
 ```
 
 #### Join the plugdev group
 Add your user to the plugdev group with this command:
 
 ```bash
-$ sudo usermod -a -G plugdev USERNAME
+sudo usermod -a -G plugdev USERNAME
 ```
 
 #### Add udev rules
@@ -110,7 +110,7 @@ Copy these two files into your /etc/udev/rules.d directory (/etc/udev.rules for 
 Then run this command:
 
 ```bash
-$ sudo udevadm control --reload-rules
+sudo udevadm control --reload-rules
 ```
 
 This should cause your `/dev/tty*` entries to have the plugdev group, which will
@@ -125,8 +125,8 @@ environment variables.
 First, the ZJS variables:
 
 ```bash
-$ cd zephyr.js
-$ source zjs-env.sh
+cd zephyr.js
+source zjs-env.sh
 ```
 
 #### Get source dependencies
@@ -134,7 +134,7 @@ Next, this command will check out additional git repos into the deps/
 subdirectory, if you haven't done so before:
 
 ```bash
-$ make update
+make update
 ```
 
 (If this is the first time you've run this, will see an error.)
@@ -144,7 +144,7 @@ As the previous command will complain, you need to set up some Zephyr OS
 environment variables, too. Here's the right way to do that:
 
 ```bash
-$ source deps/zephyr/zephyr-env.sh
+source deps/zephyr/zephyr-env.sh
 ```
 
 ### Build and Flash
@@ -161,7 +161,7 @@ with the same JS file so the required sub-modules are enabled on both images.
 You can build both with a single command:
 
 ```bash
-$ make JS=samples/TrafficLight.js
+make JS=samples/TrafficLight.js
 ```
 
 The JS= argument lets you provide the path to your application. The TrafficLight
@@ -174,7 +174,7 @@ Then connect the Arduino 101 to your host with a USB A/B cable. Press the
 Master Reset button on the Arduino 101 and after a few seconds type:
 
 ```bash
-$ make dfu
+make dfu
 ```
 
 This will flash both the images to the device using the dfu-util program.
@@ -207,7 +207,7 @@ When you plug this in, the device should show up as something such as
 with a command such as this:
 
 ```bash
-$ watch screen /dev/ttyUSB0 115200
+watch screen /dev/ttyUSB0 115200
 ```
 
 The `watch` utility will restart screen when you disconnect and reconnect your
@@ -326,11 +326,11 @@ If you hit the Reset switch and wait about five seconds, you should be able to
 start up a serial console. Either:
 
 ```bash
-$ screen /dev/ttyACM0 115200
+screen /dev/ttyACM0 115200
 ```
 or
 ```bash
-$ minicom -D /dev/ttyACM0
+minicom -D /dev/ttyACM0
 ```
 
 (I typically had to try either command several times before it
@@ -344,8 +344,8 @@ Then, follow [these instructions](https://developer.mbed.org/handbook/Firmware-F
 
 Next, you can try to build ZJS for the platform:
 ```bash
-$ make BOARD=frdm_k64f JS=samples/HelloWorld.js
-$ cp outdir/frdm_k64f/zephyr.bin /media/<USERNAME>/MBED/
+make BOARD=frdm_k64f JS=samples/HelloWorld.js
+cp outdir/frdm_k64f/zephyr.bin /media/<USERNAME>/MBED/
 ```
 
 After you copy the new `.bin` file to that directory, the device will reboot,
@@ -360,9 +360,9 @@ upload the K64F [hello world application](https://developer.mbed.org/platforms/F
 Then, you could try the Zephyr OS `hello_world` sample to narrow down the
 problem:
 ```bash
-$ cd deps/zephyr/samples/hello_world/nanokernel
-$ make pristine && make BOARD=frdm_k64f
-$ cp outdir/frdm_k64f/zephyr.bin /media/<USERNAME>/MBED/
+cd deps/zephyr/samples/hello_world/nanokernel
+make pristine && make BOARD=frdm_k64f
+cp outdir/frdm_k64f/zephyr.bin /media/<USERNAME>/MBED/
 ```
 
 Using the same procedure as above, once you hit Reset you should see
@@ -453,15 +453,15 @@ the latest XCode Command Line Tools (we build Sierra 10.12 and XCode 8.3) from A
 
 To install XCode Command Line Tools, open a terminal and type:
 ```bash
-$ xcode-select --install
+xcode-select --install
 ```
 
 It should pop up a window to ask you to install the tools. You'll then set up the environment variables
 ```bash
-$ cd zephyr.js
-$ source zjs-env.sh
-$ make update
-$ source deps/zephyr/zephyr-env.sh
+cd zephyr.js
+source zjs-env.sh
+make update
+source deps/zephyr/zephyr-env.sh
 ```
 
 ### Building Linux target
@@ -474,7 +474,7 @@ You'll need to install Homebrew first so you can install crosstool-ng. Follow th
 
 After installing crosstool-ng, create and mount the image using our script:
 ```bash
-$ osxmountzephyr.sh
+osxmountzephyr.sh
 ```
 
 This will create an image mounted under /Volumes/CrossToolNG.  You can then configure crosstool-ng:
@@ -519,7 +519,7 @@ export XTOOLS_TOOLCHAIN_PATH=/Volumes/CrossToolNG/x-tools
 
 To use the same toolchain in future sessions, you can set the variables in the file $HOME/.zephyrrc. For example:
 ```bash
-$ cat <<EOF > ~/.zephyrrc
+cat <<EOF > ~/.zephyrrc
 export XTOOLS_TOOLCHAIN_PATH=/Volumes/CrossToolNG/x-tools
 export ZEPHYR_GCC_VARIANT=xtools
 EOF
@@ -569,8 +569,8 @@ need to install the GCC ARM Embedded cross compiler [here](https://developer.arm
 
 After you download it, set these environment variables:
 ```bash
-$ export GCCARMEMB_TOOLCHAIN_PATH="~/Downloads/gcc-arm-none-eabi-6-2017-q1-update/"
-$ export ZEPHYR_GCC_VARIANT=gccarmemb
+export GCCARMEMB_TOOLCHAIN_PATH="~/Downloads/gcc-arm-none-eabi-6-2017-q1-update/"
+export ZEPHYR_GCC_VARIANT=gccarmemb
 ```
 
 Then you can build like this:
@@ -606,29 +606,29 @@ successfully. Below is a complete table of modules and target support.
 QEMU has support for networking features that can be tested on your Linux
 desktop. To do this you will need to build a separate "net-tools" project:
 ```bash
-$ git clone https://gerrit.zephyrproject.org/r/net-tools
-$ cd net-tools
-$ make
+git clone https://gerrit.zephyrproject.org/r/net-tools
+cd net-tools
+make
 ```
 
 Open up 2 terminals to run the tools:
 Terminal 1:
 ```bash
-$ sudo ./net-tools/loop-socat.sh
+sudo ./net-tools/loop-socat.sh
 ```
 
 If this fails, you may need to install the socat package:
 ```bash
-$ sudo apt-get install socat
+sudo apt-get install socat
 ```
 
 Terminal 2:
 ```bash
-$ ./net-tools/loop-slip-tap.sh
+./net-tools/loop-slip-tap.sh
 ```
 Then run QEMU as your normally would e.g.
 ```bash
-$ make BOARD=qemu_x86 JS=samples/OcfServer.js qemu
+make BOARD=qemu_x86 JS=samples/OcfServer.js qemu
 ```
 
 Note: At this point, this setup is relatively unstable. You may experience
