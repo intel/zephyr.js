@@ -378,7 +378,9 @@ jerry_value_t zjs_buffer_create(uint32_t size, zjs_buffer_t **ret_buf)
     // watch for the object getting garbage collected, and clean up
     jerry_set_object_native_handle(buf_obj, (uintptr_t)buf_item,
                                    zjs_buffer_callback_free);
-    *ret_buf = buf_item;
+    if (ret_buf) {
+        *ret_buf = buf_item;
+    }
     return buf_obj;
 }
 
