@@ -18,10 +18,14 @@ Compilation
 ------------
 
 This command will enable the shell compilation for use with the IDE:
-`make ide`
+```bash
+$ make ide
+```
 
 To use the shell via the command line use:
-`make ashell`
+```bash
+$ make ashell
+```
 
 Dev mode will append all the functionality from ZJS, so it might not fit in ROM.
 
@@ -46,11 +50,11 @@ below instructions to connect to the device from the browser IDE directly.
      $ sudo udevadm control --reload-rules
      ```
   * Disable ModemManager to stop interfering when the browser accessing the device.
-
      ```bash
      $ sudo service modemmanager stop
      ```
-    If you get the message "Unit modemmanager.service not loaded." Try this instead...
+
+     If you get the message "Unit modemmanager.service not loaded." try this instead:
 
     ```bash
     $ sudo service ModemManager stop
@@ -155,7 +159,7 @@ Remove file
 Sets the device ready to get raw or ihex text input.
 The text will be recorded in the FAT File system.
 
-Example of raw text input
+Example of raw text input:
 ```
 acm> load test.js
 
@@ -171,18 +175,16 @@ RAW>
 Set the mode to accept data when the 'load' transmission starts
 
 1. Raw data
+`set transfer raw`
+
 Will be plain text that contains the code. No CRC or error checking.
 After the transmission is finished you can parse or run the code.
 
 2. Intel Hex
+`set transfer ihex`
 Basic CRC, hexadecimal data with data sections and regions.
 It might be that the code is divided in sections and you will only update a section of the memory.
 This will be used for the future integration to support JS Snapshots.
-
-```
-set transfer ihex
-set transfer raw
-```
 
 ## Data transaction example using IHEX
 
@@ -193,15 +195,16 @@ files and have some basic support for CRC.
 acm> set transfer ihex
 HEX> load
 ```
-<Send ihex data here>
-Example:
-```
+
+Then paste ihex data. For example:
+```bash
 :2000000066756E6374696F6E2074657374696E67286E756D62657229207B0A097265747514
 :20002000726E206E756D6265722A323B0A7D3B0A7072696E742822486920776F726C642044
 :0F004000222B74657374696E6728313829293B48
 :00000001FF
 ```
-Move the temporary file to a destination file
+
+Move the temporary file to a destination file:
 ```
 HEX> mv temp.dat test.js
 HEX> run test.js
@@ -210,10 +213,12 @@ HEX> run test.js
 Connect using serial console
 ----------------------------
 If you want to interact with the ashell using serial console instead of
-browser IDE, use: `make ashell`
+browser IDE, use:
+```bash
+$ make ashell
+```
 
 * Then use the following command to connect to the ashell from a terminal:
-
   ```bash
   $ screen /dev/ttyACM0 115200
   ```
