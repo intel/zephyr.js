@@ -11,7 +11,7 @@
 #include "zjs_ocf_server.h"
 #include "zjs_ocf_common.h"
 #include "zjs_ocf_encoder.h"
-#include "zjs_ocf_ble.h"
+#include "zjs_net_config.h"
 
 #include "oc_api.h"
 #include <stdio.h>
@@ -459,7 +459,9 @@ jerry_value_t zjs_ocf_init()
 #endif
 
 #ifndef ZJS_LINUX_BUILD
-    zjs_obj_add_function(ocf_object, zjs_ocf_set_ble_address, "setBleAddress");
+    // init BLE address
+    zjs_init_ble_address();
+    zjs_obj_add_function(ocf_object, zjs_set_ble_address, "setBleAddress");
 #endif
     return ocf_object;
 }

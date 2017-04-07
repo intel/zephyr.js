@@ -49,7 +49,7 @@ endif
 OCF_ROOT ?= deps/iotivity-constrained
 JS ?= samples/HelloWorld.js
 VARIANT ?= release
-DEVICE_NAME ?= "Zephyr OCF Node"
+DEVICE_NAME ?= "ZJS Device"
 BLE_ADDR ?= "none"
 # JerryScript options
 JERRY_BASE ?= $(ZJS_BASE)/deps/jerryscript
