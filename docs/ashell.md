@@ -43,17 +43,17 @@ below instructions to connect to the device from the browser IDE directly.
 
      Then run this command:
      ```bash
-     $ sudo udevadm control --reload-rules
+     sudo udevadm control --reload-rules
      ```
   * Disable ModemManager to stop interfering when the browser accessing the device.
 
      ```bash
-     $ sudo service modemmanager stop
+     sudo service modemmanager stop
      ```
     If you get the message "Unit modemmanager.service not loaded." Try this instead...
 
     ```bash
-    $ sudo service ModemManager stop
+    sudo service ModemManager stop
     ```
 
 4. On Windows:
@@ -215,7 +215,7 @@ browser IDE, use: `make ashell`
 * Then use the following command to connect to the ashell from a terminal:
 
   ```bash
-  $ screen /dev/ttyACM0 115200
+  screen /dev/ttyACM0 115200
   ```
 
 Note: It will take about 30 seconds for it to be up and running after you boot.

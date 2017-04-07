@@ -16,13 +16,13 @@ Please follow the ZJS initial setup in the main [README](../README.md)
 ## Building for A101
 Building the OCF server sample is the same as any other:
 ```
-$ make BOARD=arduino_101 JS=samples/OcfServer.js
+make BOARD=arduino_101 JS=samples/OcfServer.js
 ```
 
 ## Flashing the A101
 Flash the Arduino 101 as you would any other script:
 ```
-$ make dfu
+make dfu
 ```
 
 ## Linux Setup
@@ -43,8 +43,8 @@ will show up as a IP interface on the Linux box:
   Load the 6lowpan driver and enable it:
 
   ```
-  $ modprobe bluetooth_6lowpan
-  $ echo 1 > /sys/kernel/debug/bluetooth/6lowpan_enable
+  modprobe bluetooth_6lowpan
+  echo 1 > /sys/kernel/debug/bluetooth/6lowpan_enable
   ```
 
 3. Make sure Bluetooth is on
@@ -53,20 +53,20 @@ will show up as a IP interface on the Linux box:
   or software "radio kill switch":
 
   ```
-  $ rfkill list bluetooth
+  rfkill list bluetooth
   ```
 
   If you see that it is software blocked, you can fix it with this command:
 
   ```
-  $ rfkill unblock bluetooth
+  rfkill unblock bluetooth
   ```
 
 4. Reset HCI
 
   ```
-  $ hciconfig hci0
-  $ hciconfig hci0 reset
+  hciconfig hci0
+  hciconfig hci0 reset
   ```
 
 5. Look for your Arduino 101 advertisement
@@ -75,7 +75,7 @@ will show up as a IP interface on the Linux box:
   appear as "Zephyr OCF Node" by default.
 
   ```
-  $ hcitool lescan
+  hcitool lescan
   LE Scan ...
   F1:F9:50:21:43:4A Zephyr OCF Node
   ```
@@ -91,7 +91,7 @@ will show up as a IP interface on the Linux box:
   /sys/kernel/debug/bluetooth/6lowpan_control. For example:
 
   ```
-  $ echo "connect F1:F9:50:21:43:4A 2" > /sys/kernel/debug/bluetooth/6lowpan_control
+  echo "connect F1:F9:50:21:43:4A 2" > /sys/kernel/debug/bluetooth/6lowpan_control
   ```
 
   Note: If you subsequently rebuild your app and reboot your device, you should
@@ -106,7 +106,7 @@ will show up as a IP interface on the Linux box:
   a few seconds for it to appear:
 
   ```
-  $ ifconfig
+  ifconfig
   bt0       Link encap:UNSPEC  HWaddr 5C-F3-70-FF-FE-78-1D-72-00-00-00-00-00-00-00-00
             inet6 addr: fe80::5ef3:70ff:fe78:1d72/64 Scope:Link
             UP POINTOPOINT RUNNING MULTICAST  MTU:1280  Metric:1
@@ -147,7 +147,7 @@ You can then do discovery from the browser or using one of the test scripts:
   Run resource discovery with the /res path:
 
   ```
-  $ ./oic-get /res
+  ./oic-get /res
   10.237.72.146:80 /res
   [{"di":"b492c1dd-fa51-47f1-a03c-d31495a0b99a","links":[{"href":"/oic/sec/doxm","
   rt":"oic.r.doxm","if":"oic.if.baseline"}]},{"di":"b492c1dd-fa51-47f1-a03c-d31495
@@ -166,7 +166,7 @@ You can then do discovery from the browser or using one of the test scripts:
   details for this resource:
 
   ```
-  $ ./oic-get /a/light?di=31bf6309-8ebf-4309-5fbf-630930c06309
+  ./oic-get /a/light?di=31bf6309-8ebf-4309-5fbf-630930c06309
   10.237.72.146:80 /a/light?di=31bf6309-8ebf-4309-5fbf-630930c06309
   {"properties":{"state":false,"power":10}}
   HTTP: 200
@@ -175,7 +175,7 @@ You can then do discovery from the browser or using one of the test scripts:
   Note the state is 'false', i.e. the light is off. Later, when the light is on:
 
   ```
-  $ ./oic-get /a/light?di=31bf6309-8ebf-4309-5fbf-630930c06309
+  ./oic-get /a/light?di=31bf6309-8ebf-4309-5fbf-630930c06309
   10.237.72.146:80 /a/light?di=31bf6309-8ebf-4309-5fbf-630930c06309
   {"properties":{"state":true,"power":10}}
   HTTP: 200
