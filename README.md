@@ -501,6 +501,7 @@ CT_INSTALL_DIR="${CT_PREFIX_DIR}"
 # Following options prevent link errors
 CT_WANTS_STATIC_LINK=n
 CT_CC_STATIC_LIBSTDCXX=n
+CT_CC_GCC_STATIC_LIBSTDCXX=n
 ...
 ```
 
