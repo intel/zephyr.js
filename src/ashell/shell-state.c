@@ -332,11 +332,9 @@ int32_t ashell_run_javascript(char *buf)
     if (ashell_get_filename_buffer(buf, filename) <= 0) {
         return RET_ERROR;
     }
-
     if (shell.state_flags & kShellTransferIhex) {
         comms_print("[RUN]\n");
     }
-
     javascript_run_code(filename);
     return RET_OK;
 }
@@ -578,6 +576,31 @@ int32_t ashell_check_control(const char *buf, uint32_t len)
     return RET_OK;
 }
 
+int32_t ashell_set_bootcfg(char *buf)
+{
+    if (!fs_valid_filename_size(buf)) {
+        return RET_ERROR;
+    }
+
+    fs_file_t *file = fs_open_alloc("boot.cfg", "w+");
+
+    if (!file) {
+        comms_println("Failed to create boot.cfg file");
+        return RET_ERROR;
+    }
+
+    ssize_t written = fs_write(file, buf, strlen(buf));
+
+    if (written == 0) {
+        comms_println("Failed to write boot.cfg file");
+        fs_close_alloc(file);
+        return RET_OK;
+    }
+
+    fs_close_alloc(file);
+    return RET_OK;
+}
+
 #define ASHELL_COMMAND(name,syntax,cmd) {name, syntax, cmd}
 
 static const struct ashell_cmd commands[] =
@@ -589,6 +612,7 @@ static const struct ashell_cmd commands[] =
     ASHELL_COMMAND("run",   "[FILE] Runs the JavaScript program in the file" ,ashell_run_javascript),
     ASHELL_COMMAND("parse", "[FILE] Check if the JS syntax is correct"       ,ashell_parse_javascript),
     ASHELL_COMMAND("stop",  "Stops current JavaScript execution"             ,ashell_stop_javascript),
+    ASHELL_COMMAND("cfg",   "[FILE] Set the file that should run at boot"    ,ashell_set_bootcfg),
 
     ASHELL_COMMAND("ls",    "[FILE] List directory contents or file stat"    ,ashell_list_dir),
     ASHELL_COMMAND("cat",   "[FILE] Print the file contents of a file"       ,ashell_print_file),
@@ -620,6 +644,37 @@ int32_t ashell_help(char *buf)
 
     //comms_println("TODO: Read help file per command!");
     return RET_OK;
+}
+
+void ashell_run_boot_cfg() {
+
+    fs_file_t *file;
+    size_t count;
+
+    file = fs_open_alloc("boot.cfg", "r");
+
+    // Failed to open boot.cfg
+    if (!file) {
+        return;
+    }
+
+    ssize_t size = fs_size(file);
+    if (size == 0) {
+        printk("Empty boot.cfg file");
+        fs_close_alloc(file);
+        return;
+    }
+    else if (size > 12) {
+        fs_close_alloc(file);
+        return;
+    }
+
+    char data[size+1];
+    count = fs_read(file, data, size);
+    data[size] = '\0';
+    ashell_run_javascript(data);
+    fs_close(file);
+    return ;
 }
 
 int32_t ashell_main_state(char *buf, uint32_t len)

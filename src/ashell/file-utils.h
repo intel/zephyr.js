@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 #ifndef __file_wrapper_h__
 #define __file_wrapper_h__
@@ -14,5 +14,5 @@ fs_file_t *fs_open_alloc(const char *filename, const char *mode);
 int fs_close_alloc(fs_file_t *fp);
 int fs_exist(const char *path);
 ssize_t fs_size(fs_file_t *file);
-
+bool fs_valid_filename_size(char *filename);
 #endif // __file_wrapper_h__

@@ -11,6 +11,8 @@
 #include "zjs_common.h"
 #include "zjs_error.h"
 
+struct k_sem mainloop_sem;
+
 #define ZJS_UNDEFINED jerry_create_undefined()
 
 /**

@@ -146,6 +146,8 @@ int main(int argc, char *argv[])
     // the beginning of the program
     ZJS_PRINT("\n");
 
+    k_sem_init(&mainloop_sem, 0, 1);
+
 #ifdef ZJS_POOL_CONFIG
     zjs_init_mem_pools();
 #ifdef DUMP_MEM_STATS
@@ -249,6 +251,9 @@ int main(int argc, char *argv[])
 #ifdef ZJS_LINUX_BUILD
     uint8_t last_serviced = 1;
 #endif
+
+    // Inform other thread that the main loop has started.
+    k_sem_give(&mainloop_sem);
 
     while (1) {
         uint8_t serviced = 0;

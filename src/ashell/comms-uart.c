@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 /**
  * @file
@@ -61,8 +61,6 @@
 extern void __stdout_hook_install(int(*fn)(int));
 
 static const char banner[] = "Zephyr.js DEV MODE " __DATE__ " " __TIME__ "\r\n";
-
-const char filename[] = "jerry.js";
 
 // Jerryscript in green color
 
@@ -523,6 +521,15 @@ void acm()
     k_fifo_init(&data_queue);
     k_fifo_init(&avail_queue);
 
+    // Wait until the main loop is running before starting the javascript
+    if (k_sem_take(&mainloop_sem, K_FOREVER) == 0)
+    {
+        ashell_run_boot_cfg();
+    }
+    else {
+        ERR_PRINT("Main loop failed to start\n");
+    }
+
 #ifdef CONFIG_UART_LINE_CTRL
     uint32_t dtr = 0;
 
@@ -530,6 +537,9 @@ void acm()
         uart_line_ctrl_get(dev_upload, LINE_CTRL_DTR, &dtr);
         if (dtr)
             break;
+        // Sleep is needed to allow the javascript in boot.cfg to run
+        // while we wait for the connection.
+        k_sleep(2000);
     }
 
     /* 1000 msec = 1 sec */

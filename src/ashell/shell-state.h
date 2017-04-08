@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 #ifndef __SHELL__STATE__H__
 #define __SHELL__STATE__H__
@@ -55,6 +55,11 @@ struct shell_state_config
  */
 int32_t ashell_main_state(char *buf, uint32_t len);
 
-int32_t ashell_help(char *buf);
+/**
+ * @brief Gets called when main loop starts and runs the JavaScript file found in
+ *  boot.cfg.  If no file exists, it simply exits and ashell starts normally.
+ */
+void ashell_run_boot_cfg();
 
+int32_t ashell_help(char *buf);
 #endif
