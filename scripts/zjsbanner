@@ -64,13 +64,13 @@ def find_pattern(char, line):
 
 def banner(message):
     while len(message) > 0:
-        line = message[:13]
-        message = message[13:]
+        line = message[:11]
+        message = message[11:]
 
         for i in range(5):
             out = ''
             for j in range(len(line)):
-                out += (find_pattern(line[j], i) + ' ')
+                out += (find_pattern(line[j], i) + '  ')
             print(out)
 
         if len(message) > 0:

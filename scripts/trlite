@@ -191,7 +191,7 @@ fi
 echo
 echo Running tests...
 
-# requires: first arg is a <=10-char label, second arg is command
+# requires: first arg is a <=11-char label, second arg is command
 #  effects: runs zjsbanner with label, then runs the command; if it fails,
 #             prints label before exiting
 function try_command()
@@ -230,7 +230,6 @@ if [ "$RUN" == "all" -o "$RUN" == "1" ]; then
     MODULES=(aio arduino101_pins ble dgram events gpio grove_lcd i2c k64f_pins \
              performance pwm uart)
 
-    # individually test build modules with short names (ten chars or less)
     MODNUM=0
     rm $TMPFILE
     for index in "${!MODULES[@]}"; do
