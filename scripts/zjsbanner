@@ -65,6 +65,7 @@ def find_pattern(char, line):
 
 def banner(message):
     while len(message) > 0:
+        print("")
         line = message[:11]
         message = message[11:]
 
