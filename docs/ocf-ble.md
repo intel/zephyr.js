@@ -15,13 +15,13 @@ Please follow the ZJS initial setup in the main [README](../README.md)
 
 ## Building for A101
 Building the OCF server sample is the same as any other:
-```
+```bash
 $ make BOARD=arduino_101 JS=samples/OcfServer.js
 ```
 
 ## Flashing the A101
 Flash the Arduino 101 as you would any other script:
-```
+```bash
 $ make dfu
 ```
 
@@ -42,7 +42,7 @@ will show up as a IP interface on the Linux box:
 
   Load the 6lowpan driver and enable it:
 
-  ```
+  ```bash
   $ modprobe bluetooth_6lowpan
   $ echo 1 > /sys/kernel/debug/bluetooth/6lowpan_enable
   ```
@@ -52,19 +52,19 @@ will show up as a IP interface on the Linux box:
   You can run this command to see if your Bluetooth is disabled by a hardware
   or software "radio kill switch":
 
-  ```
+  ```bash
   $ rfkill list bluetooth
   ```
 
   If you see that it is software blocked, you can fix it with this command:
 
-  ```
+  ```bash
   $ rfkill unblock bluetooth
   ```
 
 4. Reset HCI
 
-  ```
+  ```bash
   $ hciconfig hci0
   $ hciconfig hci0 reset
   ```
@@ -74,7 +74,7 @@ will show up as a IP interface on the Linux box:
   The following command should start listing BLE devices. Your device should
   appear as "Zephyr OCF Node" by default.
 
-  ```
+  ```bash
   $ hcitool lescan
   LE Scan ...
   F1:F9:50:21:43:4A Zephyr OCF Node
@@ -90,7 +90,7 @@ will show up as a IP interface on the Linux box:
   Next, echo "connect <device id> 2" to the file
   /sys/kernel/debug/bluetooth/6lowpan_control. For example:
 
-  ```
+  ```bash
   $ echo "connect F1:F9:50:21:43:4A 2" > /sys/kernel/debug/bluetooth/6lowpan_control
   ```
 
@@ -105,7 +105,7 @@ will show up as a IP interface on the Linux box:
   Check that you have a new network interface for this connection. It may take
   a few seconds for it to appear:
 
-  ```
+  ```bash
   $ ifconfig
   bt0       Link encap:UNSPEC  HWaddr 5C-F3-70-FF-FE-78-1D-72-00-00-00-00-00-00-00-00
             inet6 addr: fe80::5ef3:70ff:fe78:1d72/64 Scope:Link
@@ -125,10 +125,10 @@ will show up as a IP interface on the Linux box:
 Now that your Arduino 101 is connected, it is as if it's a regular OCF IP
 device. You can now connect an OCF client. There are OCF client samples in the
 [iot-rest-api-server](https://github.com/01org/iot-rest-api-server) repo.
-```
-git clone git@github.com:01org/iot-rest-api-server.git
-npm i
-node index.js
+```bash
+$ git clone git@github.com:01org/iot-rest-api-server.git
+$ npm i
+$ node index.js
 ```
 
 You can then do discovery from the browser or using one of the test scripts:
@@ -146,7 +146,7 @@ You can then do discovery from the browser or using one of the test scripts:
 
   Run resource discovery with the /res path:
 
-  ```
+  ```bash
   $ ./oic-get /res
   10.237.72.146:80 /res
   [{"di":"b492c1dd-fa51-47f1-a03c-d31495a0b99a","links":[{"href":"/oic/sec/doxm","
@@ -165,7 +165,7 @@ You can then do discovery from the browser or using one of the test scripts:
   Using the device UUID listed for the /a/light resource, query to retrieve
   details for this resource:
 
-  ```
+  ```bash
   $ ./oic-get /a/light?di=31bf6309-8ebf-4309-5fbf-630930c06309
   10.237.72.146:80 /a/light?di=31bf6309-8ebf-4309-5fbf-630930c06309
   {"properties":{"state":false,"power":10}}
@@ -174,7 +174,7 @@ You can then do discovery from the browser or using one of the test scripts:
 
   Note the state is 'false', i.e. the light is off. Later, when the light is on:
 
-  ```
+  ```bash
   $ ./oic-get /a/light?di=31bf6309-8ebf-4309-5fbf-630930c06309
   10.237.72.146:80 /a/light?di=31bf6309-8ebf-4309-5fbf-630930c06309
   {"properties":{"state":true,"power":10}}
