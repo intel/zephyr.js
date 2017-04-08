@@ -1,0 +1,87 @@
+#!/usr/bin/python3
+
+# Copyright (c) 2017, Intel Corporation.
+
+# zjsbanner - prints input text in large format
+
+import sys
+
+patterns = ['XXXXX',  # 0
+			'XXXX ',
+			' XXXX',
+			'XX XX',
+			' XXX ',
+			'XXX  ',  # 5
+			'X  XX',
+			'XX  X',
+			'X X X',
+			'X   X',
+			'X  X ',  # a
+			' X X ',
+			' XX  ',
+			'  XX ',
+			'X    ',
+			' X   ',
+			'  X  ',  # f
+			'   X ',
+			'    X',
+			'     ',
+			]
+
+alphabet = ['gb099', '19191', '2eee2', '19991', '0e1e0', '0e1ee', '2e694',
+			'99099', '0ggg0', '0hhac', '9a5a9', 'eeee0', '93899',
+			'97869', '49994', '191ee', '49962', '191a9', '2e4i1', '0gggg',
+			'99994', '999bg', '99839', '9bgb9', '9bggg', '0hgf0']
+
+digits = ['46874', 'gcgg0', '1iid0', '1i4i1', '990ii',
+		  '0e1i1', '2e194', '0hgfe', '49494', '492ii']
+
+other = {
+	'?': '4icjg',
+	'.': 'jjjjg',
+	'-': 'jj4jj',
+	'_': 'jjjj0',
+}
+
+def find_pattern(char, line):
+	# returns: five character string
+	s = ''
+	if char.isalpha():
+		char = char.upper()
+		index = ord(char) - ord('A')
+		ptnchr = alphabet[index][line]
+	elif char.isdigit():
+		index = ord(char) - ord('0')
+		ptnchr = digits[index][line]
+	else:
+		if char not in other:
+			char = '?'
+		ptnchr = other.get(char)[line]
+	pattern = patterns[int(ptnchr, 20)]
+	for c in pattern:
+		s += char.upper() if c == 'X' else ' '
+	return s
+
+def banner(message):
+	while len(message) > 0:
+		line = message[:13]
+		message = message[13:]
+
+		for i in range(5):
+			out = ''
+			for j in range(len(line)):
+				out += (find_pattern(line[j], i) + ' ')
+			print(out)
+
+		if len(message) > 0:
+			print("")
+
+def main():
+	if len(sys.argv) <= 1:
+		print("usage: zjsbanner <text>")
+		sys.exit(1)
+
+	banner(' '.join(sys.argv[1:]))
+
+if __name__ == "__main__":
+   main()

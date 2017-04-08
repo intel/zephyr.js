@@ -192,8 +192,8 @@ echo
 echo Running tests...
 
 # requires: first arg is a <=10-char label, second arg is command
-#  effects: runs banner with label, then runs the command; if it fails, prints
-#             label before exiting
+#  effects: runs zjsbanner with label, then runs the command; if it fails,
+#             prints label before exiting
 function try_command()
 {
     TESTNUM=$((TESTNUM + 1))
@@ -204,7 +204,7 @@ function try_command()
 
     LABEL=$1
     shift
-    banner "$LABEL"
+    zjsbanner "$LABEL"
 
     # run the command
     $*
