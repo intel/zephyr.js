@@ -253,8 +253,6 @@ if [ "$RUN" == "all" -o "$RUN" == "1" ]; then
 
     try_command "modules" make $VERBOSE JS=$TMPFILE ROM=250
 
-    try_command "mod debug" make $VERBOSE JS=$TMPFILE ROM=250 VARIANT=debug
-
     # OCF test
     echo "var ocf = require('ocf');" > $TMPFILE
     echo "var client = ocf.client;" >> $TMPFILE

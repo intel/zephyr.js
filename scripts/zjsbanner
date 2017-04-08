@@ -21,8 +21,8 @@ patterns = ['XXXXX',  # 0
             ' XX  ',
             '  XX ',
             'X    ',
-            ' X   ',
-            '  X  ',  # f
+            ' X   ',  # f
+            '  X  ',
             '   X ',
             '    X',
             '     ',
@@ -37,6 +37,7 @@ digits = ['46874', 'gcgg0', '1iid0', '1i4i1', '990ii',
           '0e1i1', '2e194', '0hgfe', '49494', '492ii']
 
 other = {
+    ' ': 'jjjjj',
     '?': '4icjg',
     '.': 'jjjjg',
     '-': 'jj4jj',
