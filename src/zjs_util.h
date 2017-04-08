@@ -6,7 +6,7 @@
 // The util code is only for the X86 side
 
 #include <stdlib.h>
-
+#include <kernel.h>
 #include "jerryscript.h"
 #include "zjs_common.h"
 #include "zjs_error.h"
