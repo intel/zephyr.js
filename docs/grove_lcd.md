@@ -59,8 +59,6 @@ interface GroveLCDDevice {
     unsigned long getFunction();
     void setDisplayState(unsigned long config);
     unsigned long getDisplayState();
-    void setInputState(unsigned long config);
-    unsigned long getInputState();
 };
 ```
 
@@ -182,30 +180,6 @@ GroveLCD.GLCD_DS_BLINK_OFF
 `unsigned long getDisplayState();`
 
 Return the display feature set associated with the device.
-
-### GroveLCDDevice.setInputState
-
-`void setInputState(unsigned long config);`
-
-This function provides the user the ability to change the state
-of the text input. Controlling things like text entry from the left or
-right side, and how far to increment on new text.
-
-The `config` is bit mask of the following configurations:
-
-GroveLCD.GLCD_IS_SHIFT_INCREMENT
-
-GroveLCD.GLCD_IS_SHIFT_DECREMENT
-
-GroveLCD.GLCD_IS_ENTRY_LEFT
-
-GroveLCD.GLCD_IS_ENTRY_RIGHT
-
-### GroveLCDDevice.getInputState
-
-`unsigned long getInputState();`
-
-Return the input set associated with the device.
 
 Sample Apps
 -----------

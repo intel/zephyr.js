@@ -178,6 +178,7 @@ static jerry_value_t zjs_glcd_get_display_state(const jerry_value_t function_obj
     return jerry_create_number(value);
 }
 
+/*  This is not supported in Zephyr driver yet
 static jerry_value_t zjs_glcd_set_input_state(const jerry_value_t function_obj,
                                               const jerry_value_t this,
                                               const jerry_value_t argv[],
@@ -209,6 +210,7 @@ static jerry_value_t zjs_glcd_get_input_state(const jerry_value_t function_obj,
 
     return jerry_create_number(value);
 }
+*/
 
 static jerry_value_t zjs_glcd_init(const jerry_value_t function_obj,
                                    const jerry_value_t this,
@@ -244,8 +246,10 @@ jerry_value_t zjs_grove_lcd_init()
         { zjs_glcd_get_function, "getFunction" },
         { zjs_glcd_set_display_state, "setDisplayState" },
         { zjs_glcd_get_display_state, "getDisplayState" },
+/*  This is not supported in Zephyr driver yet
         { zjs_glcd_set_input_state, "setInputState" },
         { zjs_glcd_get_input_state, "getInputState" },
+*/
         { NULL, NULL }
     };
     zjs_glcd_prototype = jerry_create_object();
@@ -255,88 +259,68 @@ jerry_value_t zjs_grove_lcd_init()
     jerry_value_t glcd_obj = jerry_create_object();
     zjs_obj_add_function(glcd_obj, zjs_glcd_init, "init");
 
-    // create object properties
-    jerry_value_t val;
-
     // function flags
-    val = jerry_create_number(GLCD_FS_8BIT_MODE);
+    ZVAL_MUTABLE val = jerry_create_number(GLCD_FS_8BIT_MODE);
     zjs_set_property(glcd_obj, "GLCD_FS_8BIT_MODE", val);
-    jerry_release_value(val);
 
     val = jerry_create_number(GLCD_FS_ROWS_2);
     zjs_set_property(glcd_obj, "GLCD_FS_ROWS_2", val);
-    jerry_release_value(val);
 
     val = jerry_create_number(GLCD_FS_ROWS_1);
     zjs_set_property(glcd_obj, "GLCD_FS_ROWS_1", val);
-    jerry_release_value(val);
 
     val = jerry_create_number(GLCD_FS_DOT_SIZE_BIG);
     zjs_set_property(glcd_obj, "GLCD_FS_DOT_SIZE_BIG", val);
-    jerry_release_value(val);
 
     val = jerry_create_number(GLCD_FS_DOT_SIZE_LITTLE);
     zjs_set_property(glcd_obj, "GLCD_FS_DOT_SIZE_LITTLE", val);
-    jerry_release_value(val);
 
     // display state flags
     val = jerry_create_number(GLCD_DS_DISPLAY_ON);
     zjs_set_property(glcd_obj, "GLCD_DS_DISPLAY_ON", val);
-    jerry_release_value(val);
 
     val = jerry_create_number(GLCD_DS_DISPLAY_OFF);
     zjs_set_property(glcd_obj, "GLCD_DS_DISPLAY_OFF", val);
-    jerry_release_value(val);
 
     val = jerry_create_number(GLCD_DS_CURSOR_ON);
     zjs_set_property(glcd_obj, "GLCD_DS_CURSOR_ON", val);
-    jerry_release_value(val);
 
     val = jerry_create_number(GLCD_DS_CURSOR_OFF);
     zjs_set_property(glcd_obj, "GLCD_DS_CURSOR_OFF", val);
-    jerry_release_value(val);
 
     val = jerry_create_number(GLCD_DS_BLINK_ON);
     zjs_set_property(glcd_obj, "GLCD_DS_BLINK_ON", val);
-    jerry_release_value(val);
 
     val = jerry_create_number(GLCD_DS_BLINK_OFF);
     zjs_set_property(glcd_obj, "GLCD_DS_BLINK_OFF", val);
-    jerry_release_value(val);
 
     // input state flags
+/*  This is not supported in Zephyr driver yet
     val = jerry_create_number(GLCD_IS_SHIFT_INCREMENT);
     zjs_set_property(glcd_obj, "GLCD_IS_SHIFT_INCREMENT", val);
-    jerry_release_value(val);
 
     val = jerry_create_number(GLCD_IS_SHIFT_DECREMENT);
     zjs_set_property(glcd_obj, "GLCD_IS_SHIFT_DECREMENT", val);
-    jerry_release_value(val);
 
     val = jerry_create_number(GLCD_IS_ENTRY_LEFT);
     zjs_set_property(glcd_obj, "GLCD_IS_ENTRY_LEFT", val);
-    jerry_release_value(val);
 
     val = jerry_create_number(GLCD_IS_ENTRY_RIGHT);
     zjs_set_property(glcd_obj, "GLCD_IS_ENTRY_RIGHT", val);
-    jerry_release_value(val);
+*/
 
     // colors
     val = jerry_create_number(GROVE_RGB_WHITE);
     zjs_set_property(glcd_obj, "GROVE_RGB_WHITE", val);
-    jerry_release_value(val);
 
     val = jerry_create_number(GROVE_RGB_RED);
     zjs_set_property(glcd_obj, "GROVE_RGB_RED", val);
-    jerry_release_value(val);
 
     val = jerry_create_number(GROVE_RGB_GREEN);
     zjs_set_property(glcd_obj, "GROVE_RGB_GREEN", val);
-    jerry_release_value(val);
 
     val = jerry_create_number(GROVE_RGB_BLUE);
     zjs_set_property(glcd_obj, "GROVE_RGB_BLUE", val);
-    jerry_release_value(val);
 
     return glcd_obj;
 }

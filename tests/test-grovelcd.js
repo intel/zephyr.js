@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 console.log("Test GroveLCD APIs");
 
@@ -188,6 +188,7 @@ glcd.setDisplayState(displayThree);
 assert(glcd.getDisplayState() === 6,
        "display: set and get with blink 'off'");
 
+/*  This is not supported in Zephyr driver yet
 // set and get input state with one keyword
 var inputOne = [
     [grove_lcd.GLCD_IS_SHIFT_DECREMENT, 0, "GLCD_IS_SHIFT_DECREMENT"],
@@ -231,3 +232,4 @@ glcd.setInputState(inputConfig);
 assert(glcd.getInputState() === 3, "input: left enter and increment");
 
 assert.result();
+*/
