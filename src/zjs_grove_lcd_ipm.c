@@ -72,11 +72,10 @@ static jerry_value_t zjs_glcd_call_remote_function(zjs_ipm_message_t *send)
 // returns undefined instead of the value result
 static jerry_value_t zjs_glcd_call_remote_ignore(zjs_ipm_message_t *send)
 {
-    jerry_value_t rval = zjs_glcd_call_remote_function(send);
+    ZVAL rval = zjs_glcd_call_remote_function(send);
     if (jerry_value_has_error_flag(rval))
         return rval;
 
-    jerry_release_value(rval);
     return ZJS_UNDEFINED;
 }
 
@@ -246,35 +245,6 @@ static jerry_value_t zjs_glcd_get_display_state(const jerry_value_t function_obj
     return zjs_glcd_call_remote_function(&send);
 }
 
-static jerry_value_t zjs_glcd_set_input_state(const jerry_value_t function_obj,
-                                              const jerry_value_t this,
-                                              const jerry_value_t argv[],
-                                              const jerry_length_t argc)
-{
-    // args: predefined numeric constants
-    ZJS_VALIDATE_ARGS(Z_NUMBER);
-
-    // send IPM message to the ARC side
-    zjs_ipm_message_t send;
-    send.type = TYPE_GLCD_SET_INPUT_STATE;
-    send.data.glcd.value = (uint8_t)jerry_get_number_value(argv[0]);
-
-    return zjs_glcd_call_remote_ignore(&send);
-}
-
-static jerry_value_t zjs_glcd_get_input_state(const jerry_value_t function_obj,
-                                              const jerry_value_t this,
-                                              const jerry_value_t argv[],
-                                              const jerry_length_t argc)
-{
-    // send IPM message to the ARC side
-    zjs_ipm_message_t send;
-    // no input parameter to set
-    send.type = TYPE_GLCD_GET_INPUT_STATE;
-
-    return zjs_glcd_call_remote_function(&send);
-}
-
 static jerry_value_t zjs_glcd_init(const jerry_value_t function_obj,
                                    const jerry_value_t this,
                                    const jerry_value_t argv[],
@@ -285,11 +255,10 @@ static jerry_value_t zjs_glcd_init(const jerry_value_t function_obj,
     // no input parameter to set
     send.type = TYPE_GLCD_INIT;
 
-    jerry_value_t result = zjs_glcd_call_remote_function(&send);
+    ZVAL result = zjs_glcd_call_remote_function(&send);
     if (jerry_value_has_error_flag(result)) {
         return result;
     }
-    jerry_release_value(result);
 
     // create the Grove LCD device object
     jerry_value_t dev_obj = jerry_create_object();
@@ -297,6 +266,10 @@ static jerry_value_t zjs_glcd_init(const jerry_value_t function_obj,
     return dev_obj;
 }
 
+// Note. setInputState is not supported in Zephyr driver yet
+// with right-to-left text flow (GLCD_IS_SHIFT_DECREMENT|GLCD_IS_ENTRY_RIGHT)
+// and defaults to left-to-right only, so we don't support
+// configuring input state until Zephyr implements this feature
 jerry_value_t zjs_grove_lcd_init()
 {
     zjs_ipm_init();
@@ -314,8 +287,6 @@ jerry_value_t zjs_grove_lcd_init()
         { zjs_glcd_get_function, "getFunction" },
         { zjs_glcd_set_display_state, "setDisplayState" },
         { zjs_glcd_get_display_state, "getDisplayState" },
-        { zjs_glcd_set_input_state, "setInputState" },
-        { zjs_glcd_get_input_state, "getInputState" },
         { NULL, NULL }
     };
     zjs_glcd_prototype = jerry_create_object();
@@ -372,23 +343,6 @@ jerry_value_t zjs_grove_lcd_init()
 
     val = jerry_create_number(GLCD_DS_BLINK_OFF);
     zjs_set_property(glcd_obj, "GLCD_DS_BLINK_OFF", val);
-    jerry_release_value(val);
-
-    // input state flags
-    val = jerry_create_number(GLCD_IS_SHIFT_INCREMENT);
-    zjs_set_property(glcd_obj, "GLCD_IS_SHIFT_INCREMENT", val);
-    jerry_release_value(val);
-
-    val = jerry_create_number(GLCD_IS_SHIFT_DECREMENT);
-    zjs_set_property(glcd_obj, "GLCD_IS_SHIFT_DECREMENT", val);
-    jerry_release_value(val);
-
-    val = jerry_create_number(GLCD_IS_ENTRY_LEFT);
-    zjs_set_property(glcd_obj, "GLCD_IS_ENTRY_LEFT", val);
-    jerry_release_value(val);
-
-    val = jerry_create_number(GLCD_IS_ENTRY_RIGHT);
-    zjs_set_property(glcd_obj, "GLCD_IS_ENTRY_RIGHT", val);
     jerry_release_value(val);
 
     // colors

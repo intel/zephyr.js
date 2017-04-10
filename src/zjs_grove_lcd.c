@@ -178,38 +178,6 @@ static jerry_value_t zjs_glcd_get_display_state(const jerry_value_t function_obj
     return jerry_create_number(value);
 }
 
-static jerry_value_t zjs_glcd_set_input_state(const jerry_value_t function_obj,
-                                              const jerry_value_t this,
-                                              const jerry_value_t argv[],
-                                              const jerry_length_t argc)
-{
-    // args: predefined numeric constants
-    ZJS_VALIDATE_ARGS(Z_NUMBER);
-
-    if (!glcd) {
-        return zjs_error("Grove LCD device not found");
-    }
-
-    uint8_t value = (uint8_t)jerry_get_number_value(argv[0]);
-    glcd_input_state_set(glcd, value);
-
-    return ZJS_UNDEFINED;
-}
-
-static jerry_value_t zjs_glcd_get_input_state(const jerry_value_t function_obj,
-                                              const jerry_value_t this,
-                                              const jerry_value_t argv[],
-                                              const jerry_length_t argc)
-{
-    if (!glcd) {
-        return zjs_error("Grove LCD not initialized");
-    }
-
-    uint8_t value = glcd_input_state_get(glcd);
-
-    return jerry_create_number(value);
-}
-
 static jerry_value_t zjs_glcd_init(const jerry_value_t function_obj,
                                    const jerry_value_t this,
                                    const jerry_value_t argv[],
@@ -232,6 +200,10 @@ static jerry_value_t zjs_glcd_init(const jerry_value_t function_obj,
     return dev_obj;
 }
 
+// Note. setInputState is not supported in Zephyr driver yet
+// with right-to-left text flow (GLCD_IS_SHIFT_DECREMENT|GLCD_IS_ENTRY_RIGHT)
+// and defaults to left-to-right only, so we don't support
+// configuring input state until Zephyr implements this feature
 jerry_value_t zjs_grove_lcd_init()
 {
     zjs_native_func_t array[] = {
@@ -244,8 +216,6 @@ jerry_value_t zjs_grove_lcd_init()
         { zjs_glcd_get_function, "getFunction" },
         { zjs_glcd_set_display_state, "setDisplayState" },
         { zjs_glcd_get_display_state, "getDisplayState" },
-        { zjs_glcd_set_input_state, "setInputState" },
-        { zjs_glcd_get_input_state, "getInputState" },
         { NULL, NULL }
     };
     zjs_glcd_prototype = jerry_create_object();
@@ -302,23 +272,6 @@ jerry_value_t zjs_grove_lcd_init()
 
     val = jerry_create_number(GLCD_DS_BLINK_OFF);
     zjs_set_property(glcd_obj, "GLCD_DS_BLINK_OFF", val);
-    jerry_release_value(val);
-
-    // input state flags
-    val = jerry_create_number(GLCD_IS_SHIFT_INCREMENT);
-    zjs_set_property(glcd_obj, "GLCD_IS_SHIFT_INCREMENT", val);
-    jerry_release_value(val);
-
-    val = jerry_create_number(GLCD_IS_SHIFT_DECREMENT);
-    zjs_set_property(glcd_obj, "GLCD_IS_SHIFT_DECREMENT", val);
-    jerry_release_value(val);
-
-    val = jerry_create_number(GLCD_IS_ENTRY_LEFT);
-    zjs_set_property(glcd_obj, "GLCD_IS_ENTRY_LEFT", val);
-    jerry_release_value(val);
-
-    val = jerry_create_number(GLCD_IS_ENTRY_RIGHT);
-    zjs_set_property(glcd_obj, "GLCD_IS_ENTRY_RIGHT", val);
     jerry_release_value(val);
 
     // colors
