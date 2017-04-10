@@ -98,7 +98,7 @@ static int zjs_ringbuf_last_error = 0;
 #ifdef DEBUG_BUILD
 static void set_info_string(char *str, const char *file, const char *func)
 {
-    char *i = (char*)(file + strlen(file));
+    const char *i = file + strlen(file);
     while (i != file) {
         if (*i == '/') {
             i++;
@@ -106,13 +106,7 @@ static void set_info_string(char *str, const char *file, const char *func)
         }
         i--;
     }
-    uint32_t file_len = strlen(i);
-    uint32_t func_len = strlen(func);
-    uint32_t total = file_len + func_len + 4;
-    if (total > MAX_CALLER_CREATOR_LEN) {
-        total = MAX_CALLER_CREATOR_LEN;
-    }
-    snprintf(str, file_len + func_len + 4, "%s:%s()", i, func);
+    snprintf(str, MAX_CALLER_CREATOR_LEN, "%s:%s()", i, func);
 }
 #endif
 
