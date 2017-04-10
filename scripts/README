@@ -36,7 +36,7 @@ memorystats
 
 osxmountzephyr.sh
 -----------------
-    Creates a build partition for building the cross-compiler on Mac.
+    Creates a filesystem image for building the cross-compiler on Mac.
 
 trlite
 ------
