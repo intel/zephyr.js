@@ -60,7 +60,7 @@ def find_pattern(char, line):
         ptnchr = other.get(char)[line]
     pattern = patterns[int(ptnchr, 20)]
     for c in pattern:
-        s += char.upper() if c == 'X' else ' '
+        s += '#' if c == 'X' else ' '
     return s
 
 def banner(message):
@@ -74,9 +74,6 @@ def banner(message):
             for j in range(len(line)):
                 out += (find_pattern(line[j], i) + '  ')
             print(out)
-
-        if len(message) > 0:
-            print("")
 
 def main():
     if len(sys.argv) <= 1:
