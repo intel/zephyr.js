@@ -1,15 +1,44 @@
-Scripts
--------
+scripts - directory for utility scripts to help with ZJS development
+=======
 
-genfilesize - A utility to visualize the sizes of files included in a Zephyr
-            build to understand where space is being used
-jsrunner - A utility to handle everything needed to run a JavaScript file in our
-         environment. Eventually this will include everything from minifying
-         source, defining it within C code, choosing the modules needed to
-         support he JS script, building the OS and running the emulator or
-         flashing to a device.
+analyze.sh
+----------
+    Checks a .js file to determine what ZJS modules it is using so they can be
+    auto-included in the build.
 
-Supporting Directories
-----------------------
-filesizes - Supporting files for the genfilesize utility.
-template - A template application that the JS script will be bulit into.
+bldetect
+--------
+    Uses dfu_util to display the sizes of the x86, arc, and boot partitions on
+    an Arduino 101. Important in the old days when we were changing x86
+    partition size from 144KB to 256KB. Now this is no longer needed and
+    devices should be left in factory 144KB condition.
+
+checkcopyrights
+---------------
+    Checks whether files in src/ have a copyright line as they should.
+
+checkheaders
+------------
+    Tries to detect whether our header files include all the header files they
+    depend on.
+
+convert.sh
+----------
+    Runs minifier on a JavaScript file and writes it out in a C string format.
+
+leakfinder
+----------
+    Parses TRACE=on output of ZJS to determine whether blocks were leaked.
+
+memorystats
+-----------
+    Finds/compares ROM and RAM usage for ZJS running a given JavaScript sample.
+
+osxmountzephyr.sh
+-----------------
+    Creates a build partition for building the cross-compiler on Mac.
+
+trlite
+------
+    Runs sanity checks, unit tests, etc. on the ZJS repo. This is what our
+    Travis CI calls but can also be run locally.
