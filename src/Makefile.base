@@ -97,4 +97,5 @@ ifeq ($(ASHELL), y)
 $(info Insecure Mode (development))
 export JERRY_INCLUDE = $(JERRY_BASE)/jerry-core/
 obj-y += ashell/
+ccflags-y += -DZJS_ASHELL
 endif
