@@ -37,9 +37,7 @@ directly from the browser IDE to Zephyr.js device for execution. Follow the
 below instructions to connect to the device from the browser IDE directly.
 
 1. Start Google Chrome 54 or later on the host PC.
-2. Enable "WebUSB" support and "Experimental Web Platform Features"
-   flags in chrome://flags/.
-3. On Ubuntu:
+2. On Ubuntu:
   * Create a new udev rule to allow Chrome to open a USB device by adding
     the following line in /etc/udev/rules.d/99-arduino-101.rules
 
@@ -68,7 +66,8 @@ below instructions to connect to the device from the browser IDE directly.
     connected to the host, but the WebUSB will continue to work.
 
 5. Connect the device to the host PC using a USB cable.
-6. A notification from Chrome will appear with an URL of the IDE.
+6. A notification from Chrome will appear with an URL of the IDE. If not, the
+    address for the IDE is https://01org.github.io/zephyrjs-ide.
 7. Click on the notification to open IDE in the browser.
 8. Click on connect button and grant an access to the device.
 9. Try uploading JS code to the device.
