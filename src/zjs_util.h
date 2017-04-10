@@ -11,7 +11,6 @@
 #include "zjs_error.h"
 
 #ifdef ZJS_ASHELL
-#include <kernel.h>
 struct k_sem mainloop_sem;
 #endif
 
