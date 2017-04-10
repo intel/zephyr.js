@@ -25,6 +25,73 @@
 #include <bluetooth/conn.h>
 #endif
 
+/**
+ * Net module
+ * @module net
+ * @namespace Net
+ */
+/**
+ * Address object
+ * @name AddressObject
+ * @typedef {Object} AddressObject
+ * @property {string} address - IP address
+ * @property {number} port - Port
+ * @property {string} family - IP address family
+ */
+
+/**
+ * Close event. Triggered when a server has closed
+ *
+ * @memberof Net.Server
+ * @event close
+ */
+/**
+ * Connection event. Triggered when the server has a new connection
+ *
+ * @memberof Net.Server
+ * @event connection
+ * @param {Socket} socket - New socket connection
+ */
+/**
+ * Error event. Triggered when there was an error on the server
+ *
+ * @memberof Net.Server
+ * @event error
+ */
+/**
+ * Listening event. Triggered when the sever has started listening
+ *
+ * @memberof Net.Server
+ * @event listening
+ */
+
+/**
+ * Close event. Triggered when the socket has closed
+ *
+ * @memberof Net.Socket
+ * @event close
+ */
+/**
+ * Connect event. Triggered when the socket has connected to a remote
+ *
+ * @memberof Net.Socket
+ * @event connect
+ */
+/**
+ * Data event. Triggered when there is data available on the socket
+ *
+ * @memberof Net.Socket
+ * @event data
+ *
+ * @param {Buffer} data
+ */
+/**
+ * Timeout event. Triggered when the socket has timed out
+ *
+ * @memberof Net.Socket
+ * @event timeout
+ */
+
 #define MAX_DBG_PRINT 64
 static jerry_value_t zjs_net_socket_prototype;
 
@@ -69,9 +136,9 @@ static void tcp_c_timeout_callback(void *h, const void *args)
     if (sock_handle && opened_sockets) {
         zjs_trigger_event(sock_handle->socket, "timeout", NULL, 0, NULL, NULL);
         k_timer_stop(&sock_handle->timer);
-        // TODO: This may not be correct, but if we dont set it, then more
+        // TODO: This may not be correct, but if we don't set it, then more
         //       timeouts will get added, potentially after the socket has been
-        //       closed;
+        //       closed
         sock_handle->timeout = 0;
         DBG_PRINT("socket timed out\n");
     }
@@ -88,6 +155,14 @@ static void socket_timeout_callback(struct k_timer *timer)
     zjs_signal_callback(cur->tcp_timeout_id, NULL, 0);
 }
 
+/*
+ * initialize, start, re-start or stop a socket timeout. 'time' is the timeout
+ * for the socket:
+ *
+ * time = 0     If a timeout has not been started this has no effect
+ *              If a timeout has been started this will stop it
+ * time > 0     Will start a timeout for the socket
+ */
 static void start_socket_timeout(sock_handle_t *handle, uint32_t time)
 {
     if (time) {
@@ -199,13 +274,14 @@ static void tcp_received(struct net_context *context,
         if (len && data) {
             memcpy(handle->wptr, data, len);
             handle->wptr += len;
-        }
-        // if not paused, call the callback to get JS the data
-        if (!handle->paused) {
-            handle->tcp_read_id = zjs_add_c_callback(handle, tcp_c_callback);
-            zjs_signal_callback(handle->tcp_read_id, NULL, 0);
 
-            DBG_PRINT("data recieved on context %p: data=%p, len=%u\n", context, data, len);
+            // if not paused, call the callback to get JS the data
+            if (!handle->paused) {
+                handle->tcp_read_id = zjs_add_c_callback(handle, tcp_c_callback);
+                zjs_signal_callback(handle->tcp_read_id, NULL, 0);
+
+                DBG_PRINT("data recieved on context %p: data=%p, len=%u\n", context, data, len);
+            }
         }
 
         net_buf_unref(buf);
@@ -229,8 +305,13 @@ static inline void pkt_sent(struct net_context *context,
     }
 }
 
-/*
- * Socket.write(Buffer, optional function)
+/**
+ * Write data to a socket
+ *
+ * @name write
+ * @memberof Net.Socket
+ * @param {Buffer} buf - Buffer being written to the socket
+ * @param {function=} func - Callback called when write has completed
  */
 static jerry_value_t socket_write(const jerry_value_t function_obj,
                                   const jerry_value_t this,
@@ -285,8 +366,12 @@ static jerry_value_t socket_write(const jerry_value_t function_obj,
     return jerry_create_boolean(true);
 }
 
-/*
- * Socket.pause()
+/**
+ * Pause/throttle 'data' callback on the socket. Calling this will prevent
+ * the 'data' callback from getting called until Socket.resume() is called.
+ *
+ * @name pause
+ * @memberof Net.Socket
  */
 static jerry_value_t socket_pause(const jerry_value_t function_obj,
                                   const jerry_value_t this,
@@ -302,8 +387,12 @@ static jerry_value_t socket_pause(const jerry_value_t function_obj,
     return ZJS_UNDEFINED;
 }
 
-/*
- * Socket.resume()
+/**
+ * Resume the 'data' callback. Calling this will un-pause the socket and
+ * allow the 'data' callback to resume being called.
+ *
+ * @name resume
+ * @memberof Net.Socket
  */
 static jerry_value_t socket_resume(const jerry_value_t function_obj,
                                    const jerry_value_t this,
@@ -319,8 +408,12 @@ static jerry_value_t socket_resume(const jerry_value_t function_obj,
     return ZJS_UNDEFINED;
 }
 
-/*
- * Socket.address()
+/**
+ * Retrieve address information from the socket
+ *
+ * @name address
+ * @memberof Net.Socket
+ * @return {AddressObject}
  */
 static jerry_value_t socket_address(const jerry_value_t function_obj,
                                     const jerry_value_t this,
@@ -348,6 +441,18 @@ static jerry_value_t socket_address(const jerry_value_t function_obj,
     return ret;
 }
 
+/**
+ * Set a timeout on a socket. The timeout expires when there has been no
+ * activity on the socket for the set number of milliseconds.
+ *
+ * @name setTimeout
+ * @memberof Net.Socket
+ * @param {number} time - The timeout in milliseconds
+ * @param {function=} callback - Callback function when the timeout expires.
+ *                               If supplied, this will be set as the listener
+ *                               for the 'timeout' event
+ * @return {Socket} socket
+ */
 static jerry_value_t socket_set_timeout(const jerry_value_t function_obj,
                                         const jerry_value_t this,
                                         const jerry_value_t argv[],
@@ -493,8 +598,13 @@ static void tcp_accepted(struct net_context *context,
     zjs_trigger_event(handle->server, "connection", &sock, 1, NULL, NULL);
 }
 
-/*
- * Server.close(optional function)
+/**
+ * Signal the server to close. Any opened sockets will remain open, and the
+ * 'close' event will be called when these remaining sockets are closed.
+ *
+ * @name close
+ * @memberof Net.Server
+ * @param {function?} Callback function. Called when server is closed
  */
 static jerry_value_t server_close(const jerry_value_t function_obj,
                                   const jerry_value_t this,
@@ -522,8 +632,12 @@ static jerry_value_t server_close(const jerry_value_t function_obj,
     return ZJS_UNDEFINED;
 }
 
-/*
- * Server.getConnections(optional function)
+/**
+ * Get the number of connections on this server
+ *
+ * @name getConnections
+ * @memberof Net.Server
+ * @param {function} Callback function. Called with the number of opened connections
  */
 static jerry_value_t server_get_connections(const jerry_value_t function_obj,
                                             const jerry_value_t this,
@@ -556,29 +670,35 @@ static jerry_value_t server_get_connections(const jerry_value_t function_obj,
     return ZJS_UNDEFINED;
 }
 
-/*
- * Server.listen(port, address, optional function)
+/**
+ * Start listening for connections
+ *
+ * @name listen
+ * @memberof Net.Server
+ *
+ * @param {ListenOptions} options - Options for listening
+ * @param {function?} listener - Listener for 'listening' event
  */
 static jerry_value_t server_listen(const jerry_value_t function_obj,
                                    const jerry_value_t this,
                                    const jerry_value_t argv[],
                                    const jerry_length_t argc)
 {
-    // port, address, optional function
-    ZJS_VALIDATE_ARGS(Z_NUMBER, Z_STRING, Z_OPTIONAL Z_FUNCTION);
+    // options object, optional function
+    ZJS_VALIDATE_ARGS(Z_OBJECT, Z_OPTIONAL Z_FUNCTION);
 
     int ret;
-    uint16_t port = jerry_get_number_value(argv[0]);
+    double port = 0;
+    double backlog = 0;
     uint32_t size = NET_HOSTNAME_MAX;
     char hostname[size];
 
-    zjs_copy_jstring(argv[1], hostname, &size);
-    if (!size) {
-        return zjs_error("invalid arguments");
-    }
+    zjs_obj_get_double(argv[0], "port", &port);
+    zjs_obj_get_double(argv[0], "backlog", &backlog);
+    zjs_obj_get_string(argv[0], "host", hostname, size);
 
-    if (argc > 2) {
-        zjs_add_event_listener(this, "listening", argv[2]);
+    if (argc > 1) {
+        zjs_add_event_listener(this, "listening", argv[1]);
     }
 
     net_handle_t *handle = NULL;
@@ -591,15 +711,15 @@ static jerry_value_t server_listen(const jerry_value_t function_obj,
     struct sockaddr_in6 my_addr6 = { 0 };
 
     my_addr6.sin6_family = AF_INET6;
-    my_addr6.sin6_port = htons(port);
+    my_addr6.sin6_port = htons((int)port);
 
     CHECK(net_context_bind(handle->tcp_sock,
                            (struct sockaddr *)&my_addr6,
                            sizeof(struct sockaddr_in6)));
-    CHECK(net_context_listen(handle->tcp_sock, 0));
+    CHECK(net_context_listen(handle->tcp_sock, (int)backlog));
 
     handle->listening = 1;
-    handle->port = port;
+    handle->port = (uint16_t)port;
     memcpy(&handle->local, &my_addr6, sizeof(struct sockaddr *));
     zjs_obj_add_boolean(this, true, "listening");
 
@@ -612,8 +732,19 @@ static jerry_value_t server_listen(const jerry_value_t function_obj,
     return ZJS_UNDEFINED;
 }
 
-/*
- * Net.createServer(optional function)
+/**
+ * Create a TCP server
+ *
+ * @memberof Net
+ * @name Server
+ * @fires close
+ * @fires connection
+ * @fires error
+ * @fires listening
+ *
+ * @param {function?} listener - Connection listener
+ *
+ * @return {Server} server - Newly created server
  */
 static jerry_value_t net_create_server(const jerry_value_t function_obj,
                                        const jerry_value_t this,
@@ -631,7 +762,6 @@ static jerry_value_t net_create_server(const jerry_value_t function_obj,
     zjs_obj_add_function(server, server_listen, "listen");
     zjs_obj_add_function(server, server_close, "close");
     zjs_obj_add_function(server, server_get_connections, "getConnections");
-
 
     zjs_make_event(server, ZJS_UNDEFINED);
 
@@ -662,6 +792,8 @@ static void tcp_connected_c_callback(void *handle, const void *args)
 {
     sock_handle_t *sock_handle = (sock_handle_t *)handle;
     if (sock_handle) {
+        // set socket.connecting property == false
+        zjs_obj_add_boolean(sock_handle->socket, false, "connecting");
         zjs_trigger_event(sock_handle->socket, "connect", NULL, 0, NULL, NULL);
         zjs_remove_callback(sock_handle->tcp_connect_id);
     }
@@ -690,8 +822,14 @@ static void tcp_connected(struct net_context *context,
     }
 }
 
-/*
- * Socket.connect(options object, optional function)
+/**
+ * Connect to a remote server
+ *
+ * @name connect
+ * @memberof Net.Socket
+ *
+ * @param {ConnectOptions} options
+ * @param {function?} listener - Connect listener callback
  */
 static jerry_value_t socket_connect(const jerry_value_t function_obj,
                                     const jerry_value_t this,
@@ -707,8 +845,14 @@ static jerry_value_t socket_connect(const jerry_value_t function_obj,
         return zjs_error("socket handle not found");
     }
 
+    if (!handle->tcp_sock) {
+        CHECK(net_context_get(AF_INET6, SOCK_STREAM, IPPROTO_TCP,
+                    &handle->tcp_sock));
+    }
+
     double port = 0;
     double localPort = 0;
+    double fam = 0;
     char host[128];
     char localAddress[128];
 
@@ -716,37 +860,75 @@ static jerry_value_t socket_connect(const jerry_value_t function_obj,
     zjs_obj_get_string(argv[0], "host", host, 128);
     zjs_obj_get_double(argv[0], "localPort", &localPort);
     zjs_obj_get_string(argv[0], "localAddress", localAddress, 128);
-    // TODO: get: .family, .hints, .lookup
+    zjs_obj_get_double(argv[0], "family", &fam);
+    if (fam == 0) {
+        fam = 4;
+    }
+    // TODO: get: .hints, .lookup
 
     DBG_PRINT("port: %u, host: %s, localPort: %u, localAddress: %s, socket=%u\n", (uint32_t)port, host, (uint32_t)localPort, localAddress, this);
-    struct sockaddr_in6 my_addr6 = { 0 };
 
-    my_addr6.sin6_family = AF_INET6;
-    my_addr6.sin6_port = htons((uint32_t)localPort);
+    if (fam == 6) {
+        struct sockaddr_in6 my_addr6 = { 0 };
 
-    CHECK(net_addr_pton(AF_INET6,
-                        localAddress,
-                        &my_addr6.sin6_addr));
-    // bind to our local address
-    CHECK(net_context_bind(handle->tcp_sock,
-                           (struct sockaddr *)&my_addr6,
-                           sizeof(struct sockaddr_in6)));
+        my_addr6.sin6_family = AF_INET6;
+        my_addr6.sin6_port = htons((uint32_t)localPort);
 
-    struct sockaddr_in6 peer_addr6 = { 0 };
-    peer_addr6.sin6_family = AF_INET6;
-    peer_addr6.sin6_port = htons((uint32_t)port);
+        CHECK(net_addr_pton(AF_INET6,
+                            localAddress,
+                            &my_addr6.sin6_addr));
+        // bind to our local address
+        CHECK(net_context_bind(handle->tcp_sock,
+                               (struct sockaddr *)&my_addr6,
+                               sizeof(struct sockaddr_in6)));
 
-    CHECK(net_addr_pton(AF_INET6,
-                        host,
-                        &peer_addr6.sin6_addr));
-    // connect to remote
-    CHECK(net_context_connect(handle->tcp_sock,
-                              (struct sockaddr *)&peer_addr6,
-                              sizeof(peer_addr6),
-                              tcp_connected,
-                              K_NO_WAIT,
-                              handle));
+        struct sockaddr_in6 peer_addr6 = { 0 };
+        peer_addr6.sin6_family = AF_INET6;
+        peer_addr6.sin6_port = htons((uint32_t)port);
 
+        CHECK(net_addr_pton(AF_INET6,
+                            host,
+                            &peer_addr6.sin6_addr));
+        // set socket.connecting property == true
+        zjs_obj_add_boolean(this, true, "connecting");
+        // connect to remote
+        CHECK(net_context_connect(handle->tcp_sock,
+                                  (struct sockaddr *)&peer_addr6,
+                                  sizeof(peer_addr6),
+                                  tcp_connected,
+                                  K_NO_WAIT,
+                                  handle));
+    } else {
+        struct sockaddr_in my_addr4 = { 0 };
+
+        my_addr4.sin_family = AF_INET;
+        my_addr4.sin_port = htons((uint32_t)localPort);
+
+        CHECK(net_addr_pton(AF_INET,
+                            localAddress,
+                            &my_addr4.sin_addr));
+        // bind to our local address
+        CHECK(net_context_bind(handle->tcp_sock,
+                               (struct sockaddr *)&my_addr4,
+                               sizeof(struct sockaddr_in)));
+
+        struct sockaddr_in peer_addr4 = { 0 };
+        peer_addr4.sin_family = AF_INET;
+        peer_addr4.sin_port = htons((uint32_t)port);
+
+        CHECK(net_addr_pton(AF_INET,
+                            host,
+                            &peer_addr4.sin_addr));
+        // set socket.connecting property == true
+        zjs_obj_add_boolean(this, true, "connecting");
+        // connect to remote
+        CHECK(net_context_connect(handle->tcp_sock,
+                                  (struct sockaddr *)&peer_addr4,
+                                  sizeof(peer_addr4),
+                                  tcp_connected,
+                                  K_NO_WAIT,
+                                  handle));
+    }
     if (argc > 1) {
         zjs_add_event_listener(this, "connect", argv[1]);
     }
@@ -768,8 +950,17 @@ static jerry_value_t socket_connect(const jerry_value_t function_obj,
     return ZJS_UNDEFINED;
 }
 
-/*
- * net.Socket()
+/**
+ * Create a new socket object
+ *
+ * @namespace Net.Socket
+ * @memberof Net
+ * @name Socket
+ * @fires close
+ * @fires connect
+ * @fires data
+ * @fires timeout
+ * @returns {Socket} New socket object created
  */
 static jerry_value_t net_socket(const jerry_value_t function_obj,
                                 const jerry_value_t this,
@@ -778,13 +969,9 @@ static jerry_value_t net_socket(const jerry_value_t function_obj,
 {
     sock_handle_t *sock_handle = NULL;
     jerry_value_t socket = create_socket(true, &sock_handle);
-    int ret;
     if (!sock_handle) {
         return zjs_error("could not alloc socket handle");
     }
-
-    CHECK(net_context_get(AF_INET6, SOCK_STREAM, IPPROTO_TCP,
-                &sock_handle->tcp_sock));
 
     DBG_PRINT("socket created, context=%p, sock=%u\n", sock_handle->tcp_sock, socket);
 
@@ -801,6 +988,15 @@ static void event_iface_up(struct net_mgmt_event_callback *cb,
 }
 #endif
 
+/**
+ * Check if input is an IP address
+ *
+ * @name isIP
+ * @memberof Net
+ *
+ * @param {string} input - Input string
+ * @return {number} 0 for invalid strings, 4 for IPv4, 6 for IPv6
+ */
 static jerry_value_t net_is_ip(const jerry_value_t function_obj,
                                const jerry_value_t this,
                                const jerry_value_t argv[],
@@ -835,6 +1031,15 @@ static jerry_value_t net_is_ip(const jerry_value_t function_obj,
     }
 }
 
+/**
+ * Check if input is an IPv4 address
+ *
+ * @name isIPv4
+ * @memberof Net
+ *
+ * @param {string} input - Input string
+ * @return {boolean} true if input was IPv4
+ */
 static jerry_value_t net_is_ip4(const jerry_value_t function_obj,
                                 const jerry_value_t this,
                                 const jerry_value_t argv[],
@@ -848,6 +1053,15 @@ static jerry_value_t net_is_ip4(const jerry_value_t function_obj,
     return jerry_create_boolean(false);
 }
 
+/**
+ * Check if input is an IPv6 address
+ *
+ * @name isIPv6
+ * @memberof Net
+ *
+ * @param {string} input - Input string
+ * @return {boolean} true if input was IPv4
+ */
 static jerry_value_t net_is_ip6(const jerry_value_t function_obj,
                                const jerry_value_t this,
                                const jerry_value_t argv[],

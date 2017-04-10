@@ -8,7 +8,7 @@ var count = 0;
 
 setTimeout(function() {
 	console.log("Connecting");
-	client.connect({port: 4242, host:'fe80::5ef3:70ff:fe78:1080', localAddress:'2001:db8::1', localPort: 8484}, function() {
+	client.connect({port: 4242, host:'fe80::5ef3:70ff:fe78:1080', localAddress:'2001:db8::1', localPort: 8484, family: 6}, function() {
 	    console.log("connect successful");
 	    client.write(new Buffer("initial data"));
 	});
