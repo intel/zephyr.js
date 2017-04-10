@@ -1,10 +1,12 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
-#ifndef SRC_ZJS_FS_H_
-#define SRC_ZJS_FS_H_
+#ifndef __zjs_fs_h__
+#define __zjs_fs_h__
+
+#include "jerryscript.h"
 
 jerry_value_t zjs_fs_init();
 
 void zjs_fs_cleanup();
 
-#endif /* SRC_ZJS_FS_H_ */
+#endif  // __zjs_fs_h__

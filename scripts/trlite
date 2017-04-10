@@ -381,6 +381,9 @@ if [ "$RUN" == "all" -o "$RUN" == "3" ]; then
     # check that updated files have updated copyrights
     try_command "copyright" check_copyright
 
+    # check that headers include all needed dependencies
+    try_command "headers" checkheaders -v
+
     # linux build tests
     try_command "linux" make $VERBOSE BOARD=linux
 

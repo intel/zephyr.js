@@ -1,9 +1,13 @@
-#ifndef CONFIG_H
-#define CONFIG_H
+// Copyright (c) 2017, Intel Corporation.
+
+#ifndef __ocf_config_h__
+#define __ocf_config_h__
+
+#include <stdint.h>
 
 /* Time resolution */
-#include <stdint.h>
 typedef uint64_t oc_clock_time_t;
+
 /* Sets one clock tick to 1 ms */
 #define OC_CLOCK_CONF_TICKS_PER_SECOND (1000)
 
@@ -50,4 +54,4 @@ typedef uint64_t oc_clock_time_t;
 /* Max inactivity timeout before tearing down DTLS connection */
 #define OC_DTLS_INACTIVITY_TIMEOUT (60)
 
-#endif /* CONFIG_H */
+#endif  // __ocf_config_h__
