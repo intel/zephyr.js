@@ -187,3 +187,5 @@ glcd.setDisplayState(displayThree);
 
 assert(glcd.getDisplayState() === 6,
        "display: set and get with blink 'off'");
+
+assert.result();
