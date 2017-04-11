@@ -1,7 +1,9 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 #ifndef __zjs_timers_h__
 #define __zjs_timers_h__
+
+#include <stdint.h>
 
 /**
  * Service the timer module.

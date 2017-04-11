@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (c) 2016, Intel Corporation.
+# Copyright (c) 2016-2017, Intel Corporation.
 
 # This script makes sure that all the header files in src/ can be included
 # without any missing dependencies.
@@ -15,18 +15,25 @@ echo "return 0;"    >> $TEMPLATE
 echo "}"            >> $TEMPLATE
 
 SOURCE=/tmp/zjs_source.c
+BINARY=/tmp/zjs_source
 
 PASSCOUNT=0
 TOTAL=0
 
-CFLAGS="-o /tmp/zjs_source -m32 -DCONFIG_X86 -DCONFIG_NUM_COOP_PRIORITIES=2 -I. -I../deps/jerryscript/jerry-core -I../deps/zephyr/include -I../deps/iotivity-constrained/include -I../deps/iotivity-constrained"
+CFLAGS="-m32 -DCONFIG_X86 -DCONFIG_PREEMPT_ENABLED -DCONFIG_LOAPIC_BASE_ADDRESS=0xFEE00000 -I. -I../deps/jerryscript/jerry-core -I../deps/zephyr/include -I../deps/iotivity-constrained/include -I../deps/iotivity-constrained -include ../deps/iotivity-constrained/port/zephyr/src/config.h"
 FAILURES=
+
+function create_source()  # HEADER
+{
+    # write source file with include for given header file
+    echo "#include \"$1\"" > $SOURCE
+    cat $TEMPLATE >> $SOURCE
+}
 
 # collect list of files with failures on first pass
 for i in *.h; do
-    echo "#include \"$i\"" > $SOURCE
-    cat $TEMPLATE >> $SOURCE
-    gcc $CFLAGS $SOURCE > /dev/null 2>&1
+    create_source $i
+    gcc $CFLAGS $SOURCE -o $BINARY > /dev/null 2>&1
     if [ $? -eq 0 ]; then
         PASSCOUNT=$(($PASSCOUNT + 1))
     else
@@ -35,8 +42,10 @@ for i in *.h; do
     TOTAL=$(($TOTAL + 1))
 done
 
-echo Failures detected in $FAILURES
-echo Use checkheaders -v to see details
+if [ -n "$FAILURES" ]; then
+    echo Failures detected in $FAILURES
+    echo Use checkheaders -v to see details
+fi
 
 if [ "$1" == "-v" ] && [ $PASSCOUNT -ne $TOTAL ]; then
     # print failure output on second pass
@@ -46,9 +55,8 @@ if [ "$1" == "-v" ] && [ $PASSCOUNT -ne $TOTAL ]; then
         printf "%${LEN}s\n" | tr ' ' '='
         echo " $STR"
         printf "%${LEN}s\n" | tr ' ' '='
-        echo "#include \"$i\"" > $SOURCE
-        cat $TEMPLATE >> $SOURCE
-        gcc $CFLAGS $SOURCE
+        create_source $i
+        gcc $CFLAGS $SOURCE -o $BINARY
     done
 fi
 

@@ -287,6 +287,9 @@ if [ "$RUN" == "all" -o "$RUN" == "2" ]; then
 
     # k64f build tests
     try_command "k64f hello" make $VERBOSE BOARD=frdm_k64f
+
+    # check that headers include all needed dependencies
+    try_command "headers" checkheaders -v
 fi
 
 #
