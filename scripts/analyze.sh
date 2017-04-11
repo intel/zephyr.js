@@ -291,6 +291,7 @@ if check_for_require ble || check_config_file ZJS_BLE; then
     echo "CONFIG_BLUETOOTH_SMP=y" >> $PRJFILE
     echo "CONFIG_BLUETOOTH_PERIPHERAL=y" >> $PRJFILE
     echo "CONFIG_BLUETOOTH_GATT_DYNAMIC_DB=y" >> $PRJFILE
+    echo "CONFIG_BLUETOOTH_MAX_CONN=4" >> $PRJFILE
     MODULES+=" -DBUILD_MODULE_EVENTS"
     echo "export ZJS_EVENTS=y" >> $CONFFILE
     echo "export ZJS_BLE=y" >> $CONFFILE

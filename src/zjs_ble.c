@@ -29,20 +29,17 @@
 
 #define ZJS_BLE_TIMEOUT_TICKS                  5000
 
-static struct k_sem ble_sem;
-static bool bt_enabled = false;
-
 typedef void (*ccc_cfg_changed_func)(const struct bt_gatt_attr *attr,
                                      uint16_t value);
 
-typedef struct ble_handle {
+typedef struct ble_buffer_handle {
     zjs_callback_id id;
     jerry_value_t js_callback;
     const void *buffer;
     uint16_t buffer_size;
     uint16_t offset;
     uint32_t error_code;
-} ble_handle_t;
+} ble_buffer_handle_t;
 
 typedef struct ble_notify_handle {
     zjs_callback_id id;
@@ -56,8 +53,8 @@ typedef struct zjs_ble_characteristic {
     struct bt_gatt_attr *chrc_attr;
     struct bt_gatt_attr *ccc_attr;
     jerry_value_t cud_value;
-    ble_handle_t read_cb;
-    ble_handle_t write_cb;
+    ble_buffer_handle_t read_cb;
+    ble_buffer_handle_t write_cb;
     ble_notify_handle_t subscribe_cb;
     ble_notify_handle_t unsubscribe_cb;
     ble_notify_handle_t notify_cb;
@@ -74,28 +71,29 @@ typedef struct zjs_ble_service {
 } ble_service_t;
 
 typedef struct zjs_ble_connection {
-    jerry_value_t ble_obj;
-    struct bt_conn *default_conn;
-    struct bt_gatt_ccc_cfg blvl_ccc_cfg[CONFIG_BLUETOOTH_MAX_PAIRED];
-    uint8_t simulate_blvl;
-    ble_service_t *services;
-    zjs_callback_id ready_cb_id;
+    struct bt_conn *bt_conn;
     zjs_callback_id connected_cb_id;
     zjs_callback_id disconnected_cb_id;
-} zjs_ble_connection_t;
+    struct zjs_ble_connection *next;
+} ble_connection_t;
 
-// global connection object
-static zjs_ble_connection_t ble_conn = {
-    .default_conn = NULL,
-    .blvl_ccc_cfg = {},
-    .simulate_blvl = 0,
-    .services = NULL,
-};
+typedef struct zjs_ble_handle {
+    struct bt_gatt_ccc_cfg blvl_ccc_cfg[CONFIG_BLUETOOTH_MAX_PAIRED];
+    jerry_value_t ble_obj;
+    zjs_callback_id ready_cb_id;
+    ble_service_t *services;
+    ble_connection_t *connections;
+} ble_handle_t;
 
 static struct bt_uuid *gatt_primary_service_uuid = BT_UUID_DECLARE_16(BT_UUID_GATT_PRIMARY_VAL);
 static struct bt_uuid *gatt_characteristic_uuid = BT_UUID_DECLARE_16(BT_UUID_GATT_CHRC_VAL);
 static struct bt_uuid *gatt_cud_uuid = BT_UUID_DECLARE_16(BT_UUID_GATT_CUD_VAL);
 static struct bt_uuid *gatt_ccc_uuid = BT_UUID_DECLARE_16(BT_UUID_GATT_CCC_VAL);
+
+static struct k_sem ble_sem;
+static bool bt_enabled = false;
+
+static ble_handle_t *ble_handle = NULL;
 
 struct bt_uuid *zjs_ble_new_uuid_16(uint16_t value) {
     struct bt_uuid_16 *uuid = zjs_malloc(sizeof(struct bt_uuid_16));
@@ -111,10 +109,59 @@ struct bt_uuid *zjs_ble_new_uuid_16(uint16_t value) {
     return (struct bt_uuid *) uuid;
 }
 
+static ble_connection_t *zjs_ble_new_connection(ble_connection_t **conns, struct bt_conn *conn)
+{
+    ble_connection_t *new_conn = zjs_malloc(sizeof(ble_connection_t));
+    if (!new_conn) {
+        ERR_PRINT("cannot allocate ble_connection_t\n");
+        return NULL;
+    }
+
+    memset(new_conn, 0, sizeof(ble_connection_t));
+    new_conn->bt_conn = conn;
+    new_conn->next = *conns;
+    *conns = new_conn;
+    return new_conn;
+}
+
+static void zjs_ble_release_connection(ble_connection_t **conns, ble_connection_t *conn)
+{
+    if (!conns || !conn)
+        return;
+
+    if (*conns == conn) {
+        // if conn is the head
+        ble_connection_t *tmp = *conns;
+        *conns = (*conns)->next;
+        zjs_remove_callback(tmp->connected_cb_id);
+        zjs_remove_callback(tmp->disconnected_cb_id);
+        bt_conn_unref(tmp->bt_conn);
+        zjs_free(tmp);
+        return;
+    }
+
+    ble_connection_t *current = (*conns)->next;
+    ble_connection_t *previous = *conns;
+    while (current && previous) {
+        if (current == conn) {
+            ble_connection_t *tmp = current;
+            previous->next = current->next;
+            zjs_remove_callback(tmp->connected_cb_id);
+            zjs_remove_callback(tmp->disconnected_cb_id);
+            bt_conn_unref(tmp->bt_conn);
+            zjs_free(tmp);
+            return;
+        }
+
+        previous = current;
+        current = current->next;
+    }
+}
+
 static void zjs_ble_free_characteristics(ble_characteristic_t *chrc)
 {
     ble_characteristic_t *tmp;
-    while (chrc != NULL) {
+    while (chrc) {
         tmp = chrc;
         chrc = chrc->next;
 
@@ -154,7 +201,7 @@ static void zjs_ble_free_characteristics(ble_characteristic_t *chrc)
 static void zjs_ble_free_services(ble_service_t *service)
 {
     ble_service_t *tmp;
-    while (service != NULL) {
+    while (service) {
         tmp = service;
         service = service->next;
 
@@ -205,7 +252,7 @@ static ZJS_DECL_FUNC(zjs_ble_read_callback_function)
 static void zjs_ble_read_c_callback(void *handle, const void *argv)
 {
     ble_characteristic_t *chrc = (ble_characteristic_t *)handle;
-    ble_handle_t *cb = &chrc->read_cb;
+    ble_buffer_handle_t *cb = &chrc->read_cb;
 
     ZVAL offset = jerry_create_number(cb->offset);
     ZVAL callback =
@@ -298,7 +345,7 @@ static ZJS_DECL_FUNC(zjs_ble_write_callback_function)
 static void zjs_ble_write_c_callback(void *handle, const void *argv)
 {
     ble_characteristic_t *chrc = (ble_characteristic_t *)handle;
-    ble_handle_t *cb = &chrc->write_cb;
+    ble_buffer_handle_t *cb = &chrc->write_cb;
 
     ZVAL_MUTABLE buf_obj;
     if (cb->buffer && cb->buffer_size > 0) {
@@ -375,14 +422,17 @@ static ZJS_DECL_FUNC(zjs_ble_update_value_callback_function)
     // args: buffer
     ZJS_VALIDATE_ARGS(Z_BUFFER);
 
-    if (ble_conn.default_conn) {
-        uintptr_t ptr;
-        if (jerry_get_object_native_handle(this, &ptr)) {
-            ble_characteristic_t *chrc = (ble_characteristic_t *)ptr;
-            if (chrc->chrc_attr) {
-                zjs_buffer_t *buf = zjs_buffer_find(argv[0]);
-                bt_gatt_notify(ble_conn.default_conn, chrc->chrc_attr,
+    uintptr_t ptr;
+    if (jerry_get_object_native_handle(this, &ptr)) {
+        ble_characteristic_t *chrc = (ble_characteristic_t *)ptr;
+        if (chrc->chrc_attr) {
+            zjs_buffer_t *buf = zjs_buffer_find(argv[0]);
+            // loop through all the connections
+            ble_connection_t *conn = ble_handle->connections;
+            while (conn) {
+                bt_gatt_notify(conn->bt_conn, chrc->chrc_attr,
                                buf->buffer, buf->bufsize);
+                conn = conn->next;
             }
         }
     }
@@ -433,7 +483,7 @@ static ble_characteristic_t *get_base_chrc(const struct bt_gatt_attr *attr)
     ble_service_t *service;
     ble_characteristic_t *chrc;
 
-    for (service = ble_conn.services; service; service = service->next) {
+    for (service = ble_handle->services; service; service = service->next) {
         for (chrc = service->characteristics; chrc; chrc = chrc->next) {
             if (chrc->ccc_attr == attr) {
                 return chrc;
@@ -464,45 +514,71 @@ static void zjs_ble_blvl_ccc_cfg_changed(const struct bt_gatt_attr *attr, uint16
 
 static void zjs_ble_connected_c_callback(void *handle, const void *argv)
 {
+    ble_handle_t * h = (ble_handle_t *)handle;
+    if (!h) {
+        ERR_PRINT("handle not found\n");
+        return;
+    }
+
     char *addr = (char *)argv;
     ZVAL arg = jerry_create_string((jerry_char_t *)addr);
-    zjs_trigger_event(ble_conn.ble_obj, "accept", &arg, 1, NULL, NULL);
+    zjs_trigger_event(h->ble_obj, "accept", &arg, 1, NULL, NULL);
     DBG_PRINT("BLE event: connected, addr %s\n", addr);
+}
+
+static void zjs_ble_disconnected_c_callback(void *handle, const void *argv)
+{
+    ble_handle_t * h = (ble_handle_t *)handle;
+    if (!h) {
+        ERR_PRINT("handle not found\n");
+        return;
+    }
+
+    char *addr = (char *)argv;
+    ZVAL arg = jerry_create_string((jerry_char_t *)addr);
+    zjs_trigger_event(h->ble_obj, "disconnect", &arg, 1, NULL, NULL);
+    DBG_PRINT("BLE event: disconnected, addr %s\n", addr);
 }
 
 // INTERRUPT SAFE FUNCTION: No JerryScript VM, allocs, or release prints!
 static void zjs_ble_connected(struct bt_conn *conn, uint8_t err)
 {
     if (err) {
-        DBG_PRINT("Connection failed (err %u)\n", err);
+        ERR_PRINT("Connection failed (err %u)\n", err);
     } else {
-        DBG_PRINT("========== connected ==========\n");
+        DBG_PRINT("new connection\n");
+        ble_connection_t *new_conn = zjs_ble_new_connection(&ble_handle->connections, conn);
+        if (!new_conn) {
+            ERR_PRINT("failed to create new cilent connection\n");
+            return;
+        }
+
+        new_conn->connected_cb_id = zjs_add_c_callback(ble_handle, zjs_ble_connected_c_callback);
+        new_conn->disconnected_cb_id = zjs_add_c_callback(ble_handle, zjs_ble_disconnected_c_callback);
         char addr[BT_ADDR_LE_STR_LEN];
         bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-        ble_conn.default_conn = bt_conn_ref(conn);
-        zjs_signal_callback(ble_conn.connected_cb_id, addr, sizeof(addr));
+        new_conn->bt_conn = bt_conn_ref(conn);
+        zjs_signal_callback(new_conn->connected_cb_id, addr, sizeof(addr));
+        DBG_PRINT("client connected: %s\n", addr);
     }
-}
-
-static void zjs_ble_disconnected_c_callback(void *handle, const void *argv)
-{
-    char *addr = (char *)argv;
-    ZVAL arg = jerry_create_string((jerry_char_t *)addr);
-    zjs_trigger_event(ble_conn.ble_obj, "disconnect", &arg, 1, NULL, NULL);
-    DBG_PRINT("BLE event: disconnected, addr %s\n", addr);
 }
 
 // INTERRUPT SAFE FUNCTION: No JerryScript VM, allocs, or release prints!
 static void zjs_ble_disconnected(struct bt_conn *conn, uint8_t reason)
 {
-    DBG_PRINT("========== Disconnected (reason %u) ==========\n", reason);
-    if (ble_conn.default_conn) {
-        char addr[BT_ADDR_LE_STR_LEN];
-        bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-        bt_conn_unref(ble_conn.default_conn);
-        ble_conn.default_conn = NULL;
-        zjs_signal_callback(ble_conn.disconnected_cb_id, addr, sizeof(addr));
+    ble_connection_t *ble_conn = ble_handle->connections;
+    while (ble_conn) {
+        if (ble_conn->bt_conn == conn) {
+            char addr[BT_ADDR_LE_STR_LEN];
+            bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+            zjs_signal_callback(ble_conn->disconnected_cb_id, addr, sizeof(addr));
+            zjs_ble_release_connection(&ble_handle->connections, ble_conn);
+            DBG_PRINT("client disconnected (reason %u): %s\n", reason, addr);
+            return;
+        }
+        ble_conn = ble_conn->next;
     }
+    DBG_PRINT("connection not found\n");
 }
 
 static struct bt_conn_cb zjs_ble_conn_callbacks = {
@@ -513,10 +589,8 @@ static struct bt_conn_cb zjs_ble_conn_callbacks = {
 static void zjs_ble_auth_cancel(struct bt_conn *conn)
 {
         char addr[BT_ADDR_LE_STR_LEN];
-
         bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-        DBG_PRINT("Pairing cancelled: %s\n", addr);
+        DBG_PRINT("pairing cancelled: %s\n", addr);
 }
 
 static struct bt_conn_auth_cb zjs_ble_auth_cb_display = {
@@ -525,8 +599,14 @@ static struct bt_conn_auth_cb zjs_ble_auth_cb_display = {
 
 static void zjs_ble_ready_c_callback(void *handle, const void *argv)
 {
+    ble_handle_t * h = (ble_handle_t *)handle;
+    if (!h) {
+        ERR_PRINT("handle not found\n");
+        return;
+    }
+
     ZVAL arg = jerry_create_string((jerry_char_t *)"poweredOn");
-    zjs_trigger_event(ble_conn.ble_obj, "stateChange", &arg, 1, NULL, NULL);
+    zjs_trigger_event(h->ble_obj, "stateChange", &arg, 1, NULL, NULL);
     DBG_PRINT("BLE event: stateChange - poweredOn");
 }
 
@@ -534,7 +614,7 @@ static void zjs_ble_ready_c_callback(void *handle, const void *argv)
 static void zjs_ble_bt_ready(int err)
 {
     DBG_PRINT("bt_ready() is called [err %d]\n", err);
-    zjs_signal_callback(ble_conn.ready_cb_id, NULL, 0);
+    zjs_signal_callback(ble_handle->ready_cb_id, NULL, 0);
 }
 
 void zjs_ble_enable() {
@@ -547,15 +627,28 @@ void zjs_ble_enable() {
 
 static ZJS_DECL_FUNC(zjs_ble_disconnect)
 {
-    if (ble_conn.default_conn) {
-        int error = bt_conn_disconnect(ble_conn.default_conn,
-                                       BT_HCI_ERR_REMOTE_USER_TERM_CONN);
-        if (error) {
-            return zjs_error("zjs_ble_disconnect: disconnect failed");
+    ZJS_VALIDATE_ARGS(Z_STRING);
+
+    jerry_size_t size = BT_ADDR_LE_STR_LEN;
+    char addr[size];
+    zjs_copy_jstring(argv[0], addr, &size);
+
+    ble_connection_t *conn = ble_handle->connections;
+    while (conn) {
+        char bt_addr[BT_ADDR_LE_STR_LEN];
+        bt_addr_le_to_str(bt_conn_get_dst(conn->bt_conn), bt_addr, sizeof(bt_addr));
+        if (!strncmp(addr, bt_addr, BT_ADDR_LE_STR_LEN)) {
+            int error = bt_conn_disconnect(conn->bt_conn,
+                                           BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+            if (error) {
+                return zjs_error("ble disconnect failed");
+            }
+            return ZJS_UNDEFINED;
         }
+        conn = conn->next;
     }
 
-    return ZJS_UNDEFINED;
+    return zjs_error("ble connection not found");
 }
 
 const int ZJS_SUCCESS = 0;
@@ -730,7 +823,7 @@ static ZJS_DECL_FUNC(zjs_ble_start_advertising)
                               sd, ARRAY_SIZE(sd));
     ZVAL error = err ? zjs_error("advertising failed") : jerry_create_null();
 
-    zjs_trigger_event(ble_conn.ble_obj, "advertisingStart", &error,
+    zjs_trigger_event(ble_handle->ble_obj, "advertisingStart", &error,
                       1, NULL, NULL);
     DBG_PRINT("BLE event: adveristingStart\n");
 
@@ -1046,8 +1139,8 @@ static bool zjs_ble_register_service(ble_service_t *service)
 
             memset(ccc_user_data, 0, sizeof(struct _bt_gatt_ccc));
 
-            ccc_user_data->cfg = ble_conn.blvl_ccc_cfg;
-            ccc_user_data->cfg_len = ARRAY_SIZE(ble_conn.blvl_ccc_cfg);
+            ccc_user_data->cfg = ble_handle->blvl_ccc_cfg;
+            ccc_user_data->cfg_len = ARRAY_SIZE(ble_handle->blvl_ccc_cfg);
             ccc_user_data->cfg_changed = zjs_ble_blvl_ccc_cfg_changed;
             bt_attrs[entry_index].uuid = gatt_ccc_uuid;
             bt_attrs[entry_index].perm = BT_GATT_PERM_READ | BT_GATT_PERM_WRITE;
@@ -1068,7 +1161,7 @@ static bool zjs_ble_register_service(ble_service_t *service)
         return false;
     }
 
-    DBG_PRINT("Registered service: %d entries\n", entry_index);
+    DBG_PRINT("registered service: %d entries\n", entry_index);
     // keep reference to the bt attributes so we can free it
     service->attr_db = bt_attrs;
     bt_gatt_register(service->attr_db, entry_index);
@@ -1088,9 +1181,9 @@ static ZJS_DECL_FUNC(zjs_ble_set_services)
     }
 
     // free existing services
-    if (ble_conn.services) {
-        zjs_ble_free_services(ble_conn.services);
-        ble_conn.services = NULL;
+    if (ble_handle->services) {
+        zjs_ble_free_services(ble_handle->services);
+        ble_handle->services = NULL;
     }
 
     bool success = true;
@@ -1131,8 +1224,8 @@ static ZJS_DECL_FUNC(zjs_ble_set_services)
         }
 
         // append to the list
-        if (!ble_conn.services) {
-            ble_conn.services = service;
+        if (!ble_handle->services) {
+            ble_handle->services = service;
             previous = service;
         }
         else {
@@ -1156,7 +1249,7 @@ static ZJS_DECL_FUNC(zjs_ble_update_rssi)
 {
     // TODO: get actual RSSI value from Zephyr Bluetooth driver
     ZVAL arg = jerry_create_number(-50);
-    zjs_trigger_event(ble_conn.ble_obj, "rssiUpdate", &arg, 1, NULL, NULL);
+    zjs_trigger_event(ble_handle->ble_obj, "rssiUpdate", &arg, 1, NULL, NULL);
     return ZJS_UNDEFINED;
 }
 
@@ -1223,6 +1316,12 @@ jerry_value_t zjs_ble_init()
 {
     k_sem_init(&ble_sem, 0, 1);
 
+    ble_handle_t *handle = zjs_malloc(sizeof(ble_handle_t));
+    if (!handle) {
+        return zjs_error("failed to allocate ble_handle");
+    }
+    memset(handle, 0, sizeof(ble_handle_t));
+
     // create global BLE object
     jerry_value_t ble_obj = jerry_create_object();
     zjs_obj_add_function(ble_obj, zjs_ble_disconnect, "disconnect");
@@ -1242,24 +1341,34 @@ jerry_value_t zjs_ble_init()
     // bt events are called from the FIBER context, since we can't call
     // zjs_trigger_event() directly, we need to register a c callback which
     // the C callback will call zjs_trigger_event()
-    ble_conn.ready_cb_id = zjs_add_c_callback(&ble_conn, zjs_ble_ready_c_callback);
-    ble_conn.connected_cb_id = zjs_add_c_callback(&ble_conn, zjs_ble_connected_c_callback);
-    ble_conn.disconnected_cb_id = zjs_add_c_callback(&ble_conn, zjs_ble_disconnected_c_callback);
-    ble_conn.ble_obj = jerry_acquire_value(ble_obj);
+    handle->ready_cb_id = zjs_add_c_callback(handle, zjs_ble_ready_c_callback);
+    handle->ble_obj = jerry_acquire_value(ble_obj);
 
     if (!bt_enabled) {
         zjs_ble_enable();
         bt_enabled = true;
     }
 
+    ble_handle = handle;
     return ble_obj;
 }
 
 void zjs_ble_cleanup()
 {
-    zjs_ble_free_services(ble_conn.services);
-    ble_conn.services = NULL;
-    jerry_release_value(ble_conn.ble_obj);
+    ble_connection_t *conn = ble_handle->connections;
+    while (conn) {
+        ble_connection_t *tmp = conn;
+        zjs_remove_callback(tmp->connected_cb_id);
+        zjs_remove_callback(tmp->disconnected_cb_id);
+        bt_conn_unref(tmp->bt_conn);
+        conn = conn->next;
+        zjs_free(tmp);
+    }
+    zjs_remove_callback(ble_handle->ready_cb_id);
+    zjs_ble_free_services(ble_handle->services);
+    jerry_release_value(ble_handle->ble_obj);
+    zjs_free(ble_handle);
+    ble_handle = NULL;
 }
 
 #endif  // QEMU_BUILD
