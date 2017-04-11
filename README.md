@@ -360,7 +360,7 @@ upload the K64F [hello world application](https://developer.mbed.org/platforms/F
 Then, you could try the Zephyr OS `hello_world` sample to narrow down the
 problem:
 ```bash
-cd deps/zephyr/samples/hello_world/nanokernel
+cd deps/zephyr/samples/hello_world/
 make pristine && make BOARD=frdm_k64f
 cp outdir/frdm_k64f/zephyr.bin /media/<USERNAME>/MBED/
 ```
