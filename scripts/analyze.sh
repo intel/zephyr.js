@@ -170,7 +170,20 @@ if check_for_require ocf || check_config_file ZJS_OCF; then
         echo "CONFIG_NET_LOG=y" >> $PRJFILE
         echo "CONFIG_NET_SLIP=y" >> $PRJFILE
         echo "CONFIG_NET_SLIP_TAP=y" >> $PRJFILE
+    elif [ $BOARD = "arduino_101" ] || [ $BOARD = "nrf52_pca10040" ]; then
+        echo "CONFIG_BLUETOOTH=y" >> $PRJFILE
+        echo "CONFIG_BLUETOOTH_SMP=y" >> $PRJFILE
+        echo "CONFIG_BLUETOOTH_SIGNING=y" >> $PRJFILE
+        echo "CONFIG_BLUETOOTH_PERIPHERAL=y" >> $PRJFILE
+        echo "CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL=y" >> $PRJFILE
+        echo "CONFIG_NETWORKING_WITH_6LOWPAN=y" >> $PRJFILE
+        echo "CONFIG_6LOWPAN_COMPRESSION_IPHC=y" >> $PRJFILE
+        echo "CONFIG_NET_L2_BLUETOOTH_ZEP1656=y" >> $PRJFILE
+        echo "CONFIG_NET_L2_BLUETOOTH=y" >> $PRJFILE
+    elif [ $BOARD = "frdm_k64f" ]; then
+        echo "CONFIG_NET_L2_ETHERNET=y" >> $PRJFILE
     fi
+
     echo "CONFIG_NETWORKING=y" >> $PRJFILE
     echo "CONFIG_NET_IPV6=y" >> $PRJFILE
     echo "CONFIG_NET_UDP=y" >> $PRJFILE
@@ -181,16 +194,6 @@ if check_for_require ocf || check_config_file ZJS_OCF; then
     echo "CONFIG_NET_IF_UNICAST_IPV6_ADDR_COUNT=1" >> $PRJFILE
     echo "CONFIG_NET_IF_MCAST_IPV6_ADDR_COUNT=1" >> $PRJFILE
     echo "CONFIG_NET_MAX_CONTEXTS=3" >> $PRJFILE
-
-    echo "CONFIG_BLUETOOTH=y" >> $PRJFILE
-    echo "CONFIG_BLUETOOTH_SMP=y" >> $PRJFILE
-    echo "CONFIG_BLUETOOTH_SIGNING=y" >> $PRJFILE
-    echo "CONFIG_BLUETOOTH_PERIPHERAL=y" >> $PRJFILE
-    echo "CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL=y" >> $PRJFILE
-    echo "CONFIG_NETWORKING_WITH_6LOWPAN=y" >> $PRJFILE
-    echo "CONFIG_6LOWPAN_COMPRESSION_IPHC=y" >> $PRJFILE
-    echo "CONFIG_NET_L2_BLUETOOTH_ZEP1656=y" >> $PRJFILE
-    echo "CONFIG_NET_L2_BLUETOOTH=y" >> $PRJFILE
 
     echo "export ZJS_OCF=y" >> $CONFFILE
     echo "export ZJS_EVENTS=y" >> $CONFFILE
