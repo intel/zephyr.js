@@ -44,4 +44,3 @@ client.findResources({ resourceType:"core.sensor" }, onfound).then(function(reso
 }).catch(function(error) {
     console.log("findResources() returned an error: " + error.name);
 });
-
