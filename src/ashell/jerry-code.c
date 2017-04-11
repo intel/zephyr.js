@@ -57,7 +57,7 @@ static bool list_contains(const char *file_name)
     return false;
 }
 
-static requires_list_t* next_req_to_scan()
+static requires_list_t *next_req_to_scan()
 {
     requires_list_t *cur = req_list;
     while (cur) {
@@ -134,7 +134,7 @@ static void javascript_print_value(const jerry_value_t value)
     jerry_port_console("\n");
 }
 
-static char* read_file(const char *file_name, ssize_t *size)
+static char *read_file(const char *file_name, ssize_t *size)
 {
     char *file_buf = NULL;
     fs_file_t *fp = fs_open_alloc(file_name, "r");
