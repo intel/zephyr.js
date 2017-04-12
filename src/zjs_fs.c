@@ -371,7 +371,7 @@ static ZJS_DECL_FUNC(zjs_fs_unlink_async) {
 static ZJS_DECL_FUNC_ARGS(zjs_fs_read, uint8_t async)
 {
     // args: file descriptor, buffer, offset, length, position
-    ZJS_VALIDATE_ARGS(Z_NUMBER, Z_OBJECT, Z_NUMBER, Z_NUMBER, Z_NUMBER Z_NULL);
+    ZJS_VALIDATE_ARGS(Z_NUMBER, Z_BUFFER, Z_NUMBER, Z_NUMBER, Z_NUMBER Z_NULL);
 #ifdef ZJS_FS_ASYNC_APIS
     // async case adds callback
     if (async) {
@@ -425,12 +425,15 @@ static ZJS_DECL_FUNC_ARGS(zjs_fs_read, uint8_t async)
         }
     }
 
-    DBG_PRINT("reading into fp=%p, buffer=%p, offset=%lu, length=%lu\n", &handle->fp, buffer->buffer, (uint32_t)offset, (uint32_t)length);
+    DBG_PRINT("reading into fp=%p, buffer=%p, offset=%lu, length=%lu\n",
+              &handle->fp, buffer->buffer, (uint32_t)offset, (uint32_t)length);
 
-    uint32_t ret = fs_read(&handle->fp, buffer->buffer + (uint32_t)offset, (uint32_t)length);
+    uint32_t ret = fs_read(&handle->fp, buffer->buffer + (uint32_t)offset,
+                           (uint32_t)length);
 
     if (ret != (uint32_t)length) {
-        DBG_PRINT("could not read %lu bytes, only %lu were read\n", (uint32_t)length, ret);
+        DBG_PRINT("could not read %lu bytes, only %lu were read\n",
+                  (uint32_t)length, ret);
         err = -1;
     }
     handle->rpos += ret;
@@ -465,7 +468,7 @@ static ZJS_DECL_FUNC(zjs_fs_read_async) {
 static ZJS_DECL_FUNC_ARGS(zjs_fs_write, uint8_t async)
 {
     // args: file descriptor, buffer[, offset[, length[, position]]]
-    ZJS_VALIDATE_ARGS_OPTCOUNT(optcount, Z_NUMBER, Z_OBJECT,
+    ZJS_VALIDATE_ARGS_OPTCOUNT(optcount, Z_NUMBER, Z_BUFFER,
                                Z_OPTIONAL Z_NUMBER, Z_OPTIONAL Z_NUMBER,
                                Z_OPTIONAL Z_NUMBER);
     // NOTE: Borrowing the optional parameters from Node 7.x, beyond 6.10 LTS
@@ -827,7 +830,7 @@ static ZJS_DECL_FUNC(zjs_fs_stat_async) {
 static ZJS_DECL_FUNC_ARGS(zjs_fs_write_file, uint8_t async)
 {
     // args: filepath, data
-    ZJS_VALIDATE_ARGS(Z_STRING, Z_OBJECT Z_STRING);
+    ZJS_VALIDATE_ARGS(Z_STRING, Z_BUFFER Z_STRING);
 
 #ifdef ZJS_FS_ASYNC_APIS
     // async case adds callback arg

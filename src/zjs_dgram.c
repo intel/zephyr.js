@@ -244,7 +244,7 @@ static ZJS_DECL_FUNC(zjs_dgram_sock_send)
     //   but for now I'll leave them as required, as they were here before
 
     // args: buffer, offset, length, port, address[, callback]
-    ZJS_VALIDATE_ARGS(Z_OBJECT, Z_NUMBER, Z_NUMBER, Z_NUMBER, Z_STRING,
+    ZJS_VALIDATE_ARGS(Z_BUFFER, Z_NUMBER, Z_NUMBER, Z_NUMBER, Z_STRING,
                       Z_OPTIONAL Z_FUNCTION);
 
     int ret;
@@ -252,9 +252,6 @@ static ZJS_DECL_FUNC(zjs_dgram_sock_send)
     GET_HANDLE(dgram_handle_t, handle);
 
     zjs_buffer_t *buf = zjs_buffer_find(argv[0]);
-    if (!buf) {
-        return zjs_error("buffer expected");
-    }
     int offset = (int)jerry_get_number_value(argv[1]);
     int len = (int)jerry_get_number_value(argv[2]);
     if (offset + len > buf->bufsize) {

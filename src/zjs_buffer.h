@@ -17,8 +17,23 @@ typedef struct zjs_buffer {
     uint32_t bufsize;
 } zjs_buffer_t;
 
-zjs_buffer_t *zjs_buffer_find(const jerry_value_t obj);
+/**
+ * Test whether the given value is a Buffer object
+ *
+ * @param value  A JerryScript value
+ *
+ * @return  true if the value is a Buffer object; false otherwise
+ */
+bool zjs_value_is_buffer(const jerry_value_t value);
 
+/**
+ * Returns the buffer handle associated with obj, if found
+ *
+ * @param obj  A JerryScript object value
+ *
+ * @return  A pointer to the handle structure for this Buffer object, or NULL.
+ */
+zjs_buffer_t *zjs_buffer_find(const jerry_value_t obj);
 
 /**
  * Create a new Buffer object

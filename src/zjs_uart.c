@@ -109,7 +109,6 @@ static void uart_c_callback(void *h, const void *args)
     if (handle->size >= handle->min) {
         zjs_buffer_t *buffer;
         handle->buf_obj = zjs_buffer_create(handle->size, &buffer);
-
         if (buffer) {
             memcpy(buffer->buffer, args, handle->size);
 
@@ -157,12 +156,9 @@ static int write_data(struct device *dev, const char *buf, int len)
 static ZJS_DECL_FUNC(uart_write)
 {
     // args: buffer
-    ZJS_VALIDATE_ARGS(Z_OBJECT);
+    ZJS_VALIDATE_ARGS(Z_BUFFER);
 
     zjs_buffer_t *buffer = zjs_buffer_find(argv[0]);
-    if (!buffer) {
-        return TYPE_ERROR("expected buffer");
-    }
 
     jerry_value_t promise = jerry_create_object();
     zjs_make_promise(promise, NULL, NULL);

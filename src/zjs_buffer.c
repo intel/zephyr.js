@@ -20,6 +20,14 @@ typedef struct zjs_buffer_priv {
     zjs_buffer_t public;
 } zjs_buffer_priv_t;
 
+bool zjs_value_is_buffer(const jerry_value_t value)
+{
+    if (jerry_value_is_object(value) && zjs_buffer_find(value)) {
+        return true;
+    }
+    return false;
+}
+
 // TODO: Call sites could be replaced with get_object_native_handle directly
 zjs_buffer_t *zjs_buffer_find(const jerry_value_t obj)
 {

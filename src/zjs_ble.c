@@ -177,7 +177,7 @@ static ZJS_DECL_FUNC(zjs_ble_read_callback_function)
     //   semaphore on error case
     if (argc != 2 ||
         !jerry_value_is_number(argv[0]) ||
-        !jerry_value_is_object(argv[1])) {
+        !zjs_value_is_buffer(argv[1])) {
         k_sem_give(&ble_sem);
         return zjs_error("zjs_ble_read_attr_call_function_return: invalid arguments");
     }
@@ -373,27 +373,21 @@ static ssize_t zjs_ble_write_attr_callback(struct bt_conn *conn,
 static ZJS_DECL_FUNC(zjs_ble_update_value_callback_function)
 {
     // args: buffer
-    ZJS_VALIDATE_ARGS(Z_OBJECT);
+    ZJS_VALIDATE_ARGS(Z_BUFFER);
 
-    // expects a Buffer object
-    zjs_buffer_t *buf = zjs_buffer_find(argv[0]);
-
-    if (buf) {
-        if (ble_conn.default_conn) {
-            uintptr_t ptr;
-            if (jerry_get_object_native_handle(this, &ptr)) {
-               ble_characteristic_t *chrc = (ble_characteristic_t *)ptr;
-               if (chrc->chrc_attr) {
-                   bt_gatt_notify(ble_conn.default_conn, chrc->chrc_attr,
-                                  buf->buffer, buf->bufsize);
-               }
+    if (ble_conn.default_conn) {
+        uintptr_t ptr;
+        if (jerry_get_object_native_handle(this, &ptr)) {
+            ble_characteristic_t *chrc = (ble_characteristic_t *)ptr;
+            if (chrc->chrc_attr) {
+                zjs_buffer_t *buf = zjs_buffer_find(argv[0]);
+                bt_gatt_notify(ble_conn.default_conn, chrc->chrc_attr,
+                               buf->buffer, buf->bufsize);
             }
         }
-
-        return ZJS_UNDEFINED;
     }
 
-    return zjs_error("updateValueCallback: buffer not found or empty");
+    return ZJS_UNDEFINED;
 }
 
 static void zjs_ble_subscribe_c_callback(void *handle, const void *argv)
