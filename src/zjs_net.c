@@ -110,6 +110,7 @@ typedef struct sock_handle {
     jerry_value_t socket;
     zjs_callback_id tcp_read_id;
     zjs_callback_id tcp_connect_id;
+    jerry_value_t connect_listener;
     uint8_t paused;
     uint8_t *rbuf;
     void *rptr;
@@ -508,6 +509,7 @@ static jerry_value_t create_socket(uint8_t client, sock_handle_t **handle_out)
     zjs_obj_add_function(socket, socket_set_timeout, "setTimeout");
 
     jerry_set_object_native_handle(socket, (uintptr_t)sock_handle, NULL);
+    sock_handle->connect_listener = ZJS_UNDEFINED;
     sock_handle->socket = socket;
     sock_handle->tcp_connect_id = -1;
     sock_handle->tcp_read_id = -1;
@@ -794,6 +796,7 @@ static void tcp_connected_c_callback(void *handle, const void *args)
     if (sock_handle) {
         // set socket.connecting property == false
         zjs_obj_add_boolean(sock_handle->socket, false, "connecting");
+        zjs_add_event_listener(sock_handle->socket, "connect", sock_handle->connect_listener);
         zjs_trigger_event(sock_handle->socket, "connect", NULL, 0, NULL, NULL);
         zjs_remove_callback(sock_handle->tcp_connect_id);
     }
@@ -803,22 +806,24 @@ static void tcp_connected(struct net_context *context,
                           int status,
                           void *user_data)
 {
-    sock_handle_t *sock_handle = (sock_handle_t *)user_data;
+    if (status == 0) {
+        sock_handle_t *sock_handle = (sock_handle_t *)user_data;
 
-    if (sock_handle) {
-        // activity, restart timeout
-        start_socket_timeout(sock_handle, sock_handle->timeout);
+        if (sock_handle) {
+            // activity, restart timeout
+            start_socket_timeout(sock_handle, sock_handle->timeout);
 
-        sock_handle->tcp_connect_id = zjs_add_c_callback(sock_handle, tcp_connected_c_callback);
-        zjs_signal_callback(sock_handle->tcp_connect_id, NULL, 0);
+            sock_handle->tcp_connect_id = zjs_add_c_callback(sock_handle, tcp_connected_c_callback);
+            zjs_signal_callback(sock_handle->tcp_connect_id, NULL, 0);
 
-        int ret;
+            int ret;
 
-        ret = net_context_recv(context, tcp_received, 0, sock_handle);
-        if (ret < 0) {
-            ERR_PRINT("Cannot receive TCP packets (%d)\n", ret);
+            ret = net_context_recv(context, tcp_received, 0, sock_handle);
+            if (ret < 0) {
+                ERR_PRINT("Cannot receive TCP packets (%d)\n", ret);
+            }
+            DBG_PRINT("connection success, context=%p, socket=%u\n", context, sock_handle->socket);
         }
-        DBG_PRINT("connection success, context=%p, socket=%u\n", context, sock_handle->socket);
     }
 }
 
@@ -848,6 +853,13 @@ static jerry_value_t socket_connect(const jerry_value_t function_obj,
     if (!handle->tcp_sock) {
         CHECK(net_context_get(AF_INET6, SOCK_STREAM, IPPROTO_TCP,
                     &handle->tcp_sock));
+    }
+    if (!handle->tcp_sock) {
+        DBG_PRINT("connect failed\n");
+        ZVAL_MUTABLE error = zjs_custom_error("NotFoundError", "Connection could not be made");
+        jerry_value_clear_error_flag(&error);
+        zjs_trigger_event(this, "error", &error, 1, NULL, NULL);
+        return ZJS_UNDEFINED;
     }
 
     double port = 0;
@@ -892,12 +904,19 @@ static jerry_value_t socket_connect(const jerry_value_t function_obj,
         // set socket.connecting property == true
         zjs_obj_add_boolean(this, true, "connecting");
         // connect to remote
-        CHECK(net_context_connect(handle->tcp_sock,
-                                  (struct sockaddr *)&peer_addr6,
-                                  sizeof(peer_addr6),
-                                  tcp_connected,
-                                  K_NO_WAIT,
-                                  handle));
+        if (net_context_connect(handle->tcp_sock,
+                                (struct sockaddr *)&peer_addr6,
+                                sizeof(peer_addr6),
+                                tcp_connected,
+                                1,
+                                handle) < 0) {
+            DBG_PRINT("connect failed\n");
+            zjs_obj_add_boolean(this, false, "connecting");
+            ZVAL_MUTABLE error = zjs_custom_error("NotFoundError", "Connection could not be made");
+            jerry_value_clear_error_flag(&error);
+            zjs_trigger_event(this, "error", &error, 1, NULL, NULL);
+            return ZJS_UNDEFINED;
+        }
     } else {
         struct sockaddr_in my_addr4 = { 0 };
 
@@ -922,15 +941,23 @@ static jerry_value_t socket_connect(const jerry_value_t function_obj,
         // set socket.connecting property == true
         zjs_obj_add_boolean(this, true, "connecting");
         // connect to remote
-        CHECK(net_context_connect(handle->tcp_sock,
-                                  (struct sockaddr *)&peer_addr4,
-                                  sizeof(peer_addr4),
-                                  tcp_connected,
-                                  K_NO_WAIT,
-                                  handle));
+        if (net_context_connect(handle->tcp_sock,
+                                (struct sockaddr *)&peer_addr4,
+                                sizeof(peer_addr4),
+                                tcp_connected,
+                                1,
+                                handle) < 0) {
+            DBG_PRINT("connect failed\n");
+            zjs_obj_add_boolean(this, false, "connecting");
+            ZVAL_MUTABLE error = zjs_custom_error("NotFoundError", "Connection could not be made");
+            jerry_value_clear_error_flag(&error);
+            zjs_trigger_event(this, "error", &error, 1, NULL, NULL);
+            return ZJS_UNDEFINED;
+        }
     }
     if (argc > 1) {
-        zjs_add_event_listener(this, "connect", argv[1]);
+        jerry_release_value(handle->connect_listener);
+        handle->connect_listener = jerry_acquire_value(argv[1]);
     }
 
     // add all the socket address information
@@ -978,6 +1005,7 @@ static jerry_value_t net_socket(const jerry_value_t function_obj,
     return socket;
 }
 
+#if 0
 #if defined(CONFIG_NET_L2_BLUETOOTH)
 static volatile uint8_t net_up = 0;
 static struct net_mgmt_event_callback cb;
@@ -988,6 +1016,7 @@ static void event_iface_up(struct net_mgmt_event_callback *cb,
 }
 #endif
 
+#endif
 /**
  * Check if input is an IP address
  *
@@ -1082,6 +1111,7 @@ jerry_value_t zjs_net_init()
     /*
      * TODO: move to net config?
      */
+#if 0
 #if defined(CONFIG_NET_L2_BLUETOOTH)
     struct net_if *iface = net_if_get_default();
     if (!atomic_test_bit(iface->flags, NET_IF_UP)) {
@@ -1091,6 +1121,7 @@ jerry_value_t zjs_net_init()
     }
     ZJS_PRINT("Waiting for iface to come up...\n");
     do {} while (!net_up);
+#endif
 #endif
 
     jerry_value_t net_obj = jerry_create_object();
