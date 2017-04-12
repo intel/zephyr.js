@@ -33,11 +33,7 @@ static void post_promise(void *h)
     }
 }
 
-static jerry_value_t promise_resolve(const jerry_value_t function_obj,
-                                     const jerry_value_t this,
-                                     const jerry_value_t argv[],
-                                     const jerry_length_t argc,
-                                     uint8_t fulfill)
+static ZJS_DECL_FUNC_ARGS(promise_resolve, uint8_t fulfill)
 {
     // args: callback
     ZJS_VALIDATE_ARGS(Z_FUNCTION);
@@ -60,20 +56,14 @@ static jerry_value_t promise_resolve(const jerry_value_t function_obj,
     return jerry_acquire_value(this);
 }
 
-static jerry_value_t promise_then(const jerry_value_t function_obj,
-                                  const jerry_value_t this,
-                                  const jerry_value_t argv[],
-                                  const jerry_length_t argc)
+static ZJS_DECL_FUNC(promise_then)
 {
-    return promise_resolve(function_obj, this, argv, argc, 1);
+    return ZJS_CHAIN_FUNC_ARGS(promise_resolve, 1);
 }
 
-static jerry_value_t promise_catch(const jerry_value_t function_obj,
-                                   const jerry_value_t this,
-                                   const jerry_value_t argv[],
-                                   const jerry_length_t argc)
+static ZJS_DECL_FUNC(promise_catch)
 {
-    return promise_resolve(function_obj, this, argv, argc, 0);
+    return ZJS_CHAIN_FUNC_ARGS(promise_resolve, 0);
 }
 
 void zjs_make_promise(jerry_value_t obj, zjs_post_promise_func post,

@@ -100,10 +100,7 @@ static void ipm_msg_receive_callback(void *context, uint32_t id, volatile void *
     }
 }
 
-static jerry_value_t zjs_glcd_print(const jerry_value_t function_obj,
-                                    const jerry_value_t this,
-                                    const jerry_value_t argv[],
-                                    const jerry_length_t argc)
+static ZJS_DECL_FUNC(zjs_glcd_print)
 {
     // args: text
     ZJS_VALIDATE_ARGS(Z_STRING);
@@ -124,10 +121,7 @@ static jerry_value_t zjs_glcd_print(const jerry_value_t function_obj,
     return result;
 }
 
-static jerry_value_t zjs_glcd_clear(const jerry_value_t function_obj,
-                                    const jerry_value_t this,
-                                    const jerry_value_t argv[],
-                                    const jerry_length_t argc)
+static ZJS_DECL_FUNC(zjs_glcd_clear)
 {
     // send IPM message to the ARC side
     zjs_ipm_message_t send;
@@ -136,10 +130,7 @@ static jerry_value_t zjs_glcd_clear(const jerry_value_t function_obj,
     return zjs_glcd_call_remote_function(&send);
 }
 
-static jerry_value_t zjs_glcd_set_cursor_pos(const jerry_value_t function_obj,
-                                             const jerry_value_t this,
-                                             const jerry_value_t argv[],
-                                             const jerry_length_t argc)
+static ZJS_DECL_FUNC(zjs_glcd_set_cursor_pos)
 {
     // args: column, row
     ZJS_VALIDATE_ARGS(Z_NUMBER, Z_NUMBER);
@@ -153,10 +144,7 @@ static jerry_value_t zjs_glcd_set_cursor_pos(const jerry_value_t function_obj,
     return zjs_glcd_call_remote_ignore(&send);
 }
 
-static jerry_value_t zjs_glcd_select_color(const jerry_value_t function_obj,
-                                           const jerry_value_t this,
-                                           const jerry_value_t argv[],
-                                           const jerry_length_t argc)
+static ZJS_DECL_FUNC(zjs_glcd_select_color)
 {
     // args: predefined color index
     ZJS_VALIDATE_ARGS(Z_NUMBER);
@@ -169,10 +157,7 @@ static jerry_value_t zjs_glcd_select_color(const jerry_value_t function_obj,
     return zjs_glcd_call_remote_ignore(&send);
 }
 
-static jerry_value_t zjs_glcd_set_color(const jerry_value_t function_obj,
-                                        const jerry_value_t this,
-                                        const jerry_value_t argv[],
-                                        const jerry_length_t argc)
+static ZJS_DECL_FUNC(zjs_glcd_set_color)
 {
     // args: red, green, blue
     ZJS_VALIDATE_ARGS(Z_NUMBER, Z_NUMBER, Z_NUMBER);
@@ -187,10 +172,7 @@ static jerry_value_t zjs_glcd_set_color(const jerry_value_t function_obj,
     return zjs_glcd_call_remote_ignore(&send);
 }
 
-static jerry_value_t zjs_glcd_set_function(const jerry_value_t function_obj,
-                                           const jerry_value_t this,
-                                           const jerry_value_t argv[],
-                                           const jerry_length_t argc)
+static ZJS_DECL_FUNC(zjs_glcd_set_function)
 {
     // args: predefined function number
     ZJS_VALIDATE_ARGS(Z_NUMBER);
@@ -203,10 +185,7 @@ static jerry_value_t zjs_glcd_set_function(const jerry_value_t function_obj,
     return zjs_glcd_call_remote_ignore(&send);
 }
 
-static jerry_value_t zjs_glcd_get_function(const jerry_value_t function_obj,
-                                           const jerry_value_t this,
-                                           const jerry_value_t argv[],
-                                           const jerry_length_t argc)
+static ZJS_DECL_FUNC(zjs_glcd_get_function)
 {
     // send IPM message to the ARC side
     zjs_ipm_message_t send;
@@ -216,10 +195,7 @@ static jerry_value_t zjs_glcd_get_function(const jerry_value_t function_obj,
     return zjs_glcd_call_remote_function(&send);
 }
 
-static jerry_value_t zjs_glcd_set_display_state(const jerry_value_t function_obj,
-                                                const jerry_value_t this,
-                                                const jerry_value_t argv[],
-                                                const jerry_length_t argc)
+static ZJS_DECL_FUNC(zjs_glcd_set_display_state)
 {
     // args: predefined numeric constants
     ZJS_VALIDATE_ARGS(Z_NUMBER);
@@ -232,10 +208,7 @@ static jerry_value_t zjs_glcd_set_display_state(const jerry_value_t function_obj
     return zjs_glcd_call_remote_ignore(&send);
 }
 
-static jerry_value_t zjs_glcd_get_display_state(const jerry_value_t function_obj,
-                                                const jerry_value_t this,
-                                                const jerry_value_t argv[],
-                                                const jerry_length_t argc)
+static ZJS_DECL_FUNC(zjs_glcd_get_display_state)
 {
     // send IPM message to the ARC side
     zjs_ipm_message_t send;
@@ -245,10 +218,7 @@ static jerry_value_t zjs_glcd_get_display_state(const jerry_value_t function_obj
     return zjs_glcd_call_remote_function(&send);
 }
 
-static jerry_value_t zjs_glcd_init(const jerry_value_t function_obj,
-                                   const jerry_value_t this,
-                                   const jerry_value_t argv[],
-                                   const jerry_length_t argc)
+static ZJS_DECL_FUNC(zjs_glcd_init)
 {
     // send IPM message to the ARC side
     zjs_ipm_message_t send;

@@ -117,82 +117,52 @@ static jerry_value_t zjs_buffer_write_bytes(const jerry_value_t this,
     return ZJS_UNDEFINED;
 }
 
-static jerry_value_t zjs_buffer_read_uint8(const jerry_value_t function_obj,
-                                           const jerry_value_t this,
-                                           const jerry_value_t argv[],
-                                           const jerry_length_t argc)
+static ZJS_DECL_FUNC(zjs_buffer_read_uint8)
 {
     return zjs_buffer_read_bytes(this, argv, argc, 1, true);
 }
 
-static jerry_value_t zjs_buffer_read_uint16_be(const jerry_value_t function_obj,
-                                               const jerry_value_t this,
-                                               const jerry_value_t argv[],
-                                               const jerry_length_t argc)
+static ZJS_DECL_FUNC(zjs_buffer_read_uint16_be)
 {
     return zjs_buffer_read_bytes(this, argv, argc, 2, true);
 }
 
-static jerry_value_t zjs_buffer_read_uint16_le(const jerry_value_t function_obj,
-                                               const jerry_value_t this,
-                                               const jerry_value_t argv[],
-                                               const jerry_length_t argc)
+static ZJS_DECL_FUNC(zjs_buffer_read_uint16_le)
 {
     return zjs_buffer_read_bytes(this, argv, argc, 2, false);
 }
 
-static jerry_value_t zjs_buffer_read_uint32_be(const jerry_value_t function_obj,
-                                               const jerry_value_t this,
-                                               const jerry_value_t argv[],
-                                               const jerry_length_t argc)
+static ZJS_DECL_FUNC(zjs_buffer_read_uint32_be)
 {
     return zjs_buffer_read_bytes(this, argv, argc, 4, true);
 }
 
-static jerry_value_t zjs_buffer_read_uint32_le(const jerry_value_t function_obj,
-                                               const jerry_value_t this,
-                                               const jerry_value_t argv[],
-                                               const jerry_length_t argc)
+static ZJS_DECL_FUNC(zjs_buffer_read_uint32_le)
 {
     return zjs_buffer_read_bytes(this, argv, argc, 4, false);
 }
 
-static jerry_value_t zjs_buffer_write_uint8(const jerry_value_t function_obj,
-                                           const jerry_value_t this,
-                                           const jerry_value_t argv[],
-                                           const jerry_length_t argc)
+static ZJS_DECL_FUNC(zjs_buffer_write_uint8)
 {
     return zjs_buffer_write_bytes(this, argv, argc, 1, true);
 }
 
-static jerry_value_t zjs_buffer_write_uint16_be(const jerry_value_t function_obj,
-                                               const jerry_value_t this,
-                                               const jerry_value_t argv[],
-                                               const jerry_length_t argc)
+static ZJS_DECL_FUNC(zjs_buffer_write_uint16_be)
 {
     return zjs_buffer_write_bytes(this, argv, argc, 2, true);
 }
 
-static jerry_value_t zjs_buffer_write_uint16_le(const jerry_value_t function_obj,
-                                               const jerry_value_t this,
-                                               const jerry_value_t argv[],
-                                               const jerry_length_t argc)
+static ZJS_DECL_FUNC(zjs_buffer_write_uint16_le)
 {
     return zjs_buffer_write_bytes(this, argv, argc, 2, false);
 }
 
-static jerry_value_t zjs_buffer_write_uint32_be(const jerry_value_t function_obj,
-                                               const jerry_value_t this,
-                                               const jerry_value_t argv[],
-                                               const jerry_length_t argc)
+static ZJS_DECL_FUNC(zjs_buffer_write_uint32_be)
 {
     return zjs_buffer_write_bytes(this, argv, argc, 4, true);
 }
 
-static jerry_value_t zjs_buffer_write_uint32_le(const jerry_value_t function_obj,
-                                               const jerry_value_t this,
-                                               const jerry_value_t argv[],
-                                               const jerry_length_t argc)
+static ZJS_DECL_FUNC(zjs_buffer_write_uint32_le)
 {
     return zjs_buffer_write_bytes(this, argv, argc, 4, false);
 }
@@ -205,10 +175,7 @@ char zjs_int_to_hex(int value) {
     return 'a' + value - 10;
 }
 
-static jerry_value_t zjs_buffer_to_string(const jerry_value_t function_obj,
-                                          const jerry_value_t this,
-                                          const jerry_value_t argv[],
-                                          const jerry_length_t argc)
+static ZJS_DECL_FUNC(zjs_buffer_to_string)
 {
     // requires: this must be a JS buffer object, if an argument is present it
     //             must be the string 'ascii' or 'hex', as those are the only
@@ -263,10 +230,7 @@ static void zjs_buffer_callback_free(uintptr_t handle)
     zjs_free(item);
 }
 
-static jerry_value_t zjs_buffer_write_string(const jerry_value_t function_obj,
-                                             const jerry_value_t this,
-                                             const jerry_value_t argv[],
-                                             const jerry_length_t argc)
+static ZJS_DECL_FUNC(zjs_buffer_write_string)
 {
     // requires: string - what will be written to buf
     //           offset - where to start writing (Default: 0)
@@ -385,10 +349,7 @@ jerry_value_t zjs_buffer_create(uint32_t size, zjs_buffer_t **ret_buf)
 }
 
 // Buffer constructor
-static jerry_value_t zjs_buffer(const jerry_value_t function_obj,
-                                const jerry_value_t this,
-                                const jerry_value_t argv[],
-                                const jerry_length_t argc)
+static ZJS_DECL_FUNC(zjs_buffer)
 {
     // requires: single argument can be a numeric size in bytes, an array of
     //             uint8s, or a string

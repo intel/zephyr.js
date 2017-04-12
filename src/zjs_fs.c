@@ -139,10 +139,7 @@ static uint16_t get_mode(char *str)
     return mode;
 }
 
-static jerry_value_t is_file(const jerry_value_t function_obj,
-                             const jerry_value_t this,
-                             const jerry_value_t argv[],
-                             const jerry_length_t argc)
+static ZJS_DECL_FUNC(is_file)
 {
     struct fs_dirent *entry;
 
@@ -156,10 +153,7 @@ static jerry_value_t is_file(const jerry_value_t function_obj,
     }
 }
 
-static jerry_value_t is_directory(const jerry_value_t function_obj,
-                                  const jerry_value_t this,
-                                  const jerry_value_t argv[],
-                                  const jerry_length_t argc)
+static ZJS_DECL_FUNC(is_directory)
 {
     struct fs_dirent *entry;
 
@@ -200,11 +194,7 @@ static jerry_value_t create_stats_obj(struct fs_dirent *entry)
     return stats_obj;
 }
 
-static jerry_value_t zjs_open(const jerry_value_t function_obj,
-                              const jerry_value_t this,
-                              const jerry_value_t argv[],
-                              const jerry_length_t argc,
-                              uint8_t async)
+static ZJS_DECL_FUNC_ARGS(zjs_open, uint8_t async)
 {
     // NOTE: what we call mode below is actually 'flags' in Node docs, argv[1];
     //   we don't support mode (optional argv[2])
@@ -274,27 +264,17 @@ static jerry_value_t zjs_open(const jerry_value_t function_obj,
     return jerry_create_number(handle->fd);
 }
 
-static jerry_value_t zjs_open_sync(const jerry_value_t function_obj,
-                                   const jerry_value_t this,
-                                   const jerry_value_t argv[],
-                                   const jerry_length_t argc) {
-    return zjs_open(function_obj, this, argv, argc, 0);
+static ZJS_DECL_FUNC(zjs_open_sync) {
+    return ZJS_CHAIN_FUNC_ARGS(zjs_open, 0);
 }
 
 #ifdef ZJS_FS_ASYNC_APIS
-static jerry_value_t zjs_open_async(const jerry_value_t function_obj,
-                                    const jerry_value_t this,
-                                    const jerry_value_t argv[],
-                                    const jerry_length_t argc) {
-    return zjs_open(function_obj, this, argv, argc, 1);
+static ZJS_DECL_FUNC(zjs_open_async) {
+    return ZJS_CHAIN_FUNC_ARGS(zjs_open, 1);
 }
 #endif
 
-static jerry_value_t zjs_close(const jerry_value_t function_obj,
-                               const jerry_value_t this,
-                               const jerry_value_t argv[],
-                               const jerry_length_t argc,
-                               uint8_t async)
+static ZJS_DECL_FUNC_ARGS(zjs_close, uint8_t async)
 {
     // args: file descriptor
     ZJS_VALIDATE_ARGS(Z_NUMBER);
@@ -330,27 +310,17 @@ static jerry_value_t zjs_close(const jerry_value_t function_obj,
     return ZJS_UNDEFINED;
 }
 
-static jerry_value_t zjs_close_sync(const jerry_value_t function_obj,
-                                    const jerry_value_t this,
-                                    const jerry_value_t argv[],
-                                    const jerry_length_t argc) {
-    return zjs_close(function_obj, this, argv, argc, 0);
+static ZJS_DECL_FUNC(zjs_close_sync) {
+    return ZJS_CHAIN_FUNC_ARGS(zjs_close, 0);
 }
 
 #ifdef ZJS_FS_ASYNC_APIS
-static jerry_value_t zjs_close_async(const jerry_value_t function_obj,
-                                     const jerry_value_t this,
-                                     const jerry_value_t argv[],
-                                     const jerry_length_t argc) {
-    return zjs_close(function_obj, this, argv, argc, 1);
+static ZJS_DECL_FUNC(zjs_close_async) {
+    return ZJS_CHAIN_FUNC_ARGS(zjs_close, 1);
 }
 #endif
 
-static jerry_value_t zjs_unlink(const jerry_value_t function_obj,
-                                const jerry_value_t this,
-                                const jerry_value_t argv[],
-                                const jerry_length_t argc,
-                                uint8_t async)
+static ZJS_DECL_FUNC_ARGS(zjs_unlink, uint8_t async)
 {
     // args: filename
     ZJS_VALIDATE_ARGS(Z_STRING);
@@ -388,27 +358,17 @@ static jerry_value_t zjs_unlink(const jerry_value_t function_obj,
     return ZJS_UNDEFINED;
 }
 
-static jerry_value_t zjs_unlink_sync(const jerry_value_t function_obj,
-                                     const jerry_value_t this,
-                                     const jerry_value_t argv[],
-                                     const jerry_length_t argc) {
-    return zjs_unlink(function_obj, this, argv, argc, 0);
+static ZJS_DECL_FUNC(zjs_unlink_sync) {
+    return ZJS_CHAIN_FUNC_ARGS(zjs_unlink, 0);
 }
 
 #ifdef ZJS_FS_ASYNC_APIS
-static jerry_value_t zjs_unlink_async(const jerry_value_t function_obj,
-                                      const jerry_value_t this,
-                                      const jerry_value_t argv[],
-                                      const jerry_length_t argc) {
-    return zjs_unlink(function_obj, this, argv, argc, 1);
+static ZJS_DECL_FUNC(zjs_unlink_async) {
+    return ZJS_CHAIN_FUNC_ARGS(zjs_unlink, 1);
 }
 #endif
 
-static jerry_value_t zjs_read(const jerry_value_t function_obj,
-                              const jerry_value_t this,
-                              const jerry_value_t argv[],
-                              const jerry_length_t argc,
-                              uint8_t async)
+static ZJS_DECL_FUNC_ARGS(zjs_read, uint8_t async)
 {
     // args: file descriptor, buffer, offset, length, position
     ZJS_VALIDATE_ARGS(Z_NUMBER, Z_OBJECT, Z_NUMBER, Z_NUMBER, Z_NUMBER Z_NULL);
@@ -492,27 +452,17 @@ static jerry_value_t zjs_read(const jerry_value_t function_obj,
     return jerry_create_number(ret);
 }
 
-static jerry_value_t zjs_read_sync(const jerry_value_t function_obj,
-                                   const jerry_value_t this,
-                                   const jerry_value_t argv[],
-                                   const jerry_length_t argc) {
-    return zjs_read(function_obj, this, argv, argc, 0);
+static ZJS_DECL_FUNC(zjs_read_sync) {
+    return ZJS_CHAIN_FUNC_ARGS(zjs_read, 0);
 }
 
 #ifdef ZJS_FS_ASYNC_APIS
-static jerry_value_t zjs_read_async(const jerry_value_t function_obj,
-                                    const jerry_value_t this,
-                                    const jerry_value_t argv[],
-                                    const jerry_length_t argc) {
-    return zjs_read(function_obj, this, argv, argc, 1);
+static ZJS_DECL_FUNC(zjs_read_async) {
+    return ZJS_CHAIN_FUNC_ARGS(zjs_read, 1);
 }
 #endif
 
-static jerry_value_t zjs_write(const jerry_value_t function_obj,
-                               const jerry_value_t this,
-                               const jerry_value_t argv[],
-                               const jerry_length_t argc,
-                               uint8_t async)
+static ZJS_DECL_FUNC_ARGS(zjs_write, uint8_t async)
 {
     // args: file descriptor, buffer[, offset[, length[, position]]]
     ZJS_VALIDATE_ARGS_OPTCOUNT(optcount, Z_NUMBER, Z_OBJECT,
@@ -605,27 +555,17 @@ static jerry_value_t zjs_write(const jerry_value_t function_obj,
     return jerry_create_number(written);
 }
 
-static jerry_value_t zjs_write_sync(const jerry_value_t function_obj,
-                                    const jerry_value_t this,
-                                    const jerry_value_t argv[],
-                                    const jerry_length_t argc) {
-    return zjs_write(function_obj, this, argv, argc, 0);
+static ZJS_DECL_FUNC(zjs_write_sync) {
+    return ZJS_CHAIN_FUNC_ARGS(zjs_write, 0);
 }
 
 #ifdef ZJS_FS_ASYNC_APIS
-static jerry_value_t zjs_write_async(const jerry_value_t function_obj,
-                                     const jerry_value_t this,
-                                     const jerry_value_t argv[],
-                                     const jerry_length_t argc) {
-    return zjs_write(function_obj, this, argv, argc, 1);
+static ZJS_DECL_FUNC(zjs_write_async) {
+    return ZJS_CHAIN_FUNC_ARGS(zjs_write, 1);
 }
 #endif
 
-static jerry_value_t zjs_truncate(const jerry_value_t function_obj,
-                                  const jerry_value_t this,
-                                  const jerry_value_t argv[],
-                                  const jerry_length_t argc,
-                                  uint8_t async)
+static ZJS_DECL_FUNC_ARGS(zjs_truncate, uint8_t async)
 {
     // args: file descriptor or string path, length
     ZJS_VALIDATE_ARGS(Z_OBJECT Z_STRING, Z_NUMBER);
@@ -678,27 +618,17 @@ static jerry_value_t zjs_truncate(const jerry_value_t function_obj,
     return ZJS_UNDEFINED;
 }
 
-static jerry_value_t zjs_truncate_sync(const jerry_value_t function_obj,
-                                       const jerry_value_t this,
-                                       const jerry_value_t argv[],
-                                       const jerry_length_t argc) {
-    return zjs_truncate(function_obj, this, argv, argc, 0);
+static ZJS_DECL_FUNC(zjs_truncate_sync) {
+    return ZJS_CHAIN_FUNC_ARGS(zjs_truncate, 0);
 }
 
 #ifdef ZJS_FS_ASYNC_APIS
-static jerry_value_t zjs_truncate_async(const jerry_value_t function_obj,
-                                        const jerry_value_t this,
-                                        const jerry_value_t argv[],
-                                        const jerry_length_t argc) {
-    return zjs_truncate(function_obj, this, argv, argc, 1);
+static ZJS_DECL_FUNC(zjs_truncate_async) {
+    return ZJS_CHAIN_FUNC_ARGS(zjs_truncate, 1);
 }
 #endif
 
-static jerry_value_t zjs_mkdir(const jerry_value_t function_obj,
-                               const jerry_value_t this,
-                               const jerry_value_t argv[],
-                               const jerry_length_t argc,
-                               uint8_t async)
+static ZJS_DECL_FUNC_ARGS(zjs_mkdir, uint8_t async)
 {
     // args: dirpath
     ZJS_VALIDATE_ARGS(Z_STRING);
@@ -733,27 +663,17 @@ static jerry_value_t zjs_mkdir(const jerry_value_t function_obj,
     return ZJS_UNDEFINED;
 }
 
-static jerry_value_t zjs_mkdir_sync(const jerry_value_t function_obj,
-                                    const jerry_value_t this,
-                                    const jerry_value_t argv[],
-                                    const jerry_length_t argc) {
-    return zjs_mkdir(function_obj, this, argv, argc, 0);
+static ZJS_DECL_FUNC(zjs_mkdir_sync) {
+    return ZJS_CHAIN_FUNC_ARGS(zjs_mkdir, 0);
 }
 
 #ifdef ZJS_FS_ASYNC_APIS
-static jerry_value_t zjs_mkdir_async(const jerry_value_t function_obj,
-                                     const jerry_value_t this,
-                                     const jerry_value_t argv[],
-                                     const jerry_length_t argc) {
-    return zjs_mkdir(function_obj, this, argv, argc, 1);
+static ZJS_DECL_FUNC(zjs_mkdir_async) {
+    return ZJS_CHAIN_FUNC_ARGS(zjs_mkdir, 1);
 }
 #endif
 
-static jerry_value_t zjs_readdir(const jerry_value_t function_obj,
-                                 const jerry_value_t this,
-                                 const jerry_value_t argv[],
-                                 const jerry_length_t argc,
-                                 uint8_t async)
+static ZJS_DECL_FUNC_ARGS(zjs_readdir, uint8_t async)
 {
     // args: dirpath
     ZJS_VALIDATE_ARGS(Z_STRING);
@@ -842,27 +762,17 @@ static jerry_value_t zjs_readdir(const jerry_value_t function_obj,
     return array;
 }
 
-static jerry_value_t zjs_readdir_sync(const jerry_value_t function_obj,
-                                      const jerry_value_t this,
-                                      const jerry_value_t argv[],
-                                      const jerry_length_t argc) {
-    return zjs_readdir(function_obj, this, argv, argc, 0);
+static ZJS_DECL_FUNC(zjs_readdir_sync) {
+    return ZJS_CHAIN_FUNC_ARGS(zjs_readdir, 0);
 }
 
 #ifdef ZJS_FS_ASYNC_APIS
-static jerry_value_t zjs_readdir_async(const jerry_value_t function_obj,
-                                       const jerry_value_t this,
-                                       const jerry_value_t argv[],
-                                       const jerry_length_t argc) {
-    return zjs_readdir(function_obj, this, argv, argc, 1);
+static ZJS_DECL_FUNC(zjs_readdir_async) {
+    return ZJS_CHAIN_FUNC_ARGS(zjs_readdir, 1);
 }
 #endif
 
-static jerry_value_t zjs_stat(const jerry_value_t function_obj,
-                              const jerry_value_t this,
-                              const jerry_value_t argv[],
-                              const jerry_length_t argc,
-                              uint8_t async)
+static ZJS_DECL_FUNC_ARGS(zjs_stat, uint8_t async)
 {
     // args: filepath
     ZJS_VALIDATE_ARGS(Z_STRING);
@@ -904,27 +814,17 @@ static jerry_value_t zjs_stat(const jerry_value_t function_obj,
     return create_stats_obj(&entry);
 }
 
-static jerry_value_t zjs_stat_sync(const jerry_value_t function_obj,
-                                   const jerry_value_t this,
-                                   const jerry_value_t argv[],
-                                   const jerry_length_t argc) {
-    return zjs_stat(function_obj, this, argv, argc, 0);
+static ZJS_DECL_FUNC(zjs_stat_sync) {
+    return ZJS_CHAIN_FUNC_ARGS(zjs_stat, 0);
 }
 
 #ifdef ZJS_FS_ASYNC_APIS
-static jerry_value_t zjs_stat_async(const jerry_value_t function_obj,
-                                    const jerry_value_t this,
-                                    const jerry_value_t argv[],
-                                    const jerry_length_t argc) {
-    return zjs_stat(function_obj, this, argv, argc, 1);
+static ZJS_DECL_FUNC(zjs_stat_async) {
+    return ZJS_CHAIN_FUNC_ARGS(zjs_stat, 1);
 }
 #endif
 
-static jerry_value_t zjs_write_file(const jerry_value_t function_obj,
-                                    const jerry_value_t this,
-                                    const jerry_value_t argv[],
-                                    const jerry_length_t argc,
-                                    uint8_t async)
+static ZJS_DECL_FUNC_ARGS(zjs_write_file, uint8_t async)
 {
     // args: filepath, data
     ZJS_VALIDATE_ARGS(Z_STRING, Z_OBJECT Z_STRING);
@@ -998,19 +898,13 @@ Finished:
     return ZJS_UNDEFINED;
 }
 
-static jerry_value_t zjs_write_file_sync(const jerry_value_t function_obj,
-                                         const jerry_value_t this,
-                                         const jerry_value_t argv[],
-                                         const jerry_length_t argc) {
-    return zjs_write_file(function_obj, this, argv, argc, 0);
+static ZJS_DECL_FUNC(zjs_write_file_sync) {
+    return ZJS_CHAIN_FUNC_ARGS(zjs_write_file, 0);
 }
 
 #ifdef ZJS_FS_ASYNC_APIS
-static jerry_value_t zjs_write_file_async(const jerry_value_t function_obj,
-                                          const jerry_value_t this,
-                                          const jerry_value_t argv[],
-                                          const jerry_length_t argc) {
-    return zjs_write_file(function_obj, this, argv, argc, 1);
+static ZJS_DECL_FUNC(zjs_write_file_async) {
+    return ZJS_CHAIN_FUNC_ARGS(zjs_write_file, 1);
 }
 #endif
 

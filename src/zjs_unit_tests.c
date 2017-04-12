@@ -89,10 +89,7 @@ static void test_compress_32()
 
 // Test test_validate_args function
 
-static jerry_value_t dummy_func(const jerry_value_t function_obj,
-                                const jerry_value_t this,
-                                const jerry_value_t argv[],
-                                const jerry_length_t argc)
+static ZJS_DECL_FUNC(dummy_func)
 {
     return ZJS_UNDEFINED;
 }

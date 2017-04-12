@@ -109,10 +109,7 @@ void zjs_add_event_listener(jerry_value_t obj, const char *event,
     zjs_obj_add_number(event_emitter, ++num_events, "numEvents");
 }
 
-static jerry_value_t add_listener(const jerry_value_t function_obj,
-                                  const jerry_value_t this,
-                                  const jerry_value_t argv[],
-                                  const jerry_length_t argc)
+static ZJS_DECL_FUNC(add_listener)
 {
     // args: event name, callback
     ZJS_VALIDATE_ARGS(Z_STRING, Z_FUNCTION);
@@ -127,10 +124,7 @@ static jerry_value_t add_listener(const jerry_value_t function_obj,
     return jerry_acquire_value(this);
 }
 
-static jerry_value_t emit_event(const jerry_value_t function_obj,
-                                const jerry_value_t this,
-                                const jerry_value_t *argv,
-                                const jerry_length_t argc)
+static ZJS_DECL_FUNC(emit_event)
 {
     // args: event name[, additional pass-through args]
     ZJS_VALIDATE_ARGS(Z_STRING);
@@ -148,10 +142,7 @@ static jerry_value_t emit_event(const jerry_value_t function_obj,
                                                   argc - 1, NULL, NULL));
 }
 
-static jerry_value_t remove_listener(const jerry_value_t function_obj,
-                                     const jerry_value_t this,
-                                     const jerry_value_t argv[],
-                                     const jerry_length_t argc)
+static ZJS_DECL_FUNC(remove_listener)
 {
     // args: event name, callback
     ZJS_VALIDATE_ARGS(Z_STRING, Z_FUNCTION);
@@ -184,10 +175,7 @@ static jerry_value_t remove_listener(const jerry_value_t function_obj,
     return jerry_acquire_value(this);
 }
 
-static jerry_value_t remove_all_listeners(const jerry_value_t function_obj,
-                                          const jerry_value_t this,
-                                          const jerry_value_t argv[],
-                                          const jerry_length_t argc)
+static ZJS_DECL_FUNC(remove_all_listeners)
 {
     // args: event name
     ZJS_VALIDATE_ARGS(Z_STRING);
@@ -237,10 +225,7 @@ bool foreach_event_name(const jerry_value_t prop_name,
     return true;
 }
 
-static jerry_value_t get_event_names(const jerry_value_t function_obj,
-                                     const jerry_value_t this,
-                                     const jerry_value_t argv[],
-                                     const jerry_length_t argc)
+static ZJS_DECL_FUNC(get_event_names)
 {
     event_names_t names;
 
@@ -256,20 +241,14 @@ static jerry_value_t get_event_names(const jerry_value_t function_obj,
     return names.name_array;
 }
 
-static jerry_value_t get_max_listeners(const jerry_value_t function_obj,
-                                       const jerry_value_t this,
-                                       const jerry_value_t argv[],
-                                       const jerry_length_t argc)
+static ZJS_DECL_FUNC(get_max_listeners)
 {
     ZVAL event_emitter = zjs_get_property(this, HIDDEN_PROP("event"));
     uint32_t max_listeners = get_max_event_listeners(event_emitter);
     return jerry_create_number(max_listeners);
 }
 
-static jerry_value_t set_max_listeners(const jerry_value_t function_obj,
-                                       const jerry_value_t this,
-                                       const jerry_value_t argv[],
-                                       const jerry_length_t argc)
+static ZJS_DECL_FUNC(set_max_listeners)
 {
     // args: max count
     ZJS_VALIDATE_ARGS(Z_NUMBER);
@@ -285,10 +264,7 @@ static jerry_value_t set_max_listeners(const jerry_value_t function_obj,
     return jerry_acquire_value(this);
 }
 
-static jerry_value_t get_listener_count(const jerry_value_t function_obj,
-                                        const jerry_value_t this,
-                                        const jerry_value_t argv[],
-                                        const jerry_length_t argc)
+static ZJS_DECL_FUNC(get_listener_count)
 {
     // args: event name
     ZJS_VALIDATE_ARGS(Z_STRING);
@@ -320,10 +296,7 @@ static jerry_value_t get_listener_count(const jerry_value_t function_obj,
     return jerry_create_number(count);
 }
 
-static jerry_value_t get_listeners(const jerry_value_t function_obj,
-                                   const jerry_value_t this,
-                                   const jerry_value_t argv[],
-                                   const jerry_length_t argc)
+static ZJS_DECL_FUNC(get_listeners)
 {
     // args: event name
     ZJS_VALIDATE_ARGS(Z_STRING);
@@ -459,10 +432,7 @@ void zjs_make_event(jerry_value_t obj, jerry_value_t prototype)
     zjs_obj_add_object(obj, event_obj, HIDDEN_PROP("event"));
 }
 
-static jerry_value_t event_constructor(const jerry_value_t function_obj,
-                                       const jerry_value_t this,
-                                       const jerry_value_t argv[],
-                                       const jerry_length_t argc)
+static ZJS_DECL_FUNC(event_constructor)
 {
     jerry_value_t new_emitter = jerry_create_object();
     zjs_make_event(new_emitter, ZJS_UNDEFINED);

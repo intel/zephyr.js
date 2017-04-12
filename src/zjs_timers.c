@@ -127,11 +127,7 @@ static bool delete_timer(int32_t id)
     return false;
 }
 
-static jerry_value_t add_timer_helper(const jerry_value_t function_obj,
-                                      const jerry_value_t this,
-                                      const jerry_length_t argc,
-                                      const jerry_value_t argv[],
-                                      bool repeat)
+static ZJS_DECL_FUNC_ARGS(add_timer_helper, bool repeat)
 {
     // args: callback, time in milliseconds[, pass-through args]
     ZJS_VALIDATE_ARGS(Z_FUNCTION, Z_NUMBER);
@@ -150,36 +146,19 @@ static jerry_value_t add_timer_helper(const jerry_value_t function_obj,
 }
 
 // native setInterval handler
-static jerry_value_t native_set_interval_handler(const jerry_value_t function_obj,
-                                                 const jerry_value_t this,
-                                                 const jerry_value_t argv[],
-                                                 const jerry_length_t argc)
+static ZJS_DECL_FUNC(native_set_interval_handler)
 {
-    return add_timer_helper(function_obj,
-                            this,
-                            argc,
-                            argv,
-                            true);
+    return ZJS_CHAIN_FUNC_ARGS(add_timer_helper, true);
 }
 
 // native setInterval handler
-static jerry_value_t native_set_timeout_handler(const jerry_value_t function_obj,
-                                                const jerry_value_t this,
-                                                const jerry_value_t argv[],
-                                                const jerry_length_t argc)
+static ZJS_DECL_FUNC(native_set_timeout_handler)
 {
-    return add_timer_helper(function_obj,
-                            this,
-                            argc,
-                            argv,
-                            false);
+    return ZJS_CHAIN_FUNC_ARGS(add_timer_helper, false);
 }
 
 // native clearInterval handler
-static jerry_value_t native_clear_interval_handler(const jerry_value_t function_obj,
-                                                   const jerry_value_t this,
-                                                   const jerry_value_t argv[],
-                                                   const jerry_length_t argc)
+static ZJS_DECL_FUNC(native_clear_interval_handler)
 {
     // args: timer object
     // FIXME: timers should be ints, not objects!

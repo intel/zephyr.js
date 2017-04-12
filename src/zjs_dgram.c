@@ -149,10 +149,7 @@ static void udp_received(struct net_context *context,
     zjs_signal_callback(handle->message_cb_id, args, sizeof(args));
 }
 
-static jerry_value_t zjs_dgram_createSocket(const jerry_value_t function_obj,
-                                            const jerry_value_t this,
-                                            const jerry_value_t argv[],
-                                            const jerry_length_t argc)
+static ZJS_DECL_FUNC(zjs_dgram_createSocket)
 {
     // args: address family
     ZJS_VALIDATE_ARGS(Z_STRING);
@@ -191,10 +188,7 @@ static jerry_value_t zjs_dgram_createSocket(const jerry_value_t function_obj,
     return sockobj;
 }
 
-static jerry_value_t zjs_dgram_sock_on(const jerry_value_t function_obj,
-                                       const jerry_value_t this,
-                                       const jerry_value_t argv[],
-                                       const jerry_length_t argc)
+static ZJS_DECL_FUNC(zjs_dgram_sock_on)
 {
     // args: event name, callback
     ZJS_VALIDATE_ARGS(Z_STRING, Z_FUNCTION Z_NULL);
@@ -243,10 +237,7 @@ static void udp_sent(struct net_context *context, int status, void *token,
     }
 }
 
-static jerry_value_t zjs_dgram_sock_send(const jerry_value_t function_obj,
-                                         const jerry_value_t this,
-                                         const jerry_value_t argv[],
-                                         const jerry_length_t argc)
+static ZJS_DECL_FUNC(zjs_dgram_sock_send)
 {
     // NOTE: really argv[1] and argv[2] (offset and length) are supposed to be
     //   optional, which would require improvements to ZJS_VALIDATE_ARGS,
@@ -295,10 +286,7 @@ static jerry_value_t zjs_dgram_sock_send(const jerry_value_t function_obj,
     return ZJS_UNDEFINED;
 }
 
-static jerry_value_t zjs_dgram_sock_bind(const jerry_value_t function_obj,
-                                         const jerry_value_t this,
-                                         const jerry_value_t argv[],
-                                         const jerry_length_t argc)
+static ZJS_DECL_FUNC(zjs_dgram_sock_bind)
 {
     // NOTE: really argv[0] and argv[1] are supposed to be optional, but
     //   leaving them as they were here for now
@@ -324,10 +312,7 @@ static jerry_value_t zjs_dgram_sock_bind(const jerry_value_t function_obj,
     return ZJS_UNDEFINED;
 }
 
-static jerry_value_t zjs_dgram_sock_close(const jerry_value_t function_obj,
-                                          const jerry_value_t this,
-                                          const jerry_value_t argv[],
-                                          const jerry_length_t argc)
+static ZJS_DECL_FUNC(zjs_dgram_sock_close)
 {
     GET_HANDLE(dgram_handle_t, handle);
     zjs_dgram_free_cb((uintptr_t)handle);

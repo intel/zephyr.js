@@ -154,10 +154,7 @@ static int write_data(struct device *dev, const char *buf, int len)
     return bytes;
 }
 
-static jerry_value_t uart_write(const jerry_value_t function_obj,
-                                const jerry_value_t this,
-                                const jerry_value_t argv[],
-                                const jerry_length_t argc)
+static ZJS_DECL_FUNC(uart_write)
 {
     // args: buffer
     ZJS_VALIDATE_ARGS(Z_OBJECT);
@@ -183,10 +180,7 @@ static jerry_value_t uart_write(const jerry_value_t function_obj,
     return promise;
 }
 
-static jerry_value_t uart_set_read_range(const jerry_value_t function_obj,
-                                         const jerry_value_t this,
-                                         const jerry_value_t argv[],
-                                         const jerry_length_t argc)
+static ZJS_DECL_FUNC(uart_set_read_range)
 {
     // args: min, max
     ZJS_VALIDATE_ARGS(Z_NUMBER, Z_NUMBER);
@@ -215,10 +209,7 @@ static jerry_value_t uart_set_read_range(const jerry_value_t function_obj,
     return ZJS_UNDEFINED;
 }
 
-static jerry_value_t uart_init(const jerry_value_t function_obj,
-                               const jerry_value_t this,
-                               const jerry_value_t argv[],
-                               const jerry_length_t argc)
+static ZJS_DECL_FUNC(uart_init)
 {
     // args: initialization object
     ZJS_VALIDATE_ARGS(Z_OBJECT);

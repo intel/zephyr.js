@@ -125,10 +125,7 @@ struct routine_map {
 static uint8_t num_routines = 0;
 struct routine_map svc_routine_map[NUM_SERVICE_ROUTINES];
 
-static jerry_value_t native_require_handler(const jerry_value_t function_obj,
-                                            const jerry_value_t this,
-                                            const jerry_value_t argv[],
-                                            const jerry_length_t argc)
+static ZJS_DECL_FUNC(native_require_handler)
 {
     // args: module name
     ZJS_VALIDATE_ARGS(Z_STRING);

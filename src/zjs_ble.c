@@ -171,10 +171,7 @@ static void zjs_ble_free_services(ble_service_t *service)
     }
 }
 
-static jerry_value_t zjs_ble_read_callback_function(const jerry_value_t function_obj,
-                                                    const jerry_value_t this,
-                                                    const jerry_value_t argv[],
-                                                    const jerry_length_t argc)
+static ZJS_DECL_FUNC(zjs_ble_read_callback_function)
 {
     // TODO: couldn't use ZJS_VALIDATE_ARGS here because it needs to give the
     //   semaphore on error case
@@ -276,10 +273,7 @@ static ssize_t zjs_ble_read_attr_callback(struct bt_conn *conn,
     return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
 }
 
-static jerry_value_t zjs_ble_write_callback_function(const jerry_value_t function_obj,
-                                                     const jerry_value_t this,
-                                                     const jerry_value_t argv[],
-                                                     const jerry_length_t argc)
+static ZJS_DECL_FUNC(zjs_ble_write_callback_function)
 {
     // TODO: couldn't use ZJS_VALIDATE_ARGS here because it needs to give the
     //   semaphore on error case
@@ -376,10 +370,7 @@ static ssize_t zjs_ble_write_attr_callback(struct bt_conn *conn,
     return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
 }
 
-static jerry_value_t zjs_ble_update_value_callback_function(const jerry_value_t function_obj,
-                                                            const jerry_value_t this,
-                                                            const jerry_value_t argv[],
-                                                            const jerry_length_t argc)
+static ZJS_DECL_FUNC(zjs_ble_update_value_callback_function)
 {
     // args: buffer
     ZJS_VALIDATE_ARGS(Z_OBJECT);
@@ -560,10 +551,7 @@ void zjs_ble_enable() {
     bt_conn_auth_cb_register(&zjs_ble_auth_cb_display);
 }
 
-static jerry_value_t zjs_ble_disconnect(const jerry_value_t function_obj,
-                                        const jerry_value_t this,
-                                        const jerry_value_t argv[],
-                                        const jerry_length_t argc)
+static ZJS_DECL_FUNC(zjs_ble_disconnect)
 {
     if (ble_conn.default_conn) {
         int error = bt_conn_disconnect(ble_conn.default_conn,
@@ -652,10 +640,7 @@ static int zjs_encode_url_frame(jerry_value_t url, uint8_t **frame, int *size)
     return ZJS_SUCCESS;
 }
 
-static jerry_value_t zjs_ble_start_advertising(const jerry_value_t function_obj,
-                                               const jerry_value_t this,
-                                               const jerry_value_t argv[],
-                                               const jerry_length_t argc)
+static ZJS_DECL_FUNC(zjs_ble_start_advertising)
 {
     // arg 0 should be the device name to advertise, e.g. "Arduino101"
     // arg 1 should be an array of UUIDs (short, 4 hex chars)
@@ -759,10 +744,7 @@ static jerry_value_t zjs_ble_start_advertising(const jerry_value_t function_obj,
     return ZJS_UNDEFINED;
 }
 
-static jerry_value_t zjs_ble_stop_advertising(const jerry_value_t function_obj,
-                                              const jerry_value_t this,
-                                              const jerry_value_t argv[],
-                                              const jerry_length_t argc)
+static ZJS_DECL_FUNC(zjs_ble_stop_advertising)
 {
     DBG_PRINT("stopAdvertising has been called\n");
     return ZJS_UNDEFINED;
@@ -1099,10 +1081,7 @@ static bool zjs_ble_register_service(ble_service_t *service)
     return true;
 }
 
-static jerry_value_t zjs_ble_set_services(const jerry_value_t function_obj,
-                                          const jerry_value_t this,
-                                          const jerry_value_t argv[],
-                                          const jerry_length_t argc)
+static ZJS_DECL_FUNC(zjs_ble_set_services)
 {
     // arg 0 should be an array of services
     // arg 1 is optionally an callback function
@@ -1179,10 +1158,7 @@ static jerry_value_t zjs_ble_set_services(const jerry_value_t function_obj,
     return ZJS_UNDEFINED;
 }
 
-static jerry_value_t zjs_ble_update_rssi(const jerry_value_t function_obj,
-                                         const jerry_value_t this,
-                                         const jerry_value_t argv[],
-                                         const jerry_length_t argc)
+static ZJS_DECL_FUNC(zjs_ble_update_rssi)
 {
     // TODO: get actual RSSI value from Zephyr Bluetooth driver
     ZVAL arg = jerry_create_number(-50);
@@ -1191,10 +1167,7 @@ static jerry_value_t zjs_ble_update_rssi(const jerry_value_t function_obj,
 }
 
 // Constructor
-static jerry_value_t zjs_ble_primary_service(const jerry_value_t function_obj,
-                                             const jerry_value_t this,
-                                             const jerry_value_t argv[],
-                                             const jerry_length_t argc)
+static ZJS_DECL_FUNC(zjs_ble_primary_service)
 {
     // args: initialization object
     ZJS_VALIDATE_ARGS(Z_OBJECT);
@@ -1203,10 +1176,7 @@ static jerry_value_t zjs_ble_primary_service(const jerry_value_t function_obj,
 }
 
 // Constructor
-static jerry_value_t zjs_ble_characteristic(const jerry_value_t function_obj,
-                                            const jerry_value_t this,
-                                            const jerry_value_t argv[],
-                                            const jerry_length_t argc)
+static ZJS_DECL_FUNC(zjs_ble_characteristic)
 {
     // args: initialization object
     ZJS_VALIDATE_ARGS(Z_OBJECT);
@@ -1247,10 +1217,7 @@ static jerry_value_t zjs_ble_characteristic(const jerry_value_t function_obj,
 }
 
 // Constructor
-static jerry_value_t zjs_ble_descriptor(const jerry_value_t function_obj,
-                                        const jerry_value_t this,
-                                        const jerry_value_t argv[],
-                                        const jerry_length_t argc)
+static ZJS_DECL_FUNC(zjs_ble_descriptor)
 {
     // args: initialization object
     ZJS_VALIDATE_ARGS(Z_OBJECT);
