@@ -212,7 +212,9 @@ void zjs_free_value(const jerry_value_t *value);
 // NOTE: Z_OBJECT will match arrays and functions too, because they are objects
 #define Z_OBJECT    "g"
 #define Z_STRING    "h"
-#define Z_UNDEFINED "i"
+// NOTE: If this test passes, you're guaranteed zjs_buffer_find will succeed
+#define Z_BUFFER    "i"
+#define Z_UNDEFINED "j"
 
 enum {
     ZJS_VALID_REQUIRED,

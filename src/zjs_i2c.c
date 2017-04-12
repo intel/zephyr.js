@@ -124,7 +124,7 @@ static ZJS_DECL_FUNC(zjs_i2c_write)
     //           at the register address. Returns an error if unsuccessful.
 
     // args: device, buffer[, register]
-    ZJS_VALIDATE_ARGS(Z_NUMBER, Z_OBJECT, Z_OPTIONAL Z_NUMBER);
+    ZJS_VALIDATE_ARGS(Z_NUMBER, Z_BUFFER, Z_OPTIONAL Z_NUMBER);
 
     uint32_t register_addr = 0;
 
@@ -136,14 +136,10 @@ static ZJS_DECL_FUNC(zjs_i2c_write)
     zjs_obj_get_uint32(this, "bus", &bus);
     zjs_buffer_t *dataBuf = zjs_buffer_find(argv[1]);
 
-    if (dataBuf != NULL) {
-        if (register_addr != 0) {
-            // If the user supplied a register address, add it to the beginning
-            // of the buffer, as that's where i2c_write will expect it.
-            dataBuf->buffer[0] = (uint8_t)register_addr;
-        }
-    } else {
-        return zjs_error("zjs_i2c_write: missing data buffer");
+    if (register_addr != 0) {
+        // If the user supplied a register address, add it to the beginning
+        // of the buffer, as that's where i2c_write will expect it.
+        dataBuf->buffer[0] = (uint8_t)register_addr;
     }
 
     uint32_t address = (uint32_t)jerry_get_number_value(argv[0]);

@@ -3,6 +3,7 @@
 #include <string.h>
 
 // ZJS includes
+#include "zjs_buffer.h"
 #include "zjs_util.h"
 
 void *zjs_malloc_with_retry(size_t size)
@@ -391,7 +392,14 @@ void zjs_free_value(const jerry_value_t *value)
     jerry_release_value(*value);
 }
 
-bool zjs_true(const jerry_value_t value)
+static bool zjs_true(const jerry_value_t value)
+{
+    // return true for any value
+    return true;
+}
+
+// leave as non-static to avoid compile warning when not used
+bool zjs_false(const jerry_value_t value)
 {
     // return true for any value
     return true;
@@ -409,6 +417,11 @@ zjs_type_test zjs_type_map[] = {
     jerry_value_is_number,
     jerry_value_is_object,
     jerry_value_is_string,
+#ifdef BUILD_MODULE_BUFFER
+    zjs_value_is_buffer,
+#else
+    zjs_false,
+#endif
     jerry_value_is_undefined
 };
 
