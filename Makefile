@@ -4,7 +4,7 @@ OS := $(shell uname)
 
 BOARD ?= arduino_101
 RAM ?= 55
-ROM ?= 256
+ROM ?= 144
 
 # Dump memory information: on = print allocs, full = print allocs + dump pools
 TRACE ?= off
