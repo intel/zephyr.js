@@ -93,14 +93,16 @@
  */
 
 #define MAX_DBG_PRINT 64
+static jerry_value_t zjs_net_prototype;
 static jerry_value_t zjs_net_socket_prototype;
+static jerry_value_t zjs_net_server_prototype;
 
 typedef struct net_handle {
     struct net_context *tcp_sock;
-    uint16_t port;
     jerry_value_t server;
-    uint8_t listening;
     struct sockaddr local;
+    uint16_t port;
+    uint8_t listening;
 } net_handle_t;
 
 typedef struct sock_handle {
@@ -108,18 +110,19 @@ typedef struct sock_handle {
     struct net_context *tcp_sock;
     struct sockaddr remote;
     jerry_value_t socket;
-    zjs_callback_id tcp_read_id;
-    zjs_callback_id tcp_connect_id;
     jerry_value_t connect_listener;
-    uint8_t paused;
-    uint8_t *rbuf;
     void *rptr;
     void *wptr;
-    uint8_t timer_started;
+    struct sock_handle *next;
     struct k_timer timer;
     uint32_t timeout;
+    zjs_callback_id tcp_read_id;
+    zjs_callback_id tcp_connect_id;
     zjs_callback_id tcp_timeout_id;
-    struct sock_handle *next;
+    uint8_t bound;
+    uint8_t paused;
+    uint8_t *rbuf;
+    uint8_t timer_started;
 } sock_handle_t;
 
 static sock_handle_t *opened_sockets = NULL;
@@ -254,7 +257,6 @@ static void tcp_received(struct net_context *context,
                          int status,
                          void *user_data)
 {
-
     sock_handle_t *handle = (sock_handle_t *)user_data;
 
     if (handle) {
@@ -268,6 +270,8 @@ static void tcp_received(struct net_context *context,
         if (len == 0 && data == NULL) {
             // socket close
             DBG_PRINT("closing socket, context=%p, socket=%u\n", context, handle->socket);
+            ZVAL_MUTABLE error = zjs_custom_error("ReadError",  "socket has been closed");
+            zjs_trigger_event(handle->socket, "error", &error, 1, NULL, NULL);
             zjs_trigger_event(handle->socket, "close", NULL, 0, post_closed, handle);
             return;
         }
@@ -319,7 +323,7 @@ static jerry_value_t socket_write(const jerry_value_t function_obj,
                                   const jerry_value_t argv[],
                                   const jerry_length_t argc)
 {
-    ZJS_VALIDATE_ARGS(Z_OBJECT, Z_OPTIONAL Z_FUNCTION);
+    ZJS_VALIDATE_ARGS_OPTCOUNT(optcount, Z_OBJECT, Z_OPTIONAL Z_FUNCTION);
 
     sock_handle_t *handle = NULL;
 
@@ -345,7 +349,7 @@ static jerry_value_t socket_write(const jerry_value_t function_obj,
     }
 
     zjs_callback_id id = -1;
-    if (argc > 1) {
+    if (optcount) {
         id = zjs_add_callback_once(argv[1], this, NULL, NULL);
     }
     int ret = net_context_send(send_buf, pkt_sent,
@@ -357,8 +361,10 @@ static jerry_value_t socket_write(const jerry_value_t function_obj,
         net_nbuf_unref(send_buf);
         zjs_remove_callback(id);
         // TODO: may need to check the specific error to determine action
-        DBG_PRINT("closing socket, context=%p, socket=%u\n", handle->tcp_sock, handle->socket);
-        zjs_trigger_event(handle->socket, "close", NULL, 0, post_closed, handle);
+        DBG_PRINT("write failed, context=%p, socket=%u\n", handle->tcp_sock, handle->socket);
+        ZVAL_MUTABLE error = zjs_custom_error("WriteError", "error writing to socket");
+        jerry_value_clear_error_flag(&error);
+        zjs_trigger_event(handle->socket, "error", &error, 1, post_closed, handle);
         return jerry_create_boolean(false);
     }
 
@@ -459,7 +465,7 @@ static jerry_value_t socket_set_timeout(const jerry_value_t function_obj,
                                         const jerry_value_t argv[],
                                         const jerry_length_t argc)
 {
-    ZJS_VALIDATE_ARGS(Z_NUMBER, Z_OPTIONAL Z_FUNCTION);
+    ZJS_VALIDATE_ARGS_OPTCOUNT(optcount, Z_NUMBER, Z_OPTIONAL Z_FUNCTION);
 
     sock_handle_t *handle = NULL;
     jerry_get_object_native_handle(this, (uintptr_t *)&handle);
@@ -471,7 +477,7 @@ static jerry_value_t socket_set_timeout(const jerry_value_t function_obj,
 
     start_socket_timeout(handle, time);
 
-    if (argc > 1) {
+    if (optcount) {
         zjs_add_event_listener(this, "timeout", argv[1]);
     }
 
@@ -502,11 +508,6 @@ static jerry_value_t create_socket(uint8_t client, sock_handle_t **handle_out)
         // only a new client socket has connect method
         zjs_obj_add_function(socket, socket_connect, "connect");
     }
-    zjs_obj_add_function(socket, socket_address, "address");
-    zjs_obj_add_function(socket, socket_write, "write");
-    zjs_obj_add_function(socket, socket_pause, "pause");
-    zjs_obj_add_function(socket, socket_resume, "resume");
-    zjs_obj_add_function(socket, socket_set_timeout, "setTimeout");
 
     jerry_set_object_native_handle(socket, (uintptr_t)sock_handle, NULL);
     sock_handle->connect_listener = ZJS_UNDEFINED;
@@ -517,7 +518,7 @@ static jerry_value_t create_socket(uint8_t client, sock_handle_t **handle_out)
     sock_handle->rbuf = zjs_malloc(SOCK_READ_BUF_SIZE);
     sock_handle->rptr = sock_handle->wptr = sock_handle->rbuf;
 
-    zjs_make_event(socket, ZJS_UNDEFINED);
+    zjs_make_event(socket, zjs_net_socket_prototype);
 
     *handle_out = sock_handle;
 
@@ -564,6 +565,19 @@ static void add_socket_connection(jerry_value_t socket,
     }
 }
 
+static void post_connection(void *handle)
+{
+    sock_handle_t *sock_handle = (sock_handle_t *)handle;
+    int ret = net_context_recv(sock_handle->tcp_sock, tcp_received, 0, sock_handle);
+    if (ret < 0) {
+        ERR_PRINT("Cannot receive TCP packet (family %d)\n",
+                net_context_get_family(sock_handle->tcp_sock));
+        // this seems to mean the remote exists but the connection was not made
+        zjs_trigger_event(sock_handle->handle->server, "error", NULL, 0, NULL, NULL);
+        return;
+    }
+}
+
 static void tcp_accepted(struct net_context *context,
                          struct sockaddr *addr,
                          socklen_t addrlen,
@@ -572,7 +586,6 @@ static void tcp_accepted(struct net_context *context,
 {
     net_handle_t *handle = (net_handle_t *)user_data;
     sock_handle_t *sock_handle = NULL;
-    int ret;
 
     DBG_PRINT("connection made, context %p error %d\n", context, error);
 
@@ -584,20 +597,11 @@ static void tcp_accepted(struct net_context *context,
 
     add_socket_connection(sock, handle, context, addr);
 
-    ret = net_context_recv(context, tcp_received, 0, sock_handle);
-    if (ret < 0) {
-        ERR_PRINT("Cannot receive TCP packet (family %d)\n",
-            net_context_get_family(context));
-        // this seems to mean the remote exists but the connection was not made
-        zjs_trigger_event(handle->server, "error", NULL, 0, NULL, NULL);
-        return;
-    }
-
     // add new socket to list
     sock_handle->next = opened_sockets;
     opened_sockets = sock_handle;
 
-    zjs_trigger_event(handle->server, "connection", &sock, 1, NULL, NULL);
+    zjs_trigger_event(handle->server, "connection", &sock, 1, post_connection, sock_handle);
 }
 
 /**
@@ -613,7 +617,7 @@ static jerry_value_t server_close(const jerry_value_t function_obj,
                                   const jerry_value_t argv[],
                                   const jerry_length_t argc)
 {
-    ZJS_VALIDATE_ARGS(Z_OPTIONAL Z_FUNCTION);
+    ZJS_VALIDATE_ARGS_OPTCOUNT(optcount, Z_OPTIONAL Z_FUNCTION);
 
     net_handle_t *handle = NULL;
     jerry_get_object_native_handle(this, (uintptr_t *)&handle);
@@ -623,7 +627,7 @@ static jerry_value_t server_close(const jerry_value_t function_obj,
     handle->listening = 0;
     zjs_obj_add_boolean(this, false, "listening");
 
-    if (argc > 0) {
+    if (optcount) {
         zjs_add_event_listener(handle->server, "close", argv[0]);
     }
     // If there are no connections the server can be closed
@@ -687,7 +691,7 @@ static jerry_value_t server_listen(const jerry_value_t function_obj,
                                    const jerry_length_t argc)
 {
     // options object, optional function
-    ZJS_VALIDATE_ARGS(Z_OBJECT, Z_OPTIONAL Z_FUNCTION);
+    ZJS_VALIDATE_ARGS_OPTCOUNT(optcount, Z_OBJECT, Z_OPTIONAL Z_FUNCTION);
 
     int ret;
     double port = 0;
@@ -699,7 +703,7 @@ static jerry_value_t server_listen(const jerry_value_t function_obj,
     zjs_obj_get_double(argv[0], "backlog", &backlog);
     zjs_obj_get_string(argv[0], "host", hostname, size);
 
-    if (argc > 1) {
+    if (optcount) {
         zjs_add_event_listener(this, "listening", argv[1]);
     }
 
@@ -753,7 +757,7 @@ static jerry_value_t net_create_server(const jerry_value_t function_obj,
                                        const jerry_value_t argv[],
                                        const jerry_length_t argc)
 {
-    ZJS_VALIDATE_ARGS(Z_OPTIONAL Z_FUNCTION);
+    ZJS_VALIDATE_ARGS_OPTCOUNT(optcount, Z_OPTIONAL Z_FUNCTION);
 
     int ret;
     jerry_value_t server = jerry_create_object();
@@ -761,13 +765,9 @@ static jerry_value_t net_create_server(const jerry_value_t function_obj,
     zjs_obj_add_boolean(server, false, "listening");
     zjs_obj_add_number(server, NET_DEFAULT_MAX_CONNECTIONS, "maxConnections");
 
-    zjs_obj_add_function(server, server_listen, "listen");
-    zjs_obj_add_function(server, server_close, "close");
-    zjs_obj_add_function(server, server_get_connections, "getConnections");
+    zjs_make_event(server, zjs_net_server_prototype);
 
-    zjs_make_event(server, ZJS_UNDEFINED);
-
-    if (argc > 0) {
+    if (optcount) {
         zjs_add_event_listener(server, "connection", argv[0]);
     }
 
@@ -810,20 +810,21 @@ static void tcp_connected(struct net_context *context,
         sock_handle_t *sock_handle = (sock_handle_t *)user_data;
 
         if (sock_handle) {
+            int ret;
+            ret = net_context_recv(context, tcp_received, 0, sock_handle);
+            if (ret < 0) {
+                ERR_PRINT("Cannot receive TCP packets (%d)\n", ret);
+            }
             // activity, restart timeout
             start_socket_timeout(sock_handle, sock_handle->timeout);
 
             sock_handle->tcp_connect_id = zjs_add_c_callback(sock_handle, tcp_connected_c_callback);
             zjs_signal_callback(sock_handle->tcp_connect_id, NULL, 0);
 
-            int ret;
-
-            ret = net_context_recv(context, tcp_received, 0, sock_handle);
-            if (ret < 0) {
-                ERR_PRINT("Cannot receive TCP packets (%d)\n", ret);
-            }
             DBG_PRINT("connection success, context=%p, socket=%u\n", context, sock_handle->socket);
         }
+    } else {
+        DBG_PRINT("connect failed, status=%d\n", status);
     }
 }
 
@@ -849,7 +850,6 @@ static jerry_value_t socket_connect(const jerry_value_t function_obj,
     if (!handle) {
         return zjs_error("socket handle not found");
     }
-
     if (!handle->tcp_sock) {
         CHECK(net_context_get(AF_INET6, SOCK_STREAM, IPPROTO_TCP,
                     &handle->tcp_sock));
@@ -860,6 +860,11 @@ static jerry_value_t socket_connect(const jerry_value_t function_obj,
         jerry_value_clear_error_flag(&error);
         zjs_trigger_event(this, "error", &error, 1, NULL, NULL);
         return ZJS_UNDEFINED;
+    }
+
+    if (argc > 1) {
+        jerry_release_value(handle->connect_listener);
+        handle->connect_listener = jerry_acquire_value(argv[1]);
     }
 
     double port = 0;
@@ -881,19 +886,21 @@ static jerry_value_t socket_connect(const jerry_value_t function_obj,
     DBG_PRINT("port: %u, host: %s, localPort: %u, localAddress: %s, socket=%u\n", (uint32_t)port, host, (uint32_t)localPort, localAddress, this);
 
     if (fam == 6) {
-        struct sockaddr_in6 my_addr6 = { 0 };
+        if (!handle->bound) {
+            struct sockaddr_in6 my_addr6 = { 0 };
 
-        my_addr6.sin6_family = AF_INET6;
-        my_addr6.sin6_port = htons((uint32_t)localPort);
+            my_addr6.sin6_family = AF_INET6;
+            my_addr6.sin6_port = htons((uint32_t)localPort);
 
-        CHECK(net_addr_pton(AF_INET6,
-                            localAddress,
-                            &my_addr6.sin6_addr));
-        // bind to our local address
-        CHECK(net_context_bind(handle->tcp_sock,
-                               (struct sockaddr *)&my_addr6,
-                               sizeof(struct sockaddr_in6)));
-
+            CHECK(net_addr_pton(AF_INET6,
+                                localAddress,
+                                &my_addr6.sin6_addr));
+            // bind to our local address
+            CHECK(net_context_bind(handle->tcp_sock,
+                                   (struct sockaddr *)&my_addr6,
+                                   sizeof(struct sockaddr_in6)));
+            handle->bound = 1;
+        }
         struct sockaddr_in6 peer_addr6 = { 0 };
         peer_addr6.sin6_family = AF_INET6;
         peer_addr6.sin6_port = htons((uint32_t)port);
@@ -918,19 +925,20 @@ static jerry_value_t socket_connect(const jerry_value_t function_obj,
             return ZJS_UNDEFINED;
         }
     } else {
-        struct sockaddr_in my_addr4 = { 0 };
+        if (!handle->bound) {
+            struct sockaddr_in my_addr4 = { 0 };
 
-        my_addr4.sin_family = AF_INET;
-        my_addr4.sin_port = htons((uint32_t)localPort);
-
-        CHECK(net_addr_pton(AF_INET,
-                            localAddress,
-                            &my_addr4.sin_addr));
-        // bind to our local address
-        CHECK(net_context_bind(handle->tcp_sock,
-                               (struct sockaddr *)&my_addr4,
-                               sizeof(struct sockaddr_in)));
-
+            my_addr4.sin_family = AF_INET;
+            my_addr4.sin_port = htons((uint32_t)localPort);
+            CHECK(net_addr_pton(AF_INET,
+                                localAddress,
+                                &my_addr4.sin_addr));
+            // bind to our local address
+            CHECK(net_context_bind(handle->tcp_sock,
+                                   (struct sockaddr *)&my_addr4,
+                                   sizeof(struct sockaddr_in)));
+            handle->bound = 1;
+        }
         struct sockaddr_in peer_addr4 = { 0 };
         peer_addr4.sin_family = AF_INET;
         peer_addr4.sin_port = htons((uint32_t)port);
@@ -954,10 +962,6 @@ static jerry_value_t socket_connect(const jerry_value_t function_obj,
             zjs_trigger_event(this, "error", &error, 1, NULL, NULL);
             return ZJS_UNDEFINED;
         }
-    }
-    if (argc > 1) {
-        jerry_release_value(handle->connect_listener);
-        handle->connect_listener = jerry_acquire_value(argv[1]);
     }
 
     // add all the socket address information
@@ -1005,18 +1009,6 @@ static jerry_value_t net_socket(const jerry_value_t function_obj,
     return socket;
 }
 
-#if 0
-#if defined(CONFIG_NET_L2_BLUETOOTH)
-static volatile uint8_t net_up = 0;
-static struct net_mgmt_event_callback cb;
-static void event_iface_up(struct net_mgmt_event_callback *cb,
-               uint32_t mgmt_event, struct net_if *iface)
-{
-    net_up = 1;
-}
-#endif
-
-#endif
 /**
  * Check if input is an IP address
  *
@@ -1104,14 +1096,70 @@ static jerry_value_t net_is_ip6(const jerry_value_t function_obj,
     return jerry_create_boolean(false);
 }
 
+static jerry_value_t net_obj;
+
+#if defined(CONFIG_NET_L2_BLUETOOTH)
+static zjs_callback_id up_id = -1;
+
+static void up_callback(void *handle, const void *args)
+{
+    zjs_trigger_event(net_obj, "up", NULL, 0, NULL, NULL);
+    zjs_remove_callback(up_id);
+}
+
+static struct net_mgmt_event_callback cb;
+static void event_iface_up(struct net_mgmt_event_callback *cb,
+               uint32_t mgmt_event, struct net_if *iface)
+{
+    zjs_signal_callback(up_id, NULL, 0);
+}
+#endif
+
 jerry_value_t zjs_net_init()
 {
     zjs_net_config();
 
+    zjs_native_func_t net_array[] = {
+            { net_create_server, "createServer" },
+            { net_socket, "Socket" },
+            { net_is_ip, "isIP" },
+            { net_is_ip4, "isIPv4" },
+            { net_is_ip6, "isIPv6" },
+            { NULL, NULL }
+    };
+    zjs_native_func_t sock_array[] = {
+            { socket_address, "address" },
+            { socket_write, "write" },
+            { socket_pause, "pause" },
+            { socket_resume, "resume" },
+            { socket_set_timeout, "setTimeout" },
+            { NULL, NULL }
+    };
+    zjs_native_func_t server_array[] = {
+            { server_listen, "listen" },
+            { server_close, "close" },
+            { server_get_connections, "getConnections" },
+            { NULL, NULL }
+    };
+    // Net object prototype
+    zjs_net_prototype = jerry_create_object();
+    zjs_obj_add_functions(zjs_net_prototype, net_array);
+
+    // Socket object prototype
+    zjs_net_socket_prototype = jerry_create_object();
+    zjs_obj_add_functions(zjs_net_socket_prototype, sock_array);
+
+    // Server object prototype
+    zjs_net_server_prototype = jerry_create_object();
+    zjs_obj_add_functions(zjs_net_server_prototype, server_array);
+
+    net_obj = jerry_create_object();
+    //jerry_set_prototype(net_obj, zjs_net_prototype);
+    zjs_make_event(net_obj, zjs_net_prototype);
+
     /*
      * TODO: move to net config?
      */
-#if 0
 #if defined(CONFIG_NET_L2_BLUETOOTH)
     struct net_if *iface = net_if_get_default();
     if (!atomic_test_bit(iface->flags, NET_IF_UP)) {
@@ -1119,24 +1167,17 @@ jerry_value_t zjs_net_init()
                 NET_EVENT_IF_UP);
         net_mgmt_add_event_callback(&cb);
     }
-    ZJS_PRINT("Waiting for iface to come up...\n");
-    do {} while (!net_up);
-#endif
+    up_id = zjs_add_c_callback(NULL, up_callback);
 #endif
 
-    jerry_value_t net_obj = jerry_create_object();
-    zjs_obj_add_function(net_obj, net_create_server, "createServer");
-    zjs_obj_add_function(net_obj, net_socket, "Socket");
-    zjs_obj_add_function(net_obj, net_is_ip, "isIP");
-    zjs_obj_add_function(net_obj, net_is_ip4, "isIPv4");
-    zjs_obj_add_function(net_obj, net_is_ip6, "isIPv6");
-
-    return net_obj;
+    return jerry_acquire_value(net_obj);
 }
 
 void zjs_net_cleanup()
 {
+    jerry_release_value(zjs_net_prototype);
     jerry_release_value(zjs_net_socket_prototype);
+    jerry_release_value(zjs_net_server_prototype);
 }
 
 #endif // BUILD_MODULE_NET
