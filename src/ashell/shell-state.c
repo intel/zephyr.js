@@ -172,6 +172,9 @@ int32_t ashell_rename(char *buf)
             comms_printf("mv: cannot access '%s' file already exists\n", path_dest);
             return RET_ERROR;
         }
+        if (!fs_valid_filename(path_dest)) {
+            return RET_ERROR;
+        }
     }
 
     f_rename(path_org, path_dest);
@@ -434,6 +437,9 @@ int32_t ashell_raw_capture(const char *buf, uint32_t len)
 
 int32_t ashell_read_data(char *buf)
 {
+    if (!fs_valid_filename(buf)) {
+        return RET_ERROR;
+    }
     char filename[MAX_FILENAME_SIZE];
     if (shell.state_flags & kShellTransferRaw) {
         if (ashell_get_filename_buffer(buf, filename) <= 0) {
@@ -578,19 +584,18 @@ int32_t ashell_check_control(const char *buf, uint32_t len)
 
 int32_t ashell_set_bootcfg(char *buf)
 {
-    if (!fs_valid_filename_size(buf)) {
+    if (!fs_exist(buf)) {
+        comms_println("File passed to cfg doesn't exist\n");
         return RET_ERROR;
     }
 
     fs_file_t *file = fs_open_alloc("boot.cfg", "w+");
-
     if (!file) {
         comms_println("Failed to create boot.cfg file");
         return RET_ERROR;
     }
 
     ssize_t written = fs_write(file, buf, strlen(buf));
-
     if (written == 0) {
         comms_println("Failed to write boot.cfg file");
         fs_close_alloc(file);
@@ -646,8 +651,8 @@ int32_t ashell_help(char *buf)
     return RET_OK;
 }
 
-void ashell_run_boot_cfg() {
-
+void ashell_run_boot_cfg()
+{
     fs_file_t *file;
     size_t count;
 
@@ -674,7 +679,6 @@ void ashell_run_boot_cfg() {
     data[size] = '\0';
     ashell_run_javascript(data);
     fs_close(file);
-    return ;
 }
 
 int32_t ashell_main_state(char *buf, uint32_t len)

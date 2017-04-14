@@ -79,7 +79,7 @@ int fs_close_alloc(fs_file_t *fp)
     return res;
 }
 
-bool fs_valid_filename_size(char *filename)
+bool fs_valid_filename(char *filename)
 {
     if (filename == NULL) {
         printf("No filename given\n");
@@ -92,33 +92,24 @@ bool fs_valid_filename_size(char *filename)
     ssize_t extlen;
     ssize_t size = strlen(filename);
 
-    if (fs_exist(filename)) {
-        ptr1 = strchr(ptr1, '.');
+    ptr1 = strchr(ptr1, '.');
 
+    if (ptr1 != NULL) {
+        // Check there aren't multiple periods
+        ptr2 = strchr(ptr1 + 1, '.');
 
-        if (ptr1 != NULL) {
-            // Check there aren't multiple periods
-            ptr2 = strchr(ptr1 + 1, '.');
-
-            if (ptr2 != NULL) {
-                printf("Invalid file extention format\n");
-                return false;
-            }
-
-            namelen = ptr1 - filename;
-            extlen = size - namelen - 1;
+        if (ptr2 != NULL) {
+            printf("Invalid file extension format\n");
+            return false;
         }
-        else
-        {
-            // Filename has no extension
-            namelen = strlen(filename);
-            extlen = 0;
-        }
+
+        namelen = ptr1 - filename;
+        extlen = size - namelen - 1;
     }
     else {
-        // Don't let the cfg be set to a file that doesn't exist
-        printf("File passed to cfg doesn't exist\n");
-        return false;
+        // Filename has no extension
+        namelen = strlen(filename);
+        extlen = 0;
     }
 
     if (namelen == 0) {
@@ -131,7 +122,7 @@ bool fs_valid_filename_size(char *filename)
     }
 
     if (extlen > 3) {
-        printf("File extention is longer than 3 characters\n");
+        printf("File extension is longer than 3 characters\n");
         return false;
     }
 

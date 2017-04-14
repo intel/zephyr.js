@@ -522,8 +522,7 @@ void acm()
     k_fifo_init(&avail_queue);
 
     // Wait until the main loop is running before starting the javascript
-    if (k_sem_take(&mainloop_sem, K_FOREVER) == 0)
-    {
+    if (k_sem_take(&mainloop_sem, K_FOREVER) == 0) {
         ashell_run_boot_cfg();
     }
     else {
