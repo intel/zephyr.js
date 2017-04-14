@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016 - 2017, Intel Corporation.
 
 #ifndef __file_wrapper_h__
 #define __file_wrapper_h__
