@@ -39,27 +39,34 @@ typedef struct requires_list {
     struct requires_list *prev;
 } requires_list_t;
 
-static requires_list_t *req_list = NULL;
-
-static bool list_contains(const char *file_name)
+static bool list_contains(requires_list_t **list, const char *file_name)
 {
-    if (req_list) {
-        requires_list_t *cur = req_list;
-        while (cur) {
-            if (strcmp(file_name, cur->file_name) != 0) {
-                cur = cur->next;
-            }
-            else {
-                return true;
-            }
+    requires_list_t *cur = *list;
+    while (cur) {
+        if (strcmp(file_name, cur->file_name) != 0) {
+            cur = cur->next;
+        }
+        else {
+            return true;
         }
     }
     return false;
 }
 
-static requires_list_t *next_req_to_scan()
+static void free_list(requires_list_t **list)
 {
-    requires_list_t *cur = req_list;
+    requires_list_t *cur = *list;
+    while (cur) {
+        zjs_free(cur->file_name);
+        *list = (*list)->next;
+        zjs_free(cur);
+        cur = *list;
+    }
+}
+
+static requires_list_t *next_req_to_scan(requires_list_t **list)
+{
+    requires_list_t *cur = *list;
     while (cur) {
         if (!cur->reqs_checked) {
             return cur;
@@ -75,17 +82,17 @@ static void add_to_list(requires_list_t **list, const char *item)
 {
     requires_list_t *new = zjs_malloc(sizeof(requires_list_t));
     size_t len = strlen(item) + 1;
-    new->file_name = (char*)zjs_malloc(len);
+    new->file_name = (char *)zjs_malloc(len);
     strncpy(new->file_name, item, len);
     new->file_name[len] = '\0';
     new->next = *list;
-
+    new->reqs_checked = false;
     if (*list != NULL) {
         new->prev = (*list)->prev;
         if ((*list)->prev != NULL)
             (*list)->prev->next = new;
         else
-            req_list = new;
+            *list = new;
         (*list)->prev = new;
     }
     else {
@@ -134,7 +141,7 @@ static void javascript_print_value(const jerry_value_t value)
     jerry_port_console("\n");
 }
 
-static char *read_file(const char *file_name, ssize_t *size)
+static char *read_file_alloc(const char *file_name, ssize_t *size)
 {
     char *file_buf = NULL;
     fs_file_t *fp = fs_open_alloc(file_name, "r");
@@ -169,26 +176,26 @@ static char *read_file(const char *file_name, ssize_t *size)
     return file_buf;
 }
 
-static void eval_list()
+static void eval_list(requires_list_t **list)
 {
     // This assumes the list is in the correct order for calling eval
-    if (req_list) {
+    if (*list) {
         ssize_t file_size;
         char *req_file_buffer = NULL;
-        requires_list_t *cur = req_list;
+        requires_list_t *cur = *list;
         while (cur) {
-            req_file_buffer = read_file(cur->file_name, &file_size);
+            req_file_buffer = read_file_alloc(cur->file_name, &file_size);
             javascript_eval_code(req_file_buffer, file_size);
             zjs_free(req_file_buffer);
             zjs_free(cur->file_name);
-            req_list = req_list->next;
+            *list = (*list)->next;
             zjs_free(cur);
-            cur = req_list;
+            cur = *list;
         }
     }
 }
 
-static void add_requires(requires_list_t **list, char *filebuf)
+static bool add_requires(requires_list_t **list, char *filebuf)
 {
     // Scan the file and if it contains requires, append them before *list
     char *ptr1 = filebuf;
@@ -197,7 +204,6 @@ static void add_requires(requires_list_t **list, char *filebuf)
     char *ext_check = NULL;
 
     while (ptr1 != NULL) {
-
         // Find next instance of "require"
         ptr1 = strstr(ptr1, "require");
 
@@ -205,50 +211,68 @@ static void add_requires(requires_list_t **list, char *filebuf)
             // Find the text between the two " " after require
             ptr1 = strchr(ptr1, '"') + 1;
             ptr2 = strchr(ptr1, '"');
-            size_t len = ptr2-ptr1;
+            size_t len = ptr2 - ptr1;
+            if (len < (ssize_t)MAX_ASHELL_JS_MODULE_LEN) {
+                // Allocate the memory for the string
+                filestr = (char *)zjs_malloc(len + 1);
+                strncpy(filestr, ptr1, len);
+                filestr[len] = '\0';
 
-            // Allocate the memory for the string
-            filestr = (char*)zjs_malloc(len + 1);
-            strncpy(filestr, ptr1, len);
-            filestr[len] = '\0';
+                // Check that this is a *.js require and not a zephyr require
+                // Also check that the file hasn't already been loaded
+                ext_check = &filestr[len - 3];
 
-            // Check that this is a *.js require and not a zephyr require
-            // Also check that the file hasn't already been loaded
-            ext_check = &filestr[len - 3];
-
-            if (strcmp(ext_check, ".js") == 0 && !list_contains(filestr)) {
-                add_to_list(list, filestr);
+                if (strcmp(ext_check, ".js") == 0 && !list_contains(list, filestr)) {
+                    add_to_list(list, filestr);
+                }
+                zjs_free(filestr);
+                filestr = NULL;
             }
-            zjs_free(filestr);
-            filestr = NULL;
+            else {
+                filestr = (char *)zjs_malloc(10);
+                strncpy(filestr, ptr1, 10);
+                comms_printf("[ERR] requires(\"%s...\") string is too long\n", filestr);
+                zjs_free(filestr);
+                filestr = NULL;
+                return false;
+            }
         }
     }
+    return true;
 }
 
-static void load_require_modules(char *file_buffer)
+static bool load_require_modules(char *file_buffer)
 {
     ssize_t file_size;
     char *req_file_buffer = NULL;
+    requires_list_t *req_list = NULL;
     // Check if the file we've been asked to run requires any JS modules
-    add_requires(&req_list, file_buffer);
+    bool add_success = add_requires(&req_list, file_buffer);
+    if (add_success) {
+        // If it has any requires, check if those files have requires as well
+        requires_list_t *cur = next_req_to_scan(&req_list);
+        while (cur && add_success) {
+            // Read the file into a buffer so we can scan it
+            req_file_buffer = read_file_alloc(cur->file_name, &file_size);
 
-    // If it has any requires, check if those files have requires as well
-    requires_list_t *cur = next_req_to_scan();
-    while (cur) {
-        // Read the file into a buffer so we can scan it
-        req_file_buffer = read_file(cur->file_name, &file_size);
-
-        if (req_file_buffer && file_size > 0) {
-            add_requires(&cur, req_file_buffer);
-            cur->reqs_checked = true;
-            zjs_free(req_file_buffer);
+            if (req_file_buffer && file_size > 0) {
+                // If adding a requires fails, bail out of the while loop
+                add_success = add_requires(&cur, req_file_buffer);
+                cur->reqs_checked = true;
+                zjs_free(req_file_buffer);
+                if (!add_success) {
+                    free_list(&req_list);
+                    return false;
+                }
+            }
+            // Get the next file to scan
+            cur = next_req_to_scan(&req_list);
         }
-        // Get the next file to scan
-        cur = next_req_to_scan();
+        // The eval file list is complete, now jerry_eval all the files
+        eval_list(&req_list);
+        return true;
     }
-
-    // The eval file list is complete, now jerry_eval all the files
-    eval_list();
+    return false;
 }
 
 static void javascript_print_error(jerry_value_t error_value)
@@ -332,7 +356,7 @@ int javascript_parse_code(const char *file_name, bool show_lines)
     char *buf = NULL;
     ssize_t size;
 
-    buf = read_file(file_name, &size);
+    buf = read_file_alloc(file_name, &size);
 
     if (buf && size > 0) {
         if (show_lines) {
@@ -358,16 +382,17 @@ int javascript_parse_code(const char *file_name, bool show_lines)
         }
 
         // Find and load all required js modules
-        load_require_modules(buf);
-
-        /* Setup Global scope code */
-        parsed_code = jerry_parse((const jerry_char_t *) buf, size, false);
-        if (jerry_value_has_error_flag(parsed_code)) {
-            printf("[ERR] Could not parse JS\n");
-            javascript_print_error(parsed_code);
-            jerry_release_value(parsed_code);
-        } else {
-            ret = 0;
+        if (load_require_modules(buf))
+        {
+            /* Setup Global scope code */
+            parsed_code = jerry_parse((const jerry_char_t *) buf, size, false);
+            if (jerry_value_has_error_flag(parsed_code)) {
+                printf("[ERR] Could not parse JS\n");
+                javascript_print_error(parsed_code);
+                jerry_release_value(parsed_code);
+            } else {
+                ret = 0;
+            }
         }
     }
 

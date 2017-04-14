@@ -9,6 +9,7 @@
 #include <fs.h>
 
 #define MAX_FILENAME_SIZE MAX_FILE_NAME + 1
+#define MAX_ASHELL_JS_MODULE_LEN 12
 
 fs_file_t *fs_open_alloc(const char *filename, const char *mode);
 int fs_close_alloc(fs_file_t *fp);
