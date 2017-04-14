@@ -271,6 +271,7 @@ static void tcp_received(struct net_context *context,
             // socket close
             DBG_PRINT("closing socket, context=%p, socket=%u\n", context, handle->socket);
             ZVAL_MUTABLE error = zjs_custom_error("ReadError",  "socket has been closed");
+            jerry_value_clear_error_flag(&error);
             zjs_trigger_event(handle->socket, "error", &error, 1, NULL, NULL);
             zjs_trigger_event(handle->socket, "close", NULL, 0, post_closed, handle);
             return;
