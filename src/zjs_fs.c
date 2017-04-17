@@ -194,7 +194,7 @@ static jerry_value_t create_stats_obj(struct fs_dirent *entry)
     return stats_obj;
 }
 
-static ZJS_DECL_FUNC_ARGS(zjs_open, uint8_t async)
+static ZJS_DECL_FUNC_ARGS(zjs_fs_open, uint8_t async)
 {
     // NOTE: what we call mode below is actually 'flags' in Node docs, argv[1];
     //   we don't support mode (optional argv[2])
@@ -264,17 +264,17 @@ static ZJS_DECL_FUNC_ARGS(zjs_open, uint8_t async)
     return jerry_create_number(handle->fd);
 }
 
-static ZJS_DECL_FUNC(zjs_open_sync) {
-    return ZJS_CHAIN_FUNC_ARGS(zjs_open, 0);
+static ZJS_DECL_FUNC(zjs_fs_open_sync) {
+    return ZJS_CHAIN_FUNC_ARGS(zjs_fs_open, 0);
 }
 
 #ifdef ZJS_FS_ASYNC_APIS
-static ZJS_DECL_FUNC(zjs_open_async) {
-    return ZJS_CHAIN_FUNC_ARGS(zjs_open, 1);
+static ZJS_DECL_FUNC(zjs_fs_open_async) {
+    return ZJS_CHAIN_FUNC_ARGS(zjs_fs_open, 1);
 }
 #endif
 
-static ZJS_DECL_FUNC_ARGS(zjs_close, uint8_t async)
+static ZJS_DECL_FUNC_ARGS(zjs_fs_close, uint8_t async)
 {
     // args: file descriptor
     ZJS_VALIDATE_ARGS(Z_NUMBER);
@@ -310,17 +310,17 @@ static ZJS_DECL_FUNC_ARGS(zjs_close, uint8_t async)
     return ZJS_UNDEFINED;
 }
 
-static ZJS_DECL_FUNC(zjs_close_sync) {
-    return ZJS_CHAIN_FUNC_ARGS(zjs_close, 0);
+static ZJS_DECL_FUNC(zjs_fs_close_sync) {
+    return ZJS_CHAIN_FUNC_ARGS(zjs_fs_close, 0);
 }
 
 #ifdef ZJS_FS_ASYNC_APIS
-static ZJS_DECL_FUNC(zjs_close_async) {
-    return ZJS_CHAIN_FUNC_ARGS(zjs_close, 1);
+static ZJS_DECL_FUNC(zjs_fs_close_async) {
+    return ZJS_CHAIN_FUNC_ARGS(zjs_fs_close, 1);
 }
 #endif
 
-static ZJS_DECL_FUNC_ARGS(zjs_unlink, uint8_t async)
+static ZJS_DECL_FUNC_ARGS(zjs_fs_unlink, uint8_t async)
 {
     // args: filename
     ZJS_VALIDATE_ARGS(Z_STRING);
@@ -358,17 +358,17 @@ static ZJS_DECL_FUNC_ARGS(zjs_unlink, uint8_t async)
     return ZJS_UNDEFINED;
 }
 
-static ZJS_DECL_FUNC(zjs_unlink_sync) {
-    return ZJS_CHAIN_FUNC_ARGS(zjs_unlink, 0);
+static ZJS_DECL_FUNC(zjs_fs_unlink_sync) {
+    return ZJS_CHAIN_FUNC_ARGS(zjs_fs_unlink, 0);
 }
 
 #ifdef ZJS_FS_ASYNC_APIS
-static ZJS_DECL_FUNC(zjs_unlink_async) {
-    return ZJS_CHAIN_FUNC_ARGS(zjs_unlink, 1);
+static ZJS_DECL_FUNC(zjs_fs_unlink_async) {
+    return ZJS_CHAIN_FUNC_ARGS(zjs_fs_unlink, 1);
 }
 #endif
 
-static ZJS_DECL_FUNC_ARGS(zjs_read, uint8_t async)
+static ZJS_DECL_FUNC_ARGS(zjs_fs_read, uint8_t async)
 {
     // args: file descriptor, buffer, offset, length, position
     ZJS_VALIDATE_ARGS(Z_NUMBER, Z_OBJECT, Z_NUMBER, Z_NUMBER, Z_NUMBER Z_NULL);
@@ -452,17 +452,17 @@ static ZJS_DECL_FUNC_ARGS(zjs_read, uint8_t async)
     return jerry_create_number(ret);
 }
 
-static ZJS_DECL_FUNC(zjs_read_sync) {
-    return ZJS_CHAIN_FUNC_ARGS(zjs_read, 0);
+static ZJS_DECL_FUNC(zjs_fs_read_sync) {
+    return ZJS_CHAIN_FUNC_ARGS(zjs_fs_read, 0);
 }
 
 #ifdef ZJS_FS_ASYNC_APIS
-static ZJS_DECL_FUNC(zjs_read_async) {
-    return ZJS_CHAIN_FUNC_ARGS(zjs_read, 1);
+static ZJS_DECL_FUNC(zjs_fs_read_async) {
+    return ZJS_CHAIN_FUNC_ARGS(zjs_fs_read, 1);
 }
 #endif
 
-static ZJS_DECL_FUNC_ARGS(zjs_write, uint8_t async)
+static ZJS_DECL_FUNC_ARGS(zjs_fs_write, uint8_t async)
 {
     // args: file descriptor, buffer[, offset[, length[, position]]]
     ZJS_VALIDATE_ARGS_OPTCOUNT(optcount, Z_NUMBER, Z_OBJECT,
@@ -555,17 +555,17 @@ static ZJS_DECL_FUNC_ARGS(zjs_write, uint8_t async)
     return jerry_create_number(written);
 }
 
-static ZJS_DECL_FUNC(zjs_write_sync) {
-    return ZJS_CHAIN_FUNC_ARGS(zjs_write, 0);
+static ZJS_DECL_FUNC(zjs_fs_write_sync) {
+    return ZJS_CHAIN_FUNC_ARGS(zjs_fs_write, 0);
 }
 
 #ifdef ZJS_FS_ASYNC_APIS
-static ZJS_DECL_FUNC(zjs_write_async) {
-    return ZJS_CHAIN_FUNC_ARGS(zjs_write, 1);
+static ZJS_DECL_FUNC(zjs_fs_write_async) {
+    return ZJS_CHAIN_FUNC_ARGS(zjs_fs_write, 1);
 }
 #endif
 
-static ZJS_DECL_FUNC_ARGS(zjs_truncate, uint8_t async)
+static ZJS_DECL_FUNC_ARGS(zjs_fs_truncate, uint8_t async)
 {
     // args: file descriptor or string path, length
     ZJS_VALIDATE_ARGS(Z_OBJECT Z_STRING, Z_NUMBER);
@@ -618,17 +618,17 @@ static ZJS_DECL_FUNC_ARGS(zjs_truncate, uint8_t async)
     return ZJS_UNDEFINED;
 }
 
-static ZJS_DECL_FUNC(zjs_truncate_sync) {
-    return ZJS_CHAIN_FUNC_ARGS(zjs_truncate, 0);
+static ZJS_DECL_FUNC(zjs_fs_truncate_sync) {
+    return ZJS_CHAIN_FUNC_ARGS(zjs_fs_truncate, 0);
 }
 
 #ifdef ZJS_FS_ASYNC_APIS
-static ZJS_DECL_FUNC(zjs_truncate_async) {
-    return ZJS_CHAIN_FUNC_ARGS(zjs_truncate, 1);
+static ZJS_DECL_FUNC(zjs_fs_truncate_async) {
+    return ZJS_CHAIN_FUNC_ARGS(zjs_fs_truncate, 1);
 }
 #endif
 
-static ZJS_DECL_FUNC_ARGS(zjs_mkdir, uint8_t async)
+static ZJS_DECL_FUNC_ARGS(zjs_fs_mkdir, uint8_t async)
 {
     // args: dirpath
     ZJS_VALIDATE_ARGS(Z_STRING);
@@ -663,17 +663,17 @@ static ZJS_DECL_FUNC_ARGS(zjs_mkdir, uint8_t async)
     return ZJS_UNDEFINED;
 }
 
-static ZJS_DECL_FUNC(zjs_mkdir_sync) {
-    return ZJS_CHAIN_FUNC_ARGS(zjs_mkdir, 0);
+static ZJS_DECL_FUNC(zjs_fs_mkdir_sync) {
+    return ZJS_CHAIN_FUNC_ARGS(zjs_fs_mkdir, 0);
 }
 
 #ifdef ZJS_FS_ASYNC_APIS
-static ZJS_DECL_FUNC(zjs_mkdir_async) {
-    return ZJS_CHAIN_FUNC_ARGS(zjs_mkdir, 1);
+static ZJS_DECL_FUNC(zjs_fs_mkdir_async) {
+    return ZJS_CHAIN_FUNC_ARGS(zjs_fs_mkdir, 1);
 }
 #endif
 
-static ZJS_DECL_FUNC_ARGS(zjs_readdir, uint8_t async)
+static ZJS_DECL_FUNC_ARGS(zjs_fs_readdir, uint8_t async)
 {
     // args: dirpath
     ZJS_VALIDATE_ARGS(Z_STRING);
@@ -762,17 +762,17 @@ static ZJS_DECL_FUNC_ARGS(zjs_readdir, uint8_t async)
     return array;
 }
 
-static ZJS_DECL_FUNC(zjs_readdir_sync) {
-    return ZJS_CHAIN_FUNC_ARGS(zjs_readdir, 0);
+static ZJS_DECL_FUNC(zjs_fs_readdir_sync) {
+    return ZJS_CHAIN_FUNC_ARGS(zjs_fs_readdir, 0);
 }
 
 #ifdef ZJS_FS_ASYNC_APIS
-static ZJS_DECL_FUNC(zjs_readdir_async) {
-    return ZJS_CHAIN_FUNC_ARGS(zjs_readdir, 1);
+static ZJS_DECL_FUNC(zjs_fs_readdir_async) {
+    return ZJS_CHAIN_FUNC_ARGS(zjs_fs_readdir, 1);
 }
 #endif
 
-static ZJS_DECL_FUNC_ARGS(zjs_stat, uint8_t async)
+static ZJS_DECL_FUNC_ARGS(zjs_fs_stat, uint8_t async)
 {
     // args: filepath
     ZJS_VALIDATE_ARGS(Z_STRING);
@@ -814,17 +814,17 @@ static ZJS_DECL_FUNC_ARGS(zjs_stat, uint8_t async)
     return create_stats_obj(&entry);
 }
 
-static ZJS_DECL_FUNC(zjs_stat_sync) {
-    return ZJS_CHAIN_FUNC_ARGS(zjs_stat, 0);
+static ZJS_DECL_FUNC(zjs_fs_stat_sync) {
+    return ZJS_CHAIN_FUNC_ARGS(zjs_fs_stat, 0);
 }
 
 #ifdef ZJS_FS_ASYNC_APIS
-static ZJS_DECL_FUNC(zjs_stat_async) {
-    return ZJS_CHAIN_FUNC_ARGS(zjs_stat, 1);
+static ZJS_DECL_FUNC(zjs_fs_stat_async) {
+    return ZJS_CHAIN_FUNC_ARGS(zjs_fs_stat, 1);
 }
 #endif
 
-static ZJS_DECL_FUNC_ARGS(zjs_write_file, uint8_t async)
+static ZJS_DECL_FUNC_ARGS(zjs_fs_write_file, uint8_t async)
 {
     // args: filepath, data
     ZJS_VALIDATE_ARGS(Z_STRING, Z_OBJECT Z_STRING);
@@ -892,19 +892,17 @@ Finished:
     if (data && !is_buf) {
         zjs_free(data);
     }
-    if (path) {
-        zjs_free(path);
-    }
+    zjs_free(path);
     return ZJS_UNDEFINED;
 }
 
-static ZJS_DECL_FUNC(zjs_write_file_sync) {
-    return ZJS_CHAIN_FUNC_ARGS(zjs_write_file, 0);
+static ZJS_DECL_FUNC(zjs_fs_write_file_sync) {
+    return ZJS_CHAIN_FUNC_ARGS(zjs_fs_write_file, 0);
 }
 
 #ifdef ZJS_FS_ASYNC_APIS
-static ZJS_DECL_FUNC(zjs_write_file_async) {
-    return ZJS_CHAIN_FUNC_ARGS(zjs_write_file, 1);
+static ZJS_DECL_FUNC(zjs_fs_write_file_async) {
+    return ZJS_CHAIN_FUNC_ARGS(zjs_fs_write_file, 1);
 }
 #endif
 
@@ -912,30 +910,30 @@ jerry_value_t zjs_fs_init()
 {
     jerry_value_t fs = jerry_create_object();
 
-    zjs_obj_add_function(fs, zjs_open_sync, "openSync");
-    zjs_obj_add_function(fs, zjs_close_sync, "closeSync");
-    zjs_obj_add_function(fs, zjs_unlink_sync, "unlinkSync");
-    zjs_obj_add_function(fs, zjs_unlink_sync, "rmdirSync");
-    zjs_obj_add_function(fs, zjs_read_sync, "readSync");
-    zjs_obj_add_function(fs, zjs_write_sync, "writeSync");
-    zjs_obj_add_function(fs, zjs_truncate_sync, "truncateSync");
-    zjs_obj_add_function(fs, zjs_mkdir_sync, "mkdirSync");
-    zjs_obj_add_function(fs, zjs_readdir_sync, "readdirSync");
-    zjs_obj_add_function(fs, zjs_stat_sync, "statSync");
-    zjs_obj_add_function(fs, zjs_write_file_sync, "writeFileSync");
+    zjs_obj_add_function(fs, zjs_fs_open_sync, "openSync");
+    zjs_obj_add_function(fs, zjs_fs_close_sync, "closeSync");
+    zjs_obj_add_function(fs, zjs_fs_unlink_sync, "unlinkSync");
+    zjs_obj_add_function(fs, zjs_fs_unlink_sync, "rmdirSync");
+    zjs_obj_add_function(fs, zjs_fs_read_sync, "readSync");
+    zjs_obj_add_function(fs, zjs_fs_write_sync, "writeSync");
+    zjs_obj_add_function(fs, zjs_fs_truncate_sync, "truncateSync");
+    zjs_obj_add_function(fs, zjs_fs_mkdir_sync, "mkdirSync");
+    zjs_obj_add_function(fs, zjs_fs_readdir_sync, "readdirSync");
+    zjs_obj_add_function(fs, zjs_fs_stat_sync, "statSync");
+    zjs_obj_add_function(fs, zjs_fs_write_file_sync, "writeFileSync");
 
 #ifdef ZJS_FS_ASYNC_APIS
-    zjs_obj_add_function(fs, zjs_open_async, "open");
-    zjs_obj_add_function(fs, zjs_close_async, "close");
-    zjs_obj_add_function(fs, zjs_unlink_async, "unlink");
-    zjs_obj_add_function(fs, zjs_unlink_async, "rmdir");
-    zjs_obj_add_function(fs, zjs_read_async, "read");
-    zjs_obj_add_function(fs, zjs_write_async, "write");
-    zjs_obj_add_function(fs, zjs_truncate_async, "truncate");
-    zjs_obj_add_function(fs, zjs_mkdir_async, "mkdir");
-    zjs_obj_add_function(fs, zjs_readdir_async, "readdir");
-    zjs_obj_add_function(fs, zjs_stat_async, "stat");
-    zjs_obj_add_function(fs, zjs_write_file_async, "writeFile");
+    zjs_obj_add_function(fs, zjs_fs_open_async, "open");
+    zjs_obj_add_function(fs, zjs_fs_close_async, "close");
+    zjs_obj_add_function(fs, zjs_fs_unlink_async, "unlink");
+    zjs_obj_add_function(fs, zjs_fs_unlink_async, "rmdir");
+    zjs_obj_add_function(fs, zjs_fs_read_async, "read");
+    zjs_obj_add_function(fs, zjs_fs_write_async, "write");
+    zjs_obj_add_function(fs, zjs_fs_truncate_async, "truncate");
+    zjs_obj_add_function(fs, zjs_fs_mkdir_async, "mkdir");
+    zjs_obj_add_function(fs, zjs_fs_readdir_async, "readdir");
+    zjs_obj_add_function(fs, zjs_fs_stat_async, "stat");
+    zjs_obj_add_function(fs, zjs_fs_write_file_async, "writeFile");
 #endif
 
     return fs;
