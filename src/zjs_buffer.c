@@ -13,13 +13,6 @@
 
 static jerry_value_t zjs_buffer_prototype;
 
-const uint32_t BUFFER_MAGIC = 0xb11ffe12;
-
-typedef struct zjs_buffer_priv {
-    uint32_t magic;
-    zjs_buffer_t public;
-} zjs_buffer_priv_t;
-
 bool zjs_value_is_buffer(const jerry_value_t value)
 {
     if (jerry_value_is_object(value) && zjs_buffer_find(value)) {
@@ -37,10 +30,8 @@ zjs_buffer_t *zjs_buffer_find(const jerry_value_t obj)
     //             the associated list item struct, or NULL if not found
     uintptr_t handle;
     if (jerry_get_object_native_handle(obj, &handle)) {
-        zjs_buffer_priv_t *priv = (zjs_buffer_priv_t *)handle;
-        if (priv->magic == BUFFER_MAGIC &&
-            jerry_get_prototype(obj) == zjs_buffer_prototype) {
-            return &priv->public;
+        if (jerry_get_prototype(obj) == zjs_buffer_prototype) {
+            return (zjs_buffer_t *)handle;
         }
     }
     return NULL;
@@ -244,13 +235,8 @@ static void zjs_buffer_callback_free(uintptr_t handle)
     // requires: handle is the native pointer we registered with
     //             jerry_set_object_native_handle
     //  effects: frees the buffer item
-    zjs_buffer_priv_t *item = (zjs_buffer_priv_t *)handle;
-    if (item->magic != BUFFER_MAGIC) {
-        ERR_PRINT("Attempted to free invalid buffer: %p\n", item);
-        return;
-    }
-    item->magic = 0;
-    zjs_free(item->public.buffer);
+    zjs_buffer_t *item = (zjs_buffer_t *)handle;
+    zjs_free(item->buffer);
     zjs_free(item);
 }
 
@@ -343,8 +329,7 @@ jerry_value_t zjs_buffer_create(uint32_t size, zjs_buffer_t **ret_buf)
     }
 
     void *buf = zjs_malloc(size);
-    zjs_buffer_priv_t *buf_item =
-        (zjs_buffer_priv_t *)zjs_malloc(sizeof(zjs_buffer_priv_t));
+    zjs_buffer_t *buf_item = (zjs_buffer_t *)zjs_malloc(sizeof(zjs_buffer_t));
 
     if (!buf || !buf_item) {
         zjs_free(buf);
@@ -356,9 +341,8 @@ jerry_value_t zjs_buffer_create(uint32_t size, zjs_buffer_t **ret_buf)
     }
 
     jerry_value_t buf_obj = jerry_create_object();
-    buf_item->public.buffer = buf;
-    buf_item->public.bufsize = size;
-    buf_item->magic = BUFFER_MAGIC;
+    buf_item->buffer = buf;
+    buf_item->bufsize = size;
 
     jerry_set_prototype(buf_obj, zjs_buffer_prototype);
     zjs_obj_add_readonly_number(buf_obj, size, "length");
@@ -367,7 +351,7 @@ jerry_value_t zjs_buffer_create(uint32_t size, zjs_buffer_t **ret_buf)
     jerry_set_object_native_handle(buf_obj, (uintptr_t)buf_item,
                                    zjs_buffer_callback_free);
     if (ret_buf) {
-        *ret_buf = &buf_item->public;
+        *ret_buf = buf_item;
     }
     return buf_obj;
 }
