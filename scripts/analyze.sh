@@ -95,6 +95,45 @@ fi
 check_for_js_require
 
 # Check for native modules
+if check_for_require net || check_config_file ZJS_NET; then
+    >&2 echo Using module: net
+    MODULES+=" -DBUILD_MODULE_NET -DBUILD_MODULE_BUFFER -DBUILD_MODULE_EVENTS"
+    echo "export ZJS_NET=y" >> $CONFFILE
+    echo "export ZJS_BUFFER=y" >> $CONFFILE
+    echo "export ZJS_EVENTS=y" >> $CONFFILE
+    echo "export ZJS_NET_CONFIG=y" >> $CONFFILE
+    echo "CONFIG_NETWORKING=y" >> $PRJFILE
+    echo "CONFIG_NET_IPV6=y" >> $PRJFILE
+    echo "CONFIG_NET_IPV4=y" >> $PRJFILE
+    echo "CONFIG_NET_TCP=y" >> $PRJFILE
+    echo "CONFIG_TEST_RANDOM_GENERATOR=y" >> $PRJFILE
+    echo "CONFIG_INIT_STACKS=y" >> $PRJFILE
+    echo "CONFIG_PRINTK=y" >> $PRJFILE
+    echo "CONFIG_NET_STATISTICS=y" >> $PRJFILE
+    echo "CONFIG_NET_NBUF_RX_COUNT=14" >> $PRJFILE
+    echo "CONFIG_NET_NBUF_TX_COUNT=14" >> $PRJFILE
+    echo "CONFIG_NET_NBUF_DATA_COUNT=30" >> $PRJFILE
+    echo "CONFIG_NET_IF_UNICAST_IPV6_ADDR_COUNT=3" >> $PRJFILE
+    echo "CONFIG_NET_IF_MCAST_IPV6_ADDR_COUNT=2" >> $PRJFILE
+    echo "CONFIG_NET_MAX_CONTEXTS=10" >> $PRJFILE
+    echo "CONFIG_NET_MGMT=y" >> $PRJFILE
+    echo "CONFIG_NET_MGMT_EVENT=y" >> $PRJFILE
+
+    if [ $BOARD = "qemu_x86" ]; then
+        echo "CONFIG_NET_SLIP_TAP=y" >> $PRJFILE
+    elif [ $BOARD = "arduino_101" ]; then
+        echo "CONFIG_BLUETOOTH=y" >> $PRJFILE
+        echo "CONFIG_BLUETOOTH_SMP=y" >> $PRJFILE
+        echo "CONFIG_BLUETOOTH_SIGNING=y" >> $PRJFILE
+        echo "CONFIG_BLUETOOTH_PERIPHERAL=y" >> $PRJFILE
+        echo "CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL=y" >> $PRJFILE
+        echo "CONFIG_NETWORKING_WITH_6LOWPAN=y" >> $PRJFILE
+        echo "CONFIG_6LOWPAN_COMPRESSION_IPHC=y" >> $PRJFILE
+        echo "CONFIG_NET_L2_BLUETOOTH_ZEP1656=y" >> $PRJFILE
+        echo "CONFIG_NET_L2_BLUETOOTH=y" >> $PRJFILE
+    fi
+fi
+
 if check_for_require dgram || check_config_file ZJS_DGRAM; then
     >&2 echo Using module: Dgram
     MODULES+=" -DBUILD_MODULE_DGRAM -DBUILD_MODULE_BUFFER"

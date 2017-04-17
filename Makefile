@@ -338,7 +338,7 @@ else
 endif
 endif
 
-NET_BUILD=$(shell grep -q -E "BUILD_MODULE_OCF|BUILD_MODULE_DGRAM" src/Makefile && echo y)
+NET_BUILD=$(shell grep -q -E "BUILD_MODULE_OCF|BUILD_MODULE_DGRAM|BUILD_MODULE_NET" src/Makefile && echo y)
 
 # Run QEMU target
 .PHONY: qemu
