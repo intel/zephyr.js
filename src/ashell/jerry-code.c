@@ -382,8 +382,7 @@ int javascript_parse_code(const char *file_name, bool show_lines)
         }
 
         // Find and load all required js modules
-        if (load_require_modules(buf))
-        {
+        if (load_require_modules(buf)) {
             /* Setup Global scope code */
             parsed_code = jerry_parse((const jerry_char_t *) buf, size, false);
             if (jerry_value_has_error_flag(parsed_code)) {
