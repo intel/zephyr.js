@@ -265,12 +265,12 @@ static ZJS_DECL_FUNC_ARGS(zjs_fs_open, uint8_t async)
 }
 
 static ZJS_DECL_FUNC(zjs_fs_open_sync) {
-    return ZJS_CHAIN_FUNC_ARGS(zjs_open, 0);
+    return ZJS_CHAIN_FUNC_ARGS(zjs_fs_open, 0);
 }
 
 #ifdef ZJS_FS_ASYNC_APIS
 static ZJS_DECL_FUNC(zjs_fs_open_async) {
-    return ZJS_CHAIN_FUNC_ARGS(zjs_open, 1);
+    return ZJS_CHAIN_FUNC_ARGS(zjs_fs_open, 1);
 }
 #endif
 
@@ -311,12 +311,12 @@ static ZJS_DECL_FUNC_ARGS(zjs_fs_close, uint8_t async)
 }
 
 static ZJS_DECL_FUNC(zjs_fs_close_sync) {
-    return ZJS_CHAIN_FUNC_ARGS(zjs_close, 0);
+    return ZJS_CHAIN_FUNC_ARGS(zjs_fs_close, 0);
 }
 
 #ifdef ZJS_FS_ASYNC_APIS
 static ZJS_DECL_FUNC(zjs_fs_close_async) {
-    return ZJS_CHAIN_FUNC_ARGS(zjs_close, 1);
+    return ZJS_CHAIN_FUNC_ARGS(zjs_fs_close, 1);
 }
 #endif
 
@@ -359,12 +359,12 @@ static ZJS_DECL_FUNC_ARGS(zjs_fs_unlink, uint8_t async)
 }
 
 static ZJS_DECL_FUNC(zjs_fs_unlink_sync) {
-    return ZJS_CHAIN_FUNC_ARGS(zjs_unlink, 0);
+    return ZJS_CHAIN_FUNC_ARGS(zjs_fs_unlink, 0);
 }
 
 #ifdef ZJS_FS_ASYNC_APIS
 static ZJS_DECL_FUNC(zjs_fs_unlink_async) {
-    return ZJS_CHAIN_FUNC_ARGS(zjs_unlink, 1);
+    return ZJS_CHAIN_FUNC_ARGS(zjs_fs_unlink, 1);
 }
 #endif
 
@@ -453,12 +453,12 @@ static ZJS_DECL_FUNC_ARGS(zjs_fs_read, uint8_t async)
 }
 
 static ZJS_DECL_FUNC(zjs_fs_read_sync) {
-    return ZJS_CHAIN_FUNC_ARGS(zjs_read, 0);
+    return ZJS_CHAIN_FUNC_ARGS(zjs_fs_read, 0);
 }
 
 #ifdef ZJS_FS_ASYNC_APIS
 static ZJS_DECL_FUNC(zjs_fs_read_async) {
-    return ZJS_CHAIN_FUNC_ARGS(zjs_read, 1);
+    return ZJS_CHAIN_FUNC_ARGS(zjs_fs_read, 1);
 }
 #endif
 
@@ -556,12 +556,12 @@ static ZJS_DECL_FUNC_ARGS(zjs_fs_write, uint8_t async)
 }
 
 static ZJS_DECL_FUNC(zjs_fs_write_sync) {
-    return ZJS_CHAIN_FUNC_ARGS(zjs_write, 0);
+    return ZJS_CHAIN_FUNC_ARGS(zjs_fs_write, 0);
 }
 
 #ifdef ZJS_FS_ASYNC_APIS
 static ZJS_DECL_FUNC(zjs_fs_write_async) {
-    return ZJS_CHAIN_FUNC_ARGS(zjs_write, 1);
+    return ZJS_CHAIN_FUNC_ARGS(zjs_fs_write, 1);
 }
 #endif
 
@@ -619,12 +619,12 @@ static ZJS_DECL_FUNC_ARGS(zjs_fs_truncate, uint8_t async)
 }
 
 static ZJS_DECL_FUNC(zjs_fs_truncate_sync) {
-    return ZJS_CHAIN_FUNC_ARGS(zjs_truncate, 0);
+    return ZJS_CHAIN_FUNC_ARGS(zjs_fs_truncate, 0);
 }
 
 #ifdef ZJS_FS_ASYNC_APIS
 static ZJS_DECL_FUNC(zjs_fs_truncate_async) {
-    return ZJS_CHAIN_FUNC_ARGS(zjs_truncate, 1);
+    return ZJS_CHAIN_FUNC_ARGS(zjs_fs_truncate, 1);
 }
 #endif
 
@@ -664,12 +664,12 @@ static ZJS_DECL_FUNC_ARGS(zjs_fs_mkdir, uint8_t async)
 }
 
 static ZJS_DECL_FUNC(zjs_fs_mkdir_sync) {
-    return ZJS_CHAIN_FUNC_ARGS(zjs_mkdir, 0);
+    return ZJS_CHAIN_FUNC_ARGS(zjs_fs_mkdir, 0);
 }
 
 #ifdef ZJS_FS_ASYNC_APIS
 static ZJS_DECL_FUNC(zjs_fs_mkdir_async) {
-    return ZJS_CHAIN_FUNC_ARGS(zjs_mkdir, 1);
+    return ZJS_CHAIN_FUNC_ARGS(zjs_fs_mkdir, 1);
 }
 #endif
 
@@ -763,12 +763,12 @@ static ZJS_DECL_FUNC_ARGS(zjs_fs_readdir, uint8_t async)
 }
 
 static ZJS_DECL_FUNC(zjs_fs_readdir_sync) {
-    return ZJS_CHAIN_FUNC_ARGS(zjs_readdir, 0);
+    return ZJS_CHAIN_FUNC_ARGS(zjs_fs_readdir, 0);
 }
 
 #ifdef ZJS_FS_ASYNC_APIS
 static ZJS_DECL_FUNC(zjs_fs_readdir_async) {
-    return ZJS_CHAIN_FUNC_ARGS(zjs_readdir, 1);
+    return ZJS_CHAIN_FUNC_ARGS(zjs_fs_readdir, 1);
 }
 #endif
 
@@ -815,12 +815,12 @@ static ZJS_DECL_FUNC_ARGS(zjs_fs_stat, uint8_t async)
 }
 
 static ZJS_DECL_FUNC(zjs_fs_stat_sync) {
-    return ZJS_CHAIN_FUNC_ARGS(zjs_stat, 0);
+    return ZJS_CHAIN_FUNC_ARGS(zjs_fs_stat, 0);
 }
 
 #ifdef ZJS_FS_ASYNC_APIS
 static ZJS_DECL_FUNC(zjs_fs_stat_async) {
-    return ZJS_CHAIN_FUNC_ARGS(zjs_stat, 1);
+    return ZJS_CHAIN_FUNC_ARGS(zjs_fs_stat, 1);
 }
 #endif
 
@@ -897,12 +897,12 @@ Finished:
 }
 
 static ZJS_DECL_FUNC(zjs_fs_write_file_sync) {
-    return ZJS_CHAIN_FUNC_ARGS(zjs_write_file, 0);
+    return ZJS_CHAIN_FUNC_ARGS(zjs_fs_write_file, 0);
 }
 
 #ifdef ZJS_FS_ASYNC_APIS
 static ZJS_DECL_FUNC(zjs_fs_write_file_async) {
-    return ZJS_CHAIN_FUNC_ARGS(zjs_write_file, 1);
+    return ZJS_CHAIN_FUNC_ARGS(zjs_fs_write_file, 1);
 }
 #endif
 
