@@ -386,7 +386,7 @@ int32_t ashell_eval_javascript(const char *buf, uint32_t len)
         len--;
     }
 
-    javascript_eval_code(src);
+    javascript_eval_code(src, strnlen(src, MAX_BUFFER_SIZE));
     return RET_OK;
 }
 

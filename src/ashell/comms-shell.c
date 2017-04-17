@@ -46,7 +46,7 @@ const char *comms_get_prompt()
 #define DBG printk
 #endif /* CONFIG_SHELL_UPLOADER_DEBUG */
 
-#define MAX_LINE 80
+#define MAX_LINE 90
 #define MAX_ARGUMENT_SIZE 32
 
 static ashell_line_parser_t app_line_cb = NULL;

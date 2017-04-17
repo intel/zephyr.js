@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 /**
  * @file
@@ -72,7 +72,7 @@ const char *system_get_prompt()
     return system_prompt;
 }
 
-#define MAX_LINE_LEN 80
+#define MAX_LINE_LEN 90
 #define FIFO_CACHE 2
 
 /* Configuration of the callbacks to be called */
