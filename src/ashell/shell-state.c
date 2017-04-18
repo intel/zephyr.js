@@ -611,13 +611,13 @@ int32_t ashell_set_bootcfg(char *buf)
 static const struct ashell_cmd commands[] =
 {
     ASHELL_COMMAND("help",  "This help", ashell_help),
-    ASHELL_COMMAND("eval",  "Evaluate JavaScript in real time"                ,ashell_js_immediate_mode),
+    ASHELL_COMMAND("eval",  "Evaluate JavaScript in real time"               ,ashell_js_immediate_mode),
     ASHELL_COMMAND("clear", "Clear the terminal screen"                      ,ashell_clear),
     ASHELL_COMMAND("load",  "[FILE] Saves the input text into a file"        ,ashell_read_data),
     ASHELL_COMMAND("run",   "[FILE] Runs the JavaScript program in the file" ,ashell_run_javascript),
     ASHELL_COMMAND("parse", "[FILE] Check if the JS syntax is correct"       ,ashell_parse_javascript),
     ASHELL_COMMAND("stop",  "Stops current JavaScript execution"             ,ashell_stop_javascript),
-    ASHELL_COMMAND("cfg",   "[FILE] Set the file that should run at boot"    ,ashell_set_bootcfg),
+    ASHELL_COMMAND("bootcfg", "[FILE] Set the file that should run at boot"  ,ashell_set_bootcfg),
 
     ASHELL_COMMAND("ls",    "[FILE] List directory contents or file stat"    ,ashell_list_dir),
     ASHELL_COMMAND("cat",   "[FILE] Print the file contents of a file"       ,ashell_print_file),
