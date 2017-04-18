@@ -136,8 +136,7 @@ int32_t ashell_disk_usage(char *buf)
     }
 
     ssize_t size = fs_size(file);
-    fs_close(file);
-
+    fs_close_alloc(file);
     printf("%5d %s\n", (unsigned int)size, filename);
     return RET_OK;
 }
@@ -312,7 +311,7 @@ int32_t ashell_print_file(char *buf)
     } while (count > 0);
 
     comms_write_buf("\r\n", 2);
-    fs_close(file);
+    fs_close_alloc(file);
     return RET_OK;
 }
 
@@ -355,13 +354,12 @@ int32_t ashell_start_raw_capture(char *filename)
 
 int32_t ashell_close_capture()
 {
-    return fs_close(file_code);
+    return fs_close_alloc(file_code);
 }
 
 int32_t ashell_discard_capture()
 {
-    fs_close(file_code);
-
+    fs_close_alloc(file_code);
     //TODO ashell_remove_file(file_code);
     return RET_OK;
 }
@@ -437,25 +435,26 @@ int32_t ashell_raw_capture(const char *buf, uint32_t len)
 
 int32_t ashell_read_data(char *buf)
 {
-    if (!fs_valid_filename(buf)) {
-        return RET_ERROR;
-    }
-    char filename[MAX_FILENAME_SIZE];
-    if (shell.state_flags & kShellTransferRaw) {
-        if (ashell_get_filename_buffer(buf, filename) <= 0) {
-            return RET_ERROR;
-        }
-
-        comms_println(ANSI_CLEAR);
-        comms_printf("Saving to '%s'\r\n", filename);
-        comms_println(READY_FOR_RAW_DATA);
-        comms_set_prompt(raw_prompt);
-        shell.state_flags |= kShellCaptureRaw;
-        ashell_start_raw_capture(filename);
-    }
-
     if (shell.state_flags & kShellTransferIhex) {
         ashell_process_close();
+    }
+    else {
+        if (!fs_valid_filename(buf)) {
+            return RET_ERROR;
+        }
+        char filename[MAX_FILENAME_SIZE];
+        if (shell.state_flags & kShellTransferRaw) {
+            if (ashell_get_filename_buffer(buf, filename) <= 0) {
+                return RET_ERROR;
+            }
+
+            comms_println(ANSI_CLEAR);
+            comms_printf("Saving to '%s'\r\n", filename);
+            comms_println(READY_FOR_RAW_DATA);
+            comms_set_prompt(raw_prompt);
+            shell.state_flags |= kShellCaptureRaw;
+            ashell_start_raw_capture(filename);
+        }
     }
     return RET_OK;
 }
@@ -598,8 +597,6 @@ int32_t ashell_set_bootcfg(char *buf)
     ssize_t written = fs_write(file, buf, strlen(buf));
     if (written == 0) {
         comms_println("Failed to write boot.cfg file");
-        fs_close_alloc(file);
-        return RET_OK;
     }
 
     fs_close_alloc(file);
@@ -617,7 +614,7 @@ static const struct ashell_cmd commands[] =
     ASHELL_COMMAND("run",   "[FILE] Runs the JavaScript program in the file" ,ashell_run_javascript),
     ASHELL_COMMAND("parse", "[FILE] Check if the JS syntax is correct"       ,ashell_parse_javascript),
     ASHELL_COMMAND("stop",  "Stops current JavaScript execution"             ,ashell_stop_javascript),
-    ASHELL_COMMAND("bootcfg", "[FILE] Set the file that should run at boot"  ,ashell_set_bootcfg),
+    ASHELL_COMMAND("boot",  "[FILE] Set the file that should run at boot"    ,ashell_set_bootcfg),
 
     ASHELL_COMMAND("ls",    "[FILE] List directory contents or file stat"    ,ashell_list_dir),
     ASHELL_COMMAND("cat",   "[FILE] Print the file contents of a file"       ,ashell_print_file),
@@ -655,30 +652,20 @@ void ashell_run_boot_cfg()
 {
     fs_file_t *file;
     size_t count;
-
     file = fs_open_alloc("boot.cfg", "r");
-
     // Failed to open boot.cfg
     if (!file) {
         return;
     }
 
     ssize_t size = fs_size(file);
-    if (size == 0) {
-        printk("Empty boot.cfg file");
-        fs_close_alloc(file);
-        return;
+    if (size > 0 && size <= 12) {
+        char data[size+1];
+        count = fs_read(file, data, size);
+        data[size] = '\0';
+        ashell_run_javascript(data);
     }
-    else if (size > 12) {
-        fs_close_alloc(file);
-        return;
-    }
-
-    char data[size+1];
-    count = fs_read(file, data, size);
-    data[size] = '\0';
-    ashell_run_javascript(data);
-    fs_close(file);
+    fs_close_alloc(file);
 }
 
 int32_t ashell_main_state(char *buf, uint32_t len)

@@ -108,7 +108,7 @@ bool fs_valid_filename(char *filename)
     }
     else {
         // Filename has no extension
-        namelen = strlen(filename);
+        namelen = size;
         extlen = 0;
     }
 
@@ -116,15 +116,9 @@ bool fs_valid_filename(char *filename)
         printf("Filename length is zero\n");
         return false;
     }
-    else if (namelen > 8) {
-        printf("Filename is longer than 8 characters\n");
+    else if (namelen > 8 || extlen > 3) {
+        printf("Filename must be 8.3 format\n");
         return false;
     }
-
-    if (extlen > 3) {
-        printf("File extension is longer than 3 characters\n");
-        return false;
-    }
-
     return true;
 }
