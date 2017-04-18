@@ -148,9 +148,9 @@ static ZJS_DECL_FUNC(native_require_handler)
         if (!strcmp(mod->name, module)) {
             // We only want one instance of each module at a time
             if (mod->instance == 0) {
-                mod->instance = jerry_acquire_value(mod->init());
+                mod->instance = mod->init();
             }
-            return mod->instance;
+            return jerry_acquire_value(mod->instance);
         }
     }
     DBG_PRINT("Native module not found, searching for JavaScript module %s\n",
