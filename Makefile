@@ -205,6 +205,8 @@ analyze: $(JS)
 	@echo "% This is a generated file" > prj.mdef
 	@echo "# This is a generated file" > src/Makefile
 	@cat src/Makefile.base >> src/Makefile
+	@echo "# This is a generated file" > src/sensors/Makefile
+	@cat src/sensors/Makefile.base >> src/sensors/Makefile
 	@echo "# This is a generated file" > arc/src/Makefile
 	@cat arc/src/Makefile.base >> arc/src/Makefile
 	@if [ "$(TRACE)" = "on" ] || [ "$(TRACE)" = "full" ]; then \
@@ -213,7 +215,7 @@ analyze: $(JS)
 	@if [ "$(SNAPSHOT)" = "on" ]; then \
 		echo "ccflags-y += -DZJS_SNAPSHOT_BUILD" >> src/Makefile; \
 	fi
-	@echo "ccflags-y += $(shell ./scripts/analyze.sh $(BOARD) $(JS) $(CONFIG) $(ASHELL))" | tee -a src/Makefile arc/src/Makefile
+	@echo "ccflags-y += $(shell ./scripts/analyze.sh $(BOARD) $(JS) $(CONFIG) $(ASHELL))" | tee -a src/Makefile arc/src/Makefile src/sensors/Makefile
 	@if [ "$(OS)" = "Darwin" ]; then \
 		sed -i.bu '/This is a generated file/r./zjs.conf.tmp' src/Makefile; \
 	else \

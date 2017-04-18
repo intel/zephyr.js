@@ -75,13 +75,16 @@ obj-$(ZJS_PROMISE) += zjs_promise.o
 obj-$(ZJS_NET_CONFIG) += zjs_net_config.o
 obj-$(ZJS_WS) += zjs_web_sockets.o
 
+ccflags-$(ZJS_SENSOR) += -I$(ZJS_BASE)/src/sensors
+obj-$(ZJS_SENSOR) += sensors/
+obj-$(ZJS_SENSOR) += zjs_sensor.o
+
 # skip for now for frdm_k64f
 ifeq ($(BOARD), arduino_101)
 	obj-$(ZJS_AIO) += zjs_aio.o
 	obj-$(ZJS_GROVE_LCD) += zjs_grove_lcd_ipm.o
 	obj-$(ZJS_I2C) += zjs_i2c.o \
                       zjs_i2c_ipm_handler.o
-	obj-$(ZJS_SENSOR) += zjs_sensor.o
 else
 	obj-$(ZJS_GROVE_LCD) += zjs_grove_lcd.o
 	obj-$(ZJS_I2C) += zjs_i2c.o \
