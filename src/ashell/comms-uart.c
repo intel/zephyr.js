@@ -538,7 +538,7 @@ void acm()
             break;
         // Sleep is needed to allow the javascript in boot.cfg to run
         // while we wait for the connection.
-        k_sleep(2000);
+        k_sleep(1000);
     }
 
     /* 1000 msec = 1 sec */
