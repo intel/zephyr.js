@@ -316,7 +316,6 @@ void restore_zjs_api() {
 #endif
 #endif
     jerry_init(JERRY_INIT_EMPTY);
-
     zjs_modules_init();
 }
 
