@@ -32,6 +32,9 @@
 #ifdef BUILD_MODULE_TEST_PROMISE
 #include "zjs_test_promise.h"
 #endif
+#ifdef BUILD_MODULE_TEST_CALLBACKS
+#include "zjs_test_callbacks.h"
+#endif
 
 #ifndef ZJS_LINUX_BUILD
 #include "zjs_aio.h"
@@ -119,7 +122,10 @@ module_t zjs_modules_array[] = {
     { "ocf", zjs_ocf_init, zjs_ocf_cleanup },
 #endif
 #ifdef BUILD_MODULE_TEST_PROMISE
-    { "test_promise", zjs_test_promise_init }
+    { "test_promise", zjs_test_promise_init },
+#endif
+#ifdef BUILD_MODULE_TEST_CALLBACKS
+    { "test_callbacks", zjs_test_callbacks_init }
 #endif
 };
 
