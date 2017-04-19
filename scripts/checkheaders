@@ -63,6 +63,15 @@ fi
 echo RESULTS: $PASSCOUNT/$TOTAL passed
 
 if [ $PASSCOUNT -ne $TOTAL ]; then
+    # on Ubuntu ensure libc6-dev-i386
+    if which dpkg > /dev/null; then
+        if ! dpkg -l lib6-dev-i386 > /dev/null 2>&1; then
+            echo
+            echo WARNING: package libc6-dev-i386 not found
+            echo You may need to run: sudo apt install libc6-dev-i386
+        fi
+    fi
+
     exit 1
 fi
 
