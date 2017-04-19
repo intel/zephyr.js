@@ -78,3 +78,47 @@ int fs_close_alloc(fs_file_t *fp)
     zjs_free(fp);
     return res;
 }
+
+bool fs_valid_filename(char *filename)
+{
+    if (filename == NULL) {
+        printf("No filename given\n");
+        return false;
+    }
+
+    char *ptr1 = filename;
+    char *ptr2 = NULL;
+    ssize_t namelen;
+    ssize_t extlen;
+    ssize_t size = strlen(filename);
+
+    ptr1 = strchr(ptr1, '.');
+
+    if (ptr1 != NULL) {
+        // Check there aren't multiple periods
+        ptr2 = strchr(ptr1 + 1, '.');
+
+        if (ptr2 != NULL) {
+            printf("Invalid file extension format\n");
+            return false;
+        }
+
+        namelen = ptr1 - filename;
+        extlen = size - namelen - 1;
+    }
+    else {
+        // Filename has no extension
+        namelen = size;
+        extlen = 0;
+    }
+
+    if (namelen == 0) {
+        printf("Filename length is zero\n");
+        return false;
+    }
+    else if (namelen > 8 || extlen > 3) {
+        printf("Filename must be 8.3 format\n");
+        return false;
+    }
+    return true;
+}

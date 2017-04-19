@@ -89,6 +89,7 @@ Commands list:
      run [FILE] Runs the JavaScript program in the file
    parse [FILE] Check if the JS syntax is correct
     stop Stops current JavaScript execution
+ bootcfg [FILE] Set the file that should run at boot
       ls [FILE] List directory contents or file stat
      cat [FILE] Print the file contents of a file
       du [FILE] Estimate file space usage

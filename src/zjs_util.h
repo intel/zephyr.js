@@ -6,10 +6,13 @@
 // The util code is only for the X86 side
 
 #include <stdlib.h>
-
 #include "jerryscript.h"
 #include "zjs_common.h"
 #include "zjs_error.h"
+
+#ifdef ZJS_ASHELL
+struct k_sem mainloop_sem;
+#endif
 
 #define ZJS_UNDEFINED jerry_create_undefined()
 
