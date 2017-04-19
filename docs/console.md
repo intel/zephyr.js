@@ -54,4 +54,4 @@ difference to `stdout`.
 
 Sample Apps
 -----------
-* [Console sample](../samples/Console.js)
+* [Console sample](../samples/tests/Console.js)
