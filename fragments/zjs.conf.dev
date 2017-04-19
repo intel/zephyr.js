@@ -12,7 +12,8 @@ ZJS_I2C=y
 #ZJS_OCF=y
 ZJS_PERFORMANCE=y
 ZJS_PWM=y
-ZJS_SENSOR=y
+# Note: enabling sensor will disable GPIO input on all pins.
+#ZJS_SENSOR=y
 ZJS_TIMERS=y
 ZJS_UART=y
 ZJS_FS=y
