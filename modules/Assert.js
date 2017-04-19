@@ -1,16 +1,15 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 // JavaScript library for the tests case
 
 function Assert() {
     // API object
-    var assert = function (actual, description) {
-        var thisfunc = arguments.callee;
-        thisfunc.total++;
+    function assert(actual, description) {
+        assert.total++;
 
         var label = "\033[1m\033[31mFAIL\033[0m";
         if (actual) {
-            thisfunc.pass++;
+            assert.pass++;
             label = "\033[1m\033[32mPASS\033[0m";
         }
 
