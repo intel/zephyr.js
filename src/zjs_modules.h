@@ -10,6 +10,7 @@
 #include "jerryscript.h"
 
 #define NUM_SERVICE_ROUTINES 3
+#define MAX_MODULE_LEN 32
 
 /**
  * Service routine function type

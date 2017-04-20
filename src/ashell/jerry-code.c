@@ -202,17 +202,17 @@ static bool add_requires(requires_list_t **list, char *filebuf)
     char *ptr2 = NULL;
     char *filestr = NULL;
     char *ext_check = NULL;
+    bool valid = true;
 
     while (ptr1 != NULL) {
         // Find next instance of "require"
         ptr1 = strstr(ptr1, "require");
-
         if (ptr1 != NULL) {
             // Find the text between the two " " after require
             ptr1 = strchr(ptr1, '"') + 1;
             ptr2 = strchr(ptr1, '"');
             size_t len = ptr2 - ptr1;
-            if (len < (ssize_t)MAX_ASHELL_JS_MODULE_LEN) {
+            if (len < (ssize_t)MAX_MODULE_LEN) {
                 // Allocate the memory for the string
                 filestr = (char *)zjs_malloc(len + 1);
                 strncpy(filestr, ptr1, len);
@@ -221,9 +221,14 @@ static bool add_requires(requires_list_t **list, char *filebuf)
                 // Check that this is a *.js require and not a zephyr require
                 // Also check that the file hasn't already been loaded
                 ext_check = &filestr[len - 3];
-
                 if (strcmp(ext_check, ".js") == 0 && !list_contains(list, filestr)) {
-                    add_to_list(list, filestr);
+                    if (fs_valid_filename(filestr)) {
+                        add_to_list(list, filestr);
+                    }
+                    else {
+                        valid = false;
+                        break;
+                    }
                 }
                 zjs_free(filestr);
                 filestr = NULL;
@@ -232,13 +237,14 @@ static bool add_requires(requires_list_t **list, char *filebuf)
                 filestr = (char *)zjs_malloc(10);
                 strncpy(filestr, ptr1, 10);
                 comms_printf("[ERR] requires(\"%s...\") string is too long\n", filestr);
-                zjs_free(filestr);
-                filestr = NULL;
-                return false;
+                valid = false;
+                break;
             }
         }
     }
-    return true;
+    if (filestr != NULL)
+        zjs_free(filestr);
+    return valid;
 }
 
 static bool load_require_modules(char *file_buffer)
@@ -254,7 +260,6 @@ static bool load_require_modules(char *file_buffer)
         while (cur && add_success) {
             // Read the file into a buffer so we can scan it
             req_file_buffer = read_file_alloc(cur->file_name, &file_size);
-
             if (req_file_buffer && file_size > 0) {
                 // If adding a requires fails, bail out of the while loop
                 add_success = add_requires(&cur, req_file_buffer);
@@ -264,6 +269,10 @@ static bool load_require_modules(char *file_buffer)
                     free_list(&req_list);
                     return false;
                 }
+            }
+            else {
+                free_list(&req_list);
+                return false;
             }
             // Get the next file to scan
             cur = next_req_to_scan(&req_list);
