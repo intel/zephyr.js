@@ -20,6 +20,7 @@
 #include "zjs_event.h"
 #include "zjs_modules.h"
 #include "zjs_performance.h"
+#include "zjs_callbacks.h"
 #ifdef BUILD_MODULE_SENSOR
 #include "zjs_sensor.h"
 #endif
@@ -43,6 +44,7 @@
 #include "zjs_fs.h"
 #ifdef CONFIG_BOARD_ARDUINO_101
 #include "zjs_a101_pins.h"
+#include "zjs_ipm.h"
 #endif
 #ifdef CONFIG_BOARD_FRDM_K64F
 #include "zjs_k64f_pins.h"
@@ -206,9 +208,53 @@ static ZJS_DECL_FUNC(native_require_handler)
     return jerry_acquire_value(found_obj);
 }
 
+// native eval handler
+static ZJS_DECL_FUNC(native_eval_handler)
+{
+    return zjs_error("eval not supported");
+}
+
+// native print handler
+static ZJS_DECL_FUNC(native_print_handler)
+{
+    if (argc < 1 || !jerry_value_is_string(argv[0]))
+        return zjs_error("print: missing string argument");
+
+    jerry_size_t size = 0;
+    char *str = zjs_alloc_from_jstring(argv[0], &size);
+    if (!str)
+        return zjs_error("print: out of memory");
+
+    ZJS_PRINT("%s\n", str);
+    zjs_free(str);
+    return ZJS_UNDEFINED;
+}
+
+static ZJS_DECL_FUNC(stop_js_handler)
+{
+    #ifdef CONFIG_BOARD_ARDUINO_101
+    zjs_ipm_free_callbacks();
+    #endif
+    zjs_modules_cleanup();
+    jerry_cleanup();
+    return ZJS_UNDEFINED;
+}
+
 void zjs_modules_init()
 {
+    // Add module.exports to global namespace
     ZVAL global_obj = jerry_get_global_object();
+    ZVAL modules_obj = jerry_create_object();
+    ZVAL exports_obj = jerry_create_object();
+
+    zjs_set_property(modules_obj, "exports", exports_obj);
+    zjs_set_property(global_obj, "module", modules_obj);
+
+    // Todo: find a better solution to disable eval() in JerryScript.
+    // For now, just inject our eval() function in the global space
+    zjs_obj_add_function(global_obj, native_eval_handler, "eval");
+    zjs_obj_add_function(global_obj, native_print_handler, "print");
+    zjs_obj_add_function(global_obj, stop_js_handler, "stopJS");
 
     // create the C handler for require JS call
     zjs_obj_add_function(global_obj, native_require_handler, "require");
@@ -225,7 +271,7 @@ void zjs_modules_init()
             break;
         }
     }
-
+    zjs_init_callbacks();
     // initialize fixed modules
     zjs_error_init();
     zjs_timers_init();

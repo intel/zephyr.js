@@ -48,38 +48,6 @@ const char script_jscode[] = {
 };
 #endif
 
-// native eval handler
-static ZJS_DECL_FUNC(native_eval_handler)
-{
-    return zjs_error("eval not supported");
-}
-
-// native print handler
-static ZJS_DECL_FUNC(native_print_handler)
-{
-    if (argc < 1 || !jerry_value_is_string(argv[0]))
-        return zjs_error("print: missing string argument");
-
-    jerry_size_t size = 0;
-    char *str = zjs_alloc_from_jstring(argv[0], &size);
-    if (!str)
-        return zjs_error("print: out of memory");
-
-    ZJS_PRINT("%s\n", str);
-    zjs_free(str);
-    return ZJS_UNDEFINED;
-}
-
-static ZJS_DECL_FUNC(stop_js_handler)
-{
-    #ifdef CONFIG_BOARD_ARDUINO_101
-    zjs_ipm_free_callbacks();
-    #endif
-    zjs_modules_cleanup();
-    jerry_cleanup();
-    return ZJS_UNDEFINED;
-}
-
 #ifdef ZJS_LINUX_BUILD
 // enabled if --noexit is passed to jslinux
 static uint8_t no_exit = 0;
@@ -149,20 +117,8 @@ int main(int argc, char *argv[])
 
     jerry_init(JERRY_INIT_EMPTY);
 
-    zjs_init_callbacks();
-
-    // Add module.exports to global namespace
-    jerry_value_t global_obj = jerry_get_global_object();
-    jerry_value_t modules_obj = jerry_create_object();
-    jerry_value_t exports_obj = jerry_create_object();
-
-    zjs_set_property(modules_obj, "exports", exports_obj);
-    zjs_set_property(global_obj, "module", modules_obj);
-
     // initialize modules
     zjs_modules_init();
-
-    zjs_error_init();
 
 #ifdef BUILD_MODULE_OCF
     zjs_register_service_routine(NULL, main_poll_routine);
@@ -198,11 +154,6 @@ int main(int argc, char *argv[])
     }
 #endif
 
-    // Todo: find a better solution to disable eval() in JerryScript.
-    // For now, just inject our eval() function in the global space
-    zjs_obj_add_function(global_obj, native_eval_handler, "eval");
-    zjs_obj_add_function(global_obj, native_print_handler, "print");
-    zjs_obj_add_function(global_obj, stop_js_handler, "stopJS");
 #ifndef ZJS_SNAPSHOT_BUILD
     code_eval = jerry_parse((jerry_char_t *)script, len, false);
     if (jerry_value_has_error_flag(code_eval)) {
@@ -235,9 +186,7 @@ int main(int argc, char *argv[])
 #ifndef ZJS_SNAPSHOT_BUILD
     jerry_release_value(code_eval);
 #endif
-    jerry_release_value(global_obj);
-    jerry_release_value(modules_obj);
-    jerry_release_value(exports_obj);
+
     jerry_release_value(result);
 
 #ifdef ZJS_LINUX_BUILD

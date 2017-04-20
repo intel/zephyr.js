@@ -316,17 +316,6 @@ void restore_zjs_api() {
 #endif
 #endif
     jerry_init(JERRY_INIT_EMPTY);
-    zjs_timers_init();
-#ifdef BUILD_MODULE_CONSOLE
-    zjs_console_init();
-#endif
-#ifdef BUILD_MODULE_BUFFER
-    zjs_buffer_init();
-#endif
-#ifdef BUILD_MODULE_SENSOR
-    zjs_sensor_init();
-#endif
-    zjs_init_callbacks();
     zjs_modules_init();
 }
 
