@@ -148,5 +148,7 @@ void comms_write_buf(const char *buf, int len);
 void comms_writec(char byte);
 void comms_print(const char *buf);
 void comms_printf(const char *format, ...);
+void zjs_ashell_process();
+void zjs_ashell_init();
 
 #endif  // __comms_uart_h__
