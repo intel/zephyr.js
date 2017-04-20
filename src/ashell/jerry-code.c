@@ -326,8 +326,17 @@ void restore_zjs_api() {
 #ifdef BUILD_MODULE_SENSOR
     zjs_sensor_init();
 #endif
+    jerry_value_t global_obj = jerry_get_global_object();
+    jerry_value_t modules_obj = jerry_create_object();
+    jerry_value_t exports_obj = jerry_create_object();
+    zjs_set_property(modules_obj, "exports", exports_obj);
+    zjs_set_property(global_obj, "module", modules_obj);
     zjs_init_callbacks();
     zjs_modules_init();
+    zjs_error_init();
+    jerry_release_value(global_obj);
+    jerry_release_value(modules_obj);
+    jerry_release_value(exports_obj);
 }
 
 void javascript_stop()
