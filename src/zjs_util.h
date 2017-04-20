@@ -279,4 +279,13 @@ int zjs_validate_args(const char *expectations[], const jerry_length_t argc,
         (zjs_validate_args((const char *[]){ __VA_ARGS__, NULL }, argc, argv) \
                 <= ZJS_INVALID_ARG) ? 1 : 0
 
+#ifndef ZJS_LINUX_BUILD
+#define LOCK  k_sched_lock
+#define UNLOCK k_sched_unlock
+#else
+#define LOCK() do {} while (0)
+#define UNLOCK() do {} while (0)
+#endif
+
+
 #endif  // __zjs_util_h__

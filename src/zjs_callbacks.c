@@ -95,14 +95,6 @@ static int zjs_ringbuf_error_count = 0;
 static int zjs_ringbuf_error_max = 0;
 static int zjs_ringbuf_last_error = 0;
 
-#ifndef ZJS_LINUX_BUILD
-#define LOCK  k_sched_lock
-#define UNLOCK k_sched_unlock
-#else
-#define LOCK() do {} while (0)
-#define UNLOCK() do {} while (0)
-#endif
-
 #ifdef DEBUG_BUILD
 static void set_info_string(char *str, const char *file, const char *func)
 {
