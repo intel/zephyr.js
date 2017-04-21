@@ -25,7 +25,7 @@ function found(resource) {
 
     client.getDeviceInfo(resource.deviceId).then(function(info) {
         console.log("Got device info for: " + info.uuid);
-    }).catch(function(error) {
+    }, function(error) {
         console.log("Error getting device info: " + error.name);
     });
 }
@@ -34,6 +34,6 @@ ocf.start();
 
 client.findResources({ resourceType:"oic.r.light" }, found).then(function(resource) {
     console.log("findResources() was successful, deviceId=" + resource.deviceId);
-}).catch(function(error) {
+}, function(error) {
     console.log("findResources() returned an error: " + error.name);
 });

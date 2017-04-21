@@ -59,8 +59,8 @@ server.register(resourceInit).then(function(resource) {
         }
         request.respond(MyProperties);
     });
-}).catch(function(error) {
-    console.log('Error registering');
+}, function(error) {
+    console.log("Error registering");
 });
 
 ocf.start();

@@ -463,4 +463,18 @@ void zjs_loop_init(void);
         ret; \
     })
 
+#define ZJS_GET_HANDLE(obj, type, var, info) \
+    type *var; \
+    { \
+        void *native; \
+        const jerry_object_native_info_t *tmp; \
+        if (!jerry_get_object_native_pointer(obj, &native, &tmp)) { \
+            return zjs_error("no native handle"); \
+        } \
+        if (tmp != &info) { \
+            return zjs_error("handle was incorrect type"); \
+        } \
+        var = (type *)native; \
+    }
+
 #endif  // __zjs_util_h__

@@ -13,6 +13,21 @@
 
 static jerry_value_t zjs_buffer_prototype;
 
+static void zjs_buffer_callback_free(void *handle)
+{
+    // requires: handle is the native pointer we registered with
+    //             jerry_set_object_native_handle
+    //  effects: frees the buffer item
+    zjs_buffer_t *item = (zjs_buffer_t *)handle;
+    zjs_free(item->buffer);
+    zjs_free(item);
+}
+
+static const jerry_object_native_info_t buffer_type_info =
+{
+   .free_cb = zjs_buffer_callback_free
+};
+
 bool zjs_value_is_buffer(const jerry_value_t value)
 {
     if (jerry_value_is_object(value) && zjs_buffer_find(value)) {
@@ -29,8 +44,9 @@ zjs_buffer_t *zjs_buffer_find(const jerry_value_t obj)
     //  effects: looks up obj in our list of known buffer objects and returns
     //             the associated list item struct, or NULL if not found
     uintptr_t handle;
-    if (jerry_get_object_native_handle(obj, &handle)) {
-        if (jerry_get_prototype(obj) == zjs_buffer_prototype) {
+    const jerry_object_native_info_t *tmp;
+    if (jerry_get_object_native_pointer(obj, (void **)&handle, &tmp)) {
+        if (tmp == &buffer_type_info) {
             return (zjs_buffer_t *)handle;
         }
     }
@@ -230,16 +246,6 @@ static ZJS_DECL_FUNC(zjs_buffer_to_string)
     return zjs_error("zjs_buffer_to_string: buffer is empty");
 }
 
-static void zjs_buffer_callback_free(uintptr_t handle)
-{
-    // requires: handle is the native pointer we registered with
-    //             jerry_set_object_native_handle
-    //  effects: frees the buffer item
-    zjs_buffer_t *item = (zjs_buffer_t *)handle;
-    zjs_free(item->buffer);
-    zjs_free(item);
-}
-
 static ZJS_DECL_FUNC(zjs_buffer_write_string)
 {
     // requires: string - what will be written to buf
@@ -348,8 +354,7 @@ jerry_value_t zjs_buffer_create(uint32_t size, zjs_buffer_t **ret_buf)
     zjs_obj_add_readonly_number(buf_obj, size, "length");
 
     // watch for the object getting garbage collected, and clean up
-    jerry_set_object_native_handle(buf_obj, (uintptr_t)buf_item,
-                                   zjs_buffer_callback_free);
+    jerry_set_object_native_pointer(buf_obj, (void *)buf_item, &buffer_type_info);
     if (ret_buf) {
         *ret_buf = buf_item;
     }

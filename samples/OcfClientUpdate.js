@@ -41,10 +41,10 @@ function onfound(resource) {
             console.log("update successful");
             client.retrieve(resource.deviceId, { observable: false }).then(function(res) {
                 console.log("retrieve() was successful, deviceId=" + res.deviceId);
-            }).catch(function(error) {
+            }, function(error) {
                 console.log("retrieve() returned an error: " + error.name);
             });
-        }).catch(function(error) {
+        }, function(error) {
             console.log("Error updating name='" + error.name + "' message='" +
                     error.message + "' " + "code=" + error.errorCode);
         });
@@ -55,6 +55,6 @@ ocf.start();
 
 client.findResources({ resourceType:"core.light" }, onfound).then(function(resource) {
     console.log("findResources() was successful, deviceId=" + resource.deviceId);
-}).catch(function(error) {
+}, function(error) {
     console.log("findResources() returned an error: " + error.name);
 });

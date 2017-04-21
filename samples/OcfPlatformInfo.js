@@ -24,7 +24,7 @@ function onfound(resource) {
 
     client.getPlatformInfo(resource.deviceId).then(function(info) {
         console.log("Got platform info for: " + info.id);
-    }).catch(function(error) {
+    }, function(error) {
         console.log("Error getting platform info: " + error.name);
     });
 }
@@ -33,6 +33,6 @@ ocf.start();
 
 client.findResources({ resourceType:"oic.r.light" }, onfound).then(function(resource) {
     console.log("findResources() was successful, deviceId=" + resource.deviceId);
-}).catch(function(error) {
+}, function(error) {
     console.log("findResources() returned an error: " + error.name);
 });

@@ -26,7 +26,8 @@ setup:
 
 CORE_SRC +=		tools/snapshot.c \
 			src/zjs_common.c \
-			src/zjs_script.c
+			src/zjs_script.c \
+			src/jerry-port/zjs_jerry_port.c
 
 CORE_OBJ =		$(CORE_SRC:%.c=%.o)
 

@@ -250,6 +250,7 @@ if check_for_require ocf || check_config_file ZJS_OCF; then
     MODULES+=" -DBUILD_MODULE_OCF"
     MODULES+=" -DBUILD_MODULE_EVENTS"
     MODULES+=" -DBUILD_MODULE_PROMISE"
+    MODULES+=" -DJERRY_PORT_ENABLE_JOBQUEUE"
     if grep -q "require *( *['\"]ocf['\"] *)*;" $SCRIPT; then
         OCF_OBJ=$(grep "require('ocf')" $SCRIPT  | cut -d'=' -f1 | cut -d' ' -f2)
         if grep -q "$OCF_OBJ.client" $SCRIPT; then
@@ -447,9 +448,12 @@ fi
 
 if check_for_require test_promise; then
     >&2 echo Using module: test_promise
-    MODULES+=" -DBUILD_MODULE_TEST_PROMISE -DBUILD_MODULE_PROMISE"
+    MODULES+=" -DBUILD_MODULE_TEST_PROMISE -DBUILD_MODULE_PROMISE -DJERRY_PORT_ENABLE_JOBQUEUE"
     echo "export ZJS_TEST_PROMISE=y" >> $CONFFILE
     echo "export ZJS_PROMISE=y" >> $CONFFILE
+    feature_on CONFIG_DISABLE_ES2015_PROMISE_BUILTIN
+    feature_on CONFIG_DISABLE_ES2015_BUILTIN
+    feature_on CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN
 fi
 
 if check_for_require test_callbacks; then
@@ -548,6 +552,7 @@ fi
 
 if check_for_feature "Promise("; then
     >&2 echo Using JrS module: Promise
+    MODULES+=" -DJERRY_PORT_ENABLE_JOBQUEUE"
     feature_on CONFIG_DISABLE_ES2015_PROMISE_BUILTIN
     feature_on CONFIG_DISABLE_ES2015_BUILTIN
     feature_on CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN

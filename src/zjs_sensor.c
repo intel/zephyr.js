@@ -30,16 +30,6 @@
 
 #define ZJS_SENSOR_TIMEOUT_TICKS 5000
 
-#define SENSOR_GET_HANDLE(obj, type, var) \
-    type *var; \
-    { \
-        uintptr_t native; \
-        if (!jerry_get_object_native_handle(obj, &native)) { \
-            return zjs_error("native handle not found"); \
-        } \
-        var = (type *)native; \
-    }
-
 static struct k_sem sensor_sem;
 
 static jerry_value_t zjs_sensor_prototype;
@@ -67,6 +57,15 @@ sensor_module_t sensor_modules[] = {
 #ifdef BUILD_MODULE_SENSOR_TEMP
     { SENSOR_CHAN_TEMP, zjs_sensor_temp_init, zjs_sensor_temp_cleanup },
 #endif
+};
+
+static void free_handle(void *native_p)
+{
+}
+
+static const jerry_object_native_info_t sensor_type_info =
+{
+   .free_cb = free_handle
 };
 
 sensor_instance_t *zjs_sensor_create_instance(const char *name, void *func)
@@ -218,12 +217,7 @@ void zjs_sensor_set_state(jerry_value_t obj, sensor_state_t state)
         }
     }
 
-    uintptr_t ptr;
-    sensor_handle_t *handle = NULL;
-    if (!jerry_get_object_native_handle(obj, &ptr)) {
-        ERR_PRINT("native handle not found");
-        return;
-    }
+    ZJS_GET_HANDLE(obj, sensor_handle_t, handle, sensor_type_info);
     handle = (sensor_handle_t *)ptr;
     handle->state = state;
 }
@@ -311,22 +305,9 @@ static void ipm_msg_receive_callback(void *context, uint32_t id, volatile void *
     }
 }
 
-static void zjs_sensor_callback_free(uintptr_t handle)
-{
-    sensor_handle_t *tmp = (sensor_handle_t *)handle;
-    if (tmp->controller) {
-        zjs_free(tmp->controller);
-    }
-    zjs_remove_callback(tmp->onchange_cb_id);
-    zjs_remove_callback(tmp->onstart_cb_id);
-    zjs_remove_callback(tmp->onstop_cb_id);
-    zjs_free(tmp);
-    DBG_PRINT("sensor handle %p freed\n", (void *)handle);
-}
-
 jerry_value_t zjs_sensor_start_sensor(jerry_value_t obj)
 {
-    SENSOR_GET_HANDLE(obj, sensor_handle_t, handle);
+    ZJS_GET_HANDLE(obj, sensor_handle_t, handle, sensor_type_info);
 
     zjs_ipm_message_t send;
     send.type = TYPE_SENSOR_START;
@@ -353,7 +334,7 @@ jerry_value_t zjs_sensor_start_sensor(jerry_value_t obj)
 
 jerry_value_t zjs_sensor_stop_sensor(jerry_value_t obj)
 {
-    SENSOR_GET_HANDLE(obj, sensor_handle_t, handle);
+    ZJS_GET_HANDLE(obj, sensor_handle_t, handle, sensor_type_info);
 
     zjs_ipm_message_t send;
     send.type = TYPE_SENSOR_STOP;
@@ -386,7 +367,7 @@ static ZJS_DECL_FUNC(zjs_sensor_start)
         return ZJS_UNDEFINED;
     }
 
-    SENSOR_GET_HANDLE(this, sensor_handle_t, handle);
+    ZJS_GET_HANDLE(this, sensor_handle_t, handle, sensor_type_info);
 
     zjs_sensor_set_state(this, SENSOR_STATE_ACTIVATING);
     if (jerry_value_has_error_flag(zjs_sensor_start_sensor(this))) {
@@ -406,7 +387,7 @@ static ZJS_DECL_FUNC(zjs_sensor_stop)
         return ZJS_UNDEFINED;
     }
 
-    SENSOR_GET_HANDLE(this, sensor_handle_t, handle);
+    ZJS_GET_HANDLE(this, sensor_handle_t, handle, sensor_type_info);
 
     if (jerry_value_has_error_flag(zjs_sensor_start_sensor(this))) {
         zjs_sensor_trigger_error(this, "SensorError", "start failed");
@@ -508,8 +489,8 @@ ZJS_DECL_FUNC_ARGS(zjs_sensor_create,
     instance->handles = handle;
 
     // watch for the object getting garbage collected, and clean up
-    jerry_set_object_native_handle(sensor_obj, (uintptr_t)handle,
-                                   zjs_sensor_callback_free);
+    jerry_set_object_native_pointer(sensor_obj, (void *)handle,
+                                    &sensor_type_info);
 
     DBG_PRINT("sensor driver %s initialized\n", handle->controller->name);
     DBG_PRINT("sensor frequency %u\n", handle->frequency);

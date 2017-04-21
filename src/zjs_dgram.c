@@ -33,16 +33,6 @@ typedef struct dgram_handle {
         zjs_copy_jstring(jval, buf, &str_sz); \
     }
 
-#define GET_HANDLE(type, var) \
-    type *var; \
-    { \
-        uintptr_t native; \
-        if (!jerry_get_object_native_handle(this, &native)) { \
-            return zjs_error("no native handle"); \
-        } \
-        var = (type *)native; \
-    }
-
 // Parse textual address of given address family (IPv4/IPv6) and numeric
 // port and fill in sockaddr. Returns ZJS_UNDEFINED if everything is OK,
 // or error instance otherwise.
@@ -66,7 +56,7 @@ static jerry_value_t get_addr(sa_family_t family,
     return ZJS_UNDEFINED;
 }
 
-static void zjs_dgram_free_cb(const uintptr_t native)
+static void zjs_dgram_free_cb(void *native)
 {
     dgram_handle_t *handle = (dgram_handle_t *)native;
     DBG_PRINT("zjs_dgram_free_cb: %p\n", handle);
@@ -84,6 +74,11 @@ static void zjs_dgram_free_cb(const uintptr_t native)
     zjs_remove_callback(handle->error_cb_id);
     zjs_free(handle);
 }
+
+static const jerry_object_native_info_t dgram_type_info =
+{
+   .free_cb = zjs_dgram_free_cb
+};
 
 // Copy data from Zephyr net_buf chain into linear buffer
 static char *net_buf_gather(struct net_buf *buf, char *to)
@@ -180,7 +175,7 @@ static ZJS_DECL_FUNC(zjs_dgram_createSocket)
     handle->message_cb_id = -1;
     handle->error_cb_id = -1;
 
-    jerry_set_object_native_handle(sockobj, (uintptr_t)handle, zjs_dgram_free_cb);
+    jerry_set_object_native_pointer(sockobj, (void *)handle, &dgram_type_info);
 
     // Can't call this here due to bug in Zephyr - called in .bind() instead
     //CHECK(net_context_recv(udp_sock, udp_received, K_NO_WAIT, handle));
@@ -193,7 +188,7 @@ static ZJS_DECL_FUNC(zjs_dgram_sock_on)
     // args: event name, callback
     ZJS_VALIDATE_ARGS(Z_STRING, Z_FUNCTION Z_NULL);
 
-    GET_HANDLE(dgram_handle_t, handle);
+    ZJS_GET_HANDLE(this, dgram_handle_t, handle, dgram_type_info);
 
     jerry_size_t str_sz = 32;
     char event[str_sz];
@@ -249,7 +244,7 @@ static ZJS_DECL_FUNC(zjs_dgram_sock_send)
 
     int ret;
 
-    GET_HANDLE(dgram_handle_t, handle);
+    ZJS_GET_HANDLE(this, dgram_handle_t, handle, dgram_type_info);
 
     zjs_buffer_t *buf = zjs_buffer_find(argv[0]);
     int offset = (int)jerry_get_number_value(argv[1]);
@@ -293,7 +288,7 @@ static ZJS_DECL_FUNC(zjs_dgram_sock_bind)
 
     int ret;
 
-    GET_HANDLE(dgram_handle_t, handle);
+    ZJS_GET_HANDLE(this, dgram_handle_t, handle, dgram_type_info);
 
     sa_family_t family = net_context_get_family(handle->udp_sock);
     struct sockaddr sockaddr_buf;
@@ -311,9 +306,9 @@ static ZJS_DECL_FUNC(zjs_dgram_sock_bind)
 
 static ZJS_DECL_FUNC(zjs_dgram_sock_close)
 {
-    GET_HANDLE(dgram_handle_t, handle);
-    zjs_dgram_free_cb((uintptr_t)handle);
-    jerry_set_object_native_handle(this, (uintptr_t)NULL, NULL);
+    ZJS_GET_HANDLE(this, dgram_handle_t, handle, dgram_type_info);
+    zjs_dgram_free_cb((void *)handle);
+    //jerry_set_object_native_handle(this, (uintptr_t)NULL, NULL);
     return ZJS_UNDEFINED;
 }
 

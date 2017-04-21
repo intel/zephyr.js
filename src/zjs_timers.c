@@ -30,6 +30,13 @@ typedef struct zjs_timer {
 
 static zjs_timer_t *zjs_timers = NULL;
 
+static void free_handle(void *native_p) {}
+
+static const jerry_object_native_info_t timer_type_info =
+{
+   .free_cb = free_handle
+};
+
 jerry_value_t *pre_timer(void *h, uint32_t *argc)
 {
     zjs_timer_t *handle = (zjs_timer_t *)h;
@@ -133,7 +140,7 @@ static ZJS_DECL_FUNC_ARGS(add_timer_helper, bool repeat)
                                     argc - 2, argv);
     if (handle->callback_id == -1)
         return zjs_error("native_set_interval_handler: timer alloc failed");
-    jerry_set_object_native_handle(timer_obj, (uintptr_t)handle, NULL);
+    jerry_set_object_native_pointer(timer_obj, (void *)handle, &timer_type_info);
 
     return timer_obj;
 }
@@ -157,12 +164,7 @@ static ZJS_DECL_FUNC(native_clear_interval_handler)
     // FIXME: timers should be ints, not objects!
     ZJS_VALIDATE_ARGS(Z_OBJECT);
 
-    jerry_value_t timer_obj = argv[0];
-    zjs_timer_t *handle;
-
-    if (!jerry_get_object_native_handle(timer_obj, (uintptr_t *)&handle)) {
-        return zjs_error("native_clear_interval_handler(): native handle not found");
-    }
+    ZJS_GET_HANDLE(argv[0], zjs_timer_t, handle, timer_type_info);
 
     if (!delete_timer(handle->callback_id))
         return zjs_error("native_clear_interval_handler: timer not found");

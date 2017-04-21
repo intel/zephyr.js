@@ -49,6 +49,19 @@ typedef struct file_handle {
 
 static file_handle_t *opened_handles = NULL;
 
+static void free_stats(void *native)
+{
+    struct zfs_dirent *entry = (struct zfs_dirent *)native;
+    if (entry) {
+        zjs_free(entry);
+    }
+}
+
+static const jerry_object_native_info_t stats_type_info =
+{
+   .free_cb = free_stats
+};
+
 static jerry_value_t invalid_args(void)
 {
     return zjs_error("invalid arguments");
@@ -120,11 +133,7 @@ static uint16_t get_mode(char *str)
 
 static ZJS_DECL_FUNC(is_file)
 {
-    struct fs_dirent *entry;
-
-    if (!jerry_get_object_native_handle(this, (uintptr_t *)&entry)) {
-        return zjs_error("native handle not found");
-    }
+    ZJS_GET_HANDLE(this, struct fs_dirent, entry, stats_type_info);
     if (entry->type == FS_DIR_ENTRY_FILE) {
         return jerry_create_boolean(true);
     } else {
@@ -134,23 +143,11 @@ static ZJS_DECL_FUNC(is_file)
 
 static ZJS_DECL_FUNC(is_directory)
 {
-    struct fs_dirent *entry;
-
-    if (!jerry_get_object_native_handle(this, (uintptr_t *)&entry)) {
-        return zjs_error("native handle not found");
-    }
+    ZJS_GET_HANDLE(this, struct fs_dirent, entry, stats_type_info);
     if (entry->type == FS_DIR_ENTRY_DIR) {
         return jerry_create_boolean(true);
     } else {
         return jerry_create_boolean(false);
-    }
-}
-
-static void free_stats(const uintptr_t native)
-{
-    struct zfs_dirent *entry = (struct zfs_dirent *)native;
-    if (entry) {
-        zjs_free(entry);
     }
 }
 
@@ -165,7 +162,7 @@ static jerry_value_t create_stats_obj(struct fs_dirent *entry)
     }
     memcpy(new_entry, entry, sizeof(struct fs_dirent));
 
-    jerry_set_object_native_handle(stats_obj, (uintptr_t)new_entry, free_stats);
+    jerry_set_object_native_pointer(stats_obj, (void *)new_entry, &stats_type_info);
 
     zjs_obj_add_function(stats_obj, is_file, "isFile");
     zjs_obj_add_function(stats_obj, is_directory, "isDirectory");

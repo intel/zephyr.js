@@ -28,6 +28,8 @@
 #include "zjs_net_config.h"
 #include "zjs_zephyr_port.h"
 
+#include "jerryscript.h"
+
 /*
  * TODO:
  *   - Implement WebSocket client side
@@ -89,6 +91,31 @@ typedef struct ws_packet {
     uint8_t opcode;
     uint8_t mask_bit;
 } ws_packet_t;
+
+static void free_handle(void *native_p)
+{
+}
+
+static const jerry_object_native_info_t ws_type_info =
+{
+   .free_cb = free_handle
+};
+
+static void free_server(void *native)
+{
+    server_handle_t *handle = (server_handle_t *)native;
+    if (handle) {
+        jerry_release_value(handle->accept_handler);
+        net_context_put(handle->tcp_sock);
+        zjs_free(handle);
+    }
+}
+
+static const jerry_object_native_info_t server_type_info =
+{
+   .free_cb = free_server
+};
+
 
 // start of header preceding accept key
 static char accept_header[] = "HTTP/1.1 101 Switching Protocols\r\n"
@@ -452,8 +479,7 @@ static jerry_value_t ws_send_data(const jerry_value_t function_obj,
 {
     ZJS_VALIDATE_ARGS_OPTCOUNT(optcount, Z_OBJECT, Z_OPTIONAL Z_BOOL);
     bool mask = 0;
-    ws_connection_t *con = NULL;
-    jerry_get_object_native_handle(this, (uintptr_t *)&con);
+    ZJS_GET_HANDLE(this, ws_connection_t, con, ws_type_info);
     zjs_buffer_t *buf = zjs_buffer_find(argv[0]);
     if (!buf) {
         ERR_PRINT("buffer not found\n");
@@ -494,8 +520,7 @@ static ZJS_DECL_FUNC(ws_send)
 
 static ZJS_DECL_FUNC(ws_terminate)
 {
-    ws_connection_t *con = NULL;
-    jerry_get_object_native_handle(this, (uintptr_t *)&con);
+    ZJS_GET_HANDLE(this, ws_connection_t, con, ws_type_info);
     DBG_PRINT("closing connection\n");
     close_connection(con);
     return ZJS_UNDEFINED;
@@ -508,7 +533,7 @@ static jerry_value_t create_ws_connection(ws_connection_t *con)
     zjs_obj_add_function(conn, ws_ping, "ping");
     zjs_obj_add_function(conn, ws_pong, "pong");
     zjs_obj_add_function(conn, ws_terminate, "terminate");
-    jerry_set_object_native_handle(conn, (uintptr_t)con, NULL);
+    jerry_set_object_native_pointer(conn, (void *)con, &ws_type_info);
     zjs_make_event(conn, ZJS_UNDEFINED);
     if (con->server_handle->track) {
         ZVAL clients = zjs_get_property(con->server_handle->server, "clients");
@@ -787,16 +812,6 @@ static void tcp_accepted(struct net_context *context,
     }
 }
 
-static void free_server(uintptr_t native)
-{
-    server_handle_t *handle = (server_handle_t *)native;
-    if (handle) {
-        jerry_release_value(handle->accept_handler);
-        net_context_put(handle->tcp_sock);
-        zjs_free(handle);
-    }
-}
-
 static ZJS_DECL_FUNC(ws_server)
 {
     ZJS_VALIDATE_ARGS_OPTCOUNT(optcount, Z_OBJECT, Z_OPTIONAL Z_FUNCTION);
@@ -847,7 +862,7 @@ static ZJS_DECL_FUNC(ws_server)
 
     zjs_make_event(server, ZJS_UNDEFINED);
 
-    jerry_set_object_native_handle(server, (uintptr_t)handle, free_server);
+    jerry_set_object_native_pointer(server, (void *)handle, &server_type_info);
 
     return server;
 }

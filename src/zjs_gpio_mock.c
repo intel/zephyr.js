@@ -11,6 +11,16 @@
 // mock headers should be included last
 #include "zjs_gpio_mock.h"
 
+static void free_handle(void *native)
+{
+}
+
+static const jerry_object_native_info_t mock_type_info =
+{
+   .free_cb = free_handle
+};
+
+
 // specially declare this internal gpio function
 jerry_value_t gpio_internal_lookup_pin(const jerry_value_t pin_obj,
                                        DEVICE *port, int *pin);
@@ -264,13 +274,11 @@ int mock_gpio_pin_write(DEVICE port, uint32_t pin, uint32_t value)
                          && !new_level)) {
 
                         // simulate onchange interrupt
-                        uintptr_t ptr;
-                        if (jerry_get_object_native_handle(connection, &ptr)) {
-                            mock_cb_item_t *item = (mock_cb_item_t *)ptr;
-                            if (BIT(conn_pin) & item->enabled_mask) {
-                                item->handler(port, item->callback,
-                                              item->enabled_mask);
-                            }
+                        ZJS_GET_HANDLE(connection, mock_cb_item_t, item, mock_type_info);
+
+                        if (BIT(conn_pin) & item->enabled_mask) {
+                            item->handler(port, item->callback,
+                                    item->enabled_mask);
                         }
                     }
                 }
@@ -370,7 +378,9 @@ int mock_gpio_pin_enable_callback(DEVICE port, uint32_t pin)
             uint32_t bit = BIT(pin);
             if (bit & item->pin_mask) {
                 item->enabled_mask |= bit;
-                jerry_set_object_native_handle(pin_obj, (uintptr_t)item, NULL);
+                jerry_set_object_native_pointer(pin_obj,
+                                                (void *)item,
+                                                &mock_type_info);
                 // FIXME: maybe need to clean up on re-open w/o close
                 break;
            }

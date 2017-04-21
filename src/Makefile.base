@@ -14,6 +14,7 @@ ccflags-y += -Wno-error=format
 ccflags-y += -D_XOPEN_SOURCE=700
 
 ccflags-y += -I$(JERRY_BASE)/jerry-core
+ccflags-y += -I$(JERRY_BASE)/jerry-core/jrt
 ccflags-y += -I$(ZEPHYR_BASE)/drivers
 ccflags-y += -I$(ZJS_BASE)/outdir/include
 
@@ -53,7 +54,8 @@ obj-y += main.o \
          zjs_modules.o \
          zjs_script.o \
          zjs_timers.o \
-         zjs_util.o
+         zjs_util.o \
+         jerry-port/zjs_jerry_port.o
 
 obj-$(ZJS_BOARD) += zjs_board.o
 obj-$(ZJS_BUFFER) += zjs_buffer.o
@@ -75,7 +77,6 @@ obj-$(ZJS_OCF) += zjs_ocf_client.o \
                   zjs_ocf_common.o
 obj-$(ZJS_TEST_PROMISE) += zjs_test_promise.o
 obj-$(ZJS_TEST_CALLBACKS) += zjs_test_callbacks.o
-obj-$(ZJS_PROMISE) += zjs_promise.o
 obj-$(ZJS_NET_CONFIG) += zjs_net_config.o
 obj-$(ZJS_WS) += zjs_web_sockets.o
 

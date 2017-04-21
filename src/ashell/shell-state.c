@@ -13,7 +13,7 @@
 #include <misc/printk.h>
 #include <misc/reboot.h>
 #include <ctype.h>
-#include <jerry-port.h>
+#include "jerryscript-port.h"
 #include "file-utils.h"
 
 #include "comms-uart.h"

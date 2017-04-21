@@ -41,12 +41,35 @@ typedef struct gpio_handle {
     bool closed;
 } gpio_handle_t;
 
-void gpio_internal_lookup_pin(const jerry_value_t pin_obj, DEVICE *port,
-                              int *pin)
+static void zjs_gpio_close(gpio_handle_t *handle)
 {
-    uintptr_t ptr;
-    if (jerry_get_object_native_handle(pin_obj, &ptr)) {
-        gpio_handle_t *handle = (gpio_handle_t *)ptr;
+        zjs_remove_callback(handle->callbackId);
+        gpio_remove_callback(handle->port, &handle->callback);
+        handle->closed = true;
+}
+
+static void zjs_gpio_free_cb(void *native)
+{
+    gpio_handle_t *handle = (gpio_handle_t *)native;
+    if (!handle->closed)
+        zjs_gpio_close(handle);
+
+    zjs_free(handle);
+}
+
+static const jerry_object_native_info_t gpio_type_info =
+{
+   .free_cb = zjs_gpio_free_cb
+};
+
+// non-static so that mock can access it, meant to be private though
+void gpio_internal_lookup_pin(const jerry_value_t pin_obj,
+                                       DEVICE *port, int *pin)
+{
+    gpio_handle_t *handle;
+    jerry_object_native_info_t *tmp;
+    jerry_get_object_native_pointer(pin_obj, &handle, &tmp);
+    if (tmp == &gpio_type_info) {
         *port = handle->port;
         *pin = handle->pin;
     }
@@ -98,13 +121,8 @@ static ZJS_DECL_FUNC(zjs_gpio_pin_read)
 {
     // requires: this is a GPIOPin object from zjs_gpio_open, takes no args
     //  effects: reads a logical value from the pin and returns it in ret_val_p
-    uintptr_t ptr;
-    gpio_handle_t *handle;
-    if (!jerry_get_object_native_handle(this, &ptr)) {
-        return SYSTEM_ERROR("no handle found");
-    }
+    ZJS_GET_HANDLE(this, gpio_handle_t, handle, gpio_type_info);
 
-    handle = (gpio_handle_t *)ptr;
     if (handle->closed) {
         return zjs_error("pin closed");
     }
@@ -132,13 +150,9 @@ static ZJS_DECL_FUNC(zjs_gpio_pin_write)
     // args: pin value
     ZJS_VALIDATE_ARGS(Z_BOOL Z_NUMBER);
 
-    uintptr_t ptr;
-    if (!jerry_get_object_native_handle(this, &ptr)) {
-        return SYSTEM_ERROR("no handle found");
-    }
-    gpio_handle_t *handle = (gpio_handle_t *)ptr;
+    ZJS_GET_HANDLE(this, gpio_handle_t, handle, gpio_type_info);
     if (handle->closed) {
-        return zjs_error("pin closed");
+        return zjs_error("zjs_gpio_pin_write: pin closed");
     }
 
     uint32_t value;
@@ -164,35 +178,14 @@ static ZJS_DECL_FUNC(zjs_gpio_pin_write)
     return ZJS_UNDEFINED;
 }
 
-static void zjs_gpio_close(gpio_handle_t *handle)
-{
-        zjs_remove_callback(handle->callbackId);
-        gpio_remove_callback(handle->port, &handle->callback);
-        handle->closed = true;
-}
-
 static ZJS_DECL_FUNC(zjs_gpio_pin_close)
 {
-    uintptr_t ptr;
-    if (jerry_get_object_native_handle(this, &ptr)) {
-        gpio_handle_t *handle = (gpio_handle_t *)ptr;
-        if (handle->closed)
-            return zjs_error("zjs_gpio_pin_close: already closed");
+    ZJS_GET_HANDLE(this, gpio_handle_t, handle, gpio_type_info);
+    if (handle->closed)
+        return zjs_error("zjs_gpio_pin_close: already closed");
 
-        zjs_gpio_close(handle);
-        return ZJS_UNDEFINED;
-    }
-
-    return zjs_error("zjs_gpio_pin_close: no native handle");
-}
-
-static void zjs_gpio_free_cb(const uintptr_t native)
-{
-    gpio_handle_t *handle = (gpio_handle_t *)native;
-    if (!handle->closed)
-        zjs_gpio_close(handle);
-
-    zjs_free(handle);
+    zjs_gpio_close(handle);
+    return ZJS_UNDEFINED;
 }
 
 enum {
@@ -316,8 +309,8 @@ static ZJS_DECL_FUNC(zjs_gpio_open)
     handle->callbackId = -1;
     handle->active_low = active_low;
 
-    jerry_set_object_native_handle(pin_obj, (uintptr_t)handle,
-                                   zjs_gpio_free_cb);
+    // Set the native handle so we can free it when close() is called
+    jerry_set_object_native_pointer(pin_obj, (void *)handle, &gpio_type_info);
 
     if (dir == ZJS_DIR_INPUT) {
         // Zephyr ISR callback init

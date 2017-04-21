@@ -127,6 +127,20 @@ typedef struct sock_handle {
 
 static sock_handle_t *opened_sockets = NULL;
 
+static void free_handle(void *native_p)
+{
+}
+
+static const jerry_object_native_info_t socket_type_info =
+{
+   .free_cb = free_handle
+};
+
+static const jerry_object_native_info_t net_type_info =
+{
+   .free_cb = free_handle
+};
+
 #define CHECK(x) \
     ret = (x); if (ret < 0) { ERR_PRINT("Error in " #x ": %d\n", ret); return zjs_error(#x); }
 
@@ -328,12 +342,8 @@ static jerry_value_t socket_write(const jerry_value_t function_obj,
 {
     ZJS_VALIDATE_ARGS_OPTCOUNT(optcount, Z_OBJECT, Z_OPTIONAL Z_FUNCTION);
 
-    sock_handle_t *handle = NULL;
+    ZJS_GET_HANDLE(this, sock_handle_t, handle, socket_type_info);
 
-    jerry_get_object_native_handle(this, (uintptr_t *)&handle);
-    if (!handle) {
-        return zjs_error("socket handle not found");
-    }
     start_socket_timeout(handle, handle->timeout);
 
     zjs_buffer_t *buf = zjs_buffer_find(argv[0]);
@@ -388,11 +398,7 @@ static jerry_value_t socket_pause(const jerry_value_t function_obj,
                                   const jerry_value_t argv[],
                                   const jerry_length_t argc)
 {
-    sock_handle_t *handle = NULL;
-    jerry_get_object_native_handle(this, (uintptr_t *)&handle);
-    if (!handle) {
-        return zjs_error("socket handle not found");
-    }
+    ZJS_GET_HANDLE(this, sock_handle_t, handle, socket_type_info);
     handle->paused = 1;
     return ZJS_UNDEFINED;
 }
@@ -409,11 +415,7 @@ static jerry_value_t socket_resume(const jerry_value_t function_obj,
                                    const jerry_value_t argv[],
                                    const jerry_length_t argc)
 {
-    sock_handle_t *handle = NULL;
-    jerry_get_object_native_handle(this, (uintptr_t *)&handle);
-    if (!handle) {
-        return zjs_error("socket handle not found");
-    }
+    ZJS_GET_HANDLE(this, sock_handle_t, handle, socket_type_info);
     handle->paused = 0;
     return ZJS_UNDEFINED;
 }
@@ -430,11 +432,7 @@ static jerry_value_t socket_address(const jerry_value_t function_obj,
                                     const jerry_value_t argv[],
                                     const jerry_length_t argc)
 {
-    sock_handle_t *handle = NULL;
-    jerry_get_object_native_handle(this, (uintptr_t *)&handle);
-    if (!handle) {
-        return zjs_error("socket handle not found");
-    }
+    ZJS_GET_HANDLE(this, sock_handle_t, handle, socket_type_info);
     jerry_value_t ret = jerry_create_object();
     ZVAL port = zjs_get_property(this, "localPort");
     ZVAL addr = zjs_get_property(this, "localAddress");
@@ -470,11 +468,7 @@ static jerry_value_t socket_set_timeout(const jerry_value_t function_obj,
 {
     ZJS_VALIDATE_ARGS_OPTCOUNT(optcount, Z_NUMBER, Z_OPTIONAL Z_FUNCTION);
 
-    sock_handle_t *handle = NULL;
-    jerry_get_object_native_handle(this, (uintptr_t *)&handle);
-    if (!handle) {
-        return zjs_error("socket handle not found");
-    }
+    ZJS_GET_HANDLE(this, sock_handle_t, handle, socket_type_info);
 
     uint32_t time = (uint32_t)jerry_get_number_value(argv[0]);
 
@@ -512,7 +506,7 @@ static jerry_value_t create_socket(uint8_t client, sock_handle_t **handle_out)
         zjs_obj_add_function(socket, socket_connect, "connect");
     }
 
-    jerry_set_object_native_handle(socket, (uintptr_t)sock_handle, NULL);
+    jerry_set_object_native_pointer(socket, (uintptr_t)sock_handle, &socket_type_info);
     sock_handle->connect_listener = ZJS_UNDEFINED;
     sock_handle->socket = socket;
     sock_handle->tcp_connect_id = -1;
@@ -538,9 +532,13 @@ static void add_socket_connection(jerry_value_t socket,
                                   struct sockaddr *remote)
 {
     sock_handle_t *handle = NULL;
-    jerry_get_object_native_handle(socket, (uintptr_t *)&handle);
-    if (!handle) {
+    const jerry_object_native_info_t *tmp;
+    if (!jerry_get_object_native_pointer(socket, (uintptr_t *)&handle, &tmp)) {
         ERR_PRINT("could not get socket handle\n");
+        return;
+    }
+    if (tmp != &socket_type_info) {
+        ERR_PRINT("handle was incorrect type");
         return;
     }
 
@@ -622,11 +620,8 @@ static jerry_value_t server_close(const jerry_value_t function_obj,
 {
     ZJS_VALIDATE_ARGS_OPTCOUNT(optcount, Z_OPTIONAL Z_FUNCTION);
 
-    net_handle_t *handle = NULL;
-    jerry_get_object_native_handle(this, (uintptr_t *)&handle);
-    if (!handle) {
-        return zjs_error("server handle not found");
-    }
+    ZJS_GET_HANDLE(this, net_handle_t, handle, net_type_info);
+
     handle->listening = 0;
     zjs_obj_add_boolean(this, false, "listening");
 
@@ -656,11 +651,7 @@ static jerry_value_t server_get_connections(const jerry_value_t function_obj,
     ZJS_VALIDATE_ARGS(Z_FUNCTION);
 
     int count = 0;
-    net_handle_t *handle = NULL;
-    jerry_get_object_native_handle(this, (uintptr_t *)&handle);
-    if (!handle) {
-        return zjs_error("server handle not found");
-    }
+    ZJS_GET_HANDLE(this, net_handle_t, handle, net_type_info);
 
     sock_handle_t *cur = opened_sockets;
     while (cur) {
@@ -696,6 +687,8 @@ static jerry_value_t server_listen(const jerry_value_t function_obj,
     // options object, optional function
     ZJS_VALIDATE_ARGS_OPTCOUNT(optcount, Z_OBJECT, Z_OPTIONAL Z_FUNCTION);
 
+    ZJS_GET_HANDLE(this, net_handle_t, handle, net_type_info);
+
     int ret;
     double port = 0;
     double backlog = 0;
@@ -708,13 +701,6 @@ static jerry_value_t server_listen(const jerry_value_t function_obj,
 
     if (optcount) {
         zjs_add_event_listener(this, "listening", argv[1]);
-    }
-
-    net_handle_t *handle = NULL;
-
-    jerry_get_object_native_handle(this, (uintptr_t *)&handle);
-    if (!handle) {
-        return zjs_error("server handle not found");
     }
 
     struct sockaddr_in6 my_addr6 = { 0 };
@@ -783,7 +769,7 @@ static jerry_value_t net_create_server(const jerry_value_t function_obj,
     CHECK(net_context_get(AF_INET6, SOCK_STREAM, IPPROTO_TCP,
             &handle->tcp_sock))
 
-    jerry_set_object_native_handle(server, (uintptr_t)handle, NULL);
+    jerry_set_object_native_pointer(server, (uintptr_t)handle, &net_type_info);
 
     handle->server = server;
     handle->listening = 0;
@@ -848,11 +834,7 @@ static jerry_value_t socket_connect(const jerry_value_t function_obj,
     ZJS_VALIDATE_ARGS(Z_OBJECT, Z_OPTIONAL Z_FUNCTION);
 
     int ret;
-    sock_handle_t *handle = NULL;
-    jerry_get_object_native_handle(this, (uintptr_t *)&handle);
-    if (!handle) {
-        return zjs_error("socket handle not found");
-    }
+    ZJS_GET_HANDLE(this, sock_handle_t, handle, socket_type_info);
     if (!handle->tcp_sock) {
         CHECK(net_context_get(AF_INET6, SOCK_STREAM, IPPROTO_TCP,
                     &handle->tcp_sock));

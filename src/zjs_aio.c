@@ -34,7 +34,7 @@ static aio_handle_t *zjs_aio_alloc_handle()
     return handle;
 }
 
-static void zjs_aio_free_cb(uintptr_t ptr)
+static void zjs_aio_free_cb(void *ptr)
 {
     aio_handle_t *handle = (aio_handle_t *)ptr;
     zjs_remove_callback(handle->callback_id);
@@ -43,8 +43,13 @@ static void zjs_aio_free_cb(uintptr_t ptr)
 
 static void zjs_aio_free_callback(void *ptr, jerry_value_t rval)
 {
-    zjs_aio_free_cb((uintptr_t)ptr);
+    zjs_aio_free_cb(ptr);
 }
+
+static const jerry_object_native_info_t aio_type_info =
+{
+   .free_cb = zjs_aio_free_cb
+};
 
 static bool zjs_aio_ipm_send_async(uint32_t type, uint32_t pin, void *data) {
     zjs_ipm_message_t msg;
@@ -180,12 +185,14 @@ static ZJS_DECL_FUNC(zjs_aio_pin_close)
     zjs_obj_get_uint32(this, "pin", &pin);
 
     aio_handle_t *handle;
-    if (jerry_get_object_native_handle(this, (uintptr_t *)&handle) && handle) {
-        // remove existing onchange handler and unsubscribe
-        zjs_aio_ipm_send_async(TYPE_AIO_PIN_UNSUBSCRIBE, pin, handle);
-        zjs_remove_callback(handle->callback_id);
-        jerry_set_object_native_handle(this, 0, NULL);
-        zjs_free(handle);
+    const jerry_object_native_info_t *tmp;
+    if (jerry_get_object_native_pointer(this, (void **)&handle, &tmp)) {
+        if (tmp == &aio_type_info) {
+            // remove existing onchange handler and unsubscribe
+            zjs_aio_ipm_send_async(TYPE_AIO_PIN_UNSUBSCRIBE, pin, handle);
+            zjs_remove_callback(handle->callback_id);
+            zjs_free(handle);
+        }
     }
 
     return ZJS_UNDEFINED;
@@ -206,16 +213,18 @@ static ZJS_DECL_FUNC(zjs_aio_pin_on)
         return zjs_error("zjs_aio_pin_on: unsupported event type");
 
     aio_handle_t *handle;
-    if (jerry_get_object_native_handle(this, (uintptr_t *)&handle) && handle) {
-        if (jerry_value_is_null(argv[1])) {
-            // no change function, remove if one existed before
-            zjs_aio_ipm_send_async(TYPE_AIO_PIN_UNSUBSCRIBE, pin, handle);
-            zjs_remove_callback(handle->callback_id);
-            jerry_set_object_native_handle(this, 0, NULL);
-            zjs_free(handle);
-        } else {
-            // switch to new change function
-            zjs_edit_js_func(handle->callback_id, argv[1]);
+    const jerry_object_native_info_t *tmp;
+    if (jerry_get_object_native_pointer(this, (void **)&handle, &tmp)) {
+        if (tmp == &aio_type_info) {
+            if (jerry_value_is_null(argv[1])) {
+                // no change function, remove if one existed before
+                zjs_aio_ipm_send_async(TYPE_AIO_PIN_UNSUBSCRIBE, pin, handle);
+                zjs_remove_callback(handle->callback_id);
+                zjs_free(handle);
+            } else {
+                // switch to new change function
+                zjs_edit_js_func(handle->callback_id, argv[1]);
+            }
         }
     } else if (!jerry_value_is_null(argv[1])) {
         // new change function
@@ -223,8 +232,7 @@ static ZJS_DECL_FUNC(zjs_aio_pin_on)
         if (!handle)
             return zjs_error("zjs_aio_pin_on: could not allocate handle");
 
-        jerry_set_object_native_handle(this, (uintptr_t)handle,
-                                       zjs_aio_free_cb);
+        jerry_set_object_native_pointer(this, (void *)handle, &aio_type_info);
         handle->callback_id = zjs_add_callback(argv[1], this, handle, NULL);
         zjs_aio_ipm_send_async(TYPE_AIO_PIN_SUBSCRIBE, pin, handle);
     }
@@ -248,7 +256,7 @@ static ZJS_DECL_FUNC(zjs_aio_pin_read_async)
     handle->callback_id = zjs_add_callback(argv[0], this, handle,
                                            zjs_aio_free_callback);
 
-    jerry_set_object_native_handle(this, (uintptr_t)handle, zjs_aio_free_cb);
+    jerry_set_object_native_pointer(this, (void *)handle, &aio_type_info);
 
     // send IPM message to the ARC side; response will come on an ISR
     zjs_aio_ipm_send_async(TYPE_AIO_PIN_READ, pin, handle);

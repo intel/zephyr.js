@@ -47,7 +47,7 @@ server.register(resourceInit).then(function(resource) {
                 request.target.resourcePath + " observe=" + observe);
         request.respond(MyProperties).then(function() {
             console.log("respond success");
-        }).catch(function(error) {
+        }, function(error) {
             console.log("respond error: " + error.name);
         });
     });
@@ -61,7 +61,7 @@ server.register(resourceInit).then(function(resource) {
         }
         request.respond(MyProperties);
     });
-}).catch(function(error) {
+}, function(error) {
     console.log("Error registering");
 });
 

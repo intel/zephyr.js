@@ -95,6 +95,15 @@ static ble_handle_t *ble_handle = NULL;
 static zjs_callback_id connected_cb_id = -1;
 static zjs_callback_id disconnected_cb_id = -1;
 
+static void free_handle(void *native_p)
+{
+}
+
+static const jerry_object_native_info_t ble_type_info =
+{
+   .free_cb = free_handle
+};
+
 struct bt_uuid *zjs_ble_new_uuid_16(uint16_t value) {
     struct bt_uuid_16 *uuid = zjs_malloc(sizeof(struct bt_uuid_16));
     if (!uuid) {
@@ -225,19 +234,16 @@ static ZJS_DECL_FUNC(zjs_ble_read_callback_function)
         return zjs_error("zjs_ble_read_attr_call_function_return: invalid arguments");
     }
 
-    uintptr_t ptr;
-    if (jerry_get_object_native_handle(function_obj, &ptr)) {
-        // store the return value in the read_cb struct
-        struct zjs_ble_characteristic *chrc = (struct zjs_ble_characteristic *)ptr;
-        chrc->read_cb.error_code = (uint32_t)jerry_get_number_value(argv[0]);
+    ZJS_GET_HANDLE(this, struct zjs_ble_characteristic, chrc, ble_type_info);
 
-        zjs_buffer_t *buf = zjs_buffer_find(argv[1]);
-        if (buf) {
-            chrc->read_cb.buffer = buf->buffer;
-            chrc->read_cb.buffer_size = buf->bufsize;
-        } else {
-            ERR_PRINT("buffer not found\n");
-        }
+    chrc->read_cb.error_code = (uint32_t)jerry_get_number_value(argv[0]);
+
+    zjs_buffer_t *buf = zjs_buffer_find(argv[1]);
+    if (buf) {
+        chrc->read_cb.buffer = buf->buffer;
+        chrc->read_cb.buffer_size = buf->bufsize;
+    } else {
+        ERR_PRINT("buffer not found\n");
     }
 
     // unblock fiber
@@ -254,7 +260,7 @@ static void zjs_ble_read_c_callback(void *handle, const void *argv)
     ZVAL callback =
         jerry_create_external_function(zjs_ble_read_callback_function);
 
-    jerry_set_object_native_handle(callback, (uintptr_t)handle, NULL);
+    jerry_set_object_native_pointer(callback, (void *)handle, &ble_type_info);
 
     jerry_value_t args[2] = {offset, callback};
     ZVAL rval = jerry_call_function(cb->js_callback, chrc->chrc_obj, args, 2);
@@ -326,12 +332,10 @@ static ZJS_DECL_FUNC(zjs_ble_write_callback_function)
         return zjs_error("zjs_ble_write_attr_call_function_return: invalid arguments");
     }
 
-    uintptr_t ptr;
-    if (jerry_get_object_native_handle(function_obj, &ptr)) {
-        // store the return value in the write_cb struct
-        struct zjs_ble_characteristic *chrc = (struct zjs_ble_characteristic *)ptr;
-        chrc->write_cb.error_code = (uint32_t)jerry_get_number_value(argv[0]);
-    }
+    ZJS_GET_HANDLE(this, struct zjs_ble_characteristic, chrc, ble_type_info);
+
+    // store the return value in the write_cb struct
+    chrc->write_cb.error_code = (uint32_t)jerry_get_number_value(argv[0]);
 
     // unblock fiber
     k_sem_give(&ble_sem);
@@ -365,7 +369,7 @@ static void zjs_ble_write_c_callback(void *handle, const void *argv)
     ZVAL callback =
         jerry_create_external_function(zjs_ble_write_callback_function);
 
-    jerry_set_object_native_handle(callback, (uintptr_t)handle, NULL);
+    jerry_set_object_native_pointer(callback, (void *)handle, &ble_type_info);
 
     jerry_value_t args[4] = {buf_obj, offset, without_response, callback};
     ZVAL rval = jerry_call_function(cb->js_callback, chrc->chrc_obj, args, 4);
@@ -418,22 +422,19 @@ static ZJS_DECL_FUNC(zjs_ble_update_value_callback_function)
     // args: buffer
     ZJS_VALIDATE_ARGS(Z_BUFFER);
 
-    uintptr_t ptr;
-    if (jerry_get_object_native_handle(this, &ptr)) {
-        ble_characteristic_t *chrc = (ble_characteristic_t *)ptr;
-        if (chrc->chrc_attr) {
-            zjs_buffer_t *buf = zjs_buffer_find(argv[0]);
-            if (buf) {
-                // loop through all the connections
-                ble_connection_t *conn = ble_handle->connections;
-                while (conn) {
-                    bt_gatt_notify(conn->bt_conn, chrc->chrc_attr,
-                                   buf->buffer, buf->bufsize);
-                    conn = conn->next;
-                }
-            } else {
-                return zjs_error("buffer not found");
+    ZJS_GET_HANDLE(this, struct zjs_ble_characteristic, chrc, ble_type_info);
+
+    if (chrc->chrc_attr) {
+        zjs_buffer_t *buf = zjs_buffer_find(argv[0]);
+        if (buf) {
+            ble_connection_t *conn = ble_handle->connections;
+            while (conn) {
+                bt_gatt_notify(conn->bt_conn, chrc->chrc_attr,
+                               buf->buffer, buf->bufsize);
+                conn = conn->next;
             }
+        } else {
+            return zjs_error("buffer not found");
         }
     }
 
@@ -1001,7 +1002,8 @@ static bool zjs_ble_parse_service(ble_service_t *service)
 
         // transfer ownership of v_chrc to chrc struct
         chrc->chrc_obj = jerry_acquire_value(v_chrc);
-        jerry_set_object_native_handle(chrc->chrc_obj, (uintptr_t)chrc, NULL);
+        jerry_set_object_native_pointer(chrc->chrc_obj, (void *)chrc,
+                                        &ble_type_info);
 
         // FIXME: All the stuff above this in the loop should move into
         //   parse_characteristic and it should take chrc_obj instead; it would
@@ -1206,8 +1208,8 @@ static ZJS_DECL_FUNC(zjs_ble_set_services)
 
         // transfer ownership of v_service to service struct
         service->service_obj = jerry_acquire_value(v_service);
-        jerry_set_object_native_handle(service->service_obj,
-                                       (uintptr_t)service, NULL);
+        jerry_set_object_native_pointer(service->service_obj,
+                                        (void *)service, &ble_type_info);
 
         // FIXME: The parse_service should take the service_obj instead and do
         //   all this above stuff in the loop, reducing error handling cruft.

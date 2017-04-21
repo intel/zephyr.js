@@ -91,7 +91,7 @@ void zjs_remove_callback(zjs_callback_id id);
 /*
  * Remove all callbacks from memory
  */
-void zjs_remove_all_callbacks();
+void zjs_remove_all_callbacks(void);
 
 void signal_callback_priv(zjs_callback_id id,
                           const void *args,

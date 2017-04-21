@@ -24,19 +24,20 @@ CORE_SRC +=	src/zjs_a101_pins.c \
 		src/main.c \
 		src/zjs_modules.c \
 		src/zjs_performance.c \
-		src/zjs_promise.c \
 		src/zjs_script.c \
 		src/zjs_timers.c \
 		src/zjs_test_promise.c \
 		src/zjs_test_callbacks.c \
 		src/zjs_unit_tests.c \
-		src/zjs_util.c
+		src/zjs_util.c \
+		src/jerry-port/zjs_jerry_port.c
 
 CORE_OBJ =	$(CORE_SRC:%.c=%.o)
 
 LINUX_INCLUDES += 	-Isrc/ \
 			-I$(ZJS_BASE)/outdir/include \
-			-I$(JERRY_BASE)/jerry-core
+			-I$(JERRY_BASE)/jerry-core \
+			-I$(JERRY_BASE)/jerry-core/jrt
 
 JERRY_LIBS += 		-l jerry-core -lm
 
@@ -61,7 +62,8 @@ LINUX_DEFINES +=	-DZJS_LINUX_BUILD \
 			-DBUILD_MODULE_A101 \
 			-DBUILD_MODULE_GPIO \
 			-DZJS_GPIO_MOCK \
-			-DZJS_FIND_FUNC_NAME
+			-DZJS_FIND_FUNC_NAME \
+			-DJERRY_PORT_ENABLE_JOBQUEUE
 
 LINUX_FLAGS += 	-fno-asynchronous-unwind-tables \
 		-fno-omit-frame-pointer \
@@ -109,7 +111,7 @@ LINUX_INCLUDES += 	-I$(OCF_ROOT)/deps/tinydtls \
 			-I$(OCF_ROOT)/util \
 			-I$(OCF_ROOT)/messaging/coap \
 			-I$(OCF_ROOT)/api \
-			-include $(ZJS_BASE)/src/zjs_ocf_config.h
+			-include $(ZJS_BASE)/src/zjs_ocf_config.h \
 
 include Makefile.ocf_linux
 
@@ -126,7 +128,12 @@ $(BUILD_DIR)/%.o:%.c
 
 .PHONY: linux
 linux: $(BUILD_OBJ)
-	@cd deps/jerryscript; python ./tools/build.py --error-messages ON $(VERBOSE) --mem-heap 16;
+	@cd deps/jerryscript; python ./tools/build.py	--error-messages ON $(VERBOSE) \
+													--mem-heap 16 \
+													--profile=es2015-subset \
+													--jerry-port-default=OFF \
+													--jerry-cmdline OFF \
+													--jerry-libc OFF;
 	@echo [LD] $(BUILD_DIR)/jslinux
 	@gcc $(LINUX_INCLUDES) $(JERRY_LIB_PATH) -o $(BUILD_DIR)/jslinux $(BUILD_OBJ) $(LINUX_FLAGS) $(CFLAGS) $(LINUX_DEFINES) $(LINUX_LIBS)
 
