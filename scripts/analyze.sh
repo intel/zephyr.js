@@ -36,7 +36,7 @@ fi
 
 echo "# Modules found in $SCRIPT:" > $PRJFILE
 echo "# Modules found in $SCRIPT:" > $ARCPRJFILE
-tmpstr="# ZJS flags set by analyze.js"
+tmpstr="# ZJS flags set by analyze.sh"
 
 if [ -n "$CONFIG" ]; then
     tmpstr+=" and $CONFIG"

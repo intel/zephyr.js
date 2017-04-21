@@ -1,6 +1,5 @@
 // Copyright (c) 2016-2017, Intel Corporation.
 
-#ifdef BUILD_MODULE_GPIO
 // Zephyr includes
 #include <zephyr.h>
 #include <gpio.h>
@@ -455,5 +454,3 @@ void zjs_gpio_cleanup()
 {
     jerry_release_value(zjs_gpio_pin_prototype);
 }
-
-#endif // BUILD_MODULE_GPIO
