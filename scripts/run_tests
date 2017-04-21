@@ -1,0 +1,38 @@
+#!/bin/bash
+
+TESTNUM=0
+START=1
+END=100000
+
+# requires: first arg is a <=10-char label, second arg is command
+#  effects: runs banner with label, then runs the command; if it fails, prints
+#             label before exiting
+function try_command()
+{
+    TESTNUM=$((TESTNUM + 1))
+    if [ "$TESTNUM" -lt "$START" -o "$TESTNUM" -gt "$END" ]; then
+        echo "Skipping test #$TESTNUM"
+        return
+    fi
+
+    LABEL=$1
+    shift
+#    banner "$LABEL"
+
+    # run the command
+    $*
+    CODE=$?
+    if [ $CODE -ne 0 ]; then
+        echo Error: Failed in $LABEL subtest \#$TESTNUM with code $CODE \(rerun with: trlite $VMNUM $TESTNUM\)!
+        exit $CODE
+    fi
+    echo Success: $LABEL
+}
+
+# linux runtime tests
+# TODO: Add buffer, it fails in Linux ATM
+for i in error event promise; do
+    ./outdir/linux/release/jslinux tests/test-$i.js > /tmp/output
+    cat /tmp/output
+    try_command "run t-$i" test ! $(grep "FAIL" /tmp/output)
+done

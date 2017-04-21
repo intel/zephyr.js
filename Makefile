@@ -393,6 +393,9 @@ arcgdb:
 linux: generate
 	make -f Makefile.linux JS=$(JS) VARIANT=$(VARIANT) CB_STATS=$(CB_STATS) V=$(V) SNAPSHOT=$(SNAPSHOT)
 
+test:
+	scripts/run_tests
+
 .PHONY: help
 help:
 	@echo "JavaScript Runtime for Zephyr OS - Build System"
