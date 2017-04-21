@@ -1,14 +1,5 @@
 // Copyright (c) 2017, Intel Corporation.
 
-// ZJS includes
-#include "zjs_util.h"
-#include "zjs_buffer.h"
-#include "zjs_callbacks.h"
-#include "zjs_event.h"
-#include "zjs_modules.h"
-#include "zjs_net_config.h"
-#include "zjs_zephyr_port.h"
-
 #include <zephyr.h>
 #include <random.h>
 #include <sections.h>
@@ -27,6 +18,15 @@
 #include <gatt/ipss.h>
 #include <bluetooth/conn.h>
 #endif
+
+// ZJS includes
+#include "zjs_util.h"
+#include "zjs_buffer.h"
+#include "zjs_callbacks.h"
+#include "zjs_event.h"
+#include "zjs_modules.h"
+#include "zjs_net_config.h"
+#include "zjs_zephyr_port.h"
 
 /*
  * TODO:
@@ -162,7 +162,7 @@ static void generate_key(char *key, uint32_t len, char *output, uint32_t olen)
     strcat(concat, magic);
     char sha_out[20];
     // compute sha1 hash of concatenated key + magic
-    mbedtls_sha1(concat, strlen(concat), sha_out);
+    mbedtls_sha1(concat, strnlen(concat, 64), sha_out);
     uint32_t out_len;
     // base64 encode the sha1 hash
     mbedtls_base64_encode(output, olen, &out_len, sha_out, 20);
@@ -180,7 +180,11 @@ static void dump_packet(ws_packet_t *packet)
     ZJS_PRINT("OPCODE=      0x%02x\n", packet->opcode);
     ZJS_PRINT("MASK=        0x%02x\n", packet->mask_bit);
     ZJS_PRINT("PayloadLen=  %d\n",  packet->payload_len);
-    ZJS_PRINT("PayloadMask= [%02x%02x%02x%02x]\n", packet->mask[0], packet->mask[1], packet->mask[2], packet->mask[3]);
+    ZJS_PRINT("PayloadMask= [%02x%02x%02x%02x]\n",
+              packet->mask[0],
+              packet->mask[1],
+              packet->mask[2],
+              packet->mask[3]);
     ZJS_PRINT("Payload=     %s\n", (char*)packet->payload);
 }
 
@@ -219,7 +223,11 @@ static void dump_bytes(const char *tag, uint8_t *data, uint32_t len)
 #endif
 
 // encode data into a WS packet.
-static int encode_packet(ws_packet_type type, uint8_t mask, void *payload, uint16_t len, uint8_t *out)
+static int encode_packet(ws_packet_type type,
+                         uint8_t mask,
+                         void *payload,
+                         uint16_t len,
+                         uint8_t *out)
 {
     uint8_t mask_offset = 2;
     uint8_t byte1 = 0;
@@ -358,6 +366,10 @@ static void close_connection(ws_connection_t *con)
 {
     ws_connection_t *cur = connections;
     if (cur->next == NULL) {
+        if (cur != con) {
+            ERR_PRINT("connection handle %p does not exist\n", con);
+            return;
+        }
         connections = NULL;
         net_context_put(cur->tcp_sock);
         zjs_free(cur->rbuf);
@@ -456,34 +468,22 @@ static jerry_value_t ws_send_data(const jerry_value_t function_obj,
     return ZJS_UNDEFINED;
 }
 
-static jerry_value_t ws_ping(const jerry_value_t function_obj,
-                             const jerry_value_t this,
-                             const jerry_value_t argv[],
-                             const jerry_length_t argc)
+static ZJS_DECL_FUNC(ws_ping)
 {
     return ws_send_data(function_obj, this, argv, argc, WS_PACKET_PING);
 }
 
-static jerry_value_t ws_pong(const jerry_value_t function_obj,
-                             const jerry_value_t this,
-                             const jerry_value_t argv[],
-                             const jerry_length_t argc)
+static ZJS_DECL_FUNC(ws_pong)
 {
     return ws_send_data(function_obj, this, argv, argc, WS_PACKET_PONG);
 }
 
-static jerry_value_t ws_send(const jerry_value_t function_obj,
-                             const jerry_value_t this,
-                             const jerry_value_t argv[],
-                             const jerry_length_t argc)
+static ZJS_DECL_FUNC(ws_send)
 {
     return ws_send_data(function_obj, this, argv, argc, WS_PACKET_TEXT_DATA);
 }
 
-static jerry_value_t ws_terminate(const jerry_value_t function_obj,
-                                  const jerry_value_t this,
-                                  const jerry_value_t argv[],
-                                  const jerry_length_t argc)
+static ZJS_DECL_FUNC(ws_terminate)
 {
     ws_connection_t *con = NULL;
     jerry_get_object_native_handle(this, (uintptr_t *)&con);
@@ -518,7 +518,6 @@ static void tcp_received(struct net_context *context,
     uint32_t len = net_nbuf_appdatalen(buf);
     uint8_t *buffer = net_nbuf_appdata(buf);
 
-
     DBG_PRINT("data recieved on context %p: data=%p, len=%u\n", con->tcp_sock, buffer, len);
 
     if (buffer && len == 0) {
@@ -543,6 +542,13 @@ static void tcp_received(struct net_context *context,
         net_buf_pull(tmp, header_len);
 
         uint8_t *data = zjs_malloc(len);
+        if (!data) {
+            ERR_PRINT("not enough memory to allocate data\n");
+            ZVAL error = zjs_error("out of memory");
+            zjs_trigger_event(con->server, "error", &error, 1, NULL, NULL);
+            net_nbuf_unref(buf);
+            return;
+        }
         uint8_t *wptr = data;
         while (tmp) {
             memcpy(wptr, tmp->data, tmp->len);
@@ -554,7 +560,7 @@ static void tcp_received(struct net_context *context,
         dump_bytes("DATA", data, len);
 #endif
         if (con->server_handle->max_payload &&
-                (len > con->server_handle->max_payload)) {
+            (len > con->server_handle->max_payload)) {
             ZVAL error = zjs_error("payload too large");
             zjs_trigger_event(con->server, "error", &error, 1, NULL, NULL);
             net_nbuf_unref(buf);
@@ -670,8 +676,11 @@ static void post_accept_handler(void *handle, jerry_value_t *ret_val)
     }
 
     // create the accept response
-    char *send_data = zjs_malloc(strlen(accept_header) + strlen(con->accept_key) + strlen(proto) + 32);
-    memset(send_data, 0, strlen(accept_header) + strlen(con->accept_key) + strlen(proto) + 32);
+    uint32_t sdata_size = strlen(accept_header) +
+                          strlen(con->accept_key) +
+                          strlen(proto) + 32;
+    char *send_data = zjs_malloc(sdata_size);
+    memset(send_data, 0, sdata_size);
     memcpy(send_data, accept_header, strlen(accept_header));
     strcat(send_data, con->accept_key);
     strcat(send_data, "\r\n");
@@ -725,10 +734,7 @@ static void tcp_accepted(struct net_context *context,
     }
 }
 
-static jerry_value_t ws_server(const jerry_value_t function_obj,
-                               const jerry_value_t this,
-                               const jerry_value_t argv[],
-                               const jerry_length_t argc)
+static ZJS_DECL_FUNC(ws_server)
 {
     ZJS_VALIDATE_ARGS_OPTCOUNT(optcount, Z_OBJECT, Z_OPTIONAL Z_FUNCTION);
 
@@ -738,6 +744,9 @@ static jerry_value_t ws_server(const jerry_value_t function_obj,
     double max_payload = 0;
 
     server_handle_t *handle = zjs_malloc(sizeof(server_handle_t));
+    if (!handle) {
+        return zjs_error("out of memory");
+    }
     memset(handle, 0, sizeof(server_handle_t));
 
     jerry_value_t server = jerry_create_object();
