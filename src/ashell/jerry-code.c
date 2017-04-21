@@ -202,7 +202,6 @@ static bool add_requires(requires_list_t **list, char *filebuf)
     char *ptr2 = NULL;
     char *filestr = NULL;
     char *ext_check = NULL;
-    bool valid = true;
 
     while (ptr1 != NULL) {
         // Find next instance of "require"
@@ -212,7 +211,7 @@ static bool add_requires(requires_list_t **list, char *filebuf)
             ptr1 = strchr(ptr1, '"') + 1;
             ptr2 = strchr(ptr1, '"');
             size_t len = ptr2 - ptr1;
-            if (len < (ssize_t)MAX_MODULE_LEN) {
+            if (len < (ssize_t)MAX_MODULE_STRLEN) {
                 // Allocate the memory for the string
                 filestr = (char *)zjs_malloc(len + 1);
                 strncpy(filestr, ptr1, len);
@@ -226,8 +225,8 @@ static bool add_requires(requires_list_t **list, char *filebuf)
                         add_to_list(list, filestr);
                     }
                     else {
-                        valid = false;
-                        break;
+                        zjs_free(filestr);
+                        return false;
                     }
                 }
                 zjs_free(filestr);
@@ -237,14 +236,12 @@ static bool add_requires(requires_list_t **list, char *filebuf)
                 filestr = (char *)zjs_malloc(10);
                 strncpy(filestr, ptr1, 10);
                 comms_printf("[ERR] requires(\"%s...\") string is too long\n", filestr);
-                valid = false;
-                break;
+                zjs_free(filestr);
+                return false;
             }
         }
     }
-    if (filestr != NULL)
-        zjs_free(filestr);
-    return valid;
+    return true;
 }
 
 static bool load_require_modules(char *file_buffer)
