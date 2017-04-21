@@ -442,7 +442,7 @@ void signal_callback_priv(zjs_callback_id id,
               args, size);
     if (id >= 0 && cb_map[id]) {
         if (GET_CB_REMOVED(cb_map[id]->flags)) {
-            DBG_PRINT("callback already removed");
+            DBG_PRINT("callback already removed\n");
             return;
         }
     }
@@ -465,10 +465,10 @@ void signal_callback_priv(zjs_callback_id id,
 #endif
         }
         int ret = zjs_port_ring_buf_put(&ring_buffer,
-                (uint16_t)id,
-                0,  // we use value for CB_FLUSH_ONE/ALL
-                (uint32_t *)args,
-                (uint8_t)((size + 3) / 4));
+                                        (uint16_t)id,
+                                        0,  // we use value for CB_FLUSH_ONE/ALL
+                                        (uint32_t *)args,
+                                        (uint8_t)((size + 3) / 4));
         if (ret != 0) {
             if (GET_TYPE(cb_map[id]->flags) == CALLBACK_TYPE_JS) {
                 // for JS, acquire values and release them after servicing callback
