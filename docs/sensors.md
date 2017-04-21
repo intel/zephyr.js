@@ -62,7 +62,6 @@ callback ErrorCallback = void(SensorErrorEvent error);
 ```javascript
 [Constructor(optional AccelerometerOptions accelerometerOptions)]
 interface Accelerometer : Sensor {
-    attribute boolean includesGravity;
     readonly attribute double x;
     readonly attribute double y;
     readonly attribute double z;
@@ -70,7 +69,6 @@ interface Accelerometer : Sensor {
 
 dictionary AccelerometerOptions : SensorOptions  {
     string controller;       // controller name, default to "bmi160"
-    boolean includeGravity;  // not supported currently
 };
 ```
 ####GyroscopeSensor Interface
