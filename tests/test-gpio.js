@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 // Testing GPIO APIs
 
@@ -90,20 +90,3 @@ pinB = gpio.open({ pin: pins.IO8, activeLow:true, direction: "in" });
 pinA.write(false);
 bValue = pinB.read();
 assert(bValue, "activeLow: true");
-
-// test GPIO openAsync
-gpio.openAsync({ pin: pins.IO7 }).then(function (pin2) {
-    assert(pin2 != null && typeof pin2 == "object",
-          "openAsync: defined pin and default as 'out' direction");
-    gpio.openAsync({ pin: pins.IO8, direction: "in", edge: "any" })
-        .then(function (pin4) {
-            pin4.onchange = function (event) {
-                assert(true, "gpiopin: onchange in openAsync");
-                pin4.close();
-            };
-            pin2.write(true);
-            var pin4v = pin4.read();
-            assert(pin4v, "gpiopin: read and write in openAsync");
-    });
-    pin2.write(false);
-});

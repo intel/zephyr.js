@@ -51,7 +51,6 @@ obj-y += main.o \
          zjs_common.o \
          zjs_error.o \
          zjs_modules.o \
-         zjs_promise.o \
          zjs_script.o \
          zjs_timers.o \
          zjs_util.o
@@ -72,6 +71,7 @@ obj-$(ZJS_OCF) += zjs_ocf_client.o \
                   zjs_ocf_common.o
 obj-$(ZJS_TEST_PROMISE) += zjs_test_promise.o
 obj-$(ZJS_TEST_CALLBACKS) += zjs_test_callbacks.o
+obj-$(ZJS_PROMISE) += zjs_promise.o
 obj-$(ZJS_NET_CONFIG) += zjs_net_config.o
 obj-$(ZJS_WS) += zjs_web_sockets.o
 

@@ -23,7 +23,6 @@ specific API functions.
 [NoInterfaceObject]
 interface GPIO {
     GPIOPin open(GPIOInit init);
-    Promise<GPIOPin> openAsync(GPIOInit init);
 };
 
 dictionary GPIOInit {
@@ -79,18 +78,6 @@ floating (not being intentionally driven to a particular value).
 can always provide an external resistor for this purpose instead.*
 
 The function returns a GPIOPin object that can be used to read or write the pin.
-
-### GPIO.openAsync
-
-`Promise<GPIOPin> openAsync(GPIOInit init);`
-
-See above for the format of the init object.
-
-This version of the open call is asynchronous and will complete the open action
-later and fulfill or reject the promise. The returned Promise object has then()
-and docatch() (should be renamed to catch soon) methods you can use to give a
-handler for the success and failure cases. This is based on ECMAScript 6
-promises but some other functionality like all() is not available at this time.
 
 ### GPIOPin.read
 

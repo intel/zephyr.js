@@ -28,6 +28,10 @@ implemented because the feature is not available on Zephyr.
 
 enum UARTParity { "none", "event", "odd" }
 
+interface UART {
+    UARTConnection init(UARTOptions options);
+};
+
 dictionary UARTOptions {
     string port;
     // number baud = 115200;
@@ -39,9 +43,8 @@ dictionary UARTOptions {
 
 [NoInterfaceObject]
 interface UARTConnection {
-    Promise<void> init(UARTOptions options);
     // void close();
-    Promise<void> write(Buffer data);
+    void write(Buffer data);
     void setReadRange(number min, number max);
 };
 ```
@@ -50,20 +53,20 @@ API Documentation
 -----------------
 ### UART.init
 
-`void init(UARTOptions options);`
+`UARTConnection init(UARTOptions options);`
 
 The `options` object lets you choose the UART device/port you would like to
 initialize. The Arduino 101, for example, should be "tty0".
 
-### UART.write
+### UARTConnection.write
 
-`Promise<void> write(Buffer data);`
+`void write(Buffer data);`
 
 Write data out to the UART TX line. `data` is a string that will be written.
 Returned is a Promise that, on success will be void, and upon error will contain
 an `Error` object with a name and message for the error.
 
-### UART.setReadRange
+### UARTConnection.setReadRange
 
 `void setReadRange(number min, number max);`
 

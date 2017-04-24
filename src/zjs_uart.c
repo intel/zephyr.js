@@ -15,7 +15,6 @@
 #endif
 #include "zjs_common.h"
 #include "zjs_util.h"
-#include "zjs_promise.h"
 #include "zjs_callbacks.h"
 #include "zjs_event.h"
 #include "zjs_buffer.h"
@@ -160,20 +159,14 @@ static ZJS_DECL_FUNC(uart_write)
 
     zjs_buffer_t *buffer = zjs_buffer_find(argv[0]);
 
-    jerry_value_t promise = jerry_create_object();
-    zjs_make_promise(promise, NULL, NULL);
-
     int wrote = write_data(uart_dev, (const char *)buffer->buffer,
                            buffer->bufsize);
     if (wrote == buffer->bufsize) {
-        zjs_fulfill_promise(promise, NULL, 0);
+        return jerry_create_number(wrote);
     }
     else {
-        ZVAL error = make_uart_error("WriteError", "incomplete write");
-        zjs_reject_promise(promise, &error, 1);
+        return make_uart_error("WriteError", "incomplete write");
     }
-
-    return promise;
 }
 
 static ZJS_DECL_FUNC(uart_set_read_range)
@@ -215,9 +208,6 @@ static ZJS_DECL_FUNC(uart_init)
 #ifdef CONFIG_UART_LINE_CTRL
     int ret, dtr;
 #endif
-    jerry_value_t promise = jerry_create_object();
-
-    zjs_make_promise(promise, NULL, NULL);
 
     ZVAL port_val = zjs_get_property(argv[0], "port");
 
@@ -229,10 +219,7 @@ static ZJS_DECL_FUNC(uart_init)
 
     if (!size) {
         DBG_PRINT("port length is too long\n");
-        ZVAL error = make_uart_error("TypeMismatchError",
-                                     "port length is too long");
-        zjs_reject_promise(promise, &error, 1);
-        return promise;
+        return make_uart_error("TypeMismatchError", "port length is too long");
     }
 
     ZVAL baud_val = zjs_get_property(argv[0], "baud");
@@ -249,10 +236,7 @@ static ZJS_DECL_FUNC(uart_init)
     }
     if (uart_dev == NULL) {
         DBG_PRINT("could not find port %s\n", port);
-        ZVAL error = make_uart_error("NotFoundError",
-                                     "could not find port provided");
-        zjs_reject_promise(promise, &error, 1);
-        return promise;
+        return make_uart_error("NotFoundError", "could not find port provided");
     }
 
     // Hardware initialization
@@ -291,10 +275,7 @@ static ZJS_DECL_FUNC(uart_init)
     } else {
         if (test_baud != baud) {
             DBG_PRINT("baudrate was not set successfully");
-            ZVAL error = make_uart_error("InternalError",
-                                         "baud could not be set");
-            zjs_reject_promise(promise, &error, 1);
-            return promise;
+            return make_uart_error("InternalError", "baud could not be set");
         }
     }
     DBG_PRINT("baudrate set successfully: %ld\n", baud);
@@ -311,11 +292,9 @@ static ZJS_DECL_FUNC(uart_init)
 
     zjs_make_event(handle->uart_obj, zjs_uart_prototype);
 
-    zjs_fulfill_promise(promise, &handle->uart_obj, 1);
-
     read_id = zjs_add_c_callback(handle, uart_c_callback);
 
-    return promise;
+    return handle->uart_obj;
 }
 
 jerry_value_t zjs_uart_init()
