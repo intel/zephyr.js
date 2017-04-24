@@ -136,8 +136,7 @@ static ZJS_DECL_FUNC(native_require_handler)
     // args: module name
     ZJS_VALIDATE_ARGS(Z_STRING);
 
-    const int MAX_MODULE_LEN = 32;
-    jerry_size_t size = MAX_MODULE_LEN;
+    jerry_size_t size = MAX_MODULE_STR_LEN;
     char module[size];
     zjs_copy_jstring(argv[0], module, &size);
     if (!size) {

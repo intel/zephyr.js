@@ -49,8 +49,10 @@ fs_file_t *fs_open_alloc(const char *filename, const char *mode)
     }
     else {
         /* Return NULL if trying to read from a nonexistent file */
-        if (!fs_exist(filename))
+        if (!fs_exist(filename)) {
+            printf("[ERR] %s not found\n", filename);
             return NULL;
+        }
     }
 
     fs_file_t *file = (fs_file_t *)zjs_malloc(sizeof(fs_file_t));
