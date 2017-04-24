@@ -402,12 +402,8 @@ void comms_print_status()
         (int)bytes_received, (int)bytes_processed);
 }
 
-void comms_runner()
+void comms_runner_init()
 {
-    static struct comms_input *data = NULL;
-    char *buf = NULL;
-    uint32_t len = 0;
-
     DBG("[Listening]\n");
     __stdout_hook_install(comms_out);
 
@@ -418,84 +414,64 @@ void comms_runner()
 
     process_state = 0;
 
-    while (1) {
-        atomic_set(&uart_state, UART_INIT);
-        if (comms_config.interface.init_cb != NULL) {
-            DBG("[Init]\n");
-            comms_config.interface.init_cb();
-        }
+    atomic_set(&uart_state, UART_INIT);
 
-        while (!comms_config.interface.is_done()) {
-            atomic_set(&uart_state, UART_WAITING);
-            process_state = 10;
-
-            while (data == NULL) {
-                DBG("[Wait]\n");
-                data = k_fifo_get(&data_queue, FIVE_SECONDS);
-                if (data) {
-                    atomic_dec(&data_queue_count);
-                    buf = data->line;
-                    len = strnlen(buf, MAX_LINE_LEN);
-
-                    DBG("[Data]\n");
-                    DBG("%s\n", buf);
-                } else {
-                    /* We clear the cache memory if there are no data transactions */
-                    if (tail == 0) {
-                        fifo_cache_clear();
-                    } else {
-                        /* Wait for a timeout and flush data if there was not a carriage return */
-                        if (atomic_get(&uart_state) == UART_ISR_END && isr_data != NULL) {
-                            DBG("Capturing buffer\n");
-                            process_state = 20;
-                            isr_data->line[tail] = 0;
-                            tail = 0;
-                            data = isr_data;
-                            buf = data->line;
-                            isr_data = NULL;
-                            atomic_set(&uart_state, UART_TASK_DATA_CAPTURE);
-                        }
-                    }
-                }
-            }
-
-            process_state = 30;
-            uint32_t processed = comms_config.interface.process_cb(buf, len);
-
-            bytes_processed += processed;
-
-            process_state = 40;
-            if (comms_config.interface.is_done()) {
-                len -= processed;
-                // Moving the remaining data to be processed by the new callback
-                memmove(buf, buf + processed, len);
-                buf[len] = '\0';
-                DBG("New buf [%s]\n", buf);
-            } else {
-                uart_process_done = true;
-                DBG("[Recycle]\n");
-                fifo_recycle_buffer(data);
-                data = NULL;
-            }
-
-        }
-
-        process_state = 50;
-        atomic_set(&uart_state, UART_CLOSE);
-        if (comms_config.interface.close_cb != NULL)
-            comms_config.interface.close_cb();
+    if (comms_config.interface.init_cb != NULL) {
+        DBG("[Init]\n");
+        comms_config.interface.init_cb();
     }
+}
 
-    // Not possible
-    atomic_set(&uart_state, UART_TERMINATED);
+/*
+ * Process user input
+ */
+void zjs_ashell_process()
+{
+    static struct comms_input *data = NULL;
+    char *buf = NULL;
+    uint32_t len = 0;
+
+    atomic_set(&uart_state, UART_WAITING);
+    data = k_fifo_get(&data_queue, K_NO_WAIT);
+    if (data) {
+        atomic_dec(&data_queue_count);
+        buf = data->line;
+        len = strnlen(buf, MAX_LINE_LEN);
+
+        comms_config.interface.process_cb(buf, len);
+        uart_process_done = true;
+        DBG("[Recycle]\n");
+        fifo_recycle_buffer(data);
+        data = NULL;
+
+        DBG("[Data]\n");
+        DBG("%s\n", buf);
+    } else {
+        /* We clear the cache memory if there are no data transactions */
+        if (tail == 0) {
+            fifo_cache_clear();
+        } else {
+            /* Wait for a timeout and flush data if there was not a carriage return */
+            if (atomic_get(&uart_state) == UART_ISR_END && isr_data != NULL) {
+                DBG("Capturing buffer\n");
+                process_state = 20;
+                isr_data->line[tail] = 0;
+                tail = 0;
+                data = isr_data;
+                buf = data->line;
+                isr_data = NULL;
+                atomic_set(&uart_state, UART_TASK_DATA_CAPTURE);
+            }
+        }
+    }
 }
 
 /**
- * ACM TASK
- * Task running the shell in the ACM Uart port
+ * Ashell initialization
+ * Init UART/ACM to start getting input from user
  */
 
-void acm()
+void zjs_ashell_init()
 {
     ashell_process_start();
 
@@ -521,13 +497,7 @@ void acm()
     k_fifo_init(&data_queue);
     k_fifo_init(&avail_queue);
 
-    // Wait until the main loop is running before starting the javascript
-    if (k_sem_take(&mainloop_sem, K_FOREVER) == 0) {
-        ashell_run_boot_cfg();
-    }
-    else {
-        ERR_PRINT("Main loop failed to start\n");
-    }
+    ashell_run_boot_cfg();
 
 #ifdef CONFIG_UART_LINE_CTRL
     uint32_t dtr = 0;
@@ -555,7 +525,7 @@ void acm()
     /* Enable rx interrupts */
     uart_irq_rx_enable(dev_upload);
 
-    comms_runner();
+    comms_runner_init();
 }
 
 /**************************** DEVICE **********************************/
