@@ -1,7 +1,7 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
-// Testing gyroscope APIs
-console.log("Testing gyroscope APIs");
+// Testing bmi160 gyroscope APIs
+console.log("Testing bmi160 gyroscope APIs");
 
 var genericSensor = require("GenericSensor.js");
 
