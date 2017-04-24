@@ -1,7 +1,7 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
-// Testing accelerometer APIs
-console.log("Testing accelerometer APIs");
+// Testing bmi160 accelerometer APIs
+console.log("Testing bmi160 accelerometer APIs");
 
 var genericSensor = require("GenericSensor.js");
 

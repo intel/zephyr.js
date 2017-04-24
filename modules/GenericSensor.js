@@ -117,6 +117,10 @@ function GenericSensor() {
                            sensor.illuminance !== null,
                            "sensor: reading value for '" + sensorType + "'");
 
+                    assert(sensor.controller === "ADC_0",
+                           "sensor: controller name as default");
+                    console.log("sensor.controller : " + sensor.controller);
+
                     middleNum = sensor.illuminance;
                     sensor.illuminance = middleNum + 1;
                     assert(sensor.illuminance === middleNum,
@@ -134,6 +138,10 @@ function GenericSensor() {
                            sensor.z !== null,
                            "sensor: reading value for '" + sensorType + "'");
 
+                    assert(sensor.controller === "bmi160",
+                           "sensor: controller name as default");
+                    console.log("sensor.controller : " + sensor.controller);
+
                     middleNumX = sensor.x;
                     sensor.x = middleNumX + 1;
                     middleNumY = sensor.y;
@@ -150,6 +158,22 @@ function GenericSensor() {
                                 " x=" + sensor.x +
                                 " y=" + sensor.y +
                                 " z=" + sensor.z);
+                } else if (sensorType === "Temperature") {
+                    assert(typeof sensor.celsius === "number" &&
+                           sensor.celsius !== null,
+                           "sensor: reading value for '" + sensorType + "'");
+
+                    assert(sensor.controller === "bmi160",
+                           "sensor: controller name as default");
+                    console.log("sensor.controller : " + sensor.controller);
+
+                    middleNum = sensor.celsius;
+                    sensor.celsius = middleNum + 1;
+                    assert(sensor.celsius === middleNum,
+                           "sensor: reading is readonly property");
+
+                    console.log("sensor.timestamp: " + sensor.timestamp);
+                    console.log(sensorType + ": " + sensor.celsius);
                 }
 
                 changeFlag = false;
