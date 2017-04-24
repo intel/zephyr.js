@@ -2,8 +2,10 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "zjs_util.h"
+#include "zjs_callbacks.h"
 
 static int passed = 0;
 static int total = 0;
@@ -27,6 +29,109 @@ static int check_hex_to_byte(char *str, uint8_t byte)
     uint8_t result;
     zjs_hex_to_byte(str, &result);
     return result == byte;
+}
+
+static uint32_t count1 = 0;
+static void c_callback1(void *handle, const void *args)
+{
+    count1++;
+}
+
+static uint8_t string_correct = 0;
+static void c_callback2(void *handle, const void *args)
+{
+    char *s = (char *)handle;
+    if (strcmp(s, "pass string as handle") == 0) {
+        string_correct = 1;
+    }
+}
+
+static uint8_t handle_and_args = 0;
+static void c_callback3(void *handle, const void *args)
+{
+    char *h = (char *)handle;
+    char *a = (char *)args;
+    if (strcmp(h, "this is my handle") == 0) {
+        if (strcmp(a, "this is my args") == 0) {
+            handle_and_args = 1;
+        }
+    }
+}
+
+static uint8_t cb4_called = 0;
+static void c_callback4(void *handle, const void *args)
+{
+    cb4_called = 1;
+}
+
+static uint8_t handle_correct = 0;
+static void c_callback5(void *handle, const void *args)
+{
+    uint32_t h = *((uint32_t *)handle);
+    if (h == 0x44332211) {
+        handle_correct = 1;
+    }
+
+}
+
+static void test_c_callbacks()
+{
+    zjs_init_callbacks();
+    // test multiple signals
+    zjs_callback_id id1 = zjs_add_c_callback(NULL, c_callback1);
+    for (int i = 0; i < 10; i++) {
+        zjs_signal_callback(id1, NULL, 0);
+    }
+    zjs_service_callbacks();
+    zjs_assert(count1 == 10, "signal callback 10 times");
+    zjs_remove_callback(id1);
+
+    // test handle
+    char s[] = "pass string as handle";
+    zjs_callback_id id2 = zjs_add_c_callback(s, c_callback2);
+    zjs_signal_callback(id2, NULL, 0);
+    zjs_service_callbacks();
+    zjs_assert(string_correct, "handle passed correctly");
+    zjs_remove_callback(id2);
+
+    // test args and handle
+    char h[] = "this is my handle";
+    char a[] = "this is my args";
+    zjs_callback_id id3 = zjs_add_c_callback(h, c_callback3);
+    zjs_signal_callback(id3, a, strlen(a));
+    zjs_service_callbacks();
+    zjs_assert(handle_and_args, "handle and args passed correctly");
+    zjs_remove_callback(id3);
+
+    // test callback ID recycling
+    zjs_callback_id list[10];
+    for (int i = 0; i < 10; i++) {
+        list[i] = zjs_add_c_callback(NULL, c_callback4);
+    }
+    zjs_callback_id next = zjs_add_c_callback(NULL, c_callback4);
+    for (int i = 0; i < 10; i++) {
+        zjs_remove_callback(list[i]);
+    }
+    zjs_service_callbacks();
+    zjs_callback_id less = zjs_add_c_callback(NULL, c_callback4);
+    zjs_assert(less < next, "callback IDs are recycled");
+    zjs_remove_callback(next);
+    zjs_remove_callback(less);
+
+    // test zjs_call_callback
+    zjs_callback_id id4 = zjs_add_c_callback(NULL, c_callback4);
+    zjs_call_callback(id4, NULL, 0);
+    zjs_assert(cb4_called, "zjs_call_callback()");
+    zjs_remove_callback(id4);
+
+    // test zjs_edit_callback_handle()
+    uint32_t h1 = 0x11223344;
+    uint32_t h2 = 0x44332211;
+    zjs_callback_id id5 = zjs_add_c_callback((void *)&h1, c_callback5);
+    zjs_signal_callback(id5, NULL, 0);
+    zjs_edit_callback_handle(id5, (void *)&h2);
+    zjs_service_callbacks();
+    zjs_assert(handle_correct, "zjs_edit_callback_handle()");
 }
 
 static void test_hex_to_byte()
@@ -277,6 +382,7 @@ void zjs_run_unit_tests()
     test_default_convert_pin();
     test_compress_32();
     test_validate_args();
+    test_c_callbacks();
 
     printf("TOTAL - %d of %d passed\n", passed, total);
     exit(!(passed == total));
