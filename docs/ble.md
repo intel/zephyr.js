@@ -9,8 +9,7 @@ ZJS API for Bluetooth Low Energy (BLE)
 
 Introduction
 ------------
-The BLE API is based off the [bleno API]
-(https://github.com/sandeepmistry/bleno). Bluetooth Low Energy (aka
+The BLE API is based off the [bleno API](https://github.com/sandeepmistry/bleno). Bluetooth Low Energy (aka
 [Bluetooth Smart](https://www.bluetooth.com/what-is-bluetooth-technology/bluetooth-technology-basics/low-energy)) is a power-friendly version of Bluetooth
 intended for IoT devices. It provides the ability to support low-bandwidth data
 services to nearby devices.
@@ -132,8 +131,7 @@ The `uuids` array may contain at most 7 16-bit UUIDs (four hex digits each).
 These UUIDs identify available services to nearby BLE devices.
 
 The `url` is optional and limited to around 24 characters (slightly more
-if part of the URL is able to be [encoded]
-(https://github.com/google/eddystone/tree/master/eddystone-url)). If provided,
+if part of the URL is able to be [encoded](https://github.com/google/eddystone/tree/master/eddystone-url). If provided,
 this will be used to create a physical web advertisement that will direct users
 to the given URL. At that URL they might be able to interact with the
 advertising device somehow.
