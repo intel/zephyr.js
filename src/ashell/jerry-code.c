@@ -211,7 +211,7 @@ static bool add_requires(requires_list_t **list, char *filebuf)
             ptr1 = strchr(ptr1, '"') + 1;
             ptr2 = strchr(ptr1, '"');
             size_t len = ptr2 - ptr1;
-            if (len < (ssize_t)MAX_MODULE_STRLEN) {
+            if (len < (ssize_t)MAX_MODULE_STR_LEN) {
                 // Allocate the memory for the string
                 filestr = (char *)zjs_malloc(len + 1);
                 strncpy(filestr, ptr1, len);
