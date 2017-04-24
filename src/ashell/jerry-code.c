@@ -337,7 +337,9 @@ void javascript_stop()
     /* Cleanup engine */
     zjs_modules_cleanup();
     zjs_remove_all_callbacks();
+    #ifdef CONFIG_BOARD_ARDUINO_101
     zjs_ipm_free_callbacks();
+    #endif
     jerry_cleanup();
 
     restore_zjs_api();

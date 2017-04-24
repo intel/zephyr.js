@@ -25,7 +25,9 @@
 
 #ifdef CONFIG_REBOOT
 //TODO Waiting for patch https://gerrit.zephyrproject.org/r/#/c/3161/
+#ifdef CONFIG_BOARD_ARDUINO_101
 #include <qm_init.h>
+#endif
 #endif
 
 /**
@@ -193,7 +195,9 @@ int32_t ashell_reboot(char *buf)
 
 #ifdef CONFIG_REBOOT
     //TODO Waiting for patch https://gerrit.zephyrproject.org/r/#/c/3161/
+    #ifdef CONFIG_BOARD_ARDUINO_101
     QM_SCSS_PMU->rstc |= QM_COLD_RESET;
+    #endif
 #endif
     sys_reboot(SYS_REBOOT_COLD);
     return RET_OK;
