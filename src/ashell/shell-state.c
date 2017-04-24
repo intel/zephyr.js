@@ -594,8 +594,10 @@ int32_t ashell_set_bootcfg(char *buf)
         return RET_ERROR;
     }
 
-    ssize_t written = fs_write(file, buf, strlen(buf));
-    if (written == 0) {
+    ssize_t written = fs_write(file, __TIMESTAMP__, strlen(__TIMESTAMP__));
+    written += fs_write(file, " ", 1);
+    written += fs_write(file, buf, strlen(buf));
+    if (written <= 0) {
         comms_println("Failed to write boot.cfg file");
     }
 
@@ -643,7 +645,6 @@ int32_t ashell_help(char *buf)
     for (uint32_t t = 0; t < ASHELL_COMMANDS_COUNT; t++) {
         comms_printf("%8s %s\r\n", commands[t].cmd_name, commands[t].syntax);
     }
-
     //comms_println("TODO: Read help file per command!");
     return RET_OK;
 }
@@ -658,12 +659,31 @@ void ashell_run_boot_cfg()
         return;
     }
 
+    size_t tssize = strlen(__TIMESTAMP__);
     ssize_t size = fs_size(file);
-    if (size > 0 && size <= 12) {
-        char data[size+1];
-        count = fs_read(file, data, size);
-        data[size] = '\0';
-        ashell_run_javascript(data);
+    // Check that there is something after the timestamp
+    if (size > tssize) {
+        char ts[tssize];
+        count = fs_read(file, ts, tssize);
+        if (count == tssize && strncmp(ts, __TIMESTAMP__, tssize) == 0) {
+            // skip the space
+            fs_seek(file, 1, FS_SEEK_CUR);
+            size_t filenamesize = size - tssize - 1;
+            char filename[filenamesize + 1];
+            count = fs_read(file, filename, filenamesize);
+            if (count > 0) {
+                filename[filenamesize] = '\0';
+                ashell_run_javascript(filename);
+            }
+        }
+        else {
+            // This is a newly flashed board, delete boot.cfg
+            ashell_remove_file("boot.cfg");
+        }
+    }
+    else {
+        // boot.cfg is invalid, remove it
+        ashell_remove_file("boot.cfg");
     }
     fs_close_alloc(file);
 }
