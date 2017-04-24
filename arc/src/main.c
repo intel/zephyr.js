@@ -18,6 +18,9 @@
 #ifdef BUILD_MODULE_GROVE_LCD
 #include <display/grove_lcd.h>
 #endif
+#ifdef BUILD_MODULE_PME
+#include "CuriePME.h"
+#endif
 
 #include "zjs_common.h"
 #include "zjs_ipm.h"
@@ -111,8 +114,8 @@ static uint32_t pin_read(uint8_t pin)
     };
 
     if (!adc_dev) {
-       ERR_PRINT("ADC device not found\n");
-       return 0;
+        ERR_PRINT("ADC device not found\n");
+        return 0;
     }
 
     if (adc_read(adc_dev, &entry_table) != 0) {
@@ -137,11 +140,11 @@ static void queue_message(struct zjs_ipm_message *incoming_msg)
     }
 
     k_sem_take(&arc_sem, TICKS_UNLIMITED);
-    while(msg && msg < end_of_queue_ptr) {
-       if (msg->id == MSG_ID_DONE) {
-           break;
-       }
-       msg++;
+    while (msg && msg < end_of_queue_ptr) {
+        if (msg->id == MSG_ID_DONE) {
+            break;
+        }
+        msg++;
     }
 
     if (msg != end_of_queue_ptr) {
@@ -177,7 +180,7 @@ static void handle_aio(struct zjs_ipm_message *msg)
         return;
     }
 
-    switch(msg->type) {
+    switch (msg->type) {
     case TYPE_AIO_OPEN:
         // NO OP - always success
         break;
@@ -216,7 +219,7 @@ static void handle_aio(struct zjs_ipm_message *msg)
 
 static void process_aio_updates()
 {
-    for (int i=0; i<=5; i++) {
+    for (int i = 0; i <= 5; i++) {
         if (pin_send_updates[i]) {
             pin_values[i] = pin_read(ARC_AIO_MIN + i);
             if (pin_values[i] != pin_last_values[i]) {
@@ -227,7 +230,7 @@ static void process_aio_updates()
                 msg.type = TYPE_AIO_PIN_EVENT_VALUE_CHANGE;
                 msg.flags = 0;
                 msg.user_data = pin_user_data[i];
-                msg.data.aio.pin = ARC_AIO_MIN+i;
+                msg.data.aio.pin = ARC_AIO_MIN + i;
                 msg.data.aio.value = pin_values[i];
                 ipm_send_msg(&msg);
             }
@@ -243,7 +246,7 @@ static void handle_i2c(struct zjs_ipm_message *msg)
     uint32_t error_code = ERROR_IPM_NONE;
     uint8_t msg_bus = msg->data.i2c.bus;
 
-    switch(msg->type) {
+    switch (msg->type) {
     case TYPE_I2C_OPEN:
         error_code = zjs_i2c_handle_open(msg_bus);
         break;
@@ -299,7 +302,7 @@ static void handle_glcd(struct zjs_ipm_message *msg)
         return;
     }
 
-    switch(msg->type) {
+    switch (msg->type) {
     case TYPE_GLCD_INIT:
         if (!glcd) {
             /* Initialize the Grove LCD */
@@ -423,7 +426,7 @@ static double convert_sensor_value(const struct sensor_value *val)
     // According to documentation, the value is represented as having an
     // integer and a fractional part, and can be obtained using the formula
     // val1 + val2 * 10^(-6).
-    return  (double)val->val1 + (double)val->val2 * 0.000001;
+    return (double)val->val1 + (double)val->val2 * 0.000001;
 }
 
 static void process_accel_data(struct device *dev)
@@ -549,9 +552,9 @@ static void trigger_hdlr(struct device *dev,
  * device has to stay still for about 500ms = 250ms(accel) + 250ms(gyro).
  */
 struct sensor_value acc_calib[] = {
-    {0, 0},      /* X */
-    {0, 0},      /* Y */
-    {9, 806650}, /* Z */
+    { 0, 0 },      /* X */
+    { 0, 0 },      /* Y */
+    { 9, 806650 }, /* Z */
 };
 
 static int auto_calibration(struct device *dev)
@@ -727,7 +730,8 @@ static void fetch_sensor()
 }
 
 #ifdef BUILD_MODULE_SENSOR_LIGHT
-static double cube_root_recursive(double num, double low, double high) {
+static double cube_root_recursive(double num, double low, double high)
+{
     // calculate approximated cube root value of a number recursively
     double margin = 0.0001;
     double mid = (low + high) / 2.0;
@@ -741,13 +745,14 @@ static double cube_root_recursive(double num, double low, double high) {
         return cube_root_recursive(num, mid, high);
 }
 
-static double cube_root(double num) {
+static double cube_root(double num)
+{
     return cube_root_recursive(num, 0, num);
 }
 
 static void fetch_light()
 {
-    for (int i=0; i<=5; i++) {
+    for (int i = 0; i <= 5; i++) {
         if (light_send_updates[i]) {
             pin_values[i] = pin_read(ARC_AIO_MIN + i);
             if (pin_values[i] != pin_last_values[i]) {
@@ -766,8 +771,7 @@ static void fetch_light()
                 if (analog_val > 1015) {
                     // any thing over 1015 will be considered maximum brightness
                     reading.dval = 10000.0;
-                }
-                else {
+                } else {
                     resistance = (1023.0 - analog_val) * 10.0 / analog_val;
                     base = resistance * 15.0;
                     reading.dval = 10000.0 / cube_root(base * base * base * base);
@@ -785,7 +789,7 @@ static void handle_sensor_bmi160(struct zjs_ipm_message *msg)
     int freq;
     uint32_t error_code = ERROR_IPM_NONE;
 
-    switch(msg->type) {
+    switch (msg->type) {
     case TYPE_SENSOR_INIT:
         if (!bmi160) {
             bmi160 = device_get_binding(BMI160_NAME);
@@ -894,7 +898,8 @@ static void handle_sensor_bmi160(struct zjs_ipm_message *msg)
 }
 
 #ifdef BUILD_MODULE_SENSOR_LIGHT
-static void handle_sensor_light(struct zjs_ipm_message *msg) {
+static void handle_sensor_light(struct zjs_ipm_message* msg)
+{
     uint32_t pin;
     uint32_t error_code = ERROR_IPM_NONE;
 
@@ -938,7 +943,7 @@ static void handle_sensor_light(struct zjs_ipm_message *msg) {
 static void handle_sensor(struct zjs_ipm_message *msg)
 {
     char *controller = msg->data.sensor.controller;
-    switch(msg->data.sensor.channel) {
+    switch (msg->data.sensor.channel) {
     case SENSOR_CHAN_ACCEL_XYZ:
     case SENSOR_CHAN_GYRO_XYZ:
         if (!strncmp(controller, BMI160_NAME, 6)) {
@@ -961,7 +966,7 @@ static void handle_sensor(struct zjs_ipm_message *msg)
         }
         break;
 
-     default:
+    default:
         ERR_PRINT("unsupported sensor channel\n");
         ipm_send_error(msg, ERROR_IPM_NOT_SUPPORTED);
         return;
@@ -972,43 +977,208 @@ static void handle_sensor(struct zjs_ipm_message *msg)
 }
 #endif // BUILD_MODULE_SENSOR
 
+#ifdef BUILD_MODULE_PME
+static void handle_pme(struct zjs_ipm_message* msg)
+{
+    uint32_t error_code = ERROR_IPM_NONE;
+
+    switch (msg->type) {
+    case TYPE_PME_BEGIN:
+        CuriePME_begin();
+        break;
+    case TYPE_PME_FORGET:
+        CuriePME_forget();
+        break;
+    case TYPE_PME_LEARN:
+        DBG_PRINT("learning: category=%d is %lu byte vector\n",
+                  msg->data.pme.category, msg->data.pme.vector_size);
+        if (msg->data.pme.vector_size > maxVectorSize) {
+            ERR_PRINT("vector cannot be greater than %d\n", maxVectorSize);
+            ipm_send_error(msg, ERROR_IPM_INVALID_PARAMETER);
+            return;
+        }
+
+        for (int i = 0; i < msg->data.pme.vector_size; i++) {
+            DBG_PRINT("%d ", msg->data.pme.vector[i]);
+        }
+
+        CuriePME_learn(msg->data.pme.vector, msg->data.pme.vector_size,
+                       msg->data.pme.category);
+        DBG_PRINT("\nlearned with %d neruons\n", CuriePME_getCommittedCount());
+        break;
+    case TYPE_PME_CLASSIFY:
+        DBG_PRINT("classify: %lu byte vector\n", msg->data.pme.category,
+                  msg->data.pme.vector_size);
+        if (msg->data.pme.vector_size > maxVectorSize) {
+            ERR_PRINT("vector cannot be greater than %d\n", maxVectorSize);
+            ipm_send_error(msg, ERROR_IPM_INVALID_PARAMETER);
+            return;
+        }
+
+        for (int i = 0; i < msg->data.pme.vector_size; i++) {
+            DBG_PRINT("%d ", msg->data.pme.vector[i]);
+        }
+
+        msg->data.pme.category = CuriePME_classify(msg->data.pme.vector,
+                                                   msg->data.pme.vector_size);
+        DBG_PRINT("\ncategory: %d\n", msg->data.pme.category);
+        break;
+    case TYPE_PME_READ_NEURON:
+        DBG_PRINT("read: neuron id=%d\n", msg->data.pme.neuron_id);
+        if (msg->data.pme.neuron_id < 1 || msg->data.pme.neuron_id > 128) {
+            ERR_PRINT("invalid neuron id, must be between 1 and 128\n");
+            ipm_send_error(msg, ERROR_IPM_INVALID_PARAMETER);
+            return;
+        }
+
+        neuronData data;
+        CuriePME_readNeuron(msg->data.pme.neuron_id, &data);
+        msg->data.pme.category = data.category;
+        msg->data.pme.context = data.context;
+        msg->data.pme.influence = data.influence;
+        msg->data.pme.min_influence = data.minInfluence;
+        memcpy(msg->data.pme.vector, data.vector, sizeof(data.vector));
+        DBG_PRINT("neuron: id=%d, CTX=%d, AIF=%d MIF=%d, cat=%d\n", data.context & NCR_ID,
+                                                                    data.conext & NCR_CONTEXT,
+                                                                    data.influence,
+                                                                    data.minInfluence
+                                                                    data.category);
+        break;
+    case TYPE_PME_WRITE_VECTOR:
+        DBG_PRINT("write vector: %lu byte vector\n", msg->data.pme.category,
+                  msg->data.pme.vector_size);
+        if (msg->data.pme.vector_size > maxVectorSize) {
+            ERR_PRINT("vector cannot be greater than %d\n", maxVectorSize);
+            ipm_send_error(msg, ERROR_IPM_INVALID_PARAMETER);
+            return;
+        }
+
+        if (CuriePME_getClassifierMode() != KNN_Mode) {
+            ERR_PRINT("write vector only supports KNN_Mode\n", maxVectorSize);
+            ipm_send_error(msg, ERROR_IPM_INVALID_PARAMETER);
+            return;
+        }
+
+        for (int i = 0; i < msg->data.pme.vector_size; i++)
+            DBG_PRINT("%d ", msg->data.pme.vector[i]);
+
+        CuriePME_writeVector(msg->data.pme.vector, msg->data.pme.vector_size);
+        DBG_PRINT("\nwrote with %d neruons\n", CuriePME_getCommittedCount());
+        break;
+    case TYPE_PME_GET_COMMITED_COUNT:
+        msg->data.pme.committed_count = CuriePME_getCommittedCount();
+        DBG_PRINT("committed count: %d\n", msg->data.pme.committed_count);
+        break;
+    case TYPE_PME_GET_GLOBAL_CONTEXT:
+        msg->data.pme.context = CuriePME_getGlobalContext();
+        DBG_PRINT("global context: %d\n", msg->data.pme.context);
+        break;
+    case TYPE_PME_SET_GLOBAL_CONTEXT:
+        // valid range is 1-127
+        if (msg->data.pme.context < 1 || msg->data.pme.context > 127) {
+            ERR_PRINT("context range has to be 1-127\n");
+            ipm_send_error(msg, ERROR_IPM_INVALID_PARAMETER);
+            return;
+        }
+        CuriePME_setGlobalContext(msg->data.pme.context);
+        DBG_PRINT("global context: %d\n", msg->data.pme.context);
+        break;
+    case TYPE_PME_GET_NEURON_CONTEXT:
+        msg->data.pme.context = CuriePME_getNeuronContext();
+        DBG_PRINT("neuron context: %d\n", msg->data.pme.context);
+        break;
+    case TYPE_PME_SET_NEURON_CONTEXT:
+        // valid range is 1-127
+        if (msg->data.pme.context < 1 || msg->data.pme.context > 127) {
+            ERR_PRINT("context range has to be 1-127\n");
+            ipm_send_error(msg, ERROR_IPM_INVALID_PARAMETER);
+            return;
+        }
+        CuriePME_setNeuronContext(msg->data.pme.context);
+        DBG_PRINT("neuron context: %d\n", msg->data.pme.context);
+        break;
+    case TYPE_PME_GET_CLASSIFIER_MODE:
+        msg->data.pme.mode = CuriePME_getClassifierMode();
+        DBG_PRINT("classifier mode: %d\n", msg->data.pme.mode);
+        break;
+    case TYPE_PME_SET_CLASSIFIER_MODE:
+        if (msg->data.pme.mode != RBF_Mode && msg->data.pme.mode != KNN_Mode) {
+            ERR_PRINT("invalid classifier mode\n");
+            ipm_send_error(msg, ERROR_IPM_INVALID_PARAMETER);
+            return;
+        }
+        CuriePME_setClassifierMode(msg->data.pme.mode);
+        DBG_PRINT("classifier mode: %d\n", msg->data.pme.mode);
+        break;
+    case TYPE_PME_GET_DISTANCE_MODE:
+        msg->data.pme.mode = CuriePME_getDistanceMode();
+        DBG_PRINT("distance mode: %d\n", msg->data.pme.mode);
+        break;
+    case TYPE_PME_SET_DISTANCE_MODE:
+        if (msg->data.pme.mode != L1_Distance && msg->data.pme.mode != LSUP_Distance) {
+            ERR_PRINT("invalid distance mode\n");
+            ipm_send_error(msg, ERROR_IPM_INVALID_PARAMETER);
+            return;
+        }
+        CuriePME_setDistanceMode(msg->data.pme.mode);
+        DBG_PRINT("distance mode: %d\n", msg->data.pme.mode);
+        break;
+
+    default:
+        ERR_PRINT("unsupported pme message type %lu\n", msg->type);
+        error_code = ERROR_IPM_NOT_SUPPORTED;
+    }
+
+    if (error_code != ERROR_IPM_NONE) {
+        ipm_send_error(msg, error_code);
+        return;
+    }
+    zjs_ipm_send(msg->id, msg);
+}
+#endif // BUILD_MODULE_PME
+
 static void process_messages()
 {
     struct zjs_ipm_message *msg = msg_queue;
 
     while (msg && msg < end_of_queue_ptr) {
         // loop through all messages and process them
-       switch(msg->id) {
+        switch (msg->id) {
 #ifdef BUILD_MODULE_AIO
-       case MSG_ID_AIO:
-           handle_aio(msg);
-           break;
+        case MSG_ID_AIO:
+            handle_aio(msg);
+            break;
 #endif
 #ifdef BUILD_MODULE_I2C
-       case MSG_ID_I2C:
-           handle_i2c(msg);
-           break;
+        case MSG_ID_I2C:
+            handle_i2c(msg);
+            break;
 #endif
 #ifdef BUILD_MODULE_GROVE_LCD
-       case MSG_ID_GLCD:
-           handle_glcd(msg);
-           break;
+        case MSG_ID_GLCD:
+            handle_glcd(msg);
+            break;
 #endif
 #ifdef BUILD_MODULE_SENSOR
-       case MSG_ID_SENSOR:
-           handle_sensor(msg);
-           break;
+        case MSG_ID_SENSOR:
+            handle_sensor(msg);
+            break;
 #endif
-       case MSG_ID_DONE:
-           return;
-       default:
-           ERR_PRINT("unsupported ipm message id: %lu, check ARC modules\n",
-                     msg->id);
-           ipm_send_error(msg, ERROR_IPM_NOT_SUPPORTED);
-       }
+#ifdef BUILD_MODULE_PME
+        case MSG_ID_PME:
+            handle_pme(msg);
+            break;
+#endif
+        case MSG_ID_DONE:
+            return;
+        default:
+            ERR_PRINT("unsupported ipm message id: %lu, check ARC modules\n",
+                      msg->id);
+            ipm_send_error(msg, ERROR_IPM_NOT_SUPPORTED);
+        }
 
-       msg->id = MSG_ID_DONE;
-       msg++;
+        msg->id = MSG_ID_DONE;
+        msg++;
     }
 }
 

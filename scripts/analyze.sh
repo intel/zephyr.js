@@ -534,6 +534,14 @@ if check_for_feature "Accelerometer\|Gyroscope\|AmbientLightSensor\|TemperatureS
     fi
 fi
 
+if check_for_require pme || check_config_file ZJS_PME; then
+    if [[ $BOARD = "arduino_101" ]]; then
+        >&2 echo Using module: Curie PME
+        MODULES+=" -DBUILD_MODULE_PME"
+        echo "export ZJS_PME=y" >> $CONFFILE
+    fi
+fi
+
 console=$(grep console $SCRIPT)
 if [ $? -eq 0 ] || check_config_file ZJS_CONSOLE && [[ $MODULE != *"BUILD_MODULE_CONSOLE"* ]]; then
     >&2 echo Using module: Console

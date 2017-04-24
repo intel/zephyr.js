@@ -57,6 +57,9 @@
 #include "zjs_fs.h"
 #ifdef CONFIG_BOARD_ARDUINO_101
 #include "zjs_ipm.h"
+#ifdef BUILD_MODULE_PME
+#include "zjs_pme.h"
+#endif
 #endif
 #ifdef CONFIG_BOARD_FRDM_K64F
 #include "zjs_k64f_pins.h"
@@ -127,6 +130,14 @@ module_t zjs_modules_array[] = {
 #endif
 #ifdef BUILD_MODULE_PERFORMANCE
     { "performance", zjs_performance_init },
+#endif
+#ifdef CONFIG_BOARD_ARDUINO_101
+#ifdef BUILD_MODULE_A101
+    { "arduino101_pins", zjs_a101_init },
+#endif
+#ifdef BUILD_MODULE_PME
+    { "pme", zjs_pme_init },
+#endif
 #endif
 #ifdef BUILD_MODULE_OCF
     { "ocf", zjs_ocf_init, zjs_ocf_cleanup },
@@ -328,6 +339,11 @@ void zjs_modules_cleanup()
 #endif
 #ifdef BUILD_MODULE_SENSOR
     zjs_sensor_cleanup();
+#endif
+#ifdef CONFIG_BOARD_ARDUINO_101
+#ifdef BUILD_MODULE_PME
+    zjs_pme_cleanup();
+#endif
 #endif
 }
 
