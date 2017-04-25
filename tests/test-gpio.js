@@ -21,7 +21,7 @@ var mark = 0;
 
 var edgeInterval = setInterval(function () {
     var count = 0;
-    pinA = gpio.open({ pin: pins.IO7 });
+    pinA = gpio.open({pin: pins.IO7});
     pinA.write(changes[mark][2]);
     pinB = gpio.open({
         pin: pins.IO8,
@@ -56,8 +56,8 @@ var edgeInterval = setInterval(function () {
 }, 2000);
 
 // test GPIO open
-pinA = gpio.open({ pin: pins.IO7 });
-pinB = gpio.open({ pin: pins.IO8, direction: "in" });
+pinA = gpio.open({pin: pins.IO7});
+pinB = gpio.open({pin: pins.IO8, direction: "in"});
 
 assert(pinA != null && typeof pinA == "object",
       "open: defined pin and default as 'out' direction");
@@ -66,7 +66,7 @@ assert(pinB != null && typeof pinB == "object",
       "open: defined pin with direction 'in'");
 
 assert.throws(function () {
-    gpio.open({ pin: 1024 });
+    gpio.open({pin: 1024});
 }, "open: invalid pin");
 
 // test GPIOPin read and write
@@ -74,6 +74,7 @@ pinA.write(true);
 bValue = pinB.read();
 assert(bValue, "gpiopin: write and read");
 
+// reading an output pin may not be valid; this is probably a bad test
 aValue = pinA.read();
 assert(aValue, "gpiopin: read output pin");
 
@@ -86,7 +87,7 @@ assert.throws(function () {
 }, "gpiopin: write invalid argument");
 
 // test activeLow
-pinB = gpio.open({ pin: pins.IO8, activeLow:true, direction: "in" });
+pinB = gpio.open({pin: pins.IO8, activeLow: true, direction: "in"});
 pinA.write(false);
 bValue = pinB.read();
 assert(bValue, "activeLow: true");
