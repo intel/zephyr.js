@@ -9,12 +9,14 @@ OCF_ROOT ?= deps/iotivity-constrained
 
 BUILD_DIR = $(ZJS_BASE)/outdir/linux/$(VARIANT)
 
-CORE_SRC +=	src/zjs_buffer.c \
+CORE_SRC +=	src/zjs_a101_pins.c \
+		src/zjs_buffer.c \
 		src/zjs_callbacks.c \
 		src/zjs_common.c \
 		src/zjs_console.c \
 		src/zjs_error.c \
 		src/zjs_event.c \
+		src/zjs_gpio.c \
 		src/zjs_linux_ring_buffer.c \
 		src/zjs_linux_time.c \
 		src/main.c \
@@ -52,7 +54,9 @@ LINUX_DEFINES +=	-DZJS_LINUX_BUILD \
 			-DBUILD_MODULE_BUFFER \
 			-DBUILD_MODULE_TEST_PROMISE \
 			-DBUILD_MODULE_PROMISE \
-			-DBUILD_MODULE_TEST_CALLBACKS
+			-DBUILD_MODULE_TEST_CALLBACKS \
+			-DBUILD_MODULE_A101 \
+			-DBUILD_MODULE_GPIO
 
 LINUX_FLAGS += 	-fno-asynchronous-unwind-tables \
 		-fno-omit-frame-pointer \

@@ -1,9 +1,11 @@
 // Copyright (c) 2016-2017, Intel Corporation.
 
 // Zephyr includes
+#ifndef ZJS_LINUX_BUILD
 #include <zephyr.h>
 #include <gpio.h>
 #include <misc/util.h>
+#endif
 #include <string.h>
 #include <stdlib.h>
 
@@ -12,7 +14,47 @@
 #include "zjs_util.h"
 #include "zjs_callbacks.h"
 
+#if defined(ZJS_LINUX_BUILD) || defined(QEMU_BUILD)
+#define ZJS_GPIO_MOCK
+#endif
+
 #ifdef ZJS_GPIO_MOCK
+#ifdef ZJS_LINUX_BUILD
+// provide Zephyr dependencies
+struct device;
+struct gpio_callback;
+typedef void (*gpio_callback_handler_t)(struct device *port,
+                                        struct gpio_callback *cb,
+                                        uint32_t pins);
+struct gpio_callback {
+    gpio_callback_handler_t handler;
+    uint32_t pin_mask;
+};
+
+#define GPIO_DIR_IN           (0 << 0)
+#define GPIO_DIR_OUT          (1 << 0)
+#define GPIO_INT              (1 << 1)
+#define GPIO_INT_ACTIVE_LOW   (0 << 2)
+#define GPIO_INT_ACTIVE_HIGH  (1 << 2)
+#define GPIO_INT_EDGE         (1 << 5)
+#define GPIO_INT_DOUBLE_EDGE  (1 << 6)
+#define GPIO_POL_NORMAL       (0 << 7)
+#define GPIO_POL_INV          (1 << 7)
+#define GPIO_PUD_NORMAL       (0 << 8)
+#define GPIO_PUD_PULL_UP      (1 << 8)
+#define GPIO_PUD_PULL_DOWN    (2 << 8)
+
+#define BIT(n)  (1UL << (n))
+#define CONTAINER_OF(ptr, type, field) \
+	((type *)(((char *)(ptr)) - offsetof(type, field)))
+
+#define DEVICE_TO_PORT(device) ((jerry_value_t)(uint64_t)device)
+#define PORT_TO_DEVICE(port) ((struct device *)(uint64_t)port)
+#else
+#define DEVICE_TO_PORT(device) ((jerry_value_t)device)
+#define PORT_TO_DEVICE(port) ((struct device *)port)
+#endif
+
 static struct device *mock_device_get_binding(const char *name);
 static int mock_gpio_pin_read(struct device *port, uint32_t pin,
                               uint32_t *value);
@@ -510,10 +552,10 @@ static ZJS_DECL_FUNC(zjs_gpio_mock_wire)
     lookup_pin(argv[0], &port1, &pin1);
     lookup_pin(argv[1], &port2, &pin2);
 
-    jerry_value_t port1_obj = (jerry_value_t)port1;
+    jerry_value_t port1_obj = DEVICE_TO_PORT(port1);
     jerry_value_t name1 = find_property_with_value(mock_root_obj, port1_obj);
 
-    jerry_value_t port2_obj = (jerry_value_t)port2;
+    jerry_value_t port2_obj = DEVICE_TO_PORT(port2);
     jerry_value_t name2 = find_property_with_value(mock_root_obj, port2_obj);
 
     if (!name1 || !name2) {
@@ -553,13 +595,13 @@ static struct device *mock_device_get_binding(const char *name)
     //   so it's really just a unique ID for our mock purposes. This also means
     //   we don't reference the object on return as with normal jerry_value_t
     //   rules.
-    return (struct device *)rval;
+    return PORT_TO_DEVICE(rval);
 }
 
 static int mock_gpio_pin_read(struct device *port, uint32_t pin,
                               uint32_t *value)
 {
-    jerry_value_t port_obj = (jerry_value_t)port;
+    jerry_value_t port_obj = DEVICE_TO_PORT(port);
     if (!find_property_with_value(mock_root_obj, port_obj)) {
         ERR_PRINT("invalid port object\n");
         return -1;
@@ -615,7 +657,7 @@ mock_cb_item_t *mock_cb_list = NULL;
 static int mock_gpio_pin_write(struct device *port, uint32_t pin,
                                uint32_t value)
 {
-    jerry_value_t port_obj = (jerry_value_t)port;
+    jerry_value_t port_obj = DEVICE_TO_PORT(port);
     if (!find_property_with_value(mock_root_obj, port_obj)) {
         ERR_PRINT("invalid port object\n");
         return -1;
@@ -685,7 +727,7 @@ static int mock_gpio_pin_write(struct device *port, uint32_t pin,
 static int mock_gpio_pin_configure(struct device *port, uint8_t pin,
                                    int flags)
 {
-    jerry_value_t port_obj = (jerry_value_t)port;
+    jerry_value_t port_obj = DEVICE_TO_PORT(port);
     if (!find_property_with_value(mock_root_obj, port_obj)) {
         ERR_PRINT("invalid port object\n");
         return -1;
@@ -717,7 +759,7 @@ static int mock_gpio_add_callback(struct device *port,
                                   struct gpio_callback *callback)
 {
     // FIXME: remove evil hack by defining device w/ obj inside
-    jerry_value_t port_obj = (jerry_value_t)port;
+    jerry_value_t port_obj = DEVICE_TO_PORT(port);
     if (!find_property_with_value(mock_root_obj, port_obj)) {
         ERR_PRINT("invalid port object\n");
         return -1;
@@ -737,13 +779,29 @@ static int mock_gpio_add_callback(struct device *port,
 static int mock_gpio_remove_callback(struct device *port,
                                      struct gpio_callback *callback)
 {
-    // not implemented yet
+    // disable the callback for this port
+    jerry_value_t port_obj = DEVICE_TO_PORT(port);
+    if (!find_property_with_value(mock_root_obj, port_obj)) {
+        ERR_PRINT("invalid port object\n");
+        return -1;
+    }
+
+    mock_cb_item_t *item = mock_cb_list;
+    while (item) {
+        if (item->callback == callback && item->port == DEVICE_TO_PORT(port)) {
+            item->enabled_mask = 0;
+            item = item->next;
+            break;
+        }
+        item = item->next;
+    }
+
     return 0;
 }
 
 static int mock_gpio_pin_enable_callback(struct device *port, uint32_t pin)
 {
-    jerry_value_t port_obj = (jerry_value_t)port;
+    jerry_value_t port_obj = DEVICE_TO_PORT(port);
     if (!find_property_with_value(mock_root_obj, port_obj)) {
         ERR_PRINT("invalid port object\n");
         return -1;

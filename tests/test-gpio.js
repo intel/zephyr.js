@@ -11,7 +11,7 @@ if (gpio.mock) {
 }
 else {
     // Pre-conditions
-    console.log("Wire IO7 to IO8");
+    console.log("Hardware setup: Wire IO7 to IO8!");
 }
 
 var pinA, pinB, aValue, bValue;
@@ -57,8 +57,8 @@ var edgeInterval = setInterval(function () {
             assert.result();
             clearInterval(edgeInterval);
         }
-    }, 1000);
-}, 2000);
+    }, 100);
+}, 200);
 
 // test GPIO open
 pinA = gpio.open({pin: pins.IO7});
