@@ -472,9 +472,9 @@ You can build the "linux" target on Mac OSX using BOARD=linux, follow instructio
 ### Building QEMU and Arduino 101 targets
 You can build QEMU with BOARD=qemu_x86 and Arduino 101 with BOARD=arduino_101, you'll need to install crosstool-ng and ARC compiler from Arduino IDE. (**Note** there's a linker issue currently with crosstool-ng when building Arduino 101 see [here](https://jira.zephyrproject.org/browse/ZEP-1994), but qemu_x86 should work)
 
-You'll need to install Homebrew first so you can install crosstool-ng. Follow the Zephyr instructions [here](https://www.zephyrproject.org/doc/getting_started/installation_mac.html)
+Install crosstool-ng following the Zephyr instructions [here](https://www.zephyrproject.org/doc/getting_started/installation_mac.html)
 
-After installing crosstool-ng, create and mount the image using our script:
+After installing crosstool-ng, create and mount the image using our script [osxmountzephyr.sh](scripts/osxmountzephyr.sh):
 ```bash
 osxmountzephyr.sh
 ```
