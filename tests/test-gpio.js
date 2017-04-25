@@ -2,12 +2,17 @@
 
 // Testing GPIO APIs
 
-// Pre-conditions
-console.log("Wire IO7 to IO8");
-
 var gpio = require("gpio");
 var pins = require("arduino101_pins");
 var assert = require("Assert.js");
+
+if (gpio.mock) {
+    gpio.wire(gpio.open({pin: pins.IO7}), gpio.open({pin: pins.IO8}));
+}
+else {
+    // Pre-conditions
+    console.log("Wire IO7 to IO8");
+}
 
 var pinA, pinB, aValue, bValue;
 
