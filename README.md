@@ -445,7 +445,12 @@ Requirements:
 * ARC cross-compiler (for building Arduino 101)
 * Python-yaml
 
-First, you'll need to update to the latest OSX and install/upgrade to
+First, make sure you have Homebrew installed, instructions [here](https://brew.sh/), and then install the following brew packages:
+```bash
+brew install cmake libtool automake gcc
+```
+
+Next, you'll need to update to the latest OSX and install/upgrade to
 the latest XCode Command Line Tools (we build Sierra 10.12 and XCode 8.3) from App store.
 
 To install XCode Command Line Tools, open a terminal and type:
@@ -474,6 +479,12 @@ After installing crosstool-ng, create and mount the image using our script:
 osxmountzephyr.sh
 ```
 
+Once you've created the image the first time, you can subsequently re-mount and un-mount the images with:
+```bash
+hdiutil mount CrossToolNG.sparseimage
+diskutil umount force /Volumes/CrossToolNG
+```
+
 This will create an image mounted under /Volumes/CrossToolNG.  You can then configure crosstool-ng:
 ```bash
 cd /Volumes/CrossToolNG
@@ -482,7 +493,7 @@ cd build
 cp ${ZEPHYR_BASE}/scripts/cross_compiler/x86.config .config
 ```
 
-You can create a toolchain configuration or customize an existing configuration yourself using the configuration menus:
+(optional). You can customize an existing configuration yourself using the configuration menus:
 ```bash
 ct-ng menuconfig
 ```
@@ -520,6 +531,11 @@ cat <<EOF > ~/.zephyrrc
 export XTOOLS_TOOLCHAIN_PATH=/Volumes/CrossToolNG/x-tools
 export ZEPHYR_GCC_VARIANT=xtools
 EOF
+```
+
+For a new environment, create a symlink for Python2.7:
+```bash
+ln -s /usr/bin/python2.7 /usr/local/bin/python2
 ```
 
 Now, you can build and run on QEMU using this command:
