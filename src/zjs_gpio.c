@@ -291,7 +291,7 @@ static ZJS_DECL_FUNC(zjs_gpio_open)
     bool both = false;
     if (zjs_obj_get_string(data, "edge", buffer, BUFLEN)) {
         if (!strcmp(buffer, ZJS_EDGE_BOTH)) {
-            flags |= GPIO_INT | GPIO_INT_DOUBLE_EDGE;
+            flags |= GPIO_INT | GPIO_INT_EDGE | GPIO_INT_DOUBLE_EDGE;
             edge = ZJS_EDGE_BOTH;
             both = true;
         }
