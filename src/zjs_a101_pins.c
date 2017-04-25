@@ -1,9 +1,5 @@
 // Copyright (c) 2016-2017, Intel Corporation.
 
-#ifdef BUILD_MODULE_A101
-// Zephyr includes
-#include <zephyr.h>
-
 // ZJS includes
 #include <zjs_gpio.h>
 #include <zjs_pwm.h>
@@ -117,4 +113,3 @@ jerry_value_t zjs_a101_init()
 
     return obj;
 }
-#endif // BUILD_MODULE_A101

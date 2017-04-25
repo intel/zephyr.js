@@ -15,6 +15,9 @@
 #endif
 
 // ZJS includes
+#if defined(CONFIG_BOARD_ARDUINO_101) || defined(ZJS_LINUX_BUILD)
+#include "zjs_a101_pins.h"
+#endif
 #ifdef BUILD_MODULE_BUFFER
 #include "zjs_buffer.h"
 #endif
@@ -25,6 +28,7 @@
 #include "zjs_net.h"
 #include "zjs_web_sockets.h"
 #include "zjs_event.h"
+#include "zjs_gpio.h"
 #include "zjs_modules.h"
 #include "zjs_performance.h"
 #include "zjs_callbacks.h"
@@ -46,14 +50,12 @@
 #ifndef ZJS_LINUX_BUILD
 #include "zjs_aio.h"
 #include "zjs_ble.h"
-#include "zjs_gpio.h"
 #include "zjs_grove_lcd.h"
 #include "zjs_i2c.h"
 #include "zjs_pwm.h"
 #include "zjs_uart.h"
 #include "zjs_fs.h"
 #ifdef CONFIG_BOARD_ARDUINO_101
-#include "zjs_a101_pins.h"
 #include "zjs_ipm.h"
 #endif
 #ifdef CONFIG_BOARD_FRDM_K64F
@@ -85,9 +87,6 @@ module_t zjs_modules_array[] = {
 #ifdef BUILD_MODULE_BLE
     { "ble", zjs_ble_init, zjs_ble_cleanup },
 #endif
-#ifdef BUILD_MODULE_GPIO
-    { "gpio", zjs_gpio_init, zjs_gpio_cleanup },
-#endif
 #ifdef BUILD_MODULE_GROVE_LCD
     { "grove_lcd", zjs_grove_lcd_init, zjs_grove_lcd_cleanup },
 #endif
@@ -100,11 +99,6 @@ module_t zjs_modules_array[] = {
 #ifdef BUILD_MODULE_FS
     { "fs", zjs_fs_init, zjs_fs_cleanup },
 #endif
-#ifdef CONFIG_BOARD_ARDUINO_101
-#ifdef BUILD_MODULE_A101
-    { "arduino101_pins", zjs_a101_init },
-#endif
-#endif
 #ifdef CONFIG_BOARD_FRDM_K64F
     { "k64f_pins", zjs_k64f_init },
 #endif
@@ -113,6 +107,12 @@ module_t zjs_modules_array[] = {
     { "uart", zjs_uart_init, zjs_uart_cleanup },
 #endif
 #endif // ZJS_LINUX_BUILD
+#ifdef BUILD_MODULE_A101
+    { "arduino101_pins", zjs_a101_init },
+#endif
+#ifdef BUILD_MODULE_GPIO
+    { "gpio", zjs_gpio_init, zjs_gpio_cleanup },
+#endif
 #ifdef BUILD_MODULE_DGRAM
     { "dgram", zjs_dgram_init, zjs_dgram_cleanup },
 #endif
