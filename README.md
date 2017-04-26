@@ -20,7 +20,7 @@ everything else.
 * [Building and running on Mac OSX](#building-and-running-on-mac-osx)
 * [Supported modules on Linux and Zephyr](#supported-modules-on-linux-and-zephyr)
 * [Networking with QEMU](#networking-with-qemu)
-* [OCF over BLE](#ocf-over-ble)
+* [Networking with BLE](#networking-with-ble)
 
 ## Getting Started
 
@@ -636,6 +636,6 @@ again.
 The original instructions document can be found on the Zephyr website
 (here)[https://www.zephyrproject.org/doc/subsystems/networking/qemu_setup.html]
 
-## OCF over BLE
-There is a dedicated [document](./docs/ocf-ble.md) for building and running OCF over
-BLE on the Arduino 101.
+## Networking with BLE
+It is possible to use IP networking over BLE using 6lowpan. This is explained
+in a dedicated [document](./docs/6lowpan-ble.md)
