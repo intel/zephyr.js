@@ -440,50 +440,42 @@ void signal_callback_priv(zjs_callback_id id,
     LOCK();
     DBG_PRINT("pushing item to ring buffer. id=%d, args=%p, size=%lu\n", id,
               args, size);
-    if (id < 0 || cb_map[id]) {
+    if (id < 0 || !cb_map[id]) {
         DBG_PRINT("callback ID %u does not exist\n", id);
-    } else {
-        if (GET_CB_REMOVED(cb_map[id]->flags)) {
-            DBG_PRINT("callback already removed\n");
-            return;
+        return;
+    }
+    if (GET_CB_REMOVED(cb_map[id]->flags)) {
+        DBG_PRINT("callback already removed\n");
+        return;
+    }
+    if (GET_TYPE(cb_map[id]->flags) == CALLBACK_TYPE_JS) {
+        // for JS, acquire values and release them after servicing callback
+        int argc = size / sizeof(jerry_value_t);
+        jerry_value_t *values = (jerry_value_t *)args;
+        for (int i=0; i<argc; i++) {
+            jerry_acquire_value(values[i]);
         }
     }
-
+#ifdef DEBUG_BUILD
+        set_info_string(cb_map[id]->caller, file, func);
+#endif
     int ret = zjs_port_ring_buf_put(&ring_buffer,
-                                    (uint16_t)id,
-                                    0,  // we use value for CB_FLUSH_ONE/ALL
-                                    (uint32_t *)args,
-                                    (uint8_t)((size + 3) / 4));
+            (uint16_t)id,
+            0,  // we use value for CB_FLUSH_ONE/ALL
+            (uint32_t *)args,
+            (uint8_t)((size + 3) / 4));
     if (ret != 0) {
         if (GET_TYPE(cb_map[id]->flags) == CALLBACK_TYPE_JS) {
             // for JS, acquire values and release them after servicing callback
             int argc = size / sizeof(jerry_value_t);
             jerry_value_t *values = (jerry_value_t *)args;
             for (int i=0; i<argc; i++) {
-                jerry_acquire_value(values[i]);
+                jerry_release_value(values[i]);
             }
-#ifdef DEBUG_BUILD
-            set_info_string(cb_map[id]->caller, file, func);
-#endif
         }
-        int ret = zjs_port_ring_buf_put(&ring_buffer,
-                                        (uint16_t)id,
-                                        0,  // we use value for CB_FLUSH_ONE/ALL
-                                        (uint32_t *)args,
-                                        (uint8_t)((size + 3) / 4));
-        if (ret != 0) {
-            if (GET_TYPE(cb_map[id]->flags) == CALLBACK_TYPE_JS) {
-                // for JS, acquire values and release them after servicing callback
-                int argc = size / sizeof(jerry_value_t);
-                jerry_value_t *values = (jerry_value_t *)args;
-                for (int i=0; i<argc; i++) {
-                    jerry_release_value(values[i]);
-                }
-            }
 
-            zjs_ringbuf_error_count++;
-            zjs_ringbuf_last_error = ret;
-        }
+        zjs_ringbuf_error_count++;
+        zjs_ringbuf_last_error = ret;
     }
     UNLOCK();
 }
