@@ -432,45 +432,43 @@ void zjs_ashell_process()
     uint32_t len = 0;
     atomic_set(&uart_state, UART_INIT);
 
- while (!comms_config.interface.is_done()) {
-    atomic_set(&uart_state, UART_WAITING);
-    data = k_fifo_get(&data_queue, K_NO_WAIT);
-    if (data) {
-        atomic_dec(&data_queue_count);
-        buf = data->line;
-        len = strnlen(buf, MAX_LINE_LEN);
+    while (!comms_config.interface.is_done()) {
+        atomic_set(&uart_state, UART_WAITING);
+        data = k_fifo_get(&data_queue, K_NO_WAIT);
+        if (data) {
+            atomic_dec(&data_queue_count);
+            buf = data->line;
+            len = strnlen(buf, MAX_LINE_LEN);
 
-        comms_config.interface.process_cb(buf, len);
-        uart_process_done = true;
-        DBG("[Recycle]\n");
-        fifo_recycle_buffer(data);
-        data = NULL;
+            comms_config.interface.process_cb(buf, len);
+            uart_process_done = true;
+            DBG("[Recycle]\n");
+            fifo_recycle_buffer(data);
+            data = NULL;
 
-        DBG("[Data]\n");
-        DBG("%s\n", buf);
-    } else {
-        /* We clear the cache memory if there are no data transactions */
-        if (tail == 0) {
-            fifo_cache_clear();
+            DBG("[Data]\n");
+            DBG("%s\n", buf);
         } else {
-            /* Wait for a timeout and flush data if there was not a carriage return */
-            if (atomic_get(&uart_state) == UART_ISR_END && isr_data != NULL) {
-                DBG("Capturing buffer\n");
-                process_state = 20;
-                isr_data->line[tail] = 0;
-                tail = 0;
-                data = isr_data;
-                buf = data->line;
-                isr_data = NULL;
-                atomic_set(&uart_state, UART_TASK_DATA_CAPTURE);
+            /* We clear the cache memory if there are no data transactions */
+            if (tail == 0) {
+                fifo_cache_clear();
+            } else {
+                /* Wait for a timeout and flush data if there was not a carriage return */
+                if (atomic_get(&uart_state) == UART_ISR_END && isr_data != NULL) {
+                    DBG("Capturing buffer\n");
+                    process_state = 20;
+                    isr_data->line[tail] = 0;
+                    tail = 0;
+                    data = isr_data;
+                    buf = data->line;
+                    isr_data = NULL;
+                    atomic_set(&uart_state, UART_TASK_DATA_CAPTURE);
+                }
             }
+            // We have nothing to do, bail out of the while.
+            return;
         }
-        // We have nothing to do, bail out of the while.
-        return;
     }
-
-    }
-
     atomic_set(&uart_state, UART_CLOSE);
     if (comms_config.interface.close_cb != NULL)
         comms_config.interface.close_cb();
