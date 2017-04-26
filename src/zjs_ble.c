@@ -514,21 +514,21 @@ static void zjs_ble_blvl_ccc_cfg_changed(const struct bt_gatt_attr *attr, uint16
 
 static void zjs_ble_connected_c_callback(void *handle, const void *argv)
 {
-    ble_handle_t * h = (ble_handle_t *)handle;
+    ble_handle_t *h = (ble_handle_t *)handle;
     if (!h) {
         ERR_PRINT("handle not found\n");
         return;
     }
 
-    char *addr = (char *)argv;
-    ZVAL arg = jerry_create_string((jerry_char_t *)addr);
+    const char *addr = (const char *)argv;
+    ZVAL arg = jerry_create_string((const jerry_char_t *)addr);
     zjs_trigger_event(h->ble_obj, "accept", &arg, 1, NULL, NULL);
     DBG_PRINT("BLE event: connected, addr %s\n", addr);
 }
 
 static void zjs_ble_disconnected_c_callback(void *handle, const void *argv)
 {
-    ble_handle_t * h = (ble_handle_t *)handle;
+    ble_handle_t *h = (ble_handle_t *)handle;
     if (!h) {
         ERR_PRINT("handle not found\n");
         return;
@@ -549,7 +549,7 @@ static void zjs_ble_connected(struct bt_conn *conn, uint8_t err)
         DBG_PRINT("new connection\n");
         ble_connection_t *new_conn = zjs_ble_new_connection(&ble_handle->connections, conn);
         if (!new_conn) {
-            ERR_PRINT("failed to create new cilent connection\n");
+            ERR_PRINT("failed to create new client connection\n");
             return;
         }
 
@@ -599,7 +599,7 @@ static struct bt_conn_auth_cb zjs_ble_auth_cb_display = {
 
 static void zjs_ble_ready_c_callback(void *handle, const void *argv)
 {
-    ble_handle_t * h = (ble_handle_t *)handle;
+    ble_handle_t *h = (ble_handle_t *)handle;
     if (!h) {
         ERR_PRINT("handle not found\n");
         return;
