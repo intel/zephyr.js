@@ -389,8 +389,6 @@ char *ashell_get_token_arg(char *str)
 uint32_t ashell_process_init()
 {
     DBG("[SHELL] Init\n");
-    comms_println("");
-    comms_print(comms_get_prompt());
     return 0;
 }
 

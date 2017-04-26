@@ -411,7 +411,7 @@ void comms_runner_init()
     setbuf(stdout, NULL);
 
     ashell_help("");
-
+    comms_print(comms_get_prompt());
     process_state = 0;
 
     atomic_set(&uart_state, UART_INIT);
@@ -430,7 +430,9 @@ void zjs_ashell_process()
     static struct comms_input *data = NULL;
     char *buf = NULL;
     uint32_t len = 0;
+    atomic_set(&uart_state, UART_INIT);
 
+ while (!comms_config.interface.is_done()) {
     atomic_set(&uart_state, UART_WAITING);
     data = k_fifo_get(&data_queue, K_NO_WAIT);
     if (data) {
@@ -463,7 +465,15 @@ void zjs_ashell_process()
                 atomic_set(&uart_state, UART_TASK_DATA_CAPTURE);
             }
         }
+        // We have nothing to do, bail out of the while.
+        return;
     }
+
+    }
+
+    atomic_set(&uart_state, UART_CLOSE);
+    if (comms_config.interface.close_cb != NULL)
+        comms_config.interface.close_cb();
 }
 
 /**
