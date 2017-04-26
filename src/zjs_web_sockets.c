@@ -13,7 +13,7 @@
 #include "mbedtls/sha1.h"
 #include "mbedtls/base64.h"
 
-#if defined(CONFIG_NET_L2_BLUETOOTH)
+#ifdef CONFIG_NET_L2_BLUETOOTH
 #include <bluetooth/bluetooth.h>
 #include <gatt/ipss.h>
 #include <bluetooth/conn.h>
@@ -56,8 +56,8 @@ typedef struct server_handle {
     struct net_context *tcp_sock;
     jerry_value_t accept_handler;
     jerry_value_t server;
-    bool track;
     uint16_t max_payload;
+    bool track;
 } server_handle_t;
 
 // WS connection handle, unique per server connection
@@ -78,16 +78,16 @@ typedef struct ws_connection {
 
 // structure to hold a decoded WS packet
 typedef struct ws_packet {
+    uint8_t *payload;
+    uint32_t payload_len;
+    uint32_t payload_offset;
+    uint8_t mask[4];
     uint8_t fin;
     uint8_t rsv1;
     uint8_t rsv2;
     uint8_t rsv3;
     uint8_t opcode;
     uint8_t mask_bit;
-    uint32_t payload_len;
-    uint32_t payload_offset;
-    uint8_t mask[4];
-    uint8_t *payload;
 } ws_packet_t;
 
 // start of header preceding accept key
@@ -238,7 +238,7 @@ static int encode_packet(ws_packet_type type,
     // FIN bit
     byte1 |= (1 << 7);
     // rsv[1-3] are unused
-    // opcode is the bottom 4 bits of the first byte (top 4 once in network order)
+    // opcode is the bottom 4 bits of the first byte
     byte1 |= (type & 0xf);
     uint8_t byte2 = 0;
     if (len <= 125) {
@@ -553,7 +553,7 @@ static void tcp_received(struct net_context *context,
         uint8_t *data = zjs_malloc(len);
         if (!data) {
             ERR_PRINT("not enough memory to allocate data\n");
-            ZVAL error = zjs_error("out of memory");
+            ZVAL_MUTABLE error = zjs_error("out of memory");
             jerry_value_clear_error_flag(&error);
             zjs_trigger_event(con->server, "error", &error, 1, NULL, NULL);
             net_nbuf_unref(buf);
@@ -571,7 +571,7 @@ static void tcp_received(struct net_context *context,
 #endif
         if (con->server_handle->max_payload &&
             (len > con->server_handle->max_payload)) {
-            ZVAL error = zjs_error("payload too large");
+            ZVAL_MUTABLE error = zjs_error("payload too large");
             jerry_value_clear_error_flag(&error);
             zjs_trigger_event(con->server, "error", &error, 1, NULL, NULL);
             net_nbuf_unref(buf);
@@ -583,7 +583,7 @@ static void tcp_received(struct net_context *context,
             con->accept_key = zjs_malloc(64);
             if (!con->accept_key) {
                 ERR_PRINT("could not allocate accept key\n");
-                ZVAL error = zjs_error("out of memory");
+                ZVAL_MUTABLE error = zjs_error("out of memory");
                 jerry_value_clear_error_flag(&error);
                 zjs_trigger_event(con->server, "error", &error, 1, NULL, NULL);
                 net_nbuf_unref(buf);
@@ -648,7 +648,7 @@ static void tcp_received(struct net_context *context,
                                              strlen(con->accept_key) + 6);
                 if (!send_data) {
                     ERR_PRINT("could not allocate accept message\n");
-                    ZVAL error = zjs_error("out of memory");
+                    ZVAL_MUTABLE error = zjs_error("out of memory");
                     jerry_value_clear_error_flag(&error);
                     zjs_trigger_event(con->server, "error", &error, 1, NULL, NULL);
                     net_nbuf_unref(buf);
@@ -689,10 +689,10 @@ static void tcp_received(struct net_context *context,
     net_nbuf_unref(buf);
 }
 
-static void post_accept_handler(void *handle, jerry_value_t *ret_val)
+static void post_accept_handler(void *handle, jerry_value_t ret_val)
 {
     ws_connection_t *con = (ws_connection_t *)handle;
-    if (!jerry_value_is_string(*ret_val)) {
+    if (!jerry_value_is_string(ret_val)) {
         DBG_PRINT("no protocol returned\n");
         char send_data[] = "HTTP/1.1 401 Unauthorized\r\n\r\n";
         tcp_send(con->tcp_sock, send_data, strlen(send_data));
@@ -700,7 +700,7 @@ static void post_accept_handler(void *handle, jerry_value_t *ret_val)
     }
     uint32_t size = 32;
     char proto[size];
-    zjs_copy_jstring(*ret_val, proto, &size);
+    zjs_copy_jstring(ret_val, proto, &size);
     if (!size) {
         ERR_PRINT("acceptHandler() protocol string too large\n");
         return;
@@ -713,7 +713,7 @@ static void post_accept_handler(void *handle, jerry_value_t *ret_val)
     char *send_data = zjs_malloc(sdata_size);
     if (!send_data) {
         ERR_PRINT("could not allocate accept message\n");
-        ZVAL error = zjs_error("out of memory");
+        ZVAL_MUTABLE error = zjs_error("out of memory");
         jerry_value_clear_error_flag(&error);
         zjs_trigger_event(con->server, "error", &error, 1, NULL, NULL);
         return;
@@ -746,7 +746,7 @@ static void tcp_accepted(struct net_context *context,
     ws_connection_t *new = zjs_malloc(sizeof(ws_connection_t));
     if (!new) {
         ERR_PRINT("could not allocate connection handle\n");
-        ZVAL error = zjs_error("out of memory");
+        ZVAL_MUTABLE error = zjs_error("out of memory");
         jerry_value_clear_error_flag(&error);
         zjs_trigger_event(handle->server, "error", &error, 1, NULL, NULL);
         return;
@@ -756,7 +756,7 @@ static void tcp_accepted(struct net_context *context,
     new->rbuf = zjs_malloc(DEFAULT_WS_BUFFER_SIZE);
     if (!new->rbuf) {
         ERR_PRINT("could not allocate read buffer\n");
-        ZVAL error = zjs_error("out of memory");
+        ZVAL_MUTABLE error = zjs_error("out of memory");
         jerry_value_clear_error_flag(&error);
         zjs_trigger_event(handle->server, "error", &error, 1, NULL, NULL);
         zjs_free(new);

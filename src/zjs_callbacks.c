@@ -574,7 +574,7 @@ void zjs_call_callback(zjs_callback_id id, const void *data, uint32_t sz)
             // ensure the callback wasn't deleted by the previous calls
             if (cb_map[id]) {
                 if (cb_map[id]->post) {
-                    cb_map[id]->post(cb_map[id]->handle, &rval);
+                    cb_map[id]->post(cb_map[id]->handle, rval);
                 }
                 if (GET_ONCE(cb_map[id]->flags)) {
                     zjs_remove_callback_priv(id, false);

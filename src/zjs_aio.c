@@ -41,13 +41,8 @@ static void zjs_aio_free_cb(uintptr_t ptr)
     zjs_free(handle);
 }
 
-static void zjs_aio_free_callback(void *ptr, uint32_t *rval)
+static void zjs_aio_free_callback(void *ptr, jerry_value_t rval)
 {
-    // FIXME: rval is never written to in these post callbacks, so it doesn't
-    // need to be a pointer, and it's actually never used at all currently so
-    // it could be removed entirely. The ptr arg could be changed to uintptr_t
-    // in zjs_callbacks.c to match the JrS usage as above, and this duplicate
-    // function wouldn't be needed.
     zjs_aio_free_cb((uintptr_t)ptr);
 }
 
