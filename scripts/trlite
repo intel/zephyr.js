@@ -392,7 +392,7 @@ if [ "$RUN" == "all" -o "$RUN" == "3" ]; then
 
     # linux runtime tests
     # TODO: Add buffer, it fails in Linux ATM
-    for i in buffer buffer-rw eval error event promise timers callbacks; do
+    for i in buffer buffer-rw callbacks eval error event promise timers; do
         ./outdir/linux/release/jslinux tests/test-$i.js > /tmp/output
         cat /tmp/output
         try_command "t-$i" test ! $(grep "FAIL" /tmp/output)
