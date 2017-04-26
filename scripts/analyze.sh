@@ -121,7 +121,7 @@ if check_for_require net || check_config_file ZJS_NET; then
 
     if [ $BOARD = "qemu_x86" ]; then
         echo "CONFIG_NET_SLIP_TAP=y" >> $PRJFILE
-    elif [ $BOARD = "arduino_101" ]; then
+    elif [ $BOARD = "arduino_101" ] || [ $BOARD = "nrf52_pca10040" ]; then
         echo "CONFIG_BLUETOOTH=y" >> $PRJFILE
         echo "CONFIG_BLUETOOTH_SMP=y" >> $PRJFILE
         echo "CONFIG_BLUETOOTH_SIGNING=y" >> $PRJFILE
@@ -159,7 +159,7 @@ if check_for_require dgram || check_config_file ZJS_DGRAM; then
     if [ $BOARD = "qemu_x86" ]; then
         echo "CONFIG_NET_SLIP_TAP=y" >> $PRJFILE
     # BLE Options
-    elif [ $BOARD = "arduino_101" ]; then
+    elif [ $BOARD = "arduino_101" ] || [ $BOARD = "nrf52_pca10040" ]; then
         echo "CONFIG_BLUETOOTH=y" >> $PRJFILE
         echo "CONFIG_BLUETOOTH_SMP=y" >> $PRJFILE
         echo "CONFIG_BLUETOOTH_SIGNING=y" >> $PRJFILE

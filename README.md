@@ -309,6 +309,42 @@ install this earlier, you can do so with the command:
 sudo apt-get install node-uglify
 ```
 
+## nRF52 Platform
+This is an experimental ZJS platform and has not been tested. There should be
+no expectation that any given sample/test/application will work at all on this
+platform. The good news is that there have been ZJS networking samples run
+on the nRF52 board with success therefore we mention it here so anyone can try
+it out and contribute fixes to anything that does not work, potentially getting
+it stable enough to adopt as a supported board in the future.
+
+See the
+[Zephyr Project page](https://www.zephyrproject.org/doc/boards/arm/nrf52840_pca10056/doc/nrf52840_pca10056.html)
+for general information about running Zephyr OS on the nRF52.
+
+Connecting to serial output is quite similar to the Arduino 101, except the
+nRF52 will have an ACM port rather than USB. You can connect with minicom
+by doing:
+```bash
+minicom -D /dev/ttyACM0
+```
+
+Building is the same as any other ZJS platform, just use `nrf52840_pca10056` as
+the BOARD name:
+```bash
+make JS=samples/OcfServer.js BOARD=nrf52840_pca10056
+```
+
+You should now have a zephyr binary in `outdir/nrf52840_pca10056/`. You can
+copy it to the nRF52 board with a simple `cp` command:
+```bash
+cp outdir/nrf52840_pca10056/zephyr.bin /media/<user>/JLINK/
+```
+You should see the lights flashing on the nRF52 board. When it stops you can
+reset the board and you should see your application output on /dev/ttyACM0
+
+From here the device can be connected with BLE to a Linux machine as you do with
+an Arduino 101.
+
 ## FRDM-K64F Platform
 
 See the
