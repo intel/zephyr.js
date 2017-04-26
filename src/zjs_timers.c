@@ -85,11 +85,7 @@ static zjs_timer_t *add_timer(uint32_t interval,
         tm->callback_id = zjs_add_callback_once(callback, this, tm, NULL);
     }
 
-    zjs_timer_t **pnext = &zjs_timers;
-    while (*pnext != NULL) {
-        pnext = &(*pnext)->next;
-    }
-    *pnext = tm;
+    ZJS_APPEND_NODE(zjs_timer_t, zjs_timers, tm);
 
     DBG_PRINT("add timer, id=%d, interval=%lu, repeat=%u, argv=%p, argc=%lu\n",
               tm->callback_id, interval, repeat, argv, argc);
@@ -106,23 +102,20 @@ static zjs_timer_t *add_timer(uint32_t interval,
  */
 static bool delete_timer(int32_t id)
 {
-    for (zjs_timer_t **ptm = &zjs_timers; *ptm; ptm = &(*ptm)->next) {
-        zjs_timer_t *tm = *ptm;
-        if (id == tm->callback_id) {
-            DBG_PRINT("removing timer. id=%d\n", tm->callback_id);
-            zjs_port_timer_stop(&tm->timer);
-            *ptm = tm->next;
-            for (int i = 0; i < tm->argc; ++i) {
-                jerry_release_value(tm->argv[i]);
-            }
-            // only remove interval timers, timeouts get removed automatically
-            if (tm->repeat) {
-                zjs_remove_callback(tm->callback_id);
-            }
-            zjs_free(tm->argv);
-            zjs_free(tm);
-            return true;
+    zjs_timer_t *tm = ZJS_FIND_NODE(zjs_timer_t, zjs_timers, callback_id, id);
+    if (tm) {
+        zjs_port_timer_stop(&tm->timer);
+        for (int i = 0; i < tm->argc; ++i) {
+            jerry_release_value(tm->argv[i]);
         }
+        // only remove interval timers, timeouts get removed automatically
+        if (tm->repeat) {
+            zjs_remove_callback(tm->callback_id);
+        }
+        ZJS_REMOVE_NODE(zjs_timer_t, zjs_timers, tm);
+        zjs_free(tm->argv);
+        zjs_free(tm);
+        return true;
     }
     return false;
 }
@@ -243,17 +236,18 @@ void zjs_timers_init()
                          "clearTimeout");
 }
 
+static void free_timer(zjs_timer_t *tm)
+{
+    for (int i = 0; i < tm->argc; ++i) {
+        jerry_release_value(tm->argv[i]);
+    }
+    zjs_port_timer_stop(&tm->timer);
+    zjs_remove_callback(tm->callback_id);
+    zjs_free(tm->argv);
+    zjs_free(tm);
+}
+
 void zjs_timers_cleanup()
 {
-    while (zjs_timers) {
-        zjs_timer_t *tm = zjs_timers;
-        for (int i = 0; i < tm->argc; ++i) {
-            jerry_release_value(tm->argv[i]);
-        }
-        zjs_port_timer_stop(&tm->timer);
-        zjs_remove_callback(tm->callback_id);
-        zjs_free(tm->argv);
-        zjs_timers = tm->next;
-        zjs_free(tm);
-    }
+    ZJS_FREE_LIST(zjs_timer_t, zjs_timers, free_timer);
 }

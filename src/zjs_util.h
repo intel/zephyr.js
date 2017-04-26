@@ -298,4 +298,66 @@ void zjs_loop_init(void);
 #define UNLOCK() do {} while (0)
 #endif
 
+#define ZJS_FIND_NODE(type, list, cmp_element, cmp_to) \
+   ({ \
+       type *found = NULL; \
+       type *cur = list; \
+       while (cur) { \
+           if (cur->cmp_element == cmp_to) { \
+               found = cur; \
+               break; \
+           } \
+           cur = cur->next; \
+       } \
+       found; \
+   })
+
+#define ZJS_APPEND_NODE(type, list, p) \
+    { \
+        type **pnext = &list; \
+        while (*pnext != NULL) { \
+            pnext = &(*pnext)->next; \
+        } \
+    *pnext = p; \
+    }
+#define ZJS_PREPEND_NODE(type, list, p) \
+    { \
+        ((type *)p)->next = list; \
+        list = p; \
+    }
+
+#define ZJS_REMOVE_NODE(type, list, p) \
+    type *cur = list; \
+    if (p == list) { \
+        list = ((type *)p)->next; \
+    } else { \
+        while (cur->next) { \
+            if (cur->next == p) { \
+                cur->next = ((type *)p)->next; \
+                break; \
+            } \
+            cur = cur->next; \
+        } \
+    }
+
+#define ZJS_FREE_LIST(type, list, callback) \
+    { \
+        while (list) { \
+            type *tmp = list->next; \
+            callback(list); \
+            list = tmp; \
+        } \
+    }
+
+#define ZJS_LIST_LENGTH(type, list) \
+    ({ \
+        int ret = 0; \
+        type *i = list; \
+        while (i) { \
+            ret++; \
+            i = i->next; \
+        } \
+        ret; \
+    })
+
 #endif  // __zjs_util_h__
