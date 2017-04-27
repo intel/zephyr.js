@@ -230,6 +230,7 @@ if check_for_require ocf || check_config_file ZJS_OCF; then
     >&2 echo Using module: OCF
     MODULES+=" -DBUILD_MODULE_OCF"
     MODULES+=" -DBUILD_MODULE_EVENTS"
+    MODULES+=" -DBUILD_MODULE_PROMISE"
     if grep -q "require *( *['\"]ocf['\"] *)*;" $SCRIPT; then
         OCF_OBJ=$(grep "require('ocf')" $SCRIPT  | cut -d'=' -f1 | cut -d' ' -f2)
         if grep -q "$OCF_OBJ.client" $SCRIPT; then
@@ -283,6 +284,7 @@ if check_for_require ocf || check_config_file ZJS_OCF; then
     echo "export ZJS_OCF=y" >> $CONFFILE
     echo "export ZJS_EVENTS=y" >> $CONFFILE
     echo "export ZJS_NET_CONFIG=y" >> $CONFFILE
+    echo "export ZJS_PROMISE=y" >> $CONFFILE
 fi
 
 if check_for_require gpio || check_config_file ZJS_GPIO; then
@@ -417,8 +419,9 @@ fi
 
 if check_for_require test_promise; then
     >&2 echo Using module: test_promise
-    MODULES+=" -DBUILD_MODULE_TEST_PROMISE"
+    MODULES+=" -DBUILD_MODULE_TEST_PROMISE -DBUILD_MODULE_PROMISE"
     echo "export ZJS_TEST_PROMISE=y" >> $CONFFILE
+    echo "export ZJS_PROMISE=y" >> $CONFFILE
 fi
 
 if check_for_require test_callbacks; then

@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 // Sample to test UART module. This can be run on the Arduino 101 or QEMU. It
 // will print out 'UART write succeeded, echoing input.' to the console, then echo back any characters
@@ -24,21 +24,18 @@ print("Starting UART example...");
 
 var board = require('uart');
 
-board.init({ port:"tty0", baud:115200 }).then(function(uart) {
-    var current = '';
+var uart = board.init({ port:"tty0", baud:115200 });
+var current = '';
 
-    uart.setReadRange(1, 16);
+uart.setReadRange(1, 16);
 
-    uart.on('read', function(data) {
-        if (data.toString('ascii') == '\n' || data.toString('ascii') == '\r') {
-            uart.write(new Buffer("Data recv: " + current + '\r\n'));
-            current = '';
-        } else {
-            current += data.toString('ascii');
-            uart.write(new Buffer(current + '\r\n'));
-        }
-    });
-    uart.write(new Buffer('UART write succeeded, echoing input.\r\n'));
-}).catch(function(error) {
-    print("Error starting UART: " + error.name + " msg: " + error.message);
+uart.on('read', function(data) {
+    if (data.toString('ascii') == '\n' || data.toString('ascii') == '\r') {
+        uart.write(new Buffer("Data recv: " + current + '\r\n'));
+        current = '';
+    } else {
+        current += data.toString('ascii');
+        uart.write(new Buffer(current + '\r\n'));
+    }
 });
+uart.write(new Buffer('UART write succeeded, echoing input.\r\n'));

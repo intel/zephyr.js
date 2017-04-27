@@ -11,7 +11,6 @@
 #include "zjs_gpio.h"
 #include "zjs_util.h"
 #include "zjs_callbacks.h"
-#include "zjs_promise.h"
 
 static const char *ZJS_DIR_IN = "in";
 static const char *ZJS_DIR_OUT = "out";
@@ -254,18 +253,7 @@ static void zjs_gpio_free_cb(const uintptr_t native)
     zjs_free(handle);
 }
 
-// Called after the promise is fulfilled/rejected
-static void post_open_promise(void *h)
-{
-    gpio_handle_t *handle = (gpio_handle_t *)h;
-    // Handle is the ret_args array that was malloc'ed in open()
-    if (handle) {
-        jerry_release_value(handle->pin_obj);
-        jerry_release_value(handle->open_rval);
-    }
-}
-
-static ZJS_DECL_FUNC_ARGS(zjs_gpio_open, bool async)
+static ZJS_DECL_FUNC(zjs_gpio_open)
 {
     // requires: arg 0 is an object with these members: pin (int), direction
     //             (defaults to "out"), activeLow (defaults to false),
@@ -362,7 +350,7 @@ static ZJS_DECL_FUNC_ARGS(zjs_gpio_open, bool async)
     gpio_handle_t *handle = zjs_malloc(sizeof(gpio_handle_t));
     memset(handle, 0, sizeof(gpio_handle_t));
     handle->pin = newpin;
-    handle->pin_obj = async ? jerry_acquire_value(pinobj) : pinobj;
+    handle->pin_obj = pinobj;
     handle->port = gpiodev;
     handle->callbackId = -1;
 
@@ -386,38 +374,7 @@ static ZJS_DECL_FUNC_ARGS(zjs_gpio_open, bool async)
         }
     }
 
-    if (async) {
-        // Promise obj returned by open(), will have then() and catch() funcs
-        jerry_value_t promise_ret = jerry_create_object();
-
-        // Turn object into a promise
-        zjs_make_promise(promise_ret, post_open_promise, (void *)handle);
-
-        // TODO: Can open promise be rejected? For now, rejection is based on if
-        // gpiodev is not NULL
-        if (gpiodev) {
-            handle->open_rval = jerry_acquire_value(pinobj);
-            // Fulfill the promise
-            zjs_fulfill_promise(promise_ret, &handle->open_rval, 1);
-        } else {
-            handle->open_rval = zjs_error("GPIO could not be opened");
-            zjs_reject_promise(promise_ret, &handle->open_rval, 1);
-        }
-
-        return promise_ret;
-    }
-
     return jerry_acquire_value(pinobj);
-}
-
-static ZJS_DECL_FUNC(zjs_gpio_open_sync)
-{
-    return ZJS_CHAIN_FUNC_ARGS(zjs_gpio_open, false);
-}
-
-static ZJS_DECL_FUNC(zjs_gpio_open_async)
-{
-    return ZJS_CHAIN_FUNC_ARGS(zjs_gpio_open, true);
 }
 
 jerry_value_t zjs_gpio_init()
@@ -445,8 +402,7 @@ jerry_value_t zjs_gpio_init()
 
     // create GPIO object
     jerry_value_t gpio_obj = jerry_create_object();
-    zjs_obj_add_function(gpio_obj, zjs_gpio_open_sync, "open");
-    zjs_obj_add_function(gpio_obj, zjs_gpio_open_async, "openAsync");
+    zjs_obj_add_function(gpio_obj, zjs_gpio_open, "open");
     return gpio_obj;
 }
 
