@@ -20,15 +20,21 @@ if [ -f $JSTMPFILE ]; then
     rm $JSTMPFILE
 fi
 
-PRJFILE=prj.conf.tmp
-ARCPRJFILE=arc/prj.conf.tmp
-CONFFILE=zjs.conf.tmp
-
 MODULES=''
 BOARD=$1
 SCRIPT=$2
 CONFIG=$3
 ASHELL=$4
+
+PRJFILE=prj.conf.tmp
+ARCPRJFILE=arc/prj.conf.tmp
+CONFFILE=zjs.conf.tmp
+FEATUREFILE=outdir/$BOARD/jerry_feature.profile
+
+if [ -f $FEATUREFILE ]; then
+    cp $FEATUREFILE $FEATUREFILE.bak
+fi
+mkdir -p outdir/$BOARD/ && cp fragments/jerry_feature.base $FEATUREFILE
 
 if [ -n "$ZEPHYR_SDK_INSTALL_DIR" ]; then
 SDK_VERSION=$(cat ${ZEPHYR_SDK_INSTALL_DIR}/sdk_version)
@@ -79,6 +85,21 @@ function check_config_file()
         return $?
     fi
     return 1;
+}
+
+function check_for_feature()
+{
+    # effects: checks script for occurrence of a JerryScript built-in feature
+    #          e.g. Math, Promise, JSON. If found it will enable that feature
+    #          in the feature profile.
+    rval=$(grep $1 $SCRIPT)
+    return $?
+}
+
+function feature_on()
+{
+    >&2 echo Enabling JrS feature: $1
+    sed -i "s/$1/#&/" $FEATUREFILE
 }
 
 # Check if buffer module required in the JS or config file
@@ -285,6 +306,9 @@ if check_for_require ocf || check_config_file ZJS_OCF; then
     echo "export ZJS_EVENTS=y" >> $CONFFILE
     echo "export ZJS_NET_CONFIG=y" >> $CONFFILE
     echo "export ZJS_PROMISE=y" >> $CONFFILE
+    feature_on CONFIG_DISABLE_ES2015_PROMISE_BUILTIN
+    feature_on CONFIG_DISABLE_ES2015_BUILTIN
+    feature_on CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN
 fi
 
 if check_for_require gpio || check_config_file ZJS_GPIO; then
@@ -483,6 +507,23 @@ if [ $? -eq 0 ] || check_config_file ZJS_CONSOLE && [[ $MODULE != *"BUILD_MODULE
     >&2 echo Using module: Console
     MODULES+=" -DBUILD_MODULE_CONSOLE"
     echo "export ZJS_CONSOLE=y" >> $CONFFILE
+fi
+
+if check_for_feature "Math\."; then
+    >&2 echo Using JrS module: Math
+    feature_on CONFIG_DISABLE_MATH_BUILTIN
+fi
+
+if check_for_feature "Promise("; then
+    >&2 echo Using JrS module: Promise
+    feature_on CONFIG_DISABLE_ES2015_PROMISE_BUILTIN
+    feature_on CONFIG_DISABLE_ES2015_BUILTIN
+    feature_on CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN
+fi
+
+if check_for_feature "JSON\."; then
+    >&2 echo Using JrS module: JSON
+    feature_on CONFIG_DISABLE_JSON_BUILTIN
 fi
 
 echo "# ---------------------------" >> $CONFFILE
