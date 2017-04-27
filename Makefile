@@ -219,6 +219,12 @@ analyze: $(JS)
 	else \
 		sed -i '/This is a generated file/r./zjs.conf.tmp' src/Makefile; \
 	fi
+	@# Add bluetooth debug configs if BLE is enabled
+	@if grep BUILD_MODULE_BLE src/Makefile; then \
+		if [ "$(VARIANT)" = "debug" ]; then \
+			echo "CONFIG_BLUETOOTH_DEBUG_LOG=y" >> prj.conf.tmp; \
+		fi \
+	fi
 	@# Add the include for the OCF Makefile only if the script is using OCF
 	@if grep BUILD_MODULE_OCF src/Makefile; then \
 		echo "CONFIG_BLUETOOTH_DEVICE_NAME=\"$(DEVICE_NAME)\"" >> prj.conf.tmp; \
