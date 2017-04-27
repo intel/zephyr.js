@@ -156,13 +156,15 @@ static void tcp_send(struct net_context *context, void *data, uint32_t len)
 // generate an accept key given an input key
 static void generate_key(char *key, uint32_t len, char *output, uint32_t olen)
 {
-    char *concat = zjs_malloc(strlen(key) + strlen(magic) + 1);
+    uint32_t concat_size = strlen(key) + strlen(magic) + 1;
+    char *concat = zjs_malloc(concat_size);
     if (!concat) {
         ERR_PRINT("could not allocate key\n");
         return;
     }
-    memset(concat, 0, strlen(key) + strlen(magic) + 1);
-    memcpy(concat, key, strlen(key));
+    //memset(concat, 0, concat_size);
+    strcpy(concat, key);
+    //memcpy(concat, key, strlen(key));
     strcat(concat, magic);
     char sha_out[20];
     // compute sha1 hash of concatenated key + magic
