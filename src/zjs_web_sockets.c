@@ -162,9 +162,7 @@ static void generate_key(char *key, uint32_t len, char *output, uint32_t olen)
         ERR_PRINT("could not allocate key\n");
         return;
     }
-    //memset(concat, 0, concat_size);
     strcpy(concat, key);
-    //memcpy(concat, key, strlen(key));
     strcat(concat, magic);
     char sha_out[20];
     // compute sha1 hash of concatenated key + magic

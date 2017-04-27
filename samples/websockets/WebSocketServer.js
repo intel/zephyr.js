@@ -6,8 +6,8 @@
 //
 // ip -6 route add 2001:db8::/64 dev bt0
 //
-// Then you can use a websocket client (e.g. node) to connect and interact
-// with the server.
+// Then you can use a websocket client samples/websockets/NodeWebsocketClient.js
+// to connect and interact with the server.
 
 var WebSocket = require('ws');
 
