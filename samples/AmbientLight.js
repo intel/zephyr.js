@@ -54,8 +54,8 @@ sensor.onchange = function() {
         console.log("(full brightness): " + sensor.illuminance);
 };
 
-sensor.onstatechange = function(event) {
-    console.log("state: " + event);
+sensor.onactivate = function() {
+    console.log("activated");
 };
 
 sensor.onerror = function(event) {

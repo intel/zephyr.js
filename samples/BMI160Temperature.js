@@ -16,8 +16,8 @@ sensor.onchange = function() {
     console.log("BMI160 temperature (celsius): " + sensor.celsius);
 };
 
-sensor.onstatechange = function(event) {
-    console.log("state: " + event);
+sensor.onactivate = function() {
+    console.log("activated");
 };
 
 sensor.onerror = function(event) {

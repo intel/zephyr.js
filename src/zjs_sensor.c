@@ -174,7 +174,7 @@ static void zjs_sensor_set_state(jerry_value_t obj, enum sensor_state state)
         return;
     }
 
-    // update state property and trigger onstatechange event
+    // update state property and trigger onactivate event if neccessary
     const char *state_str = NULL;
     switch(state) {
     case SENSOR_STATE_UNCONNECTED:
@@ -199,14 +199,6 @@ static void zjs_sensor_set_state(jerry_value_t obj, enum sensor_state state)
         return;
     }
     zjs_obj_add_readonly_string(obj, state_str, "state");
-
-    ZVAL func = zjs_get_property(obj, "onstatechange");
-    if (jerry_value_is_function(func)) {
-        // if onstatechange exists, call it
-        ZVAL new_state = jerry_create_string(state_str);
-        zjs_callback_id id = zjs_add_callback_once(func, obj, NULL, NULL);
-        zjs_signal_callback(id, &new_state, sizeof(new_state));
-    }
 
     if (old_state == SENSOR_STATE_ACTIVATING &&
         state == SENSOR_STATE_ACTIVATED) {
