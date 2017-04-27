@@ -54,7 +54,7 @@ BLE_ADDR ?= "none"
 # JerryScript options
 JERRY_BASE ?= $(ZJS_BASE)/deps/jerryscript
 EXT_JERRY_FLAGS ?=	-DENABLE_ALL_IN_ONE=ON \
-			-DFEATURE_PROFILE=$(ZJS_BASE)/fragments/jerry_feature.profile \
+			-DFEATURE_PROFILE=$(ZJS_BASE)/outdir/$(BOARD)/jerry_feature.profile \
 			-DFEATURE_ERROR_MESSAGES=OFF \
 			-DJERRY_LIBM=OFF
 
@@ -227,11 +227,13 @@ analyze: $(JS)
 	@if grep BUILD_MODULE_DGRAM src/Makefile; then \
 		echo "CONFIG_BLUETOOTH_DEVICE_NAME=\"$(DEVICE_NAME)\"" >> prj.conf.tmp; \
 	fi
-	@if [ -e fragments/jerry_feature.profile.bak ]; then \
-		if ! cmp fragments/jerry_feature.profile.bak fragments/jerry_feature.profile; \
+	@if [ -e outdir/$(BOARD)/jerry_feature.profile.bak ]; then \
+		if ! cmp outdir/$(BOARD)/jerry_feature.profile.bak outdir/$(BOARD)/jerry_feature.profile; \
 		then \
 			rm -f outdir/$(BOARD)/libjerry-core*.a; \
 		fi \
+	else \
+		rm -f outdir/$(BOARD)/libjerry-core*.a; \
 	fi
 
 # Update dependency repos

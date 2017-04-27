@@ -20,21 +20,21 @@ if [ -f $JSTMPFILE ]; then
     rm $JSTMPFILE
 fi
 
-PRJFILE=prj.conf.tmp
-ARCPRJFILE=arc/prj.conf.tmp
-CONFFILE=zjs.conf.tmp
-FEATUREFILE=fragments/jerry_feature.profile
-
-if [ -f fragments/jerry_feature.profile ]; then
-    cp fragments/jerry_feature.profile fragments/jerry_feature.profile.bak
-fi
-cat fragments/jerry_feature.base > fragments/jerry_feature.profile
-
 MODULES=''
 BOARD=$1
 SCRIPT=$2
 CONFIG=$3
 ASHELL=$4
+
+PRJFILE=prj.conf.tmp
+ARCPRJFILE=arc/prj.conf.tmp
+CONFFILE=zjs.conf.tmp
+FEATUREFILE=outdir/$BOARD/jerry_feature.profile
+
+if [ -f $FEATUREFILE ]; then
+    cp $FEATUREFILE $FEATUREFILE.bak
+fi
+mkdir -p outdir/$BOARD/ && cp fragments/jerry_feature.base $FEATUREFILE
 
 if [ -n "$ZEPHYR_SDK_INSTALL_DIR" ]; then
 SDK_VERSION=$(cat ${ZEPHYR_SDK_INSTALL_DIR}/sdk_version)
@@ -89,7 +89,7 @@ function check_config_file()
 
 function check_for_feature()
 {
-    # effects: checks script for occurence of a JerrScript build in feature
+    # effects: checks script for occurrence of a JerryScript built-in feature
     #          e.g. Math, Promise, JSON. If found it will enable that feature
     #          in the feature profile.
     rval=$(grep $1 $SCRIPT)
