@@ -71,6 +71,7 @@ obj-$(ZJS_OCF) += zjs_ocf_client.o \
                   zjs_ocf_server.o \
                   zjs_ocf_common.o
 obj-$(ZJS_TEST_PROMISE) += zjs_test_promise.o
+obj-$(ZJS_TEST_CALLBACKS) += zjs_test_callbacks.o
 obj-$(ZJS_NET_CONFIG) += zjs_net_config.o
 obj-$(ZJS_WS) += zjs_web_sockets.o
 

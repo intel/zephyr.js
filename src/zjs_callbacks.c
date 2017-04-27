@@ -159,7 +159,7 @@ void zjs_init_callbacks(void)
 
 bool zjs_edit_js_func(zjs_callback_id id, jerry_value_t func)
 {
-    if (id != -1 && cb_map[id]) {
+    if (id >= 0 && cb_map[id]) {
         LOCK();
         jerry_release_value(cb_map[id]->js_func);
         cb_map[id]->js_func = jerry_acquire_value(func);
@@ -172,7 +172,7 @@ bool zjs_edit_js_func(zjs_callback_id id, jerry_value_t func)
 
 bool zjs_edit_callback_handle(zjs_callback_id id, void *handle)
 {
-    if (id != -1 && cb_map[id]) {
+    if (id >= 0 && cb_map[id]) {
         LOCK();
         cb_map[id]->handle = handle;
         UNLOCK();
@@ -184,7 +184,7 @@ bool zjs_edit_callback_handle(zjs_callback_id id, void *handle)
 
 bool zjs_remove_callback_list_func(zjs_callback_id id, jerry_value_t js_func)
 {
-    if (id != -1 && cb_map[id]) {
+    if (id >= 0 && cb_map[id]) {
         LOCK();
         int i;
         for (i = 0; i < cb_map[id]->num_funcs; ++i) {
@@ -208,7 +208,7 @@ bool zjs_remove_callback_list_func(zjs_callback_id id, jerry_value_t js_func)
 
 int zjs_get_num_callbacks(zjs_callback_id id)
 {
-    if (id != -1 && cb_map[id]) {
+    if (id >= 0 && cb_map[id]) {
         return cb_map[id]->num_funcs;
     }
     return 0;
@@ -216,7 +216,7 @@ int zjs_get_num_callbacks(zjs_callback_id id)
 
 jerry_value_t *zjs_get_callback_func_list(zjs_callback_id id, int *count)
 {
-    if (id != -1) {
+    if (id >= 0) {
         if (cb_map[id]) {
             *count = cb_map[id]->num_funcs;
             return cb_map[id]->func_list;
@@ -237,7 +237,7 @@ zjs_callback_id add_callback_list_priv(jerry_value_t js_func,
                                        )
 #endif
 {
-    if (id != -1) {
+    if (id >= 0) {
         if (cb_map[id] && cb_map[id]->func_list) {
             LOCK();
             // The function list is full, allocate more space, copy the existing
@@ -364,7 +364,7 @@ zjs_callback_id add_callback_priv(jerry_value_t js_func,
 static void zjs_free_callback(zjs_callback_id id)
 {
     // effects: frees callback associated with id if it's marked as removed
-    if (id != -1 && cb_map[id] && GET_CB_REMOVED(cb_map[id]->flags)) {
+    if (id >= 0 && cb_map[id] && GET_CB_REMOVED(cb_map[id]->flags)) {
         LOCK();
         zjs_free(cb_map[id]);
         cb_map[id] = NULL;
@@ -377,8 +377,8 @@ static void zjs_remove_callback_priv(zjs_callback_id id, bool skip_flush)
     // effects: removes the callback associated with id; if skip_flush is true,
     //            assumes the callback will be "flushed" elsewhere, that is
     //            freed and the id reclaimed; otherwise, tries to do it here
-    LOCK();
-    if (id != -1 && cb_map[id]) {
+    if (id >= 0 && cb_map[id]) {
+        LOCK();
         if (GET_TYPE(cb_map[id]->flags) == CALLBACK_TYPE_JS) {
             if (GET_JS_TYPE(cb_map[id]->flags) == JS_TYPE_SINGLE) {
                 jerry_release_value(cb_map[id]->js_func);
@@ -440,7 +440,14 @@ void signal_callback_priv(zjs_callback_id id,
     LOCK();
     DBG_PRINT("pushing item to ring buffer. id=%d, args=%p, size=%lu\n", id,
               args, size);
-
+    if (id < 0 || !cb_map[id]) {
+        DBG_PRINT("callback ID %u does not exist\n", id);
+        return;
+    }
+    if (GET_CB_REMOVED(cb_map[id]->flags)) {
+        DBG_PRINT("callback already removed\n");
+        return;
+    }
     if (GET_TYPE(cb_map[id]->flags) == CALLBACK_TYPE_JS) {
         // for JS, acquire values and release them after servicing callback
         int argc = size / sizeof(jerry_value_t);
@@ -448,16 +455,15 @@ void signal_callback_priv(zjs_callback_id id,
         for (int i=0; i<argc; i++) {
             jerry_acquire_value(values[i]);
         }
+    }
 #ifdef DEBUG_BUILD
         set_info_string(cb_map[id]->caller, file, func);
 #endif
-    }
-
     int ret = zjs_port_ring_buf_put(&ring_buffer,
-                                    (uint16_t)id,
-                                    0,  // we use value for CB_FLUSH_ONE/ALL
-                                    (uint32_t *)args,
-                                    (uint8_t)((size + 3) / 4));
+            (uint16_t)id,
+            0,  // we use value for CB_FLUSH_ONE/ALL
+            (uint32_t *)args,
+            (uint8_t)((size + 3) / 4));
     if (ret != 0) {
         if (GET_TYPE(cb_map[id]->flags) == CALLBACK_TYPE_JS) {
             // for JS, acquire values and release them after servicing callback
