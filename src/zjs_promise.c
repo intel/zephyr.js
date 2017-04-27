@@ -22,7 +22,7 @@ zjs_promise_t *new_promise(void)
     return new;
 }
 
-static void post_promise(void *h)
+static void post_promise(void *h, jerry_value_t ret_val)
 {
     zjs_promise_t *handle = (zjs_promise_t *)h;
     if (handle) {

@@ -41,11 +41,8 @@ static void zjs_aio_free_cb(uintptr_t ptr)
     zjs_free(handle);
 }
 
-static void zjs_aio_free_callback(void *ptr)
+static void zjs_aio_free_callback(void *ptr, jerry_value_t rval)
 {
-    // FIXME: The ptr arg could be changed to uintptr_t in zjs_callbacks.c to
-    // match the JrS usage as above, and this duplicate function wouldn't be
-    // needed.
     zjs_aio_free_cb((uintptr_t)ptr);
 }
 

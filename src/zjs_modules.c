@@ -17,6 +17,7 @@
 #endif
 #include "zjs_dgram.h"
 #include "zjs_net.h"
+#include "zjs_web_sockets.h"
 #include "zjs_event.h"
 #include "zjs_modules.h"
 #include "zjs_performance.h"
@@ -108,6 +109,9 @@ module_t zjs_modules_array[] = {
 #endif
 #ifdef BUILD_MODULE_NET
     { "net", zjs_net_init, zjs_net_cleanup },
+#endif
+#ifdef BUILD_MODULE_WS
+    { "ws", zjs_ws_init, zjs_ws_cleanup },
 #endif
 #ifdef BUILD_MODULE_EVENTS
     { "events", zjs_event_init, zjs_event_cleanup },

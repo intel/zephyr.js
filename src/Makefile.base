@@ -17,7 +17,7 @@ ccflags-y += -I$(JERRY_BASE)/jerry-core
 ccflags-y += -I$(ZEPHYR_BASE)/drivers
 ccflags-y += -I$(ZJS_BASE)/outdir/include
 
-ifneq (,$(filter $(ZJS_DGRAM) $(ZJS_OCF) $(ZJS_NET), y))
+ifneq (,$(filter $(ZJS_DGRAM) $(ZJS_OCF) $(ZJS_NET) $(ZJS_WS), y))
 ifeq ($(BOARD), arduino_101)
 obj-y += ../deps/zephyr/samples/bluetooth/gatt/ipss.o
 ccflags-y += -I${ZEPHYR_BASE}/samples/bluetooth
@@ -72,6 +72,7 @@ obj-$(ZJS_OCF) += zjs_ocf_client.o \
                   zjs_ocf_common.o
 obj-$(ZJS_TEST_PROMISE) += zjs_test_promise.o
 obj-$(ZJS_NET_CONFIG) += zjs_net_config.o
+obj-$(ZJS_WS) += zjs_web_sockets.o
 
 # skip for now for frdm_k64f
 ifeq ($(BOARD), arduino_101)
