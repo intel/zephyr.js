@@ -29,6 +29,8 @@ Communications
 
 [UDP](./dgram.md)
 
+[WebSocket](./web-socket.md)
+
 Display
 -------
 [Grove LCD](./grove_lcd.md)
