@@ -568,17 +568,7 @@ static ZJS_DECL_FUNC_ARGS(zjs_sensor_create, enum sensor_channel channel)
                       DEFAULT_SAMPLING_FREQUENCY);
         }
 
-        if (channel == SENSOR_CHAN_ACCEL_XYZ) {
-            bool option_gravity;
-            if (zjs_obj_get_boolean(options, "includeGravity",
-                                    &option_gravity) && option_gravity) {
-                if (option_gravity) {
-                    ERR_PRINT("includeGravity is not supported\n");
-                }
-                zjs_obj_add_readonly_boolean(sensor_obj, option_gravity,
-                                             "includeGravity");
-            }
-        } else if (channel == SENSOR_CHAN_LIGHT) {
+        if (channel == SENSOR_CHAN_LIGHT) {
             if (zjs_obj_get_uint32(options, "pin", &pin)) {
                 zjs_obj_add_readonly_number(sensor_obj, pin, "pin");
             }
@@ -640,7 +630,6 @@ static ZJS_DECL_FUNC(zjs_accel_create)
 {
     // requires: arg 0 is an object containing sensor options:
     //             frequency (double) - sampling frequency
-    //             includeGravity (bool) - whether you want gravity included
     //  effects: Creates a Accelerometer object to the local sensor
     return ZJS_CHAIN_FUNC_ARGS(zjs_sensor_create, SENSOR_CHAN_ACCEL_XYZ);
 }

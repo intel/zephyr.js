@@ -6,7 +6,6 @@ console.log("Testing bmi160 accelerometer APIs");
 var genericSensor = require("GenericSensor.js");
 
 var sensor = new Accelerometer({
-    includeGravity: false,
     frequency: 50
 });
 
