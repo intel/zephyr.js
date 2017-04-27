@@ -427,12 +427,16 @@ static ZJS_DECL_FUNC(zjs_ble_update_value_callback_function)
         ble_characteristic_t *chrc = (ble_characteristic_t *)ptr;
         if (chrc->chrc_attr) {
             zjs_buffer_t *buf = zjs_buffer_find(argv[0]);
-            // loop through all the connections
-            ble_connection_t *conn = ble_handle->connections;
-            while (conn) {
-                bt_gatt_notify(conn->bt_conn, chrc->chrc_attr,
-                               buf->buffer, buf->bufsize);
-                conn = conn->next;
+            if (buf) {
+                // loop through all the connections
+                ble_connection_t *conn = ble_handle->connections;
+                while (conn) {
+                    bt_gatt_notify(conn->bt_conn, chrc->chrc_attr,
+                                   buf->buffer, buf->bufsize);
+                    conn = conn->next;
+                }
+            } else {
+                return zjs_error("buffer not found");
             }
         }
     }
