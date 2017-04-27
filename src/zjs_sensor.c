@@ -11,10 +11,10 @@
 
 // ZJS includes
 #include "zjs_common.h"
-#include "zjs_sensor.h"
 #include "zjs_callbacks.h"
 #include "zjs_ipm.h"
 #include "zjs_util.h"
+#include "zjs_sensor.h"
 #ifdef BUILD_MODULE_SENSOR_ACCEL
 #include "zjs_sensor_accel.h"
 #endif
@@ -56,10 +56,10 @@ typedef struct sensor_module {
 
 sensor_module_t sensor_modules[] = {
 #ifdef BUILD_MODULE_SENSOR_ACCEL
-    { SENSOR_CHAN_ACCEL_ANY, zjs_sensor_accel_init, zjs_sensor_accel_cleanup },
+    { SENSOR_CHAN_ACCEL_XYZ, zjs_sensor_accel_init, zjs_sensor_accel_cleanup },
 #endif
 #ifdef BUILD_MODULE_SENSOR_GYRO
-    { SENSOR_CHAN_GYRO_ANY, zjs_sensor_gyro_init, zjs_sensor_gyro_cleanup },
+    { SENSOR_CHAN_GYRO_XYZ, zjs_sensor_gyro_init, zjs_sensor_gyro_cleanup },
 #endif
 #ifdef BUILD_MODULE_SENSOR_LIGHT
     { SENSOR_CHAN_LIGHT, zjs_sensor_light_init, zjs_sensor_light_cleanup },
@@ -68,6 +68,19 @@ sensor_module_t sensor_modules[] = {
     { SENSOR_CHAN_TEMP, zjs_sensor_temp_init, zjs_sensor_temp_cleanup },
 #endif
 };
+
+sensor_instance_t *zjs_sensor_create_instance(const char *name, void *func)
+{
+    ZVAL global_obj = jerry_get_global_object();
+    zjs_obj_add_function(global_obj, func, name);
+    sensor_instance_t *instance = zjs_malloc(sizeof(sensor_instance_t));
+    if (!instance) {
+        ERR_PRINT("failed to allocate sensor_instance_t\n");
+        return NULL;
+    }
+    memset(instance, 0, sizeof(sensor_instance_t));
+    return instance;
+}
 
 static sensor_handle_t *zjs_sensor_alloc_handle()
 {
@@ -81,11 +94,11 @@ static sensor_handle_t *zjs_sensor_alloc_handle()
     return handle;
 }
 
-static void zjs_sensor_free_handles(sensor_handle_t *handle)
+static void zjs_sensor_free_handles(sensor_handle_t *handles)
 {
     sensor_handle_t *tmp;
-    while (handle) {
-        tmp = handle;
+    while (handles) {
+        tmp = handles;
         if (tmp->controller) {
             zjs_free(tmp->controller);
         }
@@ -93,7 +106,7 @@ static void zjs_sensor_free_handles(sensor_handle_t *handle)
         zjs_remove_callback(tmp->onstart_cb_id);
         zjs_remove_callback(tmp->onstop_cb_id);
         jerry_release_value(tmp->sensor_obj);
-        handle = handle->next;
+        handles = handles->next;
         zjs_free(tmp);
     }
 }
@@ -370,6 +383,10 @@ static ZJS_DECL_FUNC(zjs_sensor_start)
     SENSOR_GET_HANDLE(this, sensor_handle_t, handle);
 
     zjs_sensor_set_state(this, SENSOR_STATE_ACTIVATING);
+    if (jerry_value_has_error_flag(zjs_sensor_start_sensor(this))) {
+        zjs_sensor_trigger_error(this, "SensorError", "start failed");
+    }
+
     zjs_signal_callback(handle->onstart_cb_id, NULL, 0);
     return ZJS_UNDEFINED;
 }
@@ -385,32 +402,76 @@ static ZJS_DECL_FUNC(zjs_sensor_stop)
 
     SENSOR_GET_HANDLE(this, sensor_handle_t, handle);
 
-    // we have to set state to idle first and then check if error occued
-    // in the onstop_c_callback()
+    if (jerry_value_has_error_flag(zjs_sensor_start_sensor(this))) {
+        zjs_sensor_trigger_error(this, "SensorError", "start failed");
+    }
+
     zjs_sensor_set_state(this, SENSOR_STATE_IDLE);
     zjs_signal_callback(handle->onstop_cb_id, NULL, 0);
     return ZJS_UNDEFINED;
 }
 
-jerry_value_t zjs_sensor_create(sensor_instance_t *instance,
-                                enum sensor_channel channel,
-                                sensor_controller_t *controller,
-                                uint32_t frequency,
-                                zjs_c_callback_func onchange,
-                                zjs_c_callback_func onstart,
-                                zjs_c_callback_func onstop)
+
+ZJS_DECL_FUNC_ARGS(zjs_sensor_create,
+                   sensor_instance_t *instance,
+                   enum sensor_channel channel,
+                   const char *c_name,
+                   uint32_t pin,
+                   uint32_t max_frequency,
+                   zjs_c_callback_func onchange,
+                   zjs_c_callback_func onstart,
+                   zjs_c_callback_func onstop)
 {
     if (!instance) {
         return zjs_error("sensor instance not found");
     }
 
+    double frequency = DEFAULT_SAMPLING_FREQUENCY;
+    size_t size = SENSOR_MAX_CONTROLLER_NAME_LEN;
+    sensor_controller_t controller;
+
+    if (argc >= 1) {
+        jerry_value_t options = argv[0];
+
+        ZVAL controller_val = zjs_get_property(options, "controller");
+        if (jerry_value_is_string(controller_val)) {
+            zjs_copy_jstring(controller_val, controller.name, &size);
+        } else if (c_name) {
+            snprintf(controller.name, size, "%s", c_name);
+            DBG_PRINT("controller not set, default to %s\n", controller.name);
+        } else {
+            return zjs_error("controller not found");
+        }
+
+
+        uint32_t option_pin;
+        if (zjs_obj_get_uint32(options, "pin", &option_pin)) {
+            controller.pin = option_pin;
+        } else if (pin != -1) {
+            controller.pin = pin;
+        } else {
+            return zjs_error("pin not found");
+        }
+
+        double option_freq;
+        if (zjs_obj_get_double(options, "frequency", &option_freq)) {
+            if (option_freq < 1 || option_freq > max_frequency) {
+                ERR_PRINT("unsupported frequency, default to %dHz\n",
+                          DEFAULT_SAMPLING_FREQUENCY);
+            } else {
+                frequency = option_freq;
+            }
+        } else {
+            DBG_PRINT("frequency not found, default to %dHz\n",
+                      DEFAULT_SAMPLING_FREQUENCY);
+        }
+    }
+
     zjs_ipm_message_t send;
     send.type = TYPE_SENSOR_INIT;
     send.data.sensor.channel = channel;
-    if (controller) {
-        send.data.sensor.controller = controller->name;
-        send.data.sensor.pin = controller->pin;
-    }
+    send.data.sensor.controller = controller.name;
+    send.data.sensor.pin = controller.pin;
 
     int error = zjs_sensor_call_remote_function(&send);
     if (error != ERROR_IPM_NONE) {
@@ -427,10 +488,8 @@ jerry_value_t zjs_sensor_create(sensor_instance_t *instance,
     jerry_set_prototype(sensor_obj, zjs_sensor_prototype);
 
     sensor_handle_t *handle = zjs_sensor_alloc_handle(&(instance->handles));
-    if (controller) {
-        handle->controller = zjs_malloc(sizeof(sensor_controller_t));
-        memcpy(handle->controller, controller, sizeof(sensor_controller_t));
-    }
+    handle->controller = zjs_malloc(sizeof(sensor_controller_t));
+    memcpy(handle->controller, &controller, sizeof(sensor_controller_t));
     handle->channel = channel;
     handle->frequency = frequency;
     handle->sensor_obj = jerry_acquire_value(sensor_obj);

@@ -40,22 +40,38 @@ typedef struct sensor_instance {
 } sensor_instance_t;
 
 /*
+ * Create a new sensor instance struct that stores all the created objects
+ *
+ * @param name          name of the Sensor subclass that will exist in global
+ * @param func          constructor of the Sensor subclass
+ *
+ * @return              pointer to the sensor instance struct
+ */
+sensor_instance_t *zjs_sensor_create_instance(const char *name, void *func);
+
+/*
  * Creates a Generic W3C Sensor object using the controller information and initialize it
  *
  * @param instance      instance object that is created by each sensor module's init function
  * @param channel       the type of sensor object, maps to the supported Zephyr sensor channels
- * @param controller    the hardware controller sensor, contains info like controller name and pin number
- * @param frequency     the desired polling frequency
+ * @param c_name        the default hardware controller name if not set
+ * @param pin           the default pin if not set
+ * @param max_frequency the max supported polling frequency
  * @param onchange      the function to be called when sensor reports data has changed
  * @param onstart       the function to be called when sensor.start() has been called
  * @param onstart       the function to be called when sensor.stop() has been called
  *
  * @return              a new Sensor object or Error object if creation failed
  */
-jerry_value_t zjs_sensor_create(sensor_instance_t *instance,
+jerry_value_t zjs_sensor_create(const jerry_value_t func_obj,
+                                const jerry_value_t this,
+                                const jerry_value_t argv[],
+                                const jerry_length_t argc,
+                                sensor_instance_t *instance,
                                 enum sensor_channel channel,
-                                sensor_controller_t *controller,
-                                uint32_t frequency,
+                                const char *c_name,
+                                uint32_t pin,
+                                uint32_t max_frequency,
                                 zjs_c_callback_func onchange,
                                 zjs_c_callback_func onstart,
                                 zjs_c_callback_func onstop);
