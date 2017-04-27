@@ -21,11 +21,13 @@ Generic Sensors
 
 Communications
 --------------
-[UDP](./dgram.md)
-
 [BLE](./ble.md)
 
+[Net](./net.md)
+
 [OCF](./ocf.md)
+
+[UDP](./dgram.md)
 
 Display
 -------
