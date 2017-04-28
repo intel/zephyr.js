@@ -334,7 +334,7 @@ the BOARD name:
 make JS=samples/OcfServer.js BOARD=nrf52840_pca10056
 ```
 
-You should now have a zephyr binary in `outdir/nrf52840_pca10056/`. You can
+You should now have a Zephyr binary in `outdir/nrf52840_pca10056/`. You can
 copy it to the nRF52 board with a simple `cp` command:
 ```bash
 cp outdir/nrf52840_pca10056/zephyr.bin /media/<user>/JLINK/
