@@ -56,7 +56,7 @@ static jerry_value_t invalid_args(void)
 
 static file_handle_t *find_file(int fd)
 {
-    return ZJS_FIND_NODE(file_handle_t, opened_handles, fd, fd);
+    return ZJS_LIST_FIND(file_handle_t, opened_handles, fd, fd);
 }
 
 static file_handle_t *new_file(void)
@@ -284,7 +284,7 @@ static ZJS_DECL_FUNC_ARGS(zjs_fs_close, uint8_t async)
     }
 #endif
 
-    ZJS_REMOVE_NODE(file_handle_t, handle, opened_handles);
+    ZJS_LIST_REMOVE(file_handle_t, handle, opened_handles);
     free_file(handle);
 
     return ZJS_UNDEFINED;
@@ -924,6 +924,6 @@ jerry_value_t zjs_fs_init()
 
 void zjs_fs_cleanup()
 {
-    ZJS_FREE_LIST(file_handle_t, opened_handles, free_file);
+    ZJS_LIST_FREE(file_handle_t, opened_handles, free_file);
 }
 #endif

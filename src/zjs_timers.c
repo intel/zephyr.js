@@ -85,7 +85,7 @@ static zjs_timer_t *add_timer(uint32_t interval,
         tm->callback_id = zjs_add_callback_once(callback, this, tm, NULL);
     }
 
-    ZJS_APPEND_NODE(zjs_timer_t, zjs_timers, tm);
+    ZJS_LIST_APPEND(zjs_timer_t, zjs_timers, tm);
 
     DBG_PRINT("add timer, id=%d, interval=%lu, repeat=%u, argv=%p, argc=%lu\n",
               tm->callback_id, interval, repeat, argv, argc);
@@ -102,7 +102,7 @@ static zjs_timer_t *add_timer(uint32_t interval,
  */
 static bool delete_timer(int32_t id)
 {
-    zjs_timer_t *tm = ZJS_FIND_NODE(zjs_timer_t, zjs_timers, callback_id, id);
+    zjs_timer_t *tm = ZJS_LIST_FIND(zjs_timer_t, zjs_timers, callback_id, id);
     if (tm) {
         zjs_port_timer_stop(&tm->timer);
         for (int i = 0; i < tm->argc; ++i) {
@@ -112,7 +112,7 @@ static bool delete_timer(int32_t id)
         if (tm->repeat) {
             zjs_remove_callback(tm->callback_id);
         }
-        ZJS_REMOVE_NODE(zjs_timer_t, zjs_timers, tm);
+        ZJS_LIST_REMOVE(zjs_timer_t, zjs_timers, tm);
         zjs_free(tm->argv);
         zjs_free(tm);
         return true;
@@ -249,5 +249,5 @@ static void free_timer(zjs_timer_t *tm)
 
 void zjs_timers_cleanup()
 {
-    ZJS_FREE_LIST(zjs_timer_t, zjs_timers, free_timer);
+    ZJS_LIST_FREE(zjs_timer_t, zjs_timers, free_timer);
 }

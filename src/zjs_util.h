@@ -298,7 +298,24 @@ void zjs_loop_init(void);
 #define UNLOCK() do {} while (0)
 #endif
 
-#define ZJS_FIND_NODE(type, list, cmp_element, cmp_to) \
+// Type definition to be used with macros below
+// struct list_item {
+//     int value;
+//     struct list_item *next;
+// } list_item_t;
+// list_item_t *my_list = NULL;
+
+// Looks for and returns a node found in a list.
+// @param type          Struct type of list
+// @param list          Pointer to list head
+// @param cmp_element   Name of element in node struct to compare
+// @param cmp_to        Value to compare node element to
+
+// Example:
+//    list_item_t *item = ZJS_FIND_NODE(list_item_t, my_list, value, 42);
+
+// The above will return a list item whos `value` parameter == 42
+#define ZJS_LIST_FIND(type, list, cmp_element, cmp_to) \
    ({ \
        type *found = NULL; \
        type *cur = list; \
@@ -312,35 +329,56 @@ void zjs_loop_init(void);
        found; \
    })
 
-#define ZJS_APPEND_NODE(type, list, p) \
+// Append a new node to the end of a list
+// Example:
+//    list_item_t *item = new_list_item(...);
+//    ZJS_APPEND_NODE(list_item_t, my_list, item);
+#define ZJS_LIST_APPEND(type, list, p) \
     { \
         type **pnext = &list; \
-        while (*pnext != NULL) { \
+        while (*pnext) { \
             pnext = &(*pnext)->next; \
         } \
-    *pnext = p; \
+        *pnext = p; \
     }
-#define ZJS_PREPEND_NODE(type, list, p) \
+
+// Prepend a new node to the beginning of a list
+// Example:
+//    list_item_t *item = new_list_item(...);
+//    ZJS_PREPEND_NODE(list_item_t, my_list, item);
+#define ZJS_LIST_PREPEND(type, list, p) \
     { \
-        ((type *)p)->next = list; \
+        p->next = list; \
         list = p; \
     }
 
-#define ZJS_REMOVE_NODE(type, list, p) \
-    type *cur = list; \
-    if (p == list) { \
-        list = ((type *)p)->next; \
-    } else { \
-        while (cur->next) { \
-            if (cur->next == p) { \
-                cur->next = ((type *)p)->next; \
-                break; \
+// Remove a node from a list. Returns 1 if the node was removed.
+// Example:
+//     void remove(list_item_t *to_remove) {
+//         ZJS_REMOVE_NODE(list_item_t, my_list, to_remove);
+//     }
+#define ZJS_LIST_REMOVE(type, list, p) \
+    ({ \
+        uint8_t removed = 0; \
+        type *cur = list; \
+        if (p == list) { \
+            list = p->next; \
+        } else { \
+            while (cur->next) { \
+                if (cur->next == p) { \
+                    cur->next = p->next; \
+                    removed = 1; \
+                    break; \
+                } \
+                cur = cur->next; \
             } \
-            cur = cur->next; \
         } \
-    }
+        removed; \
+    })
 
-#define ZJS_FREE_LIST(type, list, callback) \
+// Free and iterate over a linked list, calling a callback for each list item
+// and removing the current item at each iteration.
+#define ZJS_LIST_FREE(type, list, callback) \
     { \
         while (list) { \
             type *tmp = list->next; \
@@ -349,6 +387,7 @@ void zjs_loop_init(void);
         } \
     }
 
+// Get the length of a linked list
 #define ZJS_LIST_LENGTH(type, list) \
     ({ \
         int ret = 0; \

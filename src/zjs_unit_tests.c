@@ -399,32 +399,35 @@ void test_free_list(test_list_t *element)
 void test_list_macros()
 {
     test_list_t *head = NULL;
-    test_list_t l1;
-    l1.value = 1;
-    l1.next = NULL;
-    test_list_t l2;
-    l2.value = 2;
-    l2.next = NULL;
-    test_list_t l3;
-    l3.value = 3;
-    l3.next = NULL;
+    test_list_t l1e;
+    l1e.value = 1;
+    l1e.next = NULL;
+    test_list_t l2e;
+    l2e.value = 2;
+    l2e.next = NULL;
+    test_list_t l3e;
+    l3e.value = 3;
+    l3e.next = NULL;
+    test_list_t *l1 = &l1e;
+    test_list_t *l2 = &l2e;
+    test_list_t *l3 = &l3e;
 
     // find node in a NULL list
-    test_list_t *should_be_null = ZJS_FIND_NODE(test_list_t, NULL, value, 1);
+    test_list_t *should_be_null = ZJS_LIST_FIND(test_list_t, NULL, value, 1);
     zjs_assert(should_be_null == NULL, "empty list returned NULL");
 
     // find node that doesn't exist
-    should_be_null = ZJS_FIND_NODE(test_list_t, &l2, value, 1);
+    should_be_null = ZJS_LIST_FIND(test_list_t, l2, value, 1);
     zjs_assert(should_be_null == NULL, "incorrect value not found");
 
     // find node that does exist
-    test_list_t *t1 = ZJS_FIND_NODE(test_list_t, &l1, value, 1);
-    zjs_assert(t1 == &l1, "correct node found in single element list");
+    test_list_t *t1 = ZJS_LIST_FIND(test_list_t, l1, value, 1);
+    zjs_assert(t1 == l1, "correct node found in single element list");
 
     // create multi-element list
-    ZJS_APPEND_NODE(test_list_t, head, &l1);
-    ZJS_APPEND_NODE(test_list_t, head, &l2);
-    ZJS_APPEND_NODE(test_list_t, head, &l3);
+    ZJS_LIST_APPEND(test_list_t, head, l1);
+    ZJS_LIST_APPEND(test_list_t, head, l2);
+    ZJS_LIST_APPEND(test_list_t, head, l3);
 
     // check lengths
     zjs_assert(ZJS_LIST_LENGTH(test_list_t, head) == 3, "list length (l1) correct");
@@ -432,29 +435,32 @@ void test_list_macros()
     zjs_assert(ZJS_LIST_LENGTH(test_list_t, head->next->next) == 1, "list length (l3) correct");
 
     // check values are correct
-    test_list_t *tl1 = ZJS_FIND_NODE(test_list_t, head, value, 1);
-    test_list_t *tl2 = ZJS_FIND_NODE(test_list_t, head, value, 2);
-    test_list_t *tl3 = ZJS_FIND_NODE(test_list_t, head, value, 3);
-    zjs_assert(tl1 == &l1, "first element correct");
-    zjs_assert(tl2 == &l2, "second element correct");
-    zjs_assert(tl3 == &l3, "third element correct");
+    test_list_t *tl1 = ZJS_LIST_FIND(test_list_t, head, value, 1);
+    test_list_t *tl2 = ZJS_LIST_FIND(test_list_t, head, value, 2);
+    test_list_t *tl3 = ZJS_LIST_FIND(test_list_t, head, value, 3);
+    zjs_assert(tl1 == l1, "first element correct");
+    zjs_assert(tl2 == l2, "second element correct");
+    zjs_assert(tl3 == l3, "third element correct");
 
     // check order is correct
-    zjs_assert(l1.next == &l2, "l1.next == l2");
-    zjs_assert(l2.next == &l3, "l2.next == l3");
+    zjs_assert(l1->next == l2, "l1.next == l2");
+    zjs_assert(l2->next == l3, "l2.next == l3");
 
     // remove middle element
-    ZJS_REMOVE_NODE(test_list_t, head, &l2);
-    zjs_assert(l1.next == &l3, "middle element was removed");
-    should_be_null = ZJS_FIND_NODE(test_list_t, head, value, 2);
-    zjs_assert(should_be_null == NULL, "middle element value was not found");
+    if (ZJS_LIST_REMOVE(test_list_t, head, l2)) {
+        zjs_assert(l1->next == l3, "middle element was removed");
+        should_be_null = ZJS_LIST_FIND(test_list_t, head, value, 2);
+        zjs_assert(should_be_null == NULL, "middle element value was not found");
+    } else {
+        zjs_assert(0, "element was not removed");
+    }
 
     // test prepend
-    ZJS_PREPEND_NODE(test_list_t, head, &l2);
-    zjs_assert(head == &l2, "prepended node");
-    zjs_assert(ZJS_LIST_LENGTH(test_list_t, &l2) == 3, "list length (prepend) correct");
+    ZJS_LIST_PREPEND(test_list_t, head, l2);
+    zjs_assert(head == l2, "prepended node");
+    zjs_assert(ZJS_LIST_LENGTH(test_list_t, l2) == 3, "list length (prepend) correct");
 
-    ZJS_FREE_LIST(test_list_t, head, test_free_list);
+    ZJS_LIST_FREE(test_list_t, head, test_free_list);
     zjs_assert(l1_freed, "l1 freed");
     zjs_assert(l2_freed, "l2 freed");
     zjs_assert(l3_freed, "l3 freed");
