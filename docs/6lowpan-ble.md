@@ -1,8 +1,8 @@
-# OCF over BLE
-This document describes the steps to build and run an OCF server over BLE on
-the Arduino 101. This setup requires a Linux desktop (or similar) with a BLE
-adapter and 6LoWPAN support. The 6LoWPAN module is standard on Ubuntu and
-should work with a 4.0 compliant BT/BLE adapter.
+# Using 6LoWPAN
+This document describes the steps to build and run a ZJS IP application that
+uses 6LoWPAN as its IP transport. This setup requires a Linux desktop
+(or similar) with a BLE adapter and 6LoWPAN support. The 6LoWPAN module is
+standard on Ubuntu and should work with a 4.0 compliant BT/BLE adapter.
 
 ## Prerequisites
 * Arduino 101 Board
@@ -14,23 +14,29 @@ should work with a 4.0 compliant BT/BLE adapter.
 Please follow the ZJS initial setup in the main [README](../README.md)
 
 ## Building for A101
-Building the OCF server sample is the same as any other:
+Building any IP networking sample is the same as any other, except there are
+two optional variables that can be used to set the BLE MAC address as well as
+the device name, `BLE_ADDR` and `DEVICE_NAME`. Here are some examples of
+building various samples:
 ```bash
-$ make BOARD=arduino_101 JS=samples/OcfServer.js
+$ make BOARD=arduino_101 JS=samples/OcfServer.js BLE_ADDR="DE:AD:BE:EF:11:22"
+$ make BOARD=arduino_101 JS=samples/TCPEchoServ6.js DEVICE_NAME="my_tcp_server"
 ```
+When doing BLE discovery (explained below) you should see your device name and
+MAC address appear if you use these options.
 
-## Flashing the A101
-Flash the Arduino 101 as you would any other script:
-```bash
-$ make dfu
-```
+Note: The nRF52 board is experimental but does appear to work with this same
+procedure, just substituting the correct BOARD variable, but flashing the nRF52
+is different as it does not use DFU. You can find more information on the Zephyr
+project website for the nRF52 board:
+https://www.zephyrproject.org/doc/boards/arm/nrf52840_pca10056/doc/nrf52840_pca10056.html
 
 ## Linux Setup
-These steps are for making the initial BLE connection to the Arduino 101. The
-Arduino 101 must have been flashed with the OCF server sample and reset so it
-is advertising over BLE. The following steps will create that connection which
-will show up as a IP interface on the Linux box:
-(Note: You will likely have to run these commands as root)
+These steps are for making the initial BLE connection to the ZJS board. The
+ZJS board must have been flashed with any IP networking application. After
+flashing, reset, and it should be advertising over BLE. The following steps will
+initiate the BLE connection which should then show up as a IP interface on the
+Linux box: (Note: You will likely have to run these commands as root)
 
 1. Install BLE adapter
 
@@ -72,12 +78,12 @@ will show up as a IP interface on the Linux box:
 5. Look for your Arduino 101 advertisement
 
   The following command should start listing BLE devices. Your device should
-  appear as "Zephyr OCF Node" by default.
+  appear as "ZJS Device" by default (if `DEVICE_NAME` was not used during build).
 
   ```bash
   $ hcitool lescan
   LE Scan ...
-  F1:F9:50:21:43:4A Zephyr OCF Node
+  F1:F9:50:21:43:4A ZJS Device
   ```
 
   Use Ctrl-C to stop the scan once your device is found.
@@ -121,7 +127,28 @@ will show up as a IP interface on the Linux box:
   Note: If you fail to see this bt0 interface, try the connect command above
   again.
 
-## Connecting an OCF client
+## Connecting to your 6LoWPAN device (Net/Dgram)
+If you are using OCF, please read the section below, these steps are not needed
+since OCF uses IP multi-casting to deliver its IP address.
+
+If you are using either the `net` or `dgram` module you will need to setup an
+IP route for the device so your Linux machine knows where to route the IP
+traffic. If using either `UDPEchoServ6.js` or `TCPEchoServ6.js` there should be
+a comment at the top explaining how to setup the IP route as well as here:
+```bash
+sudo ip -6 route add 2001:db8::/64 dev bt0
+```
+Once you add this IP route you should be able to communicate with the device
+using a UDP/TCP client. A quick test can be done with netcat:
+```bash
+# UDP
+echo 'hello' | nc -u -6 2001:db8::1 33333
+
+# TCP
+echo 'hello' | nc -6 2001:db8::1 33333
+```
+
+## Connecting to your OCF server
 Now that your Arduino 101 is connected, it is as if it's a regular OCF IP
 device. You can now connect an OCF client. There are OCF client samples in the
 [iot-rest-api-server](https://github.com/01org/iot-rest-api-server) repo.
