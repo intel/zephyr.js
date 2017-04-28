@@ -63,7 +63,7 @@ interface Server {
     onerror();
     onlistening();
     // Server methods
-    Address address();
+    AddressInfo address();
     void close();
     void getConnections(callback);
     void listen(Object options, callback onlistening);
@@ -71,6 +71,20 @@ interface Server {
     Boolean listening;      // true if the server is listening
     Number maxConnections;  // maximum number of connections
 };
+
+dictionary AddressOptions {
+    Number port;          // Port the client should connect to (required)
+    String host;          // Host the client should connect to
+    String localAddress;  // Local address to bind to
+    Number localPort;     // local port to bind to
+    String family;        // Version of IP stack, deafults to 4
+}
+
+dictionary AddressInfo {
+    Number port;    // Server port
+    String family;  // IPv4 or IPv6
+    String address; // IP address for the server
+}
 ```
 
 API Documentation
@@ -151,20 +165,11 @@ containing the data received.
 if a timeout was set with `setTimeout`.
 
 ### Socket.connect
-`void connect(Object options, callback onconnect)`
+`void connect(AddressOptions options, callback onconnect)`
 
 Connect to a remote TCP server.
 
-`options` is an object which specifies:
-```
-{
-    port : Port the client should connect to (required)
-    host : Host the client should connect to
-    localAddress : Local address to bind to
-    localPort : local port to bind to
-    family : Version of IP stack, deafults to 4
-}
-```
+`options` should describe the remote server your connecting to.
 
 `onconnect` is optional and, if specified, will be added as the listener for the
 `connect` event.
@@ -223,16 +228,9 @@ server has called `close()` and all its connections have been closed. Calling
 `server.listen()`.
 
 ### Server.address
-`Object address(void)`
+`AddressInfo address(void)`
 
-Returns an address object for the server:
-```
-{
-    port : Server port
-    family : IPv4 or IPv6
-    address : IP address for the server
-}
-```
+Returns an AddressInfo object for the server:
 
 ### Server.close
 `void close(void)`
