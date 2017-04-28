@@ -198,6 +198,8 @@ if check_for_require net || check_config_file ZJS_NET; then
         echo "CONFIG_6LOWPAN_COMPRESSION_IPHC=y" >> $PRJFILE
         echo "CONFIG_NET_L2_BLUETOOTH_ZEP1656=y" >> $PRJFILE
         echo "CONFIG_NET_L2_BLUETOOTH=y" >> $PRJFILE
+    elif [ $BOARD = "frdm_k64f" ]; then
+        echo "CONFIG_NET_L2_ETHERNET=y" >> $PRJFILE
     fi
 fi
 
