@@ -345,9 +345,9 @@ if check_for_require uart || check_config_file ZJS_UART; then
             echo "CONFIG_USB_CDC_ACM=y" >> $PRJFILE
         fi
         echo "CONFIG_SYS_LOG_USB_LEVEL=0" >> $PRJFILE
-        echo "CONFIG_SERIAL=y" >> $PRJFILE
         echo "CONFIG_UART_LINE_CTRL=y" >> $PRJFILE
     fi
+    echo "CONFIG_SERIAL=y" >> $PRJFILE
     echo "CONFIG_UART_INTERRUPT_DRIVEN=y" >> $PRJFILE
     MODULES+=" -DBUILD_MODULE_UART"
     MODULES+=" -DBUILD_MODULE_EVENTS"
@@ -397,10 +397,12 @@ if check_for_require fs || check_config_file ZJS_FS; then
     MODULES+=" -DBUILD_MODULE_FS -DBUILD_MODULE_BUFFER"
     if [ $BOARD = "arduino_101" ]; then
         echo "CONFIG_FS_FAT_FLASH_DISK_W25QXXDV=y" >> $PRJFILE
+        echo "CONFIG_DISK_ACCESS_FLASH=y" >> $PRJFILE
+    else
+        echo "CONFIG_DISK_ACCESS_RAM=y" >> $PRJFILE
     fi
     echo "CONFIG_FILE_SYSTEM=y" >> $PRJFILE
     echo "CONFIG_FILE_SYSTEM_FAT=y" >> $PRJFILE
-    echo "CONFIG_DISK_ACCESS_FLASH=y" >> $PRJFILE
 
     echo "CONFIG_FLASH=y" >> $PRJFILE
     echo "CONFIG_SPI=y" >> $PRJFILE

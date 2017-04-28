@@ -155,6 +155,17 @@ else
 JERRYLIB=outdir/$(BOARD)/libjerry-core-parser.a
 endif
 
+.PHONY: flash
+flash:  analyze generate $(JERRYLIB) $(ARC)
+	@make -f Makefile.zephyr flash	BOARD=$(BOARD) \
+									VARIANT=$(VARIANT) \
+									CB_STATS=$(CB_STATS) \
+									PRINT_FLOAT=$(PRINT_FLOAT) \
+									SNAPSHOT=$(SNAPSHOT) \
+									BLE_ADDR=$(BLE_ADDR) \
+									ASHELL=$(ASHELL) \
+									NETWORK_BUILD=$(NET_BUILD)
+
 # Build for zephyr, default target
 .PHONY: zephyr
 zephyr: analyze generate $(JERRYLIB) $(ARC)
