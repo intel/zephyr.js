@@ -56,14 +56,7 @@ static jerry_value_t invalid_args(void)
 
 static file_handle_t *find_file(int fd)
 {
-    file_handle_t *cur = opened_handles;
-    while (cur) {
-        if (cur->fd == fd) {
-            return cur;
-        }
-        cur = cur->next;
-    }
-    return NULL;
+    return ZJS_LIST_FIND(file_handle_t, opened_handles, fd, fd);
 }
 
 static file_handle_t *new_file(void)
@@ -89,25 +82,11 @@ static file_handle_t *new_file(void)
     return handle;
 }
 
-static void free_file(file_handle_t *handle)
+static void free_file(file_handle_t *f)
 {
-    file_handle_t *cur = opened_handles;
-    if (cur == handle) {
-        opened_handles = opened_handles->next;
-        BIT_CLR(fd_used, handle->fd);
-        zjs_free(handle);
-        return;
-    }
-    while (cur->next) {
-        if (cur->next == handle) {
-            cur->next = handle->next;
-            BIT_CLR(fd_used, handle->fd);
-            zjs_free(handle);
-            return;
-        }
-        cur = cur->next;
-    }
-    DBG_PRINT("file not found\n");
+    BIT_CLR(fd_used, f->fd);
+    fs_close(&f->fp);
+    zjs_free(f);
 }
 
 static int file_exists(const char *path)
@@ -305,6 +284,7 @@ static ZJS_DECL_FUNC_ARGS(zjs_fs_close, uint8_t async)
     }
 #endif
 
+    ZJS_LIST_REMOVE(file_handle_t, handle, opened_handles);
     free_file(handle);
 
     return ZJS_UNDEFINED;
@@ -944,13 +924,6 @@ jerry_value_t zjs_fs_init()
 
 void zjs_fs_cleanup()
 {
-    // cleanup any currently opened files
-    file_handle_t *cur = opened_handles;
-    while (cur) {
-        fs_close(&cur->fp);
-        file_handle_t *f = cur;
-        cur = cur->next;
-        zjs_free(f);
-    }
+    ZJS_LIST_FREE(file_handle_t, opened_handles, free_file);
 }
 #endif
