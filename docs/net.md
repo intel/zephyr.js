@@ -8,8 +8,8 @@ ZJS API for Net
 
 Introduction
 ------------
-ZJS provides net (TCP) API's which closely mimic Node.js' 'net' module. This
-module allows you to create a TCP IP server or client.
+ZJS provides net (TCP) APIs which closely mimic the Node.js 'net' module. This
+module allows you to create a TCP/IP server or client.
 
 Web IDL
 -------
@@ -104,23 +104,22 @@ that can be used to connect to a remote TCP server.
 
 Checks if the input is a valid IP address.
 
-Returns 0 if the input is not an IP address.
-Returns 4 if the input is IPv4
-Returns 6 if the input is IPv6
+Returns 4 if the input is an IPv4 address, 6 if the input is an IPv6 address,
+or 0 if the input is not an IP address.
 
 ### Net.isIPv4
 `Boolean isIPv4(input)`
 
-Checks if input is an IPv4 address
+Checks if input is an IPv4 address.
 
-Returns true if input is IPv4
+Returns true if input is IPv4.
 
 ### Net.isIPv6
 `Boolean isIPv6(input)`
 
-Checks if input is an IPv6 address
+Checks if input is an IPv6 address.
 
-Returns true if input is IPv6
+Returns true if input is IPv6.
 
 ### Socket.onclose Event
 `void onclose(void)`
@@ -143,13 +142,13 @@ containing the data received.
 ### Socket.onerror Event
 `void onerror(void)`
 
-`error` event emitted when there was an error on the socket (read/write/connect)
+`error` event emitted when there was an error on the socket (read/write/connect).
 
 ### Socket.ontimeout Event
 `void ontimeout(void)`
 
 `timeout` event emitted when the socket has timed out. This can only happen
-if a timeout was set with `setTimeout`
+if a timeout was set with `setTimeout`.
 
 ### Socket.connect
 `void connect(Object options, callback onconnect)`
@@ -179,13 +178,13 @@ Pause a socket from receiving data. `data` event will not be emitted until
 ### Socket.resume
 `void resume(void)`
 
-Allow a socket to resume receiving data after a call to `pause`
+Allow a socket to resume receiving data after a call to `pause`.
 
 ### Socket.setTimeout
 `void setTimeout(Number time, callback ontimeout)`
 
 Set a socket timeout. This will start a timer on the socket which will expire
-in the set amount of `time` if there has been no activity on the socket. The
+in `time` milliseconds if there has been no activity on the socket. The
 `ontimeout` parameter, if specified, will register a listener for the
 `timeout` event.
 
@@ -194,34 +193,34 @@ in the set amount of `time` if there has been no activity on the socket. The
 
 Send data on the socket.
 
-`buf` should contain the data you wish to Send
+`buf` should contain the data you wish to send.
 
-`writeDone` is optional and will be called once the data is written
+`writeDone` is optional and will be called once the data is written.
 
 ### Server.onclose Event
 `void onclose(void)`
 
 `close` event emitted when the server has closed. This only happens after a
 server has called `close()` and all its connections have been closed. Calling
-`close()` does not close all opened connections, that must be done manually.
+`close()` does not close all opened connections; that must be done manually.
 
 ### Server.onconnection Event
 `void onconnection(Socket sock)`
 
 `connection` event emitted when a client has connected to the server.
 
-`sock` parameter is the socket for this new connection
+`sock` parameter is the socket for this new connection.
 
 ### Server.onerror Event
 `void onerror(void)`
 
-`error` event emitted when the server has had an error
+`error` event emitted when the server has had an error.
 
 ### Server.onlistening Event
 `void onlistening(void)`
 
 `listening` event emitted when the server has been bound, after calling
-`server.listen()`
+`server.listen()`.
 
 ### Server.address
 `Object address(void)`
