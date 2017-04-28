@@ -18,8 +18,8 @@ sensor.onchange = function() {
                 " z=" + sensor.z);
 };
 
-sensor.onstatechange = function(event) {
-    console.log("state: " + event);
+sensor.onactivate = function() {
+    console.log("activated");
 };
 
 sensor.onerror = function(event) {

@@ -55,7 +55,6 @@ function GenericSensor() {
     }
 
     var currentState = null;
-    var StatechangeFlag = true;
     var changeFlag = false;
     var errorFlag = true;
     var defaultState, startState, stopState, middleState, middleNum;
@@ -78,25 +77,14 @@ function GenericSensor() {
         assert(sensor.state === middleState,
                "sensor: state is readonly property");
 
-        sensor.onstatechange = function(event) {
-            if (StatechangeFlag === true) {
-                assert(typeof event === "string" && event !== null,
-                       "sensor: callback value for 'onstatechange'");
+        sensor.onactivate = function() {
+            currentState = sensor.state
+            console.log("currentstate: " + currentState);
 
-                StatechangeFlag = false;
-            }
+            assert(currentState === "activated",
+                   "sensor: state is activated");
 
-            assert(currentState !== event,
-                   "sensor: '" + currentState +
-                   "' change to '" + event + "'");
-
-            currentState = sensor.state;
-            assert(typeof currentState === "string" && currentState !== null,
-                   "sensor: current state as '" + currentState + "'");
-
-            console.log("currentstate: " + event);
-
-            if (event === "activated") changeFlag = true;
+            changeFlag = true;
         };
 
         sensor.onchange = function() {
