@@ -3,7 +3,7 @@
 JERRY_BASE ?= $(ZJS_BASE)/deps/jerryscript
 OCF_ROOT ?= deps/iotivity-constrained
 
-ccflags-y += -Wall -Werror
+ccflags-y += -Wall -Werror $(ZJS_FLAGS)
 
 # TODO: iotivity-constrained gives some warnings and until we figure out how to
 #       disable them just for iotivity-constrained, we need to turn them back
@@ -62,6 +62,9 @@ obj-$(ZJS_NET) += zjs_net.o
 obj-$(ZJS_EVENTS) += zjs_event.o
 obj-$(ZJS_FS) += zjs_fs.o
 obj-$(ZJS_GPIO) += zjs_gpio.o
+ifeq ($(filter $(ZJS_FLAGS),-DZJS_GPIO_MOCK),-DZJS_GPIO_MOCK)
+obj-y += zjs_gpio_mock.o
+endif
 obj-$(ZJS_BLE) += zjs_ble.o
 obj-$(ZJS_PWM) += zjs_pwm.o
 obj-$(ZJS_PERFORMANCE) += zjs_performance.o

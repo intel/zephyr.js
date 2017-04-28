@@ -1,5 +1,8 @@
 # Copyright (c) 2016-2017, Intel Corporation.
 
+# a place to add temporary defines to ZJS builds such as -DZJS_GPIO_MOCK
+ZJS_FLAGS :=
+
 OS := $(shell uname)
 
 BOARD ?= arduino_101
@@ -137,6 +140,7 @@ ram_report: zephyr
 					CB_STATS=$(CB_STATS) \
 					PRINT_FLOAT=$(PRINT_FLOAT) \
 					SNAPSHOT=$(SNAPSHOT) \
+					ZJS_FLAGS=$(ZJS_FLAGS) \
 					ram_report
 
 .PHONY: rom_report
@@ -146,6 +150,7 @@ rom_report: zephyr
 					CB_STATS=$(CB_STATS) \
 					PRINT_FLOAT=$(PRINT_FLOAT) \
 					SNAPSHOT=$(SNAPSHOT) \
+					ZJS_FLAGS=$(ZJS_FLAGS) \
 					rom_report
 
 # choose name of jerryscript library based on snapshot feature
@@ -158,14 +163,16 @@ endif
 # Build for zephyr, default target
 .PHONY: zephyr
 zephyr: analyze generate $(JERRYLIB) $(ARC)
-	@make -f Makefile.zephyr	BOARD=$(BOARD) \
+	@make -f Makefile.zephyr \
+					BOARD=$(BOARD) \
 					VARIANT=$(VARIANT) \
 					CB_STATS=$(CB_STATS) \
 					PRINT_FLOAT=$(PRINT_FLOAT) \
 					SNAPSHOT=$(SNAPSHOT) \
 					BLE_ADDR=$(BLE_ADDR) \
 					ASHELL=$(ASHELL) \
-					NETWORK_BUILD=$(NET_BUILD)
+					NETWORK_BUILD=$(NET_BUILD) \
+					ZJS_FLAGS=$(ZJS_FLAGS)
 ifeq ($(BOARD), arduino_101)
 	@echo
 	@echo -n Creating dfu images...
@@ -362,7 +369,8 @@ qemu: zephyr
 	make -f Makefile.zephyr qemu \
 		CB_STATS=$(CB_STATS) \
 		SNAPSHOT=$(SNAPSHOT) \
-		NETWORK_BUILD=$(NET_BUILD)
+		NETWORK_BUILD=$(NET_BUILD) \
+		ZJS_FLAGS=$(ZJS_FLAGS)
 
 # Builds ARC binary
 .PHONY: arc
