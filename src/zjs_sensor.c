@@ -174,7 +174,7 @@ static void zjs_sensor_set_state(jerry_value_t obj, enum sensor_state state)
         return;
     }
 
-    // update state property and trigger onactivate event if neccessary
+    // update state property and trigger onactivate event if necessary
     const char *state_str = NULL;
     switch(state) {
     case SENSOR_STATE_UNCONNECTED:
