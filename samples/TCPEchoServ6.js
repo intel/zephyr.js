@@ -2,7 +2,7 @@
 
 // Sample for "net" module implementing an IPv6 TCP echo server.
 // To run it on the Arduino 101, you'll need to connect via BLE with your
-// TCP client (e.g. Linux), then add a new route for the bt0 interface:
+// TCP client (e.g. Linux netcat), then add a new route for the bt0 interface:
 //
 // ip -6 route add 2001:db8::/64 dev bt0
 //

@@ -1,4 +1,21 @@
 // Copyright (c) 2017, Intel Corporation.
+//
+// Sample for "net" module implementing an IPv6 TCP echo client.
+// To run it on the Arduino 101, you'll need to connect via BLE with your
+// host machine (e.g. Linux), then add a new route for the bt0 interface:
+//
+// ip -6 route add 2001:db8::/64 dev bt0
+//
+// You can then run a TCP server (e.g. python) which this sample will connect
+// to. You should then see it echo back any data send by the server.
+//
+// Note: There is some weirdness with network clients on Zephyr. There seems to
+//       be an issue with trying to connect before the bluetooth interface has
+//       come up. This is why we have the net.onup event, which is not part of
+//       the node.js spec. This sample also does not issue the first connect
+//       until 10 seconds after you make the BLE connection. This is done to
+//       give you enough time to setup the IP route and start the TCP server
+//       on the host (e.g. Linux) side.
 
 var net = require('net');
 
