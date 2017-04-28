@@ -468,32 +468,32 @@ if $buffer && [[ $MODULE != *"BUILD_MODULE_BUFFER"* ]]; then
     MODULES+=" -DBUILD_MODULE_BUFFER"
     echo "export ZJS_BUFFER=y" >> $CONFFILE
 fi
-if check_for_feature Accelerometer\|Gyroscope\|AmbientLightSensor\|TemperatureSensor || check_config_file ZJS_SENSOR; then
+if check_for_feature "Accelerometer\|Gyroscope\|AmbientLightSensor\|TemperatureSensor" || check_config_file ZJS_SENSOR; then
     >&2 echo Using module: Sensor
     MODULES+=" -DBUILD_MODULE_SENSOR"
     echo "export ZJS_SENSOR=y" >> $CONFFILE
-    if check_for_feature Accelerometer || check_config_file ZJS_SENSOR_ACCEL; then
+    if check_for_feature "Accelerometer" || check_config_file ZJS_SENSOR_ACCEL; then
         >&2 echo Using module: Sensor Accelerometer
         echo "export ZJS_SENSOR_ACCEL=y" >> $CONFFILE
         MODULES+=" -DBUILD_MODULE_SENSOR_ACCEL"
     fi
-    if check_for_feature Gyroscope || check_config_file ZJS_SENSOR_GYRO; then
+    if check_for_feature "Gyroscope" || check_config_file ZJS_SENSOR_GYRO; then
         >&2 echo Using module: Sensor Gyroscope
         echo "export ZJS_SENSOR_GYRO=y" >> $CONFFILE
         MODULES+=" -DBUILD_MODULE_SENSOR_GYRO"
     fi
-    if check_for_feature AmbientLightSensor || check_config_file ZJS_SENSOR_LIGHT; then
+    if check_for_feature "AmbientLightSensor" || check_config_file ZJS_SENSOR_LIGHT; then
         >&2 echo Using module: Sensor Ambient Light
         echo "export ZJS_SENSOR_LIGHT=y" >> $CONFFILE
         MODULES+=" -DBUILD_MODULE_SENSOR_LIGHT"
     fi
-    if check_for_feature TemperatureSensor || check_config_file ZJS_SENSOR_TEMP; then
+    if check_for_feature "TemperatureSensor" || check_config_file ZJS_SENSOR_TEMP; then
         >&2 echo Using module: Sensor Temperature
         echo "export ZJS_SENSOR_TEMP=y" >> $CONFFILE
         MODULES+=" -DBUILD_MODULE_SENSOR_TEMP"
     fi
     if [[ $BOARD = "arduino_101" ]] || [[ $ASHELL = "y" ]]; then
-        if check_for_feature Accelerometer\|Gyroscope\|TemperatureSensor || [[ $ASHELL = "y" ]]; then
+        if check_for_feature "Accelerometer\|Gyroscope\|TemperatureSensor" || [[ $ASHELL = "y" ]]; then
             echo "CONFIG_SENSOR=y" >> $ARCPRJFILE
             echo "CONFIG_GPIO=y" >> $ARCPRJFILE
             echo "CONFIG_SPI=y" >> $ARCPRJFILE
@@ -508,7 +508,7 @@ if check_for_feature Accelerometer\|Gyroscope\|AmbientLightSensor\|TemperatureSe
             echo "CONFIG_BMI160_TRIGGER=y" >> $ARCPRJFILE
             echo "CONFIG_BMI160_TRIGGER_OWN_THREAD=y" >> $ARCPRJFILE
         fi
-        if check_for_feature AmbientLightSensor || [[ $ASHELL = "y" ]]; then
+        if check_for_feature "AmbientLightSensor" || [[ $ASHELL = "y" ]]; then
             MODULES+=" -DBUILD_MODULE_SENSOR_LIGHT"
             echo "CONFIG_ADC=y" >> $ARCPRJFILE
             # Workaround for the Zephyr issue ZEP-1882: ADC doesn't work with
