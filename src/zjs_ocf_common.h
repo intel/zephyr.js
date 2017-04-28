@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 #include "jerryscript.h"
 
@@ -75,9 +75,9 @@ void zjs_ocf_free_props(void *h);
 /**
  * Routine to call into iotivity-constrained
  *
- * @return              iotivity-constrained's polling functions return value
+ * @return              Time (ms) until next event
  */
-uint8_t main_poll_routine(void *handle);
+int32_t main_poll_routine(void* handle);
 
 /**
  * Set the 'uuid' property in the device object. This API is required because

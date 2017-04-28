@@ -278,10 +278,24 @@ int zjs_validate_args(const char *expectations[], const jerry_length_t argc,
 #ifndef ZJS_LINUX_BUILD
 #define LOCK  k_sched_lock
 #define UNLOCK k_sched_unlock
+
+/*
+ * Unblock the main loop
+ */
+void zjs_loop_unblock(void);
+
+/*
+ * Block in the main loop for a specified amount of time
+ */
+void zjs_loop_block(int time);
+
+/*
+ * Initialize the main loop blocking semaphore
+ */
+void zjs_loop_init(void);
 #else
 #define LOCK() do {} while (0)
 #define UNLOCK() do {} while (0)
 #endif
-
 
 #endif  // __zjs_util_h__

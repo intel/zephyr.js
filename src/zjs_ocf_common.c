@@ -190,6 +190,9 @@ jerry_value_t ocf_object;
  */
 void oc_signal_main_loop(void)
 {
+#ifndef ZJS_LINUX_BUILD
+    zjs_loop_unblock();
+#endif
 }
 
 #ifdef OC_CLIENT
@@ -408,12 +411,9 @@ static int app_init(void)
     return ret;
 }
 
-uint8_t main_poll_routine(void *handle)
+int32_t main_poll_routine(void* handle)
 {
-    if (oc_main_poll()) {
-        return 1;
-    }
-    return 0;
+    return (int32_t)oc_main_poll();
 }
 
 static const oc_handler_t handler = {

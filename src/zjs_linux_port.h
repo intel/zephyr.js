@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 #ifndef ZJS_LINUX_PORT_H_
 #define ZJS_LINUX_PORT_H_
@@ -25,6 +25,7 @@ uint8_t zjs_port_timer_test(zjs_port_timer_t *timer);
 uint32_t zjs_port_timer_get_uptime(void);
 
 #define ZJS_TICKS_NONE          0
+#define ZJS_TICKS_FOREVER       0
 #define CONFIG_SYS_CLOCK_TICKS_PER_SEC 100
 #define zjs_sleep usleep
 

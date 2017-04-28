@@ -8,6 +8,12 @@
 #include <string.h>
 #include <stdlib.h>
 
+#ifndef ZJS_LINUX_BUILD
+#include "zjs_zephyr_port.h"
+#else
+#include "zjs_linux_port.h"
+#endif
+
 // ZJS includes
 #ifdef BUILD_MODULE_BUFFER
 #include "zjs_buffer.h"
@@ -337,14 +343,18 @@ void zjs_register_service_routine(void *handle, zjs_service_routine func)
     return;
 }
 
-uint8_t zjs_service_routines(void)
+int32_t zjs_service_routines(void)
 {
-    uint8_t serviced = 0;
+    int32_t wait = ZJS_TICKS_FOREVER;
     int i;
     for (i = 0; i < num_routines; ++i) {
-        if (svc_routine_map[i].func(svc_routine_map[i].handle)) {
-            serviced = 1;
-        }
+        int32_t ret = svc_routine_map[i].func(svc_routine_map[i].handle);
+        wait = (wait < ret) ? wait : ret;
     }
-    return serviced;
+#ifdef ZJS_LINUX_BUILD
+    if (wait == ZJS_TICKS_FOREVER) {
+        return 0;
+    }
+#endif
+    return wait;
 }

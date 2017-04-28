@@ -8,10 +8,9 @@
 /**
  * Service the timer module.
  *
- * @return          1 if any timers were serviced
- *                  0 if no timers were serviced
+ * @return          Shortest time until next expiring timer
  */
-uint8_t zjs_timers_process_events();
+int32_t zjs_timers_process_events();
 void zjs_timers_init();
 // Stops and frees all timers
 void zjs_timers_cleanup();

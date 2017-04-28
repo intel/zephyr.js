@@ -101,6 +101,9 @@ int main(int argc, char *argv[])
     jerry_value_t code_eval;
     uint32_t len;
 #endif
+#ifndef ZJS_LINUX_BUILD
+    zjs_loop_init();
+#endif
     jerry_value_t result;
 
     // print newline here to make it easier to find
@@ -198,20 +201,26 @@ int main(int argc, char *argv[])
 #ifdef ZJS_ASHELL
         zjs_ashell_process();
 #endif
+        int32_t wait_time = ZJS_TICKS_FOREVER;
         uint8_t serviced = 0;
 
-        if (zjs_timers_process_events()) {
+        uint64_t wait = zjs_timers_process_events();
+        if (wait != ZJS_TICKS_FOREVER) {
             serviced = 1;
+            wait_time = (wait < wait_time) ? wait : wait_time;
         }
+        wait = zjs_service_routines();
+        if (wait != ZJS_TICKS_FOREVER) {
+            serviced = 1;
+            wait_time = (wait < wait_time) ? wait : wait_time;
+        }
+        // callback cannot return a wait time
         if (zjs_service_callbacks()) {
             serviced = 1;
         }
-        if (zjs_service_routines()) {
-            serviced = 1;
-        }
-        // not sure if this is okay, but it seems better to sleep than
-        //   busy wait
-        zjs_sleep(1);
+#ifndef ZJS_LINUX_BUILD
+        zjs_loop_block(wait_time);
+#endif
 #ifdef ZJS_LINUX_BUILD
         if (!no_exit) {
             // if the last and current loop had no pending "events" (timers or
