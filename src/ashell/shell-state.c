@@ -63,6 +63,7 @@ const char MSG_IMMEDIATE_MODE[] =
 const char hex_prompt[] = "[HEX]\r\n";
 const char raw_prompt[] = ANSI_FG_YELLOW "RAW> " ANSI_FG_RESTORE;
 const char eval_prompt[] = ANSI_FG_GREEN "js> " ANSI_FG_RESTORE;
+const char *BUILD_TIMESTAMP = __DATE__ " " __TIME__ "\n";
 
 #define CMD_TRANSFER "transfer"
 
@@ -594,8 +595,7 @@ int32_t ashell_set_bootcfg(char *buf)
         return RET_ERROR;
     }
 
-    ssize_t written = fs_write(file, __TIMESTAMP__, strlen(__TIMESTAMP__));
-    written += fs_write(file, " ", 1);
+    ssize_t written = fs_write(file, BUILD_TIMESTAMP, strlen(BUILD_TIMESTAMP));
     written += fs_write(file, buf, strlen(buf));
     if (written <= 0) {
         comms_println("Failed to write boot.cfg file");
@@ -646,6 +646,7 @@ int32_t ashell_help(char *buf)
         comms_printf("%8s %s\r\n", commands[t].cmd_name, commands[t].syntax);
     }
     //comms_println("TODO: Read help file per command!");
+    ashell_run_boot_cfg();
     return RET_OK;
 }
 
@@ -659,18 +660,17 @@ void ashell_run_boot_cfg()
         return;
     }
 
-    size_t tssize = strlen(__TIMESTAMP__);
+    size_t tssize = strlen(BUILD_TIMESTAMP);
     ssize_t size = fs_size(file);
     // Check that there is something after the timestamp
     if (size > tssize) {
         char ts[tssize];
         count = fs_read(file, ts, tssize);
-        if (count == tssize && strncmp(ts, __TIMESTAMP__, tssize) == 0) {
-            // skip the space
-            fs_seek(file, 1, FS_SEEK_CUR);
-            size_t filenamesize = size - tssize - 1;
+        if (count == tssize && strncmp(ts, BUILD_TIMESTAMP, tssize) == 0) {
+            size_t filenamesize = size - tssize;
             char filename[filenamesize + 1];
             count = fs_read(file, filename, filenamesize);
+
             if (count > 0) {
                 filename[filenamesize] = '\0';
                 ashell_run_javascript(filename);
