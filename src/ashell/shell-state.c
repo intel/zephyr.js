@@ -646,7 +646,6 @@ int32_t ashell_help(char *buf)
         comms_printf("%8s %s\r\n", commands[t].cmd_name, commands[t].syntax);
     }
     //comms_println("TODO: Read help file per command!");
-    ashell_run_boot_cfg();
     return RET_OK;
 }
 
