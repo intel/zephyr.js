@@ -17,6 +17,7 @@ CORE_SRC +=	src/zjs_a101_pins.c \
 		src/zjs_error.c \
 		src/zjs_event.c \
 		src/zjs_gpio.c \
+		src/zjs_gpio_mock.c \
 		src/zjs_linux_ring_buffer.c \
 		src/zjs_linux_time.c \
 		src/main.c \
@@ -56,7 +57,8 @@ LINUX_DEFINES +=	-DZJS_LINUX_BUILD \
 			-DBUILD_MODULE_PROMISE \
 			-DBUILD_MODULE_TEST_CALLBACKS \
 			-DBUILD_MODULE_A101 \
-			-DBUILD_MODULE_GPIO
+			-DBUILD_MODULE_GPIO \
+			-DZJS_GPIO_MOCK
 
 LINUX_FLAGS += 	-fno-asynchronous-unwind-tables \
 		-fno-omit-frame-pointer \
