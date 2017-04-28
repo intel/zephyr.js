@@ -498,6 +498,7 @@ int zjs_validate_args(const char *expectations[], const jerry_length_t argc,
 }
 
 #ifndef ZJS_LINUX_BUILD
+#ifndef ZJS_ASHELL
 static zjs_port_sem block;
 void zjs_loop_unblock(void)
 {
@@ -513,4 +514,5 @@ void zjs_loop_init(void)
 {
     zjs_port_sem_init(&block, 0, 1);
 }
+#endif
 #endif
