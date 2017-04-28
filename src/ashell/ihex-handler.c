@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 /**
  * @file
@@ -187,4 +187,8 @@ void ihex_process_start()
     cfg.print_state = ihex_print_status;
 
     comms_uart_set_config(&cfg);
+    if (cfg.interface.init_cb != NULL) {
+        DBG("[Init]\n");
+        cfg.interface.init_cb();
+    }
 }
