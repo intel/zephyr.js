@@ -1,6 +1,6 @@
 # Using 6LoWPAN
-This document describes the steps to build and run an ZJS IP application that
-uses 6LoWPAN as its IP transport.This setup requires a Linux desktop
+This document describes the steps to build and run a ZJS IP application that
+uses 6LoWPAN as its IP transport. This setup requires a Linux desktop
 (or similar) with a BLE adapter and 6LoWPAN support. The 6LoWPAN module is
 standard on Ubuntu and should work with a 4.0 compliant BT/BLE adapter.
 
