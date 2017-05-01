@@ -536,6 +536,7 @@ void zjs_sensor_cleanup()
         }
         mod->cleanup();
     }
+    jerry_release_value(zjs_sensor_prototype);
 }
 
 #endif // QEMU_BUILD
