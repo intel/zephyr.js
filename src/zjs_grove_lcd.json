@@ -1,0 +1,15 @@
+{
+    "module":"grove_lcd",
+    "require":"grove_lcd",
+    "targets":["arduino_101"],
+    "zephyr_conf": {
+        "all": [
+            "CONFIG_I2C=y",
+            "CONFIG_GROVE=y",
+            "CONFIG_GROVE_LCD_RGB=y",
+            "CONFIG_GROVE_LCD_RGB_INIT_PRIORITY=90"
+        ]
+    },
+    "zjs_config": ["-DBUILD_MODULE_GROVE_LCD"],
+    "src": ["zjs_grove_lcd.c"]
+}

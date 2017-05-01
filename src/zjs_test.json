@@ -1,0 +1,6 @@
+{
+    "module":"test",
+    "zephyr_conf": {
+        "arduino_101": ["inner", "inner_a101"]
+    }
+}

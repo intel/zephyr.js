@@ -8,8 +8,6 @@
 
 #include "oc_api.h"
 #include <stdio.h>
-#include <signal.h>
-#include <pthread.h>
 //#include "port/oc_signal_main_loop.h"
 #include "port/oc_clock.h"
 

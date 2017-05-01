@@ -1,0 +1,7 @@
+{
+    "module":"k64f_pins",
+    "require":"k64f_pins",
+    "targets":["frdm_k64f"],
+    "zjs_config": ["-DBUILD_MODULE_K64F"],
+    "src": ["zjs_k64f_pins.c"]
+}

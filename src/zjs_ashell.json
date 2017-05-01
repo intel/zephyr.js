@@ -1,0 +1,39 @@
+{
+    "module":"ashell",
+    "depends": ["aio", "arduino101_pins", "ble", "console", "gpio", "grove_lcd", "i2c", "performance", "pwm", "uart", "fs"],
+    "targets":["arduino_101"],
+    "src": ["ashell/"],
+    "zephyr_conf": {
+        "arduino_101": [
+            "CONFIG_EARLY_CONSOLE=y",
+            "CONFIG_STDOUT_CONSOLE=y",
+            "CONFIG_CONSOLE_HANDLER=y",
+            "CONFIG_CONSOLE_HANDLER_SHELL=y",
+            "CONFIG_IHEX_UPLOADER_DEBUG=n",
+            "CONFIG_REBOOT=y",
+            "CONFIG_USB=y",
+            "CONFIG_USB_DW=y",
+            "CONFIG_USB_DEVICE_STACK=y",
+            "CONFIG_USB_DW_DEBUG=n",
+            "CONFIG_USB_DEBUG=n",
+            "CONFIG_SERIAL=y",
+            "CONFIG_UART_INTERRUPT_DRIVEN=y",
+            "CONFIG_UART_LINE_CTRL=y",
+            "CONFIG_USB_CDC_ACM_DEBUG=n",
+            "CONFIG_DEVICE_POWER_MANAGEMENT=y",
+            "CONFIG_FILE_SYSTEM=y",
+            "CONFIG_FILE_SYSTEM_FAT=y",
+            "CONFIG_DISK_ACCESS_FLASH=y",
+            "CONFIG_FS_FAT_FLASH_DISK_W25QXXDV=y",
+            "CONFIG_FLASH=y",
+            "CONFIG_SPI=y",
+            "CONFIG_GPIO=y",
+            "CONFIG_BLUETOOTH=y",
+            "CONFIG_BLUETOOTH_LE=y",
+            "CONFIG_BLUETOOTH_SMP=y",
+            "CONFIG_BLUETOOTH_PERIPHERAL=y",
+            "CONFIG_BLUETOOTH_GATT_DYNAMIC_DB=y"
+        ]
+    },
+    "zjs_config": ["-DZJS_ASHELL"]
+}

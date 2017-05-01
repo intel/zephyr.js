@@ -1,0 +1,13 @@
+{
+    "module":"i2c",
+    "require":"i2c",
+    "depends":["buffer"],
+    "targets":["arduino_101", "frdm_k64f"],
+    "zephyr_conf": {
+        "all": [
+            "CONFIG_I2C=y"
+        ]
+    },
+    "zjs_config": ["-DBUILD_MODULE_I2C"],
+    "src": ["zjs_i2c.c"]
+}

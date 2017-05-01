@@ -1,0 +1,22 @@
+{
+    "module":"uart",
+    "require":"uart",
+    "depends":["buffer", "events"],
+    "targets":["arduino_101", "frdm_k64f"],
+    "zephyr_conf": {
+        "all": ["CONFIG_UART_INTERRUPT_DRIVEN=y"],
+        "arduino_101": [
+            "CONFIG_GPIO=y",
+            "CONFIG_USB=y",
+            "CONFIG_USB_DW=y",
+            "CONFIG_USB_DEVICE_STACK=y",
+            "CONFIG_SYS_LOG_USB_DW_LEVEL=0",
+            "CONFIG_SYS_LOG_USB_LEVEL=0",
+            "CONFIG_SERIAL=y",
+            "CONFIG_UART_LINE_CTRL=y"
+        ],
+        "ashell":["CONFIG_USB_CDC_ACM=y"]
+    },
+    "zjs_config": ["-DBUILD_MODULE_UART"],
+    "src": ["zjs_uart.c"]
+}

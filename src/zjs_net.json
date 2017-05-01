@@ -1,0 +1,42 @@
+{
+    "module":"net",
+    "require":"net",
+    "targets":["arduino_101", "frdm_k64f"],
+    "depends":["buffer", "events", "net_config"],
+    "zephyr_conf": {
+        "all": [
+            "CONFIG_NETWORKING=y",
+            "CONFIG_NET_IPV6=y",
+            "CONFIG_NET_IPV4=y",
+            "CONFIG_NET_TCP=y",
+            "CONFIG_TEST_RANDOM_GENERATOR=y",
+            "CONFIG_INIT_STACKS=y",
+            "CONFIG_PRINTK=y",
+            "CONFIG_NET_STATISTICS=y",
+            "CONFIG_NET_NBUF_RX_COUNT=9",
+            "CONFIG_NET_NBUF_TX_COUNT=9",
+            "CONFIG_NET_NBUF_RX_DATA_COUNT=13",
+            "CONFIG_NET_NBUF_TX_DATA_COUNT=13",
+            "CONFIG_NET_IF_UNICAST_IPV6_ADDR_COUNT=3",
+            "CONFIG_NET_IF_MCAST_IPV6_ADDR_COUNT=2",
+            "CONFIG_NET_MAX_CONTEXTS=10",
+            "CONFIG_NET_MGMT=y",
+            "CONFIG_NET_MGMT_EVENT=y"
+        ],
+        "arduino_101": [
+            "CONFIG_BLUETOOTH=y",
+            "CONFIG_BLUETOOTH_SMP=y",
+            "CONFIG_BLUETOOTH_SIGNING=y",
+            "CONFIG_BLUETOOTH_PERIPHERAL=y",
+            "CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL=y",
+            "CONFIG_NETWORKING_WITH_6LOWPAN=y",
+            "CONFIG_6LOWPAN_COMPRESSION_IPHC=y",
+            "CONFIG_NET_L2_BLUETOOTH_ZEP1656=y",
+            "CONFIG_NET_L2_BLUETOOTH=y"
+        ],
+        "qemu_x86": ["CONFIG_NET_SLIP_TAP=y"],
+        "frdm_k64f": ["CONFIG_NET_L2_ETHERNET=y"]
+    },
+    "zjs_config": ["-DBUILD_MODULE_NET"],
+    "src": ["zjs_net.c"]
+}

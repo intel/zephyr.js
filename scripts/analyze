@@ -1,0 +1,169 @@
+#!/usr/bin/env python3
+
+import os
+import sys
+import json
+import re
+import shutil
+
+force = ['']
+featurefile = ''
+
+args = {}
+
+for i in sys.argv[1:]:
+    option, value = i.split('=')[:2]
+    args[option] = value
+
+print("Analyzing %s for %s" % (args['SCRIPT'], args['BOARD']))
+
+json_tree = {}
+
+deps_list = []
+zconf = []
+zjs_conf = []
+jrs_conf = []
+lsrc = []
+
+dependencies = []
+zephyr_config = []
+src_list = []
+zjs_config = []
+jrs_config = []
+
+def merge_lists(l1, l2):
+    if l1 != None:
+        if l2 != None:
+            for i in l2:
+                if i not in l1:
+                    l1.append(i)
+
+def build_tree(tree):
+    for file in os.listdir("src/"):
+        if file.endswith(".json"):
+            with open("src/" + file) as f:
+                data = json.load(f)
+            # Index the entry by the require name, if exists
+            if 'require' in data:
+                tree[data['require']] = data
+            # else index by the module name
+            elif 'module' in data:
+                tree[data['module']] = data
+            else:
+                print("Error: JSON entry %s must have either 'module' or 'require'" % file)
+
+def gather_deps_helper(js, dep, dlist, zlist, zjslist, jrslist, srclist, tree):
+    print("dep=" + dep)
+    if dep in tree:
+        print("looking at dep: " + dep)
+        entry = tree[dep]
+        if 'depends' in entry:
+            for i in entry['depends']:
+                print("gathering deps for " + i)
+                if i not in dlist:
+                    dlist.append(i)
+                #merge_lists(list, i)
+                gather_deps_helper(js, i, list, zlist, zjslist, jrslist, srclist, tree)
+        if 'targets' in entry:
+            if args['BOARD'] not in entry['targets']:
+                return
+        if 'src' in entry:
+            print("looking at src for " + dep)
+            src = entry['src']
+            if isinstance(src, list):
+                merge_lists(srclist, src)
+            else:
+                if 'common' in src:
+                    merge_lists(srclist, src['common'])
+                for key, value in src.items():
+                    if key != "common":
+                        # var x = require(module).key
+                        off_req = re.search(r"var .*require\([\'\"]%s[\"\']\)\.%s" % (entry['require'], key), js)
+                        if off_req:
+                            if 'src' in value:
+                                merge_lists(srclist, value['src'])
+                            if 'zjs_config' in value:
+                                merge_lists(zjslist, value['zjs_config'])
+                        else:
+                            # var x = require(module)
+                            # var y = x.y
+                            match_name = re.search(r"var .*require\([\'\"]%s[\"\']\)" % entry['require'], js)
+                            var_name = match_name.group(0).split(' ')[1]
+                            match_use = re.search(r"%s\.%s" % (var_name, key), js)
+                            if match_use:
+                                if 'src' in value:
+                                    merge_lists(srclist, value['src'])
+                                if 'zjs_config' in value:
+                                    merge_lists(zjslist, value['zjs_config'])
+        if 'zephyr_conf' in entry:
+            z_conf = entry['zephyr_conf']
+            if 'all' in z_conf:
+                merge_lists(zlist, z_conf['all'])
+            if args['BOARD'] in z_conf:
+                merge_lists(zlist, z_conf[args['BOARD']])
+        if 'jrs_config' in entry:
+            merge_lists(jrslist, entry['jrs_config'])
+        if 'zjs_config' in entry:
+            merge_lists(zjslist, entry['zjs_config'])
+
+def gather_deps(file, dlist, zlist, zjslist, jrslist, srclist, tree):
+    with open(file) as js:
+        text = js.read()
+    for i in tree:
+        if 'require' in tree[i]:
+            if re.search(r"require\([\'\"]%s[\"\']\)" % tree[i]['require'], text):
+                if i not in dlist:
+                    dlist.append(i)
+                print("found dep: " + i)
+                gather_deps_helper(text, i, dlist, zlist, zjslist, jrslist, srclist, tree)
+        elif 'constructor' in tree[i]:
+            if re.search(r"%s\(.*" % tree[i]['constructor'], text):
+                if i not in dlist:
+                    dlist.append(i)
+                print("found dep: " + i)
+                gather_deps_helper(text, i, dlist, zlist, zjslist, jrslist, srclist, tree)
+    # Get any deps for the board
+    gather_deps_helper(text, args['BOARD'], dlist, zlist, zjslist, jrslist, srclist, tree)
+
+def write_jrsconfig(list):
+    if 'PROFILE' in args:
+        if os.path.exists(args['PROFILE']):
+            shutil.copyfile(args['PROFILE'], args['PROFILE'] + '.bak')
+        with open("fragments/jerry_feature.base", "r") as jrs:
+            feature = jrs.read()
+        with open(args['PROFILE'], "w") as p:
+            for i in list:
+                feature = feature.replace(i, "#" + i)
+            p.write(feature)
+
+def write_makefile(src, zconf, file):
+    with open(args['MAKEBASE'], "r") as b:
+        base = b.read()
+    with open(file, "w") as f:
+        f.write(base)
+        if src:
+            f.write("obj-y += \\\n")
+            for i in src:
+                f.write("\t" + i.replace(".c", ".o") + " \\\n")
+            f.write("\nccflags-y += \\\n")
+            for i in zconf:
+                f.write("\t" + i + " \\\n")
+            f.write("\n")
+
+def write_zconf(list, file):
+    with open(file, "w") as f:
+        for i in list:
+            f.write(i + '\n')
+
+build_tree(json_tree)
+gather_deps(args['SCRIPT'], deps_list, zconf, zjs_conf, jrs_conf, lsrc, json_tree)
+
+print("DEPENDENCIES: " + str(deps_list))
+print("ZEPHYR_CONFIG: " + str(zconf))
+print("ZJS_CONFIG: " + str(zjs_conf))
+print("JRS_CONFIG: " + str(jrs_conf))
+print("SRC: " + str(lsrc))
+
+write_zconf(zconf, args['PRJCONF'])
+write_makefile(lsrc, zjs_conf, args['MAKEFILE'])
+write_jrsconfig(jrs_conf)

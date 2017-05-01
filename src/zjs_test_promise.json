@@ -1,0 +1,8 @@
+{
+    "module":"test_promise",
+    "require":"test_promise",
+    "targets":["arduino_101", "frdm_k64f"],
+    "depends": ["promise"],
+    "zjs_config": ["-DBUILD_MODULE_TEST_PROMISE"],
+    "src": ["zjs_test_promise.c"]
+}

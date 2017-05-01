@@ -1,0 +1,7 @@
+{
+    "module":"buffer",
+    "constructor":"Buffer",
+    "targets":["arduino_101", "frdm_k64f"],
+    "src": ["zjs_buffer.c"],
+    "zjs_config": ["-DBUILD_MODULE_BUFFER"]
+}

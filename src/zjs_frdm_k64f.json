@@ -1,0 +1,6 @@
+{
+    "module":"frdm_k64f",
+    "depends": ["k64f_pins"],
+    "targets":["frdm_k64f"],
+    "src": ["zjs_pinmux.c"]
+}

@@ -1,0 +1,7 @@
+{
+    "module":"arduino101_pins",
+    "require":"arduino101_pins",
+    "targets":["arduino_101"],
+    "zjs_config": ["-DBUILD_MODULE_A101"],
+    "src": ["zjs_a101_pins.c"]
+}

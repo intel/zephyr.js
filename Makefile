@@ -85,7 +85,7 @@ endif
 # Settings for ashell builds
 ifneq (,$(filter $(MAKECMDGOALS),ide ashell))
 CONFIG ?= fragments/zjs.conf.dev
-ASHELL=y
+ASHELL=ashell
 ZJS_FLAGS := "$(ZJS_FLAGS) -DZJS_FIND_FUNC_NAME"
 endif
 
@@ -227,36 +227,34 @@ $(JS):
 # Find the modules the JS file depends on
 .PHONY: analyze
 analyze: $(JS)
+	@mkdir -p outdir/$(BOARD)/
 	@echo "% This is a generated file" > prj.mdef
 	@echo "# This is a generated file" > src/Makefile
-	@cat src/Makefile.base >> src/Makefile
-	@echo "# This is a generated file" > src/sensors/Makefile
-	@cat src/sensors/Makefile.base >> src/sensors/Makefile
+
+	./scripts/analyze SCRIPT=$(JS) BOARD=$(BOARD) FORCE=$(ASHELL) PRJCONF=prj.conf MAKEFILE=src/Makefile MAKEBASE=src/Makefile.base PROFILE=outdir/$(BOARD)/jerry_feature.profile
+
+	@if [ "$(BOARD)" = "arduino_101" ]; then \
+		./scripts/analyze SCRIPT=$(JS) BOARD=arc PRJCONF=arc/prj.conf MAKEFILE=arc/src/Makefile MAKEBASE=arc/src/Makefile.base; \
+	fi
+
 	@if [ "$(TRACE)" = "on" ] || [ "$(TRACE)" = "full" ]; then \
 		echo "ccflags-y += -DZJS_TRACE_MALLOC" >> src/Makefile; \
 	fi
 	@if [ "$(SNAPSHOT)" = "on" ]; then \
 		echo "ccflags-y += -DZJS_SNAPSHOT_BUILD" >> src/Makefile; \
 	fi
-	@echo "ccflags-y += $(shell ./scripts/analyze.sh $(BOARD) $(JS) $(CONFIG) $(ASHELL))" | tee -a src/Makefile src/sensors/Makefile
-	@if [ "$(OS)" = "Darwin" ]; then \
-		sed -i.bu '/This is a generated file/r./zjs.conf.tmp' src/Makefile; \
-	else \
-		sed -i '/This is a generated file/r./zjs.conf.tmp' src/Makefile; \
-	fi
 	@# Add bluetooth debug configs if BLE is enabled
 	@if grep -q BUILD_MODULE_BLE src/Makefile; then \
 		if [ "$(VARIANT)" = "debug" ]; then \
-			echo "CONFIG_BLUETOOTH_DEBUG_LOG=y" >> prj.conf.tmp; \
+			echo "CONFIG_BLUETOOTH_DEBUG_LOG=y" >> prj.conf; \
 		fi \
 	fi
-	@# Add the include for the OCF Makefile only if the script is using OCF
+
 	@if grep -q BUILD_MODULE_OCF src/Makefile; then \
-		echo "CONFIG_BLUETOOTH_DEVICE_NAME=\"$(DEVICE_NAME)\"" >> prj.conf.tmp; \
-		echo "include \$$(ZJS_BASE)/Makefile.ocf_zephyr" >> src/Makefile; \
+		echo "CONFIG_BLUETOOTH_DEVICE_NAME=\"$(DEVICE_NAME)\"" >> prj.conf; \
 	fi
 	@if grep -q BUILD_MODULE_DGRAM src/Makefile; then \
-		echo "CONFIG_BLUETOOTH_DEVICE_NAME=\"$(DEVICE_NAME)\"" >> prj.conf.tmp; \
+		echo "CONFIG_BLUETOOTH_DEVICE_NAME=\"$(DEVICE_NAME)\"" >> prj.conf; \
 	fi
 	@if [ -e outdir/$(BOARD)/jerry_feature.profile.bak ]; then \
 		if ! cmp outdir/$(BOARD)/jerry_feature.profile.bak outdir/$(BOARD)/jerry_feature.profile; \
@@ -276,8 +274,8 @@ update:
 # set up prj.conf file
 -.PHONY: setup
 setup:
-	@echo "# This is a generated file" > prj.conf
-	@cat fragments/prj.conf.base >> prj.conf
+	@echo "# This is a generated file" >> prj.conf
+	#@cat fragments/prj.conf.base >> prj.conf
 
 ifeq ($(BOARD), qemu_x86)
 ifeq ($(OS), Darwin)
@@ -296,7 +294,8 @@ else
 endif
 endif
 ifeq ($(BOARD), arduino_101)
-	@cat fragments/prj.conf.arduino_101 >> prj.conf
+	#@echo > prj.conf
+	#@cat fragments/prj.conf.arduino_101 >> prj.conf
 ifeq ($(OS), Darwin)
 	# work around for OSX where the xtool toolchain do not
 	# support iamcu instruction set on the Arduino 101
@@ -363,9 +362,9 @@ ifeq ($(SNAPSHOT), on)
 	fi
 	@echo Creating snapshot bytecode from JS application...
 	@if [ -x /usr/bin/uglifyjs ]; then \
-		uglifyjs js.tmp -nc -mt > outdir/jsgen.tmp; \
+		uglifyjs $(JS) -nc -mt > outdir/jsgen.tmp; \
 	else \
-		cat js.tmp > outdir/jsgen.tmp; \
+		cat $(JS) > outdir/jsgen.tmp; \
 	fi
 	@outdir/snapshot/snapshot outdir/jsgen.tmp > outdir/include/zjs_snapshot_gen.h
 else
@@ -373,7 +372,7 @@ else
 ifeq ($(BOARD), linux)
 	@./scripts/convert.sh $(JS) outdir/include/zjs_script_gen.h
 else
-	@./scripts/convert.sh js.tmp outdir/include/zjs_script_gen.h
+	@./scripts/convert.sh $(JS) outdir/include/zjs_script_gen.h
 endif
 endif
 

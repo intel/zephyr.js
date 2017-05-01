@@ -1,0 +1,8 @@
+{
+    "module":"sensor_temp",
+    "constructor":"TemperatureSensor",
+    "depends":["sensor", "sensor_arc"],
+    "targets":["arduino_101"],
+    "zjs_config": ["-DBUILD_MODULE_SENSOR_TEMP"],
+    "src": ["sensors/zjs_sensor_temp.c"]
+}
