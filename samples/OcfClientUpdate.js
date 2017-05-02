@@ -4,7 +4,8 @@
 // This sample will find the resource, then periodically retrieve and update
 // the resource
 
-var client = require('ocf').client;
+var ocf = require('ocf');
+var client = ocf.client;
 
 console.log("Started OCF client");
 
@@ -55,3 +56,5 @@ client.findResources({ resourceType:"core.light" }, onfound).then(function(resou
 }).catch(function(error) {
     console.log("findResources() returned an error: " + error.name);
 });
+
+ocf.start();

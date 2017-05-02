@@ -3,7 +3,8 @@
 // OCF server which has one resource and two properties. One property (sensor)
 // is ready only and other one (light) is read-write.
 
-var server = require('ocf').server;
+var ocf = require('ocf');
+var server = ocf.server;
 
 var aio = require('aio');
 var gpio = require("gpio");
@@ -60,3 +61,5 @@ server.register(resourceInit).then(function(resource) {
 }).catch(function(error) {
     console.log("Error registering");
 });
+
+ocf.start();

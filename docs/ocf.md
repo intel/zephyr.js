@@ -80,6 +80,13 @@ Note: If the image was built with the `BLE_ADDR` flag, this API has
 no effect. Using the `BLE_ADDR` hard codes the supplied address into
 the image which cannot be changed.
 
+### OCFObject.start
+`void start(void)`
+
+Start the OCF stack (iotivity-constrained). This should be called after all
+resources have been registered. Any calls to `registerResource` after `start`
+will have no effect.
+
 OCF Server
 ----------
 ```javascript

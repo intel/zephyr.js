@@ -88,11 +88,6 @@ int32_t main_poll_routine(void* handle);
 void zjs_set_uuid(char *uuid);
 
 /*
- * Start Iotivity-constrained.
- */
-int zjs_ocf_start();
-
-/*
  * Object returned from require('ocf')
  */
 jerry_value_t zjs_ocf_init();
