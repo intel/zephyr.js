@@ -1,6 +1,6 @@
 // Copyright (c) 2016-2017, Intel Corporation.
 
-console.log("Wire IO3 to IO2");
+console.log("Wire IO2 to IO3");
 
 var assert = require("Assert.js");
 
@@ -9,15 +9,15 @@ var gpio = require("gpio");
 var pins = require("arduino101_pins");
 var pinA, pinB, msTimer, cycleTimer;
 
-pinB = gpio.open({ pin: pins.IO2, direction: 'in' });
+pinB = gpio.open({pin: "IO2", mode: 'in'});
 
 // PWMPins open
-pinA = pwm.open({ channel: pins.IO3 });
+pinA = pwm.open({channel: pins.IO3});
 assert(pinA !== null && typeof pinA === "object",
       "open: defined pin and default argument");
 
 assert.throws(function () {
-    pinA = pwm.open({ channel: 1024 });
+    pinA = pwm.open({channel: 1024});
 }, "open: undefined pin");
 
 // set Period and PulseWidth with ms
@@ -25,7 +25,7 @@ assert.throws(function () {
 var msTrue = 0;
 var msFalse = 0;
 
-pinA = pwm.open({ channel: pins.IO3, period: 3, pulseWidth: 1 });
+pinA = pwm.open({channel: pins.IO3, period: 3, pulseWidth: 1});
 assert(pinA !== null && typeof pinA === "object",
        "open: with period and pulseWidth");
 
@@ -69,8 +69,8 @@ setTimeout(function () {
     var cyclesFalse = 0;
     var cyclesCount = 0;
     var periodCount = 0;
-    var Flag = false;
-    var oldFlag = false;
+    var Flag = 0;
+    var oldFlag = 0;
     pinA = pwm.open({ channel: pins.IO3, polarity: "reverse" });
     assert(pinA !== null && typeof pinA === "object", "open: reverse polarity");
 
@@ -91,7 +91,7 @@ setTimeout(function () {
            oldFlag = Flag;
            cyclesCount = 0;
 
-           if (Flag === false) {
+           if (Flag === 0) {
                periodCount = periodCount + 1;
            }
 

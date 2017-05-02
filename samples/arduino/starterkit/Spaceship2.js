@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 // Reimplementation of Arduino Starter Kit's Spaceship example
 //   - Toggles LEDs in response to a button press
@@ -15,16 +15,15 @@
 //     - Instead of IO3/IO4/IO5 for output LEDs use IO4/IO7/IO8
 
 var gpio = require('gpio');
-var pins = require('arduino101_pins');
 
 // set up the GPIO pins
-var button = gpio.open({pin: pins.IO2, direction: 'in', edge: 'rising'});
-var led1 = gpio.open({pin: pins.IO4, direction: 'out'});
-var led2 = gpio.open({pin: pins.IO7, direction: 'out'});
-var led3 = gpio.open({pin: pins.IO8, direction: 'out'});
+var button = gpio.open({pin: 2, mode: 'in', edge: 'rising'});
+var led1 = gpio.open(4);
+var led2 = gpio.open(7);
+var led3 = gpio.open(8);
 
 // turn green LED on initially
-led1.write(true);
+led1.write(1);
 
 var timer = null;
 
@@ -35,17 +34,17 @@ button.onchange = function () {
     }
 
     // button has been pressed
-    var toggle = false;
-    led1.write(false);
-    led2.write(false);
-    led3.write(true);
+    var toggle = 0;
+    led1.write(0);
+    led2.write(0);
+    led3.write(1);
 
     // start timer to toggle LED states every 250ms (1/4 second)
     timer = setInterval(function () {
         if (!button.read()) {
-            led1.write(true);
-            led2.write(false);
-            led3.write(false);
+            led1.write(1);
+            led2.write(0);
+            led3.write(0);
 
             // remove the timer event
             clearInterval(timer);
@@ -53,8 +52,8 @@ button.onchange = function () {
             return;
         }
 
-        toggle = !toggle;
+        toggle = 1 - toggle;
         led2.write(toggle);
-        led3.write(!toggle);
+        led3.write(1 - toggle);
     }, 250);
 }

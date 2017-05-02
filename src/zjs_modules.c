@@ -24,6 +24,7 @@
 #ifdef BUILD_MODULE_CONSOLE
 #include "zjs_console.h"
 #endif
+#include "zjs_board.h"
 #include "zjs_dgram.h"
 #include "zjs_net.h"
 #include "zjs_web_sockets.h"
@@ -110,6 +111,9 @@ module_t zjs_modules_array[] = {
     { "uart", zjs_uart_init, zjs_uart_cleanup },
 #endif
 #endif // ZJS_LINUX_BUILD
+#ifdef BUILD_MODULE_BOARD
+    { "board", zjs_board_init },
+#endif
 #ifdef BUILD_MODULE_A101
     { "arduino101_pins", zjs_a101_init },
 #endif

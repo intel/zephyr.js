@@ -564,6 +564,50 @@ int zjs_validate_args(const char *expectations[], const jerry_length_t argc,
     return opt_args;
 }
 
+#define ZJS_VALUE_INVALID -1
+#define ZJS_VALUE_NOT_IN_MAP -2
+
+int zjs_require_bool_if_prop(jerry_value_t obj, const char *prop, bool *result)
+{
+    ZVAL value = zjs_get_property(obj, prop);
+    if (jerry_value_is_undefined(value) || jerry_value_has_error_flag(value)) {
+        // not found; leave default
+        return 0;
+    }
+
+    if (!jerry_value_is_boolean(value)) {
+        return ZJS_VALUE_INVALID;
+    }
+
+    *result = jerry_get_boolean_value(value);
+    return 0;
+}
+
+int zjs_require_string_if_prop_map(jerry_value_t obj, const char *prop,
+                                   str2int_t map[], int maxlen, int *result)
+{
+    ZVAL value = zjs_get_property(obj, prop);
+    if (jerry_value_is_undefined(value) || jerry_value_has_error_flag(value)) {
+        // not found; leave default
+        return 0;
+    }
+
+    if (!jerry_value_is_string(value)) {
+        return ZJS_VALUE_INVALID;
+    }
+
+    char str[maxlen];
+    jerry_size_t size = maxlen;
+    zjs_copy_jstring(value, str, &size);
+    for (int i = 0; map[i].first != NULL; ++i) {
+        if (!strcmp(str, map[i].first)) {
+            *result = map[i].second;
+            return 0;
+        }
+    }
+    return ZJS_VALUE_NOT_IN_MAP;
+}
+
 #ifndef ZJS_LINUX_BUILD
 #ifndef ZJS_ASHELL
 static zjs_port_sem block;

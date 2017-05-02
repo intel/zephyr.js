@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 // Reimplementation of Arduino - Basics - DigitalReadSerial example
 //   - Reads a button state every second and prints it to the serial console
@@ -12,12 +12,8 @@
 console.log("Starting DigitalReadSerial example...");
 
 var gpio = require("gpio");
-var pins = require("arduino101_pins");
 
-var pin = gpio.open({
-    pin: pins.IO4,
-    direction: 'in'
-});
+var pin = gpio.open({pin: 4, mode: 'in'});
 
 // schedule a function to run every 1s (1000)
 setInterval(function () {

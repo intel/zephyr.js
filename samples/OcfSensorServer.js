@@ -10,14 +10,14 @@ var aio = require('aio');
 var gpio = require("gpio");
 var pins = require("arduino101_pins");
 
-var led = gpio.open({pin: pins.LED2, direction: 'out', activeLow: true});
+var led = gpio.open({pin: "LED2", activeLow: true});
 var pinA = aio.open({ device: 0, pin: pins.A0 });
 
 console.log("Started OCF server");
 
 var MyProperties = {
     sensor: null,
-    light: false
+    light: 0
 }
 
 var resourceInit = {
@@ -49,9 +49,10 @@ server.register(resourceInit).then(function(resource) {
         if (request.resource.properties) {
             var recvProps = request.resource.properties;
             if (recvProps.light != undefined) {
-                MyProperties.light = recvProps.light;
-                led.write(recvProps.light);
-                console.log("properties.light=" + recvProps.light);
+                light = recvProps.light ? 1 : 0;
+                MyProperties.light = light;
+                led.write(light);
+                console.log("properties.light=" + light);
             }
         } else {
             console.log("request.properties does not exist");

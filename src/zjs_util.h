@@ -272,8 +272,66 @@ int zjs_validate_args(const char *expectations[], const jerry_length_t argc,
  * NOTE: Expects argc and argv to exist as in a JerryScript native function
  */
 #define ZJS_CHECK_ARGS(...) \
-        (zjs_validate_args((const char *[]){ __VA_ARGS__, NULL }, argc, argv) \
-                <= ZJS_INVALID_ARG) ? 1 : 0
+    (zjs_validate_args((const char *[]){ __VA_ARGS__, NULL }, argc, argv) \
+     <= ZJS_INVALID_ARG) ? 1 : 0
+
+/**
+ * Checks for a boolean property and returns it via result.
+ *
+ * Returns TypeError if property is not a boolean.
+ *
+ * @param value   A valid JS object.
+ * @param prop    A string property name.
+ * @param result  Receives result; should already be set to default.
+ *
+ * @return 0 on success, negative number on failure
+ */
+int zjs_require_bool_if_prop(jerry_value_t obj, const char *prop, bool *result);
+
+/**
+ * Returns an error from calling function if obj.prop exists but is not a
+ *   boolean.
+ */
+#define ZJS_REQUIRE_BOOL_IF_PROP(value, prop, result)         \
+    if (zjs_require_bool_if_prop(value, prop, result) < 0) {  \
+        return TYPE_ERROR("bool required");                   \
+    }
+
+typedef struct str2int {
+    const char *first;
+    int second;
+} str2int_t;
+
+/**
+ * Checks for a string property obj.prop and maps it to an int via map array.
+ *
+ * @param obj     A valid JS object.
+ * @param prop    A string property name.
+ * @param map     An array of mappings from string to int; final one with NULL.
+ * @param maxlen  The max length of string to expect in the property.
+ * @param result  Receives results; should already be set to default.
+ *
+ *  *result will hold the mapped value if a match is found; if no such
+ *  property exists, *result will be untouched; if the property is not a
+ *  string or holds a value that doesn't match, returns a constant above.
+ *
+ * @return 0 on success, negative number on failure
+ */
+int zjs_require_string_if_prop_map(jerry_value_t obj, const char *prop,
+                                   str2int_t map[], int maxlen, int *result);
+
+/**
+ * Returns an error from calling function if obj.prop exists but is not a
+ *   string, or if string is not one of the allowed values in map.
+ */
+#define ZJS_REQUIRE_STR_IF_PROP_MAP(obj, prop, map, maxlen, result)  \
+    {                                                                \
+        int rval = zjs_require_string_if_prop_map(obj, prop, map,    \
+                                                  maxlen, result);   \
+        if (rval < 0) {                                              \
+            return TYPE_ERROR("one of specific strings required");   \
+        }                                                            \
+    }
 
 #ifndef ZJS_LINUX_BUILD
 #define LOCK  k_sched_lock

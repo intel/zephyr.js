@@ -17,22 +17,21 @@ console.log("RGB LED sample...");
 
 // import gpio module
 var gpio = require("gpio");
-var pins = require("arduino101_pins");
 
 // LED0 is an onboard LED on the Arduino101
-var led = gpio.open({pin: pins.LED0, direction: 'out', activeLow: true});
+var led = gpio.open({pin: "LED0", activeLow: true});
 
-var red = gpio.open({pin: pins.IO2, direction: 'out'});
-var green = gpio.open({pin: pins.IO7, direction: 'out'});
-var blue = gpio.open({pin: pins.IO8, direction: 'out'});
+var red = gpio.open({pin: "IO2"});
+var green = gpio.open({pin: "IO7"});
+var blue = gpio.open({pin: "IO8"});
 
 var count = 0;
 
 // schedule a function to run every 0.5s
 setInterval(function () {
     count += 1;
-    led.write(count & 1 ? true:false);
-    red.write(count & 2 ? true:false);
-    green.write(count & 4 ? true:false);
-    blue.write(count & 8 ? true:false);
+    led.write(count & 1);
+    red.write(count & 2);
+    green.write(count & 4);
+    blue.write(count & 8);
 }, 500);
