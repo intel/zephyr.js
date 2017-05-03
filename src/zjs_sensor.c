@@ -212,6 +212,15 @@ void zjs_sensor_set_state(jerry_value_t obj, sensor_state_t state)
             zjs_signal_callback(id, NULL, 0);
         }
     }
+
+    uintptr_t ptr;
+    sensor_handle_t *handle = NULL;
+    if (!jerry_get_object_native_handle(obj, &ptr)) {
+        ERR_PRINT("native handle not found");
+        return;
+    }
+    handle = (sensor_handle_t *)ptr;
+    handle->state = state;
 }
 
 void zjs_sensor_trigger_change(jerry_value_t obj)
@@ -261,7 +270,7 @@ static void zjs_sensor_signal_callbacks(struct sensor_data *data)
               sensor_handle_t *handles = mod->instance->handles;
               // iterate all sensor handles to update readings and trigger event
               for (sensor_handle_t *h = handles; h; h = h->next) {
-                  if (zjs_sensor_get_state(h->sensor_obj) == SENSOR_STATE_ACTIVATED) {
+                  if (h->state == SENSOR_STATE_ACTIVATED) {
                       zjs_signal_callback(h->onchange_cb_id,
                                           &data->reading,
                                           sizeof(data->reading));
