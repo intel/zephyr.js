@@ -19,6 +19,7 @@ typedef enum sensor_state {
 } sensor_state_t;
 
 typedef struct sensor_controller {
+    struct device *dev;
     char name[SENSOR_MAX_CONTROLLER_NAME_LEN+1];
     uint32_t pin;
 } sensor_controller_t;
@@ -48,6 +49,13 @@ typedef struct sensor_instance {
  * @return              pointer to the sensor instance struct
  */
 sensor_instance_t *zjs_sensor_create_instance(const char *name, void *func);
+
+/*
+ * Destroys a sensor instance struct and free its resources
+ *
+ * @param instance      instance object that belongs to the Sensor subclass
+ */
+void zjs_sensor_free_instance(sensor_instance_t *instance);
 
 /*
  * Creates a Generic W3C Sensor object using the controller information and initialize it

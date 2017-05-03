@@ -1,8 +1,6 @@
 {
     "module": "sensor",
-    "targets": ["arduino_101"],
-    "depends": ["ipm"],
-    "zjs_config": ["-DBUILD_MODULE_SENSOR"],
+    "depends": ["sensor_a101", "sensor_frdm"],
     "zjs_config": ["-I$(ZJS_BASE)/src/sensors", "-DBUILD_MODULE_SENSOR"],
     "src": ["zjs_sensor.c"],
     "header": ["zjs_sensor.h"],

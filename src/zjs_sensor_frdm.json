@@ -1,0 +1,15 @@
+{
+    "module": "sensor_frdm",
+    "targets": ["frdm_k64f"],
+    "zephyr_conf": {
+        "frdm_k64f": [
+            "CONFIG_SENSOR=y",
+            "CONFIG_I2C=y",
+            "CONFIG_FXOS8700=y",
+            "CONFIG_FXOS8700_MODE_HYBRID=y",
+            "CONFIG_FXOS8700_TRIGGER_OWN_THREAD=y"
+        ]
+    },
+    "zjs_config": ["-DBUILD_MODULE_SENSOR"],
+    "src": ["zjs_sensor_board_frdm.c"]
+}

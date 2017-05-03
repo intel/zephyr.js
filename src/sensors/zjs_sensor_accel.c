@@ -43,7 +43,7 @@ static ZJS_DECL_FUNC(zjs_sensor_constructor)
     jerry_value_t sensor_obj = ZJS_CHAIN_FUNC_ARGS(zjs_sensor_create,
                                                    g_instance,
                                                    SENSOR_CHAN_ACCEL_XYZ,
-                                                   BMI160_DEVICE_NAME,
+                                                   ACCEL_DEVICE_NAME,
                                                    0,
                                                    800,
                                                    onchange,
@@ -73,7 +73,7 @@ sensor_instance_t *zjs_sensor_accel_init()
 void zjs_sensor_accel_cleanup()
 {
     if (g_instance) {
-        zjs_free(g_instance);
+        zjs_sensor_free_instance(g_instance);
         g_instance = NULL;
     }
 }
