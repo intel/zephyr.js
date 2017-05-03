@@ -24,7 +24,7 @@ ccflags-y += -DOC_SECURITY \
              -DDTLS_CHECK_CONTENTTYPE
 endif
 
-ccflags-y += -include $(ZJS_BASE)/$(OCF_ROOT)/port/zephyr/src/config.h
+ccflags-y += -include $(ZJS_BASE)/src/zjs_ocf_config.h
 ccflags-y += -I$(ZJS_BASE)/$(OCF_ROOT)/$(OCF_ROOT)/include
 ccflags-y += -I$(ZJS_BASE)/$(OCF_ROOT)
 

@@ -3,6 +3,7 @@
 #ifdef BUILD_MODULE_OCF
 
 #include "oc_api.h"
+#include "oc_core_res.h"
 #include "port/oc_clock.h"
 //#include "port/oc_signal_main_loop.h"
 
@@ -411,17 +412,6 @@ static jerry_value_t ocf_notify(const jerry_value_t function_val,
     return ZJS_UNDEFINED;
 }
 
-/*
- * TODO: This is a workaround for getting the resource UUID. There is no API
- *       available to do this currently so we must get it with this external
- *       structure.
- */
-extern struct
-{
-  oc_uuid_t uuid;
-  oc_string_t payload;
-} oc_device_info[OC_MAX_NUM_DEVICES];
-
 static jerry_value_t ocf_register(const jerry_value_t function_val,
                                   const jerry_value_t this,
                                   const jerry_value_t argv[],
@@ -540,15 +530,10 @@ static jerry_value_t ocf_register(const jerry_value_t function_val,
         }
     }
 
-    // Start OCF. Device/platform/resource properties should all be set after
-    if (zjs_ocf_start() < 0) {
-        REJECT(promise, "InternalError", "OCF failed to start", h);
-        return promise;
-    }
-
     // Get UUID and set it in the ocf.device object
+    oc_uuid_t *id = oc_core_get_device_id(resource->res->device);
     char uuid[37];
-    oc_uuid_to_str(&oc_device_info[resource->res->device].uuid, uuid, 37);
+    oc_uuid_to_str(id, uuid, 37);
     zjs_set_uuid(uuid);
 
     h = new_ocf_handler(resource);

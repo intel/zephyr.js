@@ -1,9 +1,10 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 // Sample server that works with the linux server found in iotivity-constrained
 // This sample will find the resource and retrieve its device info
 
-var client = require('ocf').client;
+var ocf = require('ocf');
+var client = ocf.client;
 
 console.log("Started OCF client");
 
@@ -34,3 +35,5 @@ client.findResources({ resourceType:"oic.r.light" }, found).then(function(resour
 }).catch(function(error) {
     console.log("findResources() returned an error: " + error.name);
 });
+
+ocf.start();

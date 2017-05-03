@@ -559,16 +559,6 @@ static jerry_value_t ocf_find_resources(const jerry_value_t function_val,
 
     zjs_make_promise(promise, post_ocf_promise, h);
 
-    if (zjs_ocf_start() < 0) {
-        ERR_PRINT("OCF failed to start\n");
-        ZVAL err = make_ocf_error("NetworkError", "Error code from GET", NULL);
-        zjs_reject_promise(h->promise_obj, &err, 1);
-        if (resource_type) {
-            zjs_free(resource_type);
-        }
-        return promise;
-    }
-
     oc_do_ip_discovery(resource_type, discovery, h);
 
     if (resource_type) {

@@ -106,7 +106,7 @@ LINUX_INCLUDES += 	-I$(OCF_ROOT)/deps/tinydtls \
 			-I$(OCF_ROOT)/util \
 			-I$(OCF_ROOT)/messaging/coap \
 			-I$(OCF_ROOT)/api \
-			-include $(OCF_ROOT)/port/linux/config.h
+			-include $(ZJS_BASE)/src/zjs_ocf_config.h
 
 include Makefile.ocf_linux
 

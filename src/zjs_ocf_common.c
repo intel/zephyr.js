@@ -427,15 +427,15 @@ static const oc_handler_t handler = {
                                       .signal_event_loop = oc_signal_main_loop,
 };
 
-int zjs_ocf_start()
+static jerry_value_t ocf_start(const jerry_value_t function_val,
+                               const jerry_value_t this,
+                               const jerry_value_t argv[],
+                               const jerry_length_t argc)
 {
-    int ret;
-
-    ret = oc_main_init(&handler);
-    if (ret < 0) {
-        ERR_PRINT("error initializing, ret=%u\n", ret);
+    if (oc_main_init(&handler) < 0) {
+        return zjs_error("OCF failed to start");
     }
-    return ret;
+    return ZJS_UNDEFINED;
 }
 
 jerry_value_t zjs_ocf_init()
@@ -448,6 +448,7 @@ jerry_value_t zjs_ocf_init()
     ZVAL platform = ZJS_UNDEFINED;
     zjs_set_property(ocf_object, "platform", platform);
 
+    zjs_obj_add_function(ocf_object, ocf_start, "start");
 #ifdef OC_CLIENT
     ZVAL client = zjs_ocf_client_init();
     zjs_set_property(ocf_object, "client", client);
