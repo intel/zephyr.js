@@ -26,16 +26,32 @@ for (var i = 0; i < GPIOPins.length; i++) {
     if (pinName == "D8") continue;
 
     // GPIOPins as input pins
-    var pin = gpio.open({ pin: pins[pinName], direction: "in" });
-    var pinValue = pin.read();
-    assert(typeof pinValue == "boolean", "K64f_pins: " + pinName + " input");
+    var pinA = gpio.open({ pin: pins[pinName], direction: "in" });
+    var pinAValue1 = pinA.read();
+    var ApullValue = (pinAValue1) ? " weak pull-up" : " weak pull-down";
+
+    assert(typeof pinAValue1 == "boolean",
+           "K64f_pins: " + pinName + ApullValue + " on input");
+
+    pinA.write(false);
+    var pinAValue2 = pinA.read();
+
+    assert(typeof pinAValue2 == "boolean" && pinAValue1 == pinAValue2,
+           "K64f_pins: " + pinName + " input");
 
     // GPIOPins as output pins
-    pin = gpio.open({ pin: pins[pinName], direction: "out" });
-    pinValue = pin.read();
-    pin.write(!pinValue);
+    var pinB = gpio.open({ pin: pins[pinName], direction: "out" });
+    var pinBValue1 = pinB.read();
+    var BpullValue = (pinBValue1) ? " weak pull-up" : " weak pull-down";
 
-    assert(pin.read() != pinValue, "K64f_pins: " + pinName + " output");
+    assert(typeof pinBValue1 == "boolean",
+           "K64f_pins: " + pinName + BpullValue + " on output");
+
+    pinB.write(true);
+    var pinBValue2 = pinB.read();
+
+    assert(typeof pinBValue2 == "boolean" && pinBValue2 != pinBValue1,
+          "K64f_pins: " + pinName + " output");
 }
 
 // LEDs

@@ -26,18 +26,35 @@ for(var i = 0; i < GPIOPins.length; i++) {
     // IO6 and IO9 are defined but unusable as GPIOs currently
     if (pinName == "IO6" || pinName == "IO9") continue;
 
-    var pin = gpio.open({ pin: pins[pinName] });
-    var pinValue = pin.read();
-    assert(typeof pinValue == "boolean",
+    var pinA = gpio.open({ pin: pins[pinName], direction: "in" });
+    var pinAValue1 = pinA.read();
+    var ApullValue = (pinAValue1) ? " weak pull-up" : " weak pull-down";
+
+    assert(typeof pinAValue1 == "boolean",
+           "Arduino101Pins: " + pinName + ApullValue + " on input");
+
+    pinA.write(false);
+    var pinAValue2 = pinA.read();
+
+    assert(typeof pinAValue2 == "boolean" && pinAValue1 == pinAValue2,
            "Arduino101Pins: " + pinName + " input");
 
-    pin.write(!pinValue);
+    var pinB = gpio.open({ pin: pins[pinName], direction: "out" });
+    var pinBValue1 = pinB.read();
+    var BpullValue = (pinBValue1) ? " weak pull-up" : " weak pull-down";
+
+    assert(typeof pinBValue1 == "boolean",
+           "Arduino101Pins: " + pinName + BpullValue + " on output");
+
+    pinB.write(true);
+    var pinBValue2 = pinB.read();
+
     if (pinName == "IO3" || pinName == "IO5") {
         // IO3 and IO5 can be used as GPIO inputs but not outputs currently
-        assert(pin.read() == pinValue,
-              "Arduino101Pins: " + pinName + " output");
+        assert(typeof pinBValue2 == "boolean" && pinBValue2 == pinBValue1,
+              "Arduino101Pins: " + pinName + " not output");
     } else {
-        assert(pin.read() != pinValue,
+        assert(typeof pinBValue2 == "boolean" && pinBValue2 != pinBValue1,
               "Arduino101Pins: " + pinName + " output");
     }
 }
