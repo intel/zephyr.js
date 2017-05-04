@@ -214,32 +214,30 @@ analyze: $(JS)
 	@cat src/Makefile.base >> src/Makefile
 	@echo "# This is a generated file" > src/sensors/Makefile
 	@cat src/sensors/Makefile.base >> src/sensors/Makefile
-	@echo "# This is a generated file" > arc/src/Makefile
-	@cat arc/src/Makefile.base >> arc/src/Makefile
 	@if [ "$(TRACE)" = "on" ] || [ "$(TRACE)" = "full" ]; then \
 		echo "ccflags-y += -DZJS_TRACE_MALLOC" >> src/Makefile; \
 	fi
 	@if [ "$(SNAPSHOT)" = "on" ]; then \
 		echo "ccflags-y += -DZJS_SNAPSHOT_BUILD" >> src/Makefile; \
 	fi
-	@echo "ccflags-y += $(shell ./scripts/analyze.sh $(BOARD) $(JS) $(CONFIG) $(ASHELL))" | tee -a src/Makefile arc/src/Makefile src/sensors/Makefile
+	@echo "ccflags-y += $(shell ./scripts/analyze.sh $(BOARD) $(JS) $(CONFIG) $(ASHELL))" | tee -a src/Makefile src/sensors/Makefile
 	@if [ "$(OS)" = "Darwin" ]; then \
 		sed -i.bu '/This is a generated file/r./zjs.conf.tmp' src/Makefile; \
 	else \
 		sed -i '/This is a generated file/r./zjs.conf.tmp' src/Makefile; \
 	fi
 	@# Add bluetooth debug configs if BLE is enabled
-	@if grep BUILD_MODULE_BLE src/Makefile; then \
+	@if grep -q BUILD_MODULE_BLE src/Makefile; then \
 		if [ "$(VARIANT)" = "debug" ]; then \
 			echo "CONFIG_BLUETOOTH_DEBUG_LOG=y" >> prj.conf.tmp; \
 		fi \
 	fi
 	@# Add the include for the OCF Makefile only if the script is using OCF
-	@if grep BUILD_MODULE_OCF src/Makefile; then \
+	@if grep -q BUILD_MODULE_OCF src/Makefile; then \
 		echo "CONFIG_BLUETOOTH_DEVICE_NAME=\"$(DEVICE_NAME)\"" >> prj.conf.tmp; \
 		echo "include \$$(ZJS_BASE)/Makefile.ocf_zephyr" >> src/Makefile; \
 	fi
-	@if grep BUILD_MODULE_DGRAM src/Makefile; then \
+	@if grep -q BUILD_MODULE_DGRAM src/Makefile; then \
 		echo "CONFIG_BLUETOOTH_DEVICE_NAME=\"$(DEVICE_NAME)\"" >> prj.conf.tmp; \
 	fi
 	@if [ -e outdir/$(BOARD)/jerry_feature.profile.bak ]; then \
@@ -380,6 +378,9 @@ arc: analyze
 	@if [ -e arc/prj.conf.tmp ]; then \
 		cat arc/prj.conf.tmp >> arc/prj.conf; \
 	fi
+	@echo "# This is a generated file" > arc/src/Makefile
+	@cat arc/src/Makefile.base >> arc/src/Makefile
+	@echo "ccflags-y += $(shell ./scripts/analyze.sh $(BOARD) $(JS) $(CONFIG) $(ASHELL))" >> arc/src/Makefile
 	@printf "CONFIG_SRAM_SIZE=%d\n" $$((79 - $(RAM))) >> arc/prj.conf
 	@printf "CONFIG_FLASH_BASE_ADDRESS=0x400%x\n" $$((($(ROM) + 64) * 1024)) >> arc/prj.conf
 	@if [ "$(OS)" = "Darwin" ]; then \
