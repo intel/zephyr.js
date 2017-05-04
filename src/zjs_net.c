@@ -259,13 +259,12 @@ static void tcp_received(struct net_context *context,
 {
     sock_handle_t *handle = (sock_handle_t *)user_data;
 
-    if (handle) {
+    if (handle && buf) {
         start_socket_timeout(handle, handle->timeout);
 
         uint32_t len = net_nbuf_appdatalen(buf);
         uint8_t *data = net_nbuf_appdata(buf);
 
-        DBG_PRINT("received data, context=%p, data=%p, len=%u\n", context, data, len);
         // TODO: Probably not the right way to check if a socket is closed
         if (len == 0 && data == NULL) {
             // socket close
@@ -274,10 +273,13 @@ static void tcp_received(struct net_context *context,
             jerry_value_clear_error_flag(&error);
             zjs_trigger_event(handle->socket, "error", &error, 1, NULL, NULL);
             zjs_trigger_event(handle->socket, "close", NULL, 0, post_closed, handle);
+            net_buf_unref(buf);
             return;
         }
 
         if (len && data) {
+            DBG_PRINT("received data, context=%p, data=%p, len=%u\n", context, data, len);
+
             memcpy(handle->wptr, data, len);
             handle->wptr += len;
 
