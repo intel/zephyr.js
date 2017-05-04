@@ -263,6 +263,14 @@ if [ "$RUN" == "all" -o "$RUN" == "1" ]; then
     echo "console.log(3.14159);" > $TMPFILE
     try_command "console" make $VERBOSE JS=$TMPFILE
     try_command "floats" make $VERBOSE JS=$TMPFILE PRINT_FLOAT=on
+
+    # WebSocket test
+    echo "var ws = require('ws');" > $TMPFILE
+    try_command "ws" make $VERBOSE JS=$TMPFILE ROM=250
+
+    # Net test
+    echo "var net = require('net');" > $TMPFILE
+    try_command "net" make $VERBOSE JS=$TMPFILE ROM=250
 fi
 
 #
