@@ -76,8 +76,8 @@ interface PME {
 interface Neuron {
     unsigned short category;
     unsigned short context;
-    unsigned short influence;
-    unsigned short minInfluence;
+    unsigned short AIF;
+    unsigned short minIF;
 };
 ```
 
@@ -116,8 +116,8 @@ The `distanceMode` is the distance function to use. Valid values are:
  - PME.LSUP_DISTANCE
  - PME.L1_DISTANCE
 
-The `minInfluence` is the minimum influence value used on the neuron.
-The `maxInfluence` is the maximum influence value used on the neuron.
+The `minIF` is the minimum influence value used on the neuron.
+The `maxIF` is the maximum influence value used on the neuron.
 
 ### PME.learn
 
@@ -240,6 +240,35 @@ The `mode` is the distance function to use. Valid values are:
  - PME.LSUP_DISTANCE
  - PME.L1_DISTANCE
 
+### PME.saveNeurons
+
+`Json[] saveNeurons();`
+
+Export committed neuron data into an array of JSON objects in the following format, maximum number of objects to save is 128:
+
+`{
+     "category": 100,
+     "context": 1,
+     "AIF": 40,
+     "minIF": 2,
+     "vector": [10,10,10,10] // up to 128 bytes
+ }`
+
+### PME.restoreNeurons
+
+`void restoreNeurons(Json[] objects);`
+
+Restore neurons in an array of JSON objects in the following format, maximum number of objects to restore is 128:
+
+`{
+     "category": 100,
+     "context": 1,
+     "AIF": 40,
+     "minIF": 2,
+     "vector": [10,10,10,10] // up to 128 bytes
+ }`
+
 Sample Apps
 -----------
 * [PME sample](../samples/PME.js)
+* [PME Save and Restore sample](../samples/PMESaveRestore.js)

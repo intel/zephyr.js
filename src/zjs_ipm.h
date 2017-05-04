@@ -4,7 +4,9 @@
 #define __zjs_ipm_h__
 
 #include <ipm.h>
+#ifdef BUILD_MODULE_SENSOR
 #include <sensor.h>
+#endif
 
 #define IPM_CHANNEL_X86_TO_ARC                             0x01
 #define IPM_CHANNEL_ARC_TO_X86                             0x02
@@ -88,6 +90,13 @@ enum {
 #define TYPE_PME_SET_CLASSIFIER_MODE                       0x004D
 #define TYPE_PME_GET_DISTANCE_MODE                         0x004E
 #define TYPE_PME_SET_DISTANCE_MODE                         0x004F
+// PME save and restore
+#define TYPE_PME_BEGIN_SAVE_MODE                           0x0050
+#define TYPE_PME_ITERATE_TO_SAVE                           0x0051
+#define TYPE_PME_END_SAVE_MODE                             0x0052
+#define TYPE_PME_BEGIN_RESTORE_MODE                        0x0053
+#define TYPE_PME_ITERATE_TO_RESTORE                        0x0054
+#define TYPE_PME_END_RESTORE_MODE                          0x0055
 
 typedef struct zjs_ipm_message {
     uint32_t id;
@@ -97,13 +106,14 @@ typedef struct zjs_ipm_message {
     uint32_t error_code;
 
     union {
-        // AIO
+#ifdef BUILD_MODULE_AIO
         struct aio_data {
             uint32_t pin;
             uint32_t value;
         } aio;
+#endif // AIO
 
-        // I2C
+#ifdef BUILD_MODULE_I2C
         struct i2c_data {
             uint8_t bus;
             uint8_t speed;
@@ -112,7 +122,9 @@ typedef struct zjs_ipm_message {
             uint8_t *data;
             uint32_t length;
         } i2c;
+#endif // I2C
 
+#ifdef BUILD_MODULE_GROVE_LCD
         // GROVE_LCD
         struct glcd_data {
             uint8_t value;
@@ -123,8 +135,9 @@ typedef struct zjs_ipm_message {
             uint8_t color_b;
             void *buffer;
         } glcd;
+#endif // GROVE_LCD
 
-        // SENSOR
+#ifdef BUILD_MODULE_SENSOR
         struct sensor_data {
             enum sensor_channel channel;
             char *controller;
@@ -141,15 +154,16 @@ typedef struct zjs_ipm_message {
                 double dval;
             } reading;
         } sensor;
+#endif // SENSOR
 
-        // PME
+#ifdef BUILD_MODULE_PME
         struct pme_data {
             uint8_t c_mode;
             uint8_t d_mode;
             uint8_t vector[128];
             uint8_t vector_size;
-            uint16_t committed_count;
             uint16_t category;
+            uint16_t committed_count;
             uint16_t g_context;
             uint16_t n_context;
             uint16_t aif;
@@ -157,6 +171,7 @@ typedef struct zjs_ipm_message {
             uint16_t max_if;
             uint32_t neuron_id;
         } pme;
+#endif // PME
     } data;
 } zjs_ipm_message_t;
 
