@@ -175,7 +175,7 @@ static void handle_aio(struct zjs_ipm_message *msg)
     uint32_t error_code = ERROR_IPM_NONE;
 
     if (pin < ARC_AIO_MIN || pin > ARC_AIO_MAX) {
-        ERR_PRINT("pin #%lu out of range\n", pin);
+        ERR_PRINT("pin #%u out of range\n", pin);
         ipm_send_error(msg, ERROR_IPM_INVALID_PARAMETER);
         return;
     }
@@ -203,7 +203,7 @@ static void handle_aio(struct zjs_ipm_message *msg)
         pin_user_data[pin - ARC_AIO_MIN] = NULL;
         break;
     default:
-        ERR_PRINT("unsupported aio message type %lu\n", msg->type);
+        ERR_PRINT("unsupported aio message type %u\n", msg->type);
         error_code = ERROR_IPM_NOT_SUPPORTED;
     }
 
@@ -276,7 +276,7 @@ static void handle_i2c(struct zjs_ipm_message *msg)
         DBG_PRINT("received TYPE_I2C_TRANSFER\n");
         break;
     default:
-        ERR_PRINT("unsupported i2c message type %lu\n", msg->type);
+        ERR_PRINT("unsupported i2c message type %u\n", msg->type);
         error_code = ERROR_IPM_NOT_SUPPORTED;
     }
 
@@ -361,7 +361,7 @@ static void handle_glcd(struct zjs_ipm_message *msg)
         msg->data.glcd.value = glcd_input_state_get(glcd);
         break;
     default:
-        ERR_PRINT("unsupported grove lcd message type %lu\n", msg->type);
+        ERR_PRINT("unsupported grove lcd message type %u\n", msg->type);
         error_code = ERROR_IPM_NOT_SUPPORTED;
     }
 
@@ -886,7 +886,7 @@ static void handle_sensor_bmi160(struct zjs_ipm_message *msg)
         }
         break;
     default:
-        ERR_PRINT("unsupported sensor message type %lu\n", msg->type);
+        ERR_PRINT("unsupported sensor message type %u\n", msg->type);
         error_code = ERROR_IPM_NOT_SUPPORTED;
     }
 
@@ -910,7 +910,7 @@ static void handle_sensor_light(struct zjs_ipm_message* msg)
     case TYPE_SENSOR_START:
         pin = msg->data.sensor.pin;
         if (pin < ARC_AIO_MIN || pin > ARC_AIO_MAX) {
-            ERR_PRINT("pin #%lu out of range\n", pin);
+            ERR_PRINT("pin #%u out of range\n", pin);
             error_code = ERROR_IPM_OPERATION_FAILED;
         } else {
             DBG_PRINT("start ambient light %lu\n", msg->data.sensor.pin);
@@ -920,7 +920,7 @@ static void handle_sensor_light(struct zjs_ipm_message* msg)
     case TYPE_SENSOR_STOP:
         pin = msg->data.sensor.pin;
         if (pin < ARC_AIO_MIN || pin > ARC_AIO_MAX) {
-            ERR_PRINT("pin #%lu out of range\n", pin);
+            ERR_PRINT("pin #%u out of range\n", pin);
             error_code = ERROR_IPM_OPERATION_FAILED;
         } else {
             DBG_PRINT("stop ambient light %lu\n", msg->data.sensor.pin);
@@ -928,7 +928,7 @@ static void handle_sensor_light(struct zjs_ipm_message* msg)
         }
         break;
     default:
-        ERR_PRINT("unsupported sensor message type %lu\n", msg->type);
+        ERR_PRINT("unsupported sensor message type %u\n", msg->type);
         error_code = ERROR_IPM_NOT_SUPPORTED;
     }
 
@@ -1054,7 +1054,7 @@ static void handle_pme(struct zjs_ipm_message* msg)
         }
 
         if (CuriePME_getClassifierMode() != KNN_Mode) {
-            ERR_PRINT("write vector only supports KNN_Mode\n", maxVectorSize);
+            ERR_PRINT("write vector only supports KNN_Mode\n");
             ipm_send_error(msg, ERROR_IPM_INVALID_PARAMETER);
             return;
         }
@@ -1125,7 +1125,7 @@ static void handle_pme(struct zjs_ipm_message* msg)
         break;
 
     default:
-        ERR_PRINT("unsupported pme message type %lu\n", msg->type);
+        ERR_PRINT("unsupported pme message type %u\n", msg->type);
         error_code = ERROR_IPM_NOT_SUPPORTED;
     }
 
@@ -1172,7 +1172,7 @@ static void process_messages()
         case MSG_ID_DONE:
             return;
         default:
-            ERR_PRINT("unsupported ipm message id: %lu, check ARC modules\n",
+            ERR_PRINT("unsupported ipm message id: %u, check ARC modules\n",
                       msg->id);
             ipm_send_error(msg, ERROR_IPM_NOT_SUPPORTED);
         }

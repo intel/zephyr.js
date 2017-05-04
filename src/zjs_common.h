@@ -6,8 +6,15 @@
 // This file includes code common to both X86 and ARC
 
 #include <stdio.h>
+#if CONFIG_ARC
+#include <misc/printk.h>
+#endif
 
+#ifdef CONFIG_ARC
+#define ZJS_PRINT printk
+#else
 #define ZJS_PRINT printf
+#endif
 
 /**
  * Return a pointer to the filename portion of a string plus one parent dir
