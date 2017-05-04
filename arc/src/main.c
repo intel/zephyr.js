@@ -66,8 +66,13 @@ static char str[MAX_BUFFER_SIZE];
 #ifdef BUILD_MODULE_SENSOR
 static uint32_t sensor_poll_freq = 20;  // default poll frequency
 static struct device *bmi160 = NULL;
+#ifdef CONFIG_BMI160_TRIGGER
 static bool accel_trigger = false;      // trigger mode
 static bool gyro_trigger = false;       // trigger mode
+#else
+static bool accel_poll = false;         // polling mode
+static bool gyro_poll = false;          // polling mode
+#endif
 static bool temp_poll = false;          // polling mode
 static double accel_last_value[3];
 static double gyro_last_value[3];
@@ -427,7 +432,7 @@ static void process_accel_data(struct device *dev)
     double dval[3];
 
     if (sensor_channel_get(dev, SENSOR_CHAN_ACCEL_XYZ, val) < 0) {
-        ERR_PRINT("failed to read accelerometer channels\n");
+        ERR_PRINT("failed to read accelerometer channel\n");
         return;
     }
 
@@ -463,7 +468,7 @@ static void process_gyro_data(struct device *dev)
     double dval[3];
 
     if (sensor_channel_get(dev, SENSOR_CHAN_GYRO_XYZ, val) < 0) {
-        ERR_PRINT("failed to read gyroscope channels\n");
+        ERR_PRINT("failed to read gyroscope channel\n");
         return;
     }
 
@@ -491,6 +496,32 @@ static void process_gyro_data(struct device *dev)
 #endif
 }
 
+static void process_temp_data(struct device *dev)
+{
+    struct sensor_value val;
+    double dval;
+
+    if (sensor_channel_get(bmi160, SENSOR_CHAN_TEMP, &val) < 0) {
+        ERR_PRINT("failed to read temperature channel\n");
+        return;
+    }
+
+    dval = convert_sensor_value(&val);
+    if (dval != temp_last_value) {
+        union sensor_reading reading;
+        reading.dval = temp_last_value = dval;
+        send_sensor_data(SENSOR_CHAN_TEMP, reading);
+    }
+
+#ifdef DEBUG_BUILD
+    char buf[18];
+
+    sensor_value_snprintf(buf, sizeof(buf), &val);
+    DBG_PRINT("sending temp: X=%s, Y=%s, Z=%s\n", buf);
+#endif
+}
+
+#ifdef CONFIG_BMI160_TRIGGER
 static void trigger_hdlr(struct device *dev,
                          struct sensor_trigger *trigger)
 {
@@ -510,6 +541,7 @@ static void trigger_hdlr(struct device *dev,
         process_gyro_data(dev);
     }
 }
+#endif
 
 /*
  * The values in the following map are the expected values that the
@@ -543,6 +575,7 @@ static int auto_calibration(struct device *dev)
     return 0;
 }
 
+#ifdef CONFIG_BMI160_TRIGGER
 static int start_accel_trigger(struct device *dev, int freq)
 {
     struct sensor_value attr;
@@ -662,28 +695,33 @@ static int stop_gyro_trigger(struct device *dev)
     gyro_trigger = false;
     return 0;
 }
+#endif
 
 static void fetch_sensor()
 {
     // ToDo: currently only supports BMI160 temperature
     // add support for other types of sensors
-    if (temp_poll && bmi160) {
+    if (bmi160 && (
+#ifndef CONFIG_BMI160_TRIGGER
+            accel_poll ||
+            gyro_poll ||
+#endif
+            temp_poll)) {
         if (sensor_sample_fetch(bmi160) < 0) {
             ERR_PRINT("failed to fetch sample from sensor\n");
             return;
         }
 
-        struct sensor_value val;
-        if (sensor_channel_get(bmi160, SENSOR_CHAN_TEMP, &val) < 0) {
-            ERR_PRINT("Temperature channel read error.\n");
-            return;
+#ifndef CONFIG_BMI160_TRIGGER
+        if (accel_poll) {
+            process_accel_data(bmi160);
         }
-
-        union sensor_reading reading;
-        double dval = convert_sensor_value(&val);
-        if (dval != temp_last_value) {
-            reading.dval = temp_last_value = dval;
-            send_sensor_data(SENSOR_CHAN_TEMP, reading);
+        if (gyro_poll) {
+            process_gyro_data(bmi160);
+        }
+#endif
+        if (temp_poll) {
+            process_temp_data(bmi160);
         }
     }
 }
@@ -764,19 +802,40 @@ static void handle_sensor_bmi160(struct zjs_ipm_message *msg)
         }
         break;
     case TYPE_SENSOR_START:
+        if (!bmi160) {
+            error_code = ERROR_IPM_OPERATION_FAILED;
+            break;
+        }
+
         freq = msg->data.sensor.frequency;
         if (msg->data.sensor.channel == SENSOR_CHAN_ACCEL_XYZ) {
-            if (!bmi160 || (!accel_trigger &&
-                             start_accel_trigger(bmi160, freq) != 0)) {
+#ifdef CONFIG_BMI160_TRIGGER
+            if (!accel_trigger && start_accel_trigger(bmi160, freq) != 0) {
                 error_code = ERROR_IPM_OPERATION_FAILED;
             }
+#else
+            if (accel_poll) {
+                error_code = ERROR_IPM_OPERATION_FAILED;
+            } else {
+                sensor_poll_freq = msg->data.sensor.frequency;
+                accel_poll = true;
+            }
+#endif
         } else if (msg->data.sensor.channel == SENSOR_CHAN_GYRO_XYZ) {
-            if (!bmi160 || (!gyro_trigger &&
-                             start_gyro_trigger(bmi160, freq) != 0)) {
+#ifdef CONFIG_BMI160_TRIGGER
+            if (!gyro_trigger && start_gyro_trigger(bmi160, freq) != 0) {
                 error_code = ERROR_IPM_OPERATION_FAILED;
             }
+#else
+            if (gyro_poll) {
+                error_code = ERROR_IPM_OPERATION_FAILED;
+            } else {
+                sensor_poll_freq = msg->data.sensor.frequency;
+                gyro_poll = true;
+            }
+#endif
         } else if (msg->data.sensor.channel == SENSOR_CHAN_TEMP) {
-            if (!bmi160 || temp_poll) {
+            if (temp_poll) {
                 error_code = ERROR_IPM_OPERATION_FAILED;
             } else {
                 sensor_poll_freq = msg->data.sensor.frequency;
@@ -785,21 +844,39 @@ static void handle_sensor_bmi160(struct zjs_ipm_message *msg)
         }
         break;
     case TYPE_SENSOR_STOP:
+        if (!bmi160) {
+            error_code = ERROR_IPM_OPERATION_FAILED;
+            break;
+        }
+
         if (msg->data.sensor.channel == SENSOR_CHAN_ACCEL_XYZ) {
-            if (!bmi160 || (accel_trigger &&
-                            stop_accel_trigger(bmi160) != 0)) {
+#ifdef CONFIG_BMI160_TRIGGER
+            if (accel_trigger && stop_accel_trigger(bmi160) != 0) {
                 error_code = ERROR_IPM_OPERATION_FAILED;
             }
-        } else if (msg->data.sensor.channel == SENSOR_CHAN_GYRO_XYZ) {
-            if (!bmi160 || (gyro_trigger &&
-                            stop_gyro_trigger(bmi160) != 0)) {
-                error_code = ERROR_IPM_OPERATION_FAILED;
-            }
-        } else if (msg->data.sensor.channel == SENSOR_CHAN_TEMP) {
-            if (!bmi160 || !temp_poll) {
+#else
+            if (accel_poll) {
                 error_code = ERROR_IPM_OPERATION_FAILED;
             } else {
-                sensor_poll_freq = msg->data.sensor.frequency;
+                accel_poll = false;
+            }
+#endif
+        } else if (msg->data.sensor.channel == SENSOR_CHAN_GYRO_XYZ) {
+#ifdef CONFIG_BMI160_TRIGGER
+            if (gyro_trigger && stop_gyro_trigger(bmi160) != 0) {
+                error_code = ERROR_IPM_OPERATION_FAILED;
+            }
+#else
+            if (gyro_poll) {
+                error_code = ERROR_IPM_OPERATION_FAILED;
+            } else {
+                gyro_poll = false;
+            }
+#endif
+        } else if (msg->data.sensor.channel == SENSOR_CHAN_TEMP) {
+            if (temp_poll) {
+                error_code = ERROR_IPM_OPERATION_FAILED;
+            } else {
                 temp_poll = false;
             }
         }

@@ -317,6 +317,7 @@ if check_for_require gpio || check_config_file ZJS_GPIO; then
     MODULES+=" -DBUILD_MODULE_GPIO"
     echo "CONFIG_GPIO=y" >> $PRJFILE
     echo "export ZJS_GPIO=y" >> $CONFFILE
+    gpio=true
 fi
 
 if check_for_require performance || check_config_file ZJS_PERFORMANCE; then
@@ -476,26 +477,29 @@ if check_for_feature "Accelerometer\|Gyroscope\|AmbientLightSensor\|TemperatureS
         >&2 echo Using module: Sensor Accelerometer
         echo "export ZJS_SENSOR_ACCEL=y" >> $CONFFILE
         MODULES+=" -DBUILD_MODULE_SENSOR_ACCEL"
+        sensor_accel=true
     fi
     if check_for_feature "Gyroscope" || check_config_file ZJS_SENSOR_GYRO; then
         >&2 echo Using module: Sensor Gyroscope
         echo "export ZJS_SENSOR_GYRO=y" >> $CONFFILE
         MODULES+=" -DBUILD_MODULE_SENSOR_GYRO"
+        sensor_gyro=true
     fi
     if check_for_feature "AmbientLightSensor" || check_config_file ZJS_SENSOR_LIGHT; then
         >&2 echo Using module: Sensor Ambient Light
         echo "export ZJS_SENSOR_LIGHT=y" >> $CONFFILE
         MODULES+=" -DBUILD_MODULE_SENSOR_LIGHT"
+        sensor_light=true
     fi
     if check_for_feature "TemperatureSensor" || check_config_file ZJS_SENSOR_TEMP; then
         >&2 echo Using module: Sensor Temperature
         echo "export ZJS_SENSOR_TEMP=y" >> $CONFFILE
         MODULES+=" -DBUILD_MODULE_SENSOR_TEMP"
+        sensor_temp=true
     fi
-    if [[ $BOARD = "arduino_101" ]] || [[ $ASHELL = "y" ]]; then
-        if check_for_feature "Accelerometer\|Gyroscope\|TemperatureSensor" || [[ $ASHELL = "y" ]]; then
+    if [[ $BOARD = "arduino_101" ]]; then
+        if $sensor_accel || $sensor_gyro || $sensor_temp; then
             echo "CONFIG_SENSOR=y" >> $ARCPRJFILE
-            echo "CONFIG_GPIO=y" >> $ARCPRJFILE
             echo "CONFIG_SPI=y" >> $ARCPRJFILE
             echo "CONFIG_SPI_0=n" >> $ARCPRJFILE
             echo "CONFIG_SPI_1=n" >> $ARCPRJFILE
@@ -505,11 +509,18 @@ if check_for_feature "Accelerometer\|Gyroscope\|AmbientLightSensor\|TemperatureS
             echo "CONFIG_BMI160_SPI_PORT_NAME=\"SPI_SS_1\"" >> $ARCPRJFILE
             echo "CONFIG_BMI160_SLAVE=1" >> $ARCPRJFILE
             echo "CONFIG_BMI160_SPI_BUS_FREQ=88" >> $ARCPRJFILE
-            echo "CONFIG_BMI160_TRIGGER=y" >> $ARCPRJFILE
-            echo "CONFIG_BMI160_TRIGGER_OWN_THREAD=y" >> $ARCPRJFILE
+            if $gpio; then
+                # Workaround for Zephyr bug ZEP-2024: conflict with BMI160 trigger
+                # and GPIO, so trigger mode can only be enabled for non-ashell mode
+                # and ashell will default to polling
+                echo "CONFIG_BMI160_TRIGGER_NONE=y" >> $ARCPRJFILE
+            else
+                echo "CONFIG_GPIO=y" >> $ARCPRJFILE
+                echo "CONFIG_BMI160_TRIGGER=y" >> $ARCPRJFILE
+                echo "CONFIG_BMI160_TRIGGER_OWN_THREAD=y" >> $ARCPRJFILE
+            fi
         fi
-        if check_for_feature "AmbientLightSensor" || [[ $ASHELL = "y" ]]; then
-            MODULES+=" -DBUILD_MODULE_SENSOR_LIGHT"
+        if $sensor_light; then
             echo "CONFIG_ADC=y" >> $ARCPRJFILE
             # Workaround for the Zephyr issue ZEP-1882: ADC doesn't work with
             # SDK 0.9 due to some compiler optimization, so enable debug mode.
