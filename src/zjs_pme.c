@@ -196,7 +196,7 @@ static ZJS_DECL_FUNC(zjs_pme_write_vector)
     return ZJS_UNDEFINED;
 }
 
-static ZJS_DECL_FUNC(zjs_pme_get_commited_count)
+static ZJS_DECL_FUNC(zjs_pme_get_committed_count)
 {
     zjs_ipm_message_t send, reply;
     send.type = TYPE_PME_GET_COMMITED_COUNT;
@@ -304,7 +304,7 @@ jerry_value_t zjs_pme_init()
         { zjs_pme_classify, "classify" },
         { zjs_pme_read_neuron, "readNeuron" },
         { zjs_pme_write_vector, "writeVector" },
-        { zjs_pme_get_commited_count, "getCommitedCount" },
+        { zjs_pme_get_committed_count, "getCommittedCount" },
         { zjs_pme_get_global_context, "getGlobalContext" },
         { zjs_pme_set_global_context, "setGlobalContext" },
         { zjs_pme_get_neuron_context, "getNeuronContext" },
