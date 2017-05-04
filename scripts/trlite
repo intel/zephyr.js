@@ -251,6 +251,9 @@ if [ "$RUN" == "all" -o "$RUN" == "1" ]; then
     echo "var buf = new Buffer(10);" >> $TMPFILE
     echo "setTimeout(function() {}, 10);" >> $TMPFILE
 
+    # also, try printing a float w/o PRINT_FLOAT
+    echo "console.log(3.14159);" >> $TMPFILE
+
     try_command "modules" make $VERBOSE JS=$TMPFILE ROM=250
 
     # OCF test
@@ -259,18 +262,20 @@ if [ "$RUN" == "all" -o "$RUN" == "1" ]; then
     echo "var server = ocf.server;" >> $TMPFILE
     try_command "ocf" make $VERBOSE JS=$TMPFILE ROM=250
 
-    # individually test special modules
-    echo "console.log(3.14159);" > $TMPFILE
-    try_command "console" make $VERBOSE JS=$TMPFILE
-    try_command "floats" make $VERBOSE JS=$TMPFILE PRINT_FLOAT=on
+    MODULES=(net ws)
 
-    # WebSocket test
-    echo "var ws = require('ws');" > $TMPFILE
-    try_command "ws" make $VERBOSE JS=$TMPFILE ROM=250
+    MODNUM=0
+    rm $TMPFILE
+    for index in "${!MODULES[@]}"; do
+        MODNUM=$((MODNUM + 1))
+        MODULE=${MODULES[index]}
+        echo "var module$MODNUM = require('$MODULE');" >> $TMPFILE
+    done
 
-    # Net test
-    echo "var net = require('net');" > $TMPFILE
-    try_command "net" make $VERBOSE JS=$TMPFILE ROM=250
+    # also, try printing a float w/ PRINT_FLOAT
+    echo "console.log(3.14159);" >> $TMPFILE
+
+    try_command "net" make $VERBOSE JS=$TMPFILE PRINT_FLOAT=on ROM=250
 fi
 
 #
