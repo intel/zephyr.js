@@ -438,6 +438,17 @@ int32_t ashell_raw_capture(const char *buf, uint32_t len)
     return RET_OK_NO_RET;
 }
 
+int32_t ashell_set_echo_mode(char *buf)
+{
+    if (!strcmp("on", buf)) {
+        comms_set_echo_mode(true);
+    }
+    else if (!strcmp("off", buf)) {
+        comms_set_echo_mode(false);
+    }
+    return RET_OK;
+}
+
 int32_t ashell_read_data(char *buf)
 {
     if (shell.state_flags & kShellTransferIhex) {
@@ -634,6 +645,7 @@ static const struct ashell_cmd commands[] =
     ASHELL_COMMAND("error", "Prints an error using JerryScript"              ,ashell_error),
     ASHELL_COMMAND("ping",  "Prints '[PONG]' to check that we are alive"     ,ashell_ping),
     ASHELL_COMMAND("at",    "OK used by the driver when initializing"        ,ashell_at),
+    ASHELL_COMMAND("echo",  "[on/off] Sets console echo mode on/off"         ,ashell_set_echo_mode),
 
     ASHELL_COMMAND("set",   "Sets the input mode for 'load' accept data\r\n\ttransfer raw\r\n\ttransfer ihex\t",ashell_set_state),
     ASHELL_COMMAND("get",   "Get states on the shell"                        ,ashell_get_state),

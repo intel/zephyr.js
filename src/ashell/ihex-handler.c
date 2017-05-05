@@ -164,7 +164,9 @@ uint32_t ihex_process_finish()
     ihex_end_read(&ihex);
     comms_print("[EOF]\n");
 
+#ifdef CONFIG_IHEX_UPLOADER_DEBUG
     printf("Saved file '%s'\n", TEMPORAL_FILENAME);
+#endif
 
     ashell_process_start();
     return 0;
