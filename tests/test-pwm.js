@@ -106,7 +106,7 @@ setTimeout(function () {
        }
     // set 10 ms but 20 ms actually
     }, 10);
-}, 3040);
+}, 3000);
 
 assert.throws(function () {
     pinA.setCycles("Value", 1000);
