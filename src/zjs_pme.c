@@ -368,10 +368,6 @@ jerry_value_t zjs_pme_init()
     zjs_set_property(pme_obj, "MAX_NEURONS", val);
     jerry_release_value(val);
 
-    val = jerry_create_number(128);
-    zjs_set_property(pme_obj, "SAVE_RESTORE_SIZE", val);
-    jerry_release_value(val);
-
     return pme_obj;
 }
 
