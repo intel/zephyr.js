@@ -6,42 +6,20 @@
 
 import sys
 
-patterns = ['#####',  # 0
-            '#### ',
-            ' ####',
-            '## ##',
-            ' ### ',
-            '###  ',  # 5
-            '#  ##',
-            '##  #',
-            '# # #',
-            '#   #',
-            '#  # ',  # a
-            ' # # ',
-            ' ##  ',
-            '  ## ',
-            '#    ',
-            ' #   ',  # f
-            '  #  ',
-            '   # ',
-            '    #',
-            '     ',
-            ]
+alphabet = ['4avhh', 'uhuhu', 'fgggf', 'uhhhu', 'vgugv', 'vgugg', 'fgjhe',
+            'hhvhh', 'v444v', 'v22ic', 'hisih', 'ggggv', 'hrlhh',
+            'hpljh', 'ehhhe', 'uhugg', 'ehhjf', 'uhuih', 'fge1u', 'v4444',
+            'hhhhe', 'hhha4', 'hhlrh', 'ha4ah', 'ha444', 'v248v']
 
-alphabet = ['gb099', '19191', '2eee2', '19991', '0e1e0', '0e1ee', '2e694',
-            '99099', '0ggg0', '0hhac', '9a5a9', 'eeee0', '93899',
-            '97869', '49994', '191ee', '49962', '191a9', '2e4i1', '0gggg',
-            '99994', '999bg', '99839', '9bgb9', '9bggg', '0hgf0']
-
-digits = ['46874', 'gcgg0', '1iid0', '1i4i1', '990ii',
-          '0e1i1', '2e194', '0hgfe', '49494', '492ii']
+digits = ['ejlpe', '4c44v', 'u116v', 'u1e1u', 'hhv11',
+          'vgu1u', 'fguhe', 'v248g', 'ehehe', 'ehf11']
 
 other = {
-    ' ': 'jjjjj',
-    '?': '4icjg',
-    '.': 'jjjjg',
-    '-': 'jj4jj',
-    '_': 'jjjj0',
+    ' ': '00000',
+    '?': 'e1c04',
+    '.': '00004',
+    '-': '00e00',
+    '_': '0000v',
 }
 
 def find_pattern(char, line):
@@ -57,7 +35,13 @@ def find_pattern(char, line):
         if char not in other:
             char = '?'
         ptnchr = other.get(char)[line]
-    return patterns[int(ptnchr, 20)]
+
+    if ptnchr.isalpha():
+        mask = ord(ptnchr) - ord('a') + 10
+    else:
+        mask = ord(ptnchr) - ord('0')
+
+    return "{0:5b}".format(mask).replace('1', '#').replace('0', ' ')
 
 def banner(message):
     while len(message) > 0:
