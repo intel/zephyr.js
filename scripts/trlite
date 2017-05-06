@@ -216,6 +216,30 @@ function try_command()
     echo Success: $LABEL
 }
 
+# requires: first arg is a <=11-char label, second arg is command
+#  effects: runs zjsbanner with label, then runs the test and greps for FAIL;
+#             if found, prints label before exiting
+function try_test()
+{
+    TESTNUM=$((TESTNUM + 1))
+    if [ "$TESTNUM" -lt "$START" -o "$TESTNUM" -gt "$END" ]; then
+        echo "Skipping test #$TESTNUM"
+        return
+    fi
+
+    LABEL=$1
+    shift
+    zjsbanner "$LABEL"
+
+    # run the command
+    $* | tee $TRLDIR/output
+    if grep -q FAIL $TRLDIR/output; then
+        echo Error: Failed in $LABEL subtest \#$TESTNUM with code $CODE \(rerun with: trlite $VMNUM $TESTNUM\)!
+        exit 1
+    fi
+    echo Success: $LABEL
+}
+
 #
 # Tests from VM #1
 #
@@ -406,9 +430,7 @@ if [ "$RUN" == "all" -o "$RUN" == "3" ]; then
     # linux runtime tests
     # TODO: Add buffer, it fails in Linux ATM
     for i in buffer buffer-rw callbacks eval error event gpio promise timers; do
-        ./outdir/linux/release/jslinux tests/test-$i.js > /tmp/output
-        try_command "t-$i" test ! $(grep "FAIL" /tmp/output)
-        cat /tmp/output
+        try_test "t-$i" ./outdir/linux/release/jslinux tests/test-$i.js
     done
 fi
 
