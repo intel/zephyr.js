@@ -74,19 +74,20 @@ enum {
 // PME
 #define TYPE_PME_BEGIN                                     0x0040
 #define TYPE_PME_FORGET                                    0x0041
-#define TYPE_PME_LEARN                                     0x0042
-#define TYPE_PME_CLASSIFY                                  0x0043
-#define TYPE_PME_READ_NEURON                               0x0044
-#define TYPE_PME_WRITE_VECTOR                              0x0045
-#define TYPE_PME_GET_COMMITED_COUNT                        0x0046
-#define TYPE_PME_GET_GLOBAL_CONTEXT                        0x0047
-#define TYPE_PME_SET_GLOBAL_CONTEXT                        0x0048
-#define TYPE_PME_GET_NEURON_CONTEXT                        0x0049
-#define TYPE_PME_SET_NEURON_CONTEXT                        0x004A
-#define TYPE_PME_GET_CLASSIFIER_MODE                       0x004B
-#define TYPE_PME_SET_CLASSIFIER_MODE                       0x004C
-#define TYPE_PME_GET_DISTANCE_MODE                         0x004D
-#define TYPE_PME_SET_DISTANCE_MODE                         0x004E
+#define TYPE_PME_CONFIGURE                                 0x0042
+#define TYPE_PME_LEARN                                     0x0043
+#define TYPE_PME_CLASSIFY                                  0x0044
+#define TYPE_PME_READ_NEURON                               0x0045
+#define TYPE_PME_WRITE_VECTOR                              0x0046
+#define TYPE_PME_GET_COMMITED_COUNT                        0x0047
+#define TYPE_PME_GET_GLOBAL_CONTEXT                        0x0048
+#define TYPE_PME_SET_GLOBAL_CONTEXT                        0x0049
+#define TYPE_PME_GET_NEURON_CONTEXT                        0x004A
+#define TYPE_PME_SET_NEURON_CONTEXT                        0x004B
+#define TYPE_PME_GET_CLASSIFIER_MODE                       0x004C
+#define TYPE_PME_SET_CLASSIFIER_MODE                       0x004D
+#define TYPE_PME_GET_DISTANCE_MODE                         0x004E
+#define TYPE_PME_SET_DISTANCE_MODE                         0x004F
 
 typedef struct zjs_ipm_message {
     uint32_t id;
@@ -143,14 +144,17 @@ typedef struct zjs_ipm_message {
 
         // PME
         struct pme_data {
-            uint8_t mode;
+            uint8_t c_mode;
+            uint8_t d_mode;
             uint8_t vector[128];
             uint8_t vector_size;
             uint16_t committed_count;
             uint16_t category;
-            uint16_t context;
+            uint16_t g_context;
+            uint16_t n_context;
             uint16_t influence;
             uint16_t min_influence;
+            uint16_t max_influence;
             uint32_t neuron_id;
         } pme;
     } data;

@@ -989,6 +989,32 @@ static void handle_pme(struct zjs_ipm_message* msg)
     case TYPE_PME_FORGET:
         CuriePME_forget();
         break;
+    case TYPE_PME_CONFIGURE:
+        // valid range is 1-127
+        if (msg->data.pme.g_context < 1 || msg->data.pme.g_context > 127) {
+            ERR_PRINT("context range has to be 1-127\n");
+            ipm_send_error(msg, ERROR_IPM_INVALID_PARAMETER);
+            return;
+        }
+
+        if (msg->data.pme.c_mode != RBF_Mode && msg->data.pme.c_mode != KNN_Mode) {
+            ERR_PRINT("invalid classifier mode\n");
+            ipm_send_error(msg, ERROR_IPM_INVALID_PARAMETER);
+            return;
+        }
+
+        if (msg->data.pme.d_mode != L1_Distance && msg->data.pme.d_mode != LSUP_Distance) {
+            ERR_PRINT("invalid distance mode\n");
+            ipm_send_error(msg, ERROR_IPM_INVALID_PARAMETER);
+            return;
+        }
+
+        CuriePME_configure(msg->data.pme.g_context,
+                           msg->data.pme.d_mode,
+                           msg->data.pme.c_mode,
+                           msg->data.pme.min_influence,
+                           msg->data.pme.max_influence);
+        break;
     case TYPE_PME_LEARN:
         DBG_PRINT("learning: category=%d is %lu byte vector\n",
                   msg->data.pme.category, msg->data.pme.vector_size);
@@ -1034,7 +1060,7 @@ static void handle_pme(struct zjs_ipm_message* msg)
         neuronData data;
         CuriePME_readNeuron(msg->data.pme.neuron_id, &data);
         msg->data.pme.category = data.category;
-        msg->data.pme.context = data.context;
+        msg->data.pme.n_context = data.context;
         msg->data.pme.influence = data.influence;
         msg->data.pme.min_influence = data.minInfluence;
         memcpy(msg->data.pme.vector, data.vector, sizeof(data.vector));
@@ -1059,8 +1085,9 @@ static void handle_pme(struct zjs_ipm_message* msg)
             return;
         }
 
-        for (int i = 0; i < msg->data.pme.vector_size; i++)
+        for (int i = 0; i < msg->data.pme.vector_size; i++) {
             DBG_PRINT("%d ", msg->data.pme.vector[i]);
+        }
 
         CuriePME_writeVector(msg->data.pme.vector, msg->data.pme.vector_size);
         DBG_PRINT("\nwrote with %d neruons\n", CuriePME_getCommittedCount());
@@ -1070,58 +1097,62 @@ static void handle_pme(struct zjs_ipm_message* msg)
         DBG_PRINT("committed count: %d\n", msg->data.pme.committed_count);
         break;
     case TYPE_PME_GET_GLOBAL_CONTEXT:
-        msg->data.pme.context = CuriePME_getGlobalContext();
-        DBG_PRINT("global context: %d\n", msg->data.pme.context);
+        msg->data.pme.g_context = CuriePME_getGlobalContext();
+        DBG_PRINT("global context: %d\n", msg->data.pme.g_context);
         break;
     case TYPE_PME_SET_GLOBAL_CONTEXT:
         // valid range is 1-127
-        if (msg->data.pme.context < 1 || msg->data.pme.context > 127) {
+        if (msg->data.pme.g_context < 1 || msg->data.pme.g_context > 127) {
             ERR_PRINT("context range has to be 1-127\n");
             ipm_send_error(msg, ERROR_IPM_INVALID_PARAMETER);
             return;
         }
-        CuriePME_setGlobalContext(msg->data.pme.context);
-        DBG_PRINT("global context: %d\n", msg->data.pme.context);
+
+        CuriePME_setGlobalContext(msg->data.pme.g_context);
+        DBG_PRINT("global context: %d\n", msg->data.pme.g_context);
         break;
     case TYPE_PME_GET_NEURON_CONTEXT:
-        msg->data.pme.context = CuriePME_getNeuronContext();
-        DBG_PRINT("neuron context: %d\n", msg->data.pme.context);
+        msg->data.pme.n_context = CuriePME_getNeuronContext();
+        DBG_PRINT("neuron context: %d\n", msg->data.pme.n_context);
         break;
     case TYPE_PME_SET_NEURON_CONTEXT:
         // valid range is 1-127
-        if (msg->data.pme.context < 1 || msg->data.pme.context > 127) {
+        if (msg->data.pme.n_context < 1 || msg->data.pme.n_context > 127) {
             ERR_PRINT("context range has to be 1-127\n");
             ipm_send_error(msg, ERROR_IPM_INVALID_PARAMETER);
             return;
         }
-        CuriePME_setNeuronContext(msg->data.pme.context);
-        DBG_PRINT("neuron context: %d\n", msg->data.pme.context);
+
+        CuriePME_setNeuronContext(msg->data.pme.n_context);
+        DBG_PRINT("neuron context: %d\n", msg->data.pme.n_context);
         break;
     case TYPE_PME_GET_CLASSIFIER_MODE:
-        msg->data.pme.mode = CuriePME_getClassifierMode();
-        DBG_PRINT("classifier mode: %d\n", msg->data.pme.mode);
+        msg->data.pme.c_mode = CuriePME_getClassifierMode();
+        DBG_PRINT("classifier mode: %d\n", msg->data.pme.c_mode);
         break;
     case TYPE_PME_SET_CLASSIFIER_MODE:
-        if (msg->data.pme.mode != RBF_Mode && msg->data.pme.mode != KNN_Mode) {
+        if (msg->data.pme.c_mode != RBF_Mode && msg->data.pme.c_mode != KNN_Mode) {
             ERR_PRINT("invalid classifier mode\n");
             ipm_send_error(msg, ERROR_IPM_INVALID_PARAMETER);
             return;
         }
-        CuriePME_setClassifierMode(msg->data.pme.mode);
-        DBG_PRINT("classifier mode: %d\n", msg->data.pme.mode);
+
+        CuriePME_setClassifierMode(msg->data.pme.c_mode);
+        DBG_PRINT("classifier mode: %d\n", msg->data.pme.c_mode);
         break;
     case TYPE_PME_GET_DISTANCE_MODE:
-        msg->data.pme.mode = CuriePME_getDistanceMode();
-        DBG_PRINT("distance mode: %d\n", msg->data.pme.mode);
+        msg->data.pme.d_mode = CuriePME_getDistanceMode();
+        DBG_PRINT("distance mode: %d\n", msg->data.pme.d_mode);
         break;
     case TYPE_PME_SET_DISTANCE_MODE:
-        if (msg->data.pme.mode != L1_Distance && msg->data.pme.mode != LSUP_Distance) {
+        if (msg->data.pme.d_mode != L1_Distance && msg->data.pme.d_mode != LSUP_Distance) {
             ERR_PRINT("invalid distance mode\n");
             ipm_send_error(msg, ERROR_IPM_INVALID_PARAMETER);
             return;
         }
-        CuriePME_setDistanceMode(msg->data.pme.mode);
-        DBG_PRINT("distance mode: %d\n", msg->data.pme.mode);
+
+        CuriePME_setDistanceMode(msg->data.pme.d_mode);
+        DBG_PRINT("distance mode: %d\n", msg->data.pme.d_mode);
         break;
 
     default:
@@ -1133,6 +1164,7 @@ static void handle_pme(struct zjs_ipm_message* msg)
         ipm_send_error(msg, error_code);
         return;
     }
+
     zjs_ipm_send(msg->id, msg);
 }
 #endif // BUILD_MODULE_PME

@@ -89,6 +89,21 @@ static ZJS_DECL_FUNC(zjs_pme_forget)
     return ZJS_UNDEFINED;
 }
 
+static ZJS_DECL_FUNC(zjs_pme_configure)
+{
+    ZJS_VALIDATE_ARGS(Z_NUMBER, Z_NUMBER, Z_NUMBER, Z_NUMBER, Z_NUMBER);
+    zjs_ipm_message_t send, reply;
+    send.type = TYPE_PME_CONFIGURE;
+
+    send.data.pme.g_context = jerry_get_number_value(argv[0]);
+    send.data.pme.c_mode = jerry_get_number_value(argv[1]);
+    send.data.pme.d_mode = jerry_get_number_value(argv[2]);
+    send.data.pme.min_influence = jerry_get_number_value(argv[3]);
+    send.data.pme.max_influence = jerry_get_number_value(argv[4]);
+    CALL_REMOTE_FUNCTION(send, reply);
+    return ZJS_UNDEFINED;
+}
+
 static ZJS_DECL_FUNC(zjs_pme_learn)
 {
     ZJS_VALIDATE_ARGS(Z_ARRAY, Z_NUMBER);
@@ -155,9 +170,9 @@ static ZJS_DECL_FUNC(zjs_pme_read_neuron)
     CALL_REMOTE_FUNCTION(send, reply);
     jerry_value_t obj = jerry_create_object();
     zjs_obj_add_number(obj, reply.data.pme.category, "category");
-    zjs_obj_add_number(obj, reply.data.pme.context, "context");
+    zjs_obj_add_number(obj, reply.data.pme.n_context, "context");
     zjs_obj_add_number(obj, reply.data.pme.influence, "influence");
-    zjs_obj_add_number(obj, reply.data.pme.influence, "minInfluence");
+    zjs_obj_add_number(obj, reply.data.pme.min_influence, "minInfluence");
 
     ZVAL array = jerry_create_array(MAX_VECTOR_SIZE);
     for (int i = 0; i < MAX_VECTOR_SIZE; i++) {
@@ -211,7 +226,7 @@ static ZJS_DECL_FUNC(zjs_pme_get_global_context)
     send.type = TYPE_PME_GET_GLOBAL_CONTEXT;
 
     CALL_REMOTE_FUNCTION(send, reply);
-    return jerry_create_number(reply.data.pme.context);
+    return jerry_create_number(reply.data.pme.g_context);
 }
 
 static ZJS_DECL_FUNC(zjs_pme_set_global_context)
@@ -220,7 +235,7 @@ static ZJS_DECL_FUNC(zjs_pme_set_global_context)
 
     zjs_ipm_message_t send, reply;
     send.type = TYPE_PME_SET_GLOBAL_CONTEXT;
-    send.data.pme.context = jerry_get_number_value(argv[0]);
+    send.data.pme.g_context = jerry_get_number_value(argv[0]);
 
     CALL_REMOTE_FUNCTION(send, reply);
     return ZJS_UNDEFINED;
@@ -232,7 +247,7 @@ static ZJS_DECL_FUNC(zjs_pme_get_neuron_context)
     send.type = TYPE_PME_GET_NEURON_CONTEXT;
 
     CALL_REMOTE_FUNCTION(send, reply);
-    return jerry_create_number(reply.data.pme.context);
+    return jerry_create_number(reply.data.pme.n_context);
 }
 
 static ZJS_DECL_FUNC(zjs_pme_set_neuron_context)
@@ -241,7 +256,7 @@ static ZJS_DECL_FUNC(zjs_pme_set_neuron_context)
 
     zjs_ipm_message_t send, reply;
     send.type = TYPE_PME_SET_NEURON_CONTEXT;
-    send.data.pme.context = jerry_get_number_value(argv[0]);
+    send.data.pme.n_context = jerry_get_number_value(argv[0]);
 
     CALL_REMOTE_FUNCTION(send, reply);
     return ZJS_UNDEFINED;
@@ -253,7 +268,7 @@ static ZJS_DECL_FUNC(zjs_pme_get_classifier_mode)
     send.type = TYPE_PME_GET_CLASSIFIER_MODE;
 
     CALL_REMOTE_FUNCTION(send, reply);
-    return jerry_create_number(reply.data.pme.mode);
+    return jerry_create_number(reply.data.pme.c_mode);
 }
 
 static ZJS_DECL_FUNC(zjs_pme_set_classifier_mode)
@@ -262,7 +277,7 @@ static ZJS_DECL_FUNC(zjs_pme_set_classifier_mode)
 
     zjs_ipm_message_t send, reply;
     send.type = TYPE_PME_SET_CLASSIFIER_MODE;
-    send.data.pme.mode = jerry_get_number_value(argv[0]);
+    send.data.pme.c_mode = jerry_get_number_value(argv[0]);
 
     CALL_REMOTE_FUNCTION(send, reply);
     return ZJS_UNDEFINED;
@@ -274,7 +289,7 @@ static ZJS_DECL_FUNC(zjs_pme_get_distance_mode)
     send.type = TYPE_PME_GET_DISTANCE_MODE;
 
     CALL_REMOTE_FUNCTION(send, reply);
-    return jerry_create_number(reply.data.pme.mode);
+    return jerry_create_number(reply.data.pme.d_mode);
 }
 
 static ZJS_DECL_FUNC(zjs_pme_set_distance_mode)
@@ -283,7 +298,7 @@ static ZJS_DECL_FUNC(zjs_pme_set_distance_mode)
 
     zjs_ipm_message_t send, reply;
     send.type = TYPE_PME_SET_DISTANCE_MODE;
-    send.data.pme.mode = jerry_get_number_value(argv[0]);
+    send.data.pme.d_mode = jerry_get_number_value(argv[0]);
 
     CALL_REMOTE_FUNCTION(send, reply);
     return ZJS_UNDEFINED;
@@ -300,6 +315,7 @@ jerry_value_t zjs_pme_init()
     zjs_native_func_t array[] = {
         { zjs_pme_begin, "begin" },
         { zjs_pme_forget, "forget" },
+        { zjs_pme_configure, "configure" },
         { zjs_pme_learn, "learn" },
         { zjs_pme_classify, "classify" },
         { zjs_pme_read_neuron, "readNeuron" },
