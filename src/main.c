@@ -204,6 +204,13 @@ int main(int argc, char *argv[])
         int32_t wait_time = ZJS_TICKS_FOREVER;
         uint8_t serviced = 0;
 
+        // callback cannot return a wait time
+        if (zjs_service_callbacks()) {
+            // when this was only called at the end, if a callback created a
+            //   timer, it would think there were no timers and block forever
+            // FIXME: need to consider the chicken and egg problems here
+            serviced = 1;
+        }
         uint64_t wait = zjs_timers_process_events();
         if (wait != ZJS_TICKS_FOREVER) {
             serviced = 1;
