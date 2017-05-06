@@ -16,22 +16,34 @@ var classify3 = [ 16, 16, 16, 16 ];
 var classify4 = [ 25, 25, 25, 25 ];
 var classify5 = [ 30, 30, 30, 30 ];
 
+function pme_stats() {
+    console.log("PME statistics");
+    console.log("==============:");
+    var mode = pme.getClassifierMode();
+    if (mode === pme.RBF_MODE) {
+        console.log("Classification mode: RBF_MODE");
+    } else if (mode === pme.RBF_MODE) {
+        console.log("Classification mode: KNN_MODE");
+    }
+
+    mode = pme.getDistanceMode();
+    if (mode === pme.L1_DISTANCE) {
+        console.log("Distance mode: L1_DISTANCE");
+    } else if (mode === pme.LSUP_DISTANCE) {
+        console.log("Distance mode: LSUP_DISTANCE");
+    }
+
+    for (var i = 1; i <= pme.getCommittedCount(); i++) {
+        var neuron = pme.readNeuron(i);
+        console.log("Neuron id=" + i +
+                    " category=" + neuron.category +
+                    " context=" + neuron.context +
+                    " influence=" + neuron.influence +
+                    " minInfluence=" + neuron.minInfluence);
+    }
+}
+
 pme.begin();
-
-var mode = pme.getClassifierMode();
-if (mode === pme.RBF_MODE) {
-    console.log("Classification mode: RBF_MODE");
-} else if (mode === pme.RBF_MODE) {
-    console.log("Classification mode: KNN_MODE");
-}
-
-mode = pme.getDistanceMode();
-if (mode === pme.L1_DISTANCE) {
-    console.log("Distance mode: L1_DISTANCE");
-} else if (mode === pme.LSUP_DISTANCE) {
-    console.log("Distance mode: LSUP_DISTANCE");
-}
-
 pme.learn(training1, 100);
 console.log("Learned [ 10, 10, 10, 10 ] with category 100");
 pme.learn(training2, 200);
@@ -70,11 +82,9 @@ if (category === pme.NO_MATCH) {
 }
 console.log("Classified [ 30, 30, 30, 30 ] as category " + category);
 
-for (var i = 1; i <= pme.getCommittedCount(); i++) {
-    var neuron = pme.readNeuron(i);
-    console.log("Neuron id=" + i +
-                " category=" + neuron.category +
-                " context=" + neuron.context +
-                " influence=" + neuron.influence +
-                " minInfluence=" + neuron.minInfluence);
-}
+pme_stats();
+
+console.log("Reconfigure with KNN_MODE, LSUP_DISTANCE,");
+pme.configure(pme.getGlobalContext(), pme.KNN_MODE, pme.LSUP_DISTANCE, 5, 10);
+
+pme_stats();
