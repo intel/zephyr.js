@@ -645,8 +645,8 @@ reason we have the following possibilities for support:
 | Module    | Linux | Arduino 101 | K64F  | nRF52 | Arduino DUE | ST F411RE |
 | :---:     | :---: |    :---:    | :---: | :---: |    :---:    |   :---:   |
 |HelloWorld |   X   |      X      |   X   |    X  |      X      |     X     |
-|  ADC      |       |      X      |   X   |   NT  |      NT     |     NT    |
-|  PWM      |       |      X      |   X   |   NT  |      NT     |     NT    |
+|  ADC      |       |      X      |       |   NT  |      NT     |     NT    |
+|  PWM      |       |      X      |       |   NT  |      NT     |     NT    |
 |  GPIO     |       |      X      |   X   |   E   |      NT     |     NT    |
 |  I2C      |       |      X      |   X   |   NT  |      NT     |     NT    |
 |  BLE      |       |      X      |       |   NT  |             |           |
