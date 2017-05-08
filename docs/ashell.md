@@ -47,30 +47,43 @@ below instructions to connect to the device from the browser IDE directly.
      ```bash
      $ sudo udevadm control --reload-rules
      ```
-  * Disable ModemManager to stop interfering when the browser accessing the device.
-     ```bash
-     $ sudo service modemmanager stop
-     ```
+  * Blacklist the device using udev rule or disable ModemManager to stop interfering
+    when the browser accessing the device.
 
-     If you get the message "Unit modemmanager.service not loaded." try this instead:
+    * To blacklist the device: Add the following line in /etc/udev/rules.d/99-arduino-101.rules
 
-    ```bash
-    $ sudo service ModemManager stop
-    ```
+      `SUBSYSTEM=="usb", ATTRS{idVendor}=="8086" ATTRS{idProduct}=="f8a1", ENV{ID_MM_DEVICE_IGNORE}="1"`
 
-4. On Windows:
+      Then run this command:
+      ```bash
+      $ sudo udevadm control --reload-rules
+      ```
+
+      or
+
+    * To disable the ModemManager:
+       ```bash
+       $ sudo service modemmanager stop
+       ```
+
+       If you get the message "Unit modemmanager.service not loaded." try this instead:
+       ```bash
+       $ sudo service ModemManager stop
+       ```
+
+3. On Windows:
   * WebUSB compatible device is not appearing with the official WinUSB driver on
     Windows for some reason, so try installing different version of WinUSB driver
     with the Zadig utility. Also, note that the landing page detection is disabled
     on Windows on Chrome startup so you don't see a notification when the device is
     connected to the host, but the WebUSB will continue to work.
 
-5. Connect the device to the host PC using a USB cable.
-6. A notification from Chrome will appear with an URL of the IDE. If not, the
+4. Connect the device to the host PC using a USB cable.
+5. A notification from Chrome will appear with an URL of the IDE. If not, the
     address for the IDE is https://01org.github.io/zephyrjs-ide.
-7. Click on the notification to open IDE in the browser.
-8. Click on connect button and grant an access to the device.
-9. Try uploading JS code to the device.
+6. Click on the notification to open IDE in the browser.
+7. Click on connect button and grant an access to the device.
+8. Try uploading JS code to the device.
 
 Commands
 --------
