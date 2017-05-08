@@ -506,7 +506,7 @@ static jerry_value_t create_socket(uint8_t client, sock_handle_t **handle_out)
         zjs_obj_add_function(socket, socket_connect, "connect");
     }
 
-    jerry_set_object_native_pointer(socket, (uintptr_t)sock_handle, &socket_type_info);
+    jerry_set_object_native_pointer(socket, (void *)sock_handle, &socket_type_info);
     sock_handle->connect_listener = ZJS_UNDEFINED;
     sock_handle->socket = socket;
     sock_handle->tcp_connect_id = -1;
@@ -533,7 +533,7 @@ static void add_socket_connection(jerry_value_t socket,
 {
     sock_handle_t *handle = NULL;
     const jerry_object_native_info_t *tmp;
-    if (!jerry_get_object_native_pointer(socket, (uintptr_t *)&handle, &tmp)) {
+    if (!jerry_get_object_native_pointer(socket, (void **)&handle, &tmp)) {
         ERR_PRINT("could not get socket handle\n");
         return;
     }
@@ -769,7 +769,7 @@ static jerry_value_t net_create_server(const jerry_value_t function_obj,
     CHECK(net_context_get(AF_INET6, SOCK_STREAM, IPPROTO_TCP,
             &handle->tcp_sock))
 
-    jerry_set_object_native_pointer(server, (uintptr_t)handle, &net_type_info);
+    jerry_set_object_native_pointer(server, (void **)handle, &net_type_info);
 
     handle->server = server;
     handle->listening = 0;

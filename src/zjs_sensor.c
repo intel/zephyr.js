@@ -217,8 +217,16 @@ void zjs_sensor_set_state(jerry_value_t obj, sensor_state_t state)
         }
     }
 
-    ZJS_GET_HANDLE(obj, sensor_handle_t, handle, sensor_type_info);
-    handle = (sensor_handle_t *)ptr;
+    sensor_handle_t *handle = NULL;
+    const jerry_object_native_info_t *tmp;
+    if (!jerry_get_object_native_pointer(obj, (void **)&handle, &tmp)) {
+        ERR_PRINT("no handle found\n");
+        return;
+    }
+    if (tmp != &sensor_type_info) {
+        ERR_PRINT("handle type did not match\n");
+        return;
+    }
     handle->state = state;
 }
 
