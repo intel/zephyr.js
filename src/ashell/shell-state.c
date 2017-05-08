@@ -41,10 +41,8 @@ static struct shell_state_config shell = {
     .state_flags = kShellTransferRaw
 };
 
-const char ERROR_NOT_RECOGNIZED[] = "Unknown command";
 const char ERROR_NOT_ENOUGH_ARGUMENTS[] = "Not enough arguments";
 const char ERROR_FILE_NOT_FOUND[] = "File not found";
-const char ERROR_EXCEDEED_SIZE[] = "String too long";
 
 const char MSG_FILE_SAVED[] =
      ANSI_FG_GREEN "Saving file. " ANSI_FG_RESTORE
@@ -115,13 +113,11 @@ int32_t ashell_remove_file(char *buf)
 
 int32_t ashell_remove_dir(char *buf)
 {
-    printf("rmdir: Not implemented \n");
     return RET_OK;
 }
 
 int32_t ashell_make_dir(char *buf)
 {
-    printf("mkdir: Not implemented \n");
     return RET_OK;
 }
 
