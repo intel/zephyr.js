@@ -542,7 +542,7 @@ uint32_t ashell_process_finish()
 
 void ashell_print_status()
 {
-    printk("Shell Status\n");
+    DBG("Shell Status\n");
 
     malloc_stats();
 
