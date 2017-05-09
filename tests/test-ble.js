@@ -192,9 +192,7 @@ ble.on('accept', function (clientAddress) {
 
     if (stopFlag) {
         setTimeout(function () {
-            // FIXME: this function actually requires a string argument but
-            //   that's not documented
-            ble.disconnect();
+            ble.disconnect(clientAddress);
             console.log("please connect again");
         }, 1000);
     }

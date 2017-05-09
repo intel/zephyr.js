@@ -33,7 +33,7 @@ specific API functions.
 
 [NoInterfaceObject]
 interface BLE {
-    void disconnect();
+    void disconnect(string address);
     void on(string eventType, EventCallback callback);
     void startAdvertising(string name, string[] uuids, string url);
     void stopAdvertising();
@@ -94,9 +94,11 @@ API Documentation
 -----------------
 ### BLE.disconnect
 
-`void disconnect();`
+`void disconnect(string address);`
 
 Disconnect the remote client.
+
+The `address` is the address of the connected client.
 
 ### BLE.on
 
