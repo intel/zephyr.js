@@ -7,7 +7,6 @@
 * this is a basic stub, do not expect a full implementation.
 */
 
-#include <nanokernel.h>
 #include <arch/cpu.h>
 #include <fs.h>
 

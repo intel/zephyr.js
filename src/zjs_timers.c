@@ -87,7 +87,7 @@ static zjs_timer_t *add_timer(uint32_t interval,
 
     ZJS_LIST_APPEND(zjs_timer_t, zjs_timers, tm);
 
-    DBG_PRINT("add timer, id=%d, interval=%lu, repeat=%u, argv=%p, argc=%lu\n",
+    DBG_PRINT("add timer, id=%d, interval=%u, repeat=%u, argv=%p, argc=%u\n",
               tm->callback_id, interval, repeat, argv, argc);
     zjs_port_timer_start(&tm->timer, interval);
     return tm;
@@ -185,7 +185,7 @@ int32_t zjs_timers_process_events()
         }
         else if (zjs_port_timer_test(&tm->timer) > 0) {
             // timer has expired, signal the callback
-            DBG_PRINT("signaling timer. id=%d, argv=%p, argc=%lu\n",
+            DBG_PRINT("signaling timer. id=%d, argv=%p, argc=%u\n",
                     tm->callback_id, tm->argv, tm->argc);
             zjs_signal_callback(tm->callback_id, tm->argv,
                                 tm->argc * sizeof(jerry_value_t));

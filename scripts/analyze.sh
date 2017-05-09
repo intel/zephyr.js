@@ -36,10 +36,6 @@ if [ -f $FEATUREFILE ]; then
 fi
 mkdir -p outdir/$BOARD/ && cp fragments/jerry_feature.base $FEATUREFILE
 
-if [ -n "$ZEPHYR_SDK_INSTALL_DIR" ]; then
-SDK_VERSION=$(cat ${ZEPHYR_SDK_INSTALL_DIR}/sdk_version)
-fi
-
 echo "# Modules found in $SCRIPT:" > $PRJFILE
 echo "# Modules found in $SCRIPT:" > $ARCPRJFILE
 tmpstr="# ZJS flags set by analyze.sh"
@@ -379,12 +375,6 @@ if check_for_require aio || check_config_file ZJS_AIO; then
     >&2 echo Using module: AIO
     MODULES+=" -DBUILD_MODULE_AIO"
     echo "CONFIG_ADC=y" >> $ARCPRJFILE
-    # Workaround for the Zephyr issue ZEP-1882: ADC doesn't work with
-    # SDK 0.9 due to some compiler optimization, so enable debug mode.
-    if [ $SDK_VERSION = "0.9" ]; then
-        >&2 echo Warning: Zephyr SDK 0.9 detected, compiling in debug mode!
-        echo "CONFIG_DEBUG=y" >> $ARCPRJFILE
-    fi
     echo "export ZJS_AIO=y" >> $CONFFILE
 fi
 
@@ -532,12 +522,6 @@ if check_for_feature "Accelerometer\|Gyroscope\|AmbientLightSensor\|TemperatureS
         fi
         if $sensor_light; then
             echo "CONFIG_ADC=y" >> $ARCPRJFILE
-            # Workaround for the Zephyr issue ZEP-1882: ADC doesn't work with
-            # SDK 0.9 due to some compiler optimization, so enable debug mode.
-            if [ $SDK_VERSION = "0.9" ]; then
-                >&2 echo Warning: Zephyr SDK 0.9 detected, compiling in debug mode!
-                echo "CONFIG_DEBUG=y" >> $ARCPRJFILE
-            fi
         fi
     fi
 fi

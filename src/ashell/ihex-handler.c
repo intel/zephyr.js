@@ -8,8 +8,7 @@
  * Designed to be used from Javascript or a ECMAScript object file.
  */
 
-#include <nanokernel.h>
-
+#include <zephyr.h>
 #include <stdio.h>
 #include <misc/printk.h>
 

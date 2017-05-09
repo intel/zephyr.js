@@ -11,8 +11,6 @@
  * Hooks into the printk and fputc (for printf) modules. Poll driven.
  */
 
-#include <nanokernel.h>
-
 #include <arch/cpu.h>
 
 #include <stdbool.h>
