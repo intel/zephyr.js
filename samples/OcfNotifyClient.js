@@ -27,34 +27,14 @@ function onupdate(resource) {
 
 client.on('update', onupdate);
 
-var lightOn = true;
-
-// TODO: Must save away the timer handle or else GC will destroy it after a few iterations
-var t1 = null;
-
 function onfound(resource) {
-    t1 = setInterval(function() {
-        console.log("Updating/Retrieving...");
-        lightOn = lightOn ? false : true;
-        resource.properties.state = lightOn;
-        client.update(resource).then(function(resource) {
-            console.log("update successful");
-            client.retrieve(resource.deviceId, { observable: false }).then(function(res) {
-                console.log("retrieve() was successful, deviceId=" + res.deviceId);
-            }).catch(function(error) {
-                console.log("retrieve() returned an error: " + error.name);
-            });
-        }).catch(function(error) {
-            console.log("Error updating name='" + error.name + "' message='" +
-                    error.message + "' " + "code=" + error.errorCode);
-        });
-    }, 1000);
+    console.log("Resource found");
 }
 
 ocf.start();
 
-client.findResources({ resourceType:"core.light" }, onfound).then(function(resource) {
+client.findResources({ resourceType:"oic.r.light" }, onfound).then(function(resource) {
     console.log("findResources() was successful, deviceId=" + resource.deviceId);
-}).catch(function(error) {
+}, function(error) {
     console.log("findResources() returned an error: " + error.name);
 });
