@@ -77,7 +77,7 @@ setTimeout(function() {
                     assert(list_count === 3,
                            "removed list callback didn't get called");
                     assert.result();
-                }, 0);
+                }, 100);
             }, 0);
         }, 0);
     }, 0);
