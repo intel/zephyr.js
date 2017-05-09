@@ -530,12 +530,6 @@ static jerry_value_t ocf_register(const jerry_value_t function_val,
         }
     }
 
-    // Get UUID and set it in the ocf.device object
-    oc_uuid_t *id = oc_core_get_device_id(resource->res->device);
-    char uuid[37];
-    oc_uuid_to_str(id, uuid, 37);
-    zjs_set_uuid(uuid);
-
     h = new_ocf_handler(resource);
     zjs_make_promise(promise, post_ocf_promise, h);
     /*
@@ -601,6 +595,12 @@ void zjs_ocf_register_resources(void)
         oc_resource_set_request_handler(resource->res, OC_POST, ocf_put_handler, resource);
 
         oc_add_resource(resource->res);
+
+        // Get UUID and set it in the ocf.device object
+        oc_uuid_t *id = oc_core_get_device_id(resource->res->device);
+        char uuid[37];
+        oc_uuid_to_str(id, uuid, 37);
+        zjs_set_uuid(uuid);
 
         cur = cur->next;
     }
