@@ -377,7 +377,6 @@ uint32_t comms_get_baudrate(void)
 
 void comms_print_status()
 {
-    printk("******* SYSTEM STATE ********\n");
     if (atomic_get(&uart_state) == UART_INIT)
         printk(ANSI_FG_RED "JavaScript terminal not connected\n" ANSI_FG_RESTORE);
 

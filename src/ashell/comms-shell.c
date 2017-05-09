@@ -48,11 +48,13 @@ const char *comms_get_prompt()
 
 #define MAX_LINE 90
 #define MAX_ARGUMENT_SIZE 32
+#define CMD_ECHO_OFF "echo off\n"
 
 static ashell_line_parser_t app_line_cb = NULL;
 static char *shell_line = NULL;
 static uint8_t tail = 0;
 static bool ashell_is_done = false;
+static bool echo_mode = true;
 
 static inline void cursor_forward(unsigned int count)
 {
@@ -81,7 +83,8 @@ static void insert_char(char *pos, char c, uint8_t end)
     char tmp;
 
     /* Echo back to console */
-    comms_writec(c);
+    if (echo_mode)
+        comms_writec(c);
 
     if (end == 0) {
         *pos = c;
@@ -415,6 +418,11 @@ uint32_t ashell_process_data(const char *buf, uint32_t len)
         tail = 0;
     }
 
+    /* Don't send back the 'echo off' command */
+    if (!strcmp(CMD_ECHO_OFF, buf)) {
+        echo_mode = false;
+    }
+
     while (len-- > 0) {
         processed++;
         uint8_t byte = *buf++;
@@ -520,6 +528,11 @@ bool ashell_process_is_done()
     return ashell_is_done;
 }
 
+void comms_set_echo_mode(bool mode)
+{
+    echo_mode = mode;
+}
+
 uint32_t ashell_process_finish()
 {
     DBG("[SHELL CLOSE]\n");
@@ -529,7 +542,7 @@ uint32_t ashell_process_finish()
 
 void ashell_print_status()
 {
-    printk("Shell Status\n");
+    DBG("Shell Status\n");
 
     malloc_stats();
 
