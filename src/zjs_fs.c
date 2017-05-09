@@ -284,7 +284,7 @@ static ZJS_DECL_FUNC_ARGS(zjs_fs_close, uint8_t async)
     }
 #endif
 
-    ZJS_LIST_REMOVE(file_handle_t, handle, opened_handles);
+    ZJS_LIST_REMOVE(file_handle_t, opened_handles, handle);
     free_file(handle);
 
     return ZJS_UNDEFINED;
