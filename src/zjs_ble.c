@@ -72,8 +72,6 @@ typedef struct zjs_ble_service {
 
 typedef struct zjs_ble_connection {
     struct bt_conn *bt_conn;
-    zjs_callback_id connected_cb_id;
-    zjs_callback_id disconnected_cb_id;
     struct zjs_ble_connection *next;
 } ble_connection_t;
 
@@ -94,6 +92,8 @@ static struct k_sem ble_sem;
 static bool bt_enabled = false;
 
 static ble_handle_t *ble_handle = NULL;
+static zjs_callback_id connected_cb_id = -1;
+static zjs_callback_id disconnected_cb_id = -1;
 
 struct bt_uuid *zjs_ble_new_uuid_16(uint16_t value) {
     struct bt_uuid_16 *uuid = zjs_malloc(sizeof(struct bt_uuid_16));
@@ -133,8 +133,6 @@ static void zjs_ble_release_connection(ble_connection_t **conns, ble_connection_
         // if conn is the head
         ble_connection_t *tmp = *conns;
         *conns = (*conns)->next;
-        zjs_remove_callback(tmp->connected_cb_id);
-        zjs_remove_callback(tmp->disconnected_cb_id);
         bt_conn_unref(tmp->bt_conn);
         zjs_free(tmp);
         return;
@@ -146,8 +144,6 @@ static void zjs_ble_release_connection(ble_connection_t **conns, ble_connection_
         if (current == conn) {
             ble_connection_t *tmp = current;
             previous->next = current->next;
-            zjs_remove_callback(tmp->connected_cb_id);
-            zjs_remove_callback(tmp->disconnected_cb_id);
             bt_conn_unref(tmp->bt_conn);
             zjs_free(tmp);
             return;
@@ -527,6 +523,7 @@ static void zjs_ble_connected_c_callback(void *handle, const void *argv)
     const char *addr = (const char *)argv;
     ZVAL arg = jerry_create_string((const jerry_char_t *)addr);
     zjs_trigger_event(h->ble_obj, "accept", &arg, 1, NULL, NULL);
+    zjs_remove_callback(connected_cb_id);
     DBG_PRINT("BLE event: connected, addr %s\n", addr);
 }
 
@@ -541,6 +538,7 @@ static void zjs_ble_disconnected_c_callback(void *handle, const void *argv)
     char *addr = (char *)argv;
     ZVAL arg = jerry_create_string((jerry_char_t *)addr);
     zjs_trigger_event(h->ble_obj, "disconnect", &arg, 1, NULL, NULL);
+    zjs_remove_callback(disconnected_cb_id);
     DBG_PRINT("BLE event: disconnected, addr %s\n", addr);
 }
 
@@ -557,12 +555,11 @@ static void zjs_ble_connected(struct bt_conn *conn, uint8_t err)
             return;
         }
 
-        new_conn->connected_cb_id = zjs_add_c_callback(ble_handle, zjs_ble_connected_c_callback);
-        new_conn->disconnected_cb_id = zjs_add_c_callback(ble_handle, zjs_ble_disconnected_c_callback);
         char addr[BT_ADDR_LE_STR_LEN];
         bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
         new_conn->bt_conn = bt_conn_ref(conn);
-        zjs_signal_callback(new_conn->connected_cb_id, addr, sizeof(addr));
+        connected_cb_id = zjs_add_c_callback(ble_handle, zjs_ble_connected_c_callback);
+        zjs_signal_callback(connected_cb_id, addr, sizeof(addr));
         DBG_PRINT("client connected: %s\n", addr);
     }
 }
@@ -575,7 +572,8 @@ static void zjs_ble_disconnected(struct bt_conn *conn, uint8_t reason)
         if (ble_conn->bt_conn == conn) {
             char addr[BT_ADDR_LE_STR_LEN];
             bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-            zjs_signal_callback(ble_conn->disconnected_cb_id, addr, sizeof(addr));
+            disconnected_cb_id = zjs_add_c_callback(ble_handle, zjs_ble_disconnected_c_callback);
+            zjs_signal_callback(disconnected_cb_id, addr, sizeof(addr));
             zjs_ble_release_connection(&ble_handle->connections, ble_conn);
             DBG_PRINT("client disconnected (reason %u): %s\n", reason, addr);
             return;
@@ -1362,8 +1360,6 @@ void zjs_ble_cleanup()
     ble_connection_t *conn = ble_handle->connections;
     while (conn) {
         ble_connection_t *tmp = conn;
-        zjs_remove_callback(tmp->connected_cb_id);
-        zjs_remove_callback(tmp->disconnected_cb_id);
         bt_conn_unref(tmp->bt_conn);
         conn = conn->next;
         zjs_free(tmp);
