@@ -169,6 +169,7 @@ static jerry_value_t create_stats_obj(struct fs_dirent *entry)
 
     zjs_obj_add_function(stats_obj, is_file, "isFile");
     zjs_obj_add_function(stats_obj, is_directory, "isDirectory");
+    zjs_obj_add_number(stats_obj, (double)entry->size, "size");
 
     return stats_obj;
 }
