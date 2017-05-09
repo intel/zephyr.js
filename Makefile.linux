@@ -58,7 +58,8 @@ LINUX_DEFINES +=	-DZJS_LINUX_BUILD \
 			-DBUILD_MODULE_TEST_CALLBACKS \
 			-DBUILD_MODULE_A101 \
 			-DBUILD_MODULE_GPIO \
-			-DZJS_GPIO_MOCK
+			-DZJS_GPIO_MOCK \
+			-DZJS_FIND_FUNC_NAME
 
 LINUX_FLAGS += 	-fno-asynchronous-unwind-tables \
 		-fno-omit-frame-pointer \
