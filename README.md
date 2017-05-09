@@ -633,23 +633,35 @@ For additional information, see [here](https://www.zephyrproject.org/doc/getting
 There is only partial support for modules on Linux compared to Zephyr. Any hardware
 specific module (I2C, UART, GPIO, ADC etc.) is not supported on Linux. Trying
 to run a Zephyr specific module on Linux will result in the JavaScript not running
-successfully. Below is a complete table of modules and target support.
+successfully. Below is a complete table of modules and target support. Some
+Zephyr targets listed are experimental and have not been fully tested. For this
+reason we have the following possibilities for support:
 
-| Module    | Linux                    | Zephyr                   |
-| :---:     | :---:                    | :---:                    |
-|  ADC      | <ul><li>- [ ] </li></ul> | <ul><li>- [x] </li></ul> |
-|  PWM      | <ul><li>- [ ] </li></ul> | <ul><li>- [x] </li></ul> |
-|  GPIO     | <ul><li>- [ ] </li></ul> | <ul><li>- [x] </li></ul> |
-|  I2C      | <ul><li>- [ ] </li></ul> | <ul><li>- [x] </li></ul> |
-|  BLE      | <ul><li>- [ ] </li></ul> | <ul><li>- [x] </li></ul> |
-|  UART     | <ul><li>- [ ] </li></ul> | <ul><li>- [x] </li></ul> |
-| Sensor    | <ul><li>- [ ] </li></ul> | <ul><li>- [x] </li></ul> |
-| Buffer    | <ul><li>- [x] </li></ul> | <ul><li>- [x] </li></ul> |
-| Console   | <ul><li>- [x] </li></ul> | <ul><li>- [x] </li></ul> |
-| Event     | <ul><li>- [x] </li></ul> | <ul><li>- [x] </li></ul> |
-| OCF       | <ul><li>- [x] </li></ul> | <ul><li>- [x] </li></ul> |
-|Performance| <ul><li>- [x] </li></ul> | <ul><li>- [x] </li></ul> |
-| Timers    | <ul><li>- [x] </li></ul> | <ul><li>- [x] </li></ul> |
+* X - Supported
+* E - Experimental, not formally tested by QA but basic functionality verified.
+* NT - Not tested at all
+* Blank - Not Supported
+
+| Module    | Linux | Arduino 101 | K64F  | nRF52 | Arduino DUE | ST F411RE |
+| :---:     | :---: |    :---:    | :---: | :---: |    :---:    |   :---:   |
+|HelloWorld |   X   |      X      |   X   |    X  |      X      |     X     |
+|  ADC      |       |      X      |       |   NT  |      NT     |     NT    |
+|  PWM      |       |      X      |       |   NT  |      NT     |     NT    |
+|  GPIO     |       |      X      |   X   |   E   |      NT     |     NT    |
+|  I2C      |       |      X      |   X   |   NT  |      NT     |     NT    |
+|  BLE      |       |      X      |       |   NT  |             |           |
+|  UART     |       |      X      |   X   |   NT  |      NT     |     NT    |
+| Sensor    |       |      X      |       |       |             |           |
+| Buffer    |   X   |      X      |   X   |   E   |      E      |     E     |
+| Console   |   X   |      X      |   X   |   E   |      E      |     E     |
+| Event     |   X   |      X      |   X   |   E   |      E      |     E     |
+|File System|       |      X      |       |       |             |           |
+| OCF       |   X   |      X      |   NT  |   E   |             |           |
+|Performance|   X   |      X      |   X   |   E   |      E      |     E     |
+| Timers    |   X   |      X      |   X   |   E   |      E      |     E     |
+| Dgram     |       |      X      |   NT  |   NT  |             |           |
+| Net       |       |      X      |   NT  |   NT  |             |           |
+| WebSocket |       |      X      |   NT  |   NT  |             |           |
 
 ## Networking with QEMU
 QEMU has support for networking features that can be tested on your Linux
