@@ -169,7 +169,7 @@ static void generate_key(char *key, uint32_t len, char *output, uint32_t olen)
     mbedtls_sha1(concat, strnlen(concat, 64), sha_out);
     uint32_t out_len;
     // base64 encode the sha1 hash
-    mbedtls_base64_encode(output, olen, &out_len, sha_out, 20);
+    mbedtls_base64_encode(output, olen, (size_t *)&out_len, sha_out, 20);
     zjs_free(concat);
 }
 
