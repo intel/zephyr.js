@@ -345,7 +345,7 @@ void javascript_stop()
     restore_zjs_api();
 }
 
-int javascript_parse_code(const char *file_name, bool show_lines)
+int javascript_parse_code(const char *file_name)
 {
     int ret = -1;
     javascript_stop();
@@ -356,28 +356,6 @@ int javascript_parse_code(const char *file_name, bool show_lines)
     buf = read_file_alloc(file_name, &size);
 
     if (buf && size > 0) {
-        if (show_lines) {
-            comms_printf("[READ] %d\n", (int)size);
-
-            // Print buffer test
-            int line = 0;
-            comms_println("[START]");
-            comms_printf("%5d  ", line++);
-            for (int t = 0; t < size; t++) {
-                uint8_t byte = buf[t];
-                if (byte == '\n' || byte == '\r') {
-                    comms_write_buf("\r\n", 2);
-                    comms_printf("%5d  ", line++);
-                } else {
-                    if (!isprint(byte)) {
-                        comms_printf("(%x)", byte);
-                    } else
-                        comms_writec(byte);
-                }
-            }
-            comms_println("[END]");
-        }
-
         // Find and load all required js modules
         if (load_require_modules(buf)) {
             /* Setup Global scope code */
@@ -398,7 +376,7 @@ int javascript_parse_code(const char *file_name, bool show_lines)
 
 void javascript_run_code(const char *file_name)
 {
-    if (javascript_parse_code(file_name, false) != 0)
+    if (javascript_parse_code(file_name) != 0)
         return;
 
     /* Execute the parsed source code in the Global scope */

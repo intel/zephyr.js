@@ -139,14 +139,9 @@ struct comms_cfg_data
 };
 
 void comms_uart_set_config(struct comms_cfg_data *config);
-
 void comms_print_status();
-void comms_clear();
-
-void comms_println(const char *buf);
 void comms_write_buf(const char *buf, int len);
-void comms_writec(char byte);
-void comms_print(const char *buf);
+void comms_print(const char *buf, bool newline);
 void comms_printf(const char *format, ...);
 void zjs_ashell_process();
 void zjs_ashell_init();
