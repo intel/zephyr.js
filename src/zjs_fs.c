@@ -890,6 +890,72 @@ static ZJS_DECL_FUNC(zjs_fs_write_file_async) {
 }
 #endif
 
+static ZJS_DECL_FUNC_ARGS(zjs_fs_read_file, uint8_t async)
+{
+    // args: filepath, data
+    ZJS_VALIDATE_ARGS(Z_STRING);
+
+#ifdef ZJS_FS_ASYNC_APIS
+    // async case adds callback arg
+    if (async) {
+        ZJS_VALIDATE_ARGS_OFFSET(1, Z_FUNCTION);
+    }
+#endif
+    jerry_value_t buffer = ZJS_UNDEFINED;
+    uint32_t size = 32;
+    char *path = zjs_alloc_from_jstring(argv[0], &size);
+    if (!path) {
+        return zjs_error("path string too long");
+    }
+    struct fs_dirent entry;
+    int ret = fs_stat(path, &entry);
+    if (ret != 0) {
+        ERR_PRINT("error getting stats on file, error=%d\n", ret);
+        goto Finished;
+    }
+    zjs_buffer_t *buf_handle;
+    buffer = zjs_buffer_create(entry.size, &buf_handle);
+
+    fs_file_t fp;
+    ret = fs_open(&fp, path);
+    if (ret != 0) {
+        ERR_PRINT("error opening file, error=%d\n", ret);
+        goto Finished;
+    }
+    if (fs_seek(&fp, 0, SEEK_SET) != 0) {
+        return zjs_error("error seeking to position");
+    }
+
+    int len = fs_read(&fp, buf_handle->buffer, buf_handle->bufsize);
+    if (len != buf_handle->bufsize) {
+        ERR_PRINT("read length was incorrect\n");
+    }
+Finished:
+#ifdef ZJS_FS_ASYNC_APIS
+    if (async) {
+        ZVAL err = jerry_create_number(ret);
+        jerry_value_t args[] = {err, buffer};
+
+        zjs_callback_id id = zjs_add_callback_once(argv[1], this, NULL, NULL);
+        zjs_signal_callback(id, args, sizeof(jerry_value_t) * 2);
+    }
+    return ZJS_UNDEFINED;
+#endif
+
+    return buffer;
+}
+
+static ZJS_DECL_FUNC(zjs_fs_read_file_sync) {
+    return ZJS_CHAIN_FUNC_ARGS(zjs_fs_read_file, 0);
+}
+
+#ifdef ZJS_FS_ASYNC_APIS
+static ZJS_DECL_FUNC(zjs_fs_read_file_async) {
+    return ZJS_CHAIN_FUNC_ARGS(zjs_fs_read_file, 1);
+}
+#endif
+
+
 jerry_value_t zjs_fs_init()
 {
     jerry_value_t fs = jerry_create_object();
@@ -905,6 +971,7 @@ jerry_value_t zjs_fs_init()
     zjs_obj_add_function(fs, zjs_fs_readdir_sync, "readdirSync");
     zjs_obj_add_function(fs, zjs_fs_stat_sync, "statSync");
     zjs_obj_add_function(fs, zjs_fs_write_file_sync, "writeFileSync");
+    zjs_obj_add_function(fs, zjs_fs_read_file_sync, "readFileSync");
 
 #ifdef ZJS_FS_ASYNC_APIS
     zjs_obj_add_function(fs, zjs_fs_open_async, "open");
@@ -918,6 +985,7 @@ jerry_value_t zjs_fs_init()
     zjs_obj_add_function(fs, zjs_fs_readdir_async, "readdir");
     zjs_obj_add_function(fs, zjs_fs_stat_async, "stat");
     zjs_obj_add_function(fs, zjs_fs_write_file_async, "writeFile");
+    zjs_obj_add_function(fs, zjs_fs_read_file_async, "readFile");
 #endif
 
     return fs;
