@@ -14,5 +14,8 @@
         ]
     },
     "zjs_config": ["-DBUILD_MODULE_BLE"],
-    "src": ["zjs_ble.c"]
+    "src": ["zjs_ble.c"],
+    "header": ["zjs_ble.h"],
+    "init": ["zjs_ble_init"],
+    "cleanup": ["zjs_ble_cleanup"]
 }

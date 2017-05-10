@@ -37,5 +37,8 @@
         "frdm_k64f": ["CONFIG_NET_L2_ETHERNET=y"]
     },
     "zjs_config": ["-DBUILD_MODULE_NET"],
-    "src": ["zjs_net.c"]
+    "src": ["zjs_net.c"],
+    "header": ["zjs_net.h"],
+    "init": ["zjs_net_init"],
+    "cleanup": ["zjs_net_cleanup"]
 }

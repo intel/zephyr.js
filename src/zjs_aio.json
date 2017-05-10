@@ -7,5 +7,8 @@
         "all": ["CONFIG_ADC=y"]
     },
     "zjs_config": ["-DBUILD_MODULE_AIO"],
-    "src": ["zjs_aio.c"]
+    "src": ["zjs_aio.c"],
+    "header": ["zjs_aio.h"],
+    "init": ["zjs_aio_init"],
+    "cleanup": ["zjs_aio_cleanup"]
 }

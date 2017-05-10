@@ -2,5 +2,7 @@
     "module": "test_callbacks",
     "require": "test_callbacks",
     "zjs_config": ["-DBUILD_MODULE_TEST_CALLBACKS"],
-    "src": ["zjs_test_callbacks.c"]
+    "src": ["zjs_test_callbacks.c"],
+    "header": ["zjs_test_callbacks.h"],
+    "init": ["zjs_test_callbacks_init"]
 }

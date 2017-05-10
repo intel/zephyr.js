@@ -11,5 +11,8 @@
         ]
     },
     "zjs_config": ["-DBUILD_MODULE_GROVE_LCD"],
-    "src": ["zjs_grove_lcd.c"]
+    "src": ["zjs_grove_lcd.c"],
+    "header": ["zjs_grove_lcd.h"],
+    "init": ["zjs_grove_lcd_init"],
+    "cleanup": ["zjs_grove_lcd_cleanup"]
 }

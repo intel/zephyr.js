@@ -40,5 +40,8 @@
         ],
         "qemu_x86": ["CONFIG_NET_SLIP_TAP=y"],
         "frdm_k64f": ["CONFIG_NET_L2_ETHERNET=y"]
-    }
+    },
+    "header": ["zjs_ocf_server.h", "zjs_ocf_client.h", "zjs_ocf_common.h"],
+    "init": ["zjs_ocf_init"],
+    "cleanup": ["zjs_ocf_cleanup"]
 }

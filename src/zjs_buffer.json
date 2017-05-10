@@ -2,5 +2,8 @@
     "module": "buffer",
     "constructor": "Buffer",
     "src": ["zjs_buffer.c"],
-    "zjs_config": ["-DBUILD_MODULE_BUFFER"]
+    "zjs_config": ["-DBUILD_MODULE_BUFFER"],
+    "header": ["zjs_buffer.h"],
+    "global_init": ["zjs_buffer_init"],
+    "global_cleanup": ["zjs_buffer_cleanup"]
 }

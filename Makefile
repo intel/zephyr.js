@@ -228,9 +228,10 @@ $(JS):
 .PHONY: analyze
 analyze: $(JS)
 	@mkdir -p outdir/$(BOARD)/
+	@mkdir -p outdir/include
 	@echo "% This is a generated file" > prj.mdef
 
-	./scripts/analyze SCRIPT=$(JS) BOARD=$(BOARD) FORCE=$(ASHELL) PRJCONF=prj.conf MAKEFILE=src/Makefile MAKEBASE=src/Makefile.base PROFILE=outdir/$(BOARD)/jerry_feature.profile
+	./scripts/analyze SCRIPT=$(JS) JS=js.tmp BOARD=$(BOARD) FORCE=$(ASHELL) PRJCONF=prj.conf MAKEFILE=src/Makefile MAKEBASE=src/Makefile.base PROFILE=outdir/$(BOARD)/jerry_feature.profile
 
 	@if [ "$(TRACE)" = "on" ] || [ "$(TRACE)" = "full" ]; then \
 		echo "ccflags-y += -DZJS_TRACE_MALLOC" >> src/Makefile; \
@@ -342,9 +343,9 @@ ifeq ($(SNAPSHOT), on)
 	fi
 	@echo Creating snapshot bytecode from JS application...
 	@if [ -x /usr/bin/uglifyjs ]; then \
-		uglifyjs $(JS) -nc -mt > outdir/jsgen.tmp; \
+		uglifyjs js.tmp -nc -mt > outdir/jsgen.tmp; \
 	else \
-		cat $(JS) > outdir/jsgen.tmp; \
+		cat js.tmp > outdir/jsgen.tmp; \
 	fi
 	@outdir/snapshot/snapshot outdir/jsgen.tmp > outdir/include/zjs_snapshot_gen.h
 else
@@ -352,7 +353,7 @@ else
 ifeq ($(BOARD), linux)
 	@./scripts/convert.sh $(JS) outdir/include/zjs_script_gen.h
 else
-	@./scripts/convert.sh $(JS) outdir/include/zjs_script_gen.h
+	@./scripts/convert.sh js.tmp outdir/include/zjs_script_gen.h
 endif
 endif
 

@@ -6,7 +6,6 @@ import json
 import re
 import shutil
 
-force = ['']
 featurefile = ''
 
 args = {}
@@ -15,7 +14,10 @@ for i in sys.argv[1:]:
     option, value = i.split('=')[:2]
     args[option] = value
 
-print("Analyzing %s for %s" % (args['SCRIPT'], args['BOARD']))
+if 'SCRIPT' not in args:
+    print("Generating modules header")
+else:
+    print("Analyzing %s for %s" % (args['SCRIPT'], args['BOARD']))
 
 json_tree = {}
 
@@ -24,6 +26,7 @@ zconf = []
 zjs_conf = []
 jrs_conf = []
 lsrc = []
+js_modules = []
 
 def merge_lists(l1, l2):
     if l1 != None:
@@ -62,13 +65,31 @@ def build_tree(tree, restrict):
     else:
         parse_list(tree, restrict)
 
+def get_dep_list_helper(dlist, dep, board, tree):
+    if dep in tree:
+        entry = tree[dep]
+        if 'targets' in entry:
+            if args['BOARD'] not in entry.get('targets', []):
+                return
+        if 'depends' in entry:
+            merge_lists(dlist, entry['depends'])
+            for i in entry['depends']:
+                get_dep_list_helper(dlist, i, board, tree)
+
+def get_dep_list(dlist, board, tree):
+    for dep in tree:
+        if 'targets' not in tree[dep]:
+            merge_lists(dlist, [dep])
+        get_dep_list_helper(dlist, dep, board, tree)
+
 def gather_deps_helper(js, dep, dlist, zlist, zjslist, jrslist, srclist, tree):
     print("dep=" + dep)
     if dep in tree:
         print("looking at dep: " + dep)
         entry = tree[dep]
-        if args['BOARD'] not in entry.get('targets', []):
-            return
+        if 'targets' in entry:
+            if args['BOARD'] not in entry.get('targets', []):
+                return
         for i in entry.get('depends', []):
             print("gathering deps for " + i)
             if i not in dlist:
@@ -129,6 +150,12 @@ def gather_deps(file, dlist, zlist, zjslist, jrslist, srclist, tree):
                     dlist.append(i)
                 print("found dep: " + i)
                 gather_deps_helper(text, i, dlist, zlist, zjslist, jrslist, srclist, tree)
+        if 'object' in tree[i]:
+            if re.search(r"%s\." % tree[i]['object'], text):
+                merge_lists(zjslist, tree[i]['zjs_config'])
+                merge_lists(srclist, tree[i]['src'])
+                dlist.append(tree[i]['object'])
+
     # Get any deps for the board
     gather_deps_helper(text, args['BOARD'], dlist, zlist, zjslist, jrslist, srclist, tree)
 
@@ -162,19 +189,108 @@ def write_zconf(list, file):
         for i in list:
             f.write(i + '\n')
 
-restrict = args.get('RESTRICT', [])
-if restrict != []:
-    restrict = restrict.split(',')
+def write_modules(list, tree):
+    headers = []
+    inits = {}
+    gbl_inits = {}
+    with open('outdir/include/zjs_modules_gen.h', 'w') as file:
+        for i in list:
+            entry = tree.get(i, None)
+            if entry:
+                print("FOUND DEP: " + i)
+                if 'init' in entry:
+                    print("init=" + str(entry['init']))
+                    inits[i] = {}
+                    inits[i]["inits"] = entry['init']
+                if 'cleanup' in entry:
+                    print("cleanup=" + str(entry['cleanup']))
+                    inits[i]["cleanups"] = entry['cleanup']
+                if 'header' in entry:
+                    print("header=" + str(entry['header']))
+                    merge_lists(headers, entry['header'])
+                if 'global_init' in entry:
+                    print("glb_init=" + str(entry['global_init']))
+                    gbl_inits[i] = {}
+                    gbl_inits[i]["inits"] = entry['global_init']
+                if 'global_cleanup' in entry:
+                    print("gbl_cleanup=" + str(entry['global_cleanup']))
+                    gbl_inits[i]["cleanups"] = entry['global_cleanup']
+        # Add include headers
+        file.write("// This is a generated file\n")
+        file.write("// Includes:\n")
+        file.write("#include \"jerryscript.h\"\n")
+        for i in headers:
+            file.write("#include \"%s\"\n" % i)
+        file.write("""typedef jerry_value_t (*initcb_t)();
+typedef void (*cleanupcb_t)();
+typedef struct module {
+    const char *name;
+    initcb_t init;
+    cleanupcb_t cleanup;
+    jerry_value_t instance;
+} module_t;
+typedef struct gbl_module {
+    const char *name;
+    void (*init)();
+    void (*cleanup)();
+} gbl_module_t;
+module_t zjs_modules_array[] = {\n""")
+        for i in inits:
+            file.write("    {\"%s\", %s" % (i, inits[i]["inits"][0]))
+            if 'cleanups' in inits[i]:
+                file.write(", %s" % inits[i]["cleanups"][0])
+            file.write("},\n")
+        file.write("};\n")
+        file.write("gbl_module_t zjs_global_array[] = {\n")
+        for i in gbl_inits:
+            file.write("    {\"%s\", %s" % (i, gbl_inits[i]["inits"][0]))
+            if 'cleanups' in gbl_inits[i]:
+                file.write(", %s" % gbl_inits[i]["cleanups"][0])
+            file.write("},\n")
+        file.write("};\n")
 
-build_tree(json_tree, restrict)
-gather_deps(args['SCRIPT'], deps_list, zconf, zjs_conf, jrs_conf, lsrc, json_tree)
+if args['BOARD'] == 'linux':
+    restrict = args['RESTRICT'].split(',')
+    print(str(restrict))
+    build_tree(json_tree, restrict)
+    print("Tree=" + str(json_tree))
+    all_list = []
+    get_dep_list(all_list, args['BOARD'], json_tree)
+    print("list: " + str(all_list))
+    write_modules(all_list, json_tree)
+else:
+    if 'JS' in args:
+        with open(args['SCRIPT'], 'r') as s:
+            js = s.read()
+        with open(args['JS'], 'w') as f:
+            for i in os.listdir("modules/"):
+                if re.search(r"require\([\'\"]%s[\"\']\)" % i, js):
+                    js_modules += [i]
+            for i in js_modules:
+                with open('modules/' + i) as mod:
+                    f.write(mod.read())
+                    f.write("\n")
+            f.write(js)
+        js_file = args['JS']
+    else:
+        js_file = args['SCRIPT']
 
-print("DEPENDENCIES: " + str(deps_list))
-print("ZEPHYR_CONFIG: " + str(zconf))
-print("ZJS_CONFIG: " + str(zjs_conf))
-print("JRS_CONFIG: " + str(jrs_conf))
-print("SRC: " + str(lsrc))
+    restrict = args.get('RESTRICT', [])
+    if restrict != []:
+        restrict = restrict.split(',')
 
-write_zconf(zconf, args['PRJCONF'])
-write_makefile(lsrc, zjs_conf, args['MAKEFILE'])
-write_jrsconfig(jrs_conf)
+    build_tree(json_tree, restrict)
+    gather_deps(js_file, deps_list, zconf, zjs_conf, jrs_conf, lsrc, json_tree)
+
+    print("DEPENDENCIES: " + str(deps_list))
+    print("ZEPHYR_CONFIG: " + str(zconf))
+    print("ZJS_CONFIG: " + str(zjs_conf))
+    print("JRS_CONFIG: " + str(jrs_conf))
+    print("SRC: " + str(lsrc))
+
+    write_zconf(zconf, args['PRJCONF'])
+    write_makefile(lsrc, zjs_conf, args['MAKEFILE'])
+    write_jrsconfig(jrs_conf)
+
+    if args['BOARD'] != 'arc':
+        write_modules(deps_list, json_tree)

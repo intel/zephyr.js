@@ -1,5 +1,9 @@
 {
     "module": "console",
+    "object": "console",
     "zjs_config": ["-DBUILD_MODULE_CONSOLE"],
-    "src": ["zjs_console.c"]
+    "src": ["zjs_console.c"],
+    "header": ["zjs_console.h"],
+    "global_init": ["zjs_console_init"],
+    "global_cleanup": ["zjs_console_cleanup"]
 }

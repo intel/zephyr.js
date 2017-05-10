@@ -2,5 +2,7 @@
     "module": "performance",
     "require": "performance",
     "src": ["zjs_performance.c"],
-    "zjs_config": ["-DBUILD_MODULE_PERFORMANCE"]
+    "zjs_config": ["-DBUILD_MODULE_PERFORMANCE"],
+    "header": ["zjs_performance.h"],
+    "init": ["zjs_performance_init"]
 }

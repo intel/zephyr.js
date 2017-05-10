@@ -36,5 +36,8 @@
         "frdm_k64f": ["CONFIG_NET_L2_ETHERNET=y"]
     },
     "zjs_config": ["-DBUILD_MODULE_DGRAM"],
-    "src": ["zjs_dgram.c"]
+    "src": ["zjs_dgram.c"],
+    "header": ["zjs_dgram.h"],
+    "init": ["zjs_dgram_init"],
+    "cleanup": ["zjs_dgram_cleanup"]
 }
