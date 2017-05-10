@@ -1,7 +1,7 @@
 // Copyright (c) 2017, Intel Corporation.
 
-#ifndef _CURIE_PME_H_
-#define _CURIE_PME_H_
+#ifndef _ARC_CURIE_PME_H_
+#define _ARC_CURIE_PME_H_
 
 #include <stdint.h>
 
@@ -145,15 +145,4 @@ inline void regWrite16(Registers reg, uint16_t value)
 {
     *regAddress(reg) = value;
 }
-#if 0
-inline void regWrite16 (Registers reg, uint8_t value)
-{
-	*regAddress(reg) = value;
-}
-
-inline void regWrite16 (Registers reg, int value)
-{
-	*regAddress(reg) = value;
-}
-#endif
 #endif

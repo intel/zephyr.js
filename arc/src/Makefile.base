@@ -7,6 +7,6 @@ obj-y += ../../src/zjs_common.o \
          ../../src/zjs_ipm.o \
          ../../src/zjs_i2c_handler.o
 
-obj-$(ZJS_PME) += CuriePME.o
+obj-$(ZJS_PME) += arc_curie_pme.o
 
 ccflags-y += -Wall -Werror

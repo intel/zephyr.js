@@ -19,7 +19,7 @@
 #include <display/grove_lcd.h>
 #endif
 #ifdef BUILD_MODULE_PME
-#include "CuriePME.h"
+#include "arc_curie_pme.h"
 #endif
 
 #include "zjs_common.h"

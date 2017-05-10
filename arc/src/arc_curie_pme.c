@@ -1,6 +1,6 @@
 // Copyright (c) 2017, Intel Corporation.
 
-#include "CuriePME.h"
+#include "arc_curie_pme.h"
 
 static uint16_t nsr_save = 0;
 
