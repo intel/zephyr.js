@@ -38,8 +38,8 @@ function pme_stats() {
         console.log("Neuron id=" + i +
                     " category=" + neuron.category +
                     " context=" + neuron.context +
-                    " influence=" + neuron.influence +
-                    " minInfluence=" + neuron.minInfluence);
+                    " AIF=" + neuron.AIF +
+                    " minIF=" + neuron.minIF);
     }
 }
 

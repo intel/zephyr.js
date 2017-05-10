@@ -152,9 +152,9 @@ typedef struct zjs_ipm_message {
             uint16_t category;
             uint16_t g_context;
             uint16_t n_context;
-            uint16_t influence;
-            uint16_t min_influence;
-            uint16_t max_influence;
+            uint16_t aif;
+            uint16_t min_if;
+            uint16_t max_if;
             uint32_t neuron_id;
         } pme;
     } data;

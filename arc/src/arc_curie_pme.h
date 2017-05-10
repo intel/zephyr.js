@@ -5,81 +5,81 @@
 
 #include <stdint.h>
 
-static const uint32_t noMatch = 0x7fff;
-static const uint16_t minContext = 0;
-static const uint16_t maxContext = 127;
-static const int32_t maxVectorSize = 128;
-static const int32_t firstNeuronID = 1;
-static const int32_t lastNeuronID = 128;
-static const int32_t maxNeurons = 128;
-static const int32_t saveRestoreSize = 128;
+static const uint32_t NO_MATCH = 0x7fff;
+static const uint16_t MIN_CONTEXT = 0;
+static const uint16_t MAX_CONTEXT = 127;
+static const int32_t MAX_VECTOR_SIZE = 128;
+static const int32_t FIRST_NEURON_ID = 1;
+static const int32_t LAST_NEURON_ID = 128;
+static const int32_t MAX_NEURONS = 128;
+static const int32_t SAVE_RESTORE_SIZE = 128;
 
 typedef enum {
-    RBF_Mode = 0,
-    KNN_Mode = 1
+    RBF_MODE = 0,
+    KNN_MODE = 1
 } PATTERN_MATCHING_CLASSIFICATION_MODE;
 
 typedef enum {
-    L1_Distance = 0,
-    LSUP_Distance = 1
+    L1_DISTANCE = 0,
+    LSUP_DISTANCE = 1
 } PATTERN_MATCHING_DISTANCE_MODE;
 
-typedef struct neuronData {
+typedef struct neuron_data {
     uint16_t context;
-    uint16_t influence;
-    uint16_t minInfluence;
+    uint16_t aif;
+    uint16_t min_if;
     uint16_t category;
     uint8_t vector[128];
-} neuronData;
+} neuron_data_t;
 
 // Default initializer
-void CuriePME_begin(void);
+void curie_pme_begin(void);
 
-void CuriePME_forget(void);
+void curie_pme_forget(void);
 
-void CuriePME_configure(uint16_t global_context,
-                        PATTERN_MATCHING_DISTANCE_MODE distance_mode,
-                        PATTERN_MATCHING_CLASSIFICATION_MODE classification_mode,
-                        uint16_t minAIF,
-                        uint16_t maxAIF);
+void curie_pme_configure(uint16_t global_context,
+                         PATTERN_MATCHING_DISTANCE_MODE distance_mode,
+                         PATTERN_MATCHING_CLASSIFICATION_MODE classification_mode,
+                         uint16_t min_if,
+                         uint16_t max_if);
 
-uint16_t CuriePME_learn(uint8_t* pattern_vector,
-                        int32_t vector_length,
-                        uint16_t category);
-uint16_t CuriePME_classify(uint8_t* pattern_vector, int32_t vector_length);
+uint16_t curie_pme_learn(uint8_t *pattern_vector,
+                         int32_t vector_length,
+                         uint16_t category);
+uint16_t curie_pme_classify(uint8_t *pattern_vector, int32_t vector_length);
 
-uint16_t CuriePME_readNeuron(int32_t neuronID, neuronData* data_array);
+uint16_t curie_pme_read_neuron(int32_t neuron_id, neuron_data_t *data_array);
 
 // save and restore knowledge
-void CuriePME_beginSaveMode(void); // saves the contents of the NSR register
-uint16_t CuriePME_iterateNeuronsToSave(neuronData* data_array);
-void CuriePME_endSaveMode(void); // restores the NSR value saved by beginSaveMode
+void curie_pme_begin_save_mode(void); // saves the contents of the NSR register
+uint16_t curie_pme_iterate_neurons_to_save(neuron_data_t *data_array);
+void curie_pme_end_save_mode(void); // restores the NSR value saved by beginSaveMode
 
 void CuriePME_beginRestoreMode(void);
-uint16_t CuriePME_iterateNeuronsToRestore(neuronData* data_array);
+uint16_t CuriePME_iterateNeuronsToRestore(neuron_data_t *data_array);
 void CuriePME_endRestoreMode(void);
 
 // getter and setters
-PATTERN_MATCHING_DISTANCE_MODE CuriePME_getDistanceMode(void);
-void CuriePME_setDistanceMode(PATTERN_MATCHING_DISTANCE_MODE mode);
-uint16_t CuriePME_getGlobalContext(void);
-void CuriePME_setGlobalContext(uint16_t context); // valid range is 1-127
-uint16_t CuriePME_getNeuronContext(void);
-void CuriePME_setNeuronContext(uint16_t context); // valid range is 1-127
+PATTERN_MATCHING_DISTANCE_MODE curie_pme_get_distance_mode(void);
+void curie_pme_set_distance_mode(PATTERN_MATCHING_DISTANCE_MODE mode);
+uint16_t curie_pme_get_global_context(void);
+void curie_pme_set_global_context(uint16_t context); // valid range is 1-127
+uint16_t curie_pme_get_neuron_context(void);
+void curie_pme_set_neuron_context(uint16_t context); // valid range is 1-127
 
-// NOTE: getCommittedCount() will give inaccurate value if the network is in
+// NOTE: get_committed_count() will give inaccurate value if the network is in
 // Save/Restore mode.
-// It should not be called between the beginSaveMode() and endSaveMode() or
+// It should not be called between the begin_save_mode() and end_save_mode() or
 // between
-// beginRestoreMode() and endRestoreMode()
-uint16_t CuriePME_getCommittedCount(void);
+// begin_restore_mode() and end_restore_mode()
+uint16_t curie_pme_get_committed_count(void);
 
-PATTERN_MATCHING_CLASSIFICATION_MODE CuriePME_getClassifierMode(void); // RBF or KNN
-void CuriePME_setClassifierMode(PATTERN_MATCHING_CLASSIFICATION_MODE mode);
+PATTERN_MATCHING_CLASSIFICATION_MODE curie_pme_get_classifier_mode(void); // RBF or KNN
+void curie_pme_set_classifier_mode(PATTERN_MATCHING_CLASSIFICATION_MODE mode);
 
 // write vector is used for kNN recognition and does not alter
 // the CAT register, which moves the chain along.
-uint16_t CuriePME_writeVector(uint8_t* pattern_vector, int32_t vector_length);
+uint16_t curie_pme_write_vector(uint8_t *pattern_vector, int32_t vector_length);
 
 // raw register access - not recommended.
 uint16_t getNCR(void);
@@ -116,7 +116,7 @@ typedef enum {
     RSTCHAIN = 0x30, // Reset Chain
     NSR = 0x34, // Network Status Register
     FORGET_NCOUNT = 0x3C // Forget Command / Neuron Count
-} Registers;
+} registers_t;
 
 typedef enum {
     NCR_ID = 0xFF00, // Upper 8-bit of Neuron ID
@@ -134,15 +134,15 @@ typedef enum {
 
 // all pattern matching accelerator registers are 16-bits wide, memory-addressed
 // define efficient inline register access
-inline volatile uint16_t* regAddress(Registers reg)
+inline volatile uint16_t* reg_address(registers_t reg)
 {
     return (uint16_t*)(0xB0600000L + reg);
 }
 
-inline uint16_t regRead16(Registers reg) { return *regAddress(reg); }
+inline uint16_t reg_read16(registers_t reg) { return *reg_address(reg); }
 
-inline void regWrite16(Registers reg, uint16_t value)
+inline void reg_write16(registers_t reg, uint16_t value)
 {
-    *regAddress(reg) = value;
+    *reg_address(reg) = value;
 }
 #endif

@@ -98,8 +98,8 @@ static ZJS_DECL_FUNC(zjs_pme_configure)
     send.data.pme.g_context = jerry_get_number_value(argv[0]);
     send.data.pme.c_mode = jerry_get_number_value(argv[1]);
     send.data.pme.d_mode = jerry_get_number_value(argv[2]);
-    send.data.pme.min_influence = jerry_get_number_value(argv[3]);
-    send.data.pme.max_influence = jerry_get_number_value(argv[4]);
+    send.data.pme.min_if = jerry_get_number_value(argv[3]);
+    send.data.pme.max_if = jerry_get_number_value(argv[4]);
     CALL_REMOTE_FUNCTION(send, reply);
     return ZJS_UNDEFINED;
 }
@@ -171,8 +171,8 @@ static ZJS_DECL_FUNC(zjs_pme_read_neuron)
     jerry_value_t obj = jerry_create_object();
     zjs_obj_add_number(obj, reply.data.pme.category, "category");
     zjs_obj_add_number(obj, reply.data.pme.n_context, "context");
-    zjs_obj_add_number(obj, reply.data.pme.influence, "influence");
-    zjs_obj_add_number(obj, reply.data.pme.min_influence, "minInfluence");
+    zjs_obj_add_number(obj, reply.data.pme.aif, "AIF");
+    zjs_obj_add_number(obj, reply.data.pme.min_if, "minIF");
 
     ZVAL array = jerry_create_array(MAX_VECTOR_SIZE);
     for (int i = 0; i < MAX_VECTOR_SIZE; i++) {
