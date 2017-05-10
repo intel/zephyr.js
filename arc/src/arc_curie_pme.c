@@ -250,31 +250,3 @@ void curie_pme_set_classifier_mode(PATTERN_MATCHING_CLASSIFICATION_MODE mode)
 
     reg_write16(NSR, mask);
 }
-
-// mark --register access--
-// getter and setters
-uint16_t getNCR(void) { return reg_read16(NCR); }
-
-uint16_t getCOMP(void) { return reg_read16(COMP); }
-
-uint16_t getLCOMP(void) { return reg_read16(LCOMP); }
-
-uint16_t getIDX_DIST(void) { return reg_read16(IDX_DIST); }
-
-uint16_t getCAT(void) { return reg_read16(CAT); }
-
-uint16_t getAIF(void) { return reg_read16(AIF); }
-
-uint16_t getMINIF(void) { return reg_read16(MINIF); }
-
-uint16_t getMAXIF(void) { return reg_read16(MAXIF); }
-
-uint16_t getNID(void) { return reg_read16(NID); }
-
-uint16_t getGCR(void) { return reg_read16(GCR); }
-
-uint16_t getRSTCHAIN(void) { return reg_read16(RSTCHAIN); }
-
-uint16_t getNSR(void) { return reg_read16(NSR); }
-
-uint16_t getFORGET_NCOUNT(void) { return reg_read16(FORGET_NCOUNT); }

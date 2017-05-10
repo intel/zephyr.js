@@ -81,21 +81,6 @@ void curie_pme_set_classifier_mode(PATTERN_MATCHING_CLASSIFICATION_MODE mode);
 // the CAT register, which moves the chain along.
 uint16_t curie_pme_write_vector(uint8_t *pattern_vector, int32_t vector_length);
 
-// raw register access - not recommended.
-uint16_t getNCR(void);
-uint16_t getCOMP(void);
-uint16_t getLCOMP(void);
-uint16_t getIDX_DIST(void);
-uint16_t getCAT(void);
-uint16_t getAIF(void);
-uint16_t getMINIF(void);
-uint16_t getMAXIF(void);
-uint16_t getNID(void);
-uint16_t getGCR(void);
-uint16_t getRSTCHAIN(void);
-uint16_t getNSR(void);
-uint16_t getFORGET_NCOUNT(void);
-
 // base address of the pattern matching accelerator in Intel(r) Curie(tm) and
 // QuarkSE(tm)
 static const uint32_t baseAddress = 0xB0600000L;
@@ -145,4 +130,20 @@ inline void reg_write16(registers_t reg, uint16_t value)
 {
     *reg_address(reg) = value;
 }
+
+// raw register access - not recommended.
+inline uint16_t getNCR(void) { return reg_read16(NCR); }
+inline uint16_t getCOMP(void) { return reg_read16(COMP); }
+inline uint16_t getLCOMP(void) { return reg_read16(LCOMP); }
+inline uint16_t getIDX_DIST(void) { return reg_read16(IDX_DIST); }
+inline uint16_t getCAT(void) { return reg_read16(CAT); }
+inline uint16_t getAIF(void) { return reg_read16(AIF); }
+inline uint16_t getMINIF(void) { return reg_read16(MINIF); }
+inline uint16_t getMAXIF(void) { return reg_read16(MAXIF); }
+inline uint16_t getNID(void) { return reg_read16(NID); }
+inline uint16_t getGCR(void) { return reg_read16(GCR); }
+inline uint16_t getRSTCHAIN(void) { return reg_read16(RSTCHAIN); }
+inline uint16_t getNSR(void) { return reg_read16(NSR); }
+inline uint16_t getFORGET_NCOUNT(void) { return reg_read16(FORGET_NCOUNT); }
+
 #endif
