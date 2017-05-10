@@ -368,7 +368,7 @@ static bool foreach_prop(const jerry_value_t prop_name,
                          const jerry_value_t prop_value,
                          void *data)
 {
-    jerry_value_t func = *((jerry_value_t*)data);
+    jerry_value_t func = *((jerry_value_t *)data);
     if (func == prop_value) {
         // found
         search_list->name = zjs_alloc_from_jstring(prop_name, NULL);
@@ -415,13 +415,9 @@ static char* function_search(jerry_value_t func)
 void zjs_print_error_message(jerry_value_t error, jerry_value_t func)
 {
     const char *uncaught = "Uncaught exception: ";
+    char *func_name = NULL;
 #ifdef ZJS_FIND_FUNC_NAME
     char *func_name = function_search(func);
-    if (!func_name) {
-        func_name = "unknown";
-    }
-#else
-    char *func_name = "unknown";
 #endif
 
     uint32_t size;
@@ -450,11 +446,14 @@ void zjs_print_error_message(jerry_value_t error, jerry_value_t func)
 
     message = zjs_alloc_from_jstring(err_msg, NULL);
 
+    if (func_name) {
+        ERR_PRINT("In function %s:\n", func_name);
+    }
     if (message) {
-        ERR_PRINT("%s%s: %s; thrown by: %s\n", uncaught, name, message, func_name);
+        ERR_PRINT("%s%s: %s\n", uncaught, name, message);
         zjs_free(message);
     } else {
-        ERR_PRINT("%s%s; thrown by: %s\n", uncaught, name, func_name);
+        ERR_PRINT("%s%s\n", uncaught, name);
     }
 }
 
