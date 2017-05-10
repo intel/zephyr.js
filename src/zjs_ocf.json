@@ -1,8 +1,7 @@
 {
-    "module":"ocf",
-    "require":"ocf",
-    "targets":["arduino_101", "frdm_k64f"],
-    "depends":["events", "buffer", "promise", "net_config", "iotivity_constrained"],
+    "module": "ocf",
+    "require": "ocf",
+    "depends": ["events", "buffer", "promise", "net_config", "iotivity_constrained"],
     "src": {
         "client": {
             "src": ["zjs_ocf_client.c"],

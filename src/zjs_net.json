@@ -1,8 +1,7 @@
 {
-    "module":"net",
-    "require":"net",
-    "targets":["arduino_101", "frdm_k64f"],
-    "depends":["buffer", "events", "net_config"],
+    "module": "net",
+    "require": "net",
+    "depends": ["buffer", "events", "net_config"],
     "zephyr_conf": {
         "all": [
             "CONFIG_NETWORKING=y",

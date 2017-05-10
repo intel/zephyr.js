@@ -3,10 +3,6 @@ ccflags-y += ${PROJECTINCLUDE} \
              -I$(src)/../../src \
 
 obj-y = main.o
-obj-y += ../../src/zjs_common.o \
-         ../../src/zjs_ipm.o \
-         ../../src/zjs_i2c_handler.o
-
-obj-$(ZJS_PME) += arc_curie_pme.o
+obj-y += arc_curie_pme.o
 
 ccflags-y += -Wall -Werror

@@ -1,7 +1,6 @@
 {
-    "module":"arduino_101",
-    "targets":["arduino_101"],
-    "src": ["zjs_i2c_ipm_handler.c", "zjs_ipm.c"],
+    "module": "arduino_101",
+    "targets": ["arduino_101"],
     "zephyr_conf": {
         "arduino_101": [
             "CONFIG_MAIN_STACK_SIZE=2048",
@@ -10,12 +9,7 @@
             "CONFIG_FLOAT=y",
             "CONFIG_NANO_TIMERS=y",
             "CONFIG_NANO_TIMEOUTS=y",
-            "CONFIG_RING_BUFFER=y",
-            "CONFIG_IPM=y",
-            "CONFIG_IPM_QUARK_SE=y",
-            "CONFIG_IPM_QUARK_SE_MASTER=y",
-            "CONFIG_IPM_CONSOLE_RECEIVER=y",
-            "CONFIG_ARC_INIT=y"
+            "CONFIG_RING_BUFFER=y"
         ]
     }
 }

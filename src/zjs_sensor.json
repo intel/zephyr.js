@@ -1,6 +1,6 @@
 {
-    "module":"sensor",
-    "targets":["arduino_101"],
+    "module": "sensor",
+    "targets": ["arduino_101"],
     "zjs_config": ["-DBUILD_MODULE_SENSOR"],
     "zephyr_conf": {
         "arc": [

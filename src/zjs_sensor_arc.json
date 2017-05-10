@@ -1,6 +1,6 @@
 {
-    "module":"sensor_arc",
-    "targets":["arc"],
+    "module": "sensor_arc",
+    "targets": ["arc"],
     "zephyr_conf": {
         "arc": [
             "CONFIG_SENSOR=y",

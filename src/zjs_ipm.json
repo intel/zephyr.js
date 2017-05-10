@@ -1,16 +1,14 @@
 {
-    "module":"ipm",
+    "module": "ipm",
+    "targets": ["arduino_101"],
     "zephyr_conf": {
-        "all": [
-            "CONFIG_FILE_SYSTEM=y",
-            "CONFIG_FILE_SYSTEM_FAT=y",
-            "CONFIG_DISK_ACCESS_FLASH=y",
-            "CONFIG_FLASH=y",
-            "CONFIG_SPI=y",
-            "CONFIG_GPIO=y"
-        ],
-        "arduino_101": ["CONFIG_FS_FAT_FLASH_DISK_W25QXXDV=y"]
+        "arduino_101": [
+            "CONFIG_IPM=y",
+            "CONFIG_IPM_QUARK_SE=y",
+            "CONFIG_IPM_QUARK_SE_MASTER=y",
+            "CONFIG_IPM_CONSOLE_RECEIVER=y",
+            "CONFIG_ARC_INIT=y"
+        ]
     },
-    "zjs_config": ["-DBUILD_MODULE_FS"],
-    "src":["zjs_fs.c"]
+    "src":["zjs_ipm.c"]
 }

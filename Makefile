@@ -229,13 +229,8 @@ $(JS):
 analyze: $(JS)
 	@mkdir -p outdir/$(BOARD)/
 	@echo "% This is a generated file" > prj.mdef
-	@echo "# This is a generated file" > src/Makefile
 
 	./scripts/analyze SCRIPT=$(JS) BOARD=$(BOARD) FORCE=$(ASHELL) PRJCONF=prj.conf MAKEFILE=src/Makefile MAKEBASE=src/Makefile.base PROFILE=outdir/$(BOARD)/jerry_feature.profile
-
-	@if [ "$(BOARD)" = "arduino_101" ]; then \
-		./scripts/analyze SCRIPT=$(JS) BOARD=arc PRJCONF=arc/prj.conf MAKEFILE=arc/src/Makefile MAKEBASE=arc/src/Makefile.base; \
-	fi
 
 	@if [ "$(TRACE)" = "on" ] || [ "$(TRACE)" = "full" ]; then \
 		echo "ccflags-y += -DZJS_TRACE_MALLOC" >> src/Makefile; \
@@ -274,18 +269,12 @@ update:
 # set up prj.conf file
 -.PHONY: setup
 setup:
-	@echo "# This is a generated file" >> prj.conf
-	#@cat fragments/prj.conf.base >> prj.conf
-
 ifeq ($(BOARD), qemu_x86)
-ifeq ($(OS), Darwin)
-	@cat fragments/prj.conf.qemu_x86_osx >> prj.conf
-else
-	@cat fragments/prj.conf.qemu_x86 >> prj.conf
+ifneq ($(OS), Darwin)
+	echo "CONFIG_XIP=y" >> prj.conf
 endif
 else
-ifeq ($(ASHELL), y)
-	@cat fragments/prj.conf.ashell >> prj.conf
+ifeq ($(ASHELL), ashell)
 	@cat fragments/prj.mdef.ashell >> prj.mdef
 ifeq ($(filter ide,$(MAKECMDGOALS)),ide)
 	@echo CONFIG_USB_CDC_ACM=n >> prj.conf
@@ -294,8 +283,6 @@ else
 endif
 endif
 ifeq ($(BOARD), arduino_101)
-	#@echo > prj.conf
-	#@cat fragments/prj.conf.arduino_101 >> prj.conf
 ifeq ($(OS), Darwin)
 	# work around for OSX where the xtool toolchain do not
 	# support iamcu instruction set on the Arduino 101
@@ -306,14 +293,7 @@ endif
 	@echo "CONFIG_ROM_SIZE=$(ROM)" >> prj.conf
 	@printf "CONFIG_SS_RESET_VECTOR=0x400%x\n" $$((($(ROM) + 64) * 1024)) >> prj.conf
 endif
-ifeq ($(BOARD), frdm_k64f)
-	@cat fragments/prj.conf.frdm_k64f >> prj.conf
 endif
-endif
-# Append script specific modules to prj.conf
-	@if [ -e prj.conf.tmp ]; then \
-		cat prj.conf.tmp >> prj.conf; \
-	fi
 
 .PHONY: cleanlocal
 cleanlocal:
@@ -390,14 +370,8 @@ qemu: zephyr
 # Builds ARC binary
 .PHONY: arc
 arc: analyze
-	@echo "# This is a generated file" > arc/prj.conf
-	@cat arc/fragments/prj.conf.base >> arc/prj.conf
-	@if [ -e arc/prj.conf.tmp ]; then \
-		cat arc/prj.conf.tmp >> arc/prj.conf; \
-	fi
-	@echo "# This is a generated file" > arc/src/Makefile
-	@cat arc/src/Makefile.base >> arc/src/Makefile
-	@echo "ccflags-y += $(shell ./scripts/analyze.sh $(BOARD) $(JS) $(CONFIG) $(ASHELL))" >> arc/src/Makefile
+	./scripts/analyze SCRIPT=$(JS) BOARD=arc PRJCONF=arc/prj.conf MAKEFILE=arc/src/Makefile MAKEBASE=arc/src/Makefile.base RESTRICT="zjs_ipm_arc.json,zjs_i2c_arc.json,zjs_arc.json"
+
 	@printf "CONFIG_SRAM_SIZE=%d\n" $$((79 - $(RAM))) >> arc/prj.conf
 	@printf "CONFIG_FLASH_BASE_ADDRESS=0x400%x\n" $$((($(ROM) + 64) * 1024)) >> arc/prj.conf
 	@if [ "$(OS)" = "Darwin" ]; then \

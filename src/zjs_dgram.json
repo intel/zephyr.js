@@ -1,8 +1,7 @@
 {
-    "module":"dgram",
-    "require":"dgram",
-    "targets":["arduino_101", "frdm_k64f"],
-    "depends":["buffer", "net_config"],
+    "module": "dgram",
+    "require": "dgram",
+    "depends": ["buffer", "net_config"],
     "zephyr_conf": {
         "all": [
             "CONFIG_NETWORKING=y",

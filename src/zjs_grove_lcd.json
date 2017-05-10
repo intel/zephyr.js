@@ -1,7 +1,7 @@
 {
-    "module":"grove_lcd",
-    "require":"grove_lcd",
-    "targets":["arduino_101"],
+    "module": "grove_lcd",
+    "require": "grove_lcd",
+    "targets": ["arduino_101"],
     "zephyr_conf": {
         "all": [
             "CONFIG_I2C=y",

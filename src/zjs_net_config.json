@@ -1,6 +1,6 @@
 {
-    "module":"net_config",
-    "targets":["arduino_101"],
+    "module": "net_config",
+    "targets": ["arduino_101"],
     "src": ["zjs_net_config.c", "../deps/zephyr/samples/bluetooth/gatt/ipss.c"],
     "zjs_config": ["-I$(ZEPHYR_BASE)/samples/bluetooth"]
 }

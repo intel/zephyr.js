@@ -1,0 +1,11 @@
+{
+    "module": "i2c_arc",
+    "require": "i2c",
+    "depends": ["ipm_arc"],
+    "targets": ["arc"],
+    "zephyr_conf": {
+        "arc": [
+            "CONFIG_I2C=y"
+        ]
+    }
+}

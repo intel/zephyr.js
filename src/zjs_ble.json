@@ -1,8 +1,7 @@
 {
-    "module":"ble",
-    "require":"ble",
-    "targets":["arduino_101"],
-    "depends":["events", "buffer"],
+    "module": "ble",
+    "require": "ble",
+    "depends": ["events", "buffer"],
     "zephyr_conf": {
         "all": [
             "CONFIG_BLUETOOTH=y",

@@ -1,7 +1,7 @@
 {
-    "module":"fs",
-    "require":"fs",
-    "targets":["arduino_101"],
+    "module": "fs",
+    "require": "fs",
+    "targets": ["arduino_101"],
     "zephyr_conf": {
         "all": [
             "CONFIG_FILE_SYSTEM=y",

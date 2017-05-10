@@ -1,6 +1,18 @@
 {
     "module":"frdm_k64f",
     "depends": ["k64f_pins"],
-    "targets":["frdm_k64f"],
-    "src": ["zjs_pinmux.c"]
+    "targets": ["frdm_k64f"],
+    "src": ["zjs_pinmux.c"],
+    "zephyr_conf": {
+        "frdm_k64f": [
+            "CONFIG_MAIN_STACK_SIZE=2048",
+            "CONFIG_STDOUT_CONSOLE=y",
+            "CONFIG_NEWLIB_LIBC=y",
+            "CONFIG_FLOAT=y",
+            "CONFIG_NANO_TIMERS=y",
+            "CONFIG_NANO_TIMEOUTS=y",
+            "CONFIG_RING_BUFFER=y",
+            "CONFIG_PINMUX_MCUX_PORTD=y"
+        ]
+    }
 }

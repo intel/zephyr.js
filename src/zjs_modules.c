@@ -264,9 +264,11 @@ static ZJS_DECL_FUNC(native_print_handler)
 
 static ZJS_DECL_FUNC(stop_js_handler)
 {
-    #ifdef CONFIG_BOARD_ARDUINO_101
+#ifdef CONFIG_BOARD_ARDUINO_101
+#ifdef CONFIG_IPM
     zjs_ipm_free_callbacks();
-    #endif
+#endif
+#endif
     zjs_modules_cleanup();
     jerry_cleanup();
     return ZJS_UNDEFINED;

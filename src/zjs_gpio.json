@@ -1,9 +1,8 @@
 {
-    "module":"gpio",
-    "require":"gpio",
-    "targets":["arduino_101"],
+    "module": "gpio",
+    "require": "gpio",
     "zephyr_conf": {
-        "all":["CONFIG_GPIO=y"]
+        "all": ["CONFIG_GPIO=y"]
     },
     "zjs_config": ["-DBUILD_MODULE_GPIO"],
     "src": ["zjs_gpio.c"]

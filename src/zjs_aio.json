@@ -1,9 +1,10 @@
 {
-    "module":"aio",
-    "require":"aio",
-    "targets":["arduino_101"],
+    "module": "aio",
+    "require": "aio",
+    "depends": ["ipm"],
+    "targets": ["arduino_101"],
     "zephyr_conf": {
-        "all":["CONFIG_ADC=y"]
+        "all": ["CONFIG_ADC=y"]
     },
     "zjs_config": ["-DBUILD_MODULE_AIO"],
     "src": ["zjs_aio.c"]

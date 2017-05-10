@@ -1,8 +1,7 @@
 {
-    "module":"websockets",
-    "require":"ws",
-    "depends":["buffer", "events", "net_config"],
-    "targets":["arduino_101", "frdm_k64f"],
+    "module": "websockets",
+    "require": "ws",
+    "depends": ["buffer", "events", "net_config"],
     "zephyr_conf": {
         "all": [
             "CONFIG_NETWORKING=y",

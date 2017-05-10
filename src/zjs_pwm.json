@@ -1,9 +1,9 @@
 {
-    "module":"pwm",
-    "require":"pwm",
-    "targets":["arduino_101"],
+    "module": "pwm",
+    "require": "pwm",
+    "targets": ["arduino_101"],
     "zephyr_conf": {
-        "all":["CONFIG_PWM=y", "CONFIG_PWM_QMSI_NUM_PORTS=4"]
+        "all": ["CONFIG_PWM=y", "CONFIG_PWM_QMSI_NUM_PORTS=4"]
     },
     "zjs_config": ["-DBUILD_MODULE_PWM"],
     "src": ["zjs_pwm.c"]

@@ -1,4 +1,18 @@
 {
-    "module":"arc",
-    "targets":["arc"]
+    "module": "arc",
+    "targets": ["arc"],
+    "zephyr_conf": {
+        "arc": [
+            "CONFIG_STDOUT_CONSOLE=y",
+            "CONFIG_PRINTK=y",
+            "CONFIG_CONSOLE=y",
+            "CONFIG_SERIAL=n",
+            "CONFIG_NS16550=n",
+            "CONFIG_NANO_TIMEOUTS=y",
+            "CONFIG_IPM=y",
+            "CONFIG_IPM_QUARK_SE=y",
+            "CONFIG_IPM_CONSOLE_SENDER=y"
+        ]
+    },
+    "src": ["../../src/zjs_common.c", "../../src/zjs_ipm.c", "../../src/zjs_i2c_handler.c"]
 }

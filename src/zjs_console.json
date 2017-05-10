@@ -1,6 +1,5 @@
 {
-    "module":"console",
-    "targets":["arduino_101", "frdm_k64f"],
+    "module": "console",
     "zjs_config": ["-DBUILD_MODULE_CONSOLE"],
-    "src":["zjs_console.c"]
+    "src": ["zjs_console.c"]
 }

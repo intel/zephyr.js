@@ -25,12 +25,6 @@ zjs_conf = []
 jrs_conf = []
 lsrc = []
 
-dependencies = []
-zephyr_config = []
-src_list = []
-zjs_config = []
-jrs_config = []
-
 def merge_lists(l1, l2):
     if l1 != None:
         if l2 != None:
@@ -38,35 +32,48 @@ def merge_lists(l1, l2):
                 if i not in l1:
                     l1.append(i)
 
-def build_tree(tree):
-    for file in os.listdir("src/"):
+def parse_list(tree, list):
+    for file in list:
         if file.endswith(".json"):
+            print("opening " + file)
             with open("src/" + file) as f:
                 data = json.load(f)
             # Index the entry by the require name, if exists
             if 'require' in data:
-                tree[data['require']] = data
+                # if the require name exists, index by module
+                # this is done due to some targets needing a restricted set of
+                # .json files (ARC). When this subset of files is looked at
+                # against the JS file, the require's still need to be parsed
+                # correctly so we have to add a second entry in the tree that
+                # is specific to this target (ARC).
+                if data['require'] in tree:
+                    tree[data['module']] = data
+                else:
+                    tree[data['require']] = data
             # else index by the module name
             elif 'module' in data:
                 tree[data['module']] = data
             else:
                 print("Error: JSON entry %s must have either 'module' or 'require'" % file)
 
+def build_tree(tree, restrict):
+    if restrict == []:
+        parse_list(tree, os.listdir("src/"))
+    else:
+        parse_list(tree, restrict)
+
 def gather_deps_helper(js, dep, dlist, zlist, zjslist, jrslist, srclist, tree):
     print("dep=" + dep)
     if dep in tree:
         print("looking at dep: " + dep)
         entry = tree[dep]
-        if 'depends' in entry:
-            for i in entry['depends']:
-                print("gathering deps for " + i)
-                if i not in dlist:
-                    dlist.append(i)
-                #merge_lists(list, i)
-                gather_deps_helper(js, i, list, zlist, zjslist, jrslist, srclist, tree)
-        if 'targets' in entry:
-            if args['BOARD'] not in entry['targets']:
-                return
+        if args['BOARD'] not in entry.get('targets', []):
+            return
+        for i in entry.get('depends', []):
+            print("gathering deps for " + i)
+            if i not in dlist:
+                dlist.append(i)
+            gather_deps_helper(js, i, list, zlist, zjslist, jrslist, srclist, tree)
         if 'src' in entry:
             print("looking at src for " + dep)
             src = entry['src']
@@ -155,7 +162,11 @@ def write_zconf(list, file):
         for i in list:
             f.write(i + '\n')
 
-build_tree(json_tree)
+restrict = args.get('RESTRICT', [])
+if restrict != []:
+    restrict = restrict.split(',')
+
+build_tree(json_tree, restrict)
 gather_deps(args['SCRIPT'], deps_list, zconf, zjs_conf, jrs_conf, lsrc, json_tree)
 
 print("DEPENDENCIES: " + str(deps_list))

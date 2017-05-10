@@ -1,7 +1,6 @@
 {
-    "module":"test_callbacks",
-    "require":"test_callbacks",
-    "targets":["arduino_101", "frdm_k64f"],
+    "module": "test_callbacks",
+    "require": "test_callbacks",
     "zjs_config": ["-DBUILD_MODULE_TEST_CALLBACKS"],
     "src": ["zjs_test_callbacks.c"]
 }

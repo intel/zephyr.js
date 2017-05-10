@@ -1,6 +1,5 @@
 {
-    "module":"iotivity_constrained",
-    "targets":["arduino_101", "frdm_k64f"],
+    "module": "iotivity_constrained",
     "src": [
          "../deps/iotivity-constrained/deps/tinycbor/src/cborencoder_close_container_checked.c",
          "../deps/iotivity-constrained/deps/tinycbor/src/cborencoder.c",

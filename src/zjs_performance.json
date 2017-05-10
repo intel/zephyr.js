@@ -1,7 +1,6 @@
 {
-    "module":"performance",
-    "require":"performance",
-    "targets":["arduino_101", "frdm_k64f"],
+    "module": "performance",
+    "require": "performance",
     "src": ["zjs_performance.c"],
     "zjs_config": ["-DBUILD_MODULE_PERFORMANCE"]
 }

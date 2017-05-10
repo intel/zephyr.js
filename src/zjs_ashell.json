@@ -1,7 +1,7 @@
 {
-    "module":"ashell",
+    "module": "ashell",
     "depends": ["aio", "arduino101_pins", "ble", "console", "gpio", "grove_lcd", "i2c", "performance", "pwm", "uart", "fs"],
-    "targets":["arduino_101"],
+    "targets": ["arduino_101"],
     "src": ["ashell/"],
     "zephyr_conf": {
         "arduino_101": [
