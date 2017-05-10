@@ -417,7 +417,7 @@ void zjs_print_error_message(jerry_value_t error, jerry_value_t func)
     const char *uncaught = "Uncaught exception: ";
     char *func_name = NULL;
 #ifdef ZJS_FIND_FUNC_NAME
-    char *func_name = function_search(func);
+    func_name = function_search(func);
 #endif
 
     uint32_t size;
