@@ -1,5 +1,5 @@
 ZJS API for Pattern Matching Engine (PME)
-=======================================
+=========================================
 
 * [Introduction](#introduction)
 * [Web IDL](#web-idl)
@@ -8,12 +8,12 @@ ZJS API for Pattern Matching Engine (PME)
 
 Introduction
 ------------
-The Pattern Matching Engine API is the JavaScript version of the is a parallel data recognition engine with the following features:
+The Pattern Matching Engine API is the JavaScript version of the parallel data recognition engine with the following features:
 
- - 128 parallel Processing Elements (PE) each with"
- - 128 byte input vector
- - 128 byte model memory
- - 8-Bit Arithmetic Units
+ - 128 parallel Processing Elements (PE) each with
+     - 128 byte input vector
+     - 128 byte model memory
+     - 8-Bit Arithmetic Units
  - Two distance evaluation norms with 16-bit resolution:
     - L1 norm (Manhattan Distance)
     - Lsup (Supremum) norm (Chebyshev Distance)
@@ -45,8 +45,8 @@ interface PME {
               unsigned short distanceMode,
               unsigned short minInfluence,
               unsigned short maxInfluence);
-    learn(unsigned char[] pattern, unsigned long category);
-    unsigned long classify(unsigned char[] pattern);
+    learn(number[] pattern, unsigned long category);
+    unsigned long classify(number[] pattern);
     Neuron readNeuron(unsigned long id);
     writeVector(unsigned char[] pattern);
     unsigned short getCommittedCount();
@@ -123,9 +123,9 @@ The `maxInfluence` is the maximum influence value used on the neuron.
 
 `void learn(unsigned char[] pattern, unsigned long category);`
 
-Takes a array of pattern in bytes, and commits it to the network as training data for a given category.
+Takes a pattern and commits it to the network as training data for a given category.
 
-The `pattern` is an array of pattern in bytes, up to 128 bytes in length.
+The `pattern` is an array of bytes, up to 128 bytes in length.
 The `category` indicates to the PME which category this training vector belongs to, that is, if a future input has a sufficiently similar pattern, it will be classified as the same category passed with this pattern.
 
 ### PME.classify
@@ -134,7 +134,7 @@ The `category` indicates to the PME which category this training vector belongs 
 
 Takes a pattern and uses the committed neurons in the network to classify the pattern.
 
-The `pattern` is an array of pattern in bytes, up to 128 bytes in length.
+The `pattern` is an array of bytes, up to 128 bytes in length.
 
 Returns `PME.NO_MATCH` if the input data did not match any of the trained categories. Otherwise, the trained category assigned by the network will be returned.
 
@@ -152,9 +152,9 @@ Returns the `Neuron` object in which to write the neuron data.
 
 `void writeVector(unsigned char[] pattern);`
 
-(Should only be used in KNN_MODE) Takes a pattern and uses the committed neurons in the network to classify the pattern.
+(Should only be used in KNN_MODE.) Takes a pattern and uses the committed neurons in the network to classify the pattern.
 
-The `pattern` is an array of pattern in bytes, up to 128 bytes in length.
+The `pattern` is an array of bytes, up to 128 bytes in length.
 
 ### PME.getCommittedCount
 
@@ -194,7 +194,7 @@ Returns the contents of the Neuron Context Register (a value between 0-127).
 
 Writes a value to the Neuron Context Register.
 
-The `context` is valid context value range between 1-127. A context value of 0 enables all neurons, with no regard to their context
+The `context` is valid context value range between 1-127. A context value of 0 enables all neurons, with no regard to their context.
 
 ### PME.getClassifierMode
 
