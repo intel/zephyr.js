@@ -54,7 +54,7 @@ ihex_bool_t ihex_data_read(struct ihex_state *ihex,
 
     if (checksum_error) {
         upload_state = UPLOAD_ERROR;
-        comms_print("[ERR] Checksum_error", true);
+        comms_print("[ERR] Checksum_error\r\n");
         return false;
     };
 
@@ -96,8 +96,8 @@ uint32_t ihex_process_init()
 {
     upload_state = UPLOAD_START;
     printk("[READY]\n");
-    comms_print("\n", false);
-    comms_print("[RDY]\n", false);
+    comms_print("\n");
+    comms_print("[RDY]\n");
 
     ihex_begin_read(&ihex);
     zfile = fs_open_alloc(TEMPORAL_FILENAME, "w+");
@@ -162,7 +162,7 @@ uint32_t ihex_process_finish()
 
     fs_close(zfile);
     ihex_end_read(&ihex);
-    comms_print("[EOF]\n", false);
+    comms_print("[EOF]\n");
 
 #ifdef CONFIG_IHEX_UPLOADER_DEBUG
     printf("Saved file '%s'\n", TEMPORAL_FILENAME);

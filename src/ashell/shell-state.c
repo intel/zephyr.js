@@ -41,24 +41,24 @@ static struct shell_state_config shell = {
     .state_flags = kShellTransferRaw
 };
 
-const char ERROR_NOT_ENOUGH_ARGUMENTS[] = "Not enough arguments";
-const char ERROR_FILE_NOT_FOUND[] = "File not found";
+const char ERROR_NOT_ENOUGH_ARGUMENTS[] = "Not enough arguments\r\n";
+const char ERROR_FILE_NOT_FOUND[] = "File not found\r\n";
 
 const char MSG_FILE_SAVED[] =
      ANSI_FG_GREEN "Saving file. " ANSI_FG_RESTORE
-     "run the 'run' command to see the result";
+     "run the 'run' command to see the result\r\n";
 
-const char MSG_FILE_ABORTED[] = ANSI_FG_RED "Aborted!";
-const char MSG_EXIT[] = ANSI_FG_GREEN "Back to shell!";
+const char MSG_FILE_ABORTED[] = ANSI_FG_RED "Aborted!\r\n";
+const char MSG_EXIT[] = ANSI_FG_GREEN "Back to shell!\r\n";
 
 const char READY_FOR_RAW_DATA[] =
     "Ready for JavaScript. \r\n" \
     "\tCtrl+Z to finish transfer.\r\n" \
-    "\tCtrl+X to cancel.";
+    "\tCtrl+X to cancel.\r\n";
 
 const char MSG_IMMEDIATE_MODE[] =
     "Ready to evaluate JavaScript.\r\n" \
-    "\tCtrl+D to return to shell.";
+    "\tCtrl+D to return to shell.\r\n";
 
 const char hex_prompt[] = "[HEX]\r\n";
 const char raw_prompt[] = ANSI_FG_YELLOW "RAW> " ANSI_FG_RESTORE;
@@ -89,7 +89,7 @@ int32_t ashell_get_filename_buffer(const char *buf, char *destination)
 
     if (arg_len == 0) {
         *destination = '\0';
-        comms_print(ERROR_NOT_ENOUGH_ARGUMENTS, true);
+        comms_print(ERROR_NOT_ENOUGH_ARGUMENTS);
         return RET_ERROR;
     }
 
@@ -130,7 +130,7 @@ int32_t ashell_disk_usage(char *buf)
 
     fs_file_t *file = fs_open_alloc(filename, "r");
     if (file == NULL) {
-        comms_print(ERROR_FILE_NOT_FOUND, true);
+        comms_print(ERROR_FILE_NOT_FOUND);
         return RET_ERROR;
     }
 
@@ -158,7 +158,7 @@ int32_t ashell_rename(char *buf)
     char *next = ashell_get_token_arg(buf);
 
     if (next == NULL) {
-        comms_print(ERROR_NOT_ENOUGH_ARGUMENTS, true);
+        comms_print(ERROR_NOT_ENOUGH_ARGUMENTS);
         return RET_ERROR;
     }
 
@@ -204,8 +204,8 @@ int32_t ashell_list_dir(char *buf)
     static struct fs_dirent entry;
     int32_t res;
     fs_dir_t dp;
-
     *filename = '\0';
+
     if (ashell_get_filename_buffer(buf, filename) > 0) {
         /* Check if file or directory */
         if (!fs_stat(filename, &entry)) {
@@ -248,7 +248,7 @@ int32_t ashell_list_dir(char *buf)
             int filesizeStrLen = snprintf(filesizeStr, 16, "%d", (int)entry.size);
             comms_write_buf(filesizeStr, filesizeStrLen);
             comms_write_buf("\t", 1);
-            comms_print(entry.name, false);
+            comms_print(entry.name);
             comms_write_buf("\r\n", 2);
         }
     }
@@ -272,13 +272,13 @@ int32_t ashell_print_file(char *buf)
 
     /* Error getting an id for our data storage */
     if (!file) {
-        comms_print(ERROR_FILE_NOT_FOUND, true);
+        comms_print(ERROR_FILE_NOT_FOUND);
         return RET_ERROR;
     }
 
     ssize_t size = fs_size(file);
     if (size == 0) {
-        comms_print("Empty file", true);
+        comms_print("Empty file\r\n");
         fs_close_alloc(file);
         return RET_OK;
     }
@@ -329,7 +329,7 @@ int32_t ashell_run_javascript(char *buf)
         return RET_ERROR;
     }
     if (shell.state_flags & kShellTransferIhex) {
-        comms_print("[RUN]\n", false);
+        comms_print("[RUN]\n");
     }
     javascript_run_code(filename);
     return RET_OK;
@@ -370,7 +370,7 @@ int32_t ashell_eval_javascript(const char *buf, uint32_t len)
             case ASCII_SUBSTITUTE:
             case ASCII_END_OF_TEXT:
             case ASCII_CANCEL:
-                comms_print(MSG_EXIT, true);
+                comms_print(MSG_EXIT);
                 shell.state_flags &= ~kShellEvalJavascript;
                 comms_set_prompt(NULL);
                 return RET_OK;
@@ -393,7 +393,7 @@ int32_t ashell_raw_capture(const char *buf, uint32_t len)
             switch (byte) {
             case ASCII_END_OF_TRANS:
             case ASCII_SUBSTITUTE:
-                comms_print(MSG_FILE_SAVED, true);
+                comms_print(MSG_FILE_SAVED);
                 shell.state_flags &= ~kShellCaptureRaw;
                 comms_set_prompt(NULL);
                 ashell_close_capture();
@@ -401,14 +401,14 @@ int32_t ashell_raw_capture(const char *buf, uint32_t len)
                 break;
             case ASCII_END_OF_TEXT:
             case ASCII_CANCEL:
-                comms_print(MSG_FILE_ABORTED, true);
+                comms_print(MSG_FILE_ABORTED);
                 shell.state_flags &= ~kShellCaptureRaw;
                 comms_set_prompt(NULL);
                 ashell_discard_capture();
                 return RET_OK;
             case ASCII_CR:
             case ASCII_IF:
-                comms_print("", true);
+                comms_print("\r\n");
                 break;
             default:
                 comms_write_buf(buf, 1);
@@ -454,9 +454,9 @@ int32_t ashell_read_data(char *buf)
                 return RET_ERROR;
             }
 
-            comms_print(ANSI_CLEAR, true);
+            comms_print(ANSI_CLEAR);
             comms_printf("Saving to '%s'\r\n", filename);
-            comms_print(READY_FOR_RAW_DATA, true);
+            comms_print(READY_FOR_RAW_DATA);
             comms_set_prompt(raw_prompt);
             shell.state_flags |= kShellCaptureRaw;
             ashell_start_raw_capture(filename);
@@ -468,8 +468,8 @@ int32_t ashell_read_data(char *buf)
 int32_t ashell_js_immediate_mode(char *buf)
 {
     shell.state_flags |= kShellEvalJavascript;
-    comms_print(ANSI_CLEAR, false);
-    comms_print(MSG_IMMEDIATE_MODE, true);
+    comms_print(ANSI_CLEAR);
+    comms_print(MSG_IMMEDIATE_MODE);
     comms_set_prompt(eval_prompt);
     return RET_OK;
 }
@@ -478,11 +478,11 @@ int32_t ashell_set_transfer_state(char *buf)
 {
     char *next;
     if (buf == 0) {
-        comms_print(ERROR_NOT_ENOUGH_ARGUMENTS, true);
+        comms_print(ERROR_NOT_ENOUGH_ARGUMENTS);
         return RET_ERROR;
     }
     next = ashell_get_token_arg(buf);
-    comms_print(buf, true);
+    comms_print(buf);
 
     if (!strcmp("raw", buf)) {
         comms_set_prompt(NULL);
@@ -503,7 +503,7 @@ int32_t ashell_set_transfer_state(char *buf)
 int32_t ashell_set_state(char *buf)
 {
     if (buf == 0) {
-        comms_print(ERROR_NOT_ENOUGH_ARGUMENTS, true);
+        comms_print(ERROR_NOT_ENOUGH_ARGUMENTS);
         return RET_ERROR;
     }
 
@@ -518,7 +518,7 @@ int32_t ashell_set_state(char *buf)
 int32_t ashell_get_state(char *buf)
 {
     if (buf == 0) {
-        comms_print(ERROR_NOT_ENOUGH_ARGUMENTS, true);
+        comms_print(ERROR_NOT_ENOUGH_ARGUMENTS);
         return RET_ERROR;
     }
 
@@ -527,10 +527,10 @@ int32_t ashell_get_state(char *buf)
         DBG("Flags %lu\n", shell.state_flags);
 
         if (shell.state_flags & kShellTransferRaw)
-            comms_print("Raw", true);
+            comms_print("Raw\r\n");
 
         if (shell.state_flags & kShellTransferIhex)
-            comms_print("Ihex", true);
+            comms_print("Ihex\r\n");
 
         return RET_OK;
     }
@@ -539,13 +539,13 @@ int32_t ashell_get_state(char *buf)
 
 int32_t ashell_at(char *buf)
 {
-    comms_print("OK\r\n", true);
+    comms_print("OK\r\n\r\n");
     return RET_OK;
 }
 
 int32_t ashell_clear(char *buf)
 {
-    comms_print(ANSI_CLEAR, false);
+    comms_print(ANSI_CLEAR);
     return RET_OK;
 }
 
@@ -578,20 +578,20 @@ int32_t ashell_check_control(const char *buf, uint32_t len)
 int32_t ashell_set_bootcfg(char *buf)
 {
     if (!fs_exist(buf)) {
-        comms_print("File passed to cfg doesn't exist\n", true);
+        comms_print("File passed to cfg doesn't exist\n\r\n");
         return RET_ERROR;
     }
 
     fs_file_t *file = fs_open_alloc("boot.cfg", "w+");
     if (!file) {
-        comms_print("Failed to create boot.cfg file", true);
+        comms_print("Failed to create boot.cfg file\r\n");
         return RET_ERROR;
     }
 
     ssize_t written = fs_write(file, BUILD_TIMESTAMP, strlen(BUILD_TIMESTAMP));
     written += fs_write(file, buf, strlen(buf));
     if (written <= 0) {
-        comms_print("Failed to write boot.cfg file", true);
+        comms_print("Failed to write boot.cfg file\r\n");
     }
 
     fs_close_alloc(file);
@@ -631,12 +631,13 @@ static const struct ashell_cmd commands[] =
 
 int32_t ashell_help(char *buf)
 {
-    comms_print("'A Shell' bash\r\n", true);
-    comms_print("Commands list:", true);
+    comms_print("'A Shell' bash\r\n\r\n");
+    comms_print("Commands list:\r\n");
     for (uint32_t t = 0; t < ASHELL_COMMANDS_COUNT; t++) {
-        comms_print(commands[t].cmd_name, false);
+        comms_print(commands[t].cmd_name);
         comms_write_buf("\t", 1);
-        comms_print(commands[t].syntax, true);
+        comms_print(commands[t].syntax);
+        comms_write_buf("\r\n", 2);
     }
     return RET_OK;
 }
@@ -712,7 +713,7 @@ int32_t ashell_main_state(char *buf, uint32_t len)
 
     /* Begin command */
     if (shell.state_flags & kShellTransferIhex) {
-        comms_print("[BCMD]\n", false);
+        comms_print("[BCMD]\n");
     }
 
     for (uint8_t t = 0; t < ASHELL_COMMANDS_COUNT; t++) {
@@ -720,7 +721,7 @@ int32_t ashell_main_state(char *buf, uint32_t len)
             int32_t res = commands[t].cb(next);
             /* End command */
             if (shell.state_flags & kShellTransferIhex) {
-                comms_print("[ECMD]\n", false);
+                comms_print("[ECMD]\n");
             }
             return res;
         }
@@ -728,10 +729,10 @@ int32_t ashell_main_state(char *buf, uint32_t len)
 
     /* Shell didn't recognize the command */
     if (shell.state_flags & kShellTransferIhex) {
-        comms_print("[ERRCMD]\n", false);
+        comms_print("[ERRCMD]\n");
     } else {
         comms_printf("%s: command not found. \r\n", buf);
-        comms_print("Type 'help' for available commands.", true);
+        comms_print("Type 'help' for available commands.\r\n");
     }
     return RET_UNKNOWN;
 }

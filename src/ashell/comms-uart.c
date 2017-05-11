@@ -309,12 +309,9 @@ void comms_write_buf(const char *buf, int len)
     while (data_transmitted == false);
     uart_irq_tx_disable(dev_upload);
 }
-void comms_print(const char *buf, bool newline)
+void comms_print(const char *buf)
 {
     comms_write_buf(buf, strnlen(buf, MAX_LINE_LEN));
-
-    if (newline)
-        comms_write_buf("\r\n", 2);
 }
 
 /**
@@ -378,7 +375,7 @@ void comms_runner_init()
     setbuf(stdout, NULL);
 
     ashell_help("");
-    comms_print(comms_get_prompt(), false);
+    comms_print(comms_get_prompt());
     process_state = 0;
 
     atomic_set(&uart_state, UART_INIT);

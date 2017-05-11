@@ -57,23 +57,23 @@ static bool echo_mode = true;
 static inline void cursor_forward(unsigned int count)
 {
     for (int t = 0; t < count; t++)
-        comms_print("\x1b[1C", false);
+        comms_print("\x1b[1C");
 }
 
 static inline void cursor_backward(unsigned int count)
 {
     for (int t = 0; t < count; t++)
-        comms_print("\x1b[1D", false);
+        comms_print("\x1b[1D");
 }
 
 static inline void cursor_save(void)
 {
-    comms_print("\x1b[s", false);
+    comms_print("\x1b[s");
 }
 
 static inline void cursor_restore(void)
 {
-    comms_print("\x1b[u", false);
+    comms_print("\x1b[u");
 }
 
 static void insert_char(char *pos, char c, uint8_t end)
@@ -107,13 +107,11 @@ static void insert_char(char *pos, char c, uint8_t end)
 
 static void del_char(char *pos, uint8_t end)
 {
-    char bs = '\b';
-    char space = ' ';
-    comms_write_buf(&bs, 1);
+    comms_write_buf("\b", 1);
 
     if (end == 0) {
-        comms_write_buf(&space, 1);
-        comms_write_buf(&bs, 1);
+        comms_write_buf(" ", 1);
+        comms_write_buf("\b", 1);
         return;
     }
 
@@ -124,7 +122,7 @@ static void del_char(char *pos, uint8_t end)
         comms_write_buf((pos++), 1);
     }
 
-    comms_write_buf(&space, 1);
+    comms_write_buf(" ", 1);
 
     /* Move cursor back to right place */
     cursor_restore();
@@ -402,14 +400,13 @@ void ashell_process_line(const char *buf, uint32_t len)
 #else
     printk("\n%s", system_get_prompt());
 #endif
-    comms_print(comms_get_prompt(), false);
+    comms_print(comms_get_prompt());
 }
 
 uint32_t ashell_process_data(const char *buf, uint32_t len)
 {
     uint32_t processed = 0;
     bool flush_line = false;
-    char tab = '\t';
     if (shell_line == NULL) {
         DBG("[Process]%d\n", (int)len);
         DBG("[%s]\n", buf);
@@ -470,7 +467,7 @@ uint32_t ashell_process_data(const char *buf, uint32_t len)
                 flush_line = true;
                 break;
             case ASCII_TAB:
-                comms_write_buf(&tab, 1);
+                comms_write_buf("\t", 1);
                 break;
             case ASCII_IF:
                 flush_line = true;
