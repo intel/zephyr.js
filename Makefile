@@ -54,6 +54,7 @@ JS ?= samples/HelloWorld.js
 VARIANT ?= release
 DEVICE_NAME ?= "ZJS Device"
 BLE_ADDR ?= "none"
+FUNC_NAME ?= off
 # JerryScript options
 JERRY_BASE ?= $(ZJS_BASE)/deps/jerryscript
 EXT_JERRY_FLAGS ?=	-DENABLE_ALL_IN_ONE=ON \
@@ -74,6 +75,10 @@ SNAPSHOT ?= on
 ifeq ($(SNAPSHOT), on)
 EXT_JERRY_FLAGS += -DFEATURE_JS_PARSER=OFF
 endif
+endif
+
+ifeq ($(FUNC_NAME), on)
+ZJS_FLAGS += " -DZJS_FIND_FUNC_NAME"
 endif
 
 # Settings for ashell builds

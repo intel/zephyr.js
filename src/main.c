@@ -160,7 +160,7 @@ int main(int argc, char *argv[])
     code_eval = jerry_parse((jerry_char_t *)script, len, false);
     if (jerry_value_has_error_flag(code_eval)) {
         ERR_PRINT("Error parsing javascript\n");
-        zjs_print_error_message(code_eval);
+        zjs_print_error_message(code_eval, ZJS_UNDEFINED);
         goto error;
     }
 #endif
@@ -179,7 +179,7 @@ int main(int argc, char *argv[])
 
     if (jerry_value_has_error_flag(result)) {
         ERR_PRINT("Error running javascript\n");
-        zjs_print_error_message(result);
+        zjs_print_error_message(result, ZJS_UNDEFINED);
         goto error;
     }
 

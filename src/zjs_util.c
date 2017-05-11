@@ -349,12 +349,76 @@ uint32_t zjs_uncompress_16_to_32(uint16_t num)
     return uncompressed << (21 - zeroes);
 }
 
+#ifdef ZJS_FIND_FUNC_NAME
+typedef struct name_element {
+    jerry_value_t obj;
+    struct name_element *next;
+} name_element_t;
+
+typedef struct head_element {
+    name_element_t *head;
+    char *name;
+} head_element_t;
+
+static head_element_t *search_list = NULL;
+
+static void search_helper(jerry_value_t obj, jerry_value_t func);
+
+static bool foreach_prop(const jerry_value_t prop_name,
+                         const jerry_value_t prop_value,
+                         void *data)
+{
+    jerry_value_t func = *((jerry_value_t *)data);
+    if (func == prop_value) {
+        // found
+        search_list->name = zjs_alloc_from_jstring(prop_name, NULL);
+        return false;
+    }
+    // continue searching
+    if (jerry_value_is_object(prop_value)) {
+        // check for duplicate/circular references
+        if (ZJS_LIST_FIND(name_element_t, search_list->head, obj, prop_value)) {
+            // duplicate/circular reference found
+            return true;
+        }
+        name_element_t *new = zjs_malloc(sizeof(name_element_t));
+        new->obj = prop_value;
+        ZJS_LIST_PREPEND(name_element_t, search_list->head, new);
+        search_helper(prop_value, func);
+    }
+    return true;
+}
+
+static void search_helper(jerry_value_t obj, jerry_value_t func)
+{
+    jerry_foreach_object_property(obj, foreach_prop, (void *)&func);
+}
+
+static char *function_search(jerry_value_t func)
+{
+    search_list = zjs_malloc(sizeof(head_element_t));
+    search_list->head = NULL;
+    search_list->name = NULL;
+
+    ZVAL global_obj = jerry_get_global_object();
+    search_helper(global_obj, func);
+    char *tmp = search_list->name;
+    ZJS_LIST_FREE(name_element_t, search_list->head, zjs_free);
+    zjs_free(search_list);
+    return tmp;
+}
+#endif
+
 #define MAX_ERROR_NAME_LENGTH       32
 #define MAX_ERROR_MESSAGE_LENGTH    128
 
-void zjs_print_error_message(jerry_value_t error)
+void zjs_print_error_message(jerry_value_t error, jerry_value_t func)
 {
     const char *uncaught = "Uncaught exception: ";
+    char *func_name = NULL;
+#ifdef ZJS_FIND_FUNC_NAME
+    func_name = function_search(func);
+#endif
 
     uint32_t size;
     char *message = NULL;
@@ -382,6 +446,9 @@ void zjs_print_error_message(jerry_value_t error)
 
     message = zjs_alloc_from_jstring(err_msg, NULL);
 
+    if (func_name) {
+        ERR_PRINT("In function %s:\n", func_name);
+    }
     if (message) {
         ERR_PRINT("%s%s: %s\n", uncaught, name, message);
         zjs_free(message);
