@@ -84,14 +84,15 @@ obj-$(ZJS_SENSOR) += zjs_sensor.o
 
 # skip for now for frdm_k64f
 ifeq ($(BOARD), arduino_101)
-	obj-$(ZJS_AIO) += zjs_aio.o
-	obj-$(ZJS_GROVE_LCD) += zjs_grove_lcd_ipm.o
-	obj-$(ZJS_I2C) += zjs_i2c.o \
-                      zjs_i2c_ipm_handler.o
+obj-$(ZJS_AIO) += zjs_aio.o
+obj-$(ZJS_GROVE_LCD) += zjs_grove_lcd_ipm.o
+obj-$(ZJS_I2C) += zjs_i2c.o \
+                  zjs_i2c_ipm_handler.o
+obj-$(ZJS_PME) += zjs_pme.o
 else
-	obj-$(ZJS_GROVE_LCD) += zjs_grove_lcd.o
-	obj-$(ZJS_I2C) += zjs_i2c.o \
-                      zjs_i2c_handler.o
+obj-$(ZJS_GROVE_LCD) += zjs_grove_lcd.o
+obj-$(ZJS_I2C) += zjs_i2c.o \
+                  zjs_i2c_handler.o
 endif
 
 obj-$(CONFIG_BOARD_ARDUINO_101) += \

@@ -395,8 +395,10 @@ arc: analyze
 	@printf "CONFIG_SRAM_SIZE=%d\n" $$((79 - $(RAM))) >> arc/prj.conf
 	@printf "CONFIG_FLASH_BASE_ADDRESS=0x400%x\n" $$((($(ROM) + 64) * 1024)) >> arc/prj.conf
 	@if [ "$(OS)" = "Darwin" ]; then \
+		sed -i.bu '/This is a generated file/r./zjs.conf.tmp' arc/src/Makefile; \
 		cd arc; make BOARD=arduino_101_sss CROSS_COMPILE=$(ARC_CROSS_COMPILE); \
 	else \
+		sed -i '/This is a generated file/r./zjs.conf.tmp' arc/src/Makefile; \
 		cd arc; make BOARD=arduino_101_sss; \
 	fi
 ifeq ($(BOARD), arduino_101)
