@@ -17,9 +17,9 @@ var pins = require('arduino101_pins');
 
 // set up the GPIO pins
 var sensor = aio.open({device: 0, pin: pins.A0});
-var led1 = gpio.open("LED0");//4);
-var led2 = gpio.open("LED1");//7);
-var led3 = gpio.open("LED2");//8);
+var led1 = gpio.open(4);
+var led2 = gpio.open(7);
+var led3 = gpio.open(8);
 
 var baselineTemp = 20.0;
 

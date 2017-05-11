@@ -33,7 +33,7 @@ dictionary GPIOInit {
     boolean activeLow = false;
     string mode = "out";        // in, out
     string edge = "none";       // none, rising, falling, any
-    string pull = "state";      // none, up, down
+    string state = "none";      // none, up, down
 };
 
 [NoInterfaceObject]

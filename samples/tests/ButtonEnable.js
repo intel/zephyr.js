@@ -11,15 +11,15 @@
 // it doesn't work the other way and I haven't figured out why yet. It may
 // relate to IO5 being connected to both the X86 and ARC processors.
 
-console.log("Button enable test...");
+console.log('Button enable test...');
 
 // import gpio module
-var gpio = require("gpio");
+var gpio = require('gpio');
 
-var led1 = gpio.open({pin: "LED1", activeLow: true});
-var led2 = gpio.open({pin: "LED2", activeLow: false});
-var btn1 = gpio.open({pin: "IO2", mode: 'in', edge: 'any'});
-var btn2 = gpio.open({pin: "IO4", mode: 'in', edge: 'any'});
+var led1 = gpio.open({pin: 'LED1', activeLow: true});
+var led2 = gpio.open({pin: 'LED2', activeLow: false});
+var btn1 = gpio.open({pin: 'IO2', mode: 'in', edge: 'any'});
+var btn2 = gpio.open({pin: 'IO4', mode: 'in', edge: 'any'});
 
 // turn off LED #2 initially
 led1.write(0);

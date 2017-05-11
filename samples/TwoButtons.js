@@ -7,14 +7,14 @@
 // it doesn't work the other way and I haven't figured out why yet. It may
 // relate to IO5 being connected to both the X86 and ARC processors.
 
-console.log("GPIO test with two buttons controlling two LEDs...");
+console.log('GPIO test with two buttons controlling two LEDs...');
 
 // import gpio module
-var gpio = require("gpio");
+var gpio = require('gpio');
 
 // LED1 and LED2 are onboard LEDs on Arduino 101
-var led1 = gpio.open({pin: "LED1", activeLow: true});
-var led2 = gpio.open({pin: "LED2", activeLow: false});
+var led1 = gpio.open({pin: 'LED1', activeLow: true});
+var led2 = gpio.open({pin: 'LED2', activeLow: false});
 var btn1 = gpio.open({pin: 2, mode: 'in', edge: 'any'});
 var btn2 = gpio.open({pin: 4, mode: 'in', edge: 'any'});
 

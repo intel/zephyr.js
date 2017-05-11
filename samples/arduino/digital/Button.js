@@ -10,13 +10,13 @@
 //   - Wire the device's power to Arduino 3.3V and ground to GND
 //   - Wire the signal pin to IO4
 
-console.log("Starting Button example...");
+console.log('Starting Button example...');
 
 // import gpio module
-var gpio = require("gpio");
+var gpio = require('gpio');
 
-var led = gpio.open({pin: "LED0", mode: 'out', activeLow: true});
-var button = gpio.open({pin: "IO4", mode: 'in', edge: 'any'});
+var led = gpio.open({pin: 'LED0', mode: 'out', activeLow: true});
+var button = gpio.open({pin: 'IO4', mode: 'in', edge: 'any'});
 
 led.write(0);
 

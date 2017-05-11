@@ -4,9 +4,9 @@
 // The buzzer squeals while the button is held down. Some tape over the buzzer
 // could probably make it a lot less annoying.
 
-console.log("Electroshock sample...");
+console.log('Electroshock sample...');
 
-var gpio = require("gpio");
+var gpio = require('gpio');
 
 var button = gpio.open({pin: 2, mode: 'in', edge: 'any'});
 
@@ -32,8 +32,8 @@ function resetDebounce() {
 
 function updateBuzzer() {
     var value = button.read();
-    if (value != lastState) {
-        buzzer.write(!!value);
+    if (value !== lastState) {
+        buzzer.write(value);
         lastState = value;
     }
 }

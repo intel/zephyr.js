@@ -5,15 +5,15 @@
 // off together, but when the button is pressed turns one on and one off until
 // the next timer expires.
 
-console.log("GPIO test with two LEDs and a button...");
+console.log('GPIO test with two LEDs and a button...');
 
 // import gpio module
-var gpio = require("gpio");
+var gpio = require('gpio');
 
 // LED1 and LED2 are onboard LEDs on Arduino 101
-var pinA = gpio.open({pin: "LED1", activeLow: true});
-var pinB = gpio.open({pin: "LED2", activeLow: false});
-var pinIn = gpio.open({pin: "IO4", mode: 'in', edge: 'rising'});
+var pinA = gpio.open({pin: 'LED1', activeLow: true});
+var pinB = gpio.open({pin: 'LED2', activeLow: false});
+var pinIn = gpio.open({pin: 'IO4', mode: 'in', edge: 'rising'});
 
 // tick is the delay between blinks
 var tick = 1000, toggle = 0;

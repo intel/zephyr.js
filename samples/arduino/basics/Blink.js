@@ -18,14 +18,14 @@
 //   Larger resistors will make the LED dimmer. Smaller ones could reduce its
 //     life.
 
-console.log("Starting Blink sample...");
+console.log('Starting Blink sample...');
 
 // import gpio module
-var gpio = require("gpio");
+var gpio = require('gpio');
 
 // LED0 is one of the onboard LEDs on the Arduino 101
 // 'out' mode is default, could be left out
-var pin = gpio.open({pin: "LED0", mode: 'out', activeLow: true});
+var pin = gpio.open({pin: 'LED0', mode: 'out', activeLow: true});
 
 // remember the current state of the LED
 var toggle = 0;
