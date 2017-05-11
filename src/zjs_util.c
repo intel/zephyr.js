@@ -394,7 +394,7 @@ static void search_helper(jerry_value_t obj, jerry_value_t func)
     jerry_foreach_object_property(obj, foreach_prop, (void *)&func);
 }
 
-static char* function_search(jerry_value_t func)
+static char *function_search(jerry_value_t func)
 {
     search_list = zjs_malloc(sizeof(head_element_t));
     search_list->head = NULL;
