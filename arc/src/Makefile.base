@@ -3,6 +3,5 @@ ccflags-y += ${PROJECTINCLUDE} \
              -I$(src)/../../src \
 
 obj-y = main.o
-obj-y += arc_curie_pme.o
 
 ccflags-y += -Wall -Werror

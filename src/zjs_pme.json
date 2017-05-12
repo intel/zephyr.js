@@ -1,0 +1,10 @@
+{
+    "module": "pwm",
+    "require": "pme",
+    "depends": ["ipm"],
+    "zjs_config": ["-DBUILD_MODULE_PME"],
+    "src": ["zjs_pme.c"],
+    "header": ["zjs_pme.h"],
+    "init": ["zjs_pme_init"],
+    "cleanup": ["zjs_pme_cleanup"]
+}

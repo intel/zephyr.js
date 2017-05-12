@@ -371,7 +371,7 @@ qemu: zephyr
 # Builds ARC binary
 .PHONY: arc
 arc: analyze
-	./scripts/analyze SCRIPT=$(JS) BOARD=arc PRJCONF=arc/prj.conf MAKEFILE=arc/src/Makefile MAKEBASE=arc/src/Makefile.base RESTRICT="zjs_ipm_arc.json,zjs_i2c_arc.json,zjs_arc.json"
+	./scripts/analyze SCRIPT=$(JS) BOARD=arc PRJCONF=arc/prj.conf MAKEFILE=arc/src/Makefile MAKEBASE=arc/src/Makefile.base RESTRICT="zjs_ipm_arc.json,zjs_i2c_arc.json,zjs_arc.json,zjs_pme_arc.json"
 
 	@printf "CONFIG_SRAM_SIZE=%d\n" $$((79 - $(RAM))) >> arc/prj.conf
 	@printf "CONFIG_FLASH_BASE_ADDRESS=0x400%x\n" $$((($(ROM) + 64) * 1024)) >> arc/prj.conf

@@ -16,6 +16,7 @@
 #endif
 
 #include "zjs_modules.h"
+#include "zjs_modules_gen.h"
 #include "zjs_util.h"
 #include "zjs_callbacks.h"
 #include "zjs_script.h"

@@ -95,7 +95,7 @@ endif
 
 BUILD_OBJ = $(CORE_OBJ:%.o=$(BUILD_DIR)/%.o)
 
-LINUX_MODULES= "zjs_buffer.json,zjs_console.json,zjs_event.json,zjs_iotivity_constrained.json,zjs_ocf.json,zjs_performance.json,zjs_promise.json,zjs_test_callbacks.json,zjs_test_promise.json"
+LINUX_MODULES= "zjs_buffer.json,zjs_console.json,zjs_event.json,zjs_iotivity_constrained.json,zjs_ocf.json,zjs_performance.json,zjs_promise.json,zjs_test_callbacks.json,zjs_test_promise.json,zjs_gpio.json"
 
 UNAME := $(shell uname)
 ifneq ($(UNAME),Darwin)
@@ -117,7 +117,7 @@ LINUX_INCLUDES += 	-I$(OCF_ROOT)/deps/tinydtls \
 
 include Makefile.ocf_linux
 
-LINUX_DEFINES += -DOC_SERVER -DOC_CLIENT -DBUILD_MODULE_OCF
+LINUX_DEFINES += -DOC_SERVER -DOC_CLIENT -DBUILD_MODULE_OCF -DZJS_GPIO_MOCK
 endif
 
 .PHONY: all
