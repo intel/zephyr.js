@@ -430,10 +430,10 @@ int32_t ashell_raw_capture(const char *buf, uint32_t len)
 int32_t ashell_set_echo_mode(char *buf)
 {
     if (!strcmp("on", buf)) {
-        comms_println("echo_on");
+        comms_print("echo_on");
         comms_set_echo_mode(true);
     } else if (!strcmp("off", buf)) {
-        comms_println("echo_off");
+        comms_print("echo_off");
         comms_set_echo_mode(false);
     }
     return RET_OK;

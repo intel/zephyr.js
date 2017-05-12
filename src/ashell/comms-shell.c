@@ -400,6 +400,7 @@ void ashell_process_line(const char *buf, uint32_t len)
 #else
     printk("\n%s", system_get_prompt());
 #endif
+    comms_print("\r\n");
     comms_print(comms_get_prompt());
 }
 
