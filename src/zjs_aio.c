@@ -142,10 +142,10 @@ static void ipm_msg_receive_callback(void *context, uint32_t id,
             zjs_signal_callback(handle->callback_id, &num, sizeof(num));
             break;
         case TYPE_AIO_PIN_SUBSCRIBE:
-            DBG_PRINT("subscribed to events on pin %lu\n", pin);
+            DBG_PRINT("subscribed to events on pin %u\n", pin);
             break;
         case TYPE_AIO_PIN_UNSUBSCRIBE:
-            DBG_PRINT("unsubscribed to events on pin %lu\n", pin);
+            DBG_PRINT("unsubscribed to events on pin %u\n", pin);
             break;
 
         default:
@@ -161,7 +161,7 @@ static ZJS_DECL_FUNC(zjs_aio_pin_read)
     zjs_obj_get_uint32(this, "pin", &pin);
 
     if (pin < ARC_AIO_MIN || pin > ARC_AIO_MAX) {
-        DBG_PRINT("PIN: #%lu\n", pin);
+        DBG_PRINT("PIN: #%u\n", pin);
         return zjs_error("zjs_aio_pin_read: pin out of range");
     }
 

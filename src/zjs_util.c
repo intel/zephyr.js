@@ -264,7 +264,7 @@ char *zjs_alloc_from_jstring(jerry_value_t jstr, jerry_size_t *maxlen)
 
     if (maxlen) {
         if (*maxlen && *maxlen < len) {
-            DBG_PRINT("string limited to %lu bytes\n", *maxlen);
+            DBG_PRINT("string limited to %u bytes\n", *maxlen);
             buffer[*maxlen] = '\0';
         }
         else {
@@ -559,7 +559,7 @@ int zjs_validate_args(const char *expectations[], const jerry_length_t argc,
     }
 
     if (arg_index < argc) {
-        DBG_PRINT("API received %lu unexpected arg(s)\n", argc - arg_index);
+        DBG_PRINT("API received %u unexpected arg(s)\n", argc - arg_index);
     }
     return opt_args;
 }

@@ -202,7 +202,7 @@ bool zjs_remove_callback_list_func(zjs_callback_id id, jerry_value_t js_func)
         }
         UNLOCK();
     }
-    DBG_PRINT("could not remove callback %ld\n", (uint32_t)id);
+    DBG_PRINT("could not remove callback %u\n", id);
     return false;
 }
 
@@ -351,7 +351,7 @@ zjs_callback_id add_callback_priv(jerry_value_t js_func,
         cb_size++;
     }
 
-    DBG_PRINT("adding new callback id %d, js_func=%lu, once=%u\n",
+    DBG_PRINT("adding new callback id %d, js_func=%u, once=%u\n",
               new_cb->id, new_cb->js_func, once);
 
 #ifdef DEBUG_BUILD
@@ -438,7 +438,7 @@ void signal_callback_priv(zjs_callback_id id,
 #endif
 {
     LOCK();
-    DBG_PRINT("pushing item to ring buffer. id=%d, args=%p, size=%lu\n", id,
+    DBG_PRINT("pushing item to ring buffer. id=%d, args=%p, size=%u\n", id,
               args, size);
     if (id < 0 || id > cb_size || !cb_map[id]) {
         DBG_PRINT("callback ID %u does not exist\n", id);
@@ -521,7 +521,7 @@ void print_callbacks(void)
                 if (cb_map[i]->func_list == NULL &&
                     jerry_value_is_function(cb_map[i]->js_func)) {
                     ZJS_PRINT("Single Function\n");
-                    ZJS_PRINT("\tjs_func: %lu\n", cb_map[i]->js_func);
+                    ZJS_PRINT("\tjs_func: %u\n", cb_map[i]->js_func);
                     ZJS_PRINT("\tonce: %u\n", GET_ONCE(cb_map[i]->flags));
                 } else {
                     ZJS_PRINT("List\n");

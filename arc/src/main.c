@@ -94,7 +94,7 @@ static int ipm_send_error(struct zjs_ipm_message *msg,
 {
     msg->flags |= MSG_ERROR_FLAG;
     msg->error_code = error_code;
-    DBG_PRINT("send error %lu\n", msg->error_code);
+    DBG_PRINT("send error %u\n", msg->error_code);
     return zjs_ipm_send(msg->id, msg);
 }
 
@@ -139,12 +139,12 @@ static void queue_message(struct zjs_ipm_message *incoming_msg)
         return;
     }
 
-    k_sem_take(&arc_sem, TICKS_UNLIMITED);
-    while (msg && msg < end_of_queue_ptr) {
-        if (msg->id == MSG_ID_DONE) {
-            break;
-        }
-        msg++;
+    k_sem_take(&arc_sem, K_FOREVER);
+    while(msg && msg < end_of_queue_ptr) {
+       if (msg->id == MSG_ID_DONE) {
+           break;
+       }
+       msg++;
     }
 
     if (msg != end_of_queue_ptr) {
@@ -903,7 +903,7 @@ static void handle_sensor_light(struct zjs_ipm_message* msg)
     uint32_t pin;
     uint32_t error_code = ERROR_IPM_NONE;
 
-    switch(msg->type) {
+    switch (msg->type) {
     case TYPE_SENSOR_INIT:
         // INIT
         break;
@@ -913,7 +913,7 @@ static void handle_sensor_light(struct zjs_ipm_message* msg)
             ERR_PRINT("pin #%u out of range\n", pin);
             error_code = ERROR_IPM_OPERATION_FAILED;
         } else {
-            DBG_PRINT("start ambient light %lu\n", msg->data.sensor.pin);
+            DBG_PRINT("start ambient light %u\n", msg->data.sensor.pin);
             light_send_updates[pin - ARC_AIO_MIN] = 1;
         }
         break;
@@ -923,7 +923,7 @@ static void handle_sensor_light(struct zjs_ipm_message* msg)
             ERR_PRINT("pin #%u out of range\n", pin);
             error_code = ERROR_IPM_OPERATION_FAILED;
         } else {
-            DBG_PRINT("stop ambient light %lu\n", msg->data.sensor.pin);
+            DBG_PRINT("stop ambient light %u\n", msg->data.sensor.pin);
             light_send_updates[pin - ARC_AIO_MIN] = 0;
         }
         break;
