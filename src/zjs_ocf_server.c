@@ -51,13 +51,9 @@ struct ocf_handler {
     struct server_resource *res;
 };
 
-static void free_handle(void *native_p)
-{
-}
-
 static const jerry_object_native_info_t ocf_type_info =
 {
-   .free_cb = free_handle
+   .free_cb = free_handle_nop
 };
 
 static resource_list_t *res_list = NULL;
@@ -291,7 +287,7 @@ static jerry_value_t create_request(struct server_resource *resource,
 
     zjs_obj_add_function(object, ocf_respond, "respond");
 
-    jerry_set_object_native_pointer(object, (void *)handler, &ocf_type_info);
+    jerry_set_object_native_pointer(object, handler, &ocf_type_info);
 
     return object;
 }
@@ -519,7 +515,7 @@ static jerry_value_t ocf_register(const jerry_value_t function_val,
      */
     resource->object = this;
 
-    jerry_set_object_native_pointer(res, (void *)resource, &ocf_type_info);
+    jerry_set_object_native_pointer(res, resource, &ocf_type_info);
 
     DBG_PRINT("registered resource, path=%s\n", resource_path);
 

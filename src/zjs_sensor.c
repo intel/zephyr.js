@@ -59,13 +59,9 @@ sensor_module_t sensor_modules[] = {
 #endif
 };
 
-static void free_handle(void *native_p)
-{
-}
-
 static const jerry_object_native_info_t sensor_type_info =
 {
-   .free_cb = free_handle
+   .free_cb = free_handle_nop
 };
 
 sensor_instance_t *zjs_sensor_create_instance(const char *name, void *func)
@@ -497,8 +493,7 @@ ZJS_DECL_FUNC_ARGS(zjs_sensor_create,
     instance->handles = handle;
 
     // watch for the object getting garbage collected, and clean up
-    jerry_set_object_native_pointer(sensor_obj, (void *)handle,
-                                    &sensor_type_info);
+    jerry_set_object_native_pointer(sensor_obj, handle, &sensor_type_info);
 
     DBG_PRINT("sensor driver %s initialized\n", handle->controller->name);
     DBG_PRINT("sensor frequency %u\n", handle->frequency);

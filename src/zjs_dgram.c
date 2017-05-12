@@ -175,7 +175,7 @@ static ZJS_DECL_FUNC(zjs_dgram_createSocket)
     handle->message_cb_id = -1;
     handle->error_cb_id = -1;
 
-    jerry_set_object_native_pointer(sockobj, (void *)handle, &dgram_type_info);
+    jerry_set_object_native_pointer(sockobj, handle, &dgram_type_info);
 
     // Can't call this here due to bug in Zephyr - called in .bind() instead
     //CHECK(net_context_recv(udp_sock, udp_received, K_NO_WAIT, handle));
@@ -308,7 +308,6 @@ static ZJS_DECL_FUNC(zjs_dgram_sock_close)
 {
     ZJS_GET_HANDLE(this, dgram_handle_t, handle, dgram_type_info);
     zjs_dgram_free_cb((void *)handle);
-    //jerry_set_object_native_handle(this, (uintptr_t)NULL, NULL);
     return ZJS_UNDEFINED;
 }
 

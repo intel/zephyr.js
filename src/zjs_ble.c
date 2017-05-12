@@ -95,13 +95,9 @@ static ble_handle_t *ble_handle = NULL;
 static zjs_callback_id connected_cb_id = -1;
 static zjs_callback_id disconnected_cb_id = -1;
 
-static void free_handle(void *native_p)
-{
-}
-
 static const jerry_object_native_info_t ble_type_info =
 {
-   .free_cb = free_handle
+   .free_cb = free_handle_nop
 };
 
 struct bt_uuid *zjs_ble_new_uuid_16(uint16_t value) {
@@ -260,7 +256,7 @@ static void zjs_ble_read_c_callback(void *handle, const void *argv)
     ZVAL callback =
         jerry_create_external_function(zjs_ble_read_callback_function);
 
-    jerry_set_object_native_pointer(callback, (void *)handle, &ble_type_info);
+    jerry_set_object_native_pointer(callback, handle, &ble_type_info);
 
     jerry_value_t args[2] = {offset, callback};
     ZVAL rval = jerry_call_function(cb->js_callback, chrc->chrc_obj, args, 2);
@@ -369,7 +365,7 @@ static void zjs_ble_write_c_callback(void *handle, const void *argv)
     ZVAL callback =
         jerry_create_external_function(zjs_ble_write_callback_function);
 
-    jerry_set_object_native_pointer(callback, (void *)handle, &ble_type_info);
+    jerry_set_object_native_pointer(callback, handle, &ble_type_info);
 
     jerry_value_t args[4] = {buf_obj, offset, without_response, callback};
     ZVAL rval = jerry_call_function(cb->js_callback, chrc->chrc_obj, args, 4);
@@ -1002,8 +998,7 @@ static bool zjs_ble_parse_service(ble_service_t *service)
 
         // transfer ownership of v_chrc to chrc struct
         chrc->chrc_obj = jerry_acquire_value(v_chrc);
-        jerry_set_object_native_pointer(chrc->chrc_obj, (void *)chrc,
-                                        &ble_type_info);
+        jerry_set_object_native_pointer(chrc->chrc_obj, chrc, &ble_type_info);
 
         // FIXME: All the stuff above this in the loop should move into
         //   parse_characteristic and it should take chrc_obj instead; it would
@@ -1209,7 +1204,7 @@ static ZJS_DECL_FUNC(zjs_ble_set_services)
         // transfer ownership of v_service to service struct
         service->service_obj = jerry_acquire_value(v_service);
         jerry_set_object_native_pointer(service->service_obj,
-                                        (void *)service, &ble_type_info);
+                                        service, &ble_type_info);
 
         // FIXME: The parse_service should take the service_obj instead and do
         //   all this above stuff in the loop, reducing error handling cruft.

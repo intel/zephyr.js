@@ -43,11 +43,11 @@ zjs_buffer_t *zjs_buffer_find(const jerry_value_t obj)
     //             in zjs_buffer
     //  effects: looks up obj in our list of known buffer objects and returns
     //             the associated list item struct, or NULL if not found
-    uintptr_t handle;
+    zjs_buffer_t *handle;
     const jerry_object_native_info_t *tmp;
     if (jerry_get_object_native_pointer(obj, (void **)&handle, &tmp)) {
         if (tmp == &buffer_type_info) {
-            return (zjs_buffer_t *)handle;
+            return handle;
         }
     }
     return NULL;
@@ -354,7 +354,7 @@ jerry_value_t zjs_buffer_create(uint32_t size, zjs_buffer_t **ret_buf)
     zjs_obj_add_readonly_number(buf_obj, size, "length");
 
     // watch for the object getting garbage collected, and clean up
-    jerry_set_object_native_pointer(buf_obj, (void *)buf_item, &buffer_type_info);
+    jerry_set_object_native_pointer(buf_obj, buf_item, &buffer_type_info);
     if (ret_buf) {
         *ret_buf = buf_item;
     }

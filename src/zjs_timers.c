@@ -30,11 +30,9 @@ typedef struct zjs_timer {
 
 static zjs_timer_t *zjs_timers = NULL;
 
-static void free_handle(void *native_p) {}
-
 static const jerry_object_native_info_t timer_type_info =
 {
-   .free_cb = free_handle
+   .free_cb = free_handle_nop
 };
 
 jerry_value_t *pre_timer(void *h, uint32_t *argc)
@@ -140,7 +138,7 @@ static ZJS_DECL_FUNC_ARGS(add_timer_helper, bool repeat)
                                     argc - 2, argv);
     if (handle->callback_id == -1)
         return zjs_error("native_set_interval_handler: timer alloc failed");
-    jerry_set_object_native_pointer(timer_obj, (void *)handle, &timer_type_info);
+    jerry_set_object_native_pointer(timer_obj, handle, &timer_type_info);
 
     return timer_obj;
 }

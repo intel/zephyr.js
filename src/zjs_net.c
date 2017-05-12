@@ -127,18 +127,14 @@ typedef struct sock_handle {
 
 static sock_handle_t *opened_sockets = NULL;
 
-static void free_handle(void *native_p)
-{
-}
-
 static const jerry_object_native_info_t socket_type_info =
 {
-   .free_cb = free_handle
+   .free_cb = free_handle_nop
 };
 
 static const jerry_object_native_info_t net_type_info =
 {
-   .free_cb = free_handle
+   .free_cb = free_handle_nop
 };
 
 #define CHECK(x) \
@@ -506,7 +502,7 @@ static jerry_value_t create_socket(uint8_t client, sock_handle_t **handle_out)
         zjs_obj_add_function(socket, socket_connect, "connect");
     }
 
-    jerry_set_object_native_pointer(socket, (void *)sock_handle, &socket_type_info);
+    jerry_set_object_native_pointer(socket, sock_handle, &socket_type_info);
     sock_handle->connect_listener = ZJS_UNDEFINED;
     sock_handle->socket = socket;
     sock_handle->tcp_connect_id = -1;
@@ -769,7 +765,7 @@ static jerry_value_t net_create_server(const jerry_value_t function_obj,
     CHECK(net_context_get(AF_INET6, SOCK_STREAM, IPPROTO_TCP,
             &handle->tcp_sock))
 
-    jerry_set_object_native_pointer(server, (void **)handle, &net_type_info);
+    jerry_set_object_native_pointer(server, handle, &net_type_info);
 
     handle->server = server;
     handle->listening = 0;

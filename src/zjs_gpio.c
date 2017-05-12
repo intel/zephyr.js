@@ -67,8 +67,8 @@ void gpio_internal_lookup_pin(const jerry_value_t pin_obj,
                                        DEVICE *port, int *pin)
 {
     gpio_handle_t *handle;
-    jerry_object_native_info_t *tmp;
-    jerry_get_object_native_pointer(pin_obj, &handle, &tmp);
+    const jerry_object_native_info_t *tmp;
+    jerry_get_object_native_pointer(pin_obj, (void **)&handle, &tmp);
     if (tmp == &gpio_type_info) {
         *port = handle->port;
         *pin = handle->pin;
@@ -310,7 +310,7 @@ static ZJS_DECL_FUNC(zjs_gpio_open)
     handle->active_low = active_low;
 
     // Set the native handle so we can free it when close() is called
-    jerry_set_object_native_pointer(pin_obj, (void *)handle, &gpio_type_info);
+    jerry_set_object_native_pointer(pin_obj, handle, &gpio_type_info);
 
     if (dir == ZJS_DIR_INPUT) {
         // Zephyr ISR callback init

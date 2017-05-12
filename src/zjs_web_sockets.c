@@ -92,13 +92,9 @@ typedef struct ws_packet {
     uint8_t mask_bit;
 } ws_packet_t;
 
-static void free_handle(void *native_p)
-{
-}
-
 static const jerry_object_native_info_t ws_type_info =
 {
-   .free_cb = free_handle
+   .free_cb = free_handle_nop
 };
 
 static void free_server(void *native)
@@ -533,7 +529,7 @@ static jerry_value_t create_ws_connection(ws_connection_t *con)
     zjs_obj_add_function(conn, ws_ping, "ping");
     zjs_obj_add_function(conn, ws_pong, "pong");
     zjs_obj_add_function(conn, ws_terminate, "terminate");
-    jerry_set_object_native_pointer(conn, (void *)con, &ws_type_info);
+    jerry_set_object_native_pointer(conn, con, &ws_type_info);
     zjs_make_event(conn, ZJS_UNDEFINED);
     if (con->server_handle->track) {
         ZVAL clients = zjs_get_property(con->server_handle->server, "clients");
@@ -862,7 +858,7 @@ static ZJS_DECL_FUNC(ws_server)
 
     zjs_make_event(server, ZJS_UNDEFINED);
 
-    jerry_set_object_native_pointer(server, (void *)handle, &server_type_info);
+    jerry_set_object_native_pointer(server, handle, &server_type_info);
 
     return server;
 }

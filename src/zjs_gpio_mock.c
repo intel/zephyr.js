@@ -11,13 +11,9 @@
 // mock headers should be included last
 #include "zjs_gpio_mock.h"
 
-static void free_handle(void *native)
-{
-}
-
 static const jerry_object_native_info_t mock_type_info =
 {
-   .free_cb = free_handle
+   .free_cb = free_handle_nop
 };
 
 
@@ -379,7 +375,7 @@ int mock_gpio_pin_enable_callback(DEVICE port, uint32_t pin)
             if (bit & item->pin_mask) {
                 item->enabled_mask |= bit;
                 jerry_set_object_native_pointer(pin_obj,
-                                                (void *)item,
+                                                item,
                                                 &mock_type_info);
                 // FIXME: maybe need to clean up on re-open w/o close
                 break;

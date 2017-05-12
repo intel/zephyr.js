@@ -333,6 +333,8 @@ int zjs_require_string_if_prop_map(jerry_value_t obj, const char *prop,
         }                                                            \
     }
 
+void free_handle_nop(void *h);
+
 #ifndef ZJS_LINUX_BUILD
 #define LOCK  k_sched_lock
 #define UNLOCK k_sched_unlock

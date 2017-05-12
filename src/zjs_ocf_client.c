@@ -333,7 +333,7 @@ static void add_resource(char *id, char *type, char *path, jerry_value_t client,
 
     new->client = client;
 
-    jerry_set_object_native_pointer(client, (void *)new, &ocf_type_info);
+    jerry_set_object_native_pointer(client, new, &ocf_type_info);
 
     if (!jerry_value_is_undefined(listener)) {
         zjs_add_event_listener(new->client, "resourcefound", listener);
@@ -924,7 +924,7 @@ static jerry_value_t ocf_get_platform_info(const jerry_value_t function_val,
 
     struct client_resource *resource = find_resource_by_id(device_id);
     if (!resource) {
-        ERR_PRINT("resource was not found: %s\n", device_id);
+        ERR_PRINT("%s: %s\n", "resource was not found", device_id);
         REJECT("NotFoundError", "resource was not found");
     }
 
@@ -1022,7 +1022,7 @@ static jerry_value_t ocf_get_device_info(const jerry_value_t function_val,
 
     struct client_resource *resource = find_resource_by_id(device_id);
     if (!resource) {
-        ERR_PRINT("resource was not found: %s\n", device_id);
+        ERR_PRINT("%s: %s\n", "resource was not found", device_id);
         REJECT("NotFoundError", "resource was not found");
     }
 

@@ -111,7 +111,7 @@ LINUX_INCLUDES += 	-I$(OCF_ROOT)/deps/tinydtls \
 			-I$(OCF_ROOT)/util \
 			-I$(OCF_ROOT)/messaging/coap \
 			-I$(OCF_ROOT)/api \
-			-include $(ZJS_BASE)/src/zjs_ocf_config.h \
+			-include $(ZJS_BASE)/src/zjs_ocf_config.h
 
 include Makefile.ocf_linux
 
@@ -128,12 +128,14 @@ $(BUILD_DIR)/%.o:%.c
 
 .PHONY: linux
 linux: $(BUILD_OBJ)
-	@cd deps/jerryscript; python ./tools/build.py	--error-messages ON $(VERBOSE) \
-													--mem-heap 16 \
-													--profile=es2015-subset \
-													--jerry-port-default=OFF \
-													--jerry-cmdline OFF \
-													--jerry-libc OFF;
+	@cd deps/jerryscript; python ./tools/build.py \
+		--error-messages ON $(VERBOSE) \
+		--mem-heap 16 \
+		--profile=es2015-subset \
+		--jerry-port-default=OFF \
+		--jerry-cmdline OFF \
+		--jerry-libc OFF;
+
 	@echo [LD] $(BUILD_DIR)/jslinux
 	@gcc $(LINUX_INCLUDES) $(JERRY_LIB_PATH) -o $(BUILD_DIR)/jslinux $(BUILD_OBJ) $(LINUX_FLAGS) $(CFLAGS) $(LINUX_DEFINES) $(LINUX_LIBS)
 

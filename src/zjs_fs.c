@@ -162,7 +162,7 @@ static jerry_value_t create_stats_obj(struct fs_dirent *entry)
     }
     memcpy(new_entry, entry, sizeof(struct fs_dirent));
 
-    jerry_set_object_native_pointer(stats_obj, (void *)new_entry, &stats_type_info);
+    jerry_set_object_native_pointer(stats_obj, new_entry, &stats_type_info);
 
     zjs_obj_add_function(stats_obj, is_file, "isFile");
     zjs_obj_add_function(stats_obj, is_directory, "isDirectory");
