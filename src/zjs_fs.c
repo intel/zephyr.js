@@ -586,7 +586,7 @@ static ZJS_DECL_FUNC_ARGS(zjs_fs_truncate, uint8_t async)
 
     uint32_t length = jerry_get_number_value(argv[1]);
 
-    if (!fs_truncate(&fp, length)) {
+    if (fs_truncate(&fp, length) != 0) {
         return zjs_error("error calling fs_truncate()");
     }
 
