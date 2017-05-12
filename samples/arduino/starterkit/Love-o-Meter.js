@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 // Reimplementation of Arduino Starter Kit's Love-o-Meter example
 //   - Lights up 0-3 LEDs in response to temperature sensor reading
@@ -16,22 +16,10 @@ var aio = require('aio');
 var pins = require('arduino101_pins');
 
 // set up the GPIO pins
-var sensor = aio.open({
-    device: 0,
-    pin: pins.A0
-});
-var led1 = gpio.open({
-    pin: pins.IO4,
-    direction: 'out'
-});
-var led2 = gpio.open({
-    pin: pins.IO7,
-    direction: 'out'
-});
-var led3 = gpio.open({
-    pin: pins.IO8,
-    direction: 'out'
-});
+var sensor = aio.open({device: 0, pin: pins.A0});
+var led1 = gpio.open(4);
+var led2 = gpio.open(7);
+var led3 = gpio.open(8);
 
 var baselineTemp = 20.0;
 
@@ -39,7 +27,7 @@ var leds = [led1, led2, led3];
 
 // initialize each LED to off (false)
 for (var id in leds) {
-    leds[id].write(false);
+    leds[id].write(0);
 }
 
 function clipNum(num) {
@@ -82,24 +70,24 @@ setInterval(function () {
     //   temperatures between the baseline and baseline + 2, so this is
     //   probably what they intended.
     if (temperature < baselineTemp) {
-        led1.write(false);
-        led2.write(false);
-        led3.write(false);
+        led1.write(0);
+        led2.write(0);
+        led3.write(0);
     }
     else if (temperature < baselineTemp + 2) {
-        led1.write(true);
-        led2.write(false);
-        led3.write(false);
+        led1.write(1);
+        led2.write(0);
+        led3.write(0);
     }
     else if (temperature < baselineTemp + 4) {
-        led1.write(true);
-        led2.write(true);
-        led3.write(false);
+        led1.write(1);
+        led2.write(1);
+        led3.write(0);
     }
     else {
-        led1.write(true);
-        led2.write(true);
-        led3.write(true);
+        led1.write(1);
+        led2.write(1);
+        led3.write(1);
     }
 
 // This interval of 10ms is the minimum we can currently handle on Arduino 101,

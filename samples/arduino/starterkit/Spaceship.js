@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 // Reimplementation of Arduino Starter Kit's Spaceship example
 //   - Toggles LEDs in while a button is pressed
@@ -16,28 +16,15 @@
 //     - Instead of IO3/IO4/IO5 for output LEDs use IO4/IO7/IO8
 
 var gpio = require('gpio');
-var pins = require('arduino101_pins');
 
 // set up the GPIO pins
-var button = gpio.open({
-    pin: pins.IO2,
-    direction: 'in'
-});
-var led1 = gpio.open({
-    pin: pins.IO4,
-    direction: 'out'
-});
-var led2 = gpio.open({
-    pin: pins.IO7,
-    direction: 'out'
-});
-var led3 = gpio.open({
-    pin: pins.IO8,
-    direction: 'out'
-});
+var button = gpio.open({pin: 2, mode: 'in'});
+var led1 = gpio.open(4);
+var led2 = gpio.open(7);
+var led3 = gpio.open(8);
 
 var btnstate = false;
-var toggle = false;
+var toggle = 0;
 
 // check button state every 250ms (1/4 second)
 setInterval(function () {
@@ -46,19 +33,19 @@ setInterval(function () {
         if (!btnstate) {
             // it wasn't pressed last time we checked
             btnstate = true;
-            toggle = false;
-            led1.write(false);
+            toggle = 0;
+            led1.write(0);
         }
 
-        toggle = !toggle;
-        led2.write(!toggle);
+        toggle = 1 - toggle;
+        led2.write(1 - toggle);
         led3.write(toggle);
     }
     else {
         // the button is not being pressed
         btnstate = false;
-        led1.write(true);
-        led2.write(false);
-        led3.write(false);
+        led1.write(1);
+        led2.write(0);
+        led3.write(0);
     }
 }, 250);

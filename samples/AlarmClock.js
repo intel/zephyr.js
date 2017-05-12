@@ -23,7 +23,6 @@ var expiredAlarmMessage = 'expired!        ';
 
 // Application
 
-var pins = require("arduino101_pins");
 var gpio = require("gpio");
 var lcd = require("grove_lcd");
 var perf = require("performance");
@@ -46,10 +45,10 @@ glcd.print(noAlarmMessage);
 
 var debounce = false;
 
-var button = gpio.open({ pin: pins.IO2, direction: 'in', edge: 'rising' });
+var button = gpio.open({pin: 2, mode: 'in', edge: 'rising'});
 
 // IO4, IO7, IO8 can work here
-var buzzer = gpio.open({ pin: pins.IO4, direction: 'out' });
+var buzzer = gpio.open(4);
 
 var minutes = 0;
 var seconds = 0;
@@ -119,7 +118,7 @@ function updateLCD() {
     glcd.print(display);
 }
 
-var alarm = false;
+var alarm = 0;
 var timings = [62, 63, 62, 63, 62, 63, 62, 563,
                62, 63, 62, 63, 62, 63, 62, 563,
                62, 63, 62, 63, 62, 63, 62, 563];
@@ -132,7 +131,7 @@ function soundAlarm() {
 }
 
 function toggleAlarm() {
-    alarm = !alarm;
+    alarm = 1 - alarm;
 
     if (index < timings.length) {
         buzzer.write(alarm);
@@ -144,7 +143,7 @@ function toggleAlarm() {
         if (alarm) {
             // ensure we turn off at the end
             alarm = 0;
-            buzzer.write(false);
+            buzzer.write(0);
         }
         glcd.setColor(baseColor[0], baseColor[1], baseColor[2]);
         glcd.setCursorPos(0, 1);

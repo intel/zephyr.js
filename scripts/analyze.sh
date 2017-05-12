@@ -314,8 +314,10 @@ if check_for_require ocf || check_config_file ZJS_OCF; then
 fi
 
 if check_for_require gpio || check_config_file ZJS_GPIO; then
+    >&2 echo Using module: GPIO
     MODULES+=" -DBUILD_MODULE_GPIO"
     echo "CONFIG_GPIO=y" >> $PRJFILE
+    echo "export ZJS_BOARD=y" >> $CONFFILE
     echo "export ZJS_GPIO=y" >> $CONFFILE
     gpio=true
 fi
@@ -439,6 +441,12 @@ if check_for_require grove_lcd || check_config_file ZJS_GROVE_LCD; then
         echo "CONFIG_GROVE_LCD_RGB_INIT_PRIORITY=90" >> $PRJFILE
     fi
     echo "export ZJS_GROVE_LCD=y" >> $CONFFILE
+fi
+
+if check_for_require board || check_config_file ZJS_BOARD; then
+    >&2 echo Using module: Board
+    MODULES+=" -DBUILD_MODULE_BOARD"
+    echo "export ZJS_BOARD=y" >> $CONFFILE
 fi
 
 if check_for_require arduino101_pins || check_config_file ZJS_ARDUINO101_PINS; then

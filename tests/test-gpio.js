@@ -3,43 +3,38 @@
 // Testing GPIO APIs
 
 var gpio = require("gpio");
-var pins = require("arduino101_pins");
 var assert = require("Assert.js");
 
 if (gpio.mock) {
-    gpio.wire(gpio.open({pin: pins.IO7}), gpio.open({pin: pins.IO8}));
+    gpio.wire(gpio.open(7), gpio.open(10));
 }
 else {
-    // Pre-conditions
-    console.log("Hardware setup: Wire IO7 to IO8!");
+    // NOTE: changed from pin 8 to 10 so this test can work on k64f too
+    console.log("Hardware setup: Wire pin 7 to pin 10");
 }
 
 var pinA, pinB, aValue, bValue;
 
 // test GPIOPin onchange
 var changes = [
-    ["falling", 1, true],
-    ["rising", 1, false],
-    ["any", 1, false]
+    ["falling", 1, 1],
+    ["rising", 1, 0],
+    ["any", 1, 0]
 ];
 var mark = 0;
 
 var edgeInterval = setInterval(function () {
     var count = 0;
-    pinA = gpio.open({pin: pins.IO7});
+    pinA = gpio.open(7);
     pinA.write(changes[mark][2]);
-    pinB = gpio.open({
-        pin: pins.IO8,
-        direction: "in",
-        edge: changes[mark][0]
-    });
+    pinB = gpio.open({pin: 10, mode: "in", edge: changes[mark][0]});
 
     pinB.onchange = function () {
         count++;
         pinB.close();
     };
 
-    pinA.write(!changes[mark][2]);
+    pinA.write(1 - changes[mark][2]);
 
     setTimeout(function () {
         assert(count == changes[mark][1],
@@ -47,7 +42,7 @@ var edgeInterval = setInterval(function () {
 
         if (changes[mark][0] == "any") {
             // test GPIOPin close
-            pinA.write(!changes[mark][2]);
+            pinA.write(1 - changes[mark][2]);
             assert(count == changes[mark][1], "gpiopin: close onchange");
         }
 
@@ -61,8 +56,8 @@ var edgeInterval = setInterval(function () {
 }, 200);
 
 // test GPIO open
-pinA = gpio.open({pin: pins.IO7});
-pinB = gpio.open({pin: pins.IO8, direction: "in"});
+pinA = gpio.open(7);
+pinB = gpio.open({pin: 10, mode: "in", edge: "none"});
 
 assert(pinA != null && typeof pinA == "object",
       "open: defined pin and default as 'out' direction");
@@ -71,11 +66,11 @@ assert(pinB != null && typeof pinB == "object",
       "open: defined pin with direction 'in'");
 
 assert.throws(function () {
-    gpio.open({pin: 1024});
+    gpio.open(1024);
 }, "open: invalid pin");
 
 // test GPIOPin read and write
-pinA.write(true);
+pinA.write(1);
 bValue = pinB.read();
 assert(bValue, "gpiopin: write and read");
 
@@ -83,16 +78,17 @@ assert(bValue, "gpiopin: write and read");
 aValue = pinA.read();
 assert(aValue, "gpiopin: read output pin");
 
-pinB.write(false);
+pinB.write(0);
 bValue = pinB.read();
 assert(bValue, "gpiopin: write input pin");
 
 assert.throws(function () {
-    pinA.write(1);
+    // booleans allowed temporarily as deprecation path, so try another value
+    pinA.write("1");
 }, "gpiopin: write invalid argument");
 
 // test activeLow
-pinB = gpio.open({pin: pins.IO8, activeLow: true, direction: "in"});
-pinA.write(false);
+pinB = gpio.open({pin: 10, mode: "in", activeLow: true});
+pinA.write(0);
 bValue = pinB.read();
 assert(bValue, "activeLow: true");

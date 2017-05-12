@@ -9,29 +9,26 @@ console.log("GPIO test with two LEDs and a button...");
 
 // import gpio module
 var gpio = require("gpio");
-var pins = require("k64f_pins");
-
 
 // D0 - D15 will also work as these output pins, if you hook up an LED
 // (except D8 currently not working on Rev E3 board at least)
-var ledr = gpio.open({pin: pins.LEDR});
-var ledb = gpio.open({pin: pins.LEDB});
+var ledr = gpio.open({pin: "LEDR"});
+var ledb = gpio.open({pin: "LEDB"});
 
 // D0 - D15 will also work as this input pin, if you hook up a button
 // (except D8 currently not working on Rev E3 board at least)
-var pinIn = gpio.open({pin: pins.SW2, direction: 'in', edge: 'falling'});
+var pinIn = gpio.open({pin: "SW2", mode: 'in', edge: 'falling'});
 
 // tick is the delay between blinks
-var tick = 1000, toggle = false;
+var tick = 1000, toggle = 0;
 
 setInterval(function () {
-    toggle = !toggle;
-    pinIn.read();
+    toggle = 1 - toggle;
     ledr.write(toggle);
     ledb.write(toggle);
 }, tick);
 
 pinIn.onchange = function(event) {
-    ledr.write(true);
-    ledb.write(false);
+    ledr.write(1);
+    ledb.write(0);
 };

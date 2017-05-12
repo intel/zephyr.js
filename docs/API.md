@@ -3,6 +3,20 @@ JavaScript* Runtime for Zephyr* OS (ZJS) API
 
 These are the current APIs supported by ZJS:
 
+General
+-------
+[Buffer](./buffer.md)
+
+[Console](./console.md)
+
+[Events](./events.md)
+
+[Filesystem](./fs.md)
+
+[Performance](./performance.md)
+
+[Timers](./timers.md)
+
 I/O
 ---
 [AIO](./aio.md)
@@ -23,34 +37,22 @@ Communications
 --------------
 [BLE](./ble.md)
 
-[Net](./net.md)
-
 [OCF](./ocf.md)
 
-[UDP](./dgram.md)
+[TCP Sockets (net)](./net.md)
 
-[WebSocket](./web-socket.md)
+[UDP Sockets (dgram)](./dgram.md)
 
-Display
--------
-[Grove LCD](./grove_lcd.md)
+[WebSockets](./web-socket.md)
 
 Board Support
 -------------
+[Board](./board.md)
+
 [Arduino 101](./a101_pins.md)
 
 [FRDM-K64F](./k64f_pins.md)
 
-General
+Devices
 -------
-[Buffer](./buffer.md)
-
-[Console](./console.md)
-
-[Events](./events.md)
-
-[File System](./fs.md)
-
-[Performance](./performance.md)
-
-[Timers](./timers.md)
+[Grove LCD](./grove_lcd.md)

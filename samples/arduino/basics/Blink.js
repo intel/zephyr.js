@@ -18,21 +18,20 @@
 //   Larger resistors will make the LED dimmer. Smaller ones could reduce its
 //     life.
 
-console.log("Starting Blink example...");
+console.log('Starting Blink sample...');
 
 // import gpio module
-var gpio = require("gpio");
-var pins = require("arduino101_pins");
+var gpio = require('gpio');
 
 // LED0 is one of the onboard LEDs on the Arduino 101
-// 'out' direction is default, could be left out
-var pin = gpio.open({pin: pins.LED0, direction: 'out', activeLow: true});
+// 'out' mode is default, could be left out
+var pin = gpio.open({pin: 'LED0', mode: 'out', activeLow: true});
 
 // remember the current state of the LED
-var toggle = false;
+var toggle = 0;
 
 // schedule a function to run every 1s (1000ms)
 setInterval(function () {
-    toggle = !toggle;
+    toggle = 1 - toggle;
     pin.write(toggle);
 }, 1000);

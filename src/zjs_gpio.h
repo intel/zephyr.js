@@ -1,11 +1,9 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 #ifndef __zjs_gpio_h__
 #define __zjs_gpio_h__
 
 #include "jerryscript.h"
-
-extern void (*zjs_gpio_convert_pin)(uint32_t orig, int *dev, int *pin);
 
 /**
  * Initialize the gpio module, or reinitialize after cleanup

@@ -1,9 +1,9 @@
 // Copyright (c) 2016-2017, Intel Corporation.
 
-// Reimplementation of Arduino - Basics - Blink example
-//   - Toggles onboard LEDs as if they were a traffic light
+// Toggles onboard LEDs as if they were a traffic light
 
 // Hardware Requirements:
+//   - Arduino 101 (if using default LED0-2 pins)
 //   - None, to use the onboard LED
 //   - Otherwise, three LEDs and resistors
 // Wiring:
@@ -18,40 +18,39 @@
 //   Larger resistors will make the LED dimmer. Smaller ones could reduce its
 //     life.
 
-console.log("Starting TrafficLight example...");
+console.log("Starting TrafficLight sample...");
 
 // WARNING: These traffic light timings are appropriate for hummingbirds only
 
 // import gpio module
 var gpio = require("gpio");
-var pins = require("arduino101_pins");
 
-var red    = gpio.open({pin: pins.LED0, direction: 'out', activeLow: true});
-var yellow = gpio.open({pin: pins.LED1, direction: 'out', activeLow: true});
-var green  = gpio.open({pin: pins.LED2, direction: 'out', activeLow: false});
+var red    = gpio.open({pin: "LED0", activeLow: true});
+var yellow = gpio.open({pin: "LED1", activeLow: true});
+var green  = gpio.open({pin: "LED2", activeLow: false});
 
 var elapsed = 0;
 
 // turn red light on first
-red.write(true);
-yellow.write(false);
-green.write(false);
+red.write(1);
+yellow.write(0);
+green.write(0);
 
 // schedule a function to run every 1s (1000ms)
 setInterval(function () {
     elapsed++;
     if (elapsed == 5) {
         // switch to green after 5s
-        red.write(false);
-        green.write(true);
+        red.write(0);
+        green.write(1);
     } else if (elapsed == 8) {
         // switch to yellow after 3s
-        green.write(false);
-        yellow.write(true);
+        green.write(0);
+        yellow.write(1);
     } else if (elapsed == 10) {
         // switch to red after 2s
-        yellow.write(false);
-        red.write(true);
+        yellow.write(0);
+        red.write(1);
         elapsed = 0;
     }
 }, 1000);

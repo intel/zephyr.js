@@ -12,33 +12,33 @@ var assert = require("Assert.js");
 
 // test AIO open
 assert.throws(function() {
-    aio.open({ pin: 1024 });
+    aio.open({pin: 1024});
 }, "open: undefined pin");
 
-var pinA = aio.open({ pin: pins.A0 });
+var pinA = aio.open({pin: pins.A0});
 assert(pinA !== null && typeof pinA === "object", "open: defined pin");
 
-var readFlag = false;
-var readAsyncflag = false;
-var waveFlag = false;
-var OldwaveFlag = true;
+var readFlag = 0;
+var readAsyncflag = 0;
+var waveFlag = 0;
+var OldwaveFlag = 1;
 var readTimes = 0;
 var readCount = 0;
 var readValue = 0;
 
-var pinB = gpio.open({ pin: pins.IO4, direction: 'out' });
-pinB.write(true);
+var pinB = gpio.open({pin: "IO4", mode: 'out'});
+pinB.write(1);
 
 // test AIOPin on
 pinA.on("change", function () {
     readValue = pinA.read();
 
     if (readValue <= 100) {
-        waveFlag = false;
+        waveFlag = 0;
     }
 
     if (readValue >= 4000) {
-        waveFlag = true;
+        waveFlag = 1;
     }
 
     if (waveFlag !== OldwaveFlag) {
@@ -52,7 +52,7 @@ pinA.on("change", function () {
 // test AIOPin read
 var onInterval = setInterval(function () {
     pinB.write(readFlag);
-    readFlag = !readFlag;
+    readFlag = 1 - readFlag;
     readTimes++;
 
     if (readTimes === 4) {
@@ -87,11 +87,11 @@ var onInterval = setInterval(function () {
     if (readTimes === 10) {
         pinA.readAsync(function (rawValue) {
             if (rawValue >= 4000) {
-                readAsyncflag = true;
+                readAsyncflag = 1;
             }
 
             if (rawValue <= 100) {
-                readAsyncflag = false;
+                readAsyncflag = 0;
             }
 
             assert(readAsyncflag !== readFlag,

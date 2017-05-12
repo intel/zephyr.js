@@ -4,6 +4,7 @@
 #include "gpio.h"
 #endif
 
+#include "zjs_board.h"
 #include "zjs_gpio.h"
 #include "zjs_util.h"
 
@@ -33,14 +34,14 @@ static jerry_value_t mock_root_obj = 0;
 static jerry_value_t get_pin(jerry_value_t port, unsigned int pin)
 {
     char name[15];
-    sprintf(name, "pin%u\n", pin);
+    sprintf(name, "pin%u", pin);
     return zjs_get_property(port, name);
 }
 
 static jerry_value_t ensure_pin(jerry_value_t port, unsigned int pin)
 {
     char name[15];
-    sprintf(name, "pin%u\n", pin);
+    sprintf(name, "pin%u", pin);
     jerry_value_t pin_obj = zjs_get_property(port, name);
     if (!jerry_value_is_object(pin_obj)) {
         pin_obj = jerry_create_object();

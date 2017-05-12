@@ -14,10 +14,9 @@ console.log("(D14-D15 are at the end of the 10-pin header)\n");
 
 // import gpio module
 var gpio = require("gpio");
-var pins = require("k64f_pins");
 
 // blink D0 forever
-var input = gpio.open({pin: pins.D0, direction: 'in', edge: 'rising'});
+var input = gpio.open({pin: 0, mode: 'in', edge: 'rising'});
 var count = 1;
 input.onchange = function(event) {
     console.log("Output event", count);
@@ -25,19 +24,17 @@ input.onchange = function(event) {
 }
 
 // test all pins but D0
-var testpins = [pins.D1, pins.D2, pins.D3, pins.D4, pins.D5, pins.D6, pins.D7,
-                pins.D8, pins.D9, pins.D10, pins.D11, pins.D12, pins.D13,
-                pins.D14, pins.D15];
+var testpins = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
 var pincount = testpins.length;
 var gpios = [];
 for (var i = 0; i < pincount; i++) {
     gpios[i] = gpio.open({pin: testpins[i]});
 }
 
-var tick = 250, toggle = false;
+var tick = 250, toggle = 0;
 setInterval(function () {
     for (var i = 0; i < pincount; i++) {
         gpios[i].write(toggle);
     }
-    toggle = !toggle;
+    toggle = 1 - toggle;
 }, tick);

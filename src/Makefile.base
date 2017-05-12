@@ -55,6 +55,7 @@ obj-y += main.o \
          zjs_timers.o \
          zjs_util.o
 
+obj-$(ZJS_BOARD) += zjs_board.o
 obj-$(ZJS_BUFFER) += zjs_buffer.o
 obj-$(ZJS_CONSOLE) += zjs_console.o
 obj-$(ZJS_DGRAM) += zjs_dgram.o

@@ -10,6 +10,7 @@ OCF_ROOT ?= deps/iotivity-constrained
 BUILD_DIR = $(ZJS_BASE)/outdir/linux/$(VARIANT)
 
 CORE_SRC +=	src/zjs_a101_pins.c \
+		src/zjs_board.c \
 		src/zjs_buffer.c \
 		src/zjs_callbacks.c \
 		src/zjs_common.c \
@@ -48,11 +49,12 @@ LINUX_LIBS +=		-pthread
 endif
 
 LINUX_DEFINES +=	-DZJS_LINUX_BUILD \
+			-DBUILD_MODULE_BOARD \
+			-DBUILD_MODULE_BUFFER \
 			-DBUILD_MODULE_EVENTS \
 			-DBUILD_MODULE_PERFORMANCE \
 			-DBUILD_MODULE_CONSOLE \
 			-DZJS_PRINT_FLOATS \
-			-DBUILD_MODULE_BUFFER \
 			-DBUILD_MODULE_TEST_PROMISE \
 			-DBUILD_MODULE_PROMISE \
 			-DBUILD_MODULE_TEST_CALLBACKS \

@@ -4,28 +4,24 @@
 // The buzzer squeals while the button is held down. Some tape over the buzzer
 // could probably make it a lot less annoying.
 
-console.log("Electroshock sample...");
+console.log('Electroshock sample...');
 
-var pins = require("arduino101_pins");
-var gpio = require("gpio");
+var gpio = require('gpio');
 
-var debounce = false;
-
-var button = gpio.open({ pin: pins.IO2, direction: 'in', edge: 'any' });
+var button = gpio.open({pin: 2, mode: 'in', edge: 'any'});
 
 // IO4, IO7, IO8 can work here
-var buzzer = gpio.open({ pin: pins.IO4, direction: 'out' });
+var buzzer = gpio.open({pin: 4});
 
-var lastState = false;
+var debounce = false;
+var lastState = 0;
 
 button.onchange = function (event) {
     if (debounce)
         return;
 
     debounce = true;
-
     updateBuzzer();
-
     setTimeout(resetDebounce, 20);
 }
 
@@ -36,8 +32,7 @@ function resetDebounce() {
 
 function updateBuzzer() {
     var value = button.read();
-    if (value != lastState) {
-        console.log("WRITE", value);
+    if (value !== lastState) {
         buzzer.write(value);
         lastState = value;
     }

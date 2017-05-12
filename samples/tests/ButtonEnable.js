@@ -11,26 +11,25 @@
 // it doesn't work the other way and I haven't figured out why yet. It may
 // relate to IO5 being connected to both the X86 and ARC processors.
 
-console.log("Button enable test...");
+console.log('Button enable test...');
 
 // import gpio module
-var gpio = require("gpio");
-var pins = require("arduino101_pins");
+var gpio = require('gpio');
 
-var led1 = gpio.open({pin: pins.LED1, activeLow: true});
-var led2 = gpio.open({pin: pins.LED2, activeLow: false});
-var btn1 = gpio.open({pin: pins.IO2, direction: 'in', edge: 'any'});
-var btn2 = gpio.open({pin: pins.IO4, direction: 'in', edge: 'any'});
+var led1 = gpio.open({pin: 'LED1', activeLow: true});
+var led2 = gpio.open({pin: 'LED2', activeLow: false});
+var btn1 = gpio.open({pin: 'IO2', mode: 'in', edge: 'any'});
+var btn2 = gpio.open({pin: 'IO4', mode: 'in', edge: 'any'});
 
 // turn off LED #2 initially
-led1.write(false);
+led1.write(0);
 
 btn1.onchange = function (event) {
     var value = btn1.read();
     led1.write(value);
 
     if (value) {
-    // set up btn2 to toggle led2 while btn1 is down
+        // set up btn2 to toggle led2 while btn1 is down
         btn2.onchange = function (event) {
             var value = btn2.read();
             led2.write(value);

@@ -26,31 +26,31 @@ for (var i = 0; i < GPIOPins.length; i++) {
     if (pinName == "D8") continue;
 
     // GPIOPins as input pins
-    var pinA = gpio.open({ pin: pins[pinName], direction: "in" });
+    var pinA = gpio.open({pin: pinName, mode: "in"});
     var pinAValue1 = pinA.read();
     var ApullValue = (pinAValue1) ? " weak pull-up" : " weak pull-down";
 
-    assert(typeof pinAValue1 == "boolean",
+    assert(typeof pinAValue1 == "number",
            "K64f_pins: " + pinName + ApullValue + " on input");
 
-    pinA.write(false);
+    pinA.write(0);
     var pinAValue2 = pinA.read();
 
-    assert(typeof pinAValue2 == "boolean" && pinAValue1 == pinAValue2,
+    assert(typeof pinAValue2 == "number" && pinAValue1 == pinAValue2,
            "K64f_pins: " + pinName + " input");
 
     // GPIOPins as output pins
-    var pinB = gpio.open({ pin: pins[pinName], direction: "out" });
+    var pinB = gpio.open({pin: pinName, mode: "out"});
     var pinBValue1 = pinB.read();
     var BpullValue = (pinBValue1) ? " weak pull-up" : " weak pull-down";
 
-    assert(typeof pinBValue1 == "boolean",
+    assert(typeof pinBValue1 == "number",
            "K64f_pins: " + pinName + BpullValue + " on output");
 
-    pinB.write(true);
+    pinB.write(1);
     var pinBValue2 = pinB.read();
 
-    assert(typeof pinBValue2 == "boolean" && pinBValue2 != pinBValue1,
+    assert(typeof pinBValue2 == "number" && pinBValue2 != pinBValue1,
           "K64f_pins: " + pinName + " output");
 }
 
@@ -68,12 +68,12 @@ for (var i = 0; i < LEDs.length; i++) {
 
     // activeLow
     var lowFlag = LEDs[i][1];
-    var pin = gpio.open({ pin: pins[pinName], activeLow: lowFlag });
+    var pin = gpio.open({pin: pinName, activeLow: lowFlag});
 
     var pinValue = pin.read();
     assert(pinValue == lowFlag, "K64f_pins: " + pinName + " active high");
 
-    pin.write(!pinValue);
+    pin.write(1 - pinValue);
     assert(pin.read() != pinValue, "K64f_pins: " + pinName + " output");
 }
 
@@ -81,12 +81,12 @@ for (var i = 0; i < LEDs.length; i++) {
 checkDefined("SW2");
 checkDefined("SW3");
 
-var SW2 = gpio.open({ pin: pins.SW2, direction: "in" });
+var SW2 = gpio.open({pin: "SW2", mode: "in"});
 
 var SWValue = SW2.read();
-assert(typeof SWValue == "boolean", "K64f_pins: SW2 input");
+assert(typeof SWValue == "number", "K64f_pins: SW2 input");
 
-SW2.write(!SWValue);
+SW2.write(1 - SWValue);
 assert(SW2.read() == SWValue, "K64f_pins: SW2 not output");
 
 // PWM Pins

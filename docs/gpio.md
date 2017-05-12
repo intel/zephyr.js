@@ -11,6 +11,9 @@ Introduction
 The GPIO API supports digital I/O pins. Pins can be configured as inputs or
 outputs, with some board-specific limitations.
 
+The GPIO API intends to follow the [iot-js-api specification](https://github.com/01org/iot-js-api/tree/master/board/gpio.md),
+but both that and ZJS are under a lot of change at the moment.
+
 Web IDL
 -------
 This IDL provides an overview of the interface; see below for documentation of
@@ -22,21 +25,21 @@ specific API functions.
 
 [NoInterfaceObject]
 interface GPIO {
-    GPIOPin open(GPIOInit init);
+    GPIOPin open(number or string or GPIOInit init);
 };
 
 dictionary GPIOInit {
-    unsigned long pin;
+    number or string pin;
     boolean activeLow = false;
-    string direction = "out";  // in, out
-    string edge = "any";       // none, rising, falling, any
-    string pull = "none";      // none, up, down
+    string mode = "out";        // in, out
+    string edge = "none";       // none, rising, falling, any
+    string state = "none";      // none, up, down
 };
 
 [NoInterfaceObject]
 interface GPIOPin {
-    boolean read();
-    void write(boolean value);
+    number read();
+    void write(number value);
     void close();
     attribute ChangeCallback onchange;
 };
@@ -44,8 +47,7 @@ interface GPIOPin {
 callback ChangeCallback = void (GPIOEvent);
 
 dictionary GPIOEvent {
-    // TODO: probably should add event type here, or else return value directly
-    boolean value;
+    number value;
 }
 ```
 
@@ -53,47 +55,58 @@ API Documentation
 -----------------
 ### GPIO.open
 
-`GPIOPin open(GPIOInit init);`
+`GPIOPin open(number or string or GPIOInit init);`
 
-The `init` object lets you set the pin number. You can either use a raw
-number for your device or use the board support module such as
-[Arduino 101](./a101_pins.md) or [K64F](./k64f_pins.md) to specify a named pin.
+If the argument is a number, it is a pin number. If it is a string, it is a
+pin name. Otherwise, it must be an `init` object.
+
+The `init` object lets you set the pin number or name with the `pin` property.
+
+If the pin number or name is valid for the given board, the call will succeed.
+You can use a pin name like "GPIO_0.10" where "GPIO_0" is the name of a Zephyr
+gpio port device for your board and 10 is the pin number. This will work on any
+board as long as you find the right values in Zephyr documentation. But for
+boards with specific ZJS support, you can use friendly names. Currently this
+means Arduino 101 and FRDM-K64F. For the A101, you can use numbers 0-13 or
+strings "IO0" through "IO13", as well as "LED0" through "LED2". For K64F, you
+can use numbers 0-15 or strings "D0" through "D15", as well as "LEDR", "LEDG",
+and "LEDB" for the RGB LED, and "SW2" and "SW3" for onboard switches.
 
 The other values are optional. The `activeLow` setting determines whether
 high (default) or low means active. When you read or write a boolean value,
 true means 'active' and false means 'inactive'.
 
-The `direction` value determines whether the pin is an input ('in') or output
+The `mode` value determines whether the pin is an input ('in') or output
 ('out', default).
 
 The `edge` value is for input pins and tells whether the `onchange` callback
 will be called on the rising edge of the signal, falling edge, or both.
 
-The `pull` value is to enable an internal pullup or pulldown resistor. This
+The `state` value is to enable an internal pullup or pulldown resistor. This
 would be used for inputs to provide a default (high or low) when the input is
 floating (not being intentionally driven to a particular value).
 
-*NOTE: Zephyr does not currently use this pull setting, at least for Arduino
-101. Perhaps there is no hardware support, but in any case it doesn't work. You
-can always provide an external resistor for this purpose instead.*
+*NOTE: When we last checked, Zephyr did not use this state setting, at least for
+Arduino 101. Perhaps there is no hardware support, but in any case it didn't
+work. You can always provide an external resistor for this purpose instead.*
 
 The function returns a GPIOPin object that can be used to read or write the pin.
 
 ### GPIOPin.read
 
-`boolean read();`
+`number read();`
 
 Returns the current reading from the pin. This is a synchronous function because
 it should be nearly instantaneous on the devices we've tested with so far. The
-value will be true if the pin is active (high by default, low for a pin
-configured active low), false if inactive.
+value will be 1 if the pin is active (high by default, low for a pin configured
+active low), 0 if inactive.
 
 ### GPIOPin.write
 
-`void write(boolean value);`
+`void write(number value);`
 
-Pass true for `value` to make an output pin active (high by default, low for
-a pin configured active low), false to make it inactive.
+Pass 1 for `value` to make an output pin active (high by default, low for a pin
+configured active low), 0 to make it inactive.
 
 ### GPIOPin.close
 

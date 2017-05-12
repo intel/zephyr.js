@@ -1,15 +1,14 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
-console.log("Wire IO2 to IO4");
+console.log("Wire IO7 to IO8");
 
 var gpio = require("gpio");
-var pins = require("arduino101_pins");
 var ble = require ("ble");
 var assert = require("Assert.js");
 
 var deviceName, bufferData, pinA, pinB, disconnectClient,
     readValue, acceptClient, rssiValue, tmpValue;
-var writeValue = true;
+var writeValue = 1;
 var poweredOnFlag = false;
 var advertisingFlag = false;
 var writeFlag = true;
@@ -22,8 +21,8 @@ var advertiseFlag = true;
 var totalFlag = false;
 var stopFlag = true;
 
-pinA = gpio.open({ pin: pins.IO7 });
-pinB = gpio.open({ pin: pins.IO8, direction: "in" });
+pinA = gpio.open({ pin: "IO7" });
+pinB = gpio.open({ pin: "IO8", direction: "in" });
 pinA.write(writeValue);
 readValue = pinB.read();
 
@@ -46,9 +45,9 @@ var keywordResult = [ true, true, true, true ];
 writeCharacteristic.onWriteRequest = function(data, offset, withoutResponse,
                                               callback) {
     if (data.toString('hex') === "01") {
-        writeValue = true;
+        writeValue = 1;
     } else if (data.toString('hex') === "00") {
-        writeValue = false;
+        writeValue = 0;
     } else {
         tmpValue = writeValue;
         writeValue = null;
@@ -64,11 +63,11 @@ writeCharacteristic.onWriteRequest = function(data, offset, withoutResponse,
         return;
     }
 
-    if (typeof writeValue !== "boolean") {
+    if (typeof writeValue !== "number") {
         if (keywordResult[1]) {
             keywordResult[1] = false;
             assert(true, "result: RESULT_UNLIKELY_ERROR");
-        }
+       }
 
         writeValue = tmpValue;
         callback(this.RESULT_UNLIKELY_ERROR);
@@ -193,6 +192,8 @@ ble.on('accept', function (clientAddress) {
 
     if (stopFlag) {
         setTimeout(function () {
+            // FIXME: this function actually requires a string argument but
+            //   that's not documented
             ble.disconnect();
             console.log("please connect again");
         }, 1000);
