@@ -59,7 +59,7 @@ FUNC_NAME ?= off
 JERRY_BASE ?= $(ZJS_BASE)/deps/jerryscript
 EXT_JERRY_FLAGS ?=	-DENABLE_ALL_IN_ONE=ON \
 			-DFEATURE_PROFILE=$(ZJS_BASE)/outdir/$(BOARD)/jerry_feature.profile \
-			-DFEATURE_ERROR_MESSAGES=OFF \
+			-DFEATURE_ERROR_MESSAGES=ON \
 			-DJERRY_LIBM=OFF
 
 # Generate and run snapshot as byte code instead of running JS directly
