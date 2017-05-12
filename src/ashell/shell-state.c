@@ -41,24 +41,24 @@ static struct shell_state_config shell = {
     .state_flags = kShellTransferRaw
 };
 
-const char ERROR_NOT_ENOUGH_ARGUMENTS[] = "Not enough arguments";
-const char ERROR_FILE_NOT_FOUND[] = "File not found";
+const char ERROR_NOT_ENOUGH_ARGUMENTS[] = "Not enough arguments\r\n";
+const char ERROR_FILE_NOT_FOUND[] = "File not found\r\n";
 
 const char MSG_FILE_SAVED[] =
      ANSI_FG_GREEN "Saving file. " ANSI_FG_RESTORE
-     "run the 'run' command to see the result";
+     "run the 'run' command to see the result\r\n";
 
-const char MSG_FILE_ABORTED[] = ANSI_FG_RED "Aborted!";
-const char MSG_EXIT[] = ANSI_FG_GREEN "Back to shell!";
+const char MSG_FILE_ABORTED[] = ANSI_FG_RED "Aborted!\r\n";
+const char MSG_EXIT[] = ANSI_FG_GREEN "Back to shell!\r\n";
 
 const char READY_FOR_RAW_DATA[] =
     "Ready for JavaScript. \r\n" \
     "\tCtrl+Z to finish transfer.\r\n" \
-    "\tCtrl+X to cancel.";
+    "\tCtrl+X to cancel.\r\n";
 
 const char MSG_IMMEDIATE_MODE[] =
     "Ready to evaluate JavaScript.\r\n" \
-    "\tCtrl+D to return to shell.";
+    "\tCtrl+D to return to shell.\r\n";
 
 const char hex_prompt[] = "[HEX]\r\n";
 const char raw_prompt[] = ANSI_FG_YELLOW "RAW> " ANSI_FG_RESTORE;
@@ -67,7 +67,7 @@ const char *BUILD_TIMESTAMP = __DATE__ " " __TIME__ "\n";
 
 #define CMD_TRANSFER "transfer"
 
-#define READ_BUFFER_SIZE 4
+#define READ_BUFFER_SIZE 80
 
 #ifndef CONFIG_IHEX_UPLOADER_DEBUG
 #define DBG(...) { ; }
@@ -89,7 +89,7 @@ int32_t ashell_get_filename_buffer(const char *buf, char *destination)
 
     if (arg_len == 0) {
         *destination = '\0';
-        comms_println(ERROR_NOT_ENOUGH_ARGUMENTS);
+        comms_print(ERROR_NOT_ENOUGH_ARGUMENTS);
         return RET_ERROR;
     }
 
@@ -130,7 +130,7 @@ int32_t ashell_disk_usage(char *buf)
 
     fs_file_t *file = fs_open_alloc(filename, "r");
     if (file == NULL) {
-        comms_println(ERROR_FILE_NOT_FOUND);
+        comms_print(ERROR_FILE_NOT_FOUND);
         return RET_ERROR;
     }
 
@@ -158,7 +158,7 @@ int32_t ashell_rename(char *buf)
     char *next = ashell_get_token_arg(buf);
 
     if (next == NULL) {
-        comms_println(ERROR_NOT_ENOUGH_ARGUMENTS);
+        comms_print(ERROR_NOT_ENOUGH_ARGUMENTS);
         return RET_ERROR;
     }
 
@@ -188,8 +188,6 @@ int32_t ashell_error(char *buf)
 
 int32_t ashell_reboot(char *buf)
 {
-    comms_println("Rebooting now!");
-
 #ifdef CONFIG_REBOOT
     //TODO Waiting for patch https://gerrit.zephyrproject.org/r/#/c/3161/
     #ifdef CONFIG_BOARD_ARDUINO_101
@@ -206,8 +204,8 @@ int32_t ashell_list_dir(char *buf)
     static struct fs_dirent entry;
     int32_t res;
     fs_dir_t dp;
-
     *filename = '\0';
+
     if (ashell_get_filename_buffer(buf, filename) > 0) {
         /* Check if file or directory */
         if (!fs_stat(filename, &entry)) {
@@ -231,6 +229,8 @@ int32_t ashell_list_dir(char *buf)
         printf(ANSI_FG_LIGHT_BLUE "      .\n      ..\n" ANSI_FG_RESTORE);
     }
 
+    char filesizeStr[16];
+
     for (;;) {
         res = fs_readdir(&dp, &entry);
 
@@ -245,7 +245,11 @@ int32_t ashell_list_dir(char *buf)
             for (; *p; ++p)
                 *p = tolower((int)*p);
 
-            printf("%5u %s\n", (unsigned int)entry.size, entry.name);
+            int filesizeStrLen = snprintf(filesizeStr, 16, "%d", (int)entry.size);
+            comms_write_buf(filesizeStr, filesizeStrLen);
+            comms_write_buf("\t", 1);
+            comms_print(entry.name);
+            comms_write_buf("\r\n", 2);
         }
     }
 
@@ -258,17 +262,7 @@ int32_t ashell_print_file(char *buf)
     char filename[MAX_FILENAME_SIZE];
     char data[READ_BUFFER_SIZE];
     fs_file_t *file;
-    size_t count;
-    size_t line = 1;
-
-    // Show not printing
-    bool hidden = ashell_check_parameter(buf, 'v');
-    bool lines = ashell_check_parameter(buf, 'n');
-    if (lines)
-        printk(" Print lines \n");
-
-    if (hidden)
-        printk(" Print hidden \n");
+    ssize_t count;
 
     if (ashell_get_filename_buffer(buf, filename) <= 0) {
         return RET_ERROR;
@@ -278,37 +272,38 @@ int32_t ashell_print_file(char *buf)
 
     /* Error getting an id for our data storage */
     if (!file) {
-        comms_println(ERROR_FILE_NOT_FOUND);
+        comms_print(ERROR_FILE_NOT_FOUND);
         return RET_ERROR;
     }
 
     ssize_t size = fs_size(file);
     if (size == 0) {
-        comms_println("Empty file");
+        comms_print("Empty file\r\n");
         fs_close_alloc(file);
         return RET_OK;
     }
 
     fs_seek(file, 0, SEEK_SET);
-    if (lines)
-        comms_printf("%5d  ", line++);
 
+    int lineStart = 0;
     do {
-        count = fs_read(file, data, 4);
+        count = fs_read(file, data, READ_BUFFER_SIZE);
         for (int t = 0; t < count; t++) {
-            uint8_t byte = data[t];
-            if (byte == '\n' || byte == '\r') {
+            if (data[t] == '\n' || data[t] == '\r') {
+                int strLen = t - lineStart;
+                comms_write_buf(&data[lineStart], strLen);
                 comms_write_buf("\r\n", 2);
-                if (lines)
-                    comms_printf("%5d  ", line++);
-
-            } else {
-                if (hidden && !isprint(byte)) {
-                    comms_printf("(%x)", byte);
-                } else
-                    comms_writec(byte);
+                lineStart = t + 1;
             }
         }
+        // If we have data left that doesn't end in a newline, print it.
+        if (lineStart < count)
+        {
+            int strLen = count - lineStart;
+            comms_write_buf(&data[lineStart], strLen);
+        }
+        // Reset the line start
+        lineStart = 0;
     } while (count > 0);
 
     comms_write_buf("\r\n", 2);
@@ -323,9 +318,7 @@ int32_t ashell_parse_javascript(char *buf)
         return RET_ERROR;
     }
 
-    bool verbose = ashell_check_parameter(buf, 'v');
-
-    javascript_parse_code(filename, verbose);
+    javascript_parse_code(filename);
     return RET_OK;
 }
 
@@ -377,7 +370,7 @@ int32_t ashell_eval_javascript(const char *buf, uint32_t len)
             case ASCII_SUBSTITUTE:
             case ASCII_END_OF_TEXT:
             case ASCII_CANCEL:
-                comms_println(MSG_EXIT);
+                comms_print(MSG_EXIT);
                 shell.state_flags &= ~kShellEvalJavascript;
                 comms_set_prompt(NULL);
                 return RET_OK;
@@ -400,7 +393,7 @@ int32_t ashell_raw_capture(const char *buf, uint32_t len)
             switch (byte) {
             case ASCII_END_OF_TRANS:
             case ASCII_SUBSTITUTE:
-                comms_println(MSG_FILE_SAVED);
+                comms_print(MSG_FILE_SAVED);
                 shell.state_flags &= ~kShellCaptureRaw;
                 comms_set_prompt(NULL);
                 ashell_close_capture();
@@ -408,17 +401,17 @@ int32_t ashell_raw_capture(const char *buf, uint32_t len)
                 break;
             case ASCII_END_OF_TEXT:
             case ASCII_CANCEL:
-                comms_println(MSG_FILE_ABORTED);
+                comms_print(MSG_FILE_ABORTED);
                 shell.state_flags &= ~kShellCaptureRaw;
                 comms_set_prompt(NULL);
                 ashell_discard_capture();
                 return RET_OK;
             case ASCII_CR:
             case ASCII_IF:
-                comms_println("");
+                comms_print("\r\n");
                 break;
             default:
-                printf("%c", byte);
+                comms_write_buf(buf, 1);
             }
         } else {
             size_t written = fs_write(file_code, &byte, 1);
@@ -437,10 +430,10 @@ int32_t ashell_raw_capture(const char *buf, uint32_t len)
 int32_t ashell_set_echo_mode(char *buf)
 {
     if (!strcmp("on", buf)) {
-        comms_println("echo_on");
+        comms_print("echo_on");
         comms_set_echo_mode(true);
     } else if (!strcmp("off", buf)) {
-        comms_println("echo_off");
+        comms_print("echo_off");
         comms_set_echo_mode(false);
     }
     return RET_OK;
@@ -461,9 +454,9 @@ int32_t ashell_read_data(char *buf)
                 return RET_ERROR;
             }
 
-            comms_println(ANSI_CLEAR);
+            comms_print(ANSI_CLEAR);
             comms_printf("Saving to '%s'\r\n", filename);
-            comms_println(READY_FOR_RAW_DATA);
+            comms_print(READY_FOR_RAW_DATA);
             comms_set_prompt(raw_prompt);
             shell.state_flags |= kShellCaptureRaw;
             ashell_start_raw_capture(filename);
@@ -476,7 +469,7 @@ int32_t ashell_js_immediate_mode(char *buf)
 {
     shell.state_flags |= kShellEvalJavascript;
     comms_print(ANSI_CLEAR);
-    comms_println(MSG_IMMEDIATE_MODE);
+    comms_print(MSG_IMMEDIATE_MODE);
     comms_set_prompt(eval_prompt);
     return RET_OK;
 }
@@ -485,11 +478,11 @@ int32_t ashell_set_transfer_state(char *buf)
 {
     char *next;
     if (buf == 0) {
-        comms_println(ERROR_NOT_ENOUGH_ARGUMENTS);
+        comms_print(ERROR_NOT_ENOUGH_ARGUMENTS);
         return RET_ERROR;
     }
     next = ashell_get_token_arg(buf);
-    comms_println(buf);
+    comms_print(buf);
 
     if (!strcmp("raw", buf)) {
         comms_set_prompt(NULL);
@@ -510,7 +503,7 @@ int32_t ashell_set_transfer_state(char *buf)
 int32_t ashell_set_state(char *buf)
 {
     if (buf == 0) {
-        comms_println(ERROR_NOT_ENOUGH_ARGUMENTS);
+        comms_print(ERROR_NOT_ENOUGH_ARGUMENTS);
         return RET_ERROR;
     }
 
@@ -525,7 +518,7 @@ int32_t ashell_set_state(char *buf)
 int32_t ashell_get_state(char *buf)
 {
     if (buf == 0) {
-        comms_println(ERROR_NOT_ENOUGH_ARGUMENTS);
+        comms_print(ERROR_NOT_ENOUGH_ARGUMENTS);
         return RET_ERROR;
     }
 
@@ -534,10 +527,10 @@ int32_t ashell_get_state(char *buf)
         DBG("Flags %lu\n", shell.state_flags);
 
         if (shell.state_flags & kShellTransferRaw)
-            comms_println("Raw");
+            comms_print("Raw\r\n");
 
         if (shell.state_flags & kShellTransferIhex)
-            comms_println("Ihex");
+            comms_print("Ihex\r\n");
 
         return RET_OK;
     }
@@ -546,19 +539,7 @@ int32_t ashell_get_state(char *buf)
 
 int32_t ashell_at(char *buf)
 {
-    comms_println("OK\r\n");
-    return RET_OK;
-}
-
-int32_t ashell_test(char *buf)
-{
-    comms_println("TEST OK\r\n");
-    return RET_OK;
-}
-
-int32_t ashell_ping(char *buf)
-{
-    comms_println("[PONG]\r\n");
+    comms_print("OK\r\n\r\n");
     return RET_OK;
 }
 
@@ -597,20 +578,20 @@ int32_t ashell_check_control(const char *buf, uint32_t len)
 int32_t ashell_set_bootcfg(char *buf)
 {
     if (!fs_exist(buf)) {
-        comms_println("File passed to cfg doesn't exist\n");
+        comms_print("File passed to cfg doesn't exist\n\r\n");
         return RET_ERROR;
     }
 
     fs_file_t *file = fs_open_alloc("boot.cfg", "w+");
     if (!file) {
-        comms_println("Failed to create boot.cfg file");
+        comms_print("Failed to create boot.cfg file\r\n");
         return RET_ERROR;
     }
 
     ssize_t written = fs_write(file, BUILD_TIMESTAMP, strlen(BUILD_TIMESTAMP));
     written += fs_write(file, buf, strlen(buf));
     if (written <= 0) {
-        comms_println("Failed to write boot.cfg file");
+        comms_print("Failed to write boot.cfg file\r\n");
     }
 
     fs_close_alloc(file);
@@ -638,10 +619,7 @@ static const struct ashell_cmd commands[] =
 
 //    ASHELL_COMMAND("rmdir", "[TODO]"                                         ,ashell_remove_dir),
 //    ASHELL_COMMAND("mkdir", "[TODO]"                                         ,ashell_make_dir),
-    ASHELL_COMMAND("test",  "Runs your current test"                         ,ashell_test),
     ASHELL_COMMAND("error", "Prints an error using JerryScript"              ,ashell_error),
-    ASHELL_COMMAND("ping",  "Prints '[PONG]' to check that we are alive"     ,ashell_ping),
-    ASHELL_COMMAND("at",    "OK used by the driver when initializing"        ,ashell_at),
     ASHELL_COMMAND("echo",  "[on/off] Sets console echo mode on/off"         ,ashell_set_echo_mode),
 
     ASHELL_COMMAND("set",   "Sets the input mode for 'load' accept data\r\n\ttransfer raw\r\n\ttransfer ihex\t",ashell_set_state),
@@ -653,12 +631,14 @@ static const struct ashell_cmd commands[] =
 
 int32_t ashell_help(char *buf)
 {
-    comms_println("'A Shell' bash\r\n");
-    comms_println("Commands list:");
+    comms_print("'A Shell' bash\r\n\r\n");
+    comms_print("Commands list:\r\n");
     for (uint32_t t = 0; t < ASHELL_COMMANDS_COUNT; t++) {
-        comms_printf("%8s %s\r\n", commands[t].cmd_name, commands[t].syntax);
+        comms_print(commands[t].cmd_name);
+        comms_write_buf("\t", 1);
+        comms_print(commands[t].syntax);
+        comms_write_buf("\r\n", 2);
     }
-    //comms_println("TODO: Read help file per command!");
     return RET_OK;
 }
 
@@ -752,7 +732,7 @@ int32_t ashell_main_state(char *buf, uint32_t len)
         comms_print("[ERRCMD]\n");
     } else {
         comms_printf("%s: command not found. \r\n", buf);
-        comms_println("Type 'help' for available commands.");
+        comms_print("Type 'help' for available commands.\r\n");
     }
     return RET_UNKNOWN;
 }

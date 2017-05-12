@@ -146,21 +146,6 @@ void fifo_recycle_buffer(struct comms_input *data)
     }
     k_fifo_put(&avail_queue, data);
 }
-void comms_clear(void)
-{
-    void *data = NULL;
-    do {
-        if (data != NULL)
-            zjs_free(data);
-        data = k_fifo_get(&avail_queue, K_NO_WAIT);
-    } while (data);
-
-    do {
-        if (data != NULL)
-            zjs_free(data);
-        data = k_fifo_get(&data_queue, K_NO_WAIT);
-    } while (data);
-}
 
 /**************************** UART CAPTURE **********************************/
 
@@ -231,10 +216,6 @@ static void comms_interrupt_handler(struct device *dev)
             bytes_received += bytes_read;
             tail += bytes_read;
 
-            for (uint32_t t = 0; t<bytes_read; t++) {
-                printk("%c",buf[t]);
-            }
-
             /* We don't want to flush data too fast otherwise we would be allocating
             * but we want to flush as soon as we have processed the data on the task
             * so we don't queue too much and delay the system response.
@@ -301,7 +282,8 @@ static void comms_interrupt_handler(struct device *dev)
 
 static int comms_out(int c)
 {
-    comms_writec((char)c);
+    char ch = (char)c;
+    comms_write_buf(&ch, 1);
     return 1;
 }
 
@@ -320,31 +302,20 @@ void comms_write_buf(const char *buf, int len)
     if (len == 0)
         return;
 
-    struct device *dev = dev_upload;
-    uart_irq_tx_enable(dev);
-
+    uart_irq_tx_enable(dev_upload);
     data_transmitted = false;
-    uart_fifo_fill(dev, buf, len);
-
+    int bytes = 0;
+    while (bytes != len) {
+        buf += bytes;
+        len -= bytes;
+        bytes = uart_fifo_fill(dev_upload, (const uint8_t *)buf, len);
+    }
     while (data_transmitted == false);
-
-    uart_irq_tx_disable(dev);
+    uart_irq_tx_disable(dev_upload);
 }
-
-void comms_writec(char byte)
-{
-    comms_write_buf(&byte, 1);
-}
-
 void comms_print(const char *buf)
 {
-    comms_write_buf(buf, strnlen(buf, MAX_LINE_LEN * 4));
-}
-
-void comms_println(const char *buf)
-{
     comms_write_buf(buf, strnlen(buf, MAX_LINE_LEN));
-    comms_write_buf("\r\n", 2);
 }
 
 /**

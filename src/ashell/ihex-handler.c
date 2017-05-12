@@ -53,7 +53,7 @@ ihex_bool_t ihex_data_read(struct ihex_state *ihex,
 
     if (checksum_error) {
         upload_state = UPLOAD_ERROR;
-        comms_println("[ERR] Checksum_error");
+        comms_print("[ERR] Checksum_error\r\n");
         return false;
     };
 
