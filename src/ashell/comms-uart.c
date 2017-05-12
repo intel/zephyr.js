@@ -284,7 +284,8 @@ static void comms_interrupt_handler(struct device *dev)
 
 static int comms_out(int c)
 {
-    comms_write_buf((char*)((int*)&c), 1);
+    char ch = (char)c;
+    comms_write_buf(&ch, 1);
     return 1;
 }
 
