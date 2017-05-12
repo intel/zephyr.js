@@ -203,4 +203,19 @@ fs.unlinkSync('tf3.txt');
 
 fs.unlinkSync('testfile.txt');
 
+// test that w overwrites existing file data
+fd1 = fs.openSync('testfile.txt', 'w');
+fs.writeSync(fd1, new Buffer('somedata'));
+fs.closeSync(fd1);
+fd1 = fs.openSync('testfile.txt', 'w+');
+fs.writeSync(fd1, new Buffer('over'));
+rbuf = new Buffer(8);
+rlen = fs.readSync(fd1, rbuf, 0, 8, 0);
+assert(rlen == 4, "length correct: " + rlen);
+assert(rbuf.toString('ascii') == 'over',
+    "file was overwritten with 'w': " + rbuf.toString('ascii'));
+fs.closeSync(fd1);
+
+fs.unlinkSync('testfile.txt');
+
 assert.result();
