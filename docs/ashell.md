@@ -37,40 +37,18 @@ directly from the browser IDE to Zephyr.js device for execution. Follow the
 below instructions to connect to the device from the browser IDE directly.
 
 1. Start Google Chrome 54 or later on the host PC.
-2. On Ubuntu:
-  * Create a new udev rule to allow Chrome to open a USB device by adding
-    the following line in /etc/udev/rules.d/99-arduino-101.rules
+2. On Ubuntu and Fedora:
+  * Create udev rules to allow Chrome to open the WebUSB enabled device and
+    also prevent ModemManager interfering with that device by adding the
+    following lines in /etc/udev/rules.d/99-arduino-101.rules
 
-     `SUBSYSTEM=="usb", ATTR{idVendor}=="8086", MODE="0664", GROUP="plugdev"`
+>     SUBSYSTEM=="tty", ENV{ID_VENDOR_ID}=="8086", ENV{ID_MODEL_ID}=="f8a1", MODE="0666", ENV{ID_MM_DEVICE_IGNORE}="1", ENV{ID_MM_CANDIDATE}="0"
+>     SUBSYSTEM=="usb", ATTR{idVendor}=="8086", ATTR{idProduct}=="f8a1", MODE="0666" ENV{ID_MM_DEVICE_IGNORE}="1"
 
-     Then run this command:
-     ```bash
-     $ sudo udevadm control --reload-rules
-     ```
-  * Blacklist the device using udev rule or disable ModemManager to stop interfering
-    when the browser accessing the device.
-
-    * To blacklist the device: Add the following line in /etc/udev/rules.d/99-arduino-101.rules
-
-      `SUBSYSTEM=="usb", ATTRS{idVendor}=="8086" ATTRS{idProduct}=="f8a1", ENV{ID_MM_DEVICE_IGNORE}="1"`
-
-      Then run this command:
-      ```bash
-      $ sudo udevadm control --reload-rules
-      ```
-
-      or
-
-    * To disable the ModemManager:
-       ```bash
-       $ sudo service modemmanager stop
-       ```
-
-       If you get the message "Unit modemmanager.service not loaded." try this instead:
-       ```bash
-       $ sudo service ModemManager stop
-       ```
-
+  * Then run this command:
+    ```bash
+    $ sudo udevadm control --reload-rules
+    ```
 3. On Windows:
   * WebUSB compatible device is not appearing with the official WinUSB driver on
     Windows for some reason, so try installing different version of WinUSB driver
