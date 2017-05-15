@@ -32,7 +32,7 @@ function found(resource) {
 
 ocf.start();
 
-client.findResources({ resourceType:"oic.r.light" }, found).then(function(resource) {
+client.findResources({ resourceType:"core.light" }, found).then(function(resource) {
     console.log("findResources() was successful, deviceId=" + resource.deviceId);
 }).catch(function(error) {
     console.log("findResources() returned an error: " + error.name);
