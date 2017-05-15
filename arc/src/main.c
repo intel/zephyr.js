@@ -859,7 +859,7 @@ static void handle_sensor_bmi160(struct zjs_ipm_message *msg)
                 error_code = ERROR_IPM_OPERATION_FAILED;
             }
 #else
-            if (accel_poll) {
+            if (!accel_poll) {
                 error_code = ERROR_IPM_OPERATION_FAILED;
             } else {
                 accel_poll = false;
@@ -871,14 +871,14 @@ static void handle_sensor_bmi160(struct zjs_ipm_message *msg)
                 error_code = ERROR_IPM_OPERATION_FAILED;
             }
 #else
-            if (gyro_poll) {
+            if (!gyro_poll) {
                 error_code = ERROR_IPM_OPERATION_FAILED;
             } else {
                 gyro_poll = false;
             }
 #endif
         } else if (msg->data.sensor.channel == SENSOR_CHAN_TEMP) {
-            if (temp_poll) {
+            if (!temp_poll) {
                 error_code = ERROR_IPM_OPERATION_FAILED;
             } else {
                 temp_poll = false;

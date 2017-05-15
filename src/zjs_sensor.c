@@ -99,6 +99,11 @@ static void zjs_sensor_free_handles(sensor_handle_t *handles)
     sensor_handle_t *tmp;
     while (handles) {
         tmp = handles;
+        if (tmp->state == SENSOR_STATE_ACTIVATED) {
+            // we need to stop all sensors so that ARC
+            // do not continue to send change events
+            zjs_sensor_stop_sensor(tmp->sensor_obj);
+        }
         if (tmp->controller) {
             zjs_free(tmp->controller);
         }
@@ -544,6 +549,7 @@ void zjs_sensor_cleanup()
             zjs_sensor_free_handles(mod->instance->handles);
         }
         mod->cleanup();
+        mod->instance = NULL;
     }
     jerry_release_value(zjs_sensor_prototype);
 }
