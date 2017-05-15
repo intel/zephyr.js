@@ -860,6 +860,7 @@ static ZJS_DECL_FUNC_ARGS(zjs_fs_write_file, uint8_t async)
     }
     if (fs_truncate(&fp, 0) != 0) {
         ERR_PRINT("could not truncate file: %s\n", path);
+        goto Finished;
     }
 
     ssize_t written = fs_write(&fp, data, length);
