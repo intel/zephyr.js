@@ -35,6 +35,7 @@ typedef int32_t(*ashell_cmd)(char *buf);
 struct ashell_cmd
 {
     const char *cmd_name;
+    const char *args;
     const char *syntax;
     ashell_cmd cb;
 };

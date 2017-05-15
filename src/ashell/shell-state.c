@@ -23,6 +23,10 @@
 #include "ihex-handler.h"
 #include "jerry-code.h"
 
+#ifndef CONFIG_USB_CDC_ACM
+#define CONFIG_IDE
+#endif
+
 #ifdef CONFIG_REBOOT
 //TODO Waiting for patch https://gerrit.zephyrproject.org/r/#/c/3161/
 #ifdef CONFIG_BOARD_ARDUINO_101
@@ -600,33 +604,43 @@ int32_t ashell_set_bootcfg(char *buf)
     return RET_OK;
 }
 
-#define ASHELL_COMMAND(name,syntax,cmd) {name, syntax, cmd}
+#ifdef CONFIG_IDE
+// skip listing this command in the IDE by setting description string empty
+#define IDE_SKIP(str) ""
+#else
+#define IDE_SKIP(str) str
+#endif
 
 static const struct ashell_cmd commands[] =
 {
-    ASHELL_COMMAND("help",  "This help", ashell_help),
-    ASHELL_COMMAND("eval",  "Evaluate JavaScript in real time"               ,ashell_js_immediate_mode),
-    ASHELL_COMMAND("clear", "Clear the terminal screen"                      ,ashell_clear),
-    ASHELL_COMMAND("load",  "[FILE] Saves the input text into a file"        ,ashell_read_data),
-    ASHELL_COMMAND("run",   "[FILE] Runs the JavaScript program in the file" ,ashell_run_javascript),
-    ASHELL_COMMAND("parse", "[FILE] Check if the JS syntax is correct"       ,ashell_parse_javascript),
-    ASHELL_COMMAND("stop",  "Stops current JavaScript execution"             ,ashell_stop_javascript),
-    ASHELL_COMMAND("boot",  "[FILE] Set the file that should run at boot"    ,ashell_set_bootcfg),
+    // CMD    ARGS      DESCRIPTION  IMPL
+    {"help",  "",       "This help", ashell_help},
+    {"eval",  "",       "Evaluate JavaScript in real time",
+                          ashell_js_immediate_mode},
+    {"load",  "FILE",   IDE_SKIP("Saves the input text into a file"),
+                          ashell_read_data},
+    {"run",   "FILE",   "Runs the JavaScript program in the file",
+                          ashell_run_javascript},
+    {"parse", "FILE",   IDE_SKIP("Check if the JS syntax is correct"),
+                          ashell_parse_javascript},
+    {"stop",  "",       "Stops current JavaScript execution",
+                          ashell_stop_javascript},
+    {"ls",    "",       "List all files", ashell_list_dir},
+    {"cat",   "FILE",   "Print the file contents of a file", ashell_print_file},
+    {"du",    "FILE",   IDE_SKIP("Estimate file space usage"),
+                          ashell_disk_usage},
+    {"rm",    "FILE",   "Remove file or directory", ashell_remove_file},
+    {"mv",    "F1 F2",  "Move file F1 to destination F2", ashell_rename},
+    {"clear", "",       "Clear the terminal screen", ashell_clear},
+    {"boot",  "FILE",   "Set the file that should run at boot",
+                          ashell_set_bootcfg},
+    {"reboot", "",      "Reboots the device", ashell_reboot},
 
-    ASHELL_COMMAND("ls",    "[FILE] List directory contents or file stat"    ,ashell_list_dir),
-    ASHELL_COMMAND("cat",   "[FILE] Print the file contents of a file"       ,ashell_print_file),
-    ASHELL_COMMAND("du",    "[FILE] Estimate file space usage"               ,ashell_disk_usage),
-    ASHELL_COMMAND("rm",    "[FILE] Remove file or directory"                ,ashell_remove_file),
-    ASHELL_COMMAND("mv",    "[SOURCE] [DEST] Move a file to destination"     ,ashell_rename),
-
-//    ASHELL_COMMAND("rmdir", "[TODO]"                                         ,ashell_remove_dir),
-//    ASHELL_COMMAND("mkdir", "[TODO]"                                         ,ashell_make_dir),
-    ASHELL_COMMAND("error", "Prints an error using JerryScript"              ,ashell_error),
-    ASHELL_COMMAND("echo",  "[on/off] Sets console echo mode on/off"         ,ashell_set_echo_mode),
-
-    ASHELL_COMMAND("set",   "Sets the input mode for 'load' accept data\r\n\ttransfer raw\r\n\ttransfer ihex\t",ashell_set_state),
-    ASHELL_COMMAND("get",   "Get states on the shell"                        ,ashell_get_state),
-    ASHELL_COMMAND("reboot","Reboots the device"                             ,ashell_reboot)
+    // undocumented commands used by IDE
+    {"error", "",       "", ashell_error},
+    {"echo",  "on/off", "", ashell_set_echo_mode},
+    {"set",   "",       "", ashell_set_state},
+    {"get",   "",       "", ashell_get_state},
 };
 
 #define ASHELL_COMMANDS_COUNT (sizeof(commands)/sizeof(*commands))
@@ -636,8 +650,13 @@ int32_t ashell_help(char *buf)
     comms_print("'A Shell' bash\r\n\r\n");
     comms_print("Commands list:\r\n");
     for (uint32_t t = 0; t < ASHELL_COMMANDS_COUNT; t++) {
-        comms_print(commands[t].cmd_name);
-        comms_write_buf("\t", 1);
+        // skip commands with empty description
+        if (!commands[t].syntax[0]) {
+            continue;
+        }
+        char buf[40];
+        snprintf(buf, 40, " %s\t%s\t", commands[t].cmd_name, commands[t].args);
+        comms_print(buf);
         comms_print(commands[t].syntax);
         comms_write_buf("\r\n", 2);
     }
