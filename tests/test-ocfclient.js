@@ -5,32 +5,18 @@
 console.log("Please setup /test/test-ocfserver.js first");
 console.log("Test OCF client");
 
-var client = require("ocf").client;
+var ocf = require("ocf");
 var assert = require("Assert.js");
 
+var client = ocf.client;
 assert(typeof client === "object" && !!client,
        "OCFObject: OCF client be defined");
 
 function check_attribute(attribute, attributeName, type, attributeValue) {
-    assert(typeof attribute === type && !!attribute &&
+    assert(typeof attribute === type && attribute !== null &&
            attribute === attributeValue,
            "OCFResource: client get " + attributeName +
            " as '" + attributeValue + "'");
-}
-
-var propertiesNum1 = 0;
-var propertiesNum2 = 0;
-function onUpdate(resource) {
-    if (resource.properties != undefined) {
-        propertiesNum2 = resource.properties.num;
-    } else {
-        console.log("resource.properties not found");
-    }
-
-    if (updateFlage) {
-        propertiesNum1 = resource.properties.num - 1;
-        updateFlage =  false;
-    }
 }
 
 var expectedDevice = {
@@ -40,18 +26,16 @@ var expectedDevice = {
 }
 
 function onDevicefound(device) {
-    if (deviceFlage) {
-        assert(typeof device.uuid === "string" && !!device.uuid &&
-               typeof device.name === "string" && !!device.name &&
-               device.name === expectedDevice.name &&
-               typeof device.dataModels === "string" &&
-               !!device.dataModels &&
-               device.dataModels === expectedDevice.dataModels &&
-               typeof device.coreSpecVersion === "string" &&
-               !!device.coreSpecVersion &&
-               device.coreSpecVersion === expectedDevice.coreSpecVersion,
-               "OCFObject: all device information are defined");
-    }
+    assert(typeof device.uuid === "string" && !!device.uuid &&
+           typeof device.name === "string" && !!device.name &&
+           device.name === expectedDevice.name &&
+           typeof device.dataModels === "string" &&
+           !!device.dataModels &&
+           device.dataModels === expectedDevice.dataModels &&
+           typeof device.coreSpecVersion === "string" &&
+           !!device.coreSpecVersion &&
+           device.coreSpecVersion === expectedDevice.coreSpecVersion,
+           "OCFObject: all device information are defined");
 }
 
 var expectedPlatform = {
@@ -66,147 +50,212 @@ var expectedPlatform = {
 }
 
 function onPlatformfound(platform) {
-    if (platformFlage) {
-        assert(typeof platform.id === "string" && !!platform.id &&
-               typeof platform.manufacturerName === "string" &&
-               !!platform.manufacturerName &&
-               platform.manufacturerName === expectedPlatform.manufacturerName &&
-               typeof platform.osVersion === "string" &&
-               !!platform.osVersion &&
-               platform.osVersion === expectedPlatform.osVersion &&
-               typeof platform.model === "string" && !!platform.model &&
-               platform.model === expectedPlatform.model &&
-               typeof platform.manufacturerURL === "string" &&
-               !!platform.manufacturerURL &&
-               platform.manufacturerURL === expectedPlatform.manufacturerURL &&
-               typeof platform.manufacturerDate === "string" &&
-               !!platform.manufacturerDate &&
-               platform.manufacturerDate === expectedPlatform.manufacturerDate &&
-               typeof platform.platformVersion === "string" &&
-               !!platform.platformVersion &&
-               platform.platformVersion === expectedPlatform.platformVersion &&
-               typeof platform.firmwareVersion === "string" &&
-               !!platform.firmwareVersion &&
-               platform.firmwareVersion === expectedPlatform.firmwareVersion &&
-               typeof platform.supportURL === "string" &&
-               !!platform.supportURL &&
-               platform.supportURL === expectedPlatform.supportURL,
-               "OCFObject: all platform information are defined");
-    }
+    assert(typeof platform.id === "string" && !!platform.id &&
+           typeof platform.manufacturerName === "string" &&
+           !!platform.manufacturerName &&
+           platform.manufacturerName === expectedPlatform.manufacturerName &&
+           typeof platform.osVersion === "string" &&
+           !!platform.osVersion &&
+           platform.osVersion === expectedPlatform.osVersion &&
+           typeof platform.model === "string" && !!platform.model &&
+           platform.model === expectedPlatform.model &&
+           typeof platform.manufacturerURL === "string" &&
+           !!platform.manufacturerURL &&
+           platform.manufacturerURL === expectedPlatform.manufacturerURL &&
+           typeof platform.manufacturerDate === "string" &&
+           !!platform.manufacturerDate &&
+           platform.manufacturerDate === expectedPlatform.manufacturerDate &&
+           typeof platform.platformVersion === "string" &&
+           !!platform.platformVersion &&
+           platform.platformVersion === expectedPlatform.platformVersion &&
+           typeof platform.firmwareVersion === "string" &&
+           !!platform.firmwareVersion &&
+           platform.firmwareVersion === expectedPlatform.firmwareVersion &&
+           typeof platform.supportURL === "string" &&
+           !!platform.supportURL &&
+           platform.supportURL === expectedPlatform.supportURL,
+           "OCFObject: all platform information are defined");
+}
+
+function onUpdate(resource) {
 }
 
 function onError(error) {
     if (error.deviceId) console.log("Device error: " + error.deviceId);
 }
 
-client.on("update", onUpdate);
-client.on("devicefound", onDevicefound);
-client.on("platformfound", onPlatformfound);
-client.on("error", onError);
+var FoundStringFlag = 1;
+var FoundStateFlag = 0;
+var FoundNumberFlag = 0;
+var FoundInvalidFlag = 0;
+function onfound1(resource) {
+    if (FoundStringFlag) {
+        client.retrieve(resource.deviceId).then(function(res) {
+            assert(true, "OCFClient: retrieve resource");
 
-var timer = null;
-var retrieveFlage = true;
-var deviceFlage = true;
-var platformFlage = true;
-var updateFlage = true;
-var timeNum = 0;
-function onfound(resource) {
-    timer = setInterval(function() {
-        client.retrieve(resource.deviceId).then(function(resource) {
-            if (retrieveFlage) {
-                assert(true, "OCFClient: retrieve resource");
+            assert(typeof res.deviceId === "string" &&
+                   !!res.deviceId &&
+                   typeof res.resourcePath === "string" &&
+                   !!res.resourcePath &&
+                   typeof res.properties === "object" &&
+                   !!res.properties,
+                   "OCFclient: all resource information are defined");
 
-                assert(typeof resource.deviceId === "string" &&
-                       !!resource.deviceId &&
-                       typeof resource.resourcePath === "string" &&
-                       !!resource.resourcePath &&
-                       typeof resource.properties === "object" &&
-                       !!resource.properties,
-                       "OCFclient: all resource information are defined");
-
-                check_attribute(resource.resourcePath, "resource.resourcePath",
-                                "string", "/test/OCFserver");
-                check_attribute(resource.properties.str, "resource.properties.str",
-                                "string", "testProperties");
-                check_attribute(resource.properties.state, "resource.properties.state",
-                                "boolean", true);
-                check_attribute(resource.properties.num, "resource.properties.num",
-                                "number", propertiesNum1 + 1);
-
-                retrieveFlage = false;
-            }
-
-            timeNum = timeNum + 1;
-            if (timeNum === 10) {
-                assert((propertiesNum2 - propertiesNum1) === 10,
-                       "OCFClient: retrieve and update resource with 10 times");
-
-                clearInterval(timer);
-            }
+            check_attribute(res.resourcePath, "resource.resourcePath",
+                            "string", "/test/str");
+            check_attribute(res.properties.str, "resource.properties.str",
+                            "string", "testProperties");
         }).catch(function(error) {
-            if (retrieveFlage) {
-                assert(false, "OCFClient: retrieve resource");
-
-                retrieveFlage = false;
-                clearInterval(timer);
-            }
+            assert(false, "OCFClient: retrieve resource");
         });
-    }, 1000);
 
-    setTimeout(function() {
-        client.getDeviceInfo(resource.deviceId).then(function(info) {
-            if (deviceFlage) {
+        setTimeout(function() {
+            client.getDeviceInfo(resource.deviceId).then(function(info) {
                 assert(true, "OCFClient: get device information");
-
-                deviceFlage = false;
-            }
-        }).catch(function(error) {
-            if (deviceFlage) {
-                assert(false, "OCFClient: get device information");
-
-                deviceFlage = false;
-            }
-        });
-    }, 12000);
-
-    setTimeout(function() {
-        client.getPlatformInfo(resource.deviceId).then(function(info) {
-            if (platformFlage) {
-                assert(true, "OCFClient: get platform information");
-
-                platformFlage = false;
-            }
-        }).catch(function(error) {
-            if (platformFlage) {
-                assert(false, "OCFClient: get platform information");
-
-                platformFlage = false;
-            }
-        });
-    }, 13000);
-
-    setTimeout(function() {
-        resource.properties.state = false;
-
-        client.update(resource).then(function(resource) {
-            client.retrieve(resource.deviceId).then(function(res) {
-                assert(res.properties.state === false,
-                       "OCFClient: update resource properties data");
             }).catch(function(error) {
-                console.log("OCFClient: retrieve " + error.name);
+                assert(false, "OCFClient: get device information");
             });
-        }).catch(function(error) {
-            console.log("OCFClient: update " + error.name);
-        });
-    }, 14000);
+        }, 1000);
 
-    setTimeout(function() {
-        assert.result();
-    }, 15000);
+        setTimeout(function() {
+            client.getPlatformInfo(resource.deviceId).then(function(info) {
+                assert(true, "OCFClient: get platform information");
+            }).catch(function(error) {
+                assert(false, "OCFClient: get platform information");
+            });
+        }, 2000);
+
+        setTimeout(function() {
+            FoundStringFlag = 0;
+            FoundStateFlag = 1;
+        }, 3000);
+    }
 }
 
-client.findResources({ resourceType:"core.test" }, onfound).then(function(resource) {
-    assert(true, "OCFClient: find OCF server resources");
+function onfound2(resource) {
+    if (FoundStateFlag) {
+        client.retrieve(resource.deviceId).then(function(res) {
+            check_attribute(res.resourcePath, "resource.resourcePath",
+                            "string", "/test/state");
+            check_attribute(res.properties.state, "resource.properties.state",
+                            "boolean", true);
+        }).catch(function(error) {
+        });
+
+        resource.properties.state = false;
+        client.update(resource).then(function(res) {
+        }).catch(function(error) {
+        });
+
+        client.retrieve(resource.deviceId).then(function(res) {
+            assert(res.properties.state === false,
+                   "OCFClient: update resource properties data");
+        }).catch(function(error) {
+            console.log("OCFClient: retrieve " + error.name);
+        });
+
+        FoundStateFlag = 0;
+        FoundNumberFlag = 1;
+    }
+}
+
+var testNum;
+var NumberValue = 0;
+function onfound3(resource) {
+    if (FoundNumberFlag) {
+        client.retrieve(resource.deviceId).then(function(res) {
+            check_attribute(res.resourcePath, "resource.resourcePath",
+                            "string", "/test/num");
+            check_attribute(res.properties.num, "resource.properties.num",
+                            "number", 0);
+        }).catch(function(error) {
+        });
+
+        testNum = setInterval(function () {
+            NumberValue = NumberValue + 1;
+
+            client.retrieve(resource.deviceId).then(function(res) {
+                if (NumberValue === 10) {
+                    assert(res.properties.num === NumberValue,
+                           "OCFClient: retrieve and update resource with 10 times");
+
+                    clearInterval(testNum);
+                }
+            }).catch(function(error) {
+            });
+        }, 1000);
+
+        FoundNumberFlag = 0;
+        FoundInvalidFlag = 1;
+    }
+}
+
+var FindInvalidResourceFlag = 1;
+function onfound4(resource) {
+    if (FoundInvalidFlag) {
+        client.retrieve(resource.deviceId).then(function(res) {
+            FindInvalidResourceFlag = 0;
+        }).catch(function(error) {
+        });
+
+        FoundInvalidFlag = 0;
+    }
+}
+
+client.on("devicefound", onDevicefound);
+client.on("platformfound", onPlatformfound);
+client.on("update", onUpdate);
+client.on("error", onError);
+
+ocf.start();
+
+var ResourcesStringFlag = 0;
+var ResourcesStateFlag = 0;
+var ResourcesNumberFlag = 0;
+client.findResources({resourceType:"core.str" },
+                     onfound1).then(function(resource) {
+    assert(true, "OCFClient: find OCF server resources with 'core.str'");
+
+    ResourcesStringFlag = 1;
 }).catch(function(error) {
-    assert(false, "OCFClient: find OCF server resources");
+    assert(false, "OCFClient: find OCF server resources with 'core.str'");
 });
+
+setTimeout(function() {
+    client.findResources({resourceType:"core.state" },
+                         onfound2).then(function(resource) {
+        assert(true, "OCFClient: find OCF server resources with 'core.state'");
+
+        ResourcesStateFlag = 1;
+    }).catch(function(error) {
+        assert(false, "OCFClient: find OCF server resources with 'core.state'");
+    });
+}, 4000);
+
+setTimeout(function() {
+    client.findResources({resourceType:"core.num" },
+                         onfound3).then(function(resource) {
+        assert(true, "OCFClient: find OCF server resources with 'core.num'");
+
+        ResourcesNumberFlag = 1;
+    }).catch(function(error) {
+        assert(false, "OCFClient: find OCF server resources with 'core.num'");
+    });
+}, 5000);
+
+setTimeout(function() {
+    assert(ResourcesStringFlag && ResourcesStateFlag && ResourcesNumberFlag,
+           "OCFClient: find multiple OCF server resources");
+}, 17000);
+
+setTimeout(function() {
+    client.findResources({resourceType:"core.invalid" },
+                         onfound4).then(function(resource) {
+        FindInvalidResourceFlag = 0;
+    }).catch(function(error) {
+    });
+
+    assert(FindInvalidResourceFlag, "OCFClient: find invalid OCF server resources");
+
+    assert.result();
+}, 18000);
