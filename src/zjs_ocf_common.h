@@ -24,7 +24,7 @@ struct props_handle {
 #define TYPE_IS_UINT   2
 
 #define OCF_MAX_DEVICE_ID_LEN 36
-#define OCF_MAX_RES_TYPE_LEN  16
+#define OCF_MAX_RES_TYPE_LEN  32
 #define OCF_MAX_RES_PATH_LEN  64
 #define OCF_MAX_URI_LEN       64
 #define OCF_MAX_PROP_NAME_LEN 16
