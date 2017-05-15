@@ -475,7 +475,9 @@ uint32_t ashell_process_data(const char *buf, uint32_t len)
                 DBG("<IF>");
                 break;
             default:
-                printf("<CTRL> %u\n", byte);
+                if (echo_mode) {
+                    printf("<CTRL> %u\n", byte);
+                }
                 flush_line = true;
                 shell_line[cur++] = byte;
                 break;
@@ -529,6 +531,11 @@ bool ashell_process_is_done()
 void comms_set_echo_mode(bool mode)
 {
     echo_mode = mode;
+}
+
+bool comms_get_echo_mode()
+{
+    return echo_mode;
 }
 
 uint32_t ashell_process_finish()

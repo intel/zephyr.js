@@ -454,10 +454,12 @@ int32_t ashell_read_data(char *buf)
                 return RET_ERROR;
             }
 
-            comms_print(ANSI_CLEAR);
-            comms_printf("Saving to '%s'\r\n", filename);
-            comms_print(READY_FOR_RAW_DATA);
-            comms_set_prompt(raw_prompt);
+            if (comms_get_echo_mode()) {
+                comms_print(ANSI_CLEAR);
+                comms_printf("Saving to '%s'\r\n", filename);
+                comms_print(READY_FOR_RAW_DATA);
+                comms_set_prompt(raw_prompt);
+            }
             shell.state_flags |= kShellCaptureRaw;
             ashell_start_raw_capture(filename);
         }

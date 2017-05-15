@@ -6,6 +6,7 @@
 void comms_set_prompt(const char *prompt);
 const char *comms_get_prompt();
 void comms_set_echo_mode(bool echo_mode);
+bool comms_get_echo_mode();
 
 /**
  * Callback function when a line arrives
