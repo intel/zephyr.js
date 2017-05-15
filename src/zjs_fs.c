@@ -225,6 +225,13 @@ static ZJS_DECL_FUNC_ARGS(zjs_fs_open, uint8_t async)
         return zjs_error("could not open file");
     }
 
+    // w and w+ overwrite the existing file
+    if ((m == MODE_W) || (m == MODE_W_PLUS)) {
+        if (fs_truncate(&handle->fp, 0) != 0) {
+            ERR_PRINT("could not truncate file: %s\n", path);
+        }
+    }
+
     handle->mode = m;
     handle->next = opened_handles;
     opened_handles = handle;
@@ -851,6 +858,11 @@ static ZJS_DECL_FUNC_ARGS(zjs_fs_write_file, uint8_t async)
         ERR_PRINT("error opening file, error=%d\n", error);
         goto Finished;
     }
+    if (fs_truncate(&fp, 0) != 0) {
+        ERR_PRINT("could not truncate file: %s\n", path);
+        goto Finished;
+    }
+
     ssize_t written = fs_write(&fp, data, length);
 
     if (written != length) {
