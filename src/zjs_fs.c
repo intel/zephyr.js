@@ -826,7 +826,7 @@ static ZJS_DECL_FUNC_ARGS(zjs_fs_write_file, uint8_t async)
     char *data = NULL;
     uint32_t length;
     if (jerry_value_is_string(argv[1])) {
-        size = jerry_get_string_size(argv[1]);
+        size = 0;
         data = zjs_alloc_from_jstring(argv[1], &size);
         length = size;
     } else {
