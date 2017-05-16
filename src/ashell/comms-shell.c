@@ -80,10 +80,6 @@ static void insert_char(char *pos, char c, uint8_t end)
 {
     char tmp;
 
-    /* Echo back to console */
-    if (echo_mode)
-        comms_write_buf(&c, 1);
-
     if (end == 0) {
         *pos = c;
         return;
@@ -407,6 +403,7 @@ void ashell_process_line(const char *buf, uint32_t len)
 uint32_t ashell_process_data(const char *buf, uint32_t len)
 {
     uint32_t processed = 0;
+    uint8_t printed = cur;
     bool flush_line = false;
     if (shell_line == NULL) {
         DBG("[Process]%d\n", (int)len);
@@ -429,8 +426,6 @@ uint32_t ashell_process_data(const char *buf, uint32_t len)
             DBG("Line size exceeded \n");
             tail = 0;
         }
-
-        //DBG("(%x)", byte);
 
         /* Handle ANSI escape mode */
         if (atomic_test_bit(&esc_state, ESC_ANSI)) {
@@ -487,6 +482,7 @@ uint32_t ashell_process_data(const char *buf, uint32_t len)
         if (flush_line) {
             DBG("Line %u %u \n", cur, end);
             shell_line[cur + end] = '\0';
+            comms_print_strncpy(shell_line, printed, cur);
             comms_write_buf("\r\n", 2);
 
             uint32_t length = strnlen(shell_line, MAX_LINE);
@@ -497,22 +493,21 @@ uint32_t ashell_process_data(const char *buf, uint32_t len)
             if (ret <= 0)
                 ashell_process_line(shell_line, length);
 
-            cur = end = 0;
+            cur = end = printed = 0;
             flush_line = false;
             if (ashell_is_done) {
                 break;
             }
-        } else
-            if (isprint(byte)) {
-                /* Ignore characters if there's no more buffer space */
-                if (cur + end < MAX_LINE - 1) {
-                    insert_char(&shell_line[cur++], byte, end);
-                } else {
-                    DBG("Max line\n");
-                }
+        } else if (isprint(byte)) {
+            /* Ignore characters if there's no more buffer space */
+            if (cur + end < MAX_LINE - 1) {
+                insert_char(&shell_line[cur++], byte, end);
+            } else {
+                DBG("Max line\n");
             }
-
+        }
     }
+    comms_print_strncpy(shell_line, printed, cur);
 
     /* Done processing line */
     if (cur == 0 && end == 0 && shell_line != NULL) {

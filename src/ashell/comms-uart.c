@@ -299,23 +299,40 @@ static int comms_out(int c)
 
 void comms_write_buf(const char *buf, int len)
 {
-    if (len == 0)
-        return;
+    if (comms_get_echo_mode()) {
+        if (len == 0)
+            return;
 
-    uart_irq_tx_enable(dev_upload);
-    data_transmitted = false;
-    int bytes = 0;
-    while (bytes != len) {
-        buf += bytes;
-        len -= bytes;
-        bytes = uart_fifo_fill(dev_upload, (const uint8_t *)buf, len);
+        uart_irq_tx_enable(dev_upload);
+        data_transmitted = false;
+        int bytes = 0;
+        while (bytes != len) {
+            buf += bytes;
+            len -= bytes;
+            bytes = uart_fifo_fill(dev_upload, (const uint8_t *)buf, len);
+        }
+        while (data_transmitted == false);
+        uart_irq_tx_disable(dev_upload);
     }
-    while (data_transmitted == false);
-    uart_irq_tx_disable(dev_upload);
 }
+
 void comms_print(const char *buf)
 {
-    comms_write_buf(buf, strnlen(buf, MAX_LINE_LEN));
+    if (comms_get_echo_mode()) {
+        comms_write_buf(buf, strnlen(buf, MAX_LINE_LEN));
+    }
+}
+
+void comms_print_strncpy(const char *buf, uint16_t start, uint16_t end)
+{
+    if (comms_get_echo_mode()) {
+        int strsize = end - start;
+        if (strsize > 0) {
+            char printLine[strsize];
+            strncpy(printLine, &buf[start], strsize);
+            comms_write_buf(printLine, strsize);
+        }
+    }
 }
 
 /**
