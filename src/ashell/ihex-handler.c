@@ -150,7 +150,7 @@ uint32_t ihex_process_finish()
 {
     if (upload_state == UPLOAD_ERROR) {
         printf("[Error] Callback handle error \n");
-        fs_close(zfile);
+        fs_close_alloc(zfile);
 
         ashell_process_start();
         return 1;
@@ -159,7 +159,7 @@ uint32_t ihex_process_finish()
     if (upload_state != UPLOAD_FINISHED)
         return 1;
 
-    fs_close(zfile);
+    fs_close_alloc(zfile);
     ihex_end_read(&ihex);
     comms_print("[EOF]\n");
 
