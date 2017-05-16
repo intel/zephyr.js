@@ -73,10 +73,11 @@ below instructions to connect to the device from the browser IDE directly.
 7. Press the "Install Driver" button to install the WinUSB driver
 8. After installation is done, select WebUSB (Interface 2) from the drop down box
    and install the WinUSB driver same as above.
-9. The landing page detection is disabled on Windows on Chrome so you don't see a
-   notification in the upper right corner when the device is connected to the host,
-   but the WebUSB will continue to work. Visit the [IDE](https://01.org/iot-ide)
-   site and click on connect.
+9. Disconnect and reconnect the WebUSB device.
+10. The landing page detection is disabled on Windows on Chrome so you don't see a
+    notification in the upper right corner when the device is connected to the host,
+    but the WebUSB will continue to work. Visit the [IDE](https://01.org/iot-ide)
+    site and click on connect.
 
 Commands
 --------
