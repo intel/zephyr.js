@@ -58,10 +58,10 @@ git clone http://github.com/01org/zephyr.js.git
 ```
 
 #### Check out the desired version
-If you want to use a stable release version, the latest is 0.2:
+If you want to use a stable release version, the latest is 0.3:
 
 ```bash
-git checkout v0.2
+git checkout v0.3
 ```
 
 If you do nothing and remain on master, you will be looking at the very latest
