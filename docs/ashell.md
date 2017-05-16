@@ -36,32 +36,47 @@ WebUSB support was added to the ashell to allow the user to upload JS code
 directly from the browser IDE to Zephyr.js device for execution. Follow the
 below instructions to connect to the device from the browser IDE directly.
 
-1. Start Google Chrome 54 or later on the host PC.
-2. On Ubuntu and Fedora:
-  * Create udev rules to allow Chrome to open the WebUSB enabled device and
-    also prevent ModemManager interfering with that device by adding the
-    following lines in /etc/udev/rules.d/99-arduino-101.rules
+* Start Google Chrome 58 or later on the host PC.
+
+* **On Ubuntu and Fedora:**
+1. Create udev rules to allow Chrome to open the WebUSB enabled device and
+   also prevent ModemManager interfering with that device by adding the following
+   lines in /etc/udev/rules.d/99-arduino-101.rules
 
 >     SUBSYSTEM=="tty", ENV{ID_VENDOR_ID}=="8086", ENV{ID_MODEL_ID}=="f8a1", MODE="0666", ENV{ID_MM_DEVICE_IGNORE}="1", ENV{ID_MM_CANDIDATE}="0"
 >     SUBSYSTEM=="usb", ATTR{idVendor}=="8086", ATTR{idProduct}=="f8a1", MODE="0666" ENV{ID_MM_DEVICE_IGNORE}="1"
 
-  * Then run this command:
+2. Then run this command:
     ```bash
     $ sudo udevadm control --reload-rules
     ```
-3. On Windows:
-  * WebUSB compatible device is not appearing with the official WinUSB driver on
-    Windows for some reason, so try installing different version of WinUSB driver
-    with the Zadig utility. Also, note that the landing page detection is disabled
-    on Windows on Chrome startup so you don't see a notification when the device is
-    connected to the host, but the WebUSB will continue to work.
+3. Connect the device to the host PC using a USB cable.
+4. A notification from Chrome will appear with an URL of the IDE. If not, the
+   address for the IDE is https://01.org/iot-ide.
+5. Click on the notification to open IDE in the browser.
+6. Click on connect button and grant an access to the device.
+7. Try uploading JS code to the device.
 
-4. Connect the device to the host PC using a USB cable.
-5. A notification from Chrome will appear with an URL of the IDE. If not, the
-    address for the IDE is https://01org.github.io/zephyrjs-ide.
-6. Click on the notification to open IDE in the browser.
-7. Click on connect button and grant an access to the device.
-8. Try uploading JS code to the device.
+* **On Windows 8 and above:**
+
+  WebUSB compatible device is not appearing on Windows by default for some reason,
+  so try installing WinUSB driver with the Zadig utility.
+
+  Here are the steps for installing the WinUSB driver with the Zadig utility:
+
+1. Download the [Zadig](http://zadig.akeo.ie/downloads/zadig-2.3.exe) utility.
+2. Connect WebUSB device to host
+3. Start Zadig
+4. In Zadig app under "Options" check the "List All Devices" option
+5. In the drop down box select WebUSB (Interface 1)
+6. Select the WinUSB driver
+7. Press the "Install Driver" button to install the WinUSB driver
+8. After installation is done, select WebUSB (Interface 2) from the drop down box
+   and install the WinUSB driver same as above.
+9. The landing page detection is disabled on Windows on Chrome so you don't see a
+   notification in the upper right corner when the device is connected to the host,
+   but the WebUSB will continue to work. Visit the [IDE](https://01.org/iot-ide)
+   site and click on connect.
 
 Commands
 --------
