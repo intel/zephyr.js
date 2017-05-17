@@ -305,7 +305,7 @@ static int comms_out(int c)
 
 void comms_write_buf(const char *buf, int len)
 {
-    if (len == 0)
+    if (len <= 0)
         return;
 
     uart_irq_tx_enable(dev_upload);
