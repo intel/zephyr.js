@@ -195,53 +195,118 @@ static void eval_list(requires_list_t **list)
     }
 }
 
+static void skip_whitespace(char **ptr)
+{
+    // modifies: *ptr
+    //  effects: increments *ptr until it's past any whitespace (space, tab,
+    //             newline) or gets to null terminator
+    while (**ptr != '\0') {
+        if (**ptr == ' ' || **ptr == '\t' || **ptr == '\r' || **ptr == '\n') {
+            ++(*ptr);
+        }
+        else {
+            return;
+        }
+    }
+}
+
+static bool skip_char_with_whitespace(char **ptr, char match)
+{
+    // modifies: *ptr
+    //  effects: skips any whitespace in *ptr before and after a match char or
+    //             until null terminator is reached
+    //           if first non-whitespace char found is match, returns true;
+    //             otherwise, false
+    skip_whitespace(ptr);
+    if (**ptr != match) {
+        return false;
+    }
+    skip_whitespace(ptr);
+    return true;
+}
+
+static char *find_next_require(char *source, char *module, int *modlen)
+{
+    // requires: source is a pointer into a null-terminated source buffer;
+    //             module is a buffer with at least MAX_MODULE_STR_LEN bytes
+    // modifies: module, if one is found
+    //  effects: finds the next require('modname') in the source, writes the
+    //             modname to module and returns pointer into source beyond the
+    //             require, or NULL if not found
+    char *ptr = source;
+    while (1) {
+        // find the word require
+        // FIXME: buggy, doesn't check for comments, etc.
+        char *require = strstr(ptr, "require");
+        if (!require) {
+            return NULL;
+        }
+
+        ptr = require + 7;
+        if (!skip_char_with_whitespace(&ptr, '(')) {
+            // no open paren found, not a valid require() call
+            continue;
+        }
+
+        char quotechar;
+        if (*ptr != '\'' && *ptr != '"') {
+            // not a literal string we can handle
+            continue;
+        }
+        quotechar = *ptr;
+
+        char *modname = ++ptr;
+        char *closechar = strchr(ptr, quotechar);
+        if (!closechar) {
+            // no matching quote found, shouldn't happen, try again
+            continue;
+        }
+
+        ptr = closechar + 1;
+        *modlen = closechar - modname;
+        if (*modlen <= 0 || *modlen > MAX_MODULE_STR_LEN - 1) {
+            // bogus module name, try again
+            continue;
+        }
+
+        if (!skip_char_with_whitespace(&ptr, ')')) {
+            // no close paren found, not a valid require() call
+            continue;
+        }
+
+        strncpy(module, modname, *modlen);
+        module[*modlen] = '\0';
+        return ptr;
+    }
+}
+
 static bool add_requires(requires_list_t **list, char *filebuf)
 {
     // Scan the file and if it contains requires, append them before *list
-    char *ptr1 = filebuf;
-    char *ptr2 = NULL;
-    char *filestr = NULL;
-    char *ext_check = NULL;
+    char *ptr = filebuf;
+    char filestr[MAX_MODULE_STR_LEN];
+    int filelen = 0;
 
-    while (ptr1 != NULL) {
-        // Find next instance of "require"
-        ptr1 = strstr(ptr1, "require");
-        if (ptr1 != NULL) {
-            // Find the text between the two " " after require
-            ptr1 = strchr(ptr1, '"') + 1;
-            ptr2 = strchr(ptr1, '"');
-            size_t len = ptr2 - ptr1;
-            if (len < (ssize_t)MAX_MODULE_STR_LEN) {
-                // Allocate the memory for the string
-                filestr = (char *)zjs_malloc(len + 1);
-                strncpy(filestr, ptr1, len);
-                filestr[len] = '\0';
+    while (1) {
+        ptr = find_next_require(ptr, filestr, &filelen);
+        if (!ptr) {
+            return true;
+        }
 
-                // Check that this is a *.js require and not a zephyr require
-                // Also check that the file hasn't already been loaded
-                ext_check = &filestr[len - 3];
-                if (strcmp(ext_check, ".js") == 0 && !list_contains(list, filestr)) {
-                    if (fs_valid_filename(filestr)) {
-                        add_to_list(list, filestr);
-                    }
-                    else {
-                        zjs_free(filestr);
-                        return false;
-                    }
-                }
-                zjs_free(filestr);
-                filestr = NULL;
+        // Check that this is a *.js require and not a zephyr require
+        // Also check that the file hasn't already been loaded
+
+        // FIXME: this always expects JS file to have .js lowercase extension
+        if (filelen >= 3 && !strcmp(&filestr[filelen - 3], ".js") &&
+            !list_contains(list, filestr)) {
+            if (fs_valid_filename(filestr)) {
+                add_to_list(list, filestr);
             }
             else {
-                filestr = (char *)zjs_malloc(10);
-                strncpy(filestr, ptr1, 10);
-                comms_printf("[ERR] requires(\"%s...\") string is too long\n", filestr);
-                zjs_free(filestr);
                 return false;
             }
         }
     }
-    return true;
 }
 
 static bool load_require_modules(char *file_buffer)
