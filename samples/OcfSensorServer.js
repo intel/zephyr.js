@@ -36,7 +36,7 @@ server.register(resourceInit).then(function(resource) {
     MyResource = resource;
     server.on('retrieve', function(request, observe) {
         MyProperties.sensor = pinA.read();
-        console.log('on('retrieve'): request.target.resourcePath=' +
+        console.log("on('retrieve'): request.target.resourcePath=" +
                 request.target.resourcePath + ' observe=' + observe);
         request.respond(MyProperties).then(function() {
             console.log('respond success');
@@ -45,7 +45,7 @@ server.register(resourceInit).then(function(resource) {
         });
     });
     server.on('update', function(request) {
-        console.log('on('update'): request.target.resourcePath=' + request.target.resourcePath);
+        console.log("on('update'): request.target.resourcePath=" + request.target.resourcePath);
         if (request.resource.properties) {
             var recvProps = request.resource.properties;
             if (recvProps.light !== undefined) {
