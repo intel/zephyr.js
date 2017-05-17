@@ -229,10 +229,11 @@ static char *find_next_require(char *source, char *module, int *modlen)
 {
     // requires: source is a pointer into a null-terminated source buffer;
     //             module is a buffer with at least MAX_MODULE_STR_LEN bytes
-    // modifies: module, if one is found
+    // modifies: module, if one is found, *modlen if not NULL
     //  effects: finds the next require('modname') in the source, writes the
     //             modname to module and returns pointer into source beyond the
-    //             require, or NULL if not found
+    //             require, or NULL if not found; *modlen will be length of the
+    //             module string
     char *ptr = source;
     while (1) {
         // find the word require
@@ -263,8 +264,8 @@ static char *find_next_require(char *source, char *module, int *modlen)
         }
 
         ptr = closechar + 1;
-        *modlen = closechar - modname;
-        if (*modlen <= 0 || *modlen > MAX_MODULE_STR_LEN - 1) {
+        int len = closechar - modname;
+        if (len <= 0 || len > MAX_MODULE_STR_LEN - 1) {
             // bogus module name, try again
             continue;
         }
@@ -274,8 +275,11 @@ static char *find_next_require(char *source, char *module, int *modlen)
             continue;
         }
 
-        strncpy(module, modname, *modlen);
-        module[*modlen] = '\0';
+        strncpy(module, modname, len);
+        module[len] = '\0';
+        if (modlen) {
+            *modlen = len;
+        }
         return ptr;
     }
 }
