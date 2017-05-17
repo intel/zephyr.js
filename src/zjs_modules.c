@@ -231,7 +231,9 @@ static ZJS_DECL_FUNC(native_require_handler)
 
     ZVAL found_obj = zjs_get_property(exports_obj, module);
     if (!jerry_value_is_object(found_obj)) {
-        return NOTSUPPORTED_ERROR("native_require_handler: module not found");
+        char err[80];
+        snprintf(err, 80, "module not found: '%s'", module);
+        return NOTSUPPORTED_ERROR(err);
     }
 
     DBG_PRINT("JavaScript module %s loaded\n", module);

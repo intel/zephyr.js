@@ -221,6 +221,7 @@ static bool skip_char_with_whitespace(char **ptr, char match)
     if (**ptr != match) {
         return false;
     }
+    ++(*ptr);
     skip_whitespace(ptr);
     return true;
 }
