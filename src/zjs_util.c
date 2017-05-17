@@ -352,26 +352,32 @@ uint32_t zjs_uncompress_16_to_32(uint16_t num)
 #ifdef ZJS_FIND_FUNC_NAME
 typedef struct name_element {
     jerry_value_t obj;
+    jerry_value_t name;
     struct name_element *next;
+    struct name_element *parent;
 } name_element_t;
 
 typedef struct head_element {
     name_element_t *head;
+    name_element_t *match;
     char *name;
+    jerry_value_t func;
 } head_element_t;
 
 static head_element_t *search_list = NULL;
 
-static void search_helper(jerry_value_t obj, jerry_value_t func);
+static void search_helper(jerry_value_t obj, name_element_t *parent);
 
 static bool foreach_prop(const jerry_value_t prop_name,
                          const jerry_value_t prop_value,
                          void *data)
 {
-    jerry_value_t func = *((jerry_value_t *)data);
+    name_element_t *parent = (name_element_t *)data;
+    jerry_value_t func = search_list->func;
     if (func == prop_value) {
         // found
         search_list->name = zjs_alloc_from_jstring(prop_name, NULL);
+        search_list->match = parent;
         return false;
     }
     // continue searching
@@ -383,15 +389,59 @@ static bool foreach_prop(const jerry_value_t prop_name,
         }
         name_element_t *new = zjs_malloc(sizeof(name_element_t));
         new->obj = prop_value;
+        new->name = jerry_acquire_value(prop_name);
+        new->parent = parent;
         ZJS_LIST_PREPEND(name_element_t, search_list->head, new);
-        search_helper(prop_value, func);
+        search_helper(prop_value, new);
     }
     return true;
 }
 
-static void search_helper(jerry_value_t obj, jerry_value_t func)
+static void search_helper(jerry_value_t obj, name_element_t *parent)
 {
-    jerry_foreach_object_property(obj, foreach_prop, (void *)&func);
+    jerry_foreach_object_property(obj, foreach_prop, parent);
+}
+
+static uint32_t get_total_length(char *func_name, name_element_t *parent)
+{
+    uint32_t len = strlen(func_name);
+    name_element_t *cur = parent;
+    while (cur) {
+        len += jerry_get_string_size(cur->name) + 1;
+        cur = cur->parent;
+    }
+    return len;
+}
+
+static char *create_func_string(char *func_name, name_element_t *parent)
+{
+    uint32_t len = get_total_length(func_name, parent);
+    char *total = zjs_malloc(len + 3);
+    char *i = total + len;
+    uint32_t flen = strlen(func_name);
+    i -= flen;
+    memcpy(i, func_name, flen);
+    i[flen] = '(';
+    i[flen + 1] = ')';
+    i--;
+    name_element_t *cur = parent;
+    while (cur) {
+        uint32_t size = 32;
+        char name[size];
+        zjs_copy_jstring(cur->name, name, &size);
+        i -= size;
+        memcpy(i, name, size);
+        i[size] = '.';
+        i--;
+        cur = cur->parent;
+    }
+    return total;
+}
+
+static void free_element(name_element_t *e)
+{
+    jerry_release_value(e->name);
+    zjs_free(e);
 }
 
 static char *function_search(jerry_value_t func)
@@ -399,13 +449,17 @@ static char *function_search(jerry_value_t func)
     search_list = zjs_malloc(sizeof(head_element_t));
     search_list->head = NULL;
     search_list->name = NULL;
+    search_list->func = func;
+    search_list->match = NULL;
 
     ZVAL global_obj = jerry_get_global_object();
-    search_helper(global_obj, func);
-    char *tmp = search_list->name;
-    ZJS_LIST_FREE(name_element_t, search_list->head, zjs_free);
+    search_helper(global_obj, NULL);
+
+    char *ret = create_func_string(search_list->name, search_list->match);
+
+    ZJS_LIST_FREE(name_element_t, search_list->head, free_element);
     zjs_free(search_list);
-    return tmp;
+    return ret;
 }
 #endif
 
@@ -448,6 +502,7 @@ void zjs_print_error_message(jerry_value_t error, jerry_value_t func)
 
     if (func_name) {
         ERR_PRINT("In function %s:\n", func_name);
+        zjs_free(func_name);
     }
     if (message) {
         ERR_PRINT("%s%s: %s\n", uncaught, name, message);
