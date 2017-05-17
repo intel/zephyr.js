@@ -485,8 +485,8 @@ uint32_t ashell_process_data(const char *buf, uint32_t len)
             shell_line[cur + end] = '\0';
             if (comms_get_echo_mode()) {
                 comms_write_buf(shell_line + printed, cur - printed);
+                comms_write_buf("\r\n", 2);
             }
-            comms_write_buf("\r\n", 2);
 
             uint32_t length = strnlen(shell_line, MAX_LINE);
             int32_t ret = 0;
