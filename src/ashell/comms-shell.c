@@ -403,6 +403,7 @@ void ashell_process_line(const char *buf, uint32_t len)
 uint32_t ashell_process_data(const char *buf, uint32_t len)
 {
     uint32_t processed = 0;
+    // printed Is used to make sure we don't re-print characters
     uint8_t printed = cur;
     bool flush_line = false;
     if (shell_line == NULL) {
@@ -478,11 +479,13 @@ uint32_t ashell_process_data(const char *buf, uint32_t len)
                 break;
             }
         }
-
+        // We have a newline, flush the current line
         if (flush_line) {
             DBG("Line %u %u \n", cur, end);
             shell_line[cur + end] = '\0';
-            comms_print_strncpy(shell_line, printed, cur);
+            if (comms_get_echo_mode()) {
+                comms_write_buf(shell_line + printed, cur - printed);
+            }
             comms_write_buf("\r\n", 2);
 
             uint32_t length = strnlen(shell_line, MAX_LINE);
@@ -507,7 +510,10 @@ uint32_t ashell_process_data(const char *buf, uint32_t len)
             }
         }
     }
-    comms_print_strncpy(shell_line, printed, cur);
+    // Once the data has been parsed, print it
+    if (comms_get_echo_mode()) {
+        comms_write_buf(shell_line + printed, cur - printed);
+    }
 
     /* Done processing line */
     if (cur == 0 && end == 0 && shell_line != NULL) {

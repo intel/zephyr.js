@@ -142,7 +142,6 @@ void comms_uart_set_config(struct comms_cfg_data *config);
 void comms_print_status();
 void comms_write_buf(const char *buf, int len);
 void comms_print(const char *buf);
-void comms_print_strncpy(const char *buf, uint16_t start, uint16_t end);
 void comms_printf(const char *format, ...);
 void zjs_ashell_process();
 void zjs_ashell_init();
