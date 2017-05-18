@@ -55,6 +55,10 @@ static bool ocf_foreach_prop(const jerry_value_t prop_name,
         handle->names_array[handle->size][strlen(name)] = '\0';
         ZVAL ret = jerry_set_property_by_index(handle->props_array,
                                                handle->size++, prop_value);
+        if (jerry_value_has_error_flag(ret)) {
+            ERR_PRINT("set property failed\n");
+            return false;
+        }
     }
 
     return true;
