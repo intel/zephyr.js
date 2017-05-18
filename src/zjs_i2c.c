@@ -19,10 +19,7 @@
 
 static jerry_value_t zjs_i2c_prototype;
 
-static jerry_value_t zjs_i2c_read_base(const jerry_value_t this,
-                                       const jerry_value_t argv[],
-                                       const jerry_length_t argc,
-                                       bool burst)
+static ZJS_DECL_FUNC_ARGS(zjs_i2c_read_base, bool burst)
 {
     // requires: Requires three arguments and has an optional fourth.
     //           arg[0] - Address of the I2C device you wish to read from.
@@ -94,7 +91,7 @@ static ZJS_DECL_FUNC(zjs_i2c_read)
     //           from the register address. Returns a buffer object
     //           that size containing the data.
 
-    return zjs_i2c_read_base(this, argv, argc, false);
+    return zjs_i2c_read_base(this, function_obj, argv, argc, false);
 }
 
 static ZJS_DECL_FUNC(zjs_i2c_burst_read)
@@ -109,7 +106,7 @@ static ZJS_DECL_FUNC(zjs_i2c_burst_read)
     //           Reads the number of bytes requested from the I2C device.
     //           Returns a buffer object containing the data.
 
-    return zjs_i2c_read_base(this, argv, argc, true);
+    return zjs_i2c_read_base(this, function_obj, argv, argc, true);
 }
 
 static ZJS_DECL_FUNC(zjs_i2c_write)

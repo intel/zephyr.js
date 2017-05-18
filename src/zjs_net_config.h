@@ -18,7 +18,4 @@ void zjs_init_ble_address();
 /*
  * JS native API provided to set the BLE address from JavaScript
  */
-jerry_value_t zjs_set_ble_address(const jerry_value_t function_val,
-                                  const jerry_value_t this,
-                                  const jerry_value_t argv[],
-                                  const jerry_length_t argc);
+ZJS_DECL_FUNC(zjs_set_ble_address);

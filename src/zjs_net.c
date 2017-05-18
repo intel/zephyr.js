@@ -331,10 +331,7 @@ static inline void pkt_sent(struct net_context *context,
  * @param {Buffer} buf - Buffer being written to the socket
  * @param {function=} func - Callback called when write has completed
  */
-static jerry_value_t socket_write(const jerry_value_t function_obj,
-                                  const jerry_value_t this,
-                                  const jerry_value_t argv[],
-                                  const jerry_length_t argc)
+static ZJS_DECL_FUNC(socket_write)
 {
     ZJS_VALIDATE_ARGS_OPTCOUNT(optcount, Z_OBJECT, Z_OPTIONAL Z_FUNCTION);
 
@@ -389,10 +386,7 @@ static jerry_value_t socket_write(const jerry_value_t function_obj,
  * @name pause
  * @memberof Net.Socket
  */
-static jerry_value_t socket_pause(const jerry_value_t function_obj,
-                                  const jerry_value_t this,
-                                  const jerry_value_t argv[],
-                                  const jerry_length_t argc)
+static ZJS_DECL_FUNC(socket_pause)
 {
     ZJS_GET_HANDLE(this, sock_handle_t, handle, socket_type_info);
     handle->paused = 1;
@@ -406,10 +400,7 @@ static jerry_value_t socket_pause(const jerry_value_t function_obj,
  * @name resume
  * @memberof Net.Socket
  */
-static jerry_value_t socket_resume(const jerry_value_t function_obj,
-                                   const jerry_value_t this,
-                                   const jerry_value_t argv[],
-                                   const jerry_length_t argc)
+static ZJS_DECL_FUNC(socket_resume)
 {
     ZJS_GET_HANDLE(this, sock_handle_t, handle, socket_type_info);
     handle->paused = 0;
@@ -423,10 +414,7 @@ static jerry_value_t socket_resume(const jerry_value_t function_obj,
  * @memberof Net.Socket
  * @return {AddressObject}
  */
-static jerry_value_t socket_address(const jerry_value_t function_obj,
-                                    const jerry_value_t this,
-                                    const jerry_value_t argv[],
-                                    const jerry_length_t argc)
+static ZJS_DECL_FUNC(socket_address)
 {
     ZJS_GET_HANDLE(this, sock_handle_t, handle, socket_type_info);
     jerry_value_t ret = jerry_create_object();
@@ -457,10 +445,7 @@ static jerry_value_t socket_address(const jerry_value_t function_obj,
  *                               for the 'timeout' event
  * @return {Socket} socket
  */
-static jerry_value_t socket_set_timeout(const jerry_value_t function_obj,
-                                        const jerry_value_t this,
-                                        const jerry_value_t argv[],
-                                        const jerry_length_t argc)
+static ZJS_DECL_FUNC(socket_set_timeout)
 {
     ZJS_VALIDATE_ARGS_OPTCOUNT(optcount, Z_NUMBER, Z_OPTIONAL Z_FUNCTION);
 
@@ -477,10 +462,7 @@ static jerry_value_t socket_set_timeout(const jerry_value_t function_obj,
     return jerry_acquire_value(this);
 }
 
-static jerry_value_t socket_connect(const jerry_value_t function_obj,
-                                    const jerry_value_t this,
-                                    const jerry_value_t argv[],
-                                    const jerry_length_t argc);
+static ZJS_DECL_FUNC(socket_connect);
 
 /*
  * Create a new socket object with needed methods. If 'client' is true,
@@ -609,10 +591,7 @@ static void tcp_accepted(struct net_context *context,
  * @memberof Net.Server
  * @param {function?} Callback function. Called when server is closed
  */
-static jerry_value_t server_close(const jerry_value_t function_obj,
-                                  const jerry_value_t this,
-                                  const jerry_value_t argv[],
-                                  const jerry_length_t argc)
+static ZJS_DECL_FUNC(server_close)
 {
     ZJS_VALIDATE_ARGS_OPTCOUNT(optcount, Z_OPTIONAL Z_FUNCTION);
 
@@ -639,10 +618,7 @@ static jerry_value_t server_close(const jerry_value_t function_obj,
  * @memberof Net.Server
  * @param {function} Callback function. Called with the number of opened connections
  */
-static jerry_value_t server_get_connections(const jerry_value_t function_obj,
-                                            const jerry_value_t this,
-                                            const jerry_value_t argv[],
-                                            const jerry_length_t argc)
+static ZJS_DECL_FUNC(server_get_connections)
 {
     ZJS_VALIDATE_ARGS(Z_FUNCTION);
 
@@ -675,10 +651,7 @@ static jerry_value_t server_get_connections(const jerry_value_t function_obj,
  * @param {ListenOptions} options - Options for listening
  * @param {function?} listener - Listener for 'listening' event
  */
-static jerry_value_t server_listen(const jerry_value_t function_obj,
-                                   const jerry_value_t this,
-                                   const jerry_value_t argv[],
-                                   const jerry_length_t argc)
+static ZJS_DECL_FUNC(server_listen)
 {
     // options object, optional function
     ZJS_VALIDATE_ARGS_OPTCOUNT(optcount, Z_OBJECT, Z_OPTIONAL Z_FUNCTION);
@@ -737,10 +710,7 @@ static jerry_value_t server_listen(const jerry_value_t function_obj,
  *
  * @return {Server} server - Newly created server
  */
-static jerry_value_t net_create_server(const jerry_value_t function_obj,
-                                       const jerry_value_t this,
-                                       const jerry_value_t argv[],
-                                       const jerry_length_t argc)
+static ZJS_DECL_FUNC(net_create_server)
 {
     ZJS_VALIDATE_ARGS_OPTCOUNT(optcount, Z_OPTIONAL Z_FUNCTION);
 
@@ -822,10 +792,7 @@ static void tcp_connected(struct net_context *context,
  * @param {ConnectOptions} options
  * @param {function?} listener - Connect listener callback
  */
-static jerry_value_t socket_connect(const jerry_value_t function_obj,
-                                    const jerry_value_t this,
-                                    const jerry_value_t argv[],
-                                    const jerry_length_t argc)
+static ZJS_DECL_FUNC(socket_connect)
 {
     ZJS_VALIDATE_ARGS(Z_OBJECT, Z_OPTIONAL Z_FUNCTION);
 
@@ -974,10 +941,7 @@ static jerry_value_t socket_connect(const jerry_value_t function_obj,
  * @fires timeout
  * @returns {Socket} New socket object created
  */
-static jerry_value_t net_socket(const jerry_value_t function_obj,
-                                const jerry_value_t this,
-                                const jerry_value_t argv[],
-                                const jerry_length_t argc)
+static ZJS_DECL_FUNC(net_socket)
 {
     sock_handle_t *sock_handle = NULL;
     jerry_value_t socket = create_socket(true, &sock_handle);
@@ -999,10 +963,7 @@ static jerry_value_t net_socket(const jerry_value_t function_obj,
  * @param {string} input - Input string
  * @return {number} 0 for invalid strings, 4 for IPv4, 6 for IPv6
  */
-static jerry_value_t net_is_ip(const jerry_value_t function_obj,
-                               const jerry_value_t this,
-                               const jerry_value_t argv[],
-                               const jerry_length_t argc)
+static ZJS_DECL_FUNC(net_is_ip)
 {
     if (!jerry_value_is_string(argv[0]) || argc < 1) {
         return jerry_create_number(0);
@@ -1042,10 +1003,7 @@ static jerry_value_t net_is_ip(const jerry_value_t function_obj,
  * @param {string} input - Input string
  * @return {boolean} true if input was IPv4
  */
-static jerry_value_t net_is_ip4(const jerry_value_t function_obj,
-                                const jerry_value_t this,
-                                const jerry_value_t argv[],
-                                const jerry_length_t argc)
+static ZJS_DECL_FUNC(net_is_ip4)
 {
     ZVAL ret = net_is_ip(function_obj, this, argv, argc);
     double v = jerry_get_number_value(ret);
@@ -1064,10 +1022,7 @@ static jerry_value_t net_is_ip4(const jerry_value_t function_obj,
  * @param {string} input - Input string
  * @return {boolean} true if input was IPv4
  */
-static jerry_value_t net_is_ip6(const jerry_value_t function_obj,
-                               const jerry_value_t this,
-                               const jerry_value_t argv[],
-                               const jerry_length_t argc)
+static ZJS_DECL_FUNC(net_is_ip6)
 {
     ZVAL ret = net_is_ip(function_obj, this, argv, argc);
     double v = jerry_get_number_value(ret);

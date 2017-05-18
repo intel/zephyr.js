@@ -222,10 +222,7 @@ static void print_props_data(oc_request_t *data)
 }
 #endif
 
-static jerry_value_t ocf_respond(const jerry_value_t function_val,
-                                 const jerry_value_t this,
-                                 const jerry_value_t argv[],
-                                 const jerry_length_t argc)
+static ZJS_DECL_FUNC(ocf_respond)
 {
     // args: properties object
     ZJS_VALIDATE_ARGS(Z_OBJECT);
@@ -376,10 +373,7 @@ static void ocf_delete_handler(oc_request_t *request, oc_interface_mask_t interf
 /*
  * TODO: Get resource object and use it to notify
  */
-static jerry_value_t ocf_notify(const jerry_value_t function_val,
-                                const jerry_value_t this,
-                                const jerry_value_t argv[],
-                                const jerry_length_t argc)
+static ZJS_DECL_FUNC(ocf_notify)
 {
     // args: resource object
     ZJS_VALIDATE_ARGS(Z_OBJECT);
@@ -393,10 +387,7 @@ static jerry_value_t ocf_notify(const jerry_value_t function_val,
     return ZJS_UNDEFINED;
 }
 
-static jerry_value_t ocf_register(const jerry_value_t function_val,
-                                  const jerry_value_t this,
-                                  const jerry_value_t argv[],
-                                  const jerry_length_t argc)
+static ZJS_DECL_FUNC(ocf_register)
 {
     // args: resource object
     ZJS_VALIDATE_ARGS(Z_OBJECT);

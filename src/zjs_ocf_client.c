@@ -492,10 +492,7 @@ Found:
     return OC_CONTINUE_DISCOVERY;
 }
 
-static jerry_value_t ocf_find_resources(const jerry_value_t function_val,
-                                        const jerry_value_t this,
-                                        const jerry_value_t argv[],
-                                        const jerry_length_t argc)
+static ZJS_DECL_FUNC(ocf_find_resources)
 {
     // args: options object
     ZJS_VALIDATE_ARGS(Z_OPTIONAL Z_OBJECT, Z_OPTIONAL Z_FUNCTION);
@@ -594,10 +591,7 @@ static void ocf_get_handler(oc_client_response_t *data)
     }
 }
 
-static jerry_value_t ocf_retrieve(const jerry_value_t function_obj,
-                                  const jerry_value_t this,
-                                  const jerry_value_t argv[],
-                                  const jerry_length_t argc)
+static ZJS_DECL_FUNC(ocf_retrieve)
 {
     // args: device id[, options][, listener]
     ZJS_VALIDATE_ARGS(Z_STRING, Z_OPTIONAL Z_OBJECT, Z_OPTIONAL Z_FUNCTION);
@@ -713,10 +707,7 @@ static void put_finished(oc_client_response_t *data)
     }
 }
 
-static jerry_value_t ocf_update(const jerry_value_t function_val,
-                                const jerry_value_t this,
-                                const jerry_value_t argv[],
-                                const jerry_length_t argc)
+static ZJS_DECL_FUNC(ocf_update)
 {
     // args: resource object
     ZJS_VALIDATE_ARGS(Z_OBJECT);
@@ -793,10 +784,7 @@ static void delete_finished(oc_client_response_t *data)
     }
 }
 
-static jerry_value_t ocf_delete(const jerry_value_t function_val,
-                                const jerry_value_t this,
-                                const jerry_value_t argv[],
-                                const jerry_length_t argc)
+static ZJS_DECL_FUNC(ocf_delete)
 {
     // args: device id
     ZJS_VALIDATE_ARGS(Z_STRING);
@@ -832,10 +820,7 @@ static jerry_value_t ocf_delete(const jerry_value_t function_val,
 /*
  * TODO: create not supported
  */
-static jerry_value_t ocf_create(const jerry_value_t function_val,
-                                const jerry_value_t this,
-                                const jerry_value_t argv[],
-                                const jerry_length_t argc)
+static ZJS_DECL_FUNC(ocf_create)
 {
     struct ocf_handler *h;
     jerry_value_t promise = jerry_create_object();
@@ -911,10 +896,7 @@ static void ocf_get_platform_info_handler(oc_client_response_t *data)
     }
 }
 
-static jerry_value_t ocf_get_platform_info(const jerry_value_t function_val,
-                                           const jerry_value_t this,
-                                           const jerry_value_t argv[],
-                                           const jerry_length_t argc)
+static ZJS_DECL_FUNC(ocf_get_platform_info)
 {
     // args: device ide
     ZJS_VALIDATE_ARGS(Z_STRING);
@@ -1008,10 +990,7 @@ static void ocf_get_device_info_handler(oc_client_response_t *data)
     }
 }
 
-static jerry_value_t ocf_get_device_info(const jerry_value_t function_val,
-                                         const jerry_value_t this,
-                                         const jerry_value_t argv[],
-                                         const jerry_length_t argc)
+static ZJS_DECL_FUNC(ocf_get_device_info)
 {
     // args: device id
     ZJS_VALIDATE_ARGS(Z_STRING);
@@ -1049,10 +1028,7 @@ static jerry_value_t ocf_get_device_info(const jerry_value_t function_val,
  * TODO: find devices not supported
  */
 #if 0
-static jerry_value_t ocf_find_devices(const jerry_value_t function_val,
-                                      const jerry_value_t this,
-                                      const jerry_value_t argv[],
-                                      const jerry_length_t argc)
+static ZJS_DECL_FUNC(ocf_find_devices)
 {
     ERR_PRINT("findDevices() is not yet supported\n");
     struct ocf_handler *h;
@@ -1064,10 +1040,7 @@ static jerry_value_t ocf_find_devices(const jerry_value_t function_val,
 /*
  * TODO: find platforms not supported
  */
-static jerry_value_t ocf_find_platforms(const jerry_value_t function_val,
-                                        const jerry_value_t this,
-                                        const jerry_value_t argv[],
-                                        const jerry_length_t argc)
+static ZJS_DECL_FUNC(ocf_find_platforms)
 {
     ERR_PRINT("findPlatforms() is not yet supported\n");
 

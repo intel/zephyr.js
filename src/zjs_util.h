@@ -230,7 +230,8 @@ int zjs_validate_args(const char *expectations[], const jerry_length_t argc,
 /**
  * Macro to validate existing argv based on a list of expected argument types.
  *
- * NOTE: Expects argc and argv to exist as in a JerryScript native function.
+ * NOTE: Expects this, function_obj, argc and argv to exist as in a JerryScript
+ *       native function.
  *
  * @param optcount  A pointer to an int to receive count of optional args found,
  *                    or NULL if not needed.
