@@ -27,6 +27,11 @@ typedef struct dgram_handle {
 #define CHECK(x) \
     ret = (x); if (ret < 0) { ERR_PRINT("Error in " #x ": %d\n", ret); return zjs_error(#x); }
 
+// FIXME: Quick hack to allow context into the regular CHECK while fixing build
+//        for call sites without JS binding context
+#define CHECK_ALT(x) \
+    ret = (x); if (ret < 0) { ERR_PRINT("Error in " #x ": %d\n", ret); return zjs_error_context(#x, 0, 0); }
+
 #define GET_STR(jval, buf) \
     { \
         jerry_size_t str_sz = sizeof(buf); \
@@ -52,7 +57,7 @@ static jerry_value_t get_addr(sa_family_t family,
     jerry_size_t str_len = 40;
     char addr_str[str_len];
     zjs_copy_jstring(addr, addr_str, &str_len);
-    CHECK(net_addr_pton(family, addr_str, &sockaddr_in->sin_addr));
+    CHECK_ALT(net_addr_pton(family, addr_str, &sockaddr_in->sin_addr));
     return ZJS_UNDEFINED;
 }
 
@@ -220,7 +225,7 @@ static void udp_sent(struct net_context *context, int status, void *token,
         if (status != 0) {
             char errbuf[8];
             snprintf(errbuf, sizeof(errbuf), "%d", status);
-            rval = zjs_standard_error(NetworkError, errbuf);
+            rval = zjs_standard_error(NetworkError, errbuf, 0, 0);
             // We need error object, not error value (JrS doesn't allow to
             // pass the latter as a func argument).
             jerry_value_clear_error_flag(&rval);

@@ -33,6 +33,8 @@ typedef enum {
 #define BIT_CLR(a, i) a &= ~(1 << i)
 #define IS_SET(a, i) (a >> i) & 1
 
+#define invalid_args() zjs_error("invalid arguments")
+
 /*
  * Bit mask of currently open FD's
  */
@@ -61,11 +63,6 @@ static const jerry_object_native_info_t stats_type_info =
 {
    .free_cb = free_stats
 };
-
-static jerry_value_t invalid_args(void)
-{
-    return zjs_error("invalid arguments");
-}
 
 static file_handle_t *find_file(int fd)
 {
@@ -158,7 +155,7 @@ static jerry_value_t create_stats_obj(struct fs_dirent *entry)
 
     struct fs_dirent *new_entry = zjs_malloc(sizeof(struct fs_dirent));
     if (!new_entry) {
-        return zjs_error("malloc failed");
+        return zjs_error_context("malloc failed", 0, 0);
     }
     memcpy(new_entry, entry, sizeof(struct fs_dirent));
 

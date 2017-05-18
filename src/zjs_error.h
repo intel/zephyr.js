@@ -41,7 +41,8 @@ jerry_value_t zjs_custom_error_with_func(jerry_value_t this,
  *
  * @return A new Error object with the given name and message set.
  */
-jerry_value_t zjs_custom_error(const char *name, const char *message);
+jerry_value_t zjs_custom_error(const char *name, const char *message,
+                               jerry_value_t this, jerry_value_t func);
 
 /**
  * Create an error object to return from an API.
@@ -51,18 +52,45 @@ jerry_value_t zjs_custom_error(const char *name, const char *message);
  *
  * @return A new Error or subclass object.
  */
-jerry_value_t zjs_standard_error(zjs_error_type_t type, const char *message);
+jerry_value_t zjs_standard_error(zjs_error_type_t type, const char *message,
+                                 jerry_value_t this, jerry_value_t func);
 
-#define zjs_error(msg)          (zjs_standard_error(Error, (msg)))
 
-#define SECURITY_ERROR(msg)     (zjs_standard_error(SecurityError, (msg)))
-#define NOTSUPPORTED_ERROR(msg) (zjs_standard_error(NotSupportedError, (msg)))
-#define SYNTAX_ERROR(msg)       (zjs_standard_error(SyntaxError, (msg)))
-#define TYPE_ERROR(msg)         (zjs_standard_error(TypeError, (msg)))
-#define RANGE_ERROR(msg)        (zjs_standard_error(RangeError, (msg)))
-#define TIMEOUT_ERROR(msg)      (zjs_standard_error(TimeoutError, (msg)))
-#define NETWORK_ERROR(msg)      (zjs_standard_error(NetworkError, (msg)))
-#define SYSTEM_ERROR(msg)       (zjs_standard_error(SystemError, (msg)))
+#define ZJS_STD_ERROR(type, msg) (zjs_standard_error((type), (msg), \
+                                                     this, function_obj))
+
+// Error Context
+//
+// The error "context" referred to in this function is meant to be the JS
+//   function we're running on behalf of, and the object that function was
+//   called on. So the zjs_error() function has been updated to automatically
+//   use this and function_obj parameters that are present in any ZJS_DECL_FUNC.
+//
+// Use this zjs_error_context function when you need to manually pass in the
+//   context. The two situations where this might happen are when you have no
+//   context for some reason (pass 0 for both), or when you're not directly in
+//   a ZJS_DECL_FUNC and they may have different names.
+//
+// The error reporting uses this context to print descriptive information for
+//   the user after errors such as:
+// "In function MyGPIOObjects.led0.write():"
+//   to indicate where the error occurred since we can't currently provide line
+//   numbers.
+#define zjs_error_context(msg, this, func)  (zjs_standard_error(Error, (msg), \
+                                                                (this), (func)))
+
+// The below functions when inside a ZJS_DECL_FUNC JS binding; they require
+//   that 'this' and 'function_obj' be defined.
+#define zjs_error(msg)          (ZJS_STD_ERROR(Error, (msg)))
+
+#define SECURITY_ERROR(msg)     (ZJS_STD_ERROR(SecurityError, (msg)))
+#define NOTSUPPORTED_ERROR(msg) (ZJS_STD_ERROR(NotSupportedError, (msg)))
+#define SYNTAX_ERROR(msg)       (ZJS_STD_ERROR(SyntaxError, (msg)))
+#define TYPE_ERROR(msg)         (ZJS_STD_ERROR(TypeError, (msg)))
+#define RANGE_ERROR(msg)        (ZJS_STD_ERROR(RangeError, (msg)))
+#define TIMEOUT_ERROR(msg)      (ZJS_STD_ERROR(TimeoutError, (msg)))
+#define NETWORK_ERROR(msg)      (ZJS_STD_ERROR(NetworkError, (msg)))
+#define SYSTEM_ERROR(msg)       (ZJS_STD_ERROR(SystemError, (msg)))
 
 /*
  * These macros expects function_obj and this to exist in a JerryScript native

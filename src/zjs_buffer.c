@@ -322,9 +322,10 @@ jerry_value_t zjs_buffer_create(uint32_t size, zjs_buffer_t **ret_buf)
     }
     if (size > maxLength) {
 #ifdef DEBUG_BUILD
-        return RANGE_ERROR("size greater than max length");
+        return zjs_standard_error(RangeError, "size greater than max length",
+                                  0, 0);
 #else
-        return RANGE_ERROR("");
+        return zjs_standard_error(RangeError, "", 0, 0);
 #endif
     }
 
@@ -337,7 +338,7 @@ jerry_value_t zjs_buffer_create(uint32_t size, zjs_buffer_t **ret_buf)
         if (ret_buf) {
             *ret_buf = NULL;
         }
-        return zjs_error("out of memory");
+        return zjs_error_context("out of memory", 0, 0);
     }
 
     jerry_value_t buf_obj = jerry_create_object();

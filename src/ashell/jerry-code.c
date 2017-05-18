@@ -427,7 +427,7 @@ int javascript_parse_code(const char *file_name)
             /* Setup Global scope code */
             parsed_code = jerry_parse((const jerry_char_t *) buf, size, false);
             if (jerry_value_has_error_flag(parsed_code)) {
-                printf("[ERR] Could not parse JS\n");
+                DBG_PRINT("Error parsing JS\n");
                 javascript_print_error(parsed_code);
                 jerry_release_value(parsed_code);
             } else {
@@ -449,6 +449,7 @@ void javascript_run_code(const char *file_name)
     ZVAL ret_value = jerry_run(parsed_code);
 
     if (jerry_value_has_error_flag(ret_value)) {
-        javascript_print_error(ret_value);
+        DBG_PRINT("Error running JS\n");
+        zjs_print_error_message(ret_value, ZJS_UNDEFINED);
     }
 }

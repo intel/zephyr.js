@@ -436,7 +436,9 @@ static void process_packet(ws_connection_t *con, uint8_t *data, uint32_t len)
     ws_packet_t *packet = zjs_malloc(sizeof(ws_packet_t));
     if (!packet) {
         ERR_PRINT("allocation failed\n");
-        ZVAL_MUTABLE error = zjs_custom_error("OutOfMemoryError", "could not allocate packet");
+        ZVAL_MUTABLE error = zjs_custom_error("OutOfMemoryError",
+                                              "could not allocate packet",
+                                              0, 0);
         jerry_value_clear_error_flag(&error);
         zjs_trigger_event(con->conn, "error", &error, 1, NULL, NULL);
         return;
@@ -446,7 +448,8 @@ static void process_packet(ws_connection_t *con, uint8_t *data, uint32_t len)
         ERR_PRINT("error decoding packet\n");
         zjs_free(packet->payload);
         zjs_free(packet);
-        ZVAL_MUTABLE error = zjs_custom_error("PacketDecodeError", "error decoding packet");
+        ZVAL_MUTABLE error = zjs_custom_error("PacketDecodeError",
+                                              "error decoding packet", 0, 0);
         jerry_value_clear_error_flag(&error);
         zjs_trigger_event(con->conn, "error", &error, 1, NULL, NULL);
         return;
@@ -570,7 +573,7 @@ static void tcp_received(struct net_context *context,
         uint8_t *data = zjs_malloc(len);
         if (!data) {
             ERR_PRINT("not enough memory to allocate data\n");
-            ZVAL_MUTABLE error = zjs_error("out of memory");
+            ZVAL_MUTABLE error = zjs_error_context("out of memory", 0, 0);
             jerry_value_clear_error_flag(&error);
             zjs_trigger_event(con->server, "error", &error, 1, NULL, NULL);
             net_nbuf_unref(buf);
@@ -588,7 +591,7 @@ static void tcp_received(struct net_context *context,
 #endif
         if (con->server_handle->max_payload &&
             (len > con->server_handle->max_payload)) {
-            ZVAL_MUTABLE error = zjs_error("payload too large");
+            ZVAL_MUTABLE error = zjs_error_context("payload too large", 0, 0);
             jerry_value_clear_error_flag(&error);
             zjs_trigger_event(con->server, "error", &error, 1, NULL, NULL);
             net_nbuf_unref(buf);
@@ -600,7 +603,7 @@ static void tcp_received(struct net_context *context,
             con->accept_key = zjs_malloc(64);
             if (!con->accept_key) {
                 ERR_PRINT("could not allocate accept key\n");
-                ZVAL_MUTABLE error = zjs_error("out of memory");
+                ZVAL_MUTABLE error = zjs_error_context("out of memory", 0, 0);
                 jerry_value_clear_error_flag(&error);
                 zjs_trigger_event(con->server, "error", &error, 1, NULL, NULL);
                 net_nbuf_unref(buf);
@@ -665,7 +668,8 @@ static void tcp_received(struct net_context *context,
                                              strlen(con->accept_key) + 6);
                 if (!send_data) {
                     ERR_PRINT("could not allocate accept message\n");
-                    ZVAL_MUTABLE error = zjs_error("out of memory");
+                    ZVAL_MUTABLE error = zjs_error_context("out of memory",
+                                                           0, 0);
                     jerry_value_clear_error_flag(&error);
                     zjs_trigger_event(con->server, "error", &error, 1, NULL, NULL);
                     net_nbuf_unref(buf);
@@ -730,7 +734,7 @@ static void post_accept_handler(void *handle, jerry_value_t ret_val)
     char *send_data = zjs_malloc(sdata_size);
     if (!send_data) {
         ERR_PRINT("could not allocate accept message\n");
-        ZVAL_MUTABLE error = zjs_error("out of memory");
+        ZVAL_MUTABLE error = zjs_error_context("out of memory", 0, 0);
         jerry_value_clear_error_flag(&error);
         zjs_trigger_event(con->server, "error", &error, 1, NULL, NULL);
         return;
@@ -763,7 +767,7 @@ static void tcp_accepted(struct net_context *context,
     ws_connection_t *new = zjs_malloc(sizeof(ws_connection_t));
     if (!new) {
         ERR_PRINT("could not allocate connection handle\n");
-        ZVAL_MUTABLE error = zjs_error("out of memory");
+        ZVAL_MUTABLE error = zjs_error_context("out of memory", 0, 0);
         jerry_value_clear_error_flag(&error);
         zjs_trigger_event(handle->server, "error", &error, 1, NULL, NULL);
         return;
@@ -773,7 +777,7 @@ static void tcp_accepted(struct net_context *context,
     new->rbuf = zjs_malloc(DEFAULT_WS_BUFFER_SIZE);
     if (!new->rbuf) {
         ERR_PRINT("could not allocate read buffer\n");
-        ZVAL_MUTABLE error = zjs_error("out of memory");
+        ZVAL_MUTABLE error = zjs_error_context("out of memory", 0, 0);
         jerry_value_clear_error_flag(&error);
         zjs_trigger_event(handle->server, "error", &error, 1, NULL, NULL);
         zjs_free(new);

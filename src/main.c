@@ -159,7 +159,7 @@ int main(int argc, char *argv[])
 #ifndef ZJS_SNAPSHOT_BUILD
     code_eval = jerry_parse((jerry_char_t *)script, len, false);
     if (jerry_value_has_error_flag(code_eval)) {
-        ERR_PRINT("Error parsing javascript\n");
+        DBG_PRINT("Error parsing JS\n");
         zjs_print_error_message(code_eval, ZJS_UNDEFINED);
         goto error;
     }
@@ -178,7 +178,7 @@ int main(int argc, char *argv[])
 #endif
 
     if (jerry_value_has_error_flag(result)) {
-        ERR_PRINT("Error running javascript\n");
+        DBG_PRINT("Error running JS\n");
         zjs_print_error_message(result, ZJS_UNDEFINED);
         goto error;
     }

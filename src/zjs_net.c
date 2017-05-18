@@ -279,7 +279,7 @@ static void tcp_received(struct net_context *context,
         if (len == 0 && data == NULL) {
             // socket close
             DBG_PRINT("closing socket, context=%p, socket=%u\n", context, handle->socket);
-            ZVAL_MUTABLE error = zjs_custom_error("ReadError",  "socket has been closed");
+            ZVAL_MUTABLE error = zjs_custom_error("ReadError",  "socket has been closed", 0, 0);
             jerry_value_clear_error_flag(&error);
             zjs_trigger_event(handle->socket, "error", &error, 1, NULL, NULL);
             zjs_trigger_event(handle->socket, "close", NULL, 0, post_closed, handle);
@@ -368,7 +368,9 @@ static ZJS_DECL_FUNC(socket_write)
         zjs_remove_callback(id);
         // TODO: may need to check the specific error to determine action
         DBG_PRINT("write failed, context=%p, socket=%u\n", handle->tcp_sock, handle->socket);
-        ZVAL_MUTABLE error = zjs_custom_error("WriteError", "error writing to socket");
+        ZVAL_MUTABLE error = zjs_custom_error("WriteError",
+                                              "error writing to socket", this,
+                                              function_obj);
         jerry_value_clear_error_flag(&error);
         zjs_trigger_event(handle->socket, "error", &error, 1, post_closed, handle);
         return jerry_create_boolean(false);
@@ -473,7 +475,7 @@ static jerry_value_t create_socket(uint8_t client, sock_handle_t **handle_out)
 {
     sock_handle_t *sock_handle = zjs_malloc(sizeof(sock_handle_t));
     if (!sock_handle) {
-        return zjs_error("could not alloc socket handle");
+        return zjs_error_context("could not alloc socket handle", 0, 0);
     }
     memset(sock_handle, 0, sizeof(sock_handle_t));
 
@@ -804,7 +806,9 @@ static ZJS_DECL_FUNC(socket_connect)
     }
     if (!handle->tcp_sock) {
         DBG_PRINT("connect failed\n");
-        ZVAL_MUTABLE error = zjs_custom_error("NotFoundError", "Connection could not be made");
+        ZVAL_MUTABLE error = zjs_custom_error("NotFoundError",
+                                              "Connection could not be made",
+                                              this, function_obj);
         jerry_value_clear_error_flag(&error);
         zjs_trigger_event(this, "error", &error, 1, NULL, NULL);
         return ZJS_UNDEFINED;
@@ -867,7 +871,9 @@ static ZJS_DECL_FUNC(socket_connect)
                                 handle) < 0) {
             DBG_PRINT("connect failed\n");
             zjs_obj_add_boolean(this, false, "connecting");
-            ZVAL_MUTABLE error = zjs_custom_error("NotFoundError", "Connection could not be made");
+            ZVAL_MUTABLE error = zjs_custom_error("NotFoundError",
+                                                  "Connection could not be made",
+                                                  this, function_obj);
             jerry_value_clear_error_flag(&error);
             zjs_trigger_event(this, "error", &error, 1, NULL, NULL);
             return ZJS_UNDEFINED;
@@ -905,7 +911,9 @@ static ZJS_DECL_FUNC(socket_connect)
                                 handle) < 0) {
             DBG_PRINT("connect failed\n");
             zjs_obj_add_boolean(this, false, "connecting");
-            ZVAL_MUTABLE error = zjs_custom_error("NotFoundError", "Connection could not be made");
+            ZVAL_MUTABLE error = zjs_custom_error("NotFoundError",
+                                                  "Connection could not be made",
+                                                  this, function_obj);
             jerry_value_clear_error_flag(&error);
             zjs_trigger_event(this, "error", &error, 1, NULL, NULL);
             return ZJS_UNDEFINED;

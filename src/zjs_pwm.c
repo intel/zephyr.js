@@ -196,7 +196,8 @@ jerry_value_t zjs_pwm_init()
         zjs_pwm_dev[i] = device_get_binding(devname);
         if (!zjs_pwm_dev[i]) {
             ERR_PRINT("DEVICE: '%s'\n", devname);
-            return zjs_error("zjs_pwm_init: cannot find PWM device");
+            return zjs_error_context("zjs_pwm_init: cannot find PWM device",
+                                     0, 0);
         }
     }
 

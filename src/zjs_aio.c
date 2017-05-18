@@ -95,19 +95,19 @@ static bool zjs_aio_ipm_send_sync(zjs_ipm_message_t *send,
 static jerry_value_t zjs_aio_call_remote_function(zjs_ipm_message_t *send)
 {
     if (!send)
-        return zjs_error("zjs_aio_call_remote_function: invalid send message");
+        return zjs_error_context("invalid send message", 0, 0);
 
     zjs_ipm_message_t reply;
 
     bool success = zjs_aio_ipm_send_sync(send, &reply);
 
     if (!success) {
-        return zjs_error("zjs_aio_call_remote_function: ipm message failed or timed out!");
+        return zjs_error_context("ipm message failed or timed out!", 0, 0);
     }
 
     if (reply.error_code != ERROR_IPM_NONE) {
         ERR_PRINT("error code: %u\n", (unsigned int)reply.error_code);
-        return zjs_error("zjs_aio_call_remote_function: error received");
+        return zjs_error_context("error received", 0, 0);
     }
 
     uint32_t value = reply.data.aio.value;
@@ -167,7 +167,7 @@ static ZJS_DECL_FUNC(zjs_aio_pin_read)
 
     if (pin < ARC_AIO_MIN || pin > ARC_AIO_MAX) {
         DBG_PRINT("PIN: #%u\n", pin);
-        return zjs_error("zjs_aio_pin_read: pin out of range");
+        return zjs_error("pin out of range");
     }
 
     // send IPM message to the ARC side
@@ -210,7 +210,7 @@ static ZJS_DECL_FUNC(zjs_aio_pin_on)
     char event[size];
     zjs_copy_jstring(argv[0], event, &size);
     if (strcmp(event, "change"))
-        return zjs_error("zjs_aio_pin_on: unsupported event type");
+        return zjs_error("unsupported event type");
 
     aio_handle_t *handle;
     const jerry_object_native_info_t *tmp;
@@ -230,7 +230,7 @@ static ZJS_DECL_FUNC(zjs_aio_pin_on)
         // new change function
         handle = zjs_aio_alloc_handle();
         if (!handle)
-            return zjs_error("zjs_aio_pin_on: could not allocate handle");
+            return zjs_error("could not allocate handle");
 
         jerry_set_object_native_pointer(this, handle, &aio_type_info);
         handle->callback_id = zjs_add_callback(argv[1], this, handle, NULL);
@@ -251,7 +251,7 @@ static ZJS_DECL_FUNC(zjs_aio_pin_read_async)
 
     aio_handle_t *handle = zjs_aio_alloc_handle();
     if (!handle)
-        return zjs_error("zjs_aio_pin_read_async: could not allocate handle");
+        return zjs_error("could not allocate handle");
 
     handle->callback_id = zjs_add_callback(argv[0], this, handle,
                                            zjs_aio_free_callback);
@@ -272,7 +272,7 @@ static ZJS_DECL_FUNC(zjs_aio_open)
 
     uint32_t pin;
     if (!zjs_obj_get_uint32(data, "pin", &pin))
-        return zjs_error("zjs_aio_open: missing required field (pin)");
+        return zjs_error("missing required field (pin)");
 
     // send IPM message to the ARC side
     zjs_ipm_message_t send;
