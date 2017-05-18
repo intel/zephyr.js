@@ -79,13 +79,14 @@ endif
 endif
 
 ifeq ($(FUNC_NAME), on)
-ZJS_FLAGS += " -DZJS_FIND_FUNC_NAME"
+ZJS_FLAGS := "$(ZJS_FLAGS) -DZJS_FIND_FUNC_NAME"
 endif
 
 # Settings for ashell builds
 ifneq (,$(filter $(MAKECMDGOALS),ide ashell))
 CONFIG ?= fragments/zjs.conf.dev
 ASHELL=y
+ZJS_FLAGS := "$(ZJS_FLAGS) -DZJS_FIND_FUNC_NAME"
 endif
 
 ifeq ($(BOARD), arduino_101)
