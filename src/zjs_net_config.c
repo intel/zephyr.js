@@ -97,10 +97,7 @@ static int str2bt_addr_le(const char *str, const char *type, bt_addr_le_t *addr)
     return 0;
 }
 
-jerry_value_t zjs_set_ble_address(const jerry_value_t function_val,
-                                  const jerry_value_t this,
-                                  const jerry_value_t argv[],
-                                  const jerry_length_t argc)
+ZJS_DECL_FUNC(zjs_set_ble_address)
 {
 #ifndef ZJS_CONFIG_BLE_ADDRESS
     // args: address

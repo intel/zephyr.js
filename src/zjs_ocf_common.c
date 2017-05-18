@@ -427,10 +427,7 @@ static const oc_handler_t handler = {
                                       .signal_event_loop = oc_signal_main_loop,
 };
 
-static jerry_value_t ocf_start(const jerry_value_t function_val,
-                               const jerry_value_t this,
-                               const jerry_value_t argv[],
-                               const jerry_length_t argc)
+static ZJS_DECL_FUNC(ocf_start)
 {
     if (oc_main_init(&handler) < 0) {
         return zjs_error("OCF failed to start");

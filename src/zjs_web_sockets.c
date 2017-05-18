@@ -467,11 +467,7 @@ static void process_packet(ws_connection_t *con, uint8_t *data, uint32_t len)
     zjs_free(packet);
 }
 
-static jerry_value_t ws_send_data(const jerry_value_t function_obj,
-                                  const jerry_value_t this,
-                                  const jerry_value_t argv[],
-                                  const jerry_length_t argc,
-                                  ws_packet_type type)
+static ZJS_DECL_FUNC_ARGS(ws_send_data, ws_packet_type type)
 {
     ZJS_VALIDATE_ARGS_OPTCOUNT(optcount, Z_OBJECT, Z_OPTIONAL Z_BOOL);
     bool mask = 0;
