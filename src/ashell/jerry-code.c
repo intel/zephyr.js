@@ -13,7 +13,7 @@
 #include <ctype.h>
 
 /* JerryScript includes */
-#include "jerry-port.h"
+#include "jerryscript-port.h"
 #include "jerry-code.h"
 #include "file-utils.h"
 
@@ -25,8 +25,6 @@
 #include "../zjs_sensor.h"
 #include "../zjs_timers.h"
 #include "../zjs_util.h"
-
-void jerry_port_default_set_log_level(jerry_log_level_t level); /** Inside jerry-port-default.h */
 
 #include "comms-uart.h"
 
@@ -104,21 +102,21 @@ static void add_to_list(requires_list_t **list, const char *item)
 static void javascript_print_value(const jerry_value_t value)
 {
     if (jerry_value_is_undefined(value)) {
-        jerry_port_console("undefined");
+        jerry_port_log(JERRY_LOG_LEVEL_TRACE, "undefined");
     } else if (jerry_value_is_null(value)) {
-        jerry_port_console("null");
+        jerry_port_log(JERRY_LOG_LEVEL_TRACE, "null");
     } else if (jerry_value_is_boolean(value)) {
         if (jerry_get_boolean_value(value)) {
-            jerry_port_console("true");
+            jerry_port_log(JERRY_LOG_LEVEL_TRACE, "true");
         } else {
-            jerry_port_console("false");
+            jerry_port_log(JERRY_LOG_LEVEL_TRACE, "false");
         }
     }
     /* Float value */
     else if (jerry_value_is_number(value)) {
         double val = jerry_get_number_value(value);
         // %lf prints an empty value :?
-        jerry_port_console("Number [%d]\n", (int) val);
+        jerry_port_log(JERRY_LOG_LEVEL_TRACE, "Number [%d]\n", (int) val);
     }
     /* String value */
     else if (jerry_value_is_string(value)) {
@@ -126,19 +124,19 @@ static void javascript_print_value(const jerry_value_t value)
         jerry_size_t size = 0;
         char *str = zjs_alloc_from_jstring(value, &size);
         if (str) {
-            jerry_port_console("%s", str);
+            jerry_port_log(JERRY_LOG_LEVEL_TRACE, "%s", str);
             zjs_free(str);
         }
         else {
-            jerry_port_console("[String too long]");
+            jerry_port_log(JERRY_LOG_LEVEL_TRACE, "[String too long]");
         }
     }
     /* Object reference */
     else if (jerry_value_is_object(value)) {
-        jerry_port_console("[JS object]");
+        jerry_port_log(JERRY_LOG_LEVEL_TRACE, "[JS object]");
     }
 
-    jerry_port_console("\n");
+    jerry_port_log(JERRY_LOG_LEVEL_TRACE, "\n");
 }
 
 static char *read_file_alloc(const char *file_name, ssize_t *size)
@@ -372,7 +370,6 @@ static void javascript_print_error(jerry_value_t error_value)
 
 void javascript_eval_code(const char *source_buffer, ssize_t size)
 {
-    jerry_port_default_set_log_level(JERRY_LOG_LEVEL_TRACE);
     ZVAL ret_val = jerry_eval((jerry_char_t *) source_buffer, size, false);
 
     if (jerry_value_has_error_flag(ret_val)) {
@@ -419,7 +416,6 @@ int javascript_parse_code(const char *file_name)
 {
     int ret = -1;
     javascript_stop();
-    jerry_port_default_set_log_level(JERRY_LOG_LEVEL_TRACE);
     char *buf = NULL;
     ssize_t size;
 

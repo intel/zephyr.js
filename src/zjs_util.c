@@ -608,6 +608,8 @@ int zjs_require_string_if_prop_map(jerry_value_t obj, const char *prop,
     return ZJS_VALUE_NOT_IN_MAP;
 }
 
+void free_handle_nop(void *h) {}
+
 #ifndef ZJS_LINUX_BUILD
 #ifndef ZJS_ASHELL
 static zjs_port_sem block;
