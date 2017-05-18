@@ -402,40 +402,31 @@ static void search_helper(jerry_value_t obj, name_element_t *parent)
     jerry_foreach_object_property(obj, foreach_prop, parent);
 }
 
-static uint32_t get_total_length(char *func_name, name_element_t *parent)
-{
-    uint32_t len = strlen(func_name);
-    name_element_t *cur = parent;
-    while (cur) {
-        len += jerry_get_string_size(cur->name) + 1;
-        cur = cur->parent;
-    }
-    return len;
-}
-
 static char *create_func_string(char *func_name, name_element_t *parent)
 {
-    uint32_t len = get_total_length(func_name, parent);
-    char *total = zjs_malloc(len + 3);
-    char *i = total + len;
-    uint32_t flen = strlen(func_name);
-    i -= flen;
-    memcpy(i, func_name, flen);
-    i[flen] = '(';
-    i[flen + 1] = ')';
-    i--;
-    name_element_t *cur = parent;
-    while (cur) {
+    // requires: func_name is a null-terminated string
+    int total = strlen(func_name) + 1;
+    char *str = zjs_malloc(total);
+    if (!str) {
+        return "";
+    }
+    strcpy(str, func_name);
+
+    while (parent) {
         uint32_t size = 32;
         char name[size];
-        zjs_copy_jstring(cur->name, name, &size);
-        i -= size;
-        memcpy(i, name, size);
-        i[size] = '.';
-        i--;
-        cur = cur->parent;
+        zjs_copy_jstring(parent->name, name, &size);
+        total += size + 1;
+        char *newstr = zjs_malloc(total);
+        if (!newstr) {
+            break;
+        }
+        snprintf(newstr, total, "%s.%s", name, str);
+        zjs_free(str);
+        str = newstr;
+        parent = parent->parent;
     }
-    return total;
+    return str;
 }
 
 static void free_element(name_element_t *e)
@@ -468,48 +459,35 @@ static char *function_search(jerry_value_t func)
 
 void zjs_print_error_message(jerry_value_t error, jerry_value_t func)
 {
-    const char *uncaught = "Uncaught exception: ";
     char *func_name = NULL;
+
 #ifdef ZJS_FIND_FUNC_NAME
-    func_name = function_search(func);
+    ZVAL err_func = zjs_get_property(error, "function");
+    if (jerry_value_is_function(err_func)) {
+        func_name = function_search(err_func);
+    }
+
+    if (!func_name && jerry_value_is_function(func)) {
+        func_name = function_search(func);
+    }
 #endif
 
-    uint32_t size;
-    char *message = NULL;
-    ZVAL err_name = zjs_get_property(error, "name");
-    if (!jerry_value_is_string(err_name)) {
-        ERR_PRINT("%s(no name)\n", uncaught);
-        // we should never get here.
-        return;
-    }
-    ZVAL err_msg = zjs_get_property(error, "message");
-    if (!jerry_value_is_string(err_msg)) {
-        ERR_PRINT("%s(no message)\n", uncaught);
-        // we should never get here.
-        return;
-    }
-
-    size = MAX_ERROR_NAME_LENGTH;
-    char name[size];
-
-    zjs_copy_jstring(err_name, name, &size);
-    if (!size) {
-        ERR_PRINT("%s(name too long)\n", uncaught);
-        return;
-    }
-
-    message = zjs_alloc_from_jstring(err_msg, NULL);
-
     if (func_name) {
-        ERR_PRINT("In function %s:\n", func_name);
+        ZJS_PRINT("In function %s:\n", func_name);
         zjs_free(func_name);
     }
-    if (message) {
-        ERR_PRINT("%s%s: %s\n", uncaught, name, message);
-        zjs_free(message);
-    } else {
-        ERR_PRINT("%s%s\n", uncaught, name);
+
+    jerry_value_clear_error_flag(&error);
+    ZVAL err_str_val = jerry_value_to_string(error);
+
+    jerry_size_t size = 0;
+    char *msg = zjs_alloc_from_jstring(err_str_val, &size);
+    const char *err_str = msg;
+    if (!msg) {
+        err_str = "(Error message too long)";
     }
+    ZJS_PRINT("%s\n", err_str);
+    zjs_free(msg);
 }
 
 void zjs_free_value(const jerry_value_t *value)

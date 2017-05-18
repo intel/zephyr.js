@@ -311,7 +311,7 @@ static void ipm_msg_receive_callback(void *context, uint32_t id, volatile void *
 
 jerry_value_t zjs_sensor_start_sensor(jerry_value_t obj)
 {
-    ZJS_GET_HANDLE(obj, sensor_handle_t, handle, sensor_type_info);
+    ZJS_GET_HANDLE_ALT(obj, sensor_handle_t, handle, sensor_type_info);
 
     zjs_ipm_message_t send;
     send.type = TYPE_SENSOR_START;
@@ -325,9 +325,11 @@ jerry_value_t zjs_sensor_start_sensor(jerry_value_t obj)
     int error = zjs_sensor_call_remote_function(&send);
     if (error != ERROR_IPM_NONE) {
         if (error == ERROR_IPM_OPERATION_NOT_ALLOWED) {
-            return zjs_custom_error("NotAllowedError", "permission denied");
+            return zjs_custom_error("NotAllowedError", "permission denied",
+                                    0, 0);
         } else {
-            return zjs_custom_error("UnknownError", "IPM failed");
+            return zjs_custom_error("UnknownError", "IPM failed",
+                                    0, 0);
         }
     }
 
@@ -338,7 +340,7 @@ jerry_value_t zjs_sensor_start_sensor(jerry_value_t obj)
 
 jerry_value_t zjs_sensor_stop_sensor(jerry_value_t obj)
 {
-    ZJS_GET_HANDLE(obj, sensor_handle_t, handle, sensor_type_info);
+    ZJS_GET_HANDLE_ALT(obj, sensor_handle_t, handle, sensor_type_info);
 
     zjs_ipm_message_t send;
     send.type = TYPE_SENSOR_STOP;
@@ -351,9 +353,10 @@ jerry_value_t zjs_sensor_stop_sensor(jerry_value_t obj)
     int error = zjs_sensor_call_remote_function(&send);
     if (error != ERROR_IPM_NONE) {
         if (error == ERROR_IPM_OPERATION_NOT_ALLOWED) {
-            return zjs_custom_error("NotAllowedError", "permission denied");
+            return zjs_custom_error("NotAllowedError", "permission denied",
+                                    0, 0);
         } else {
-            return zjs_custom_error("UnknownError", "IPM failed");
+            return zjs_custom_error("UnknownError", "IPM failed", 0, 0);
         }
     }
 

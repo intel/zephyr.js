@@ -1317,7 +1317,7 @@ jerry_value_t zjs_ble_init()
 
     ble_handle_t *handle = zjs_malloc(sizeof(ble_handle_t));
     if (!handle) {
-        return zjs_error("failed to allocate ble_handle");
+        return zjs_error_context("failed to allocate ble_handle", 0, 0);
     }
     memset(handle, 0, sizeof(ble_handle_t));
 

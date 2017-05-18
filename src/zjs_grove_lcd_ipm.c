@@ -49,19 +49,19 @@ static bool zjs_glcd_ipm_send_sync(zjs_ipm_message_t *send,
 static jerry_value_t zjs_glcd_call_remote_function(zjs_ipm_message_t *send)
 {
     if (!send)
-        return zjs_error("zjs_glcd_call_remote_function: invalid send message");
+        return zjs_error_context("invalid send message", 0, 0);
 
     zjs_ipm_message_t reply;
 
     bool success = zjs_glcd_ipm_send_sync(send, &reply);
 
     if (!success) {
-        return zjs_error("zjs_glcd_call_remote_function: ipm message failed or timed out!");
+        return zjs_error_context("ipm message failed or timed out!", 0, 0);
     }
 
     if (reply.error_code != ERROR_IPM_NONE) {
         ERR_PRINT("error code: %u\n", (unsigned int)reply.error_code);
-        return zjs_error("zjs_glcd_call_remote_function: error received");
+        return zjs_error_context("error received", 0, 0);
     }
 
     uint8_t value = reply.data.glcd.value;

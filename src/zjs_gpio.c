@@ -229,7 +229,8 @@ static ZJS_DECL_FUNC(zjs_gpio_open)
     }
     DEVICE gpiodev = device_get_binding(devname);
     if (!gpiodev || rval == FIND_PIN_FAILURE) {
-        return zjs_custom_error("InvalidAccessError", "pin failure");
+        return zjs_custom_error("InvalidAccessError", "pin failure", this,
+                                function_obj);
     }
 
     // ignore mapping for now as we can do it automatically

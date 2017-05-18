@@ -120,9 +120,9 @@ jerry_value_t zjs_custom_error_with_func(jerry_value_t this,
     if (!msg) {
         // Problem finding function
         DBG_PRINT("calling function not found\n");
-        error = zjs_custom_error(name, message);
+        error = zjs_custom_error(name, message, this, func);
     } else {
-        error = zjs_custom_error(name, msg);
+        error = zjs_custom_error(name, msg, this, func);
         zjs_free(msg);
     }
     return error;
@@ -139,37 +139,56 @@ jerry_value_t zjs_error_with_func(jerry_value_t this,
     if (!msg) {
         // Problem finding function
         DBG_PRINT("calling function not found\n");
-        error = zjs_standard_error(type, message);
+        error = zjs_standard_error(type, message, this, func);
     } else {
-        error = zjs_standard_error(type, msg);
+        error = zjs_standard_error(type, msg, this, func);
         zjs_free(msg);
     }
     return error;
 }
 
-jerry_value_t zjs_custom_error(const char *name, const char *message)
+static void add_context(jerry_value_t error, jerry_value_t this,
+                        jerry_value_t func)
+{
+    // FIXME: move this to a native pointer after the new jerryscript goes in
+    if (jerry_value_is_object(func)) {
+        zjs_obj_add_object(error, func, "function");
+        if (jerry_value_is_object(this)) {
+            zjs_obj_add_object(error, this, "this");
+        }
+    }
+}
+
+jerry_value_t zjs_custom_error(const char *name, const char *message,
+                               jerry_value_t this, jerry_value_t func)
 {
     jerry_value_t error = jerry_create_error(JERRY_ERROR_TYPE,
                                              (jerry_char_t *)message);
     zjs_obj_add_string(error, name, "name");
+    add_context(error, this, func);
     return error;
 }
 
-jerry_value_t zjs_standard_error(zjs_error_type_t type, const char *message)
+jerry_value_t zjs_standard_error(zjs_error_type_t type, const char *message,
+                                 jerry_value_t this, jerry_value_t func)
 {
     int count = sizeof(error_types) / sizeof(zjs_error_t);
+    jerry_value_t error;
     if ((unsigned int)type >= count) {
 #ifdef DEBUG_BUILD
         ZJS_PRINT("[Error] %s\n", message);
 #endif
-        return jerry_create_error(JERRY_ERROR_TYPE, (jerry_char_t *)message);
+        error = jerry_create_error(JERRY_ERROR_TYPE, (jerry_char_t *)message);
+    }
+    else {
+#ifdef DEBUG_BUILD
+        ZJS_PRINT("[%s] %s\n", error_types[type].name, message);
+#endif
+        ZVAL msg = jerry_create_string((jerry_char_t *)message);
+        error = jerry_construct_object(error_types[type].ctor, &msg, 1);
+        jerry_value_set_error_flag(&error);
     }
 
-#ifdef DEBUG_BUILD
-    ZJS_PRINT("[%s] %s\n", error_types[type].name, message);
-#endif
-    ZVAL msg = jerry_create_string((jerry_char_t *)message);
-    jerry_value_t obj = jerry_construct_object(error_types[type].ctor, &msg, 1);
-    jerry_value_set_error_flag(&obj);
-    return obj;
+    add_context(error, this, func);
+    return error;
 }

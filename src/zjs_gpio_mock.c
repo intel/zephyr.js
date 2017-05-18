@@ -270,7 +270,8 @@ int mock_gpio_pin_write(DEVICE port, uint32_t pin, uint32_t value)
                          && !new_level)) {
 
                         // simulate onchange interrupt
-                        ZJS_GET_HANDLE(connection, mock_cb_item_t, item, mock_type_info);
+                        ZJS_GET_HANDLE_ALT(connection, mock_cb_item_t, item,
+                                           mock_type_info);
 
                         if (BIT(conn_pin) & item->enabled_mask) {
                             item->handler(port, item->callback,

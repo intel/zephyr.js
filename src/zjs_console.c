@@ -210,9 +210,11 @@ static ZJS_DECL_FUNC(console_assert)
     if (!b) {
         if (argc > 1) {
             value2str(argv[1], message, MAX_STR_LENGTH, false);
-            return zjs_custom_error("AssertionError", message);
+            return zjs_custom_error("AssertionError", message, this,
+                                    function_obj);
         } else {
-            return zjs_custom_error("AssertionError", "console.assert");
+            return zjs_custom_error("AssertionError", "console.assert", this,
+                                    function_obj);
         }
     }
     return ZJS_UNDEFINED;

@@ -480,4 +480,20 @@ void zjs_loop_init(void);
         var = (type *)native; \
     }
 
+// FIXME: Quick hack to allow context into the regular macro while fixing build
+//        for call sites without JS binding context
+#define ZJS_GET_HANDLE_ALT(obj, type, var, info) \
+    type *var; \
+    { \
+        void *native; \
+        const jerry_object_native_info_t *tmp; \
+        if (!jerry_get_object_native_pointer(obj, &native, &tmp)) { \
+            return zjs_error_context("no native handle", 0, 0); \
+        } \
+        if (tmp != &info) { \
+            return zjs_error_context("handle was incorrect type", 0, 0);  \
+        } \
+        var = (type *)native; \
+    }
+
 #endif  // __zjs_util_h__
