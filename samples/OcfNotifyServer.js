@@ -1,4 +1,7 @@
-var server = require('ocf').server;
+// Copyright (c) 2017, Intel Corporation.
+
+var ocf = require('ocf');
+var server = ocf.server;
 
 console.log("Started OCF server");
 
@@ -36,3 +39,5 @@ server.register(resourceInit).then(function(resource) {
 }).catch(function(error) {
     console.log("Error registering");
 });
+
+ocf.start();
