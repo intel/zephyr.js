@@ -32,6 +32,8 @@ application on Arduino 101\*.
 * Ubuntu\* 16.04 host; adapt as necessary for other platforms.
 * If you're behind a proxy, go through all the [usual pain](https://github.com/01org/zephyr.js/wiki/Proxy) to get ssh working to
 github.com and http working to zephyrproject.org.
+* If you are a board pre-flashed with IDE, you can follow the ashell/IDE [guide](./docs/ashell.md) on how to build
+and run your app using Web IDE.
 
 ### Initial Setup
 ***Windows and OSX users***: These instructions are for Ubuntu 16.04. Be sure to
@@ -188,6 +190,11 @@ You have built and run your first ZJS application!
 
 If you want to make changes to the application, or run a different .js sample,
 you just need to repeat the steps the desired JavaScript filename.
+
+### Build with Web-based IDE
+You can also build your app using our Web-based IDE, which allows you to write JS apps on the fly
+in our online editor and upload them directly to the Arduino 101 board through WebUSB.  To use the
+Web IDE, follow the [instructions](./docs/ashell.md) here to build and connect tto the IDE.
 
 ### Next steps
 
