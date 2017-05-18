@@ -230,7 +230,7 @@ static ZJS_DECL_FUNC(zjs_ble_read_callback_function)
         return zjs_error("invalid arguments");
     }
 
-    ZJS_GET_HANDLE(this, struct zjs_ble_characteristic, chrc, ble_type_info);
+    ZJS_GET_HANDLE(function_obj, struct zjs_ble_characteristic, chrc, ble_type_info);
 
     chrc->read_cb.error_code = (uint32_t)jerry_get_number_value(argv[0]);
 
@@ -328,7 +328,7 @@ static ZJS_DECL_FUNC(zjs_ble_write_callback_function)
         return zjs_error("invalid arguments");
     }
 
-    ZJS_GET_HANDLE(this, struct zjs_ble_characteristic, chrc, ble_type_info);
+    ZJS_GET_HANDLE(function_obj, struct zjs_ble_characteristic, chrc, ble_type_info);
 
     // store the return value in the write_cb struct
     chrc->write_cb.error_code = (uint32_t)jerry_get_number_value(argv[0]);
@@ -423,14 +423,13 @@ static ZJS_DECL_FUNC(zjs_ble_update_value_callback_function)
     if (chrc->chrc_attr) {
         zjs_buffer_t *buf = zjs_buffer_find(argv[0]);
         if (buf) {
+            // loop through all the connections
             ble_connection_t *conn = ble_handle->connections;
             while (conn) {
                 bt_gatt_notify(conn->bt_conn, chrc->chrc_attr,
                                buf->buffer, buf->bufsize);
                 conn = conn->next;
             }
-        } else {
-            return zjs_error("buffer not found");
         }
     }
 
