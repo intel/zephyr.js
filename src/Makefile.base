@@ -107,6 +107,6 @@ obj-$(CONFIG_BOARD_FRDM_K64F) += \
 ifeq ($(ASHELL), y)
 $(info Insecure Mode (development))
 export JERRY_INCLUDE = $(JERRY_BASE)/jerry-core/
-obj-y += ashell/
+obj-y += bshell/
 ccflags-y += -DZJS_ASHELL
 endif
