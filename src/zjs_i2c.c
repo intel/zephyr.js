@@ -91,7 +91,7 @@ static ZJS_DECL_FUNC(zjs_i2c_read)
     //           from the register address. Returns a buffer object
     //           that size containing the data.
 
-    return zjs_i2c_read_base(this, function_obj, argv, argc, false);
+    return zjs_i2c_read_base(function_obj, this, argv, argc, false);
 }
 
 static ZJS_DECL_FUNC(zjs_i2c_burst_read)
@@ -106,7 +106,7 @@ static ZJS_DECL_FUNC(zjs_i2c_burst_read)
     //           Reads the number of bytes requested from the I2C device.
     //           Returns a buffer object containing the data.
 
-    return zjs_i2c_read_base(this, function_obj, argv, argc, true);
+    return zjs_i2c_read_base(function_obj, this, argv, argc, true);
 }
 
 static ZJS_DECL_FUNC(zjs_i2c_write)
