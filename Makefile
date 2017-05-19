@@ -181,7 +181,7 @@ flash:  analyze generate $(JERRYLIB) $(ARC)
 # Build for zephyr, default target
 .PHONY: zephyr
 zephyr: analyze generate $(JERRYLIB) $(ARC)
-	@make -f Makefile.zephyr \
+	@make -f Makefile.zephyr -j4 \
 					BOARD=$(BOARD) \
 					VARIANT=$(VARIANT) \
 					CB_STATS=$(CB_STATS) \
@@ -406,7 +406,7 @@ arc: analyze
 		cd arc; make BOARD=arduino_101_sss CROSS_COMPILE=$(ARC_CROSS_COMPILE); \
 	else \
 		sed -i '/This is a generated file/r./zjs.conf.tmp' arc/src/Makefile; \
-		cd arc; make BOARD=arduino_101_sss; \
+		cd arc; make BOARD=arduino_101_sss -j4; \
 	fi
 ifeq ($(BOARD), arduino_101)
 	@echo
