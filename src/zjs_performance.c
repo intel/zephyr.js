@@ -11,7 +11,7 @@
 static ZJS_DECL_FUNC(zjs_performance_now)
 {
     if (argc != 0)
-        return zjs_error("performance.now: no args expected");
+        return zjs_error("no args expected");
 #ifdef ZJS_LINUX_BUILD
     struct timeval tv;
     gettimeofday(&tv, NULL);

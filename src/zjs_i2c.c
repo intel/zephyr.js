@@ -42,7 +42,7 @@ static ZJS_DECL_FUNC_ARGS(zjs_i2c_read_base, bool burst)
     }
 
     if (size < 1) {
-        return zjs_error("zjs_i2c_read_base: size should be greater than zero");
+        return zjs_error("size should be greater than zero");
     }
 
     uint32_t bus;
@@ -176,15 +176,15 @@ static ZJS_DECL_FUNC(zjs_i2c_open)
     uint32_t speed;
 
     if (!zjs_obj_get_uint32(data, "bus", &bus)) {
-        return zjs_error("zjs_i2c_open: missing required field (bus)");
+        return zjs_error("missing required field (bus)");
     }
 
     if (!zjs_obj_get_uint32(data, "speed", &speed)) {
-        return zjs_error("zjs_i2c_open: missing required field (speed)");
+        return zjs_error("missing required field (speed)");
     }
 
     if (zjs_i2c_handle_open((uint8_t)bus)) {
-        return zjs_error("zjs_i2c_open: failed to open connection to I2C bus");
+        return zjs_error("failed to open connection to I2C bus");
     }
     // create the I2C object
     jerry_value_t i2c_obj = jerry_create_object();

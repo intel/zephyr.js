@@ -108,7 +108,7 @@ static ZJS_DECL_FUNC(zjs_glcd_print)
     jerry_size_t size = MAX_BUFFER_SIZE;
     char *buffer = zjs_alloc_from_jstring(argv[0], &size);
     if (!buffer) {
-        return zjs_error("zjs_glcd_print: cannot allocate buffer");
+        return zjs_error("cannot allocate buffer");
     }
 
     // send IPM message to the ARC side

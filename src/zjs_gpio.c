@@ -152,7 +152,7 @@ static ZJS_DECL_FUNC(zjs_gpio_pin_write)
 
     ZJS_GET_HANDLE(this, gpio_handle_t, handle, gpio_type_info);
     if (handle->closed) {
-        return zjs_error("zjs_gpio_pin_write: pin closed");
+        return zjs_error("pin closed");
     }
 
     uint32_t value;
@@ -182,7 +182,7 @@ static ZJS_DECL_FUNC(zjs_gpio_pin_close)
 {
     ZJS_GET_HANDLE(this, gpio_handle_t, handle, gpio_type_info);
     if (handle->closed)
-        return zjs_error("zjs_gpio_pin_close: already closed");
+        return zjs_error("already closed");
 
     zjs_gpio_close(handle);
     return ZJS_UNDEFINED;

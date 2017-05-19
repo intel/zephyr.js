@@ -165,7 +165,7 @@ static ZJS_DECL_FUNC(zjs_dgram_createSocket)
     else if (strcmp(type_str, "udp6") == 0)
         family = AF_INET6;
     else
-        return zjs_error("createSocket: invalid argument");
+        return zjs_error("invalid argument");
 
     struct net_context *udp_sock;
     CHECK(net_context_get(family, SOCK_DGRAM, IPPROTO_UDP, &udp_sock));
@@ -175,7 +175,7 @@ static ZJS_DECL_FUNC(zjs_dgram_createSocket)
 
     dgram_handle_t *handle = zjs_malloc(sizeof(dgram_handle_t));
     if (!handle)
-        return zjs_error("createSocket: OOM");
+        return zjs_error("out of memory");
     handle->udp_sock = udp_sock;
     handle->message_cb_id = -1;
     handle->error_cb_id = -1;
@@ -205,7 +205,7 @@ static ZJS_DECL_FUNC(zjs_dgram_sock_on)
     else if (!strcmp(event, "error"))
         cb_slot = &handle->error_cb_id;
     else
-        return zjs_error("zjs_dgram_sock_on: unsupported event type");
+        return zjs_error("unsupported event type");
 
     zjs_remove_callback(*cb_slot);
     if (!jerry_value_is_null(argv[1]))
