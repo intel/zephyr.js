@@ -361,7 +361,7 @@ typedef struct head_element {
     name_element_t *head;
     name_element_t *match;
     char *name;
-    jerry_value_t func;
+    jerry_value_t obj;
 } head_element_t;
 
 static head_element_t *search_list = NULL;
@@ -373,8 +373,8 @@ static bool foreach_prop(const jerry_value_t prop_name,
                          void *data)
 {
     name_element_t *parent = (name_element_t *)data;
-    jerry_value_t func = search_list->func;
-    if (func == prop_value) {
+    jerry_value_t obj = search_list->obj;
+    if (obj == prop_value) {
         // found
         search_list->name = zjs_alloc_from_jstring(prop_name, NULL);
         search_list->match = parent;
@@ -402,15 +402,15 @@ static void search_helper(jerry_value_t obj, name_element_t *parent)
     jerry_foreach_object_property(obj, foreach_prop, parent);
 }
 
-static char *create_func_string(char *func_name, name_element_t *parent)
+static char *create_js_path(char *obj_name, name_element_t *parent)
 {
-    // requires: func_name is a null-terminated string
-    int total = strlen(func_name) + 1;
+    // requires: obj_name is a null-terminated string
+    int total = strlen(obj_name) + 1;
     char *str = zjs_malloc(total);
     if (!str) {
         return "";
     }
-    strcpy(str, func_name);
+    strcpy(str, obj_name);
 
     while (parent) {
         uint32_t size = 32;
@@ -435,19 +435,29 @@ static void free_element(name_element_t *e)
     zjs_free(e);
 }
 
-static char *function_search(jerry_value_t func)
+static char *object_search(jerry_value_t obj, jerry_value_t start)
 {
+    // requires: jerry_value_t is the object being searched for; start is the
+    //             top level object to start searching from (if not an object,
+    //             e.g. 0, the global object will be used)
+    //  effects: if obj can be found as property of start or a subobject,
+    //             returns the "path" to the object from start
     search_list = zjs_malloc(sizeof(head_element_t));
     search_list->head = NULL;
     search_list->name = NULL;
-    search_list->func = func;
+    search_list->obj = obj;
     search_list->match = NULL;
 
     ZVAL global_obj = jerry_get_global_object();
-    search_helper(global_obj, NULL);
+    if (!jerry_value_is_object(start)) {
+        start = global_obj;
+    }
+    search_helper(start, NULL);
 
-    char *ret = create_func_string(search_list->name, search_list->match);
-
+    char *ret = NULL;
+    if (search_list->name) {
+        ret = create_js_path(search_list->name, search_list->match);
+    }
     ZJS_LIST_FREE(name_element_t, search_list->head, free_element);
     zjs_free(search_list);
     return ret;
@@ -462,18 +472,44 @@ void zjs_print_error_message(jerry_value_t error, jerry_value_t func)
     char *func_name = NULL;
 
 #ifdef ZJS_FIND_FUNC_NAME
+    ZVAL this_obj = zjs_get_property(error, "this");
     ZVAL err_func = zjs_get_property(error, "function");
-    if (jerry_value_is_function(err_func)) {
-        func_name = function_search(err_func);
+    if (jerry_value_is_object(this_obj) && jerry_value_is_function(err_func)) {
+        char *this_path = object_search(this_obj, 0);
+        if (this_path) {
+            char *func_part = object_search(err_func, this_obj);
+            if (func_part) {
+                int len = strlen(this_path) + strlen(func_part) + 2;
+                func_name = zjs_malloc(len);
+                if (func_name) {
+                    snprintf(func_name, len, "%s.%s", this_path, func_part);
+                }
+                zjs_free(func_part);
+            }
+            zjs_free(this_path);
+        }
+        if (!func_name) {
+            DBG_PRINT("function %snot found\n", "object context ");
+        }
+    }
+
+    if (!func_name && jerry_value_is_function(err_func)) {
+        func_name = object_search(err_func, 0);
+        if (!func_name) {
+            DBG_PRINT("function %snot found\n", "context ");
+        }
     }
 
     if (!func_name && jerry_value_is_function(func)) {
-        func_name = function_search(func);
+        func_name = object_search(func, 0);
+        if (!func_name) {
+            DBG_PRINT("function %snot found\n", "");
+        }
     }
 #endif
 
     if (func_name) {
-        ZJS_PRINT("In function %s:\n", func_name);
+        ZJS_PRINT("In function %s():\n", func_name);
         zjs_free(func_name);
     }
 
