@@ -38,7 +38,7 @@ static ZJS_DECL_FUNC(error_handler)
 
     // FIXME: may be able to remove because this should never happen
     if (!found) {
-        return zjs_error("error_handler: unknown type");
+        return zjs_error("unknown type");
     }
 
     if (argc >= 1) {

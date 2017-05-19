@@ -74,10 +74,10 @@ static ZJS_DECL_FUNC_ARGS(zjs_buffer_read_bytes, int bytes, bool big_endian)
 
     zjs_buffer_t *buf = zjs_buffer_find(this);
     if (!buf)
-        return zjs_error("zjs_buffer_read_bytes: buffer not found on read");
+        return zjs_error("buffer not found on read");
 
     if (offset + bytes > buf->bufsize)
-        return zjs_error("zjs_buffer_read_bytes: read attempted beyond buffer");
+        return zjs_error("read attempted beyond buffer");
 
     int dir = big_endian ? 1 : -1;
     if (!big_endian)
@@ -119,10 +119,10 @@ static ZJS_DECL_FUNC_ARGS(zjs_buffer_write_bytes, int bytes, bool big_endian)
 
     zjs_buffer_t *buf = zjs_buffer_find(this);
     if (!buf)
-        return zjs_error("zjs_buffer_write_bytes: buffer not found on write");
+        return zjs_error("buffer not found on write");
 
     if (offset + bytes > buf->bufsize)
-        return zjs_error("zjs_buffer_write_bytes: write attempted beyond buffer");
+        return zjs_error("write attempted beyond buffer");
 
     int dir = big_endian ? -1 : 1;
     if (big_endian)
@@ -216,7 +216,7 @@ static ZJS_DECL_FUNC(zjs_buffer_to_string)
     char encoding[size];
     zjs_copy_jstring(argv[0], encoding, &size);
     if (!size) {
-        return zjs_error("zjs_buffer_to_string: encoding argument too long");
+        return zjs_error("encoding argument too long");
     }
 
     if (strcmp(encoding, "ascii") == 0) {
@@ -235,9 +235,9 @@ static ZJS_DECL_FUNC(zjs_buffer_to_string)
             return jerry_create_string((jerry_char_t *)hexbuf);
         }
     } else {
-        return zjs_error("zjs_buffer_to_string: unsupported encoding type");
+        return zjs_error("unsupported encoding type");
     }
-    return zjs_error("zjs_buffer_to_string: buffer is empty");
+    return zjs_error("buffer is empty");
 }
 
 static ZJS_DECL_FUNC(zjs_buffer_write_string)
@@ -258,7 +258,7 @@ static ZJS_DECL_FUNC(zjs_buffer_write_string)
     if (argc > 3) {
         char *encoding = zjs_alloc_from_jstring(argv[3], NULL);
         if (!encoding) {
-            return zjs_error("zjs_buffer_write_string: allocation failure");
+            return zjs_error("allocation failure");
         }
 
         // ask for one more char than needed to make sure not just prefix match
@@ -267,20 +267,20 @@ static ZJS_DECL_FUNC(zjs_buffer_write_string)
         int rval = strncmp(encoding, utf8_encoding, utf8_len + 1);
         zjs_free(encoding);
         if (rval != 0) {
-            return NOTSUPPORTED_ERROR("zjs_buffer_write_string: only utf8 encoding supported");
+            return NOTSUPPORTED_ERROR("only utf8 encoding supported");
         }
     }
 
     jerry_size_t size = 0;
     char *str = zjs_alloc_from_jstring(argv[0], &size);
     if (!str) {
-        return zjs_error("zjs_buffer_write_string: string too long");
+        return zjs_error("string too long");
     }
 
     zjs_buffer_t *buf = zjs_buffer_find(this);
     if (!buf) {
         zjs_free(str);
-        return zjs_error("zjs_buffer_write_string: buffer not found");
+        return zjs_error("buffer not found");
     }
 
     uint32_t offset = 0;
@@ -293,12 +293,12 @@ static ZJS_DECL_FUNC(zjs_buffer_write_string)
 
     if (length > size) {
         zjs_free(str);
-        return zjs_error("zjs_buffer_write_string: requested length larger than string");
+        return zjs_error("requested length larger than string");
     }
 
     if (offset + length > buf->bufsize) {
         zjs_free(str);
-        return zjs_error("zjs_buffer_write_string: string + offset larger than buffer");
+        return zjs_error("string + offset larger than buffer");
     }
 
     memcpy(buf->buffer + offset, str, length);

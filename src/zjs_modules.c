@@ -171,7 +171,7 @@ static ZJS_DECL_FUNC(native_require_handler)
     char module[size];
     zjs_copy_jstring(argv[0], module, &size);
     if (!size) {
-        return RANGE_ERROR("native_require_handler: argument too long");
+        return RANGE_ERROR("argument too long");
     }
 
     int modcount = sizeof(zjs_modules_array) / sizeof(module_t);
@@ -198,15 +198,15 @@ static ZJS_DECL_FUNC(native_require_handler)
 
     if (zjs_read_script(full_path, &str, &len)) {
         ERR_PRINT("could not read module %s\n", full_path);
-        return NOTSUPPORTED_ERROR("native_require_handler: could not read module script");
+        return NOTSUPPORTED_ERROR("could not read module script");
     }
     ZVAL code_eval = jerry_parse((jerry_char_t *)str, len, false);
     if (jerry_value_has_error_flag(code_eval)) {
-        return SYSTEM_ERROR("native_require_handler: could not parse javascript");
+        return SYSTEM_ERROR("could not parse javascript");
     }
     ZVAL result = jerry_run(code_eval);
     if (jerry_value_has_error_flag(result)) {
-        return SYSTEM_ERROR("native_require_handler: could not run javascript");
+        return SYSTEM_ERROR("could not run javascript");
     }
 
     zjs_free_script(str);
@@ -216,12 +216,12 @@ static ZJS_DECL_FUNC(native_require_handler)
     ZVAL modules_obj = zjs_get_property(global_obj, "module");
 
     if (!jerry_value_is_object(modules_obj)) {
-        return SYSTEM_ERROR("native_require_handler: modules object not found");
+        return SYSTEM_ERROR("modules object not found");
     }
 
     ZVAL exports_obj = zjs_get_property(modules_obj, "exports");
     if (!jerry_value_is_object(exports_obj)) {
-        return SYSTEM_ERROR("native_require_handler: exports object not found");
+        return SYSTEM_ERROR("exports object not found");
     }
 
     for (int i = 0; i < 4; i++) {

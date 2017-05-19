@@ -137,7 +137,7 @@ static ZJS_DECL_FUNC_ARGS(add_timer_helper, bool repeat)
     zjs_timer_t *handle = add_timer(interval, callback, this, repeat,
                                     argc - 2, argv);
     if (handle->callback_id == -1)
-        return zjs_error("native_set_interval_handler: timer alloc failed");
+        return zjs_error("timer alloc failed");
     jerry_set_object_native_pointer(timer_obj, handle, &timer_type_info);
 
     return timer_obj;
@@ -165,7 +165,7 @@ static ZJS_DECL_FUNC(native_clear_interval_handler)
     ZJS_GET_HANDLE(argv[0], zjs_timer_t, handle, timer_type_info);
 
     if (!delete_timer(handle->callback_id))
-        return zjs_error("native_clear_interval_handler: timer not found");
+        return zjs_error("timer not found");
 
     return ZJS_UNDEFINED;
 }
