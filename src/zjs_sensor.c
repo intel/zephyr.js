@@ -207,6 +207,10 @@ void zjs_sensor_set_state(jerry_value_t obj, sensor_state_t state)
         ZVAL activate_func = zjs_get_property(obj, "onactivate");
         if (jerry_value_is_function(activate_func)) {
             // if onactivate exists, call it
+#ifdef ZJS_FIND_FUNC_NAME
+            zjs_obj_add_string(activate_func, "sensor: onactivate",
+                               ZJS_HIDDEN_PROP("function_name"));
+#endif
             zjs_callback_id id = zjs_add_callback_once(activate_func, obj,
                                                        NULL, NULL);
             zjs_signal_callback(id, NULL, 0);
@@ -257,6 +261,10 @@ void zjs_sensor_trigger_error(jerry_value_t obj,
         zjs_set_property(error_obj, "name", name_val);
         zjs_set_property(error_obj, "message", message_val);
         zjs_set_property(event, "error", error_obj);
+#ifdef ZJS_FIND_FUNC_NAME
+            zjs_obj_add_string(func, "sensor: onerror",
+                               ZJS_HIDDEN_PROP("function_name"));
+#endif
         zjs_callback_id id = zjs_add_callback_once(func, obj, NULL, NULL);
         zjs_signal_callback(id, &event, sizeof(event));
         DBG_PRINT("triggering error %s (%s)\n", error_name, error_message);

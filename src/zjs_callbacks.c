@@ -576,7 +576,7 @@ void zjs_call_callback(zjs_callback_id id, const void *data, uint32_t sz)
 #ifdef DEBUG_BUILD
                         DBG_PRINT("callback %d had error; creator: %s, caller: %s\n", id, cb_map[id]->creator, cb_map[id]->caller);
 #endif
-                        zjs_print_error_message(rval, cb_map[id]->js_func);
+                        zjs_print_error_message(rval, cb_map[id]->func_list[i]);
                     }
                 }
             }
