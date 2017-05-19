@@ -226,6 +226,12 @@ static ZJS_DECL_FUNC(zjs_buffer_to_string)
     }
 
     if (strcmp(encoding, "ascii") == 0) {
+        // prevent buffer from accessing hidden properties
+        for (int i = 0; i < buf->bufsize; ++i) {
+            if (buf->buffer[i] == 0xff) {
+                return zjs_error("buffer has invalid ascii");
+            }
+        }
         buf->buffer[buf->bufsize] = '\0';
         return jerry_create_string((jerry_char_t *)buf->buffer);
     } else if (strcmp(encoding, "hex") == 0) {
