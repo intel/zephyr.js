@@ -498,12 +498,6 @@ static jerry_value_t ocf_register(const jerry_value_t function_val,
         }
     }
 
-    // Get UUID and set it in the ocf.device object
-    oc_uuid_t *id = oc_core_get_device_id(resource->res->device);
-    char uuid[37];
-    oc_uuid_to_str(id, uuid, 37);
-    zjs_set_uuid(uuid);
-
     jerry_value_t res = create_resource(resource_path, argv[0]);
 
     jerry_value_t promise = jerry_create_promise();
