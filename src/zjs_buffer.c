@@ -321,12 +321,8 @@ jerry_value_t zjs_buffer_create(uint32_t size, zjs_buffer_t **ret_buf)
         maxLength = (1 << 30) - 1;
     }
     if (size > maxLength) {
-#ifdef DEBUG_BUILD
         return zjs_standard_error(RangeError, "size greater than max length",
                                   0, 0);
-#else
-        return zjs_standard_error(RangeError, "", 0, 0);
-#endif
     }
 
     void *buf = zjs_malloc(size);
@@ -398,7 +394,7 @@ static ZJS_DECL_FUNC(zjs_buffer)
                 if (jerry_value_is_number(item)) {
                     buf->buffer[i] = (uint8_t)jerry_get_number_value(item);
                 } else {
-                    ERR_PRINT("non-numeric value in array, treating as 0");
+                    ERR_PRINT("non-numeric value in array, treating as 0\n");
                     buf->buffer[i] = 0;
                 }
             }

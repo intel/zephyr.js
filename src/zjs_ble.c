@@ -606,7 +606,7 @@ static void zjs_ble_ready_c_callback(void *handle, const void *argv)
 
     ZVAL arg = jerry_create_string((jerry_char_t *)"poweredOn");
     zjs_trigger_event(h->ble_obj, "stateChange", &arg, 1, NULL, NULL);
-    DBG_PRINT("BLE event: stateChange - poweredOn");
+    DBG_PRINT("BLE event: stateChange - poweredOn\n");
 }
 
 // INTERRUPT SAFE FUNCTION: No JerryScript VM, allocs, or release prints!

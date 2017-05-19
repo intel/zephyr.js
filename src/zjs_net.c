@@ -363,7 +363,7 @@ static ZJS_DECL_FUNC(socket_write)
                                UINT_TO_POINTER(net_buf_frags_len(send_buf)),
                                INT_TO_POINTER((int32_t)id));
     if (ret < 0) {
-        ERR_PRINT("Cannot send data to peer (%d)", ret);
+        ERR_PRINT("Cannot send data to peer (%d)\n", ret);
         net_nbuf_unref(send_buf);
         zjs_remove_callback(id);
         // TODO: may need to check the specific error to determine action
@@ -518,7 +518,7 @@ static void add_socket_connection(jerry_value_t socket,
         return;
     }
     if (tmp != &socket_type_info) {
-        ERR_PRINT("handle was incorrect type");
+        ERR_PRINT("handle was incorrect type\n");
         return;
     }
 

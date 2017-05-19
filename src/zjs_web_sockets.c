@@ -168,7 +168,7 @@ static void tcp_send(struct net_context *context, void *data, uint32_t len)
                                UINT_TO_POINTER(net_buf_frags_len(send_buf)),
                                NULL);
     if (ret < 0) {
-        ERR_PRINT("Cannot send data to peer (%d)", ret);
+        ERR_PRINT("Cannot send data to peer (%d)\n", ret);
         net_nbuf_unref(send_buf);
         return;
     }
