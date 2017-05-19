@@ -88,6 +88,7 @@ static bool save_mode = false;
 static bool restore_mode = false;
 #endif
 
+#ifdef CONFIG_IPM
 int ipm_send_msg(struct zjs_ipm_message *msg)
 {
     msg->flags &= ~MSG_ERROR_FLAG;
