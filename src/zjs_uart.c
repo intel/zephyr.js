@@ -274,7 +274,7 @@ static ZJS_DECL_FUNC(uart_init)
         DBG_PRINT("failed to get baudrate, ret code %d\n", ret);
     } else {
         if (test_baud != baud) {
-            DBG_PRINT("baudrate was not set successfully");
+            DBG_PRINT("baudrate was not set successfully\n");
             return make_uart_error("InternalError", "baud could not be set");
         }
     }

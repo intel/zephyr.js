@@ -80,7 +80,7 @@ static void zjs_gpio_c_callback(void *h, const void *args)
 {
     gpio_handle_t *handle = (gpio_handle_t *)h;
     if (handle->closed) {
-        ERR_PRINT("unexpected callback after close");
+        ERR_PRINT("unexpected callback after close\n");
         return;
     }
     ZVAL onchange_func = zjs_get_property(handle->pin_obj, "onchange");
@@ -171,7 +171,7 @@ static ZJS_DECL_FUNC(zjs_gpio_pin_write)
 
     int rval = gpio_pin_write(handle->port, handle->pin, value);
     if (rval) {
-        ERR_PRINT("GPIO: #%d!n", (int)handle->pin);
+        ERR_PRINT("GPIO: #%d!\n", (int)handle->pin);
         return zjs_error("write failed");
     }
 
