@@ -234,8 +234,10 @@ static ZJS_DECL_FUNC(zjs_aio_pin_on)
 
         jerry_set_object_native_pointer(this, handle, &aio_type_info);
 #ifdef ZJS_FIND_FUNC_NAME
-    zjs_obj_add_string(argv[0], "aio: onchange",
-                       ZJS_HIDDEN_PROP("function_name"));
+        if (jerry_value_is_function(argv[1])) {
+            zjs_obj_add_string(argv[1], "aio: onchange",
+                               ZJS_HIDDEN_PROP("function_name"));
+        }
 #endif
         handle->callback_id = zjs_add_callback(argv[1], this, handle, NULL);
         zjs_aio_ipm_send_async(TYPE_AIO_PIN_SUBSCRIBE, pin, handle);
