@@ -134,6 +134,15 @@ static ZJS_DECL_FUNC_ARGS(add_timer_helper, bool repeat)
     jerry_value_t callback = argv[0];
     jerry_value_t timer_obj = jerry_create_object();
 
+#ifdef ZJS_FIND_FUNC_NAME
+    if (repeat) {
+        zjs_obj_add_string(callback, "setInterval",
+                           ZJS_HIDDEN_PROP("function_name"));
+    } else {
+        zjs_obj_add_string(callback, "setTimeout",
+                           ZJS_HIDDEN_PROP("function_name"));
+    }
+#endif
     zjs_timer_t *handle = add_timer(interval, callback, this, repeat,
                                     argc - 2, argv);
     if (handle->callback_id == -1)

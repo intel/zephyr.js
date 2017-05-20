@@ -12,6 +12,13 @@
 
 #define ZJS_UNDEFINED jerry_create_undefined()
 
+#ifdef DEBUG_BUILD
+#define ZJS_HIDDEN_PROP(n) n
+#else
+#define ZJS_HIDDEN_PROP(n) "\377" n
+#endif
+
+
 /**
  * Call malloc but if it fails, run JerryScript garbage collection and retry
  *

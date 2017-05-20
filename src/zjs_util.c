@@ -406,9 +406,14 @@ static char *create_js_path(char *obj_name, name_element_t *parent)
 {
     // requires: obj_name is a null-terminated string
     int total = strlen(obj_name) + 1;
+
+    if (!obj_name) {
+        return NULL;
+    }
+
     char *str = zjs_malloc(total);
     if (!str) {
-        return "";
+        return NULL;
     }
     strcpy(str, obj_name);
 
@@ -504,6 +509,13 @@ void zjs_print_error_message(jerry_value_t error, jerry_value_t func)
         func_name = object_search(func, 0);
         if (!func_name) {
             DBG_PRINT("function %snot found\n", "");
+        }
+    }
+    if (!func_name) {
+        // see if a name property was set
+        ZVAL name = zjs_get_property(func, ZJS_HIDDEN_PROP("function_name"));
+        if (jerry_value_is_string(name)) {
+            func_name = zjs_alloc_from_jstring(name, NULL);
         }
     }
 #endif
