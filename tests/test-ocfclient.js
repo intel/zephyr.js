@@ -84,10 +84,10 @@ function onError(error) {
     if (error.deviceId) console.log("Device error: " + error.deviceId);
 }
 
-var FoundStringFlag = 1;
-var FoundStateFlag = 0;
-var FoundNumberFlag = 0;
-var FoundInvalidFlag = 0;
+var FoundStringFlag = true;
+var FoundStateFlag = false;
+var FoundNumberFlag = false;
+var FoundInvalidFlag = false;
 function onfound1(resource) {
     if (FoundStringFlag) {
         client.retrieve(resource.deviceId).then(function(res) {
@@ -126,8 +126,8 @@ function onfound1(resource) {
         }, 2000);
 
         setTimeout(function() {
-            FoundStringFlag = 0;
-            FoundStateFlag = 1;
+            FoundStringFlag = false;
+            FoundStateFlag = true;
         }, 3000);
     }
 }
@@ -154,8 +154,8 @@ function onfound2(resource) {
             console.log("OCFClient: retrieve " + error.name);
         });
 
-        FoundStateFlag = 0;
-        FoundNumberFlag = 1;
+        FoundStateFlag = false;
+        FoundNumberFlag = true;
     }
 }
 
@@ -185,20 +185,20 @@ function onfound3(resource) {
             });
         }, 1000);
 
-        FoundNumberFlag = 0;
-        FoundInvalidFlag = 1;
+        FoundNumberFlag = false;
+        FoundInvalidFlag = true;
     }
 }
 
-var FindInvalidResourceFlag = 1;
+var FindInvalidResourceFlag = true;
 function onfound4(resource) {
     if (FoundInvalidFlag) {
         client.retrieve(resource.deviceId).then(function(res) {
-            FindInvalidResourceFlag = 0;
+            FindInvalidResourceFlag = false;
         }).catch(function(error) {
         });
 
-        FoundInvalidFlag = 0;
+        FoundInvalidFlag = false;
     }
 }
 
@@ -209,14 +209,14 @@ client.on("error", onError);
 
 ocf.start();
 
-var ResourcesStringFlag = 0;
-var ResourcesStateFlag = 0;
-var ResourcesNumberFlag = 0;
+var ResourcesStringFlag = false;
+var ResourcesStateFlag = false;
+var ResourcesNumberFlag = false;
 client.findResources({resourceType:"core.str" },
                      onfound1).then(function(resource) {
     assert(true, "OCFClient: find OCF server resources with 'core.str'");
 
-    ResourcesStringFlag = 1;
+    ResourcesStringFlag = true;
 }).catch(function(error) {
     assert(false, "OCFClient: find OCF server resources with 'core.str'");
 });
@@ -226,7 +226,7 @@ setTimeout(function() {
                          onfound2).then(function(resource) {
         assert(true, "OCFClient: find OCF server resources with 'core.state'");
 
-        ResourcesStateFlag = 1;
+        ResourcesStateFlag = true;
     }).catch(function(error) {
         assert(false, "OCFClient: find OCF server resources with 'core.state'");
     });
@@ -237,7 +237,7 @@ setTimeout(function() {
                          onfound3).then(function(resource) {
         assert(true, "OCFClient: find OCF server resources with 'core.num'");
 
-        ResourcesNumberFlag = 1;
+        ResourcesNumberFlag = true;
     }).catch(function(error) {
         assert(false, "OCFClient: find OCF server resources with 'core.num'");
     });
@@ -251,7 +251,7 @@ setTimeout(function() {
 setTimeout(function() {
     client.findResources({resourceType:"core.invalid" },
                          onfound4).then(function(resource) {
-        FindInvalidResourceFlag = 0;
+        FindInvalidResourceFlag = false;
     }).catch(function(error) {
     });
 
