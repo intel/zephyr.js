@@ -6,7 +6,7 @@
 #include <device.h>
 #include <init.h>
 #include <string.h>
-#if defined(BUILD_MODULE_AIO) || defined(BUILD_MODULE_SENSOR_LIGHT)
+#ifdef BUILD_MODULE_AIO
 #include <adc.h>
 #endif
 #ifdef BUILD_MODULE_I2C
@@ -44,18 +44,22 @@ static struct k_sem arc_sem;
 static struct zjs_ipm_message msg_queue[QUEUE_SIZE];
 static struct zjs_ipm_message *end_of_queue_ptr = msg_queue + QUEUE_SIZE;
 #endif
-#if defined(BUILD_MODULE_AIO) || defined(BUILD_MODULE_SENSOR_LIGHT)
+
+#ifdef BUILD_MODULE_AIO
+#define STACK_SIZE 1024
+#define STACK_PRIORITY 7
+static char __stack stack[STACK_SIZE];
 static struct device *adc_dev = NULL;
+static uint8_t pin_enabled[ARC_AIO_LEN] = {};
 static uint32_t pin_values[ARC_AIO_LEN] = {};
 static uint32_t pin_last_values[ARC_AIO_LEN] = {};
 static uint8_t seq_buffer[ADC_BUFFER_SIZE];
-#ifdef BUILD_MODULE_AIO
 static void *pin_user_data[ARC_AIO_LEN] = {};
 static uint8_t pin_send_updates[ARC_AIO_LEN] = {};
 #endif
+
 #ifdef BUILD_MODULE_SENSOR_LIGHT
 static uint8_t light_send_updates[ARC_AIO_LEN] = {};
-#endif
 #endif
 
 #ifdef BUILD_MODULE_I2C
@@ -106,7 +110,7 @@ static int ipm_send_error(struct zjs_ipm_message *msg,
 }
 #endif
 
-#if defined(BUILD_MODULE_AIO) || defined(BUILD_MODULE_SENSOR_LIGHT)
+#ifdef BUILD_MODULE_AIO
 static uint32_t pin_read(uint8_t pin)
 {
     struct adc_seq_entry entry = {
@@ -192,16 +196,16 @@ static void handle_aio(struct zjs_ipm_message *msg)
 
     switch (msg->type) {
     case TYPE_AIO_OPEN:
-        // NO OP - always success
+        pin_enabled[pin - ARC_AIO_MIN] = 1;
         break;
     case TYPE_AIO_PIN_READ:
-        reply_value = pin_read(pin);
+        reply_value = pin_last_values[pin - ARC_AIO_MIN];
         break;
     case TYPE_AIO_PIN_ABORT:
         // NO OP - always success
         break;
     case TYPE_AIO_PIN_CLOSE:
-        // NO OP - always success
+        pin_enabled[pin - ARC_AIO_MIN] = 0;
         break;
     case TYPE_AIO_PIN_SUBSCRIBE:
         pin_send_updates[pin - ARC_AIO_MIN] = 1;
@@ -230,21 +234,31 @@ static void handle_aio(struct zjs_ipm_message *msg)
 static void process_aio_updates()
 {
     for (int i = 0; i <= 5; i++) {
-        if (pin_send_updates[i]) {
-            pin_values[i] = pin_read(ARC_AIO_MIN + i);
-            if (pin_values[i] != pin_last_values[i]) {
-                // send updates only if value has changed
-                // so it doesn't flood the IPM channel
-                struct zjs_ipm_message msg;
-                msg.id = MSG_ID_AIO;
-                msg.type = TYPE_AIO_PIN_EVENT_VALUE_CHANGE;
-                msg.flags = 0;
-                msg.user_data = pin_user_data[i];
-                msg.data.aio.pin = ARC_AIO_MIN + i;
-                msg.data.aio.value = pin_values[i];
-                ipm_send_msg(&msg);
+        if (pin_send_updates[i] &&
+            pin_values[i] != pin_last_values[i]) {
+            // send updates only if value has changed
+            // so it doesn't flood the IPM channel
+            struct zjs_ipm_message msg;
+            msg.id = MSG_ID_AIO;
+            msg.type = TYPE_AIO_PIN_EVENT_VALUE_CHANGE;
+            msg.flags = 0;
+            msg.user_data = pin_user_data[i];
+            msg.data.aio.pin = ARC_AIO_MIN + i;
+            msg.data.aio.value = pin_values[i];
+            ipm_send_msg(&msg);
+        }
+    }
+}
+
+// AIO thread spawned to read from ADC
+static void aio_read_thread(void *p1, void *p2, void *p3)
+{
+    while (1) {
+        for (int i = 0; i <= 5; i++) {
+            if (pin_enabled[i]) {
+                pin_values[i] = pin_read(ARC_AIO_MIN + i);
+                pin_last_values[i] = pin_values[i];
             }
-            pin_last_values[i] = pin_values[i];
         }
     }
 }
@@ -1297,9 +1311,11 @@ void main(void)
     zjs_ipm_register_callback(-1, ipm_msg_receive_callback); // MSG_ID ignored
 #endif
 
-#if defined(BUILD_MODULE_AIO) || defined(BUILD_MODULE_SENSOR_LIGHT)
+#ifdef BUILD_MODULE_AIO
     adc_dev = device_get_binding(ADC_DEVICE_NAME);
     adc_enable(adc_dev);
+    k_thread_spawn(stack, STACK_SIZE, aio_read_thread, NULL, NULL, NULL,
+                   STACK_PRIORITY, 0, K_NO_WAIT);
 #endif
 
     int tick_count = 0;
@@ -1325,7 +1341,7 @@ void main(void)
         k_sleep(SLEEP_TICKS);
     }
 
-#if defined(BUILD_MODULE_AIO) || defined(BUILD_MODULE_SENSOR_LIGHT)
+#ifdef BUILD_MODULE_AIO
     adc_disable(adc_dev);
 #endif
 }
