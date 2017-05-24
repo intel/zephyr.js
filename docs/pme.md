@@ -242,4 +242,4 @@ The `mode` is the distance function to use. Valid values are:
 
 Sample Apps
 -----------
-* [PME sample](../samples/CuriePME.js)
+* [PME sample](../samples/PME.js)
