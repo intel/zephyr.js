@@ -11,10 +11,10 @@ var gpio = require('gpio');
 //B+: D7/IO7
 //B-: D8/IO8
 
-var pinA1 = gpio.open( { pin: 'IO2', mode: 'out', activeLow: false } );
-var pinA2 = gpio.open( { pin: 'IO4', mode: 'out', activeLow: false } );
-var pinB1 = gpio.open( { pin: 'IO7', mode: 'out', activeLow: false } );
-var pinB2 = gpio.open( { pin: 'IO8', mode: 'out', activeLow: false } );
+var pinA1 = gpio.open({ pin: 'IO2', mode: 'out', activeLow: false });
+var pinA2 = gpio.open({ pin: 'IO4', mode: 'out', activeLow: false });
+var pinB1 = gpio.open({ pin: 'IO7', mode: 'out', activeLow: false });
+var pinB2 = gpio.open({ pin: 'IO8', mode: 'out', activeLow: false });
 
 var dir = 0;
 
@@ -24,7 +24,7 @@ var sleepDelay = 10;
 
 // Super hacky sleep emulation - we leave a multiply operation in to take more time
 function sleep(delay) {
-    for (i = 0; i < delay * 4; ){
+    for (var i = 0; i < delay * 4; ){
         i++;
     }
 }
@@ -32,9 +32,7 @@ function sleep(delay) {
 // While the 28BYJ-48 specifies a half-step 8-phase pattern, experimentation shows
 // that a full-step incremental pattern works better in ZJS
 function stepIt(A1, A2, B1, B2) {
-
     if (dir) {
-
         pinA1.write(1);
         sleep(sleepDelay);
         pinA1.write(0);
@@ -50,9 +48,7 @@ function stepIt(A1, A2, B1, B2) {
         pinB2.write(1);
         sleep(sleepDelay);
         pinB2.write(0);
-
     } else {
-
         pinB2.write(1);
         sleep(sleepDelay);
         pinB2.write(0);
@@ -68,7 +64,6 @@ function stepIt(A1, A2, B1, B2) {
         pinA1.write(1);
         sleep(sleepDelay);
         pinA1.write(0);
-
     }
 }
 
