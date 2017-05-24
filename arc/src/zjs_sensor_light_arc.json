@@ -1,7 +1,7 @@
 {
     "module": "sensor_light_arc",
     "constructor": "AmbientLightSensor",
-    "depends": ["sensor_arc"],
+    "depends": ["aio_arc", "sensor_arc"],
     "targets": ["arc"],
     "zephyr_conf": {
         "arc": ["CONFIG_ADC=y"]
