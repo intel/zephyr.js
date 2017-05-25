@@ -50,9 +50,9 @@ static struct zjs_ipm_message *end_of_queue_ptr = msg_queue + QUEUE_SIZE;
 #define STACK_PRIORITY 7
 static char __stack stack[STACK_SIZE];
 static struct device *adc_dev = NULL;
-static uint8_t pin_enabled[ARC_AIO_LEN] = {};
-static uint32_t pin_values[ARC_AIO_LEN] = {};
-static uint32_t pin_last_values[ARC_AIO_LEN] = {};
+static atomic_t pin_enabled[ARC_AIO_LEN] = {};
+static atomic_t pin_values[ARC_AIO_LEN] = {};
+static atomic_t pin_last_values[ARC_AIO_LEN] = {};
 static uint8_t seq_buffer[ADC_BUFFER_SIZE];
 static void *pin_user_data[ARC_AIO_LEN] = {};
 static uint8_t pin_send_updates[ARC_AIO_LEN] = {};
@@ -196,7 +196,7 @@ static void handle_aio(struct zjs_ipm_message *msg)
 
     switch (msg->type) {
     case TYPE_AIO_OPEN:
-        pin_enabled[pin - ARC_AIO_MIN] = 1;
+        atomic_set(&pin_enabled[pin - ARC_AIO_MIN], 1);
         break;
     case TYPE_AIO_PIN_READ:
         reply_value = pin_last_values[pin - ARC_AIO_MIN];
@@ -205,7 +205,7 @@ static void handle_aio(struct zjs_ipm_message *msg)
         // NO OP - always success
         break;
     case TYPE_AIO_PIN_CLOSE:
-        pin_enabled[pin - ARC_AIO_MIN] = 0;
+        atomic_set(&pin_enabled[pin - ARC_AIO_MIN], 0);
         break;
     case TYPE_AIO_PIN_SUBSCRIBE:
         pin_send_updates[pin - ARC_AIO_MIN] = 1;
@@ -256,8 +256,9 @@ static void aio_read_thread(void *p1, void *p2, void *p3)
     while (1) {
         for (int i = 0; i <= 5; i++) {
             if (pin_enabled[i]) {
-                pin_values[i] = pin_read(ARC_AIO_MIN + i);
-                pin_last_values[i] = pin_values[i];
+                uint32_t value = pin_read(ARC_AIO_MIN + i);
+                atomic_set(&pin_values[i], value);
+                atomic_set(&pin_last_values[i], value);
             }
         }
     }
