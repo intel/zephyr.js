@@ -35,8 +35,9 @@ net.on('up', function() {
 		}
 
 		client.on("data", function(data) {
+			count++;
 			console.log("got data: " + data.toString('ascii'));
-			client.write(new Buffer("write data " + count++ + "\r\n"));
+			client.write(new Buffer("write data " + count + "\r\n"));
 		});
 		client.on("close", function() {
 			console.log("Socket has closed");
