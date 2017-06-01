@@ -5,9 +5,6 @@ console.log("Test OCF server");
 var ocf = require("ocf");
 var assert = require("Assert.js");
 
-var bleAddress = "F1:E2:D3:C4:B5:A6";
-ocf.setBleAddress(bleAddress);
-
 var server = ocf.server;
 assert(typeof server === "object" && !!server,
        "OCFObject: OCF server be defined");
@@ -117,8 +114,7 @@ function onRetrieve(request, observe) {
     console.log("on('retrieve'): request.target.resourcePath = " +
                 request.target.resourcePath + " observe = " + observe);
 
-    if (request.target.resourcePath === "/test/str" &&
-        request.target.resourceTypes === "core.str") {
+    if (request.target.resourcePath === "/test/str") {
         console.log("retrieve properties.str = " + TestPropertiesStr.str);
 
         request.respond(TestPropertiesStr).then(function() {
@@ -136,8 +132,7 @@ function onRetrieve(request, observe) {
                 RetrieveStrFlage = false;
             }
         });
-    } else if (request.target.resourcePath === "/test/state" &&
-               request.target.resourceTypes === "core.state") {
+    } else if (request.target.resourcePath === "/test/state") {
         console.log("retrieve properties.state = " +
                     TestPropertiesState.state);
 
@@ -156,8 +151,7 @@ function onRetrieve(request, observe) {
                 RetrieveStateFlage = false;
             }
         });
-    } else if (request.target.resourcePath === "/test/num" &&
-               request.target.resourceTypes === "core.num") {
+    } else if (request.target.resourcePath === "/test/num") {
         console.log("retrieve properties.num = " + TestPropertiesNum.num);
 
         request.respond(TestPropertiesNum).then(function() {
@@ -176,27 +170,11 @@ function onRetrieve(request, observe) {
             }
         });
 
+        if (TestPropertiesNum.num === 10) {
+            assert.result();
+        }
+
         TestPropertiesNum.num = TestPropertiesNum.num + 1;
-    } else if (request.target.resourcePath === "/test/invalid" &&
-               request.target.resourceTypes === "core.invalid") {
-        console.log("retrieve properties.value = " +
-                    TestPropertiesInvalid.value);
-
-        request.respond(TestPropertiesInvalid).then(function() {
-            if (RetrieveInvalidFlage) {
-                assert(true, "OCFServer: respond for event " +
-                       "'retrieve' with 'invalid'");
-
-                RetrieveInvalidFlage = false;
-            }
-        }).catch(function(error) {
-            if (RetrieveInvalidFlage) {
-                assert(false, "OCFServer: respond for event " +
-                       "'retrieve' with 'invalid'");
-
-                RetrieveInvalidFlage = false;
-            }
-        });
     } else {
         console.log("Resource requested does not exist");
     }
@@ -204,6 +182,7 @@ function onRetrieve(request, observe) {
 }
 
 var updateFlage = true;
+var respondData;
 function onUpdate(request) {
     if (updateFlage) {
         assert(typeof request === "object" && !!request,
@@ -290,6 +269,12 @@ server.register(ResourceInitNum).then(function(resource) {
 ocf.start();
 
 server.register(ResourceInitInvalid).then(function(resource) {
-    console.log("OCFServer: register OCF server after starting");
+    check_attribute(resource.resourcePath, "resource.resourcePath",
+                    "string", "/test/invalid");
+    check_attribute(resource.properties.value, "resource.properties.value",
+                    "string", "invalid");
+
+    assert(true, "OCFServer: register OCF server after starting");
 }).catch(function(error) {
+    assert(false, "OCFServer: register OCF server after starting");
 });
