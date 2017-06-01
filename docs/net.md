@@ -77,7 +77,7 @@ dictionary AddressOptions {
     String host;          // Host the client should connect to
     String localAddress;  // Local address to bind to
     Number localPort;     // local port to bind to
-    String family;        // Version of IP stack, deafults to 4
+    Number family;        // Version of IP stack, deafults to 4
 }
 
 dictionary AddressInfo {
