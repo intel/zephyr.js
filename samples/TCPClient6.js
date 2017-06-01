@@ -31,12 +31,13 @@ net.on('up', function() {
 		function connected() {
 			console.log("connect successful");
 			is_connected = true;
-			client.write(new Buffer("initial data"));
+			client.write(new Buffer("initial data\r\n"));
 		}
 
 		client.on("data", function(data) {
+			count++;
 			console.log("got data: " + data.toString('ascii'));
-			client.write(new Buffer("write data " + count++));
+			client.write(new Buffer("write data " + count + "\r\n"));
 		});
 		client.on("close", function() {
 			console.log("Socket has closed");
