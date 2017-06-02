@@ -148,12 +148,12 @@ static ZJS_DECL_FUNC(zjs_pwm_open)
 
     uint32_t channel;
     if (!zjs_obj_get_uint32(data, "channel", &channel))
-        return zjs_error("zjs_pwm_open: missing required field");
+        return zjs_error("missing required field");
 
     int devnum, newchannel;
     zjs_pwm_convert_pin(channel, &devnum, &newchannel);
     if (newchannel == -1)
-        return zjs_error("zjs_pwm_open: invalid channel");
+        return zjs_error("invalid channel");
 
     double period, pulseWidth;
     if (!zjs_obj_get_double(data, "period", &period)) {
@@ -196,7 +196,8 @@ jerry_value_t zjs_pwm_init()
         zjs_pwm_dev[i] = device_get_binding(devname);
         if (!zjs_pwm_dev[i]) {
             ERR_PRINT("DEVICE: '%s'\n", devname);
-            return zjs_error("zjs_pwm_init: cannot find PWM device");
+            return zjs_error_context("cannot find PWM device",
+                                     0, 0);
         }
     }
 

@@ -35,12 +35,11 @@ struct props_handle {
     char name[name##_size]; \
     zjs_copy_jstring(jval, name, &name##_size);
 
-#define REJECT(promise, err_name, err_msg, handler) \
-    handler = new_ocf_handler(NULL); \
-    zjs_make_promise(promise, post_ocf_promise, handler); \
-    jerry_value_t error = make_ocf_error(err_name, err_msg, NULL); \
-    zjs_reject_promise(promise, &error, 1); \
-    jerry_release_value(error);
+#define REJECT(err_name, err_msg) \
+    jerry_value_t promise = jerry_create_promise(); \
+    ZVAL error = make_ocf_error(err_name, err_msg, NULL); \
+    jerry_resolve_or_reject_promise(promise, error, false); \
+    return promise;
 
 /*
  * Test if value at index is a double or integer

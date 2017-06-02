@@ -57,7 +57,7 @@ below instructions to connect to the device from the browser IDE directly.
 6. Click on connect button and grant an access to the device.
 7. Try uploading JS code to the device.
 
-* **On Windows 8 and above:**
+* **On Windows 8.1 and above:**
 
   WebUSB compatible device is not appearing on Windows by default for some reason,
   so try installing WinUSB driver with the Zadig utility.
@@ -70,7 +70,7 @@ below instructions to connect to the device from the browser IDE directly.
 4. In Zadig app under "Options" check the "List All Devices" option
 5. In the drop down box select WebUSB (Interface 1)
 6. Select the WinUSB driver
-7. Press the "Install Driver" button to install the WinUSB driver
+7. Press the "Install Driver" or "Reinstall Driver" button to install the WinUSB driver
 8. After installation is done, select WebUSB (Interface 2) from the drop down box
    and install the WinUSB driver same as above.
 9. Disconnect and reconnect the WebUSB device.
@@ -89,28 +89,18 @@ acm> help
 'A Shell' bash
 
 Commands list:
-    help This help
-    eval Evaluate JavaScript in real time
-   clear Clear the terminal screen
-    load [FILE] Saves the input text into a file
-     run [FILE] Runs the JavaScript program in the file
-   parse [FILE] Check if the JS syntax is correct
-    stop Stops current JavaScript execution
- bootcfg [FILE] Set the file that should run at boot
-      ls [FILE] List directory contents or file stat
-     cat [FILE] Print the file contents of a file
-      du [FILE] Estimate file space usage
-      rm [FILE] Remove file or directory
-      mv [SOURCE] [DEST] Move a file to destination
-    test Runs your current test
-   error Prints an error using JerryScript
-    ping Prints '[PONG]' to check that we are alive
-      at OK used by the driver when initializing
-     set Sets the input mode for 'load' accept data
-        transfer raw
-        transfer ihex
-     get Get states on the shell
-  reboot Reboots the device
+    help        This help
+    eval        Evaluate JavaScript in real time
+     run FILE   Runs the JavaScript program in the file
+    stop        Stops current JavaScript execution
+ bootcfg FILE   Set the file that should run at boot
+      ls        List all files
+     cat FILE   Print the file contents of a file
+      rm FILE   Remove file or directory
+      mv F1 F2  Move a file F1 to destination F2
+   clear        Clear the terminal screen
+    boot FILE   Set the file that should run at boot
+  reboot        Reboots the device
 ```
 
 ### Eval
@@ -242,3 +232,10 @@ a duplicated character written to the ACM.
 
 LED2 on Arduino 101 is not available in ashell mode because the GPIO it is tied
 to is being used for SPI to talk to the flash filesystem instead.
+
+If you are using BLE module, by default BLE will be enabled but it cannot be
+turned off once turned on, currently Zephyr doesn't support disabling BLE.  So
+If you subsribe for BLE "stateChange" events, and/or want to register BLE GATT
+services,  it will only work for the first time you run the app, and you will
+need to reboot the board in order for it to work the second time.
+first time you run in the IDE, after that, you'll have to

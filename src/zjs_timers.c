@@ -30,6 +30,11 @@ typedef struct zjs_timer {
 
 static zjs_timer_t *zjs_timers = NULL;
 
+static const jerry_object_native_info_t timer_type_info =
+{
+   .free_cb = free_handle_nop
+};
+
 jerry_value_t *pre_timer(void *h, uint32_t *argc)
 {
     zjs_timer_t *handle = (zjs_timer_t *)h;
@@ -129,11 +134,20 @@ static ZJS_DECL_FUNC_ARGS(add_timer_helper, bool repeat)
     jerry_value_t callback = argv[0];
     jerry_value_t timer_obj = jerry_create_object();
 
+#ifdef ZJS_FIND_FUNC_NAME
+    if (repeat) {
+        zjs_obj_add_string(callback, "setInterval",
+                           ZJS_HIDDEN_PROP("function_name"));
+    } else {
+        zjs_obj_add_string(callback, "setTimeout",
+                           ZJS_HIDDEN_PROP("function_name"));
+    }
+#endif
     zjs_timer_t *handle = add_timer(interval, callback, this, repeat,
                                     argc - 2, argv);
     if (handle->callback_id == -1)
-        return zjs_error("native_set_interval_handler: timer alloc failed");
-    jerry_set_object_native_handle(timer_obj, (uintptr_t)handle, NULL);
+        return zjs_error("timer alloc failed");
+    jerry_set_object_native_pointer(timer_obj, handle, &timer_type_info);
 
     return timer_obj;
 }
@@ -157,15 +171,10 @@ static ZJS_DECL_FUNC(native_clear_interval_handler)
     // FIXME: timers should be ints, not objects!
     ZJS_VALIDATE_ARGS(Z_OBJECT);
 
-    jerry_value_t timer_obj = argv[0];
-    zjs_timer_t *handle;
-
-    if (!jerry_get_object_native_handle(timer_obj, (uintptr_t *)&handle)) {
-        return zjs_error("native_clear_interval_handler(): native handle not found");
-    }
+    ZJS_GET_HANDLE(argv[0], zjs_timer_t, handle, timer_type_info);
 
     if (!delete_timer(handle->callback_id))
-        return zjs_error("native_clear_interval_handler: timer not found");
+        return zjs_error("timer not found");
 
     return ZJS_UNDEFINED;
 }

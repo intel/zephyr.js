@@ -282,8 +282,14 @@ static void comms_interrupt_handler(struct device *dev)
 
 static int comms_out(int c)
 {
+    static char buf[80];
+    static int size = 0;
     char ch = (char)c;
-    comms_write_buf(&ch, 1);
+    buf[size++] = ch;
+    if (ch == '\n' || size == 80) {
+        comms_write_buf(buf, size);
+        size = 0;
+    }
     return 1;
 }
 
@@ -299,7 +305,7 @@ static int comms_out(int c)
 
 void comms_write_buf(const char *buf, int len)
 {
-    if (len == 0)
+    if (len <= 0)
         return;
 
     uart_irq_tx_enable(dev_upload);
@@ -313,6 +319,7 @@ void comms_write_buf(const char *buf, int len)
     while (data_transmitted == false);
     uart_irq_tx_disable(dev_upload);
 }
+
 void comms_print(const char *buf)
 {
     comms_write_buf(buf, strnlen(buf, MAX_LINE_LEN));

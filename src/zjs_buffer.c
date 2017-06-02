@@ -13,6 +13,21 @@
 
 static jerry_value_t zjs_buffer_prototype;
 
+static void zjs_buffer_callback_free(void *handle)
+{
+    // requires: handle is the native pointer we registered with
+    //             jerry_set_object_native_handle
+    //  effects: frees the buffer item
+    zjs_buffer_t *item = (zjs_buffer_t *)handle;
+    zjs_free(item->buffer);
+    zjs_free(item);
+}
+
+static const jerry_object_native_info_t buffer_type_info =
+{
+   .free_cb = zjs_buffer_callback_free
+};
+
 bool zjs_value_is_buffer(const jerry_value_t value)
 {
     if (jerry_value_is_object(value) && zjs_buffer_find(value)) {
@@ -28,19 +43,17 @@ zjs_buffer_t *zjs_buffer_find(const jerry_value_t obj)
     //             in zjs_buffer
     //  effects: looks up obj in our list of known buffer objects and returns
     //             the associated list item struct, or NULL if not found
-    uintptr_t handle;
-    if (jerry_get_object_native_handle(obj, &handle)) {
-        if (jerry_get_prototype(obj) == zjs_buffer_prototype) {
-            return (zjs_buffer_t *)handle;
+    zjs_buffer_t *handle;
+    const jerry_object_native_info_t *tmp;
+    if (jerry_get_object_native_pointer(obj, (void **)&handle, &tmp)) {
+        if (tmp == &buffer_type_info) {
+            return handle;
         }
     }
     return NULL;
 }
 
-static jerry_value_t zjs_buffer_read_bytes(const jerry_value_t this,
-                                           const jerry_value_t argv[],
-                                           const jerry_length_t argc,
-                                           int bytes, bool big_endian)
+static ZJS_DECL_FUNC_ARGS(zjs_buffer_read_bytes, int bytes, bool big_endian)
 {
     // requires: this is a JS buffer object created with zjs_buffer_create,
     //             argv[0] should be an offset into the buffer, but will treat
@@ -61,10 +74,10 @@ static jerry_value_t zjs_buffer_read_bytes(const jerry_value_t this,
 
     zjs_buffer_t *buf = zjs_buffer_find(this);
     if (!buf)
-        return zjs_error("zjs_buffer_read_bytes: buffer not found on read");
+        return zjs_error("buffer not found on read");
 
     if (offset + bytes > buf->bufsize)
-        return zjs_error("zjs_buffer_read_bytes: read attempted beyond buffer");
+        return zjs_error("read attempted beyond buffer");
 
     int dir = big_endian ? 1 : -1;
     if (!big_endian)
@@ -80,10 +93,7 @@ static jerry_value_t zjs_buffer_read_bytes(const jerry_value_t this,
     return jerry_create_number(value);
 }
 
-static jerry_value_t zjs_buffer_write_bytes(const jerry_value_t this,
-                                            const jerry_value_t argv[],
-                                            const jerry_length_t argc,
-                                            int bytes, bool big_endian)
+static ZJS_DECL_FUNC_ARGS(zjs_buffer_write_bytes, int bytes, bool big_endian)
 {
     // requires: this is a JS buffer object created with zjs_buffer_create,
     //             argv[0] must be the value to be written, argv[1] should be
@@ -109,10 +119,10 @@ static jerry_value_t zjs_buffer_write_bytes(const jerry_value_t this,
 
     zjs_buffer_t *buf = zjs_buffer_find(this);
     if (!buf)
-        return zjs_error("zjs_buffer_write_bytes: buffer not found on write");
+        return zjs_error("buffer not found on write");
 
     if (offset + bytes > buf->bufsize)
-        return zjs_error("zjs_buffer_write_bytes: write attempted beyond buffer");
+        return zjs_error("write attempted beyond buffer");
 
     int dir = big_endian ? -1 : 1;
     if (big_endian)
@@ -129,52 +139,52 @@ static jerry_value_t zjs_buffer_write_bytes(const jerry_value_t this,
 
 static ZJS_DECL_FUNC(zjs_buffer_read_uint8)
 {
-    return zjs_buffer_read_bytes(this, argv, argc, 1, true);
+    return zjs_buffer_read_bytes(function_obj, this, argv, argc, 1, true);
 }
 
 static ZJS_DECL_FUNC(zjs_buffer_read_uint16_be)
 {
-    return zjs_buffer_read_bytes(this, argv, argc, 2, true);
+    return zjs_buffer_read_bytes(function_obj, this, argv, argc, 2, true);
 }
 
 static ZJS_DECL_FUNC(zjs_buffer_read_uint16_le)
 {
-    return zjs_buffer_read_bytes(this, argv, argc, 2, false);
+    return zjs_buffer_read_bytes(function_obj, this, argv, argc, 2, false);
 }
 
 static ZJS_DECL_FUNC(zjs_buffer_read_uint32_be)
 {
-    return zjs_buffer_read_bytes(this, argv, argc, 4, true);
+    return zjs_buffer_read_bytes(function_obj, this, argv, argc, 4, true);
 }
 
 static ZJS_DECL_FUNC(zjs_buffer_read_uint32_le)
 {
-    return zjs_buffer_read_bytes(this, argv, argc, 4, false);
+    return zjs_buffer_read_bytes(function_obj, this, argv, argc, 4, false);
 }
 
 static ZJS_DECL_FUNC(zjs_buffer_write_uint8)
 {
-    return zjs_buffer_write_bytes(this, argv, argc, 1, true);
+    return zjs_buffer_write_bytes(function_obj, this, argv, argc, 1, true);
 }
 
 static ZJS_DECL_FUNC(zjs_buffer_write_uint16_be)
 {
-    return zjs_buffer_write_bytes(this, argv, argc, 2, true);
+    return zjs_buffer_write_bytes(function_obj, this, argv, argc, 2, true);
 }
 
 static ZJS_DECL_FUNC(zjs_buffer_write_uint16_le)
 {
-    return zjs_buffer_write_bytes(this, argv, argc, 2, false);
+    return zjs_buffer_write_bytes(function_obj, this, argv, argc, 2, false);
 }
 
 static ZJS_DECL_FUNC(zjs_buffer_write_uint32_be)
 {
-    return zjs_buffer_write_bytes(this, argv, argc, 4, true);
+    return zjs_buffer_write_bytes(function_obj, this, argv, argc, 4, true);
 }
 
 static ZJS_DECL_FUNC(zjs_buffer_write_uint32_le)
 {
-    return zjs_buffer_write_bytes(this, argv, argc, 4, false);
+    return zjs_buffer_write_bytes(function_obj, this, argv, argc, 4, false);
 }
 
 char zjs_int_to_hex(int value) {
@@ -206,10 +216,16 @@ static ZJS_DECL_FUNC(zjs_buffer_to_string)
     char encoding[size];
     zjs_copy_jstring(argv[0], encoding, &size);
     if (!size) {
-        return zjs_error("zjs_buffer_to_string: encoding argument too long");
+        return zjs_error("encoding argument too long");
     }
 
     if (strcmp(encoding, "ascii") == 0) {
+        // prevent buffer from accessing hidden properties
+        for (int i = 0; i < buf->bufsize; ++i) {
+            if (buf->buffer[i] == 0xff) {
+                return zjs_error("buffer has invalid ascii");
+            }
+        }
         buf->buffer[buf->bufsize] = '\0';
         return jerry_create_string((jerry_char_t *)buf->buffer);
     } else if (strcmp(encoding, "hex") == 0) {
@@ -225,19 +241,9 @@ static ZJS_DECL_FUNC(zjs_buffer_to_string)
             return jerry_create_string((jerry_char_t *)hexbuf);
         }
     } else {
-        return zjs_error("zjs_buffer_to_string: unsupported encoding type");
+        return zjs_error("unsupported encoding type");
     }
-    return zjs_error("zjs_buffer_to_string: buffer is empty");
-}
-
-static void zjs_buffer_callback_free(uintptr_t handle)
-{
-    // requires: handle is the native pointer we registered with
-    //             jerry_set_object_native_handle
-    //  effects: frees the buffer item
-    zjs_buffer_t *item = (zjs_buffer_t *)handle;
-    zjs_free(item->buffer);
-    zjs_free(item);
+    return zjs_error("buffer is empty");
 }
 
 static ZJS_DECL_FUNC(zjs_buffer_write_string)
@@ -258,7 +264,7 @@ static ZJS_DECL_FUNC(zjs_buffer_write_string)
     if (argc > 3) {
         char *encoding = zjs_alloc_from_jstring(argv[3], NULL);
         if (!encoding) {
-            return zjs_error("zjs_buffer_write_string: allocation failure");
+            return zjs_error("allocation failure");
         }
 
         // ask for one more char than needed to make sure not just prefix match
@@ -267,20 +273,20 @@ static ZJS_DECL_FUNC(zjs_buffer_write_string)
         int rval = strncmp(encoding, utf8_encoding, utf8_len + 1);
         zjs_free(encoding);
         if (rval != 0) {
-            return NOTSUPPORTED_ERROR("zjs_buffer_write_string: only utf8 encoding supported");
+            return NOTSUPPORTED_ERROR("only utf8 encoding supported");
         }
     }
 
     jerry_size_t size = 0;
     char *str = zjs_alloc_from_jstring(argv[0], &size);
     if (!str) {
-        return zjs_error("zjs_buffer_write_string: string too long");
+        return zjs_error("string too long");
     }
 
     zjs_buffer_t *buf = zjs_buffer_find(this);
     if (!buf) {
         zjs_free(str);
-        return zjs_error("zjs_buffer_write_string: buffer not found");
+        return zjs_error("buffer not found");
     }
 
     uint32_t offset = 0;
@@ -293,12 +299,12 @@ static ZJS_DECL_FUNC(zjs_buffer_write_string)
 
     if (length > size) {
         zjs_free(str);
-        return zjs_error("zjs_buffer_write_string: requested length larger than string");
+        return zjs_error("requested length larger than string");
     }
 
     if (offset + length > buf->bufsize) {
         zjs_free(str);
-        return zjs_error("zjs_buffer_write_string: string + offset larger than buffer");
+        return zjs_error("string + offset larger than buffer");
     }
 
     memcpy(buf->buffer + offset, str, length);
@@ -321,11 +327,8 @@ jerry_value_t zjs_buffer_create(uint32_t size, zjs_buffer_t **ret_buf)
         maxLength = (1 << 30) - 1;
     }
     if (size > maxLength) {
-#ifdef DEBUG_BUILD
-        return RANGE_ERROR("size greater than max length");
-#else
-        return RANGE_ERROR("");
-#endif
+        return zjs_standard_error(RangeError, "size greater than max length",
+                                  0, 0);
     }
 
     void *buf = zjs_malloc(size);
@@ -337,7 +340,7 @@ jerry_value_t zjs_buffer_create(uint32_t size, zjs_buffer_t **ret_buf)
         if (ret_buf) {
             *ret_buf = NULL;
         }
-        return zjs_error("out of memory");
+        return zjs_error_context("out of memory", 0, 0);
     }
 
     jerry_value_t buf_obj = jerry_create_object();
@@ -348,8 +351,7 @@ jerry_value_t zjs_buffer_create(uint32_t size, zjs_buffer_t **ret_buf)
     zjs_obj_add_readonly_number(buf_obj, size, "length");
 
     // watch for the object getting garbage collected, and clean up
-    jerry_set_object_native_handle(buf_obj, (uintptr_t)buf_item,
-                                   zjs_buffer_callback_free);
+    jerry_set_object_native_pointer(buf_obj, buf_item, &buffer_type_info);
     if (ret_buf) {
         *ret_buf = buf_item;
     }
@@ -398,7 +400,7 @@ static ZJS_DECL_FUNC(zjs_buffer)
                 if (jerry_value_is_number(item)) {
                     buf->buffer[i] = (uint8_t)jerry_get_number_value(item);
                 } else {
-                    ERR_PRINT("non-numeric value in array, treating as 0");
+                    ERR_PRINT("non-numeric value in array, treating as 0\n");
                     buf->buffer[i] = 0;
                 }
             }

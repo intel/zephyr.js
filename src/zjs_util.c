@@ -352,26 +352,32 @@ uint32_t zjs_uncompress_16_to_32(uint16_t num)
 #ifdef ZJS_FIND_FUNC_NAME
 typedef struct name_element {
     jerry_value_t obj;
+    jerry_value_t name;
     struct name_element *next;
+    struct name_element *parent;
 } name_element_t;
 
 typedef struct head_element {
     name_element_t *head;
+    name_element_t *match;
     char *name;
+    jerry_value_t obj;
 } head_element_t;
 
 static head_element_t *search_list = NULL;
 
-static void search_helper(jerry_value_t obj, jerry_value_t func);
+static void search_helper(jerry_value_t obj, name_element_t *parent);
 
 static bool foreach_prop(const jerry_value_t prop_name,
                          const jerry_value_t prop_value,
                          void *data)
 {
-    jerry_value_t func = *((jerry_value_t *)data);
-    if (func == prop_value) {
+    name_element_t *parent = (name_element_t *)data;
+    jerry_value_t obj = search_list->obj;
+    if (obj == prop_value) {
         // found
         search_list->name = zjs_alloc_from_jstring(prop_name, NULL);
+        search_list->match = parent;
         return false;
     }
     // continue searching
@@ -383,29 +389,83 @@ static bool foreach_prop(const jerry_value_t prop_name,
         }
         name_element_t *new = zjs_malloc(sizeof(name_element_t));
         new->obj = prop_value;
+        new->name = jerry_acquire_value(prop_name);
+        new->parent = parent;
         ZJS_LIST_PREPEND(name_element_t, search_list->head, new);
-        search_helper(prop_value, func);
+        search_helper(prop_value, new);
     }
     return true;
 }
 
-static void search_helper(jerry_value_t obj, jerry_value_t func)
+static void search_helper(jerry_value_t obj, name_element_t *parent)
 {
-    jerry_foreach_object_property(obj, foreach_prop, (void *)&func);
+    jerry_foreach_object_property(obj, foreach_prop, parent);
 }
 
-static char *function_search(jerry_value_t func)
+static char *create_js_path(char *obj_name, name_element_t *parent)
 {
+    // requires: obj_name is a null-terminated string
+    int total = strlen(obj_name) + 1;
+
+    if (!obj_name) {
+        return NULL;
+    }
+
+    char *str = zjs_malloc(total);
+    if (!str) {
+        return NULL;
+    }
+    strcpy(str, obj_name);
+
+    while (parent) {
+        uint32_t size = 32;
+        char name[size];
+        zjs_copy_jstring(parent->name, name, &size);
+        total += size + 1;
+        char *newstr = zjs_malloc(total);
+        if (!newstr) {
+            break;
+        }
+        snprintf(newstr, total, "%s.%s", name, str);
+        zjs_free(str);
+        str = newstr;
+        parent = parent->parent;
+    }
+    return str;
+}
+
+static void free_element(name_element_t *e)
+{
+    jerry_release_value(e->name);
+    zjs_free(e);
+}
+
+static char *object_search(jerry_value_t obj, jerry_value_t start)
+{
+    // requires: jerry_value_t is the object being searched for; start is the
+    //             top level object to start searching from (if not an object,
+    //             e.g. 0, the global object will be used)
+    //  effects: if obj can be found as property of start or a subobject,
+    //             returns the "path" to the object from start
     search_list = zjs_malloc(sizeof(head_element_t));
     search_list->head = NULL;
     search_list->name = NULL;
+    search_list->obj = obj;
+    search_list->match = NULL;
 
     ZVAL global_obj = jerry_get_global_object();
-    search_helper(global_obj, func);
-    char *tmp = search_list->name;
-    ZJS_LIST_FREE(name_element_t, search_list->head, zjs_free);
+    if (!jerry_value_is_object(start)) {
+        start = global_obj;
+    }
+    search_helper(start, NULL);
+
+    char *ret = NULL;
+    if (search_list->name) {
+        ret = create_js_path(search_list->name, search_list->match);
+    }
+    ZJS_LIST_FREE(name_element_t, search_list->head, free_element);
     zjs_free(search_list);
-    return tmp;
+    return ret;
 }
 #endif
 
@@ -414,47 +474,68 @@ static char *function_search(jerry_value_t func)
 
 void zjs_print_error_message(jerry_value_t error, jerry_value_t func)
 {
-    const char *uncaught = "Uncaught exception: ";
     char *func_name = NULL;
+
 #ifdef ZJS_FIND_FUNC_NAME
-    func_name = function_search(func);
+    ZVAL this_obj = zjs_get_property(error, "this");
+    ZVAL err_func = zjs_get_property(error, "function");
+    if (jerry_value_is_object(this_obj) && jerry_value_is_function(err_func)) {
+        char *this_path = object_search(this_obj, 0);
+        if (this_path) {
+            char *func_part = object_search(err_func, this_obj);
+            if (func_part) {
+                int len = strlen(this_path) + strlen(func_part) + 2;
+                func_name = zjs_malloc(len);
+                if (func_name) {
+                    snprintf(func_name, len, "%s.%s", this_path, func_part);
+                }
+                zjs_free(func_part);
+            }
+            zjs_free(this_path);
+        }
+        if (!func_name) {
+            DBG_PRINT("function %snot found\n", "object context ");
+        }
+    }
+
+    if (!func_name && jerry_value_is_function(err_func)) {
+        func_name = object_search(err_func, 0);
+        if (!func_name) {
+            DBG_PRINT("function %snot found\n", "context ");
+        }
+    }
+
+    if (!func_name && jerry_value_is_function(func)) {
+        func_name = object_search(func, 0);
+        if (!func_name) {
+            DBG_PRINT("function %snot found\n", "");
+        }
+    }
+    if (!func_name) {
+        // see if a name property was set
+        ZVAL name = zjs_get_property(func, ZJS_HIDDEN_PROP("function_name"));
+        if (jerry_value_is_string(name)) {
+            func_name = zjs_alloc_from_jstring(name, NULL);
+        }
+    }
 #endif
 
-    uint32_t size;
-    char *message = NULL;
-    ZVAL err_name = zjs_get_property(error, "name");
-    if (!jerry_value_is_string(err_name)) {
-        ERR_PRINT("%s(no name)\n", uncaught);
-        // we should never get here.
-        return;
-    }
-    ZVAL err_msg = zjs_get_property(error, "message");
-    if (!jerry_value_is_string(err_msg)) {
-        ERR_PRINT("%s(no message)\n", uncaught);
-        // we should never get here.
-        return;
-    }
-
-    size = MAX_ERROR_NAME_LENGTH;
-    char name[size];
-
-    zjs_copy_jstring(err_name, name, &size);
-    if (!size) {
-        ERR_PRINT("%s(name too long)\n", uncaught);
-        return;
-    }
-
-    message = zjs_alloc_from_jstring(err_msg, NULL);
-
     if (func_name) {
-        ERR_PRINT("In function %s:\n", func_name);
+        ZJS_PRINT("In function %s():\n", func_name);
+        zjs_free(func_name);
     }
-    if (message) {
-        ERR_PRINT("%s%s: %s\n", uncaught, name, message);
-        zjs_free(message);
-    } else {
-        ERR_PRINT("%s%s\n", uncaught, name);
+
+    jerry_value_clear_error_flag(&error);
+    ZVAL err_str_val = jerry_value_to_string(error);
+
+    jerry_size_t size = 0;
+    char *msg = zjs_alloc_from_jstring(err_str_val, &size);
+    const char *err_str = msg;
+    if (!msg) {
+        err_str = "(Error message too long)";
     }
+    ZJS_PRINT("%s\n", err_str);
+    zjs_free(msg);
 }
 
 void zjs_free_value(const jerry_value_t *value)
@@ -607,6 +688,8 @@ int zjs_require_string_if_prop_map(jerry_value_t obj, const char *prop,
     }
     return ZJS_VALUE_NOT_IN_MAP;
 }
+
+void free_handle_nop(void *h) {}
 
 #ifndef ZJS_LINUX_BUILD
 #ifndef ZJS_ASHELL

@@ -28,6 +28,8 @@
 #include "zjs_net_config.h"
 #include "zjs_zephyr_port.h"
 
+#include "jerryscript.h"
+
 /*
  * TODO:
  *   - Implement WebSocket client side
@@ -90,6 +92,27 @@ typedef struct ws_packet {
     uint8_t mask_bit;
 } ws_packet_t;
 
+static const jerry_object_native_info_t ws_type_info =
+{
+   .free_cb = free_handle_nop
+};
+
+static void free_server(void *native)
+{
+    server_handle_t *handle = (server_handle_t *)native;
+    if (handle) {
+        jerry_release_value(handle->accept_handler);
+        net_context_put(handle->tcp_sock);
+        zjs_free(handle);
+    }
+}
+
+static const jerry_object_native_info_t server_type_info =
+{
+   .free_cb = free_server
+};
+
+
 // start of header preceding accept key
 static char accept_header[] = "HTTP/1.1 101 Switching Protocols\r\n"
                               "Upgrade: websocket\r\n"
@@ -145,7 +168,7 @@ static void tcp_send(struct net_context *context, void *data, uint32_t len)
                                UINT_TO_POINTER(net_buf_frags_len(send_buf)),
                                NULL);
     if (ret < 0) {
-        ERR_PRINT("Cannot send data to peer (%d)", ret);
+        ERR_PRINT("Cannot send data to peer (%d)\n", ret);
         net_nbuf_unref(send_buf);
         return;
     }
@@ -413,7 +436,9 @@ static void process_packet(ws_connection_t *con, uint8_t *data, uint32_t len)
     ws_packet_t *packet = zjs_malloc(sizeof(ws_packet_t));
     if (!packet) {
         ERR_PRINT("allocation failed\n");
-        ZVAL_MUTABLE error = zjs_custom_error("OutOfMemoryError", "could not allocate packet");
+        ZVAL_MUTABLE error = zjs_custom_error("OutOfMemoryError",
+                                              "could not allocate packet",
+                                              0, 0);
         jerry_value_clear_error_flag(&error);
         zjs_trigger_event(con->conn, "error", &error, 1, NULL, NULL);
         return;
@@ -423,7 +448,8 @@ static void process_packet(ws_connection_t *con, uint8_t *data, uint32_t len)
         ERR_PRINT("error decoding packet\n");
         zjs_free(packet->payload);
         zjs_free(packet);
-        ZVAL_MUTABLE error = zjs_custom_error("PacketDecodeError", "error decoding packet");
+        ZVAL_MUTABLE error = zjs_custom_error("PacketDecodeError",
+                                              "error decoding packet", 0, 0);
         jerry_value_clear_error_flag(&error);
         zjs_trigger_event(con->conn, "error", &error, 1, NULL, NULL);
         return;
@@ -444,16 +470,11 @@ static void process_packet(ws_connection_t *con, uint8_t *data, uint32_t len)
     zjs_free(packet);
 }
 
-static jerry_value_t ws_send_data(const jerry_value_t function_obj,
-                                  const jerry_value_t this,
-                                  const jerry_value_t argv[],
-                                  const jerry_length_t argc,
-                                  ws_packet_type type)
+static ZJS_DECL_FUNC_ARGS(ws_send_data, ws_packet_type type)
 {
     ZJS_VALIDATE_ARGS_OPTCOUNT(optcount, Z_OBJECT, Z_OPTIONAL Z_BOOL);
     bool mask = 0;
-    ws_connection_t *con = NULL;
-    jerry_get_object_native_handle(this, (uintptr_t *)&con);
+    ZJS_GET_HANDLE(this, ws_connection_t, con, ws_type_info);
     zjs_buffer_t *buf = zjs_buffer_find(argv[0]);
     if (!buf) {
         ERR_PRINT("buffer not found\n");
@@ -494,8 +515,7 @@ static ZJS_DECL_FUNC(ws_send)
 
 static ZJS_DECL_FUNC(ws_terminate)
 {
-    ws_connection_t *con = NULL;
-    jerry_get_object_native_handle(this, (uintptr_t *)&con);
+    ZJS_GET_HANDLE(this, ws_connection_t, con, ws_type_info);
     DBG_PRINT("closing connection\n");
     close_connection(con);
     return ZJS_UNDEFINED;
@@ -508,7 +528,7 @@ static jerry_value_t create_ws_connection(ws_connection_t *con)
     zjs_obj_add_function(conn, ws_ping, "ping");
     zjs_obj_add_function(conn, ws_pong, "pong");
     zjs_obj_add_function(conn, ws_terminate, "terminate");
-    jerry_set_object_native_handle(conn, (uintptr_t)con, NULL);
+    jerry_set_object_native_pointer(conn, con, &ws_type_info);
     zjs_make_event(conn, ZJS_UNDEFINED);
     if (con->server_handle->track) {
         ZVAL clients = zjs_get_property(con->server_handle->server, "clients");
@@ -553,7 +573,7 @@ static void tcp_received(struct net_context *context,
         uint8_t *data = zjs_malloc(len);
         if (!data) {
             ERR_PRINT("not enough memory to allocate data\n");
-            ZVAL_MUTABLE error = zjs_error("out of memory");
+            ZVAL_MUTABLE error = zjs_error_context("out of memory", 0, 0);
             jerry_value_clear_error_flag(&error);
             zjs_trigger_event(con->server, "error", &error, 1, NULL, NULL);
             net_nbuf_unref(buf);
@@ -571,7 +591,7 @@ static void tcp_received(struct net_context *context,
 #endif
         if (con->server_handle->max_payload &&
             (len > con->server_handle->max_payload)) {
-            ZVAL_MUTABLE error = zjs_error("payload too large");
+            ZVAL_MUTABLE error = zjs_error_context("payload too large", 0, 0);
             jerry_value_clear_error_flag(&error);
             zjs_trigger_event(con->server, "error", &error, 1, NULL, NULL);
             net_nbuf_unref(buf);
@@ -583,7 +603,7 @@ static void tcp_received(struct net_context *context,
             con->accept_key = zjs_malloc(64);
             if (!con->accept_key) {
                 ERR_PRINT("could not allocate accept key\n");
-                ZVAL_MUTABLE error = zjs_error("out of memory");
+                ZVAL_MUTABLE error = zjs_error_context("out of memory", 0, 0);
                 jerry_value_clear_error_flag(&error);
                 zjs_trigger_event(con->server, "error", &error, 1, NULL, NULL);
                 net_nbuf_unref(buf);
@@ -648,7 +668,8 @@ static void tcp_received(struct net_context *context,
                                              strlen(con->accept_key) + 6);
                 if (!send_data) {
                     ERR_PRINT("could not allocate accept message\n");
-                    ZVAL_MUTABLE error = zjs_error("out of memory");
+                    ZVAL_MUTABLE error = zjs_error_context("out of memory",
+                                                           0, 0);
                     jerry_value_clear_error_flag(&error);
                     zjs_trigger_event(con->server, "error", &error, 1, NULL, NULL);
                     net_nbuf_unref(buf);
@@ -713,7 +734,7 @@ static void post_accept_handler(void *handle, jerry_value_t ret_val)
     char *send_data = zjs_malloc(sdata_size);
     if (!send_data) {
         ERR_PRINT("could not allocate accept message\n");
-        ZVAL_MUTABLE error = zjs_error("out of memory");
+        ZVAL_MUTABLE error = zjs_error_context("out of memory", 0, 0);
         jerry_value_clear_error_flag(&error);
         zjs_trigger_event(con->server, "error", &error, 1, NULL, NULL);
         return;
@@ -746,7 +767,7 @@ static void tcp_accepted(struct net_context *context,
     ws_connection_t *new = zjs_malloc(sizeof(ws_connection_t));
     if (!new) {
         ERR_PRINT("could not allocate connection handle\n");
-        ZVAL_MUTABLE error = zjs_error("out of memory");
+        ZVAL_MUTABLE error = zjs_error_context("out of memory", 0, 0);
         jerry_value_clear_error_flag(&error);
         zjs_trigger_event(handle->server, "error", &error, 1, NULL, NULL);
         return;
@@ -756,7 +777,7 @@ static void tcp_accepted(struct net_context *context,
     new->rbuf = zjs_malloc(DEFAULT_WS_BUFFER_SIZE);
     if (!new->rbuf) {
         ERR_PRINT("could not allocate read buffer\n");
-        ZVAL_MUTABLE error = zjs_error("out of memory");
+        ZVAL_MUTABLE error = zjs_error_context("out of memory", 0, 0);
         jerry_value_clear_error_flag(&error);
         zjs_trigger_event(handle->server, "error", &error, 1, NULL, NULL);
         zjs_free(new);
@@ -784,16 +805,6 @@ static void tcp_accepted(struct net_context *context,
         // this seems to mean the remote exists but the connection was not made
         zjs_trigger_event(handle->server, "error", NULL, 0, NULL, NULL);
         return;
-    }
-}
-
-static void free_server(uintptr_t native)
-{
-    server_handle_t *handle = (server_handle_t *)native;
-    if (handle) {
-        jerry_release_value(handle->accept_handler);
-        net_context_put(handle->tcp_sock);
-        zjs_free(handle);
     }
 }
 
@@ -847,7 +858,7 @@ static ZJS_DECL_FUNC(ws_server)
 
     zjs_make_event(server, ZJS_UNDEFINED);
 
-    jerry_set_object_native_handle(server, (uintptr_t)handle, free_server);
+    jerry_set_object_native_pointer(server, handle, &server_type_info);
 
     return server;
 }

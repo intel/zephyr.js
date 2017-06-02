@@ -30,16 +30,6 @@
 
 #define ZJS_SENSOR_TIMEOUT_TICKS 5000
 
-#define SENSOR_GET_HANDLE(obj, type, var) \
-    type *var; \
-    { \
-        uintptr_t native; \
-        if (!jerry_get_object_native_handle(obj, &native)) { \
-            return zjs_error("native handle not found"); \
-        } \
-        var = (type *)native; \
-    }
-
 static struct k_sem sensor_sem;
 
 static jerry_value_t zjs_sensor_prototype;
@@ -67,6 +57,11 @@ sensor_module_t sensor_modules[] = {
 #ifdef BUILD_MODULE_SENSOR_TEMP
     { SENSOR_CHAN_TEMP, zjs_sensor_temp_init, zjs_sensor_temp_cleanup },
 #endif
+};
+
+static const jerry_object_native_info_t sensor_type_info =
+{
+   .free_cb = free_handle_nop
 };
 
 sensor_instance_t *zjs_sensor_create_instance(const char *name, void *func)
@@ -212,19 +207,26 @@ void zjs_sensor_set_state(jerry_value_t obj, sensor_state_t state)
         ZVAL activate_func = zjs_get_property(obj, "onactivate");
         if (jerry_value_is_function(activate_func)) {
             // if onactivate exists, call it
+#ifdef ZJS_FIND_FUNC_NAME
+            zjs_obj_add_string(activate_func, "sensor: onactivate",
+                               ZJS_HIDDEN_PROP("function_name"));
+#endif
             zjs_callback_id id = zjs_add_callback_once(activate_func, obj,
                                                        NULL, NULL);
             zjs_signal_callback(id, NULL, 0);
         }
     }
 
-    uintptr_t ptr;
     sensor_handle_t *handle = NULL;
-    if (!jerry_get_object_native_handle(obj, &ptr)) {
-        ERR_PRINT("native handle not found");
+    const jerry_object_native_info_t *tmp;
+    if (!jerry_get_object_native_pointer(obj, (void **)&handle, &tmp)) {
+        ERR_PRINT("no handle found\n");
         return;
     }
-    handle = (sensor_handle_t *)ptr;
+    if (tmp != &sensor_type_info) {
+        ERR_PRINT("handle type did not match\n");
+        return;
+    }
     handle->state = state;
 }
 
@@ -259,6 +261,10 @@ void zjs_sensor_trigger_error(jerry_value_t obj,
         zjs_set_property(error_obj, "name", name_val);
         zjs_set_property(error_obj, "message", message_val);
         zjs_set_property(event, "error", error_obj);
+#ifdef ZJS_FIND_FUNC_NAME
+            zjs_obj_add_string(func, "sensor: onerror",
+                               ZJS_HIDDEN_PROP("function_name"));
+#endif
         zjs_callback_id id = zjs_add_callback_once(func, obj, NULL, NULL);
         zjs_signal_callback(id, &event, sizeof(event));
         DBG_PRINT("triggering error %s (%s)\n", error_name, error_message);
@@ -311,22 +317,9 @@ static void ipm_msg_receive_callback(void *context, uint32_t id, volatile void *
     }
 }
 
-static void zjs_sensor_callback_free(uintptr_t handle)
-{
-    sensor_handle_t *tmp = (sensor_handle_t *)handle;
-    if (tmp->controller) {
-        zjs_free(tmp->controller);
-    }
-    zjs_remove_callback(tmp->onchange_cb_id);
-    zjs_remove_callback(tmp->onstart_cb_id);
-    zjs_remove_callback(tmp->onstop_cb_id);
-    zjs_free(tmp);
-    DBG_PRINT("sensor handle %p freed\n", (void *)handle);
-}
-
 jerry_value_t zjs_sensor_start_sensor(jerry_value_t obj)
 {
-    SENSOR_GET_HANDLE(obj, sensor_handle_t, handle);
+    ZJS_GET_HANDLE_ALT(obj, sensor_handle_t, handle, sensor_type_info);
 
     zjs_ipm_message_t send;
     send.type = TYPE_SENSOR_START;
@@ -340,9 +333,11 @@ jerry_value_t zjs_sensor_start_sensor(jerry_value_t obj)
     int error = zjs_sensor_call_remote_function(&send);
     if (error != ERROR_IPM_NONE) {
         if (error == ERROR_IPM_OPERATION_NOT_ALLOWED) {
-            return zjs_custom_error("NotAllowedError", "permission denied");
+            return zjs_custom_error("NotAllowedError", "permission denied",
+                                    0, 0);
         } else {
-            return zjs_custom_error("UnknownError", "IPM failed");
+            return zjs_custom_error("UnknownError", "IPM failed",
+                                    0, 0);
         }
     }
 
@@ -353,7 +348,7 @@ jerry_value_t zjs_sensor_start_sensor(jerry_value_t obj)
 
 jerry_value_t zjs_sensor_stop_sensor(jerry_value_t obj)
 {
-    SENSOR_GET_HANDLE(obj, sensor_handle_t, handle);
+    ZJS_GET_HANDLE_ALT(obj, sensor_handle_t, handle, sensor_type_info);
 
     zjs_ipm_message_t send;
     send.type = TYPE_SENSOR_STOP;
@@ -366,9 +361,10 @@ jerry_value_t zjs_sensor_stop_sensor(jerry_value_t obj)
     int error = zjs_sensor_call_remote_function(&send);
     if (error != ERROR_IPM_NONE) {
         if (error == ERROR_IPM_OPERATION_NOT_ALLOWED) {
-            return zjs_custom_error("NotAllowedError", "permission denied");
+            return zjs_custom_error("NotAllowedError", "permission denied",
+                                    0, 0);
         } else {
-            return zjs_custom_error("UnknownError", "IPM failed");
+            return zjs_custom_error("UnknownError", "IPM failed", 0, 0);
         }
     }
 
@@ -386,7 +382,7 @@ static ZJS_DECL_FUNC(zjs_sensor_start)
         return ZJS_UNDEFINED;
     }
 
-    SENSOR_GET_HANDLE(this, sensor_handle_t, handle);
+    ZJS_GET_HANDLE(this, sensor_handle_t, handle, sensor_type_info);
 
     zjs_sensor_set_state(this, SENSOR_STATE_ACTIVATING);
     if (jerry_value_has_error_flag(zjs_sensor_start_sensor(this))) {
@@ -406,7 +402,7 @@ static ZJS_DECL_FUNC(zjs_sensor_stop)
         return ZJS_UNDEFINED;
     }
 
-    SENSOR_GET_HANDLE(this, sensor_handle_t, handle);
+    ZJS_GET_HANDLE(this, sensor_handle_t, handle, sensor_type_info);
 
     if (jerry_value_has_error_flag(zjs_sensor_start_sensor(this))) {
         zjs_sensor_trigger_error(this, "SensorError", "start failed");
@@ -508,8 +504,7 @@ ZJS_DECL_FUNC_ARGS(zjs_sensor_create,
     instance->handles = handle;
 
     // watch for the object getting garbage collected, and clean up
-    jerry_set_object_native_handle(sensor_obj, (uintptr_t)handle,
-                                   zjs_sensor_callback_free);
+    jerry_set_object_native_pointer(sensor_obj, handle, &sensor_type_info);
 
     DBG_PRINT("sensor driver %s initialized\n", handle->controller->name);
     DBG_PRINT("sensor frequency %u\n", handle->frequency);

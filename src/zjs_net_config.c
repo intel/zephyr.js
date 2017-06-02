@@ -21,7 +21,7 @@ void zjs_net_config(void)
     if (!ble_enabled) {
         zjs_init_ble_address();
         if (bt_enable(NULL)) {
-            ERR_PRINT("Bluetooth init failed");
+            ERR_PRINT("Bluetooth init failed\n");
             return;
         }
         ipss_init();
@@ -97,10 +97,7 @@ static int str2bt_addr_le(const char *str, const char *type, bt_addr_le_t *addr)
     return 0;
 }
 
-jerry_value_t zjs_set_ble_address(const jerry_value_t function_val,
-                                  const jerry_value_t this,
-                                  const jerry_value_t argv[],
-                                  const jerry_length_t argc)
+ZJS_DECL_FUNC(zjs_set_ble_address)
 {
 #ifndef ZJS_CONFIG_BLE_ADDRESS
     // args: address
@@ -136,7 +133,7 @@ void zjs_init_ble_address()
     };
 
     if (str2bt_addr_le(default_ble, "random", &id_addr) < 0) {
-        ERR_PRINT("bad BLE address string");
+        ERR_PRINT("bad BLE address string\n");
         return;
     }
     DBG_PRINT("BLE addr is set to: %s\n", default_ble);

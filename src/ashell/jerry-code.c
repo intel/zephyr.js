@@ -13,7 +13,7 @@
 #include <ctype.h>
 
 /* JerryScript includes */
-#include "jerry-port.h"
+#include "jerryscript-port.h"
 #include "jerry-code.h"
 #include "file-utils.h"
 
@@ -25,8 +25,6 @@
 #include "../zjs_sensor.h"
 #include "../zjs_timers.h"
 #include "../zjs_util.h"
-
-void jerry_port_default_set_log_level(jerry_log_level_t level); /** Inside jerry-port-default.h */
 
 #include "comms-uart.h"
 
@@ -104,21 +102,21 @@ static void add_to_list(requires_list_t **list, const char *item)
 static void javascript_print_value(const jerry_value_t value)
 {
     if (jerry_value_is_undefined(value)) {
-        jerry_port_console("undefined");
+        jerry_port_log(JERRY_LOG_LEVEL_TRACE, "undefined");
     } else if (jerry_value_is_null(value)) {
-        jerry_port_console("null");
+        jerry_port_log(JERRY_LOG_LEVEL_TRACE, "null");
     } else if (jerry_value_is_boolean(value)) {
         if (jerry_get_boolean_value(value)) {
-            jerry_port_console("true");
+            jerry_port_log(JERRY_LOG_LEVEL_TRACE, "true");
         } else {
-            jerry_port_console("false");
+            jerry_port_log(JERRY_LOG_LEVEL_TRACE, "false");
         }
     }
     /* Float value */
     else if (jerry_value_is_number(value)) {
         double val = jerry_get_number_value(value);
         // %lf prints an empty value :?
-        jerry_port_console("Number [%d]\n", (int) val);
+        jerry_port_log(JERRY_LOG_LEVEL_TRACE, "Number [%d]\n", (int) val);
     }
     /* String value */
     else if (jerry_value_is_string(value)) {
@@ -126,19 +124,19 @@ static void javascript_print_value(const jerry_value_t value)
         jerry_size_t size = 0;
         char *str = zjs_alloc_from_jstring(value, &size);
         if (str) {
-            jerry_port_console("%s", str);
+            jerry_port_log(JERRY_LOG_LEVEL_TRACE, "%s", str);
             zjs_free(str);
         }
         else {
-            jerry_port_console("[String too long]");
+            jerry_port_log(JERRY_LOG_LEVEL_TRACE, "[String too long]");
         }
     }
     /* Object reference */
     else if (jerry_value_is_object(value)) {
-        jerry_port_console("[JS object]");
+        jerry_port_log(JERRY_LOG_LEVEL_TRACE, "[JS object]");
     }
 
-    jerry_port_console("\n");
+    jerry_port_log(JERRY_LOG_LEVEL_TRACE, "\n");
 }
 
 static char *read_file_alloc(const char *file_name, ssize_t *size)
@@ -195,53 +193,123 @@ static void eval_list(requires_list_t **list)
     }
 }
 
+static void skip_whitespace(char **ptr)
+{
+    // modifies: *ptr
+    //  effects: increments *ptr until it's past any whitespace (space, tab,
+    //             newline) or gets to null terminator
+    while (**ptr != '\0') {
+        if (**ptr == ' ' || **ptr == '\t' || **ptr == '\r' || **ptr == '\n') {
+            ++(*ptr);
+        }
+        else {
+            return;
+        }
+    }
+}
+
+static bool skip_char_with_whitespace(char **ptr, char match)
+{
+    // modifies: *ptr
+    //  effects: skips any whitespace in *ptr before and after a match char or
+    //             until null terminator is reached
+    //           if first non-whitespace char found is match, returns true;
+    //             otherwise, false
+    skip_whitespace(ptr);
+    if (**ptr != match) {
+        return false;
+    }
+    ++(*ptr);
+    skip_whitespace(ptr);
+    return true;
+}
+
+static char *find_next_require(char *source, char *module, int *modlen)
+{
+    // requires: source is a pointer into a null-terminated source buffer;
+    //             module is a buffer with at least MAX_MODULE_STR_LEN bytes
+    // modifies: module, if one is found, *modlen if not NULL
+    //  effects: finds the next require('modname') in the source, writes the
+    //             modname to module and returns pointer into source beyond the
+    //             require, or NULL if not found; *modlen will be length of the
+    //             module string
+    char *ptr = source;
+    while (1) {
+        // find the word require
+        // FIXME: buggy, doesn't check for comments, etc.
+        char *require = strstr(ptr, "require");
+        if (!require) {
+            return NULL;
+        }
+
+        ptr = require + 7;
+        if (!skip_char_with_whitespace(&ptr, '(')) {
+            // no open paren found, not a valid require() call
+            continue;
+        }
+
+        char quotechar;
+        if (*ptr != '\'' && *ptr != '"') {
+            // not a literal string we can handle
+            continue;
+        }
+        quotechar = *ptr;
+
+        char *modname = ++ptr;
+        char *closechar = strchr(ptr, quotechar);
+        if (!closechar) {
+            // no matching quote found, shouldn't happen, try again
+            continue;
+        }
+
+        ptr = closechar + 1;
+        int len = closechar - modname;
+        if (len <= 0 || len > MAX_MODULE_STR_LEN - 1) {
+            // bogus module name, try again
+            continue;
+        }
+
+        if (!skip_char_with_whitespace(&ptr, ')')) {
+            // no close paren found, not a valid require() call
+            continue;
+        }
+
+        strncpy(module, modname, len);
+        module[len] = '\0';
+        if (modlen) {
+            *modlen = len;
+        }
+        return ptr;
+    }
+}
+
 static bool add_requires(requires_list_t **list, char *filebuf)
 {
     // Scan the file and if it contains requires, append them before *list
-    char *ptr1 = filebuf;
-    char *ptr2 = NULL;
-    char *filestr = NULL;
-    char *ext_check = NULL;
+    char *ptr = filebuf;
+    char filestr[MAX_MODULE_STR_LEN];
+    int filelen = 0;
 
-    while (ptr1 != NULL) {
-        // Find next instance of "require"
-        ptr1 = strstr(ptr1, "require");
-        if (ptr1 != NULL) {
-            // Find the text between the two " " after require
-            ptr1 = strchr(ptr1, '"') + 1;
-            ptr2 = strchr(ptr1, '"');
-            size_t len = ptr2 - ptr1;
-            if (len < (ssize_t)MAX_MODULE_STR_LEN) {
-                // Allocate the memory for the string
-                filestr = (char *)zjs_malloc(len + 1);
-                strncpy(filestr, ptr1, len);
-                filestr[len] = '\0';
+    while (1) {
+        ptr = find_next_require(ptr, filestr, &filelen);
+        if (!ptr) {
+            return true;
+        }
 
-                // Check that this is a *.js require and not a zephyr require
-                // Also check that the file hasn't already been loaded
-                ext_check = &filestr[len - 3];
-                if (strcmp(ext_check, ".js") == 0 && !list_contains(list, filestr)) {
-                    if (fs_valid_filename(filestr)) {
-                        add_to_list(list, filestr);
-                    }
-                    else {
-                        zjs_free(filestr);
-                        return false;
-                    }
-                }
-                zjs_free(filestr);
-                filestr = NULL;
+        // Check that this is a *.js require and not a zephyr require
+        // Also check that the file hasn't already been loaded
+
+        // FIXME: this always expects JS file to have .js lowercase extension
+        if (filelen >= 3 && !strcmp(&filestr[filelen - 3], ".js") &&
+            !list_contains(list, filestr)) {
+            if (fs_valid_filename(filestr)) {
+                add_to_list(list, filestr);
             }
             else {
-                filestr = (char *)zjs_malloc(10);
-                strncpy(filestr, ptr1, 10);
-                comms_printf("[ERR] requires(\"%s...\") string is too long\n", filestr);
-                zjs_free(filestr);
                 return false;
             }
         }
     }
-    return true;
 }
 
 static bool load_require_modules(char *file_buffer)
@@ -302,7 +370,6 @@ static void javascript_print_error(jerry_value_t error_value)
 
 void javascript_eval_code(const char *source_buffer, ssize_t size)
 {
-    jerry_port_default_set_log_level(JERRY_LOG_LEVEL_TRACE);
     ZVAL ret_val = jerry_eval((jerry_char_t *) source_buffer, size, false);
 
     if (jerry_value_has_error_flag(ret_val)) {
@@ -349,7 +416,6 @@ int javascript_parse_code(const char *file_name)
 {
     int ret = -1;
     javascript_stop();
-    jerry_port_default_set_log_level(JERRY_LOG_LEVEL_TRACE);
     char *buf = NULL;
     ssize_t size;
 
@@ -361,7 +427,7 @@ int javascript_parse_code(const char *file_name)
             /* Setup Global scope code */
             parsed_code = jerry_parse((const jerry_char_t *) buf, size, false);
             if (jerry_value_has_error_flag(parsed_code)) {
-                printf("[ERR] Could not parse JS\n");
+                DBG_PRINT("Error parsing JS\n");
                 javascript_print_error(parsed_code);
                 jerry_release_value(parsed_code);
             } else {
@@ -383,6 +449,7 @@ void javascript_run_code(const char *file_name)
     ZVAL ret_value = jerry_run(parsed_code);
 
     if (jerry_value_has_error_flag(ret_value)) {
-        javascript_print_error(ret_value);
+        DBG_PRINT("Error running JS\n");
+        zjs_print_error_message(ret_value, ZJS_UNDEFINED);
     }
 }

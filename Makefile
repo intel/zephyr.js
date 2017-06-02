@@ -60,7 +60,8 @@ JERRY_BASE ?= $(ZJS_BASE)/deps/jerryscript
 EXT_JERRY_FLAGS ?=	-DENABLE_ALL_IN_ONE=ON \
 			-DFEATURE_PROFILE=$(ZJS_BASE)/outdir/$(BOARD)/jerry_feature.profile \
 			-DFEATURE_ERROR_MESSAGES=ON \
-			-DJERRY_LIBM=OFF
+			-DJERRY_LIBM=OFF \
+			-DJERRY_PORT_DEFAULT=OFF
 
 # Generate and run snapshot as byte code instead of running JS directly
 ifneq (,$(filter $(MAKECMDGOALS),ide ashell linux))
@@ -78,13 +79,14 @@ endif
 endif
 
 ifeq ($(FUNC_NAME), on)
-ZJS_FLAGS += " -DZJS_FIND_FUNC_NAME"
+ZJS_FLAGS := "$(ZJS_FLAGS) -DZJS_FIND_FUNC_NAME"
 endif
 
 # Settings for ashell builds
 ifneq (,$(filter $(MAKECMDGOALS),ide ashell))
 CONFIG ?= fragments/zjs.conf.dev
 ASHELL=y
+ZJS_FLAGS := "$(ZJS_FLAGS) -DZJS_FIND_FUNC_NAME"
 endif
 
 ifeq ($(BOARD), arduino_101)
@@ -179,7 +181,7 @@ flash:  analyze generate $(JERRYLIB) $(ARC)
 # Build for zephyr, default target
 .PHONY: zephyr
 zephyr: analyze generate $(JERRYLIB) $(ARC)
-	@make -f Makefile.zephyr \
+	@make -f Makefile.zephyr -j4 \
 					BOARD=$(BOARD) \
 					VARIANT=$(VARIANT) \
 					CB_STATS=$(CB_STATS) \
@@ -404,7 +406,7 @@ arc: analyze
 		cd arc; make BOARD=arduino_101_sss CROSS_COMPILE=$(ARC_CROSS_COMPILE); \
 	else \
 		sed -i '/This is a generated file/r./zjs.conf.tmp' arc/src/Makefile; \
-		cd arc; make BOARD=arduino_101_sss; \
+		cd arc; make BOARD=arduino_101_sss -j4; \
 	fi
 ifeq ($(BOARD), arduino_101)
 	@echo

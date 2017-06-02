@@ -34,7 +34,7 @@ function onfound(resource) {
     t1 = setInterval(function() {
         client.retrieve(resource.deviceId, { observable: false }).then(function(res) {
             console.log("retrieve() was successful, deviceId=" + res.deviceId);
-        }).catch(function(error) {
+        }, function(error) {
             console.log("retrieve() returned an error: " + error.name);
         });
     }, 1000);
@@ -44,6 +44,6 @@ ocf.start();
 
 client.findResources({ resourceType:"core.sensor" }, onfound).then(function(resource) {
     console.log("findResources() was successful, deviceId=" + resource.deviceId);
-}).catch(function(error) {
+}, function(error) {
     console.log("findResources() returned an error: " + error.name);
 });

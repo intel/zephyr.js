@@ -12,7 +12,7 @@ setInterval(function() {
     var p = test.create_promise();
     p.then(function() {
         console.log("fulfilled sync");
-    }).catch(function() {
+    }, function() {
         console.log("rejected sync");
     });
     if (sync_toggle) {
@@ -29,7 +29,7 @@ setInterval(function() {
     var p = test.create_promise();
     p.then(function() {
         console.log("fulfilled async");
-    }).catch(function() {
+    }, function() {
         console.log("rejected async");
     });
     setTimeout(function() {

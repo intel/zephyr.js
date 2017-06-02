@@ -73,7 +73,7 @@ int zjs_i2c_handle_write (uint8_t msg_bus, uint8_t *data, uint32_t length,
     bool success = zjs_i2c_ipm_send_sync(&send, &reply);
 
     if (!success) {
-        ERR_PRINT("zjs_i2c_write: ipm message failed or timed out!");
+        ERR_PRINT("ipm message failed or timed out!\n");
     }
 
     return send.error_code;
@@ -92,11 +92,11 @@ int zjs_i2c_handle_open (uint8_t msg_bus)
     bool success = zjs_i2c_ipm_send_sync(&send, &reply);
 
     if (!success) {
-        ERR_PRINT("zjs_i2c_write: ipm message failed or timed out!");
+        ERR_PRINT("ipm message failed or timed out!\n");
     }
 
     if (send.error_code) {
-        ERR_PRINT("zjs_i2c_open: Failed to open I2C bus");
+        ERR_PRINT("Failed to open I2C bus\n");
     }
 
     return send.error_code;
@@ -117,7 +117,7 @@ int zjs_i2c_handle_read (uint8_t msg_bus, uint8_t *data, uint32_t length,
     bool success = zjs_i2c_ipm_send_sync(&send, &reply);
 
     if (!success) {
-        ERR_PRINT("zjs_i2c_read_base: ipm message failed or timed out!");
+        ERR_PRINT("ipm message failed or timed out!\n");
     }
     return send.error_code;
 }
@@ -139,7 +139,7 @@ int zjs_i2c_handle_burst_read (uint8_t msg_bus, uint8_t *data,
     bool success = zjs_i2c_ipm_send_sync(&send, &reply);
 
     if (!success) {
-        ERR_PRINT("zjs_i2c_read_base: ipm message failed or timed out!");
+        ERR_PRINT("ipm message failed or timed out!\n");
     }
     return send.error_code;
 }

@@ -12,6 +12,13 @@
 
 #define ZJS_UNDEFINED jerry_create_undefined()
 
+#ifdef DEBUG_BUILD
+#define ZJS_HIDDEN_PROP(n) n
+#else
+#define ZJS_HIDDEN_PROP(n) "\377" n
+#endif
+
+
 /**
  * Call malloc but if it fails, run JerryScript garbage collection and retry
  *
@@ -230,7 +237,8 @@ int zjs_validate_args(const char *expectations[], const jerry_length_t argc,
 /**
  * Macro to validate existing argv based on a list of expected argument types.
  *
- * NOTE: Expects argc and argv to exist as in a JerryScript native function.
+ * NOTE: Expects this, function_obj, argc and argv to exist as in a JerryScript
+ *       native function.
  *
  * @param optcount  A pointer to an int to receive count of optional args found,
  *                    or NULL if not needed.
@@ -332,6 +340,8 @@ int zjs_require_string_if_prop_map(jerry_value_t obj, const char *prop,
             return TYPE_ERROR("one of specific strings required");   \
         }                                                            \
     }
+
+void free_handle_nop(void *h);
 
 #ifndef ZJS_LINUX_BUILD
 #define LOCK  k_sched_lock
@@ -462,5 +472,35 @@ void zjs_loop_init(void);
         } \
         ret; \
     })
+
+#define ZJS_GET_HANDLE(obj, type, var, info) \
+    type *var; \
+    { \
+        void *native; \
+        const jerry_object_native_info_t *tmp; \
+        if (!jerry_get_object_native_pointer(obj, &native, &tmp)) { \
+            return zjs_error("no native handle"); \
+        } \
+        if (tmp != &info) { \
+            return zjs_error("handle was incorrect type"); \
+        } \
+        var = (type *)native; \
+    }
+
+// FIXME: Quick hack to allow context into the regular macro while fixing build
+//        for call sites without JS binding context
+#define ZJS_GET_HANDLE_ALT(obj, type, var, info) \
+    type *var; \
+    { \
+        void *native; \
+        const jerry_object_native_info_t *tmp; \
+        if (!jerry_get_object_native_pointer(obj, &native, &tmp)) { \
+            return zjs_error_context("no native handle", 0, 0); \
+        } \
+        if (tmp != &info) { \
+            return zjs_error_context("handle was incorrect type", 0, 0);  \
+        } \
+        var = (type *)native; \
+    }
 
 #endif  // __zjs_util_h__
