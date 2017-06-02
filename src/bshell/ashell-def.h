@@ -21,6 +21,7 @@
 #define ASCII_NL             '\n'
 #define ASCII_CANCEL         0x18  /* CTLR-X */
 #define ASCII_SUBSTITUTE     0x1A  /* CTLR-Z */
+
 #define ASCII_ESC            0x1B  /* Escape */
 #define ASCII_FILE_SEP       0x1C
 #define ASCII_GROUP_SEP      0x1D
@@ -77,15 +78,15 @@ ashell_config_t *ashell_get_config();
 #define SET_ECHO_MODE(b) do { ashell_get_config()->echo = b; } while(0)
 
 #ifndef CONFIG_SHELL_UPLOADER_DEBUG
-#define DBG(...) { ; }
+  #define DBG(...) { ; }
 #else
-#define DBG printk
+  #define DBG printk
 #endif /* CONFIG_SHELL_UPLOADER_DEBUG */
 
 #if 0
-#define INFO       PRINTF
+    #define INFO       PRINTF
 #else
-#define INFO(...)  while(0)
+    #define INFO(...)  while(0)
 #endif
 
 #endif  // __ashell_h__
