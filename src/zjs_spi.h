@@ -37,4 +37,3 @@ jerry_value_t zjs_spi_init();
 void zjs_spi_cleanup();
 
 #endif  // __zjs_spi_h__
-
