@@ -63,8 +63,8 @@ static ZJS_DECL_FUNC(zjs_glcd_set_cursor_pos)
         return zjs_error("Grove LCD device not found");
     }
 
-    uint8_t col = (uint8_t)jerry_get_number_value(argv[0]);
-    uint8_t row = (uint8_t)jerry_get_number_value(argv[1]);
+    u8_t col = (u8_t)jerry_get_number_value(argv[0]);
+    u8_t row = (u8_t)jerry_get_number_value(argv[1]);
     glcd_cursor_pos_set(glcd, col, row);
 
     return ZJS_UNDEFINED;
@@ -79,7 +79,7 @@ static ZJS_DECL_FUNC(zjs_glcd_select_color)
         return zjs_error("Grove LCD device not found");
     }
 
-    uint8_t value = (uint8_t)jerry_get_number_value(argv[0]);
+    u8_t value = (u8_t)jerry_get_number_value(argv[0]);
     glcd_color_select(glcd, value);
 
     return ZJS_UNDEFINED;
@@ -94,9 +94,9 @@ static ZJS_DECL_FUNC(zjs_glcd_set_color)
         return zjs_error("Grove LCD device not found");
     }
 
-    uint8_t r = (uint8_t)jerry_get_number_value(argv[0]);
-    uint8_t g = (uint8_t)jerry_get_number_value(argv[1]);
-    uint8_t b = (uint8_t)jerry_get_number_value(argv[2]);
+    u8_t r = (u8_t)jerry_get_number_value(argv[0]);
+    u8_t g = (u8_t)jerry_get_number_value(argv[1]);
+    u8_t b = (u8_t)jerry_get_number_value(argv[2]);
     glcd_color_set(glcd, r, g, b);
 
     return ZJS_UNDEFINED;
@@ -111,7 +111,7 @@ static ZJS_DECL_FUNC(zjs_glcd_set_function)
         return zjs_error("Grove LCD device not found");
     }
 
-    uint8_t value = (uint8_t)jerry_get_number_value(argv[0]);
+    u8_t value = (u8_t)jerry_get_number_value(argv[0]);
     glcd_function_set(glcd, value);
 
     return ZJS_UNDEFINED;
@@ -123,7 +123,7 @@ static ZJS_DECL_FUNC(zjs_glcd_get_function)
         return zjs_error("Grove LCD device not found");
     }
 
-    uint8_t value = glcd_function_get(glcd);
+    u8_t value = glcd_function_get(glcd);
 
     return jerry_create_number(value);
 }
@@ -134,7 +134,7 @@ static ZJS_DECL_FUNC(zjs_glcd_set_display_state)
         return zjs_error("Grove LCD device not found");
     }
 
-    uint8_t value = (uint8_t)jerry_get_number_value(argv[0]);
+    u8_t value = (u8_t)jerry_get_number_value(argv[0]);
     glcd_display_state_set(glcd, value);
 
     return ZJS_UNDEFINED;
@@ -146,7 +146,7 @@ static ZJS_DECL_FUNC(zjs_glcd_get_display_state)
         return zjs_error("Grove LCD device not found");
     }
 
-    uint8_t value = glcd_display_state_get(glcd);
+    u8_t value = glcd_display_state_get(glcd);
 
     return jerry_create_number(value);
 }

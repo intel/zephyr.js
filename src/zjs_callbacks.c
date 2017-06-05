@@ -70,9 +70,9 @@ typedef struct zjs_callback {
         zjs_c_callback_func function;   // C callback
     };
     zjs_callback_id id;
-    uint8_t flags;      // holds once and type bits
-    uint8_t max_funcs;
-    uint8_t num_funcs;
+    u8_t flags;      // holds once and type bits
+    u8_t max_funcs;
+    u8_t num_funcs;
 #ifdef DEBUG_BUILD
     char creator[MAX_CALLER_CREATOR_LEN];      // file/function that created this callback
     char caller[MAX_CALLER_CREATOR_LEN];       // file/function that signalled this callback
@@ -80,12 +80,12 @@ typedef struct zjs_callback {
 } zjs_callback_t;
 
 #ifdef ZJS_LINUX_BUILD
-static uint8_t args_buffer[ZJS_CALLBACK_BUF_SIZE];
+static u8_t args_buffer[ZJS_CALLBACK_BUF_SIZE];
 static struct zjs_port_ring_buf ring_buffer;
 #else
 SYS_RING_BUF_DECLARE_POW2(ring_buffer, 5);
 #endif
-static uint8_t ring_buf_initialized = 1;
+static u8_t ring_buf_initialized = 1;
 
 static zjs_callback_id cb_limit = INITIAL_CALLBACK_SIZE;
 static zjs_callback_id cb_size = 0;
@@ -151,7 +151,7 @@ void zjs_init_callbacks(void)
     }
 #ifdef ZJS_LINUX_BUILD
     zjs_port_ring_buf_init(&ring_buffer, ZJS_CALLBACK_BUF_SIZE,
-                           (uint32_t *)args_buffer);
+                           (u32_t *)args_buffer);
 #endif
     ring_buf_initialized = 1;
     return;
@@ -319,7 +319,7 @@ zjs_callback_id add_callback_priv(jerry_value_t js_func,
                                   jerry_value_t this,
                                   void *handle,
                                   zjs_post_callback_func post,
-                                  uint8_t once
+                                  u8_t once
 #ifdef DEBUG_BUILD
                                   , const char *file,
                                   const char *func)
@@ -395,7 +395,7 @@ static void zjs_remove_callback_priv(zjs_callback_id id, bool skip_flush)
         }
         SET_CB_REMOVED(cb_map[id]->flags);
         if (!skip_flush) {
-            int ret = zjs_port_ring_buf_put(&ring_buffer, (uint16_t)id,
+            int ret = zjs_port_ring_buf_put(&ring_buffer, (u16_t)id,
                                             CB_FLUSH_ONE, NULL, 0);
             if (ret) {
                 // couldn't add flush command, so just free now
@@ -430,7 +430,7 @@ void zjs_remove_all_callbacks()
 // INTERRUPT SAFE FUNCTION: No JerryScript VM, allocs, or release prints!
 void signal_callback_priv(zjs_callback_id id,
                           const void *args,
-                          uint32_t size
+                          u32_t size
 #ifdef DEBUG_BUILD
                           , const char *file,
                           const char *func)
@@ -461,10 +461,10 @@ void signal_callback_priv(zjs_callback_id id,
         set_info_string(cb_map[id]->caller, file, func);
 #endif
     int ret = zjs_port_ring_buf_put(&ring_buffer,
-            (uint16_t)id,
+            (u16_t)id,
             0,  // we use value for CB_FLUSH_ONE/ALL
             (u32_t *)args,
-            (uint8_t)((size + 3) / 4));
+            (u8_t)((size + 3) / 4));
     if (ret != 0) {
         if (GET_TYPE(cb_map[id]->flags) == CALLBACK_TYPE_JS) {
             // for JS, acquire values and release them after servicing callback
@@ -539,7 +539,7 @@ void print_callbacks(void)
 #define print_callbacks() do {} while (0)
 #endif
 
-void zjs_call_callback(zjs_callback_id id, const void *data, uint32_t sz)
+void zjs_call_callback(zjs_callback_id id, const void *data, u32_t sz)
 {
     LOCK();
     if (id == -1 || id > cb_size || !cb_map[id]) {
@@ -602,7 +602,7 @@ void zjs_call_callback(zjs_callback_id id, const void *data, uint32_t sz)
     UNLOCK();
 }
 
-uint8_t zjs_service_callbacks(void)
+u8_t zjs_service_callbacks(void)
 {
     LOCK();
     if (zjs_ringbuf_error_count > zjs_ringbuf_error_max) {
@@ -612,25 +612,25 @@ uint8_t zjs_service_callbacks(void)
         zjs_ringbuf_error_count = 0;
     }
 
-    uint8_t serviced = 0;
+    u8_t serviced = 0;
     if (ring_buf_initialized) {
 #ifdef ZJS_PRINT_CALLBACK_STATS
-        uint8_t header_printed = 0;
-        uint32_t num_callbacks = 0;
+        u8_t header_printed = 0;
+        u32_t num_callbacks = 0;
 #endif
-        uint16_t count = 0;
+        u16_t count = 0;
         while (count++ < ZJS_MAX_CB_LOOP_ITERATION) {
             int ret;
-            uint16_t id;
-            uint8_t value;
-            uint8_t size = 0;
+            u16_t id;
+            u8_t value;
+            u8_t size = 0;
             // set size = 0 to check if there is an item in the ring buffer
             ret = zjs_port_ring_buf_get(&ring_buffer, &id, &value, NULL, &size);
             if (ret == -EMSGSIZE || ret == 0) {
                 serviced = 1;
                 // item in ring buffer with size > 0, has args
                 // pull from ring buffer
-                uint8_t sz = size;
+                u8_t sz = size;
                 u32_t data[sz];
                 if (ret == -EMSGSIZE) {
                     ret = zjs_port_ring_buf_get(&ring_buffer, &id, &value, data,

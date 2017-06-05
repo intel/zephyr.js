@@ -39,7 +39,7 @@ const char TEMPORAL_FILENAME[] = "temp.dat";
 static bool marker = false;
 static struct ihex_state ihex;
 
-static int8_t upload_state = 0;
+static s8_t upload_state = 0;
 #define UPLOAD_START       0
 #define UPLOAD_IN_PROGRESS 1
 #define UPLOAD_FINISHED    2
@@ -83,7 +83,7 @@ ihex_bool_t ihex_data_read(struct ihex_state *ihex,
 /*
  * Negotiate a re-upload
  */
-void ihex_process_error(uint32_t error)
+void ihex_process_error(u32_t error)
 {
     printf("[Download Error]\n");
 }
@@ -91,7 +91,7 @@ void ihex_process_error(uint32_t error)
 /*
  * Capture for the Intel Hex parser
  */
-uint32_t ihex_process_init()
+u32_t ihex_process_init()
 {
     upload_state = UPLOAD_START;
     printk("[READY]\n");
@@ -109,9 +109,9 @@ uint32_t ihex_process_init()
     return (!zfile);
 }
 
-uint32_t ihex_process_data(const char *buf, uint32_t len)
+u32_t ihex_process_data(const char *buf, u32_t len)
 {
-    uint32_t processed = 0;
+    u32_t processed = 0;
     while (len-- > 0) {
         processed++;
         char byte = *buf++;
@@ -146,7 +146,7 @@ bool ihex_process_is_done()
     return (upload_state == UPLOAD_FINISHED || upload_state == UPLOAD_ERROR);
 }
 
-uint32_t ihex_process_finish()
+u32_t ihex_process_finish()
 {
     if (upload_state == UPLOAD_ERROR) {
         printf("[Error] Callback handle error \n");

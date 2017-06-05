@@ -14,10 +14,10 @@
 struct mock_gpio_callback;
 typedef void (*mock_gpio_callback_handler_t)(DEVICE port,
                                              struct mock_gpio_callback *cb,
-                                             uint32_t pins);
+                                             u32_t pins);
 struct mock_gpio_callback {
     mock_gpio_callback_handler_t handler;
-    uint32_t pin_mask;
+    u32_t pin_mask;
 };
 
 // redefine calls to Zephyr APIs we're mocking
@@ -34,15 +34,15 @@ struct mock_gpio_callback {
 #define gpio_pin_enable_callback mock_gpio_pin_enable_callback
 
 DEVICE mock_gpio_device_get_binding(const char *name);
-int mock_gpio_pin_read(DEVICE port, uint32_t pin, uint32_t *value);
-int mock_gpio_pin_write(DEVICE port, uint32_t pin, uint32_t value);
-int mock_gpio_pin_configure(DEVICE port, uint8_t pin, int flags);
+int mock_gpio_pin_read(DEVICE port, u32_t pin, u32_t *value);
+int mock_gpio_pin_write(DEVICE port, u32_t pin, u32_t value);
+int mock_gpio_pin_configure(DEVICE port, u8_t pin, int flags);
 void mock_gpio_init_callback(struct gpio_callback *callback,
                              gpio_callback_handler_t handler,
-                             uint32_t pin_mask);
+                             u32_t pin_mask);
 int mock_gpio_add_callback(DEVICE port, struct gpio_callback *callback);
 int mock_gpio_remove_callback(DEVICE port, struct gpio_callback *callback);
-int mock_gpio_pin_enable_callback(DEVICE port, uint32_t pin);
+int mock_gpio_pin_enable_callback(DEVICE port, u32_t pin);
 
 #ifdef ZJS_LINUX_BUILD
 // provide Zephyr dependencies

@@ -38,31 +38,31 @@ void post_event(void *h, jerry_value_t ret_val)
     }
 }
 
-static uint32_t get_num_events(jerry_value_t emitter)
+static u32_t get_num_events(jerry_value_t emitter)
 {
     ZVAL val = zjs_get_property(emitter, "numEvents");
     if (!jerry_value_is_number(val)) {
         ERR_PRINT("emitter had no numEvents property\n");
         return 0;
     }
-    uint32_t num = jerry_get_number_value(val);
+    u32_t num = jerry_get_number_value(val);
     return num;
 }
 
-static uint32_t get_max_event_listeners(jerry_value_t emitter)
+static u32_t get_max_event_listeners(jerry_value_t emitter)
 {
     ZVAL val = zjs_get_property(emitter, "maxListeners");
     if (!jerry_value_is_number(val)) {
         ERR_PRINT("emitter had no maxListeners property\n");
         return 0;
     }
-    uint32_t num = jerry_get_number_value(val);
+    u32_t num = jerry_get_number_value(val);
     return num;
 }
 
-static int32_t get_callback_id(jerry_value_t event_obj)
+static s32_t get_callback_id(jerry_value_t event_obj)
 {
-    int32_t callback_id = -1;
+    s32_t callback_id = -1;
     ZVAL id_prop = zjs_get_property(event_obj, "callback_id");
     if (jerry_value_is_number(id_prop)) {
         // If there already is an event object, get the callback ID
@@ -79,8 +79,8 @@ void zjs_add_event_listener(jerry_value_t obj, const char *event,
         ERR_PRINT("no event '%s' found\n", event);
         return;
     }
-    uint32_t num_events = get_num_events(event_emitter);
-    uint32_t max_listeners = get_max_event_listeners(event_emitter);
+    u32_t num_events = get_num_events(event_emitter);
+    u32_t max_listeners = get_max_event_listeners(event_emitter);
 
     if (num_events >= max_listeners) {
         ERR_PRINT("max listeners reached\n");
@@ -98,7 +98,7 @@ void zjs_add_event_listener(jerry_value_t obj, const char *event,
     sprintf(name, "%s: %s", "event", event);
     zjs_obj_add_string(listener, name, ZJS_HIDDEN_PROP("function_name"));
 #endif
-    int32_t callback_id = get_callback_id(event_obj);
+    s32_t callback_id = get_callback_id(event_obj);
     callback_id = zjs_add_callback_list(listener, obj, NULL, post_event,
                                         callback_id);
     // Add callback ID to event object
@@ -167,7 +167,7 @@ static ZJS_DECL_FUNC(remove_listener)
         return ZJS_UNDEFINED;
     }
 
-    int32_t callback_id = get_callback_id(event_obj);
+    s32_t callback_id = get_callback_id(event_obj);
     if (callback_id != -1) {
         zjs_remove_callback_list_func(callback_id, argv[1]);
     } else {
@@ -200,7 +200,7 @@ static ZJS_DECL_FUNC(remove_all_listeners)
         return ZJS_UNDEFINED;
     }
 
-    int32_t callback_id = get_callback_id(event_obj);
+    s32_t callback_id = get_callback_id(event_obj);
     if (callback_id != -1) {
         zjs_remove_callback(callback_id);
 
@@ -232,7 +232,7 @@ static ZJS_DECL_FUNC(get_event_names)
     event_names_t names;
 
     ZVAL event_emitter = zjs_get_property(this, ZJS_HIDDEN_PROP("event"));
-    uint32_t num_events = get_num_events(event_emitter);
+    u32_t num_events = get_num_events(event_emitter);
     ZVAL map = zjs_get_property(event_emitter, "map");
 
     names.idx = 0;
@@ -246,7 +246,7 @@ static ZJS_DECL_FUNC(get_event_names)
 static ZJS_DECL_FUNC(get_max_listeners)
 {
     ZVAL event_emitter = zjs_get_property(this, ZJS_HIDDEN_PROP("event"));
-    uint32_t max_listeners = get_max_event_listeners(event_emitter);
+    u32_t max_listeners = get_max_event_listeners(event_emitter);
     return jerry_create_number(max_listeners);
 }
 
@@ -287,7 +287,7 @@ static ZJS_DECL_FUNC(get_listener_count)
         return jerry_create_number(0);
     }
 
-    int32_t callback_id = get_callback_id(event_obj);
+    s32_t callback_id = get_callback_id(event_obj);
     int count = 0;
     if (callback_id != -1) {
         count = zjs_get_num_callbacks(callback_id);
@@ -319,7 +319,7 @@ static ZJS_DECL_FUNC(get_listeners)
         return zjs_error("event object not found");
     }
 
-    int32_t callback_id = get_callback_id(event_obj);
+    s32_t callback_id = get_callback_id(event_obj);
     if (callback_id == -1) {
         ERR_PRINT("callback_id not found for '%s'\n", event);
         return ZJS_UNDEFINED;
@@ -340,7 +340,7 @@ static ZJS_DECL_FUNC(get_listeners)
 bool zjs_trigger_event(jerry_value_t obj,
                        const char *event,
                        const jerry_value_t argv[],
-                       uint32_t argc,
+                       u32_t argc,
                        zjs_post_event post,
                        void *h)
 {
@@ -353,7 +353,7 @@ bool zjs_trigger_event(jerry_value_t obj,
         return false;
     }
 
-    int32_t callback_id = get_callback_id(event_obj);
+    s32_t callback_id = get_callback_id(event_obj);
     if (callback_id == -1) {
         ERR_PRINT("callback_id not found\n");
         return false;
@@ -380,7 +380,7 @@ bool zjs_trigger_event(jerry_value_t obj,
 bool zjs_trigger_event_now(jerry_value_t obj,
                            const char *event,
                            const jerry_value_t argv[],
-                           uint32_t argc,
+                           u32_t argc,
                            zjs_post_event post,
                            void *h)
 {
@@ -393,7 +393,7 @@ bool zjs_trigger_event_now(jerry_value_t obj,
         return false;
     }
 
-    int32_t callback_id = get_callback_id(event_obj);
+    s32_t callback_id = get_callback_id(event_obj);
     if (callback_id == -1) {
         ERR_PRINT("callback_id not found\n");
         return false;

@@ -24,13 +24,13 @@ static const char *ZJS_POLARITY_REVERSE = "reverse";
 
 static struct device *zjs_pwm_dev[PWM_DEV_COUNT];
 
-void (*zjs_pwm_convert_pin)(uint32_t orig, int *dev, int *pin) =
+void (*zjs_pwm_convert_pin)(u32_t orig, int *dev, int *pin) =
     zjs_default_convert_pin;
 
-static void zjs_pwm_set_cycles(jerry_value_t obj, uint32_t periodHW,
-                               uint32_t pulseWidthHW)
+static void zjs_pwm_set_cycles(jerry_value_t obj, u32_t periodHW,
+                               u32_t pulseWidthHW)
 {
-    uint32_t orig_chan;
+    u32_t orig_chan;
     zjs_obj_get_uint32(obj, "channel", &orig_chan);
 
     int devnum, channel;
@@ -45,13 +45,13 @@ static void zjs_pwm_set_cycles(jerry_value_t obj, uint32_t periodHW,
     }
 
     DBG_PRINT("Setting [cycles] channel=%d dev=%d, period=%lu, pulse=%lu\n",
-              channel, devnum, (uint32_t)periodHW, (uint32_t)pulseWidthHW);
+              channel, devnum, (u32_t)periodHW, (u32_t)pulseWidthHW);
     pwm_pin_set_cycles(zjs_pwm_dev[devnum], channel, periodHW, pulseWidthHW);
 }
 
 static void zjs_pwm_set_ms(jerry_value_t obj, double period, double pulseWidth)
 {
-    uint32_t orig_chan;
+    u32_t orig_chan;
     zjs_obj_get_uint32(obj, "channel", &orig_chan);
 
     int devnum, channel;
@@ -66,10 +66,10 @@ static void zjs_pwm_set_ms(jerry_value_t obj, double period, double pulseWidth)
     }
 
     DBG_PRINT("Setting [uSec] channel=%d dev=%d, period=%lu, pulse=%lu\n",
-              channel, devnum, (uint32_t)(period * 1000),
-              (uint32_t)(pulseWidth * 1000));
-    pwm_pin_set_usec(zjs_pwm_dev[devnum], channel, (uint32_t)(period * 1000),
-                     (uint32_t)(pulseWidth * 1000));
+              channel, devnum, (u32_t)(period * 1000),
+              (u32_t)(pulseWidth * 1000));
+    pwm_pin_set_usec(zjs_pwm_dev[devnum], channel, (u32_t)(period * 1000),
+                     (u32_t)(pulseWidth * 1000));
 }
 
 static ZJS_DECL_FUNC(zjs_pwm_pin_set_cycles)
@@ -126,8 +126,8 @@ static ZJS_DECL_FUNC(zjs_pwm_pin_set_ms)
     zjs_obj_add_number(this, period, "period");
     zjs_obj_add_number(this, period, "pulseWidth");
 
-    DBG_PRINT("period: %lu, pulse: %lu\n", (uint32_t)period,
-              (uint32_t)pulseWidth);
+    DBG_PRINT("period: %lu, pulse: %lu\n", (u32_t)period,
+              (u32_t)pulseWidth);
 
     zjs_pwm_set_ms(this, period, pulseWidth);
     return ZJS_UNDEFINED;
@@ -146,7 +146,7 @@ static ZJS_DECL_FUNC(zjs_pwm_open)
     // data input object
     jerry_value_t data = argv[0];
 
-    uint32_t channel;
+    u32_t channel;
     if (!zjs_obj_get_uint32(data, "channel", &channel))
         return zjs_error("missing required field");
 

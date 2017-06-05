@@ -41,6 +41,7 @@ void jerry_port_log(jerry_log_level_t level, const char *fmat, ...)
 }
 
 #ifdef JERRY_PORT_ENABLE_JOBQUEUE
+#include "../zjs_common.h"
 #include "../zjs_callbacks.h"
 #include "../zjs_util.h"
 // The job queue is essentially C callbacks, this is a simple wrapper

@@ -5,7 +5,7 @@
 
 #include "jerryscript.h"
 
-extern void (*zjs_pwm_convert_pin)(uint32_t num, int *dev, int *pin);
+extern void (*zjs_pwm_convert_pin)(u32_t num, int *dev, int *pin);
 
 /**
  * Initialize the pwm module, or reinitialize after cleanup

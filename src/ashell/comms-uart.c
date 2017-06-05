@@ -94,16 +94,16 @@ struct comms_input
 static struct k_fifo avail_queue;
 static struct k_fifo data_queue;
 static bool uart_process_done = false;
-static uint8_t fifo_size = 0;
-static uint8_t max_fifo_size = 0;
+static u8_t fifo_size = 0;
+static u8_t max_fifo_size = 0;
 
 atomic_t data_queue_count = 0;
 
-uint32_t alloc_count = 0;
-uint32_t free_count = 0;
+u32_t alloc_count = 0;
+u32_t free_count = 0;
 
 static struct comms_input *isr_data = NULL;
-static uint32_t tail = 0;
+static u32_t tail = 0;
 static char *buf;
 
 struct comms_input *fifo_get_isr_buffer()
@@ -153,8 +153,8 @@ static struct device *dev_upload;
 
 static volatile bool data_transmitted;
 
-uint32_t bytes_received = 0;
-uint32_t bytes_processed = 0;
+u32_t bytes_received = 0;
+u32_t bytes_processed = 0;
 
 atomic_t uart_state = 0;
 
@@ -189,8 +189,8 @@ static void comms_interrupt_handler(struct device *dev)
 {
     char byte;
 
-    uint32_t bytes_read = 0;
-    uint32_t len = 0;
+    u32_t bytes_read = 0;
+    u32_t len = 0;
 
     atomic_set(&uart_state, UART_IRQ_UPDATE);
 
@@ -314,7 +314,7 @@ void comms_write_buf(const char *buf, int len)
     while (bytes != len) {
         buf += bytes;
         len -= bytes;
-        bytes = uart_fifo_fill(dev_upload, (const uint8_t *)buf, len);
+        bytes = uart_fifo_fill(dev_upload, (const u8_t *)buf, len);
     }
     while (data_transmitted == false);
     uart_irq_tx_disable(dev_upload);
@@ -337,9 +337,9 @@ void comms_printf(const char *format, ...)
 }
 
 #ifdef CONFIG_UART_LINE_CTRL
-uint32_t comms_get_baudrate(void)
+u32_t comms_get_baudrate(void)
 {
-    uint32_t baudrate;
+    u32_t baudrate;
 
     int ret = uart_line_ctrl_get(dev_upload, LINE_CTRL_BAUD_RATE, &baudrate);
     if (ret)
@@ -404,7 +404,7 @@ void zjs_ashell_process()
 {
     static struct comms_input *data = NULL;
     char *buf = NULL;
-    uint32_t len = 0;
+    u32_t len = 0;
     atomic_set(&uart_state, UART_INIT);
 
     while (!comms_config.interface.is_done()) {
@@ -483,7 +483,7 @@ void zjs_ashell_init()
     ashell_run_boot_cfg();
 
 #ifdef CONFIG_UART_LINE_CTRL
-    uint32_t dtr = 0;
+    u32_t dtr = 0;
 
     while (1) {
         uart_line_ctrl_get(dev_upload, LINE_CTRL_DTR, &dtr);

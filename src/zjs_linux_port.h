@@ -11,56 +11,56 @@
 typedef uint32_t u32_t;
 
 typedef struct zjs_port_timer {
-    uint32_t sec;
-    uint32_t milli;
-    uint32_t interval;
+    u32_t sec;
+    u32_t milli;
+    u32_t interval;
     void *data;
 } zjs_port_timer_t;
 
 #define zjs_port_timer_init(t) do {} while (0)
 
-void zjs_port_timer_start(zjs_port_timer_t *timer, uint32_t interval);
+void zjs_port_timer_start(zjs_port_timer_t *timer, u32_t interval);
 
 void zjs_port_timer_stop(zjs_port_timer_t *timer);
 
-uint8_t zjs_port_timer_test(zjs_port_timer_t *timer);
+u8_t zjs_port_timer_test(zjs_port_timer_t *timer);
 
-uint32_t zjs_port_timer_get_uptime(void);
+u32_t zjs_port_timer_get_uptime(void);
 
 #define ZJS_TICKS_NONE          0
 #define ZJS_TICKS_FOREVER       0
 #define CONFIG_SYS_CLOCK_TICKS_PER_SEC 100
 #define zjs_sleep usleep
 
-#define SIZE32_OF(x) (sizeof((x))/sizeof(uint32_t))
+#define SIZE32_OF(x) (sizeof((x))/sizeof(u32_t))
 
 #define EAGAIN      11
 #define EMSGSIZE    12
 #define ENOSPC      28
 
 struct zjs_port_ring_buf {
-    uint32_t head;   /**< Index in buf for the head element */
-    uint32_t tail;   /**< Index in buf for the tail element */
-    uint32_t size;   /**< Size of buf in 32-bit chunks */
-    uint32_t *buf;   /**< Memory region for stored entries */
-    uint32_t mask;   /**< Modulo mask if size is a power of 2 */
+    u32_t head;   /**< Index in buf for the head element */
+    u32_t tail;   /**< Index in buf for the tail element */
+    u32_t size;   /**< Size of buf in 32-bit chunks */
+    u32_t *buf;   /**< Memory region for stored entries */
+    u32_t mask;   /**< Modulo mask if size is a power of 2 */
 };
 
 void zjs_port_ring_buf_init(struct zjs_port_ring_buf *buf,
-                            uint32_t size,
-                            uint32_t *data);
+                            u32_t size,
+                            u32_t *data);
 
 int zjs_port_ring_buf_get(struct zjs_port_ring_buf *buf,
-                          uint16_t *type,
-                          uint8_t *value,
-                          uint32_t *data,
-                          uint8_t *size32);
+                          u16_t *type,
+                          u8_t *value,
+                          u32_t *data,
+                          u8_t *size32);
 
 // INTERRUPT SAFE FUNCTION: No JerryScript VM, allocs, or release prints!
 int zjs_port_ring_buf_put(struct zjs_port_ring_buf *buf,
-                          uint16_t type,
-                          uint8_t value,
-                          uint32_t *data,
-                          uint8_t size32);
+                          u16_t type,
+                          u8_t value,
+                          u32_t *data,
+                          u8_t size32);
 
 #endif /* ZJS_LINUX_PORT_H_ */

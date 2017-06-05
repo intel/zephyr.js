@@ -10,6 +10,7 @@
 #include <stdlib.h>
 
 // ZJS includes
+#include "zjs_common.h"
 #include "zjs_gpio.h"
 #include "zjs_board.h"
 #include "zjs_util.h"
@@ -31,12 +32,12 @@ static jerry_value_t gpio_pin_prototype = 0;
 typedef struct gpio_handle {
     struct gpio_callback callback;  // Callback structure for zephyr
     DEVICE port;                    // Pin's port
-    uint32_t pin;                   // Pin associated with this handle
-    uint32_t value;                 // Value of the pin
+    u32_t pin;                   // Pin associated with this handle
+    u32_t value;                 // Value of the pin
     zjs_callback_id callbackId;     // ID for the C callback
     jerry_value_t pin_obj;          // Pin object returned from open()
-    uint32_t last;
-    uint8_t edge_both;
+    u32_t last;
+    u8_t edge_both;
     bool active_low;
     bool closed;
 } gpio_handle_t;
@@ -88,7 +89,7 @@ static void zjs_gpio_c_callback(void *h, const void *args)
     // If pin.onChange exists, call it
     if (jerry_value_is_function(onchange_func)) {
         ZVAL event = jerry_create_object();
-        uint32_t *the_args = (uint32_t *)args;
+        u32_t *the_args = (u32_t *)args;
         // Put the numeric GPIO trigger value in the object
         zjs_obj_add_number(event, the_args[0], "value");
 
@@ -102,7 +103,7 @@ static void zjs_gpio_c_callback(void *h, const void *args)
 // Callback when a GPIO input fires
 // INTERRUPT SAFE FUNCTION: No JerryScript VM, allocs, or release prints!
 static void zjs_gpio_zephyr_callback(DEVICE port, struct gpio_callback *cb,
-                                     uint32_t pins)
+                                     u32_t pins)
 {
     // Get our handle for this pin
     gpio_handle_t *handle = CONTAINER_OF(cb, gpio_handle_t, callback);
@@ -110,7 +111,7 @@ static void zjs_gpio_zephyr_callback(DEVICE port, struct gpio_callback *cb,
     gpio_pin_read(port, handle->pin, &handle->value);
     if ((handle->edge_both && handle->value != handle->last) ||
         !handle->edge_both) {
-        uint32_t args[] = {handle->value, pins};
+        u32_t args[] = {handle->value, pins};
         // Signal the C callback, where we call the JS callback
         zjs_signal_callback(handle->callbackId, args, sizeof(args));
         handle->last = handle->value;
@@ -127,7 +128,7 @@ static ZJS_DECL_FUNC(zjs_gpio_pin_read)
         return zjs_error("pin closed");
     }
 
-    uint32_t value;
+    u32_t value;
     int rval = gpio_pin_read(handle->port, handle->pin, &value);
     if (rval) {
         ERR_PRINT("PIN: #%d\n", (int)handle->pin);
@@ -155,14 +156,14 @@ static ZJS_DECL_FUNC(zjs_gpio_pin_write)
         return zjs_error("pin closed");
     }
 
-    uint32_t value;
+    u32_t value;
     // TODO: Remove this deprecated option eventually
     if (jerry_value_is_boolean(argv[0])) {
         ZJS_PRINT("Deprecated! gpio.write() no longer takes a boolean!\n");
         value = jerry_get_boolean_value(argv[0]) ? 1 : 0;
     }
     else {
-        value = (uint32_t)jerry_get_number_value(argv[0]);
+        value = (u32_t)jerry_get_number_value(argv[0]);
     }
 
     if (handle->active_low) {

@@ -180,7 +180,7 @@ void zjs_sensor_set_state(jerry_value_t obj, sensor_state_t state)
 
 void zjs_sensor_trigger_change(jerry_value_t obj)
 {
-    uint64_t timestamp = k_uptime_get();
+    u64_t timestamp = k_uptime_get();
     zjs_obj_add_readonly_number(obj, ((double)timestamp), "timestamp");
 
     ZVAL func = zjs_get_property(obj, "onchange");
@@ -267,8 +267,8 @@ ZJS_DECL_FUNC_ARGS(zjs_sensor_create,
                    sensor_instance_t *instance,
                    enum sensor_channel channel,
                    const char *c_name,
-                   uint32_t pin,
-                   uint32_t max_frequency,
+                   u32_t pin,
+                   u32_t max_frequency,
                    zjs_c_callback_func onchange,
                    zjs_c_callback_func onstart,
                    zjs_c_callback_func onstop)
@@ -294,7 +294,7 @@ ZJS_DECL_FUNC_ARGS(zjs_sensor_create,
             return zjs_error("controller not found");
         }
 
-        uint32_t option_pin;
+        u32_t option_pin;
         if (zjs_obj_get_uint32(options, "pin", &option_pin)) {
             controller.pin = option_pin;
         } else if (pin != -1) {

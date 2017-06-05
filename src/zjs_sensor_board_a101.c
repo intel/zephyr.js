@@ -124,7 +124,7 @@ static void zjs_sensor_signal_callbacks(struct sensor_data *data)
 }
 
 // INTERRUPT SAFE FUNCTION: No JerryScript VM, allocs, or likely prints!
-static void ipm_msg_receive_callback(void *context, uint32_t id, volatile void *data)
+static void ipm_msg_receive_callback(void *context, u32_t id, volatile void *data)
 {
     if (id != MSG_ID_SENSOR)
         return;

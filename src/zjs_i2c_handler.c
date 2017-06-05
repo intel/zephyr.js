@@ -14,7 +14,7 @@
 
 static struct device *i2c_device[MAX_I2C_BUS];
 
-int zjs_i2c_handle_open(uint8_t msg_bus)
+int zjs_i2c_handle_open(u8_t msg_bus)
 {
     int error_code = -1;
     if (msg_bus < MAX_I2C_BUS) {
@@ -44,8 +44,8 @@ int zjs_i2c_handle_open(uint8_t msg_bus)
     return error_code;
 }
 
-int zjs_i2c_handle_write(uint8_t msg_bus, uint8_t *data,
-                         uint32_t length, uint16_t address)
+int zjs_i2c_handle_write(u8_t msg_bus, u8_t *data,
+                         u32_t length, u16_t address)
 {
     int error_code = -1;
     if (msg_bus < MAX_I2C_BUS) {
@@ -69,8 +69,8 @@ int zjs_i2c_handle_write(uint8_t msg_bus, uint8_t *data,
     return error_code;
 }
 
-int zjs_i2c_handle_read(uint8_t msg_bus, uint8_t *data, uint32_t length,
-                        uint16_t address)
+int zjs_i2c_handle_read(u8_t msg_bus, u8_t *data, u32_t length,
+                        u16_t address)
 {
     int error_code = -1;
     if (msg_bus < MAX_I2C_BUS) {
@@ -92,8 +92,8 @@ int zjs_i2c_handle_read(uint8_t msg_bus, uint8_t *data, uint32_t length,
     return error_code;
 }
 
-int zjs_i2c_handle_burst_read(uint8_t msg_bus, uint8_t *data, uint32_t length,
-                              uint16_t address, uint16_t register_addr)
+int zjs_i2c_handle_burst_read(u8_t msg_bus, u8_t *data, u32_t length,
+                              u16_t address, u16_t register_addr)
 {
     int error_code = -1;
     if (msg_bus < MAX_I2C_BUS) {

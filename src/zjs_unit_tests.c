@@ -24,20 +24,20 @@ static void zjs_assert(int test, char *str)
 
 // Test zjs_hex_to_byte function
 
-static int check_hex_to_byte(char *str, uint8_t byte)
+static int check_hex_to_byte(char *str, u8_t byte)
 {
-    uint8_t result;
+    u8_t result;
     zjs_hex_to_byte(str, &result);
     return result == byte;
 }
 
-static uint32_t count1 = 0;
+static u32_t count1 = 0;
 static void c_callback1(void *handle, const void *args)
 {
     count1++;
 }
 
-static uint8_t string_correct = 0;
+static u8_t string_correct = 0;
 static void c_callback2(void *handle, const void *args)
 {
     char *s = (char *)handle;
@@ -46,7 +46,7 @@ static void c_callback2(void *handle, const void *args)
     }
 }
 
-static uint8_t handle_and_args = 0;
+static u8_t handle_and_args = 0;
 static void c_callback3(void *handle, const void *args)
 {
     char *h = (char *)handle;
@@ -58,16 +58,16 @@ static void c_callback3(void *handle, const void *args)
     }
 }
 
-static uint8_t cb4_called = 0;
+static u8_t cb4_called = 0;
 static void c_callback4(void *handle, const void *args)
 {
     cb4_called = 1;
 }
 
-static uint8_t handle_correct = 0;
+static u8_t handle_correct = 0;
 static void c_callback5(void *handle, const void *args)
 {
-    uint32_t h = *((uint32_t *)handle);
+    u32_t h = *((u32_t *)handle);
     if (h == 0x44332211) {
         handle_correct = 1;
     }
@@ -125,8 +125,8 @@ static void test_c_callbacks()
     zjs_remove_callback(id4);
 
     // test zjs_edit_callback_handle()
-    uint32_t h1 = 0x11223344;
-    uint32_t h2 = 0x44332211;
+    u32_t h1 = 0x11223344;
+    u32_t h2 = 0x44332211;
     zjs_callback_id id5 = zjs_add_c_callback((void *)&h1, c_callback5);
     zjs_signal_callback(id5, NULL, 0);
     zjs_edit_callback_handle(id5, (void *)&h2);
@@ -163,18 +163,18 @@ static void test_default_convert_pin()
 
 // Test zjs_util int compression functions
 
-static int check_compress_reversible(uint32_t num)
+static int check_compress_reversible(u32_t num)
 {
     // checks whether uncompressing compressed value returns exact match
-    uint32_t reversed = zjs_uncompress_16_to_32(zjs_compress_32_to_16(num));
+    u32_t reversed = zjs_uncompress_16_to_32(zjs_compress_32_to_16(num));
     return num == reversed;
 }
 
-static int check_compress_close(uint32_t num)
+static int check_compress_close(u32_t num)
 {
     // checks whether uncompressing compressed value is within 0.05% of original
     // 11-bit mantissa means 1/2048 ~= 0.05%
-    uint32_t reversed = zjs_uncompress_16_to_32(zjs_compress_32_to_16(num));
+    u32_t reversed = zjs_uncompress_16_to_32(zjs_compress_32_to_16(num));
     double ratio = reversed * 1.0 / num;
     return ratio >= 0.9995 && ratio <= 1.0005;
 }
@@ -381,9 +381,9 @@ typedef struct test_list {
     struct test_list *next;
 } test_list_t;
 
-static uint8_t l1_freed = 0;
-static uint8_t l2_freed = 0;
-static uint8_t l3_freed = 0;
+static u8_t l1_freed = 0;
+static u8_t l2_freed = 0;
+static u8_t l3_freed = 0;
 
 void test_free_list(test_list_t *element)
 {

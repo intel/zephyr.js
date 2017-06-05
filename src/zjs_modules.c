@@ -27,7 +27,7 @@ struct routine_map {
     void *handle;
 };
 
-static uint8_t num_routines = 0;
+static u8_t num_routines = 0;
 struct routine_map svc_routine_map[NUM_SERVICE_ROUTINES];
 
 static ZJS_DECL_FUNC(native_require_handler)
@@ -60,7 +60,7 @@ static ZJS_DECL_FUNC(native_require_handler)
     // JS modules now rather than at compile time
     char full_path[size + 9];
     char *str;
-    uint32_t len;
+    u32_t len;
     sprintf(full_path, "modules/%s", module);
     full_path[size + 8] = '\0';
 
@@ -226,12 +226,12 @@ void zjs_register_service_routine(void *handle, zjs_service_routine func)
     return;
 }
 
-int32_t zjs_service_routines(void)
+s32_t zjs_service_routines(void)
 {
-    int32_t wait = ZJS_TICKS_FOREVER;
+    s32_t wait = ZJS_TICKS_FOREVER;
     int i;
     for (i = 0; i < num_routines; ++i) {
-        int32_t ret = svc_routine_map[i].func(svc_routine_map[i].handle);
+        s32_t ret = svc_routine_map[i].func(svc_routine_map[i].handle);
         wait = (wait < ret) ? wait : ret;
     }
 #ifdef ZJS_LINUX_BUILD

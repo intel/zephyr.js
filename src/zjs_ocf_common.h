@@ -13,7 +13,7 @@
 
 struct props_handle {
     jerry_value_t props_array;
-    uint32_t size;
+    u32_t size;
     char **names_array;
 };
 
@@ -74,7 +74,7 @@ void zjs_ocf_free_props(void *h);
  *
  * @return              Time (ms) until next event
  */
-int32_t main_poll_routine(void* handle);
+s32_t main_poll_routine(void* handle);
 
 /**
  * Set the 'uuid' property in the device object. This API is required because

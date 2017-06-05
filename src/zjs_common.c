@@ -1,5 +1,6 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
+#include <stdint.h>
 #include <string.h>
 
 // ZJS includes
@@ -60,7 +61,7 @@ int zjs_get_ms(void)
 
 static zjs_port_timer_t print_timer;
 // Millisecond counter to increment
-static uint32_t milli = 0;
+static u32_t milli = 0;
 
 void update_print_timer(void)
 {

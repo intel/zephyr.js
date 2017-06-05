@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 #ifdef ZJS_LINUX_BUILD
 
@@ -33,7 +33,7 @@ uint8_t zjs_read_script(char *name, char **script, uint32_t *length)
             fclose(f);
             return 1;
         }
-        s = (char *)zjs_malloc(size + 1);
+        s = (char *)malloc(size + 1);
         if (!s) {
             ERR_PRINT("error allocating %u bytes, fatal\n", size);
             fclose(f);
@@ -42,7 +42,7 @@ uint8_t zjs_read_script(char *name, char **script, uint32_t *length)
         if (fread(s, size, 1, f) != 1) {
             ERR_PRINT("error reading script file\n");
             fclose(f);
-            zjs_free(s);
+            free(s);
             return 1;
         }
 
@@ -58,7 +58,7 @@ uint8_t zjs_read_script(char *name, char **script, uint32_t *length)
 void zjs_free_script(char *script)
 {
     if (script) {
-        zjs_free(script);
+        free(script);
     }
     return;
 }

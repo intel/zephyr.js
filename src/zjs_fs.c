@@ -38,14 +38,14 @@ typedef enum {
 /*
  * Bit mask of currently open FD's
  */
-static uint32_t fd_used = 0;
+static u32_t fd_used = 0;
 
 typedef struct file_handle {
     fs_file_t fp;
     int fd;
     FileMode mode;
     int error;
-    uint32_t rpos;
+    u32_t rpos;
     struct file_handle *next;
 } file_handle_t;
 
@@ -109,9 +109,9 @@ static int file_exists(const char *path)
     return !res;
 }
 
-static uint16_t get_mode(char *str)
+static u16_t get_mode(char *str)
 {
-    uint16_t mode = 0;
+    u16_t mode = 0;
     if (strcmp(str, "r") == 0) {
         mode = MODE_R;
     } else if (strcmp(str, "r+") == 0) {
@@ -168,7 +168,7 @@ static jerry_value_t create_stats_obj(struct fs_dirent *entry)
     return stats_obj;
 }
 
-static ZJS_DECL_FUNC_ARGS(zjs_fs_open, uint8_t async)
+static ZJS_DECL_FUNC_ARGS(zjs_fs_open, u8_t async)
 {
     // NOTE: what we call mode below is actually 'flags' in Node docs, argv[1];
     //   we don't support mode (optional argv[2])
@@ -255,7 +255,7 @@ static ZJS_DECL_FUNC(zjs_fs_open_async) {
 }
 #endif
 
-static ZJS_DECL_FUNC_ARGS(zjs_fs_close, uint8_t async)
+static ZJS_DECL_FUNC_ARGS(zjs_fs_close, u8_t async)
 {
     // args: file descriptor
     ZJS_VALIDATE_ARGS(Z_NUMBER);
@@ -302,7 +302,7 @@ static ZJS_DECL_FUNC(zjs_fs_close_async) {
 }
 #endif
 
-static ZJS_DECL_FUNC_ARGS(zjs_fs_unlink, uint8_t async)
+static ZJS_DECL_FUNC_ARGS(zjs_fs_unlink, u8_t async)
 {
     // args: filename
     ZJS_VALIDATE_ARGS(Z_STRING);
@@ -350,7 +350,7 @@ static ZJS_DECL_FUNC(zjs_fs_unlink_async) {
 }
 #endif
 
-static ZJS_DECL_FUNC_ARGS(zjs_fs_read, uint8_t async)
+static ZJS_DECL_FUNC_ARGS(zjs_fs_read, u8_t async)
 {
     // args: file descriptor, buffer, offset, length, position
     ZJS_VALIDATE_ARGS(Z_NUMBER, Z_BUFFER, Z_NUMBER, Z_NUMBER, Z_NUMBER Z_NULL);
@@ -402,20 +402,20 @@ static ZJS_DECL_FUNC_ARGS(zjs_fs_read, uint8_t async)
         }
         handle->rpos = position;
         // if a position was specified, seek to it before reading
-        if (fs_seek(&handle->fp, (uint32_t)position, SEEK_SET) != 0) {
+        if (fs_seek(&handle->fp, (u32_t)position, SEEK_SET) != 0) {
             return zjs_error("error seeking to position");
         }
     }
 
     DBG_PRINT("reading into fp=%p, buffer=%p, offset=%lu, length=%lu\n",
-              &handle->fp, buffer->buffer, (uint32_t)offset, (uint32_t)length);
+              &handle->fp, buffer->buffer, (u32_t)offset, (u32_t)length);
 
-    uint32_t ret = fs_read(&handle->fp, buffer->buffer + (uint32_t)offset,
-                           (uint32_t)length);
+    u32_t ret = fs_read(&handle->fp, buffer->buffer + (u32_t)offset,
+                           (u32_t)length);
 
-    if (ret != (uint32_t)length) {
+    if (ret != (u32_t)length) {
         DBG_PRINT("could not read %lu bytes, only %lu were read\n",
-                  (uint32_t)length, ret);
+                  (u32_t)length, ret);
         err = -1;
     }
     handle->rpos += ret;
@@ -447,7 +447,7 @@ static ZJS_DECL_FUNC(zjs_fs_read_async) {
 }
 #endif
 
-static ZJS_DECL_FUNC_ARGS(zjs_fs_write, uint8_t async)
+static ZJS_DECL_FUNC_ARGS(zjs_fs_write, u8_t async)
 {
     // args: file descriptor, buffer[, offset[, length[, position]]]
     ZJS_VALIDATE_ARGS_OPTCOUNT(optcount, Z_NUMBER, Z_BUFFER,
@@ -464,10 +464,10 @@ static ZJS_DECL_FUNC_ARGS(zjs_fs_write, uint8_t async)
 #endif
 
     file_handle_t *handle;
-    uint32_t offset = 0;
-    uint32_t length = 0;
-    uint32_t position = 0;
-    uint8_t from_cur = 0;
+    u32_t offset = 0;
+    u32_t length = 0;
+    u32_t position = 0;
+    u8_t from_cur = 0;
 
     handle = find_file((int)jerry_get_number_value(argv[0]));
     if (!handle) {
@@ -519,7 +519,7 @@ static ZJS_DECL_FUNC_ARGS(zjs_fs_write, uint8_t async)
     DBG_PRINT("writing to fp=%p, buffer=%p, offset=%lu, length=%lu\n",
               &handle->fp, buffer->buffer, offset, length);
 
-    uint32_t written = fs_write(&handle->fp, buffer->buffer + offset, length);
+    u32_t written = fs_write(&handle->fp, buffer->buffer + offset, length);
     if (written != length) {
         DBG_PRINT("could not write %lu bytes, only %lu were written\n", length,
                   written);
@@ -550,7 +550,7 @@ static ZJS_DECL_FUNC(zjs_fs_write_async) {
 }
 #endif
 
-static ZJS_DECL_FUNC_ARGS(zjs_fs_truncate, uint8_t async)
+static ZJS_DECL_FUNC_ARGS(zjs_fs_truncate, u8_t async)
 {
     // args: file descriptor or string path, length
     ZJS_VALIDATE_ARGS(Z_OBJECT Z_STRING, Z_NUMBER);
@@ -585,7 +585,7 @@ static ZJS_DECL_FUNC_ARGS(zjs_fs_truncate, uint8_t async)
         return invalid_args();
     }
 
-    uint32_t length = jerry_get_number_value(argv[1]);
+    u32_t length = jerry_get_number_value(argv[1]);
 
     if (fs_truncate(&fp, length) != 0) {
         return zjs_error("error calling fs_truncate()");
@@ -613,7 +613,7 @@ static ZJS_DECL_FUNC(zjs_fs_truncate_async) {
 }
 #endif
 
-static ZJS_DECL_FUNC_ARGS(zjs_fs_mkdir, uint8_t async)
+static ZJS_DECL_FUNC_ARGS(zjs_fs_mkdir, u8_t async)
 {
     // args: dirpath
     ZJS_VALIDATE_ARGS(Z_STRING);
@@ -658,7 +658,7 @@ static ZJS_DECL_FUNC(zjs_fs_mkdir_async) {
 }
 #endif
 
-static ZJS_DECL_FUNC_ARGS(zjs_fs_readdir, uint8_t async)
+static ZJS_DECL_FUNC_ARGS(zjs_fs_readdir, u8_t async)
 {
     // args: dirpath
     ZJS_VALIDATE_ARGS(Z_STRING);
@@ -715,7 +715,7 @@ static ZJS_DECL_FUNC_ARGS(zjs_fs_readdir, uint8_t async)
 
     array = jerry_create_array(num_files);
 
-    uint32_t i;
+    u32_t i;
     for (i = 0; i < num_files; ++i) {
         res = fs_readdir(&dp, &entry);
 
@@ -757,7 +757,7 @@ static ZJS_DECL_FUNC(zjs_fs_readdir_async) {
 }
 #endif
 
-static ZJS_DECL_FUNC_ARGS(zjs_fs_stat, uint8_t async)
+static ZJS_DECL_FUNC_ARGS(zjs_fs_stat, u8_t async)
 {
     // args: filepath
     ZJS_VALIDATE_ARGS(Z_STRING);
@@ -809,7 +809,7 @@ static ZJS_DECL_FUNC(zjs_fs_stat_async) {
 }
 #endif
 
-static ZJS_DECL_FUNC_ARGS(zjs_fs_write_file, uint8_t async)
+static ZJS_DECL_FUNC_ARGS(zjs_fs_write_file, u8_t async)
 {
     // args: filepath, data
     ZJS_VALIDATE_ARGS(Z_STRING, Z_BUFFER Z_STRING);
@@ -821,11 +821,11 @@ static ZJS_DECL_FUNC_ARGS(zjs_fs_write_file, uint8_t async)
     }
 #endif
 
-    uint8_t is_buf = 0;
+    u8_t is_buf = 0;
     jerry_size_t size;
     int error = 0;
     char *data = NULL;
-    uint32_t length;
+    u32_t length;
     if (jerry_value_is_string(argv[1])) {
         size = 0;
         data = zjs_alloc_from_jstring(argv[1], &size);
@@ -896,7 +896,7 @@ static ZJS_DECL_FUNC(zjs_fs_write_file_async) {
 }
 #endif
 
-static ZJS_DECL_FUNC_ARGS(zjs_fs_read_file, uint8_t async)
+static ZJS_DECL_FUNC_ARGS(zjs_fs_read_file, u8_t async)
 {
     // args: filepath, data
     ZJS_VALIDATE_ARGS(Z_STRING);
@@ -908,7 +908,7 @@ static ZJS_DECL_FUNC_ARGS(zjs_fs_read_file, uint8_t async)
     }
 #endif
     jerry_value_t buffer = ZJS_UNDEFINED;
-    uint32_t size = 32;
+    u32_t size = 32;
     char *path = zjs_alloc_from_jstring(argv[0], &size);
     if (!path) {
         return zjs_error("path string too long");

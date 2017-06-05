@@ -30,7 +30,7 @@ enum
  * @param buf Raw buffer containing the rest of the parameters from the last command
  * @return RET_OK, RET_ERROR, RET_UNKNOWN
  */
-typedef int32_t(*ashell_cmd)(char *buf);
+typedef s32_t(*ashell_cmd)(char *buf);
 
 struct ashell_cmd
 {
@@ -45,7 +45,7 @@ struct ashell_cmd
  */
 struct shell_state_config
 {
-    uint32_t state_flags;
+    u32_t state_flags;
 };
 
 /**
@@ -54,7 +54,7 @@ struct shell_state_config
  * @param buf Zero terminated string, length of the buffer.
  * @return RET_OK, RET_ERROR, RET_UNKNOWN
  */
-int32_t ashell_main_state(char *buf, uint32_t len);
+s32_t ashell_main_state(char *buf, u32_t len);
 
 /**
  * @brief Gets called when main loop starts and runs the JavaScript file found in
@@ -62,5 +62,5 @@ int32_t ashell_main_state(char *buf, uint32_t len);
  */
 void ashell_run_boot_cfg();
 
-int32_t ashell_help(char *buf);
+s32_t ashell_help(char *buf);
 #endif

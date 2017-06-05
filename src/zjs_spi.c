@@ -131,7 +131,7 @@ static ZJS_DECL_FUNC(zjs_spi_transceive)
                 for (int i = 0; i < len; i++) {
                     ZVAL item = jerry_get_property_by_index(buffer, i);
                     if (jerry_value_is_number(item)) {
-                        tx_buf->buffer[i] = (uint8_t)jerry_get_number_value(item);
+                        tx_buf->buffer[i] = (u8_t)jerry_get_number_value(item);
                     }
                     else {
                         ERR_PRINT("non-numeric value in array, treating as 0\n");
@@ -198,16 +198,16 @@ static ZJS_DECL_FUNC(zjs_spi_open)
     ZJS_VALIDATE_ARGS(Z_OPTIONAL Z_OBJECT);
 
     // Default values
-    uint32_t bus = 0;
+    u32_t bus = 0;
     double speed = 10;
     bool msbFirst = true;
-    uint32_t bits = 8;
-    uint32_t polarity = 0;
-    uint32_t phase = 0;
+    u32_t bits = 8;
+    u32_t polarity = 0;
+    u32_t phase = 0;
     char topology_str[13] = "";
     char bus_str[9];
     enum spi_topology topology = ZJS_TOPOLOGY_FULL_DUPLEX;
-    uint32_t frame_gap = 0;
+    u32_t frame_gap = 0;
     struct spi_config config = { 0 };
 
     // Get any provided optional args

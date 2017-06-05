@@ -32,7 +32,7 @@ void *zjs_malloc_with_retry(size_t size);
 #else
 #include <zephyr.h>
 #ifdef ZJS_TRACE_MALLOC
-#define zjs_malloc(sz) ({void *zjs_ptr = zjs_malloc_with_retry(sz); ZJS_PRINT("%s:%d: allocating %lu bytes (%p)\n", __func__, __LINE__, (uint32_t)sz, zjs_ptr); zjs_ptr;})
+#define zjs_malloc(sz) ({void *zjs_ptr = zjs_malloc_with_retry(sz); ZJS_PRINT("%s:%d: allocating %lu bytes (%p)\n", __func__, __LINE__, (u32_t)sz, zjs_ptr); zjs_ptr;})
 #define zjs_free(ptr) (ZJS_PRINT("%s:%d: freeing %p\n", __func__, __LINE__, ptr), free(ptr))
 #else
 #define zjs_malloc(sz) ({void *zjs_ptr = zjs_malloc_with_retry(sz); if (!zjs_ptr) {ERR_PRINT("malloc failed\n");} zjs_ptr;})
@@ -77,8 +77,8 @@ bool zjs_obj_get_boolean(jerry_value_t obj, const char *name, bool *flag);
 bool zjs_obj_get_string(jerry_value_t obj, const char *name, char *buffer,
                         int len);
 bool zjs_obj_get_double(jerry_value_t obj, const char *name, double *num);
-bool zjs_obj_get_uint32(jerry_value_t obj, const char *name, uint32_t *num);
-bool zjs_obj_get_int32(jerry_value_t obj, const char *name, int32_t *num);
+bool zjs_obj_get_uint32(jerry_value_t obj, const char *name, u32_t *num);
+bool zjs_obj_get_int32(jerry_value_t obj, const char *name, s32_t *num);
 
 /**
  * Copy a JerryScript string into a supplied char * buffer.
@@ -111,12 +111,12 @@ void zjs_copy_jstring(jerry_value_t jstr, char *buffer, jerry_size_t *maxlen);
  */
 char *zjs_alloc_from_jstring(jerry_value_t jstr, jerry_size_t *maxlen);
 
-bool zjs_hex_to_byte(const char *buf, uint8_t *byte);
+bool zjs_hex_to_byte(const char *buf, u8_t *byte);
 
-void zjs_default_convert_pin(uint32_t orig, int *dev, int *pin);
+void zjs_default_convert_pin(u32_t orig, int *dev, int *pin);
 
-uint16_t zjs_compress_32_to_16(uint32_t num);
-uint32_t zjs_uncompress_16_to_32(uint16_t num);
+u16_t zjs_compress_32_to_16(u32_t num);
+u32_t zjs_uncompress_16_to_32(u16_t num);
 
 void zjs_print_error_message(jerry_value_t error, jerry_value_t func);
 
@@ -433,7 +433,7 @@ void zjs_loop_init(void);
 //     }
 #define ZJS_LIST_REMOVE(type, list, p) \
     ({ \
-        uint8_t removed = 0; \
+        u8_t removed = 0; \
         type *cur = list; \
         if (p == list) { \
             list = p->next; \

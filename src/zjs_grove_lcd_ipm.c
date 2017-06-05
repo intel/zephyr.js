@@ -64,7 +64,7 @@ static jerry_value_t zjs_glcd_call_remote_function(zjs_ipm_message_t *send)
         return zjs_error_context("error received", 0, 0);
     }
 
-    uint8_t value = reply.data.glcd.value;
+    u8_t value = reply.data.glcd.value;
 
     return jerry_create_number(value);
 }
@@ -79,7 +79,7 @@ static jerry_value_t zjs_glcd_call_remote_ignore(zjs_ipm_message_t *send)
     return ZJS_UNDEFINED;
 }
 
-static void ipm_msg_receive_callback(void *context, uint32_t id, volatile void *data)
+static void ipm_msg_receive_callback(void *context, u32_t id, volatile void *data)
 {
     if (id != MSG_ID_GLCD)
         return;
@@ -138,8 +138,8 @@ static ZJS_DECL_FUNC(zjs_glcd_set_cursor_pos)
     // send IPM message to the ARC side
     zjs_ipm_message_t send;
     send.type = TYPE_GLCD_SET_CURSOR_POS;
-    send.data.glcd.col = (uint8_t)jerry_get_number_value(argv[0]);
-    send.data.glcd.row = (uint8_t)jerry_get_number_value(argv[1]);
+    send.data.glcd.col = (u8_t)jerry_get_number_value(argv[0]);
+    send.data.glcd.row = (u8_t)jerry_get_number_value(argv[1]);
 
     return zjs_glcd_call_remote_ignore(&send);
 }
@@ -152,7 +152,7 @@ static ZJS_DECL_FUNC(zjs_glcd_select_color)
     // send IPM message to the ARC side
     zjs_ipm_message_t send;
     send.type = TYPE_GLCD_SELECT_COLOR;
-    send.data.glcd.value = (uint8_t)jerry_get_number_value(argv[0]);
+    send.data.glcd.value = (u8_t)jerry_get_number_value(argv[0]);
 
     return zjs_glcd_call_remote_ignore(&send);
 }
@@ -165,9 +165,9 @@ static ZJS_DECL_FUNC(zjs_glcd_set_color)
     // send IPM message to the ARC side
     zjs_ipm_message_t send;
     send.type = TYPE_GLCD_SET_COLOR;
-    send.data.glcd.color_r = (uint8_t)jerry_get_number_value(argv[0]);
-    send.data.glcd.color_g = (uint8_t)jerry_get_number_value(argv[1]);
-    send.data.glcd.color_b = (uint8_t)jerry_get_number_value(argv[2]);
+    send.data.glcd.color_r = (u8_t)jerry_get_number_value(argv[0]);
+    send.data.glcd.color_g = (u8_t)jerry_get_number_value(argv[1]);
+    send.data.glcd.color_b = (u8_t)jerry_get_number_value(argv[2]);
 
     return zjs_glcd_call_remote_ignore(&send);
 }
@@ -180,7 +180,7 @@ static ZJS_DECL_FUNC(zjs_glcd_set_function)
     // send IPM message to the ARC side
     zjs_ipm_message_t send;
     send.type = TYPE_GLCD_SET_FUNCTION;
-    send.data.glcd.value = (uint8_t)jerry_get_number_value(argv[0]);
+    send.data.glcd.value = (u8_t)jerry_get_number_value(argv[0]);
 
     return zjs_glcd_call_remote_ignore(&send);
 }
@@ -203,7 +203,7 @@ static ZJS_DECL_FUNC(zjs_glcd_set_display_state)
     // send IPM message to the ARC side
     zjs_ipm_message_t send;
     send.type = TYPE_GLCD_SET_DISPLAY_STATE;
-    send.data.glcd.value = (uint8_t)jerry_get_number_value(argv[0]);
+    send.data.glcd.value = (u8_t)jerry_get_number_value(argv[0]);
 
     return zjs_glcd_call_remote_ignore(&send);
 }

@@ -54,7 +54,7 @@ void zjs_add_event_listener(jerry_value_t obj, const char *event,
  * @return              True if there were listeners
  */
 bool zjs_trigger_event(jerry_value_t obj, const char *event,
-                       const jerry_value_t argv[], uint32_t argc,
+                       const jerry_value_t argv[], u32_t argc,
                        zjs_post_event post, void *handle);
 
 /**
@@ -70,7 +70,7 @@ bool zjs_trigger_event(jerry_value_t obj, const char *event,
  * @return              True if there were listeners
  */
 bool zjs_trigger_event_now(jerry_value_t obj, const char *event,
-                           const jerry_value_t argv[], uint32_t argc,
+                           const jerry_value_t argv[], u32_t argc,
                            zjs_post_event post, void *h);
 
 /**

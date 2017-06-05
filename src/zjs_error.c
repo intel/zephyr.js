@@ -86,7 +86,7 @@ static char *construct_message(jerry_value_t this, jerry_value_t func,
     if (!jerry_value_is_array(keys_array)) {
         return NULL;
     }
-    uint32_t arr_length = jerry_get_array_length(keys_array);
+    u32_t arr_length = jerry_get_array_length(keys_array);
     int i;
     for (i = 0; i < arr_length; ++i) {
         ZVAL val = jerry_get_property_by_index(keys_array, i);

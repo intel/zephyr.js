@@ -1,12 +1,13 @@
 // Copyright (c) 2016-2017, Intel Corporation.
 
 // ZJS includes
-#include <zjs_gpio.h>
-#include <zjs_pwm.h>
-#include <zjs_util.h>
+#include "zjs_common.h"
+#include "zjs_gpio.h"
+#include "zjs_pwm.h"
+#include "zjs_util.h"
 
 #ifdef BUILD_MODULE_PWM
-static void zjs_a101_num_to_pwm(uint32_t num, int *dev, int *pin)
+static void zjs_a101_num_to_pwm(u32_t num, int *dev, int *pin)
 {
     *dev = 0;
     if (num < 0) {

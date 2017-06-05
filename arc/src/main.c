@@ -47,13 +47,13 @@ static struct device *adc_dev = NULL;
 static atomic_t pin_enabled[ARC_AIO_LEN] = {};
 static atomic_t pin_values[ARC_AIO_LEN] = {};
 static atomic_t pin_last_values[ARC_AIO_LEN] = {};
-static uint8_t seq_buffer[ADC_BUFFER_SIZE];
+static u8_t seq_buffer[ADC_BUFFER_SIZE];
 static void *pin_user_data[ARC_AIO_LEN] = {};
-static uint8_t pin_send_updates[ARC_AIO_LEN] = {};
+static u8_t pin_send_updates[ARC_AIO_LEN] = {};
 #endif
 
 #ifdef BUILD_MODULE_SENSOR_LIGHT
-static uint8_t light_send_updates[ARC_AIO_LEN] = {};
+static u8_t light_send_updates[ARC_AIO_LEN] = {};
 #endif
 
 #ifdef BUILD_MODULE_I2C
@@ -66,7 +66,7 @@ static char str[MAX_BUFFER_SIZE];
 #endif
 
 #ifdef BUILD_MODULE_SENSOR
-static uint32_t sensor_poll_freq = 20;  // default poll frequency
+static u32_t sensor_poll_freq = 20;  // default poll frequency
 static struct device *bmi160 = NULL;
 #ifdef CONFIG_BMI160_TRIGGER
 static bool accel_trigger = false;      // trigger mode
@@ -95,7 +95,7 @@ int ipm_send_msg(struct zjs_ipm_message *msg)
 }
 
 static int ipm_send_error(struct zjs_ipm_message *msg,
-                          uint32_t error_code)
+                          u32_t error_code)
 {
     msg->flags |= MSG_ERROR_FLAG;
     msg->error_code = error_code;
@@ -105,7 +105,7 @@ static int ipm_send_error(struct zjs_ipm_message *msg,
 #endif
 
 #ifdef BUILD_MODULE_AIO
-static uint32_t pin_read(uint8_t pin)
+static u32_t pin_read(u8_t pin)
 {
     struct adc_seq_entry entry = {
         .sampling_delay = 12,
@@ -130,8 +130,8 @@ static uint32_t pin_read(uint8_t pin)
     }
 
     // read from buffer, not sure if byte order is important
-    uint32_t raw_value = (uint32_t) seq_buffer[0]
-                       | (uint32_t) seq_buffer[1] << 8;
+    u32_t raw_value = (u32_t) seq_buffer[0]
+                    | (u32_t) seq_buffer[1] << 8;
 
     return raw_value;
 }
@@ -164,7 +164,7 @@ static void queue_message(struct zjs_ipm_message *incoming_msg)
     k_sem_give(&arc_sem);
 }
 
-static void ipm_msg_receive_callback(void *context, uint32_t id, volatile void *data)
+static void ipm_msg_receive_callback(void *context, u32_t id, volatile void *data)
 {
     struct zjs_ipm_message *incoming_msg = (struct zjs_ipm_message*)(*(uintptr_t *)data);
     if (incoming_msg) {
@@ -178,9 +178,9 @@ static void ipm_msg_receive_callback(void *context, uint32_t id, volatile void *
 #ifdef BUILD_MODULE_AIO
 static void handle_aio(struct zjs_ipm_message *msg)
 {
-    uint32_t pin = msg->data.aio.pin;
-    uint32_t reply_value = 0;
-    uint32_t error_code = ERROR_IPM_NONE;
+    u32_t pin = msg->data.aio.pin;
+    u32_t reply_value = 0;
+    u32_t error_code = ERROR_IPM_NONE;
 
     if (pin < ARC_AIO_MIN || pin > ARC_AIO_MAX) {
         ERR_PRINT("pin #%u out of range\n", pin);
@@ -250,7 +250,7 @@ static void aio_read_thread(void *p1, void *p2, void *p3)
     while (1) {
         for (int i = 0; i <= 5; i++) {
             if (pin_enabled[i]) {
-                uint32_t value = pin_read(ARC_AIO_MIN + i);
+                u32_t value = pin_read(ARC_AIO_MIN + i);
                 atomic_set(&pin_values[i], value);
                 atomic_set(&pin_last_values[i], value);
             }
@@ -262,8 +262,8 @@ static void aio_read_thread(void *p1, void *p2, void *p3)
 #ifdef BUILD_MODULE_I2C
 static void handle_i2c(struct zjs_ipm_message *msg)
 {
-    uint32_t error_code = ERROR_IPM_NONE;
-    uint8_t msg_bus = msg->data.i2c.bus;
+    u32_t error_code = ERROR_IPM_NONE;
+    u8_t msg_bus = msg->data.i2c.bus;
 
     switch (msg->type) {
     case TYPE_I2C_OPEN:
@@ -312,8 +312,8 @@ static void handle_i2c(struct zjs_ipm_message *msg)
 static void handle_glcd(struct zjs_ipm_message *msg)
 {
     char *buffer;
-    uint8_t r, g, b;
-    uint32_t error_code = ERROR_IPM_NONE;
+    u8_t r, g, b;
+    u32_t error_code = ERROR_IPM_NONE;
 
     if (msg->type != TYPE_GLCD_INIT && !glcd) {
         ERR_PRINT("Grove LCD device not found\n");
@@ -398,7 +398,7 @@ static void handle_glcd(struct zjs_ipm_message *msg)
 static inline int sensor_value_snprintf(char *buf, size_t len,
                                         const struct sensor_value *val)
 {
-    int32_t val1, val2;
+    s32_t val1, val2;
 
     if (val->val2 == 0) {
         return snprintf(buf, len, "%d", val->val1);
@@ -786,7 +786,7 @@ static void fetch_light()
                 double resistance, base;
                 union sensor_reading reading;
                 // rescale sample from 12bit (Zephyr) to 10bit (Grove)
-                uint16_t analog_val = pin_values[i] >> 2;
+                u16_t analog_val = pin_values[i] >> 2;
                 if (analog_val > 1015) {
                     // any thing over 1015 will be considered maximum brightness
                     reading.dval = 10000.0;
@@ -806,7 +806,7 @@ static void fetch_light()
 static void handle_sensor_bmi160(struct zjs_ipm_message *msg)
 {
     int freq;
-    uint32_t error_code = ERROR_IPM_NONE;
+    u32_t error_code = ERROR_IPM_NONE;
 
     switch (msg->type) {
     case TYPE_SENSOR_INIT:
@@ -919,8 +919,8 @@ static void handle_sensor_bmi160(struct zjs_ipm_message *msg)
 #ifdef BUILD_MODULE_SENSOR_LIGHT
 static void handle_sensor_light(struct zjs_ipm_message* msg)
 {
-    uint32_t pin;
-    uint32_t error_code = ERROR_IPM_NONE;
+    u32_t pin;
+    u32_t error_code = ERROR_IPM_NONE;
 
     switch (msg->type) {
     case TYPE_SENSOR_INIT:
@@ -999,7 +999,7 @@ static void handle_sensor(struct zjs_ipm_message *msg)
 #ifdef BUILD_MODULE_PME
 static void handle_pme(struct zjs_ipm_message* msg)
 {
-    uint32_t error_code = ERROR_IPM_NONE;
+    u32_t error_code = ERROR_IPM_NONE;
     neuron_data_t data;
 
     switch (msg->type) {
@@ -1324,8 +1324,8 @@ void main(void)
         }
 #endif
 #ifdef BUILD_MODULE_SENSOR
-        if (tick_count % (uint32_t)(CONFIG_SYS_CLOCK_TICKS_PER_SEC /
-                                    sensor_poll_freq) == 0) {
+        if (tick_count % (u32_t)(CONFIG_SYS_CLOCK_TICKS_PER_SEC /
+                                 sensor_poll_freq) == 0) {
             fetch_sensor();
 #ifdef BUILD_MODULE_SENSOR_LIGHT
             fetch_light();
