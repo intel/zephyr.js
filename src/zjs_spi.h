@@ -6,7 +6,7 @@
 #include "jerryscript.h"
 
 enum SPITopology {
-    ZJS_TOPOLOGY_FULL,
+    ZJS_TOPOLOGY_FULL_DUPLEX,
     ZJS_TOPOLOGY_SINGLE_READ,
     ZJS_TOPOLOGY_SINGLE_WRITE,
     ZJS_TOPOLOGY_MULTIPLEXED,
@@ -14,7 +14,6 @@ enum SPITopology {
 };
 
 enum direction {
-    ZJS_SPI_DIR_UNDEFINED,
     ZJS_SPI_DIR_READ,
     ZJS_SPI_DIR_WRITE,
     ZJS_SPI_DIR_READ_WRITE
