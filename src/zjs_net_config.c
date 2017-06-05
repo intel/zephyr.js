@@ -10,9 +10,9 @@
 #include "zjs_util.h"
 #include "zjs_net_config.h"
 
-static uint8_t net_enabled = 0;
+static u8_t net_enabled = 0;
 #if defined(CONFIG_NET_L2_BLUETOOTH)
-static uint8_t ble_enabled = 0;
+static u8_t ble_enabled = 0;
 #endif
 
 void zjs_net_config(void)
@@ -50,7 +50,7 @@ static bt_addr_le_t id_addr;
 static char default_ble[18] = ZJS_CONFIG_BLE_ADDRESS;
 #endif
 
-static ssize_t zjs_ble_storage_read(const bt_addr_le_t *addr, uint16_t key,
+static ssize_t zjs_ble_storage_read(const bt_addr_le_t *addr, u16_t key,
     void *data, size_t length)
 {
     if (addr) {
@@ -73,7 +73,7 @@ static ssize_t zjs_ble_storage_read(const bt_addr_le_t *addr, uint16_t key,
 static int str2bt_addr_le(const char *str, const char *type, bt_addr_le_t *addr)
 {
     int i;
-    uint8_t tmp;
+    u8_t tmp;
 
     if (strnlen(str, 18) != 17) {
         return -EINVAL;

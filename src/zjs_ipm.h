@@ -99,40 +99,40 @@ enum {
 #define TYPE_PME_END_RESTORE_MODE                          0x0055
 
 typedef struct zjs_ipm_message {
-    uint32_t id;
-    uint32_t type;
-    uint32_t flags;
+    u32_t id;
+    u32_t type;
+    u32_t flags;
     void *user_data;
-    uint32_t error_code;
+    u32_t error_code;
 
     union {
 #ifdef BUILD_MODULE_AIO
         struct aio_data {
-            uint32_t pin;
-            uint32_t value;
+            u32_t pin;
+            u32_t value;
         } aio;
 #endif // AIO
 
 #ifdef BUILD_MODULE_I2C
         struct i2c_data {
-            uint8_t bus;
-            uint8_t speed;
-            uint16_t address;
-            uint16_t register_addr;
-            uint8_t *data;
-            uint32_t length;
+            u8_t bus;
+            u8_t speed;
+            u16_t address;
+            u16_t register_addr;
+            u8_t *data;
+            u32_t length;
         } i2c;
 #endif // I2C
 
 #ifdef BUILD_MODULE_GROVE_LCD
         // GROVE_LCD
         struct glcd_data {
-            uint8_t value;
-            uint8_t col;
-            uint8_t row;
-            uint8_t color_r;
-            uint8_t color_g;
-            uint8_t color_b;
+            u8_t value;
+            u8_t col;
+            u8_t row;
+            u8_t color_r;
+            u8_t color_g;
+            u8_t color_b;
             void *buffer;
         } glcd;
 #endif // GROVE_LCD
@@ -141,8 +141,8 @@ typedef struct zjs_ipm_message {
         struct sensor_data {
             enum sensor_channel channel;
             char *controller;
-            uint32_t pin;
-            uint32_t frequency;
+            u32_t pin;
+            u32_t frequency;
             union sensor_reading {
                 // x y z axis for Accelerometer and Gyroscope
                 struct {
@@ -158,18 +158,18 @@ typedef struct zjs_ipm_message {
 
 #ifdef BUILD_MODULE_PME
         struct pme_data {
-            uint8_t c_mode;
-            uint8_t d_mode;
-            uint8_t vector[128];
-            uint8_t vector_size;
-            uint16_t category;
-            uint16_t committed_count;
-            uint16_t g_context;
-            uint16_t n_context;
-            uint16_t aif;
-            uint16_t min_if;
-            uint16_t max_if;
-            uint32_t neuron_id;
+            u8_t c_mode;
+            u8_t d_mode;
+            u8_t vector[128];
+            u8_t vector_size;
+            u16_t category;
+            u16_t committed_count;
+            u16_t g_context;
+            u16_t n_context;
+            u16_t aif;
+            u16_t min_if;
+            u16_t max_if;
+            u32_t neuron_id;
         } pme;
 #endif // PME
     } data;
@@ -177,9 +177,9 @@ typedef struct zjs_ipm_message {
 
 void zjs_ipm_init();
 
-int zjs_ipm_send(uint32_t id, zjs_ipm_message_t *data);
+int zjs_ipm_send(u32_t id, zjs_ipm_message_t *data);
 
-void zjs_ipm_register_callback(uint32_t msg_id, ipm_callback_t cb);
+void zjs_ipm_register_callback(u32_t msg_id, ipm_callback_t cb);
 
 void zjs_ipm_free_callbacks();
 

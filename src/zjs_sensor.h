@@ -21,7 +21,7 @@ typedef enum sensor_state {
 typedef struct sensor_controller {
     struct device *dev;
     char name[SENSOR_MAX_CONTROLLER_NAME_LEN+1];
-    uint32_t pin;
+    u32_t pin;
 } sensor_controller_t;
 
 typedef struct sensor_handle {
@@ -78,8 +78,8 @@ jerry_value_t zjs_sensor_create(const jerry_value_t func_obj,
                                 sensor_instance_t *instance,
                                 enum sensor_channel channel,
                                 const char *c_name,
-                                uint32_t pin,
-                                uint32_t max_frequency,
+                                u32_t pin,
+                                u32_t max_frequency,
                                 zjs_c_callback_func onchange,
                                 zjs_c_callback_func onstart,
                                 zjs_c_callback_func onstop);

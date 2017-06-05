@@ -30,15 +30,15 @@
 #define ZJS_BLE_TIMEOUT_TICKS                  5000
 
 typedef void (*ccc_cfg_changed_func)(const struct bt_gatt_attr *attr,
-                                     uint16_t value);
+                                     u16_t value);
 
 typedef struct ble_buffer_handle {
     zjs_callback_id id;
     jerry_value_t js_callback;
     const void *buffer;
-    uint16_t buffer_size;
-    uint16_t offset;
-    uint32_t error_code;
+    u16_t buffer_size;
+    u16_t offset;
+    u32_t error_code;
 } ble_buffer_handle_t;
 
 typedef struct ble_notify_handle {
@@ -100,7 +100,7 @@ static const jerry_object_native_info_t ble_type_info =
    .free_cb = free_handle_nop
 };
 
-struct bt_uuid *zjs_ble_new_uuid_16(uint16_t value) {
+struct bt_uuid *zjs_ble_new_uuid_16(u16_t value) {
     struct bt_uuid_16 *uuid = zjs_malloc(sizeof(struct bt_uuid_16));
     if (!uuid) {
         ERR_PRINT("out of memory allocating struct bt_uuid_16\n");
@@ -232,7 +232,7 @@ static ZJS_DECL_FUNC(zjs_ble_read_callback_function)
 
     ZJS_GET_HANDLE(function_obj, struct zjs_ble_characteristic, chrc, ble_type_info);
 
-    chrc->read_cb.error_code = (uint32_t)jerry_get_number_value(argv[0]);
+    chrc->read_cb.error_code = (u32_t)jerry_get_number_value(argv[0]);
 
     zjs_buffer_t *buf = zjs_buffer_find(argv[1]);
     if (buf) {
@@ -268,8 +268,8 @@ static void zjs_ble_read_c_callback(void *handle, const void *argv)
 // INTERRUPT SAFE FUNCTION: No JerryScript VM, allocs, or release prints!
 static ssize_t zjs_ble_read_attr_callback(struct bt_conn *conn,
                                           const struct bt_gatt_attr *attr,
-                                          void *buf, uint16_t len,
-                                          uint16_t offset)
+                                          void *buf, u16_t len,
+                                          u16_t offset)
 {
     if (offset > len) {
         return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
@@ -331,7 +331,7 @@ static ZJS_DECL_FUNC(zjs_ble_write_callback_function)
     ZJS_GET_HANDLE(function_obj, struct zjs_ble_characteristic, chrc, ble_type_info);
 
     // store the return value in the write_cb struct
-    chrc->write_cb.error_code = (uint32_t)jerry_get_number_value(argv[0]);
+    chrc->write_cb.error_code = (u32_t)jerry_get_number_value(argv[0]);
 
     // unblock fiber
     k_sem_give(&ble_sem);
@@ -377,8 +377,8 @@ static void zjs_ble_write_c_callback(void *handle, const void *argv)
 // INTERRUPT SAFE FUNCTION: No JerryScript VM, allocs, or release prints!
 static ssize_t zjs_ble_write_attr_callback(struct bt_conn *conn,
                                            const struct bt_gatt_attr *attr,
-                                           const void *buf, uint16_t len,
-                                           uint16_t offset, uint8_t flags)
+                                           const void *buf, u16_t len,
+                                           u16_t offset, u8_t flags)
 {
     ble_characteristic_t *chrc = attr->user_data;
 
@@ -491,7 +491,7 @@ static ble_characteristic_t *get_base_chrc(const struct bt_gatt_attr *attr)
 }
 
 // INTERRUPT SAFE FUNCTION: No JerryScript VM, allocs, or release prints!
-static void zjs_ble_blvl_ccc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
+static void zjs_ble_blvl_ccc_cfg_changed(const struct bt_gatt_attr *attr, u16_t value)
 {
     ble_characteristic_t *base_chrc = get_base_chrc(attr);
 
@@ -539,7 +539,7 @@ static void zjs_ble_disconnected_c_callback(void *handle, const void *argv)
 }
 
 // INTERRUPT SAFE FUNCTION: No JerryScript VM, allocs, or release prints!
-static void zjs_ble_connected(struct bt_conn *conn, uint8_t err)
+static void zjs_ble_connected(struct bt_conn *conn, u8_t err)
 {
     if (err) {
         ERR_PRINT("Connection failed (err %u)\n", err);
@@ -561,7 +561,7 @@ static void zjs_ble_connected(struct bt_conn *conn, uint8_t err)
 }
 
 // INTERRUPT SAFE FUNCTION: No JerryScript VM, allocs, or release prints!
-static void zjs_ble_disconnected(struct bt_conn *conn, uint8_t reason)
+static void zjs_ble_disconnected(struct bt_conn *conn, u8_t reason)
 {
     ble_connection_t *ble_conn = ble_handle->connections;
     while (ble_conn) {
@@ -654,9 +654,9 @@ const int ZJS_URL_TOO_LONG = 1;
 const int ZJS_ALLOC_FAILED = 2;
 const int ZJS_URL_SCHEME_ERROR = 3;
 
-static int zjs_encode_url_frame(jerry_value_t url, uint8_t **frame, int *size)
+static int zjs_encode_url_frame(jerry_value_t url, u8_t **frame, int *size)
 {
-    // requires: url is a URL string, frame points to a uint8_t *, url contains
+    // requires: url is a URL string, frame points to a u8_t *, url contains
     //             only UTF-8 characters and hence no nil values
     //  effects: allocates a new buffer that will fit an Eddystone URL frame
     //             with a compressed version of the given url; returns it in
@@ -709,7 +709,7 @@ static int zjs_encode_url_frame(jerry_value_t url, uint8_t **frame, int *size)
     if (len > 17)  // max URL length specified by Eddystone spec
         return ZJS_URL_TOO_LONG;
 
-    uint8_t *ptr = zjs_malloc(len + 5);
+    u8_t *ptr = zjs_malloc(len + 5);
     if (!ptr)
         return ZJS_ALLOC_FAILED;
 
@@ -753,7 +753,7 @@ static ZJS_DECL_FUNC(zjs_ble_start_advertising)
      * https://github.com/google/eddystone/blob/master/protocol-specification.md
      * https://github.com/google/eddystone/tree/master/eddystone-url
      */
-    uint8_t *url_frame = NULL;
+    u8_t *url_frame = NULL;
     int frame_size;
     if (argc >= 3) {
         if (zjs_encode_url_frame(argv[2], &url_frame, &frame_size)) {
@@ -763,7 +763,7 @@ static ZJS_DECL_FUNC(zjs_ble_start_advertising)
         }
     }
 
-    uint32_t arraylen = jerry_get_array_length(array);
+    u32_t arraylen = jerry_get_array_length(array);
     int records = arraylen;
     if (url_frame)
         records += 2;
@@ -772,7 +772,7 @@ static ZJS_DECL_FUNC(zjs_ble_start_advertising)
         return zjs_error("nothing to advertise");
     }
 
-    const uint8_t url_adv[] = {0xaa, 0xfe};
+    const u8_t url_adv[] = {0xaa, 0xfe};
 
     struct bt_data ad[records];
     int index = 0;
@@ -803,7 +803,7 @@ static ZJS_DECL_FUNC(zjs_ble_start_advertising)
             return zjs_error("unexpected uuid length");
         }
 
-        uint8_t bytes[2];
+        u8_t bytes[2];
         if (!zjs_hex_to_byte(ubuf + 2, &bytes[0]) ||
             !zjs_hex_to_byte(ubuf, &bytes[1])) {
             return zjs_error("invalid char in uuid");

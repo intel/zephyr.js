@@ -10,7 +10,7 @@
  *
  * @return          Shortest time until next expiring timer
  */
-int32_t zjs_timers_process_events();
+s32_t zjs_timers_process_events();
 void zjs_timers_init();
 // Stops and frees all timers
 void zjs_timers_cleanup();

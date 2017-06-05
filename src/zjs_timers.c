@@ -20,8 +20,8 @@
 typedef struct zjs_timer {
     zjs_port_timer_t timer;
     jerry_value_t *argv;
-    uint32_t argc;
-    uint32_t interval;
+    u32_t argc;
+    u32_t interval;
     zjs_callback_id callback_id;
     bool repeat;
     bool completed;
@@ -35,7 +35,7 @@ static const jerry_object_native_info_t timer_type_info =
    .free_cb = free_handle_nop
 };
 
-jerry_value_t *pre_timer(void *h, uint32_t *argc)
+jerry_value_t *pre_timer(void *h, u32_t *argc)
 {
     zjs_timer_t *handle = (zjs_timer_t *)h;
     *argc = handle->argc;
@@ -51,11 +51,11 @@ jerry_value_t *pre_timer(void *h, uint32_t *argc)
  * argv         Array of arguments to pass to timer callback function
  * argc         Number of arguments in argv
  */
-static zjs_timer_t *add_timer(uint32_t interval,
+static zjs_timer_t *add_timer(u32_t interval,
                               jerry_value_t callback,
                               jerry_value_t this,
                               bool repeat,
-                              uint32_t argc,
+                              u32_t argc,
                               const jerry_value_t argv[])
 {
     zjs_timer_t *tm = zjs_malloc(sizeof(zjs_timer_t));
@@ -105,7 +105,7 @@ static zjs_timer_t *add_timer(uint32_t interval,
  *
  * returns      True if the timer was removed successfully (if the ID is valid)
  */
-static bool delete_timer(int32_t id)
+static bool delete_timer(s32_t id)
 {
     zjs_timer_t *tm = ZJS_LIST_FIND(zjs_timer_t, zjs_timers, callback_id, id);
     if (tm) {
@@ -130,7 +130,7 @@ static ZJS_DECL_FUNC_ARGS(add_timer_helper, bool repeat)
     // args: callback, time in milliseconds[, pass-through args]
     ZJS_VALIDATE_ARGS(Z_FUNCTION, Z_NUMBER);
 
-    uint32_t interval = (uint32_t)(jerry_get_number_value(argv[1]));
+    u32_t interval = (u32_t)(jerry_get_number_value(argv[1]));
     jerry_value_t callback = argv[0];
     jerry_value_t timer_obj = jerry_create_object();
 
@@ -179,9 +179,9 @@ static ZJS_DECL_FUNC(native_clear_interval_handler)
     return ZJS_UNDEFINED;
 }
 
-int32_t zjs_timers_process_events()
+s32_t zjs_timers_process_events()
 {
-    int32_t wait = ZJS_TICKS_FOREVER;
+    s32_t wait = ZJS_TICKS_FOREVER;
 #ifdef DEBUG_BUILD
 #ifndef ZJS_LINUX_BUILD
     extern void update_print_timer(void);
@@ -208,7 +208,7 @@ int32_t zjs_timers_process_events()
             }
         }
 #ifndef ZJS_LINUX_BUILD
-        int32_t remaining = zjs_port_timer_get_remaining(&tm->timer);
+        s32_t remaining = zjs_port_timer_get_remaining(&tm->timer);
         if (remaining > 0 && !tm->completed) {
             wait = (wait < tm->interval) ? wait : tm->interval;
         }

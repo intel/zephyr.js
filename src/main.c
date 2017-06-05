@@ -52,12 +52,12 @@ const char script_jscode[] = {
 
 #ifdef ZJS_LINUX_BUILD
 // enabled if --noexit is passed to jslinux
-static uint8_t no_exit = 0;
+static u8_t no_exit = 0;
 // if > 0, jslinux will exit after this many milliseconds
-static uint32_t exit_after = 0;
+static u32_t exit_after = 0;
 static struct timespec exit_timer;
 
-uint8_t process_cmd_line(int argc, char *argv[])
+u8_t process_cmd_line(int argc, char *argv[])
 {
     int i;
     for (i = 0; i < argc; ++i) {
@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
     const char *script = NULL;
 #endif
     jerry_value_t code_eval;
-    uint32_t len;
+    u32_t len;
 #endif
 #ifndef ZJS_LINUX_BUILD
     zjs_loop_init();
@@ -192,7 +192,7 @@ int main(int argc, char *argv[])
     jerry_release_value(result);
 
 #ifdef ZJS_LINUX_BUILD
-    uint8_t last_serviced = 1;
+    u8_t last_serviced = 1;
 #endif
 #ifdef ZJS_ASHELL
     zjs_ashell_init();
@@ -201,8 +201,8 @@ int main(int argc, char *argv[])
 #ifdef ZJS_ASHELL
         zjs_ashell_process();
 #endif
-        int32_t wait_time = ZJS_TICKS_FOREVER;
-        uint8_t serviced = 0;
+        s32_t wait_time = ZJS_TICKS_FOREVER;
+        u8_t serviced = 0;
 
         // callback cannot return a wait time
         if (zjs_service_callbacks()) {
@@ -243,7 +243,7 @@ int main(int argc, char *argv[])
             // an exit timeout was passed in
             struct timespec now;
             clock_gettime(CLOCK_MONOTONIC, &now);
-            uint32_t elapsed = (1000 * (now.tv_sec - exit_timer.tv_sec)) +
+            u32_t elapsed = (1000 * (now.tv_sec - exit_timer.tv_sec)) +
                     ((now.tv_nsec / 1000000) - (exit_timer.tv_nsec / 1000000));
             if (elapsed >= exit_after) {
                 ZJS_PRINT("%u milliseconds have passed, exiting!\n",

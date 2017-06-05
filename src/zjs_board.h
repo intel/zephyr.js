@@ -18,12 +18,12 @@ typedef struct zjs_pin {
     const char *name;      // string name
     const char *altname;   // alternate name, e.g. number as string
     const char *altname2;  // second alternate name, e.g. PWM channel
-    uint8_t device;
-    uint8_t gpio;
+    u8_t device;
+    u8_t gpio;
 #if defined(CONFIG_BOARD_ARDUINO_101) || defined(ZJS_LINUX_BUILD)
-    uint8_t gpio_ss;
+    u8_t gpio_ss;
 #endif
-    uint8_t pwm;
+    u8_t pwm;
 } zjs_pin_t;
 
 // return codes from zjs_board_find_pin

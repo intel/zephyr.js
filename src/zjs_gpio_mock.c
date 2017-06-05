@@ -4,6 +4,7 @@
 #include "gpio.h"
 #endif
 
+#include "zjs_common.h"
 #include "zjs_board.h"
 #include "zjs_gpio.h"
 #include "zjs_util.h"
@@ -93,7 +94,7 @@ static jerry_value_t push_array(jerry_value_t array, jerry_value_t val)
         new = jerry_create_array(1);
         jerry_set_property_by_index(new, 0, val);
     } else {
-        uint32_t size = jerry_get_array_length(array);
+        u32_t size = jerry_get_array_length(array);
         new = jerry_create_array(size + 1);
         for (int i = 0; i < size; i++) {
             ZVAL v = jerry_get_property_by_index(array, i);
@@ -166,7 +167,7 @@ DEVICE mock_gpio_device_get_binding(const char *name)
     return rval;
 }
 
-int mock_gpio_pin_read(DEVICE port, uint32_t pin, uint32_t *value)
+int mock_gpio_pin_read(DEVICE port, u32_t pin, u32_t *value)
 {
     if (!find_property_with_value(mock_root_obj, port)) {
         ERR_PRINT("invalid port object\n");
@@ -191,8 +192,8 @@ int mock_gpio_pin_read(DEVICE port, uint32_t pin, uint32_t *value)
     // check for a pin this is wired to
     ZVAL wired = zjs_get_property(pin_obj, "wired");
     if (jerry_value_is_array(wired)) {
-        uint32_t len = jerry_get_array_length(wired);
-        for (uint32_t i = 0; i < len; ++i) {
+        u32_t len = jerry_get_array_length(wired);
+        for (u32_t i = 0; i < len; ++i) {
             ZVAL pin = jerry_get_property_by_index(wired, i);
             if (zjs_obj_get_boolean(pin, "state", &flag)) {
                 *value = flag ? 1 : 0;
@@ -212,14 +213,14 @@ typedef struct mock_cb_item {
     struct mock_cb_item *next;
     struct gpio_callback *callback;
     gpio_callback_handler_t handler;
-    uint32_t pin_mask;
-    uint32_t enabled_mask;
+    u32_t pin_mask;
+    u32_t enabled_mask;
     jerry_value_t port;
 } mock_cb_item_t;
 
 mock_cb_item_t *mock_cb_list = NULL;
 
-int mock_gpio_pin_write(DEVICE port, uint32_t pin, uint32_t value)
+int mock_gpio_pin_write(DEVICE port, u32_t pin, u32_t value)
 {
     if (!find_property_with_value(mock_root_obj, port)) {
         ERR_PRINT("invalid port object\n");
@@ -232,7 +233,7 @@ int mock_gpio_pin_write(DEVICE port, uint32_t pin, uint32_t value)
         return -1;
     }
 
-    uint32_t flags;
+    u32_t flags;
     if (!zjs_obj_get_uint32(pin_obj, "flags", &flags) ||
         !(flags & GPIO_DIR_OUT)) {
         // attempted write to an input; just do nothing
@@ -250,15 +251,15 @@ int mock_gpio_pin_write(DEVICE port, uint32_t pin, uint32_t value)
         ZVAL wired = zjs_get_property(pin_obj, "wired");
         if (jerry_value_is_array(wired)) {
             // trigger edges on change
-            uint32_t len = jerry_get_array_length(wired);
-            for (uint32_t i = 0; i < len; ++i) {
+            u32_t len = jerry_get_array_length(wired);
+            for (u32_t i = 0; i < len; ++i) {
                 ZVAL connection = jerry_get_property_by_index(wired, i);
-                uint32_t conn_pin = 0;
+                u32_t conn_pin = 0;
                 zjs_obj_get_uint32(connection, "pin", &conn_pin);
 
                 if (zjs_obj_get_uint32(connection, "flags", &flags)) {
                     // make sure it has interrupt and edge-triggering enabled
-                    uint32_t expect = GPIO_INT | GPIO_INT_EDGE;
+                    u32_t expect = GPIO_INT | GPIO_INT_EDGE;
                     if ((flags & expect) != expect) {
                         continue;
                     }
@@ -286,7 +287,7 @@ int mock_gpio_pin_write(DEVICE port, uint32_t pin, uint32_t value)
     return 0;
 }
 
-int mock_gpio_pin_configure(DEVICE port, uint8_t pin, int flags)
+int mock_gpio_pin_configure(DEVICE port, u8_t pin, int flags)
 {
     if (!find_property_with_value(mock_root_obj, port)) {
         ERR_PRINT("invalid port object\n");
@@ -303,7 +304,7 @@ int mock_gpio_pin_configure(DEVICE port, uint8_t pin, int flags)
 
 void mock_gpio_init_callback(struct gpio_callback *callback,
                              gpio_callback_handler_t handler,
-                             uint32_t pin_mask)
+                             u32_t pin_mask)
 {
     mock_cb_item_t *item = (mock_cb_item_t *)malloc(sizeof(mock_cb_item_t));
     if (item) {
@@ -356,7 +357,7 @@ int mock_gpio_remove_callback(DEVICE port, struct gpio_callback *callback)
     return 0;
 }
 
-int mock_gpio_pin_enable_callback(DEVICE port, uint32_t pin)
+int mock_gpio_pin_enable_callback(DEVICE port, u32_t pin)
 {
     if (!find_property_with_value(mock_root_obj, port)) {
         ERR_PRINT("invalid port object\n");
@@ -372,7 +373,7 @@ int mock_gpio_pin_enable_callback(DEVICE port, uint32_t pin)
     mock_cb_item_t *item = mock_cb_list;
     while (item) {
         if (item->port == port) {
-            uint32_t bit = BIT(pin);
+            u32_t bit = BIT(pin);
             if (bit & item->pin_mask) {
                 item->enabled_mask |= bit;
                 jerry_set_object_native_pointer(pin_obj,

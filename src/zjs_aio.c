@@ -51,7 +51,7 @@ static const jerry_object_native_info_t aio_type_info =
    .free_cb = zjs_aio_free_cb
 };
 
-static bool zjs_aio_ipm_send_async(uint32_t type, uint32_t pin, void *data) {
+static bool zjs_aio_ipm_send_async(u32_t type, u32_t pin, void *data) {
     zjs_ipm_message_t msg;
     msg.id = MSG_ID_AIO;
     msg.flags = 0;
@@ -110,12 +110,12 @@ static jerry_value_t zjs_aio_call_remote_function(zjs_ipm_message_t *send)
         return zjs_error_context("error received", 0, 0);
     }
 
-    uint32_t value = reply.data.aio.value;
+    u32_t value = reply.data.aio.value;
     return jerry_create_number(value);
 }
 
 // INTERRUPT SAFE FUNCTION: No JerryScript VM, allocs, or likely prints!
-static void ipm_msg_receive_callback(void *context, uint32_t id,
+static void ipm_msg_receive_callback(void *context, u32_t id,
                                      volatile void *data)
 {
     if (id != MSG_ID_AIO)
@@ -134,9 +134,9 @@ static void ipm_msg_receive_callback(void *context, uint32_t id,
     } else {
         // asynchronous ipm
         aio_handle_t *handle = (aio_handle_t *)msg->user_data;
-        uint32_t pin_value = msg->data.aio.value;
+        u32_t pin_value = msg->data.aio.value;
 #ifdef DEBUG_BUILD
-        uint32_t pin = msg->data.aio.pin;
+        u32_t pin = msg->data.aio.pin;
 #endif
 
         switch(msg->type) {
@@ -162,7 +162,7 @@ static void ipm_msg_receive_callback(void *context, uint32_t id,
 
 static ZJS_DECL_FUNC(zjs_aio_pin_read)
 {
-    uint32_t pin;
+    u32_t pin;
     zjs_obj_get_uint32(this, "pin", &pin);
 
     if (pin < ARC_AIO_MIN || pin > ARC_AIO_MAX) {
@@ -181,7 +181,7 @@ static ZJS_DECL_FUNC(zjs_aio_pin_read)
 
 static ZJS_DECL_FUNC(zjs_aio_pin_close)
 {
-    uint32_t pin;
+    u32_t pin;
     zjs_obj_get_uint32(this, "pin", &pin);
 
     aio_handle_t *handle;
@@ -203,7 +203,7 @@ static ZJS_DECL_FUNC(zjs_aio_pin_on)
     // args: event name, callback
     ZJS_VALIDATE_ARGS(Z_STRING, Z_FUNCTION Z_NULL);
 
-    uint32_t pin;
+    u32_t pin;
     zjs_obj_get_uint32(this, "pin", &pin);
 
     jerry_size_t size = MAX_TYPE_LEN;
@@ -252,7 +252,7 @@ static ZJS_DECL_FUNC(zjs_aio_pin_read_async)
     // args: callback
     ZJS_VALIDATE_ARGS(Z_FUNCTION);
 
-    uint32_t pin;
+    u32_t pin;
     zjs_obj_get_uint32(this, "pin", &pin);
 
     aio_handle_t *handle = zjs_aio_alloc_handle();
@@ -280,7 +280,7 @@ static ZJS_DECL_FUNC(zjs_aio_open)
 
     jerry_value_t data = argv[0];
 
-    uint32_t pin;
+    u32_t pin;
     if (!zjs_obj_get_uint32(data, "pin", &pin))
         return zjs_error("missing required field (pin)");
 

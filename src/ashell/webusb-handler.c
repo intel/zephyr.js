@@ -12,7 +12,7 @@
 #include "webusb-handler.h"
 
 /* WebUSB Platform Capability Descriptor */
-static const uint8_t webusb_bos_descriptor[] = {
+static const u8_t webusb_bos_descriptor[] = {
     /* Binary Object Store descriptor */
     0x05, 0x0F, 0x39, 0x00, 0x02,
 
@@ -43,7 +43,7 @@ static const uint8_t webusb_bos_descriptor[] = {
 };
 
 /* Microsoft OS 2.0 Descriptor Set */
-static const uint8_t ms_os_20_descriptor_set[] = {
+static const u8_t ms_os_20_descriptor_set[] = {
     0x0A, 0x00,  // wLength
     0x00, 0x00,  // MS OS 2.0 descriptor set header
     0x00, 0x00, 0x03, 0x06,  // Windows 8.1
@@ -91,7 +91,7 @@ static const uint8_t ms_os_20_descriptor_set[] = {
 };
 
 /* WebUSB Device Requests */
-static const uint8_t webusb_allowed_origins[] = {
+static const u8_t webusb_allowed_origins[] = {
     /* Allowed Origins Header:
      * https://wicg.github.io/webusb/#get-allowed-origins
      */
@@ -115,7 +115,7 @@ static const uint8_t webusb_allowed_origins[] = {
 #define MS_OS_20_REQUEST_DESCRIPTOR 0x07
 
 /* URL Descriptor: https://wicg.github.io/webusb/#url-descriptor */
-static const uint8_t webusb_origin_url_1[] = {
+static const u8_t webusb_origin_url_1[] = {
     0x1F,  // Length
     0x03,  // URL descriptor
     0x01,  // Scheme https://
@@ -125,7 +125,7 @@ static const uint8_t webusb_origin_url_1[] = {
 };
 
 /* URL Descriptor: https://wicg.github.io/webusb/#url-descriptor */
-const uint8_t webusb_origin_url_2[] = {
+const u8_t webusb_origin_url_2[] = {
     0x11,  // Length
     0x03,  // URL descriptor
     0x00,  // Scheme http://
@@ -143,11 +143,11 @@ const uint8_t webusb_origin_url_2[] = {
  *
  * @return  0 on success, negative errno code on fail
  */
-int webusb_custom_handler(struct usb_setup_packet *pSetup, int32_t *len,
-                          uint8_t **data)
+int webusb_custom_handler(struct usb_setup_packet *pSetup, s32_t *len,
+                          u8_t **data)
 {
     if (GET_DESC_TYPE(pSetup->wValue) == DESCRIPTOR_TYPE_BOS) {
-        *data = (uint8_t *)(&webusb_bos_descriptor);
+        *data = (u8_t *)(&webusb_bos_descriptor);
         *len = sizeof(webusb_bos_descriptor);
 
         return 0;
@@ -165,35 +165,35 @@ int webusb_custom_handler(struct usb_setup_packet *pSetup, int32_t *len,
  *
  * @return  0 on success, negative errno code on fail.
  */
-int webusb_vendor_handler(struct usb_setup_packet *pSetup, int32_t *len,
-                          uint8_t **data)
+int webusb_vendor_handler(struct usb_setup_packet *pSetup, s32_t *len,
+                          u8_t **data)
 {
     /* Get Allowed origins request */
     if (pSetup->bRequest == 0x01 && pSetup->wIndex == 0x01) {
-        *data = (uint8_t *)(&webusb_allowed_origins);
+        *data = (u8_t *)(&webusb_allowed_origins);
         *len = sizeof(webusb_allowed_origins);
 
         return 0;
     } else if (pSetup->bRequest == 0x01 && pSetup->wIndex == 0x02) {
         /* Get URL request */
-        uint8_t index = GET_DESC_INDEX(pSetup->wValue);
+        u8_t index = GET_DESC_INDEX(pSetup->wValue);
 
         if (index == 0 || index > NUMBER_OF_ALLOWED_ORIGINS)
             return -ENOTSUP;
 
         if (index == 1) {
-            *data = (uint8_t *)(&webusb_origin_url_1);
+            *data = (u8_t *)(&webusb_origin_url_1);
             *len = sizeof(webusb_origin_url_1);
             return 0;
         } else if (index == 2) {
-            *data = (uint8_t *)(&webusb_origin_url_2);
+            *data = (u8_t *)(&webusb_origin_url_2);
             *len = sizeof(webusb_origin_url_2);
             return 0;
         }
     } else if (pSetup->bRequest == 0x02 &&
         pSetup->wIndex == MS_OS_20_REQUEST_DESCRIPTOR) {
 
-        *data = (uint8_t *)(ms_os_20_descriptor_set);
+        *data = (u8_t *)(ms_os_20_descriptor_set);
         *len = sizeof(ms_os_20_descriptor_set);
         return 0;
     }

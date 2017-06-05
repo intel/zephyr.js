@@ -58,7 +58,7 @@ typedef struct server_handle {
     struct net_context *tcp_sock;
     jerry_value_t accept_handler;
     jerry_value_t server;
-    uint16_t max_payload;
+    u16_t max_payload;
     bool track;
 } server_handle_t;
 
@@ -66,9 +66,9 @@ typedef struct server_handle {
 typedef struct ws_connection {
     struct net_context *tcp_sock;
     server_handle_t *server_handle;
-    uint8_t *rbuf;
-    uint8_t *wptr;
-    uint8_t *rptr;
+    u8_t *rbuf;
+    u8_t *wptr;
+    u8_t *rptr;
     struct ws_connection *next;
     char *accept_key;
     jerry_value_t server;
@@ -80,16 +80,16 @@ typedef struct ws_connection {
 
 // structure to hold a decoded WS packet
 typedef struct ws_packet {
-    uint8_t *payload;
-    uint32_t payload_len;
-    uint32_t payload_offset;
-    uint8_t mask[4];
-    uint8_t fin;
-    uint8_t rsv1;
-    uint8_t rsv2;
-    uint8_t rsv3;
-    uint8_t opcode;
-    uint8_t mask_bit;
+    u8_t *payload;
+    u32_t payload_len;
+    u32_t payload_offset;
+    u8_t mask[4];
+    u8_t fin;
+    u8_t rsv1;
+    u8_t rsv2;
+    u8_t rsv3;
+    u8_t opcode;
+    u8_t mask_bit;
 } ws_packet_t;
 
 static const jerry_object_native_info_t ws_type_info =
@@ -135,7 +135,7 @@ static jerry_value_t push_array(jerry_value_t array, jerry_value_t val)
         jerry_set_property_by_index(new, 0, val);
         return new;
     } else {
-        uint32_t size = jerry_get_array_length(array);
+        u32_t size = jerry_get_array_length(array);
         jerry_value_t new = jerry_create_array(size + 1);
         for (int i = 0; i < size; i++) {
             ZVAL v = jerry_get_property_by_index(array, i);
@@ -146,7 +146,7 @@ static jerry_value_t push_array(jerry_value_t array, jerry_value_t val)
     }
 }
 
-static void tcp_send(struct net_context *context, void *data, uint32_t len)
+static void tcp_send(struct net_context *context, void *data, u32_t len)
 {
     struct net_pkt *send_pkt;
     send_pkt = net_pkt_get_tx(context, K_NO_WAIT);
@@ -175,9 +175,9 @@ static void tcp_send(struct net_context *context, void *data, uint32_t len)
 }
 
 // generate an accept key given an input key
-static void generate_key(char *key, uint32_t len, char *output, uint32_t olen)
+static void generate_key(char *key, u32_t len, char *output, u32_t olen)
 {
-    uint32_t concat_size = strlen(key) + strlen(magic) + 1;
+    u32_t concat_size = strlen(key) + strlen(magic) + 1;
     char *concat = zjs_malloc(concat_size);
     if (!concat) {
         ERR_PRINT("could not allocate key\n");
@@ -214,19 +214,19 @@ static void dump_packet(ws_packet_t *packet)
 }
 
 // dump an array of bytes, formatted (hex on left, ascii on right)
-static void dump_bytes(const char *tag, uint8_t *data, uint32_t len)
+static void dump_bytes(const char *tag, u8_t *data, u32_t len)
 {
     if (tag) {
         ZJS_PRINT("%s:\n", tag);
     } else {
         ZJS_PRINT("DUMP_BYTES:\n");
     }
-    uint8_t offset = 43;
+    u8_t offset = 43;
     char line[81];
     memset(line, ' ', sizeof(line));
     line[80] = '\0';
-    uint8_t idx = 0;
-    uint32_t i = 0;
+    u8_t idx = 0;
+    u32_t i = 0;
     while (i < len) {
         sprintf(line + (idx*3), "%02x ", data[i]);
         line[(idx*3) + 3] = ' ';
@@ -249,19 +249,19 @@ static void dump_bytes(const char *tag, uint8_t *data, uint32_t len)
 
 // encode data into a WS packet.
 static int encode_packet(ws_packet_type type,
-                         uint8_t mask,
+                         u8_t mask,
                          void *payload,
-                         uint16_t len,
-                         uint8_t *out)
+                         u16_t len,
+                         u8_t *out)
 {
-    uint8_t mask_offset = 2;
-    uint8_t byte1 = 0;
+    u8_t mask_offset = 2;
+    u8_t byte1 = 0;
     // FIN bit
     byte1 |= (1 << 7);
     // rsv[1-3] are unused
     // opcode is the bottom 4 bits of the first byte
     byte1 |= (type & 0xf);
-    uint8_t byte2 = 0;
+    u8_t byte2 = 0;
     if (len <= 125) {
         // use encoded byte for length
         byte2 |= ((mask & 0x1) << 7);
@@ -278,8 +278,8 @@ static int encode_packet(ws_packet_type type,
     out[1] = byte2;
     if (mask) {
         // data should be masked
-        uint32_t m = sys_rand32_get();
-        uint8_t mask_arr[4];
+        u32_t m = sys_rand32_get();
+        u8_t mask_arr[4];
         // a uint8 array makes things easier for encoding
         memcpy(&mask_arr, &m, 4);
         // copy random mask to out buffer
@@ -288,7 +288,7 @@ static int encode_packet(ws_packet_type type,
         int j = 0;
         for (i = mask_offset + 4; i < len + mask_offset + 4; i++) {
             // mask each byte and copy to out buffer
-            out[j + mask_offset + 4] = ((uint8_t*)payload)[j] ^ mask_arr[j % 4];
+            out[j + mask_offset + 4] = ((u8_t *)payload)[j] ^ mask_arr[j % 4];
             j++;
         }
         return mask_offset + 4 + len;
@@ -301,11 +301,11 @@ static int encode_packet(ws_packet_type type,
 
 // decode WS TCP data into a ws_packet_t type
 // Note: packet->payload must be freed after use
-static int decode_packet(ws_packet_t *packet, uint8_t *data, uint32_t len)
+static int decode_packet(ws_packet_t *packet, u8_t *data, u32_t len)
 {
-    uint32_t mask_offset = 2;
-    uint8_t byte1 = data[0];
-    uint8_t byte2 = data[1];
+    u32_t mask_offset = 2;
+    u8_t byte1 = data[0];
+    u8_t byte2 = data[1];
     packet->fin = (byte1 & 0x1);            // FIN      bytes: 0 bits: 0
     packet->rsv1 = (byte1 & 0x2);           // RSV1     bytes: 0 bits: 1
     packet->rsv2 = (byte1 & 0x4);           // RSV2     bytes: 0 bits: 2
@@ -318,8 +318,8 @@ static int decode_packet(ws_packet_t *packet, uint8_t *data, uint32_t len)
         packet->payload_offset = 6;
     } else if (packet->payload_len == 126) {
         // payload length is greater than 125 bytes
-        uint8_t byte3 = data[2];            // PAY LEN  bytes: 2-3  bits: all
-        uint8_t byte4 = data[3];
+        u8_t byte3 = data[2];            // PAY LEN  bytes: 2-3  bits: all
+        u8_t byte4 = data[3];
         // decode payload length
         packet->payload_len = (byte3 << 8) | byte4;
         packet->payload_offset = 8;
@@ -357,10 +357,10 @@ static int decode_packet(ws_packet_t *packet, uint8_t *data, uint32_t len)
 static void trigger_data(void *h, const void *args)
 {
     ws_connection_t *con = (ws_connection_t *)h;
-    uint32_t len_encode = *((uint32_t*)args);
+    u32_t len_encode = *((u32_t *)args);
     // decode length and opcode from void* handle
-    uint16_t len = (len_encode & 0xffff);
-    uint16_t opcode = ((len_encode & 0xffff0000) >> 16);
+    u16_t len = (len_encode & 0xffff);
+    u16_t opcode = ((len_encode & 0xffff0000) >> 16);
     zjs_buffer_t *zbuf;
     ZVAL data_buf = zjs_buffer_create(len, &zbuf);
     // copy data from read buffer
@@ -429,7 +429,7 @@ static void close_connection(ws_connection_t *con)
 }
 
 // process a TCP WS packet
-static void process_packet(ws_connection_t *con, uint8_t *data, uint32_t len)
+static void process_packet(ws_connection_t *con, u8_t *data, u32_t len)
 {
     ws_packet_t *packet = zjs_malloc(sizeof(ws_packet_t));
     if (!packet) {
@@ -453,7 +453,7 @@ static void process_packet(ws_connection_t *con, uint8_t *data, uint32_t len)
         return;
     }
 
-    uint32_t len_encode = 0;
+    u32_t len_encode = 0;
     // encode packet length and packet type in the void* handle
     len_encode |= packet->payload_len;
     len_encode |= (packet->opcode << 16);
@@ -485,8 +485,8 @@ static ZJS_DECL_FUNC_ARGS(ws_send_data, ws_packet_type type)
        (buf->bufsize > con->server_handle->max_payload)) {
         return zjs_error("payload too large");
     }
-    uint8_t out[buf->bufsize + 10];
-    uint32_t out_len = encode_packet(type, mask, buf->buffer, buf->bufsize, out);
+    u8_t out[buf->bufsize + 10];
+    u32_t out_len = encode_packet(type, mask, buf->buffer, buf->bufsize, out);
 #ifdef DEBUG_BUILD
     dump_bytes("SEND DATA", out, out_len);
 #endif
@@ -542,8 +542,8 @@ static void tcp_received(struct net_context *context,
                          void *user_data)
 {
     ws_connection_t *con = (ws_connection_t *)user_data;
-    uint32_t len = net_pkt_appdatalen(pkt);
-    uint8_t *buffer = net_pkt_appdata(pkt);
+    u32_t len = net_pkt_appdatalen(pkt);
+    u8_t *buffer = net_pkt_appdata(pkt);
 
     DBG_PRINT("data recieved on context %p: data=%p, len=%u\n", con->tcp_sock,
               buffer, len);
@@ -565,11 +565,11 @@ static void tcp_received(struct net_context *context,
 
     if (len && buffer) {
         struct net_buf *tmp = pkt->frags;
-        uint32_t header_len = net_pkt_appdata(pkt) - tmp->data;
+        u32_t header_len = net_pkt_appdata(pkt) - tmp->data;
         // move past IP header
         net_buf_pull(tmp, header_len);
 
-        uint8_t *data = zjs_malloc(len);
+        u8_t *data = zjs_malloc(len);
         if (!data) {
             ERR_PRINT("not enough memory to allocate data\n");
             ZVAL_MUTABLE error = zjs_error_context("out of memory", 0, 0);
@@ -578,7 +578,7 @@ static void tcp_received(struct net_context *context,
             net_pkt_unref(pkt);
             return;
         }
-        uint8_t *wptr = data;
+        u8_t *wptr = data;
         while (tmp) {
             memcpy(wptr, tmp->data, tmp->len);
             wptr += tmp->len;
@@ -718,7 +718,7 @@ static void post_accept_handler(void *handle, jerry_value_t ret_val)
         tcp_send(con->tcp_sock, send_data, strlen(send_data));
         return;
     }
-    uint32_t size = 32;
+    u32_t size = 32;
     char proto[size];
     zjs_copy_jstring(ret_val, proto, &size);
     if (!size) {
@@ -727,9 +727,9 @@ static void post_accept_handler(void *handle, jerry_value_t ret_val)
     }
 
     // create the accept response
-    uint32_t sdata_size = strlen(accept_header) +
-                          strlen(con->accept_key) +
-                          strlen(proto) + 32;
+    u32_t sdata_size = strlen(accept_header) +
+                       strlen(con->accept_key) +
+                       strlen(proto) + 32;
     char *send_data = zjs_malloc(sdata_size);
     if (!send_data) {
         ERR_PRINT("could not allocate accept message\n");
@@ -853,7 +853,7 @@ static ZJS_DECL_FUNC(ws_server)
     }
 
     handle->server = server;
-    handle->max_payload = (uint16_t)max_payload;
+    handle->max_payload = (u16_t)max_payload;
 
     zjs_make_event(server, ZJS_UNDEFINED);
 

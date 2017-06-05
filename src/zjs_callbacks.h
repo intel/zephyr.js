@@ -5,7 +5,7 @@
 
 #include "jerryscript.h"
 
-typedef int16_t zjs_callback_id;
+typedef s16_t zjs_callback_id;
 
 /*
  * Function that will be called AFTER the JS function is called.
@@ -95,7 +95,7 @@ void zjs_remove_all_callbacks(void);
 
 void signal_callback_priv(zjs_callback_id id,
                           const void *args,
-                          uint32_t size
+                          u32_t size
 #ifdef DEBUG_BUILD
                           , const char *file,
                           const char *func);
@@ -137,7 +137,7 @@ zjs_callback_id add_callback_priv(jerry_value_t js_func,
                                   jerry_value_t this,
                                   void *handle,
                                   zjs_post_callback_func post,
-                                  uint8_t once
+                                  u8_t once
 #ifdef DEBUG_BUILD
                                   , const char *file,
                                   const char *func);
@@ -230,7 +230,7 @@ zjs_callback_id zjs_add_c_callback(void *handle, zjs_c_callback_func callback);
  * @param data          Callback arguments
  * @param sz            Size of callback arguments in bytes
  */
-void zjs_call_callback(zjs_callback_id id, const void *data, uint32_t sz);
+void zjs_call_callback(zjs_callback_id id, const void *data, u32_t sz);
 
 /*
  * Service the callback module. Any callback's that have been signaled will
@@ -239,6 +239,6 @@ void zjs_call_callback(zjs_callback_id id, const void *data, uint32_t sz);
  * @return              1 if any callbacks were processed
  *                      0 if no callbacks were processed
  */
-uint8_t zjs_service_callbacks(void);
+u8_t zjs_service_callbacks(void);
 
 #endif /* SRC_ZJS_CALLBACKS_H_ */

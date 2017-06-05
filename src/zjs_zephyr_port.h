@@ -16,10 +16,10 @@
 #define ZJS_TICKS_FOREVER               K_FOREVER
 #define zjs_sleep                       k_sleep
 
-#define zjs_port_ring_buf ring_buf
-#define zjs_port_ring_buf_init sys_ring_buf_init
-#define zjs_port_ring_buf_get sys_ring_buf_get
-#define zjs_port_ring_buf_put sys_ring_buf_put
+#define zjs_port_ring_buf               ring_buf
+#define zjs_port_ring_buf_init          sys_ring_buf_init
+#define zjs_port_ring_buf_get           sys_ring_buf_get
+#define zjs_port_ring_buf_put           sys_ring_buf_put
 
 #define zjs_port_sem_init               k_sem_init
 #define zjs_port_sem_take               k_sem_take

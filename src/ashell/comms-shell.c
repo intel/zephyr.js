@@ -5,7 +5,7 @@
  * @brief Shell to keep the different states of the machine
  */
 
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
@@ -50,7 +50,7 @@ const char *comms_get_prompt()
 
 static ashell_line_parser_t app_line_cb = NULL;
 static char *shell_line = NULL;
-static uint8_t tail = 0;
+static u8_t tail = 0;
 static bool ashell_is_done = false;
 static bool echo_mode = true;
 
@@ -76,7 +76,7 @@ static inline void cursor_restore(void)
     comms_print("\x1b[u");
 }
 
-static void insert_char(char *pos, char c, uint8_t end)
+static void insert_char(char *pos, char c, u8_t end)
 {
     char tmp;
 
@@ -101,7 +101,7 @@ static void insert_char(char *pos, char c, uint8_t end)
     cursor_restore();
 }
 
-static void del_char(char *pos, uint8_t end)
+static void del_char(char *pos, u8_t end)
 {
     comms_write_buf("\b", 1);
 
@@ -135,9 +135,9 @@ enum
 
 static atomic_t esc_state;
 static unsigned int ansi_val, ansi_val_2;
-static uint8_t cur, end;
+static u8_t cur, end;
 
-static void handle_ansi(uint8_t byte)
+static void handle_ansi(u8_t byte)
 {
     if (atomic_test_and_clear_bit(&esc_state, ESC_ANSI_FIRST)) {
         if (!isdigit(byte)) {
@@ -207,12 +207,12 @@ ansi_cmd:
  * @return Returns the number of arguments on the string
  */
 
-uint32_t ashell_get_argc(const char *str, uint32_t nsize)
+u32_t ashell_get_argc(const char *str, u32_t nsize)
 {
     if (str == NULL || nsize == 0 || *str == '\0')
         return 0;
 
-    uint32_t size = 1;
+    u32_t size = 1;
     bool div = false;
 
     /* Skip the first spaces */
@@ -246,7 +246,7 @@ uint32_t ashell_get_argc(const char *str, uint32_t nsize)
  * @return 0      Pointer to where this argument finishes
  */
 
-const char *ashell_get_next_arg(const char *str, uint32_t nsize, char *str_arg, uint32_t *length)
+const char *ashell_get_next_arg(const char *str, u32_t nsize, char *str_arg, u32_t *length)
 {
     *length = 0;
     if (nsize == 0 || str == NULL || *str == '\0') {
@@ -281,7 +281,7 @@ const char *ashell_get_next_arg(const char *str, uint32_t nsize, char *str_arg, 
 * @return 0 Pointer to where this argument finishes
 */
 
-const char *ashell_get_next_arg_s(const char *str, uint32_t nsize, char *str_arg, const uint32_t max_arg_size, uint32_t *length)
+const char *ashell_get_next_arg_s(const char *str, u32_t nsize, char *str_arg, const u32_t max_arg_size, u32_t *length)
 {
     /* Check size and allocate for string termination */
     if (nsize >= max_arg_size) {
@@ -383,13 +383,13 @@ char *ashell_get_token_arg(char *str)
     return ashell_skip_spaces(str);
 }
 
-uint32_t ashell_process_init()
+u32_t ashell_process_init()
 {
     DBG("[SHELL] Init\n");
     return 0;
 }
 
-void ashell_process_line(const char *buf, uint32_t len)
+void ashell_process_line(const char *buf, u32_t len)
 {
 #ifdef CONFIG_SHELL_UPLOADER_DEBUG
     printk("%s", buf);
@@ -400,11 +400,11 @@ void ashell_process_line(const char *buf, uint32_t len)
     comms_print(comms_get_prompt());
 }
 
-uint32_t ashell_process_data(const char *buf, uint32_t len)
+u32_t ashell_process_data(const char *buf, u32_t len)
 {
-    uint32_t processed = 0;
+    u32_t processed = 0;
     // printed Is used to make sure we don't re-print characters
-    uint8_t printed = cur;
+    u8_t printed = cur;
     bool flush_line = false;
     if (shell_line == NULL) {
         DBG("[Process]%d\n", (int)len);
@@ -421,7 +421,7 @@ uint32_t ashell_process_data(const char *buf, uint32_t len)
 
     while (len-- > 0) {
         processed++;
-        uint8_t byte = *buf++;
+        u8_t byte = *buf++;
 
         if (tail == MAX_LINE) {
             DBG("Line size exceeded \n");
@@ -488,8 +488,8 @@ uint32_t ashell_process_data(const char *buf, uint32_t len)
                 comms_write_buf("\r\n", 2);
             }
 
-            uint32_t length = strnlen(shell_line, MAX_LINE);
-            int32_t ret = 0;
+            u32_t length = strnlen(shell_line, MAX_LINE);
+            s32_t ret = 0;
             if (app_line_cb != NULL)
                 ret = app_line_cb(shell_line, length);
 
@@ -539,7 +539,7 @@ bool comms_get_echo_mode()
     return echo_mode;
 }
 
-uint32_t ashell_process_finish()
+u32_t ashell_process_finish()
 {
     DBG("[SHELL CLOSE]\n");
     ihex_process_start();
@@ -591,8 +591,8 @@ void ashell_process_start()
 struct shell_tests
 {
     char *str;
-    uint32_t size;
-    uint32_t result;
+    u32_t size;
+    u32_t result;
 };
 
 #define TEST_PARAMS(str,size, params) { str, size, params }
@@ -640,8 +640,8 @@ struct shell_tests param_test[] =
 
 void shell_unit_test()
 {
-    uint32_t t = 0;
-    uint32_t argc;
+    u32_t t = 0;
+    u32_t argc;
     char tmp[512];
     char *buf;
     char *next;
@@ -659,7 +659,7 @@ void shell_unit_test()
     }
 
     char arg[32];
-    uint32_t len;
+    u32_t len;
     t = 0;
 
     while (t != sizeof(test) / sizeof(shell_tests)) {
@@ -709,7 +709,7 @@ void shell_unit_test()
 
     t = 0;
     while (t != sizeof(param_test) / sizeof(shell_tests)) {
-        uint32_t res = ashell_check_parameter(param_test[t].str, (char)param_test[t].size);
+        u32_t res = ashell_check_parameter(param_test[t].str, (char)param_test[t].size);
         if (res != param_test[t].result) {
             printf("Failed test (%s) %c\n", param_test[t].str, (char)param_test[t].size);
         };

@@ -13,8 +13,8 @@ void zjs_buffer_cleanup();
 
 // FIXME: We should make this private and have accessor methods
 typedef struct zjs_buffer {
-    uint8_t *buffer;
-    uint32_t bufsize;
+    u8_t *buffer;
+    u32_t bufsize;
 } zjs_buffer_t;
 
 /**
@@ -44,6 +44,6 @@ zjs_buffer_t *zjs_buffer_find(const jerry_value_t obj);
  * @return  New JS Buffer or Error object, and sets *ret_buf to C handle or
  *            NULL, if given
  */
-jerry_value_t zjs_buffer_create(uint32_t size, zjs_buffer_t **ret_buf);
+jerry_value_t zjs_buffer_create(u32_t size, zjs_buffer_t **ret_buf);
 
 #endif  // __zjs_buffer_h__

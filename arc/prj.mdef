@@ -1,5 +1,0 @@
-% Application       : WebBT demo ARC
-
-% TASK NAME  PRIO ENTRY STACK GROUPS
-% ==================================
-  TASK TASKA    7 mainloop  2048 [EXE]

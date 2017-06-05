@@ -64,17 +64,17 @@ const char *system_get_prompt();
 /**
  * Callback function initialize the process
  */
-typedef uint32_t(*process_init_callback_t)();
+typedef u32_t(*process_init_callback_t)();
 
 /**
  * Callback function to pass an error from the transmision
  */
-typedef void(*process_error_callback_t)(uint32_t error);
+typedef void(*process_error_callback_t)(u32_t error);
 
 /**
  * Callback function to pass an error from the transmision
  */
-typedef uint32_t(*process_data_callback_t)(const char *buf, uint32_t len);
+typedef u32_t(*process_data_callback_t)(const char *buf, u32_t len);
 
 /**
  * Callback to tell when the data transfered is finished or process completed
@@ -84,7 +84,7 @@ typedef bool(*process_is_done)();
 /**
  * Callback function to pass an error from the transmision
  */
-typedef uint32_t(*process_close_callback_t)();
+typedef u32_t(*process_close_callback_t)();
 
 /* Callback to print debug data or state to the user */
 typedef void(*process_print_state_t)();

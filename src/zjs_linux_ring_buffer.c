@@ -1,4 +1,4 @@
-// Copyright (c) 2015-2016, Intel Corporation.
+// Copyright (c) 2015-2017, Intel Corporation.
 
 /*
  * This ring buffer implementation was taken from the Zephyr source and
@@ -15,9 +15,9 @@
 #endif
 
 struct ring_element {
-    uint32_t  type   :16; /**< Application-specific */
-    uint32_t  length :8;  /**< length in 32-bit chunks */
-    uint32_t  value  :8;  /**< Room for small integral values */
+    u32_t  type   :16; /**< Application-specific */
+    u32_t  length :8;  /**< length in 32-bit chunks */
+    u32_t  value  :8;  /**< Room for small integral values */
 };
 
 static int get_space(struct zjs_port_ring_buf *buf)
@@ -35,8 +35,8 @@ static int get_space(struct zjs_port_ring_buf *buf)
 }
 
 void zjs_port_ring_buf_init(struct zjs_port_ring_buf *buf,
-                            uint32_t size,
-                            uint32_t *data)
+                            u32_t size,
+                            u32_t *data)
 {
     int i;
     for (i = 0; i < 20; ++i) {
@@ -58,13 +58,13 @@ void zjs_port_ring_buf_init(struct zjs_port_ring_buf *buf,
 }
 
 int zjs_port_ring_buf_get(struct zjs_port_ring_buf *buf,
-                          uint16_t *type,
-                          uint8_t *value,
-                          uint32_t *data,
-                          uint8_t *size32)
+                          u16_t *type,
+                          u8_t *value,
+                          u32_t *data,
+                          u8_t *size32)
 {
     struct ring_element *header;
-    uint32_t i, index;
+    u32_t i, index;
 
     if (buf->head == buf->tail) {
         return -EAGAIN;
@@ -101,12 +101,12 @@ int zjs_port_ring_buf_get(struct zjs_port_ring_buf *buf,
 }
 
 int zjs_port_ring_buf_put(struct zjs_port_ring_buf *buf,
-                          uint16_t type,
-                          uint8_t value,
-                          uint32_t *data,
-                          uint8_t size32)
+                          u16_t type,
+                          u8_t value,
+                          u32_t *data,
+                          u8_t size32)
 {
-    uint32_t i, space, index, rc = -1;
+    u32_t i, space, index, rc = -1;
 
     space = get_space(buf);
     if (space >= (size32 + 1)) {

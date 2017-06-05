@@ -34,20 +34,20 @@ static ZJS_DECL_FUNC_ARGS(zjs_i2c_read_base, bool burst)
     // args: device, length[, register]
     ZJS_VALIDATE_ARGS(Z_NUMBER, Z_NUMBER, Z_OPTIONAL Z_NUMBER);
 
-    uint32_t register_addr = 0;
-    uint32_t size = (uint32_t)jerry_get_number_value(argv[1]);
+    u32_t register_addr = 0;
+    u32_t size = (u32_t)jerry_get_number_value(argv[1]);
 
     if (argc >= 3) {
-        register_addr = (uint32_t)jerry_get_number_value(argv[2]);
+        register_addr = (u32_t)jerry_get_number_value(argv[2]);
     }
 
     if (size < 1) {
         return zjs_error("size should be greater than zero");
     }
 
-    uint32_t bus;
+    u32_t bus;
     zjs_obj_get_uint32(this, "bus", &bus);
-    uint32_t address = (uint32_t)jerry_get_number_value(argv[0]);
+    u32_t address = (u32_t)jerry_get_number_value(argv[0]);
     zjs_buffer_t *buf;
     jerry_value_t buf_obj = zjs_buffer_create(size, &buf);
     if (buf) {
@@ -55,22 +55,22 @@ static ZJS_DECL_FUNC_ARGS(zjs_i2c_read_base, bool burst)
             if (register_addr != 0) {
                 // i2c_read checks the first byte for the register address
                 // i2c_burst_read doesn't
-                buf->buffer[0] = (uint8_t)register_addr;
+                buf->buffer[0] = (u8_t)register_addr;
             }
-            int error_msg = zjs_i2c_handle_read((uint8_t)bus,
+            int error_msg = zjs_i2c_handle_read((u8_t)bus,
                                                 buf->buffer,
                                                 buf->bufsize,
-                                                (uint16_t)address);
+                                                (u16_t)address);
             if (error_msg != 0) {
                 ERR_PRINT("i2c_read failed with error %i\n", error_msg);
             }
         }
         else {
-            int error_msg = zjs_i2c_handle_burst_read((uint8_t)bus,
+            int error_msg = zjs_i2c_handle_burst_read((u8_t)bus,
                                                       buf->buffer,
                                                       buf->bufsize,
-                                                      (uint16_t)address,
-                                                      (uint16_t)register_addr);
+                                                      (u16_t)address,
+                                                      (u16_t)register_addr);
             if (error_msg != 0) {
                 ERR_PRINT("i2c_read failed with error %i\n", error_msg);
             }
@@ -123,28 +123,28 @@ static ZJS_DECL_FUNC(zjs_i2c_write)
     // args: device, buffer[, register]
     ZJS_VALIDATE_ARGS(Z_NUMBER, Z_BUFFER, Z_OPTIONAL Z_NUMBER);
 
-    uint32_t register_addr = 0;
+    u32_t register_addr = 0;
 
     if (argc >= 3) {
-        register_addr = (uint32_t)jerry_get_number_value(argv[2]);
+        register_addr = (u32_t)jerry_get_number_value(argv[2]);
     }
 
-    uint32_t bus;
+    u32_t bus;
     zjs_obj_get_uint32(this, "bus", &bus);
     zjs_buffer_t *dataBuf = zjs_buffer_find(argv[1]);
 
     if (register_addr != 0) {
         // If the user supplied a register address, add it to the beginning
         // of the buffer, as that's where i2c_write will expect it.
-        dataBuf->buffer[0] = (uint8_t)register_addr;
+        dataBuf->buffer[0] = (u8_t)register_addr;
     }
 
-    uint32_t address = (uint32_t)jerry_get_number_value(argv[0]);
+    u32_t address = (u32_t)jerry_get_number_value(argv[0]);
 
-    int error_msg = zjs_i2c_handle_write((uint8_t)bus,
+    int error_msg = zjs_i2c_handle_write((u8_t)bus,
                                          dataBuf->buffer,
                                          dataBuf->bufsize,
-                                         (uint16_t)address);
+                                         (u16_t)address);
 
     return jerry_create_number(error_msg);
 }
@@ -172,8 +172,8 @@ static ZJS_DECL_FUNC(zjs_i2c_open)
     ZJS_VALIDATE_ARGS(Z_OBJECT);
 
     jerry_value_t data = argv[0];
-    uint32_t bus;
-    uint32_t speed;
+    u32_t bus;
+    u32_t speed;
 
     if (!zjs_obj_get_uint32(data, "bus", &bus)) {
         return zjs_error("missing required field (bus)");
@@ -183,7 +183,7 @@ static ZJS_DECL_FUNC(zjs_i2c_open)
         return zjs_error("missing required field (speed)");
     }
 
-    if (zjs_i2c_handle_open((uint8_t)bus)) {
+    if (zjs_i2c_handle_open((u8_t)bus)) {
         return zjs_error("failed to open connection to I2C bus");
     }
     // create the I2C object

@@ -3,16 +3,16 @@
 #ifndef _ARC_CURIE_PME_H_
 #define _ARC_CURIE_PME_H_
 
-#include <stdint.h>
+#include <zephyr/types.h>
 
-static const uint32_t NO_MATCH = 0x7fff;
-static const uint16_t MIN_CONTEXT = 0;
-static const uint16_t MAX_CONTEXT = 127;
-static const int32_t MAX_VECTOR_SIZE = 128;
-static const int32_t FIRST_NEURON_ID = 1;
-static const int32_t LAST_NEURON_ID = 128;
-static const int32_t MAX_NEURONS = 128;
-static const int32_t SAVE_RESTORE_SIZE = 128;
+static const u32_t NO_MATCH = 0x7fff;
+static const u16_t MIN_CONTEXT = 0;
+static const u16_t MAX_CONTEXT = 127;
+static const s32_t MAX_VECTOR_SIZE = 128;
+static const s32_t FIRST_NEURON_ID = 1;
+static const s32_t LAST_NEURON_ID = 128;
+static const s32_t MAX_NEURONS = 128;
+static const s32_t SAVE_RESTORE_SIZE = 128;
 
 typedef enum {
     RBF_MODE = 0,
@@ -25,11 +25,11 @@ typedef enum {
 } PATTERN_MATCHING_DISTANCE_MODE;
 
 typedef struct neuron_data {
-    uint16_t context;
-    uint16_t aif;
-    uint16_t min_if;
-    uint16_t category;
-    uint8_t vector[128];
+    u16_t context;
+    u16_t aif;
+    u16_t min_if;
+    u16_t category;
+    u8_t vector[128];
 } neuron_data_t;
 
 // Default initializer
@@ -37,53 +37,53 @@ void curie_pme_begin(void);
 
 void curie_pme_forget(void);
 
-void curie_pme_configure(uint16_t global_context,
+void curie_pme_configure(u16_t global_context,
                          PATTERN_MATCHING_DISTANCE_MODE distance_mode,
                          PATTERN_MATCHING_CLASSIFICATION_MODE classification_mode,
-                         uint16_t min_if,
-                         uint16_t max_if);
+                         u16_t min_if,
+                         u16_t max_if);
 
-uint16_t curie_pme_learn(uint8_t *pattern_vector,
-                         int32_t vector_length,
-                         uint16_t category);
-uint16_t curie_pme_classify(uint8_t *pattern_vector, int32_t vector_length);
+u16_t curie_pme_learn(u8_t *pattern_vector,
+                      s32_t vector_length,
+                      u16_t category);
+u16_t curie_pme_classify(u8_t *pattern_vector, s32_t vector_length);
 
-uint16_t curie_pme_read_neuron(int32_t neuron_id, neuron_data_t *data_array);
+u16_t curie_pme_read_neuron(s32_t neuron_id, neuron_data_t *data_array);
 
 // save and restore knowledge
 void curie_pme_begin_save_mode(void); // saves the contents of the NSR register
-uint16_t curie_pme_iterate_neurons_to_save(neuron_data_t *data_array);
+u16_t curie_pme_iterate_neurons_to_save(neuron_data_t *data_array);
 void curie_pme_end_save_mode(void); // restores the NSR value saved by beginSaveMode
 
 void curie_pme_begin_restore_mode(void);
-uint16_t curie_pme_iterate_neurons_to_restore(neuron_data_t *data_array);
+u16_t curie_pme_iterate_neurons_to_restore(neuron_data_t *data_array);
 void curie_pme_end_restore_mode(void);
 
 // getter and setters
 PATTERN_MATCHING_DISTANCE_MODE curie_pme_get_distance_mode(void);
 void curie_pme_set_distance_mode(PATTERN_MATCHING_DISTANCE_MODE mode);
-uint16_t curie_pme_get_global_context(void);
-void curie_pme_set_global_context(uint16_t context); // valid range is 1-127
-uint16_t curie_pme_get_neuron_context(void);
-void curie_pme_set_neuron_context(uint16_t context); // valid range is 1-127
+u16_t curie_pme_get_global_context(void);
+void curie_pme_set_global_context(u16_t context); // valid range is 1-127
+u16_t curie_pme_get_neuron_context(void);
+void curie_pme_set_neuron_context(u16_t context); // valid range is 1-127
 
 // NOTE: get_committed_count() will give inaccurate value if the network is in
 // Save/Restore mode.
 // It should not be called between the begin_save_mode() and end_save_mode() or
 // between
 // begin_restore_mode() and end_restore_mode()
-uint16_t curie_pme_get_committed_count(void);
+u16_t curie_pme_get_committed_count(void);
 
 PATTERN_MATCHING_CLASSIFICATION_MODE curie_pme_get_classifier_mode(void); // RBF or KNN
 void curie_pme_set_classifier_mode(PATTERN_MATCHING_CLASSIFICATION_MODE mode);
 
 // write vector is used for kNN recognition and does not alter
 // the CAT register, which moves the chain along.
-uint16_t curie_pme_write_vector(uint8_t *pattern_vector, int32_t vector_length);
+u16_t curie_pme_write_vector(u8_t *pattern_vector, s32_t vector_length);
 
 // base address of the pattern matching accelerator in Intel(r) Curie(tm) and
 // QuarkSE(tm)
-static const uint32_t baseAddress = 0xB0600000L;
+static const u32_t baseAddress = 0xB0600000L;
 
 typedef enum {
     NCR = 0x00, // Neuron Context Register
@@ -119,31 +119,31 @@ typedef enum {
 
 // all pattern matching accelerator registers are 16-bits wide, memory-addressed
 // define efficient inline register access
-inline volatile uint16_t* reg_address(registers_t reg)
+inline volatile u16_t *reg_address(registers_t reg)
 {
-    return (uint16_t*)(0xB0600000L + reg);
+    return (u16_t *)(0xB0600000L + reg);
 }
 
-inline uint16_t reg_read16(registers_t reg) { return *reg_address(reg); }
+inline u16_t reg_read16(registers_t reg) { return *reg_address(reg); }
 
-inline void reg_write16(registers_t reg, uint16_t value)
+inline void reg_write16(registers_t reg, u16_t value)
 {
     *reg_address(reg) = value;
 }
 
 // raw register access - not recommended.
-inline uint16_t getNCR(void) { return reg_read16(NCR); }
-inline uint16_t getCOMP(void) { return reg_read16(COMP); }
-inline uint16_t getLCOMP(void) { return reg_read16(LCOMP); }
-inline uint16_t getIDX_DIST(void) { return reg_read16(IDX_DIST); }
-inline uint16_t getCAT(void) { return reg_read16(CAT); }
-inline uint16_t getAIF(void) { return reg_read16(AIF); }
-inline uint16_t getMINIF(void) { return reg_read16(MINIF); }
-inline uint16_t getMAXIF(void) { return reg_read16(MAXIF); }
-inline uint16_t getNID(void) { return reg_read16(NID); }
-inline uint16_t getGCR(void) { return reg_read16(GCR); }
-inline uint16_t getRSTCHAIN(void) { return reg_read16(RSTCHAIN); }
-inline uint16_t getNSR(void) { return reg_read16(NSR); }
-inline uint16_t getFORGET_NCOUNT(void) { return reg_read16(FORGET_NCOUNT); }
+inline u16_t getNCR(void) { return reg_read16(NCR); }
+inline u16_t getCOMP(void) { return reg_read16(COMP); }
+inline u16_t getLCOMP(void) { return reg_read16(LCOMP); }
+inline u16_t getIDX_DIST(void) { return reg_read16(IDX_DIST); }
+inline u16_t getCAT(void) { return reg_read16(CAT); }
+inline u16_t getAIF(void) { return reg_read16(AIF); }
+inline u16_t getMINIF(void) { return reg_read16(MINIF); }
+inline u16_t getMAXIF(void) { return reg_read16(MAXIF); }
+inline u16_t getNID(void) { return reg_read16(NID); }
+inline u16_t getGCR(void) { return reg_read16(GCR); }
+inline u16_t getRSTCHAIN(void) { return reg_read16(RSTCHAIN); }
+inline u16_t getNSR(void) { return reg_read16(NSR); }
+inline u16_t getFORGET_NCOUNT(void) { return reg_read16(FORGET_NCOUNT); }
 
 #endif

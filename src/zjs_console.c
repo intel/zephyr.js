@@ -58,7 +58,7 @@ static bool value2str(const jerry_value_t value, char *buf, int maxlen,
         return false;
     }
     else if (jerry_value_is_boolean(value)) {
-        uint8_t val = jerry_get_boolean_value(value);
+        u8_t val = jerry_get_boolean_value(value);
         sprintf(buf, (val) ? "true" : "false");
     }
     else if (jerry_value_is_function(value)) {
@@ -121,7 +121,7 @@ static void print_value(const jerry_value_t value, FILE *out, bool deep,
     char buf[MAX_STR_LENGTH];
     if (!value2str(value, buf, MAX_STR_LENGTH, quotes) && deep) {
         if (jerry_value_is_array(value)) {
-            uint32_t len = jerry_get_array_length(value);
+            u32_t len = jerry_get_array_length(value);
             fprintf(out, "[");
             for (int i = 0; i < len; i++) {
                 if (i) {
@@ -166,7 +166,7 @@ static ZJS_DECL_FUNC(console_time)
     // args: label
     ZJS_VALIDATE_ARGS(Z_STRING);
 
-    uint32_t start = zjs_port_timer_get_uptime();
+    u32_t start = zjs_port_timer_get_uptime();
 
     ZVAL num = jerry_create_number(start);
     jerry_set_property(gbl_time_obj, argv[0], num);
@@ -185,7 +185,7 @@ static ZJS_DECL_FUNC(console_time_end)
         return TYPE_ERROR("unexpected value");
     }
 
-    uint32_t start = (uint32_t)jerry_get_number_value(num);
+    u32_t start = (u32_t)jerry_get_number_value(num);
     unsigned int milli = zjs_port_timer_get_uptime() - start;
 
     char *label = zjs_alloc_from_jstring(argv[0], NULL);

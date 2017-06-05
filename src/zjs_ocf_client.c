@@ -40,8 +40,8 @@ struct client_resource {
     oc_server_handle_t server;
     resource_state state;
     jerry_value_t client;
-    uint32_t flags;
-    uint32_t error_code;
+    u32_t flags;
+    u32_t error_code;
     struct client_resource *next;
 };
 
@@ -145,7 +145,7 @@ static jerry_value_t get_props_from_response(oc_client_response_t *data)
             break;
         case INT:
             zjs_obj_add_number(prop_object, (double)rep->value.integer, oc_string(rep->name));
-            DBG_PRINT("%ld\n", (uint32_t)rep->value.integer);
+            DBG_PRINT("%ld\n", (u32_t)rep->value.integer);
             break;
         case BYTE_STRING:
         case STRING:
@@ -183,7 +183,7 @@ static void print_props_data(oc_client_response_t *data)
             ZJS_PRINT("%d\n", rep->value.boolean);
             break;
         case INT:
-            ZJS_PRINT("%ld\n", (uint32_t)rep->value.integer);
+            ZJS_PRINT("%ld\n", (u32_t)rep->value.integer);
             break;
         case BYTE_STRING:
         case STRING:
@@ -430,7 +430,7 @@ Found:
             /*
              * Add the array of resource types to newly discovered resource
              */
-            uint32_t sz = oc_string_array_get_allocated_size(types);
+            u32_t sz = oc_string_array_get_allocated_size(types);
             cur->types_array = jerry_create_array(sz);
 
             for (i = 0; i < sz; i++) {
@@ -861,7 +861,7 @@ static void ocf_get_platform_info_handler(oc_client_response_t *data)
                 DBG_PRINT("%d\n", rep->value.boolean);
                 break;
             case INT:
-                DBG_PRINT("%ld\n", (uint32_t)rep->value.integer);
+                DBG_PRINT("%ld\n", (u32_t)rep->value.integer);
                 break;
             case BYTE_STRING:
             case STRING:
@@ -962,7 +962,7 @@ static void ocf_get_device_info_handler(oc_client_response_t *data)
                 DBG_PRINT("%d\n", rep->value.boolean);
                 break;
             case INT:
-                DBG_PRINT("%ld\n", (uint32_t)rep->value.integer);
+                DBG_PRINT("%ld\n", (u32_t)rep->value.integer);
                 break;
             case BYTE_STRING:
             case STRING:

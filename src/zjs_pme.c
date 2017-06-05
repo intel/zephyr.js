@@ -58,7 +58,7 @@ static bool zjs_pme_ipm_send_sync(zjs_ipm_message_t *send,
     return true;
 }
 
-static void ipm_msg_receive_callback(void *context, uint32_t id, volatile void *data)
+static void ipm_msg_receive_callback(void *context, u32_t id, volatile void *data)
 {
     if (id != MSG_ID_PME)
         return;
@@ -119,7 +119,7 @@ static ZJS_DECL_FUNC(zjs_pme_learn)
     // args: pattern array, category
     ZJS_VALIDATE_ARGS(Z_ARRAY, Z_NUMBER);
     jerry_value_t vector = argv[0];
-    uint32_t vector_len = jerry_get_array_length(vector);
+    u32_t vector_len = jerry_get_array_length(vector);
 
     if (vector_len > MAX_VECTOR_SIZE) {
         return zjs_error("exceeded max vector size");
@@ -133,7 +133,8 @@ static ZJS_DECL_FUNC(zjs_pme_learn)
         if (!jerry_value_is_number(num)) {
             return zjs_error("invalid vector type");
         }
-        uint8_t byte = jerry_get_number_value(num);
+
+        u8_t byte = jerry_get_number_value(num);
         send.data.pme.vector[i] = byte;
     }
 
@@ -149,7 +150,7 @@ static ZJS_DECL_FUNC(zjs_pme_classify)
     // args: pattern array
     ZJS_VALIDATE_ARGS(Z_ARRAY);
     jerry_value_t vector = argv[0];
-    uint32_t vector_len = jerry_get_array_length(vector);
+    u32_t vector_len = jerry_get_array_length(vector);
 
     if (vector_len > MAX_VECTOR_SIZE) {
         return zjs_error("exceeded max vector size");
@@ -163,7 +164,8 @@ static ZJS_DECL_FUNC(zjs_pme_classify)
         if (!jerry_value_is_number(num)) {
             return zjs_error("invalid vector type");
         }
-        uint8_t byte = jerry_get_number_value(num);
+
+        u8_t byte = jerry_get_number_value(num);
         send.data.pme.vector[i] = byte;
     }
 
@@ -194,6 +196,7 @@ static ZJS_DECL_FUNC(zjs_pme_read_neuron)
         ZVAL val = jerry_create_number(reply.data.pme.vector[i]);
         jerry_set_property_by_index(array, i, val);
     }
+
     zjs_set_property(obj, "vector", array);
     return obj;
 }
@@ -203,7 +206,7 @@ static ZJS_DECL_FUNC(zjs_pme_write_vector)
     // args: pattern array
     ZJS_VALIDATE_ARGS(Z_ARRAY);
     jerry_value_t vector = argv[0];
-    uint32_t vector_len = jerry_get_array_length(vector);
+    u32_t vector_len = jerry_get_array_length(vector);
 
     if (vector_len > MAX_VECTOR_SIZE) {
         return zjs_error("exceeded max vector size");
@@ -212,13 +215,14 @@ static ZJS_DECL_FUNC(zjs_pme_write_vector)
     zjs_ipm_message_t send;
     send.type = TYPE_PME_WRITE_VECTOR;
 
-    memset(send.data.pme.vector, 0, sizeof(uint8_t) * MAX_VECTOR_SIZE);
+    memset(send.data.pme.vector, 0, sizeof(u8_t) * MAX_VECTOR_SIZE);
     for (int i = 0; i < vector_len; i++) {
         ZVAL num = jerry_get_property_by_index(vector, i);
         if (!jerry_value_is_number(num)) {
             return zjs_error("invalid vector type");
         }
-        uint8_t byte = jerry_get_number_value(num);
+
+        u8_t byte = jerry_get_number_value(num);
         send.data.pme.vector[i] = byte;
     }
 
@@ -384,7 +388,7 @@ static ZJS_DECL_FUNC(zjs_pme_restore_neurons)
     // args: neuron array
     ZJS_VALIDATE_ARGS(Z_ARRAY);
     jerry_value_t array = argv[0];
-    uint32_t array_len = jerry_get_array_length(array);
+    u32_t array_len = jerry_get_array_length(array);
 
     if (array_len > MAX_NEURONS) {
         return zjs_error("exceeded max neuron size");
@@ -398,7 +402,7 @@ static ZJS_DECL_FUNC(zjs_pme_restore_neurons)
 
     for (int i = 0; i < array_len; i++) {
         // iterate json object to restore neurons
-        uint32_t category, context, aif, min_if;
+        u32_t category, context, aif, min_if;
         zjs_ipm_message_t send;
 
         ZVAL neuron = jerry_get_property_by_index(array, i);
@@ -423,7 +427,7 @@ static ZJS_DECL_FUNC(zjs_pme_restore_neurons)
             return zjs_error("invalid object, missing vector array");
         }
 
-        uint32_t vector_len = jerry_get_array_length(vector);
+        u32_t vector_len = jerry_get_array_length(vector);
         if (vector_len > MAX_VECTOR_SIZE) {
             return zjs_error("vector size must be <= 128");
         }
@@ -434,13 +438,14 @@ static ZJS_DECL_FUNC(zjs_pme_restore_neurons)
         send.data.pme.aif = aif;
         send.data.pme.min_if = min_if;
 
-        memset(send.data.pme.vector, 0, sizeof(uint8_t) * MAX_VECTOR_SIZE);
+        memset(send.data.pme.vector, 0, sizeof(u8_t) * MAX_VECTOR_SIZE);
         for (int i = 0; i < vector_len; i++) {
             ZVAL num = jerry_get_property_by_index(vector, i);
             if (!jerry_value_is_number(num)) {
                  return zjs_error("invalid vector type");
             }
-            uint8_t byte = jerry_get_number_value(num);
+
+            u8_t byte = jerry_get_number_value(num);
             send.data.pme.vector[i] = byte;
         }
 

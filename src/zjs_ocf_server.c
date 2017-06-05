@@ -23,15 +23,15 @@ struct server_resource {
      *       'this' pointer so we have to save it in C.
      */
     jerry_value_t object;
-    uint32_t error_code;
+    u32_t error_code;
     oc_resource_t *res;
     char *device_id;
     char *resource_path;
     char **resource_types;
     char **resource_ifaces;
-    uint8_t num_types;
-    uint8_t num_ifaces;
-    uint8_t flags;
+    u8_t num_types;
+    u8_t num_ifaces;
+    u8_t flags;
 };
 
 typedef struct resource_list {
@@ -148,7 +148,7 @@ struct server_resource *new_server_resource(char *path)
     }
     memset(resource, 0, sizeof(struct server_resource));
 
-    uint32_t len = strlen(path);
+    u32_t len = strlen(path);
     resource->resource_path = zjs_malloc(len + 1);
     if (!resource->resource_path) {
         ERR_PRINT("resource path could not be allocated\n");
@@ -198,7 +198,7 @@ static void print_props_data(oc_request_t *data)
             ZJS_PRINT("%d\n", rep->value_boolean);
             break;
         case INT:
-            ZJS_PRINT("%ld\n", (int32_t)rep->value_int);
+            ZJS_PRINT("%ld\n", (s32_t)rep->value_int);
             break;
         case BYTE_STRING:
         case STRING:
@@ -410,7 +410,7 @@ static ZJS_DECL_FUNC(ocf_register)
     }
 
     // Optional
-    uint8_t flags = 0;
+    u8_t flags = 0;
     ZVAL observable_val = zjs_get_property(argv[0], "observable");
     if (jerry_value_is_boolean(observable_val)) {
         if (jerry_get_boolean_value(observable_val)) {
@@ -461,7 +461,7 @@ static ZJS_DECL_FUNC(ocf_register)
 
     for (i = 0; i < resource->num_types; ++i) {
         ZVAL type_val = jerry_get_property_by_index(res_type_array, i);
-        uint32_t size = OCF_MAX_RES_TYPE_LEN;
+        u32_t size = OCF_MAX_RES_TYPE_LEN;
         resource->resource_types[i] = zjs_alloc_from_jstring(type_val, &size);
         if (!resource->resource_types[i]) {
             REJECT("InternalError", "resourceType alloc failed");
@@ -482,7 +482,7 @@ static ZJS_DECL_FUNC(ocf_register)
 
     for (i = 0; i < resource->num_ifaces; ++i) {
         ZVAL val = jerry_get_property_by_index(iface_array, i);
-        uint32_t size = OCF_MAX_RES_TYPE_LEN;
+        u32_t size = OCF_MAX_RES_TYPE_LEN;
         resource->resource_ifaces[i] = zjs_alloc_from_jstring(val, &size);
         if (!resource->resource_ifaces[i]) {
             REJECT("InternalError", "resourceType alloc failed");

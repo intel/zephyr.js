@@ -28,7 +28,7 @@ static bool zjs_i2c_ipm_send_sync(zjs_ipm_message_t *send,
     return true;
 }
 
-static void ipm_msg_receive_callback(void *context, uint32_t id,
+static void ipm_msg_receive_callback(void *context, u32_t id,
                                      volatile void *data)
 {
     if (id != MSG_ID_I2C)
@@ -56,16 +56,15 @@ void zjs_i2c_ipm_init() {
     k_sem_init(&i2c_sem, 0, 1);
 }
 
-int zjs_i2c_handle_write (uint8_t msg_bus, uint8_t *data, uint32_t length,
-                              uint16_t address)
+int zjs_i2c_handle_write(u8_t msg_bus, u8_t *data, u32_t length, u16_t address)
 {
     zjs_ipm_message_t send;
     zjs_ipm_message_t reply;
 
     send.type = TYPE_I2C_WRITE;
-    send.data.i2c.bus = (uint8_t)msg_bus;
+    send.data.i2c.bus = (u8_t)msg_bus;
     send.data.i2c.data = data;
-    send.data.i2c.address = (uint16_t)address;
+    send.data.i2c.address = (u16_t)address;
     send.data.i2c.length = length;
 
 
@@ -79,15 +78,15 @@ int zjs_i2c_handle_write (uint8_t msg_bus, uint8_t *data, uint32_t length,
     return send.error_code;
 }
 
-int zjs_i2c_handle_open (uint8_t msg_bus)
+int zjs_i2c_handle_open(u8_t msg_bus)
 {
     // send IPM message to the ARC side
     zjs_ipm_message_t send;
     zjs_ipm_message_t reply;
 
     send.type = TYPE_I2C_OPEN;
-    send.data.i2c.bus = (uint8_t)msg_bus;
-    send.data.i2c.speed = (uint8_t)I2C_SPEED_STANDARD;
+    send.data.i2c.bus = (u8_t)msg_bus;
+    send.data.i2c.speed = (u8_t)I2C_SPEED_STANDARD;
 
     bool success = zjs_i2c_ipm_send_sync(&send, &reply);
 
@@ -102,16 +101,15 @@ int zjs_i2c_handle_open (uint8_t msg_bus)
     return send.error_code;
 }
 
-int zjs_i2c_handle_read (uint8_t msg_bus, uint8_t *data, uint32_t length,
-                             uint16_t address)
+int zjs_i2c_handle_read(u8_t msg_bus, u8_t *data, u32_t length, u16_t address)
 {
     zjs_ipm_message_t send;
     zjs_ipm_message_t reply;
 
     send.type = TYPE_I2C_READ;
-    send.data.i2c.bus = (uint8_t)msg_bus;
+    send.data.i2c.bus = (u8_t)msg_bus;
     send.data.i2c.data = data;
-    send.data.i2c.address = (uint16_t)address;
+    send.data.i2c.address = (u16_t)address;
     send.data.i2c.length = length;
 
     bool success = zjs_i2c_ipm_send_sync(&send, &reply);
@@ -122,17 +120,16 @@ int zjs_i2c_handle_read (uint8_t msg_bus, uint8_t *data, uint32_t length,
     return send.error_code;
 }
 
-int zjs_i2c_handle_burst_read (uint8_t msg_bus, uint8_t *data,
-                                   uint32_t length, uint16_t address,
-                                   uint16_t register_addr)
+int zjs_i2c_handle_burst_read(u8_t msg_bus, u8_t *data, u32_t length,
+                              u16_t address, u16_t register_addr)
 {
     zjs_ipm_message_t send;
     zjs_ipm_message_t reply;
 
     send.type = TYPE_I2C_BURST_READ;
-    send.data.i2c.bus = (uint8_t)msg_bus;
+    send.data.i2c.bus = (u8_t)msg_bus;
     send.data.i2c.data = data;
-    send.data.i2c.address = (uint16_t)address;
+    send.data.i2c.address = (u16_t)address;
     send.data.i2c.register_addr = register_addr;
     send.data.i2c.length = length;
 

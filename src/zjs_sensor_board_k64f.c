@@ -135,17 +135,17 @@ static void zjs_sensor_fetch_sample(sensor_handle_t *handle)
     }
 }
 
-static int32_t zjs_sensor_poll_routine(void* h)
+static s32_t zjs_sensor_poll_routine(void* h)
 {
     int modcount = sizeof(sensor_modules) / sizeof(sensor_module_t);
-    uint32_t uptime = k_uptime_get_32();
+    u32_t uptime = k_uptime_get_32();
 
     for (int i = 0; i < modcount; i++) {
         sensor_module_t *mod = &sensor_modules[i];
         if (mod->instance && mod->instance->handles) {
             sensor_handle_t *handle = mod->instance->handles;
-            if (uptime % (uint32_t)(CONFIG_SYS_CLOCK_TICKS_PER_SEC /
-                                    handle->frequency * 10) == 0) {
+            if (uptime % (u32_t)(CONFIG_SYS_CLOCK_TICKS_PER_SEC /
+                                 handle->frequency * 10) == 0) {
                 zjs_sensor_fetch_sample(handle);
             }
         }

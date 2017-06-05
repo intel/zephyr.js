@@ -8,6 +8,7 @@
 #include "jerryscript.h"
 
 // ZJS includes
+#include "zjs_common.h"
 #include "zjs_util.h"
 #include "zjs_buffer.h"
 
@@ -68,9 +69,9 @@ static ZJS_DECL_FUNC_ARGS(zjs_buffer_read_bytes, int bytes, bool big_endian)
     // args: offset
     ZJS_VALIDATE_ARGS(Z_OPTIONAL Z_NUMBER);
 
-    uint32_t offset = 0;
+    u32_t offset = 0;
     if (argc >= 1)
-        offset = (uint32_t)jerry_get_number_value(argv[0]);
+        offset = (u32_t)jerry_get_number_value(argv[0]);
 
     zjs_buffer_t *buf = zjs_buffer_find(this);
     if (!buf)
@@ -83,7 +84,7 @@ static ZJS_DECL_FUNC_ARGS(zjs_buffer_read_bytes, int bytes, bool big_endian)
     if (!big_endian)
         offset += bytes - 1;  // start on the big end
 
-    uint32_t value = 0;
+    u32_t value = 0;
     for (int i = 0; i < bytes; i++) {
         value <<= 8;
         value |= buf->buffer[offset];
@@ -111,11 +112,11 @@ static ZJS_DECL_FUNC_ARGS(zjs_buffer_write_bytes, int bytes, bool big_endian)
 
     // technically negatives aren't supported but this makes them behave better
     double dval = jerry_get_number_value(argv[0]);
-    uint32_t value = (uint32_t)(dval < 0 ? (int32_t)dval : dval);
+    u32_t value = (u32_t)(dval < 0 ? (s32_t)dval : dval);
 
-    uint32_t offset = 0;
+    u32_t offset = 0;
     if (argc > 1)
-        offset = (uint32_t)jerry_get_number_value(argv[1]);
+        offset = (u32_t)jerry_get_number_value(argv[1]);
 
     zjs_buffer_t *buf = zjs_buffer_find(this);
     if (!buf)
@@ -289,13 +290,13 @@ static ZJS_DECL_FUNC(zjs_buffer_write_string)
         return zjs_error("buffer not found");
     }
 
-    uint32_t offset = 0;
+    u32_t offset = 0;
     if (argc > 1)
-        offset = (uint32_t)jerry_get_number_value(argv[1]);
+        offset = (u32_t)jerry_get_number_value(argv[1]);
 
-    uint32_t length = buf->bufsize - offset;
+    u32_t length = buf->bufsize - offset;
     if (argc > 2)
-        length = (uint32_t)jerry_get_number_value(argv[2]);
+        length = (u32_t)jerry_get_number_value(argv[2]);
 
     if (length > size) {
         zjs_free(str);
@@ -313,7 +314,7 @@ static ZJS_DECL_FUNC(zjs_buffer_write_string)
     return jerry_create_number(length);
 }
 
-jerry_value_t zjs_buffer_create(uint32_t size, zjs_buffer_t **ret_buf)
+jerry_value_t zjs_buffer_create(u32_t size, zjs_buffer_t **ret_buf)
 {
     // requires: size is size of desired buffer, in bytes
     //  effects: allocates a JS Buffer object, an underlying C buffer, and a
@@ -321,7 +322,7 @@ jerry_value_t zjs_buffer_create(uint32_t size, zjs_buffer_t **ret_buf)
     //             otherwise return the JS object
 
     // follow Node's Buffer.kMaxLength limits though we don't expose that
-    uint32_t maxLength = (1UL << 31) - 1;
+    u32_t maxLength = (1UL << 31) - 1;
     if (sizeof(size_t) == 4) {
         // detected 32-bit architecture
         maxLength = (1 << 30) - 1;
@@ -372,7 +373,7 @@ static ZJS_DECL_FUNC(zjs_buffer)
 
     if (jerry_value_is_number(argv[0])) {
         double dnum = jerry_get_number_value(argv[0]);
-        uint32_t unum;
+        u32_t unum;
         if (dnum < 0) {
             unum = 0;
         }
@@ -381,7 +382,7 @@ static ZJS_DECL_FUNC(zjs_buffer)
         }
         else {
             // round to the nearest integer
-            unum = (uint32_t)(dnum + 0.5);
+            unum = (u32_t)(dnum + 0.5);
         }
 
         // treat a number argument as a length
@@ -390,7 +391,7 @@ static ZJS_DECL_FUNC(zjs_buffer)
     else if (jerry_value_is_array(argv[0])) {
         // treat array argument as byte initializers
         jerry_value_t array = argv[0];
-        uint32_t len = jerry_get_array_length(array);
+        u32_t len = jerry_get_array_length(array);
 
         zjs_buffer_t *buf;
         jerry_value_t new_buf = zjs_buffer_create(len, &buf);
@@ -398,7 +399,7 @@ static ZJS_DECL_FUNC(zjs_buffer)
             for (int i = 0; i < len; i++) {
                 ZVAL item = jerry_get_property_by_index(array, i);
                 if (jerry_value_is_number(item)) {
-                    buf->buffer[i] = (uint8_t)jerry_get_number_value(item);
+                    buf->buffer[i] = (u8_t)jerry_get_number_value(item);
                 } else {
                     ERR_PRINT("non-numeric value in array, treating as 0\n");
                     buf->buffer[i] = 0;

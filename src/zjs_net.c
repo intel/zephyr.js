@@ -101,8 +101,8 @@ typedef struct net_handle {
     struct net_context *tcp_sock;
     jerry_value_t server;
     struct sockaddr local;
-    uint16_t port;
-    uint8_t listening;
+    u16_t port;
+    u8_t listening;
 } net_handle_t;
 
 typedef struct sock_handle {
@@ -115,14 +115,14 @@ typedef struct sock_handle {
     void *wptr;
     struct sock_handle *next;
     struct k_timer timer;
-    uint32_t timeout;
+    u32_t timeout;
     zjs_callback_id tcp_read_id;
     zjs_callback_id tcp_connect_id;
     zjs_callback_id tcp_timeout_id;
-    uint8_t bound;
-    uint8_t paused;
-    uint8_t *rbuf;
-    uint8_t timer_started;
+    u8_t bound;
+    u8_t paused;
+    u8_t *rbuf;
+    u8_t timer_started;
 } sock_handle_t;
 
 static sock_handle_t *opened_sockets = NULL;
@@ -181,7 +181,7 @@ static void socket_timeout_callback(struct k_timer *timer)
  *              If a timeout has been started this will stop it
  * time > 0     Will start a timeout for the socket
  */
-static void start_socket_timeout(sock_handle_t *handle, uint32_t time)
+static void start_socket_timeout(sock_handle_t *handle, u32_t time)
 {
     if (time) {
         if (!handle->timer_started) {
@@ -207,7 +207,7 @@ static void tcp_c_callback(void *h, const void *args)
     sock_handle_t *handle = (sock_handle_t *)h;
     if (handle) {
         // find length of unconsumed data in read buffer
-        uint32_t len = handle->wptr - handle->rptr;
+        u32_t len = handle->wptr - handle->rptr;
         zjs_buffer_t *zbuf;
         ZVAL data_buf = zjs_buffer_create(len, &zbuf);
         // copy data from read buffer
@@ -376,7 +376,7 @@ static ZJS_DECL_FUNC(socket_write)
     int ret = net_context_send(send_buf, pkt_sent,
                                K_NO_WAIT,
                                UINT_TO_POINTER(net_pkt_get_len(send_buf)),
-                               INT_TO_POINTER((int32_t)id));
+                               INT_TO_POINTER((s32_t)id));
     if (ret < 0) {
         ERR_PRINT("Cannot send data to peer (%d)\n", ret);
         net_pkt_unref(send_buf);
@@ -470,7 +470,7 @@ static ZJS_DECL_FUNC(socket_set_timeout)
 
     ZJS_GET_HANDLE(this, sock_handle_t, handle, socket_type_info);
 
-    uint32_t time = (uint32_t)jerry_get_number_value(argv[0]);
+    u32_t time = (u32_t)jerry_get_number_value(argv[0]);
 
     start_socket_timeout(handle, time);
 
@@ -488,7 +488,7 @@ static ZJS_DECL_FUNC(socket_connect);
  * a 'connect()' method will be added (client mode). The socket native handle
  * is returned as an out parameter.
  */
-static jerry_value_t create_socket(uint8_t client, sock_handle_t **handle_out)
+static jerry_value_t create_socket(u8_t client, sock_handle_t **handle_out)
 {
     sock_handle_t *sock_handle = zjs_malloc(sizeof(sock_handle_t));
     if (!sock_handle) {
@@ -716,7 +716,7 @@ static ZJS_DECL_FUNC(server_listen)
     int ret;
     double port = 0;
     double backlog = 0;
-    uint32_t size = NET_HOSTNAME_MAX;
+    u32_t size = NET_HOSTNAME_MAX;
     char hostname[size];
 
     zjs_obj_get_double(argv[0], "port", &port);
@@ -738,7 +738,7 @@ static ZJS_DECL_FUNC(server_listen)
     CHECK(net_context_listen(handle->tcp_sock, (int)backlog));
 
     handle->listening = 1;
-    handle->port = (uint16_t)port;
+    handle->port = (u16_t)port;
     handle->local = addr;
     zjs_obj_add_boolean(this, true, "listening");
 
@@ -891,14 +891,14 @@ static ZJS_DECL_FUNC(socket_connect)
     // TODO: get: .hints, .lookup
 
     DBG_PRINT("port=%u, host=%s, localPort=%u, localAddress=%s, socket=%u\n",
-              (uint32_t)port, host, (uint32_t)localPort, localAddress, this);
+              (u32_t)port, host, (u32_t)localPort, localAddress, this);
 
     if (fam == 6) {
         if (!handle->bound) {
             struct sockaddr_in6 my_addr6 = { 0 };
 
             my_addr6.sin6_family = AF_INET6;
-            my_addr6.sin6_port = htons((uint32_t)localPort);
+            my_addr6.sin6_port = htons((u32_t)localPort);
 
             CHECK(net_addr_pton(AF_INET6,
                                 localAddress,
@@ -911,7 +911,7 @@ static ZJS_DECL_FUNC(socket_connect)
         }
         struct sockaddr_in6 peer_addr6 = { 0 };
         peer_addr6.sin6_family = AF_INET6;
-        peer_addr6.sin6_port = htons((uint32_t)port);
+        peer_addr6.sin6_port = htons((u32_t)port);
 
         CHECK(net_addr_pton(AF_INET6,
                             host,
@@ -939,7 +939,7 @@ static ZJS_DECL_FUNC(socket_connect)
             struct sockaddr_in my_addr4 = { 0 };
 
             my_addr4.sin_family = AF_INET;
-            my_addr4.sin_port = htons((uint32_t)localPort);
+            my_addr4.sin_port = htons((u32_t)localPort);
             CHECK(net_addr_pton(AF_INET,
                                 localAddress,
                                 &my_addr4.sin_addr));
@@ -951,7 +951,7 @@ static ZJS_DECL_FUNC(socket_connect)
         }
         struct sockaddr_in peer_addr4 = { 0 };
         peer_addr4.sin_family = AF_INET;
-        peer_addr4.sin_port = htons((uint32_t)port);
+        peer_addr4.sin_port = htons((u32_t)port);
 
         CHECK(net_addr_pton(AF_INET,
                             host,
@@ -1033,7 +1033,7 @@ static ZJS_DECL_FUNC(net_is_ip)
     if (!jerry_value_is_string(argv[0]) || argc < 1) {
         return jerry_create_number(0);
     }
-    uint32_t size = 64;
+    u32_t size = 64;
     char ip[size];
     zjs_copy_jstring(argv[0], ip, &size);
     if (!size) {
@@ -1110,7 +1110,7 @@ static void up_callback(void *handle, const void *args)
 
 static struct net_mgmt_event_callback cb;
 static void event_iface_up(struct net_mgmt_event_callback *cb,
-               uint32_t mgmt_event, struct net_if *iface)
+               u32_t mgmt_event, struct net_if *iface)
 {
     zjs_signal_callback(up_id, NULL, 0);
 }

@@ -4,12 +4,12 @@
 #include <zephyr.h>
 
 // ZJS includes
-#include <zjs_gpio.h>
-#include <zjs_pwm.h>
-#include <zjs_util.h>
+#include "zjs_gpio.h"
+#include "zjs_pwm.h"
+#include "zjs_util.h"
 
 #ifdef BUILD_MODULE_PWM
-static void zjs_k64f_num_to_pwm(uint32_t num, int *dev, int *pin)
+static void zjs_k64f_num_to_pwm(u32_t num, int *dev, int *pin)
 {
     int devnum = (num & 0xe0) >> 5;
     if (devnum > 3) {

@@ -1,11 +1,11 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 #include "zjs_linux_port.h"
 #include <time.h>
 
 #define ZEPHYR_TICKS_PER_SEC
 
-void zjs_port_timer_start(zjs_port_timer_t *timer, uint32_t interval)
+void zjs_port_timer_start(zjs_port_timer_t *timer, u32_t interval)
 {
     struct timespec now;
     clock_gettime(CLOCK_MONOTONIC, &now);
@@ -19,9 +19,9 @@ void zjs_port_timer_stop(zjs_port_timer_t *timer)
     timer->interval = 0;
 }
 
-uint8_t zjs_port_timer_test(zjs_port_timer_t *timer)
+u8_t zjs_port_timer_test(zjs_port_timer_t *timer)
 {
-    uint32_t elapsed;
+    u32_t elapsed;
     struct timespec now;
 
     clock_gettime(CLOCK_MONOTONIC, &now);
@@ -34,7 +34,7 @@ uint8_t zjs_port_timer_test(zjs_port_timer_t *timer)
     return 0;
 }
 
-uint32_t zjs_port_timer_get_uptime(void)
+u32_t zjs_port_timer_get_uptime(void)
 {
     struct timespec now;
 

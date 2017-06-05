@@ -2,15 +2,15 @@
 
 #include "arc_curie_pme.h"
 
-static uint16_t nsr_save = 0;
+static u16_t nsr_save = 0;
 
 // Default initializer
 void curie_pme_begin(void)
 {
-    uint16_t saved_nsr = reg_read16(NSR);
+    u16_t saved_nsr = reg_read16(NSR);
     curie_pme_forget();
 
-    reg_write16(NSR, (uint16_t)NSR_NET_MODE);
+    reg_write16(NSR, (u16_t)NSR_NET_MODE);
 
     for (int i = 0; i < MAX_NEURONS; i++) {
         reg_write16(TESTCOMP, 0);
@@ -20,11 +20,11 @@ void curie_pme_begin(void)
     reg_write16(NSR, saved_nsr);
 }
 
-void curie_pme_configure(uint16_t global_context,
+void curie_pme_configure(u16_t global_context,
                          PATTERN_MATCHING_DISTANCE_MODE distance_mode,
                          PATTERN_MATCHING_CLASSIFICATION_MODE classification_mode,
-                         uint16_t min_if,
-                         uint16_t max_if)
+                         u16_t min_if,
+                         u16_t max_if)
 {
     reg_write16(GCR, (global_context | (distance_mode << 7)));
     reg_write16(NSR, reg_read16(NSR) | (classification_mode << 5));
@@ -36,9 +36,9 @@ void curie_pme_configure(uint16_t global_context,
 void curie_pme_forget(void) { reg_write16(FORGET_NCOUNT, 0); }
 
 // mark --learn and classify--
-uint16_t curie_pme_learn(uint8_t *pattern_vector,
-                         int32_t vector_length,
-                         uint16_t category)
+u16_t curie_pme_learn(u8_t *pattern_vector,
+                      s32_t vector_length,
+                      u16_t category)
 {
     if (vector_length > MAX_VECTOR_SIZE)
         vector_length = MAX_VECTOR_SIZE;
@@ -56,14 +56,14 @@ uint16_t curie_pme_learn(uint8_t *pattern_vector,
     return reg_read16(FORGET_NCOUNT);
 }
 
-uint16_t curie_pme_classify(uint8_t *pattern_vector, int32_t vector_length)
+u16_t curie_pme_classify(u8_t *pattern_vector, s32_t vector_length)
 {
-    uint8_t* current_vector = pattern_vector;
+    u8_t *current_vector = pattern_vector;
 
     if (vector_length > MAX_VECTOR_SIZE)
         return -1;
 
-    for (uint8_t index = 0; index < (vector_length - 1); index++) {
+    for (u8_t index = 0; index < (vector_length - 1); index++) {
         reg_write16(COMP, current_vector[index]);
     }
 
@@ -75,10 +75,10 @@ uint16_t curie_pme_classify(uint8_t *pattern_vector, int32_t vector_length)
 
 // write vector is used for kNN recognition and does not alter
 // the CAT register, which moves the chain along.
-uint16_t curie_pme_write_vector(uint8_t *pattern_vector, int32_t vector_length)
+u16_t curie_pme_write_vector(u8_t *pattern_vector, s32_t vector_length)
 {
-    uint8_t* current_vector = pattern_vector;
-    uint8_t index = 0;
+    u8_t *current_vector = pattern_vector;
+    u8_t index = 0;
 
     if (vector_length > MAX_VECTOR_SIZE)
         return -1;
@@ -93,9 +93,9 @@ uint16_t curie_pme_write_vector(uint8_t *pattern_vector, int32_t vector_length)
 }
 
 // retrieve the data of a specific neuron element by ID, between 1 and 128.
-uint16_t curie_pme_read_neuron(int32_t neuron_id, neuron_data_t *data_array)
+u16_t curie_pme_read_neuron(s32_t neuron_id, neuron_data_t *data_array)
 {
-    uint16_t dummy = 0;
+    u16_t dummy = 0;
 
     // range check the id - technically, this should be an error.
 
@@ -135,7 +135,7 @@ void curie_pme_begin_save_mode(void)
 }
 
 // pass the function a structure to save data into
-uint16_t curie_pme_iterate_neurons_to_save(neuron_data_t *array)
+u16_t curie_pme_iterate_neurons_to_save(neuron_data_t *array)
 {
     array->context = reg_read16(NCR);
     for (int i = 0; i < SAVE_RESTORE_SIZE; i++) {
@@ -166,7 +166,7 @@ void curie_pme_begin_restore_mode(void)
     reg_write16(RSTCHAIN, 0);
 }
 
-uint16_t curie_pme_iterate_neurons_to_restore(neuron_data_t *array)
+u16_t curie_pme_iterate_neurons_to_restore(neuron_data_t *array)
 {
     reg_write16(NCR, array->context);
     for (int i = 0; i < SAVE_RESTORE_SIZE; i++) {
@@ -194,40 +194,40 @@ PATTERN_MATCHING_DISTANCE_MODE curie_pme_get_distance_mode(void) // L1 or LSup
 
 void curie_pme_set_distance_mode(PATTERN_MATCHING_DISTANCE_MODE mode) // L1 or LSup
 {
-    uint16_t rd = reg_read16(GCR);
+    u16_t rd = reg_read16(GCR);
 
     // do a read modify write on the GCR register
     reg_write16(GCR, (mode == LSUP_DISTANCE) ? rd | GCR_DIST : rd & ~GCR_DIST);
 }
 
-uint16_t curie_pme_get_global_context(void)
+u16_t curie_pme_get_global_context(void)
 {
     return (GCR_GLOBAL & reg_read16(GCR));
 }
 
 // A valid context value is in the range of 1-127. A context
 // value of 0 enables all neurons, without regard to their context
-void curie_pme_set_global_context(uint16_t context)
+void curie_pme_set_global_context(u16_t context)
 {
-    uint16_t gcr_mask = ~GCR_GLOBAL & reg_read16(GCR);
+    u16_t gcr_mask = ~GCR_GLOBAL & reg_read16(GCR);
     gcr_mask |= (context & GCR_GLOBAL);
     reg_write16(GCR, gcr_mask);
 }
 
-uint16_t curie_pme_get_neuron_context(void)
+u16_t curie_pme_get_neuron_context(void)
 {
     return (NCR_CONTEXT & reg_read16(NCR));
 }
 
 // valid range is 1-127
-void curie_pme_set_neuron_context(uint16_t context)
+void curie_pme_set_neuron_context(u16_t context)
 {
-    uint16_t ncr_mask = ~NCR_CONTEXT & reg_read16(NCR);
+    u16_t ncr_mask = ~NCR_CONTEXT & reg_read16(NCR);
     ncr_mask |= (context & NCR_CONTEXT);
     reg_write16(NCR, ncr_mask);
 }
 
-uint16_t curie_pme_get_committed_count(void)
+u16_t curie_pme_get_committed_count(void)
 {
     return (getFORGET_NCOUNT() & 0xff);
 }
@@ -242,7 +242,7 @@ PATTERN_MATCHING_CLASSIFICATION_MODE curie_pme_get_classifier_mode(void) // RBF 
 
 void curie_pme_set_classifier_mode(PATTERN_MATCHING_CLASSIFICATION_MODE mode)
 {
-    uint16_t mask = reg_read16(NSR);
+    u16_t mask = reg_read16(NSR);
     mask &= ~NSR_CLASS_MODE;
 
     if (mode == KNN_MODE)

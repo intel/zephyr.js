@@ -3,6 +3,7 @@
 #include <string.h>
 
 // ZJS includes
+#include "zjs_common.h"
 #include "zjs_buffer.h"
 #include "zjs_util.h"
 #ifndef ZJS_LINUX_BUILD
@@ -209,7 +210,7 @@ bool zjs_obj_get_double(jerry_value_t obj, const char *name, double *num)
     return rval;
 }
 
-bool zjs_obj_get_uint32(jerry_value_t obj, const char *name, uint32_t *num)
+bool zjs_obj_get_uint32(jerry_value_t obj, const char *name, u32_t *num)
 {
     // requires: obj is an existing JS object
     //  effects: retrieves field specified by name as a uint32
@@ -217,14 +218,14 @@ bool zjs_obj_get_uint32(jerry_value_t obj, const char *name, uint32_t *num)
     bool rval = false;
 
     if (!jerry_value_has_error_flag(value) && jerry_value_is_number(value)) {
-        *num = (uint32_t)jerry_get_number_value(value);
+        *num = (u32_t)jerry_get_number_value(value);
         rval = true;
     }
 
     return rval;
 }
 
-bool zjs_obj_get_int32(jerry_value_t obj, const char *name, int32_t *num)
+bool zjs_obj_get_int32(jerry_value_t obj, const char *name, s32_t *num)
 {
     // requires: obj is an existing JS object
     //  effects: retrieves field specified by name as a int32
@@ -232,7 +233,7 @@ bool zjs_obj_get_int32(jerry_value_t obj, const char *name, int32_t *num)
     bool rval = false;
 
     if (!jerry_value_has_error_flag(value) && jerry_value_is_number(value)) {
-        *num = (int32_t)jerry_get_number_value(value);
+        *num = (s32_t)jerry_get_number_value(value);
         rval = true;
     }
 
@@ -275,12 +276,12 @@ char *zjs_alloc_from_jstring(jerry_value_t jstr, jerry_size_t *maxlen)
     return buffer;
 }
 
-bool zjs_hex_to_byte(const char *buf, uint8_t *byte)
+bool zjs_hex_to_byte(const char *buf, u8_t *byte)
 {
     // requires: buf is a string with at least two hex chars
     //  effects: converts the first two hex chars in buf to a number and
     //             returns it in *byte; returns true on success, false otherwise
-    uint8_t num = 0;
+    u8_t num = 0;
     for (int i=0; i<2; i++) {
         num <<= 4;
         if (buf[i] >= 'A' && buf[i] <= 'F')
@@ -295,7 +296,7 @@ bool zjs_hex_to_byte(const char *buf, uint8_t *byte)
     return true;
 }
 
-void zjs_default_convert_pin(uint32_t orig, int *dev, int *pin) {
+void zjs_default_convert_pin(u32_t orig, int *dev, int *pin) {
     // effects: reads top three bits of the bottom byte of orig and writes them
     //            to dev and the bottom five bits and writes them to pin; thus
     //            up to eight devices are supported and up to 32 pins each; but
@@ -311,7 +312,7 @@ void zjs_default_convert_pin(uint32_t orig, int *dev, int *pin) {
 }
 
 // when accuracy isn't as important as space
-uint16_t zjs_compress_32_to_16(uint32_t num)
+u16_t zjs_compress_32_to_16(u32_t num)
 {
     if (num == 0) {
         // GCC states that can't use __builtin_clz
@@ -322,25 +323,25 @@ uint16_t zjs_compress_32_to_16(uint32_t num)
     int zeroes = __builtin_clz(num);
 
     if (zeroes >= 17)
-        return (uint16_t)num;
+        return (u16_t)num;
 
     // take the top 16 bits
-    uint16_t compressed = (num << zeroes) >> 16;
+    u16_t compressed = (num << zeroes) >> 16;
 
     // clear the bottom five bits to save leading zeroes
     compressed &= 0xffe0;
 
     // save the number of zeroes in bottom five bits
-    return compressed | (uint16_t)zeroes;
+    return compressed | (u16_t)zeroes;
 }
 
-uint32_t zjs_uncompress_16_to_32(uint16_t num)
+u32_t zjs_uncompress_16_to_32(u16_t num)
 {
     if ((num & 0x8000) == 0)
-        return (uint32_t)num;
+        return (u32_t)num;
 
     // take top 11 bits
-    uint32_t uncompressed = (num & 0xffe0) >> 5;
+    u32_t uncompressed = (num & 0xffe0) >> 5;
 
     // recover the number of leading zeroes
     int zeroes = num & 0x1f;
@@ -418,7 +419,7 @@ static char *create_js_path(char *obj_name, name_element_t *parent)
     strcpy(str, obj_name);
 
     while (parent) {
-        uint32_t size = 32;
+        u32_t size = 32;
         char name[size];
         zjs_copy_jstring(parent->name, name, &size);
         total += size + 1;

@@ -33,9 +33,9 @@ typedef struct {
     jerry_value_t uart_obj;
     jerry_value_t buf_obj;
     char *buf;
-    uint32_t size;
-    uint32_t min;
-    uint32_t max;
+    u32_t size;
+    u32_t min;
+    u32_t max;
 } uart_handle;
 
 static uart_dev_map device_map[] = {
@@ -132,7 +132,7 @@ static void uart_irq_handler(struct device *dev)
     }
 
     if (uart_irq_rx_ready(dev)) {
-        uint32_t len = uart_fifo_read(dev, handle->buf, handle->max);
+        u32_t len = uart_fifo_read(dev, handle->buf, handle->max);
         rx = true;
         handle->buf[len] = '\0';
         handle->size = len;
@@ -174,8 +174,8 @@ static ZJS_DECL_FUNC(uart_set_read_range)
     // args: min, max
     ZJS_VALIDATE_ARGS(Z_NUMBER, Z_NUMBER);
 
-    uint32_t min = jerry_get_number_value(argv[0]);
-    uint32_t max = jerry_get_number_value(argv[1]);
+    u32_t min = jerry_get_number_value(argv[0]);
+    u32_t max = jerry_get_number_value(argv[1]);
 
     if (handle->buf) {
         void *old = handle->buf;
@@ -243,7 +243,7 @@ static ZJS_DECL_FUNC(uart_init)
 #ifdef CONFIG_UART_LINE_CTRL
     DBG_PRINT("waiting for DTR\n");
     while (1) {
-        uart_line_ctrl_get(uart_dev, LINE_CTRL_DTR, (uint32_t *)&dtr);
+        uart_line_ctrl_get(uart_dev, LINE_CTRL_DTR, (u32_t *)&dtr);
         if (dtr) {
             break;
         }
@@ -269,7 +269,7 @@ static ZJS_DECL_FUNC(uart_init)
 
     int test_baud = baud;
 
-    ret = uart_line_ctrl_get(uart_dev, LINE_CTRL_BAUD_RATE, (uint32_t *)&test_baud);
+    ret = uart_line_ctrl_get(uart_dev, LINE_CTRL_BAUD_RATE, (u32_t *)&test_baud);
     if (ret) {
         DBG_PRINT("failed to get baudrate, ret code %d\n", ret);
     } else {

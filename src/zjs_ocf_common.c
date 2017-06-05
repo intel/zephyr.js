@@ -73,7 +73,7 @@ static struct props_handle *ocf_get_all_properties(jerry_value_t resource)
     struct props_handle *handle = zjs_malloc(sizeof(struct props_handle));
 
     ZVAL keys_array = jerry_get_object_keys(resource);
-    uint32_t arr_length = jerry_get_array_length(keys_array);
+    u32_t arr_length = jerry_get_array_length(keys_array);
 
     handle->props_array = jerry_create_array(arr_length - 1);
     handle->size = 0;
@@ -223,7 +223,7 @@ void zjs_set_uuid(char *uuid)
 
 static void platform_init(void *data)
 {
-    uint32_t size;
+    u32_t size;
     ZVAL platform = zjs_get_property(ocf_object, "platform");
     if (!jerry_value_is_undefined(platform)) {
         // osVersion
@@ -328,7 +328,7 @@ static void platform_init(void *data)
 
 static int app_init(void)
 {
-    uint32_t size;
+    u32_t size;
     // device props
     char *name = NULL;
     char *spec_version = NULL;
@@ -415,9 +415,9 @@ static int app_init(void)
     return ret;
 }
 
-int32_t main_poll_routine(void* handle)
+s32_t main_poll_routine(void* handle)
 {
-    return (int32_t)oc_main_poll();
+    return (s32_t)oc_main_poll();
 }
 
 static const oc_handler_t handler = {

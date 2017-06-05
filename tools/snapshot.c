@@ -1,5 +1,6 @@
 // Copyright (c) 2016-2017, Intel Corporation.
 
+#include <stdint.h>
 #include <string.h>
 #include "zjs_script.h"
 

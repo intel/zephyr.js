@@ -5,7 +5,7 @@
  * @brief Shell to keep the different states of the machine
  */
 
-#include <stdint.h>
+#include <zephyr/types.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
@@ -79,10 +79,10 @@ const char *BUILD_TIMESTAMP = __DATE__ " " __TIME__ "\n";
 #define DBG printk
 #endif /* CONFIG_IHEX_UPLOADER_DEBUG */
 
-int32_t ashell_get_filename_buffer(const char *buf, char *destination)
+s32_t ashell_get_filename_buffer(const char *buf, char *destination)
 {
-    uint32_t arg_len = 0;
-    uint32_t len = strnlen(buf, MAX_FILENAME_SIZE);
+    u32_t arg_len = 0;
+    u32_t len = strnlen(buf, MAX_FILENAME_SIZE);
     if (len == 0)
         return RET_ERROR;
 
@@ -100,7 +100,7 @@ int32_t ashell_get_filename_buffer(const char *buf, char *destination)
     return arg_len;
 }
 
-int32_t ashell_remove_file(char *buf)
+s32_t ashell_remove_file(char *buf)
 {
     char filename[MAX_FILENAME_SIZE];
     if (ashell_get_filename_buffer(buf, filename) <= 0) {
@@ -115,17 +115,17 @@ int32_t ashell_remove_file(char *buf)
     return RET_ERROR;
 }
 
-int32_t ashell_remove_dir(char *buf)
+s32_t ashell_remove_dir(char *buf)
 {
     return RET_OK;
 }
 
-int32_t ashell_make_dir(char *buf)
+s32_t ashell_make_dir(char *buf)
 {
     return RET_OK;
 }
 
-int32_t ashell_disk_usage(char *buf)
+s32_t ashell_disk_usage(char *buf)
 {
     char filename[MAX_FILENAME_SIZE];
     if (ashell_get_filename_buffer(buf, filename) <= 0) {
@@ -144,7 +144,7 @@ int32_t ashell_disk_usage(char *buf)
     return RET_OK;
 }
 
-int32_t ashell_rename(char *buf)
+s32_t ashell_rename(char *buf)
 {
     static struct fs_dirent entry;
     char path_org[MAX_FILENAME_SIZE];
@@ -183,14 +183,14 @@ int32_t ashell_rename(char *buf)
     return RET_OK;
 }
 
-int32_t ashell_error(char *buf)
+s32_t ashell_error(char *buf)
 {
     printk("[Error](%s)\n", buf);
     jerry_port_log(JERRY_LOG_LEVEL_ERROR, "stderr test (%s)\n", buf);
     return 0;
 }
 
-int32_t ashell_reboot(char *buf)
+s32_t ashell_reboot(char *buf)
 {
 #ifdef CONFIG_REBOOT
     //TODO Waiting for patch https://gerrit.zephyrproject.org/r/#/c/3161/
@@ -202,11 +202,11 @@ int32_t ashell_reboot(char *buf)
     return RET_OK;
 }
 
-int32_t ashell_list_dir(char *buf)
+s32_t ashell_list_dir(char *buf)
 {
     char filename[MAX_FILENAME_SIZE];
     static struct fs_dirent entry;
-    int32_t res;
+    s32_t res;
     fs_dir_t dp;
     *filename = '\0';
 
@@ -261,7 +261,7 @@ int32_t ashell_list_dir(char *buf)
     return RET_OK;
 }
 
-int32_t ashell_print_file(char *buf)
+s32_t ashell_print_file(char *buf)
 {
     char filename[MAX_FILENAME_SIZE];
     char data[READ_BUFFER_SIZE];
@@ -315,7 +315,7 @@ int32_t ashell_print_file(char *buf)
     return RET_OK;
 }
 
-int32_t ashell_parse_javascript(char *buf)
+s32_t ashell_parse_javascript(char *buf)
 {
     char filename[MAX_FILENAME_SIZE];
     if (ashell_get_filename_buffer(buf, filename) <= 0) {
@@ -326,7 +326,7 @@ int32_t ashell_parse_javascript(char *buf)
     return RET_OK;
 }
 
-int32_t ashell_run_javascript(char *buf)
+s32_t ashell_run_javascript(char *buf)
 {
     char filename[MAX_FILENAME_SIZE];
     if (ashell_get_filename_buffer(buf, filename) <= 0) {
@@ -339,7 +339,7 @@ int32_t ashell_run_javascript(char *buf)
     return RET_OK;
 }
 
-int32_t ashell_start_raw_capture(char *filename)
+s32_t ashell_start_raw_capture(char *filename)
 {
     file_code = fs_open_alloc(filename, "w+");
 
@@ -350,24 +350,24 @@ int32_t ashell_start_raw_capture(char *filename)
     return RET_OK;
 }
 
-int32_t ashell_close_capture()
+s32_t ashell_close_capture()
 {
     return fs_close_alloc(file_code);
 }
 
-int32_t ashell_discard_capture()
+s32_t ashell_discard_capture()
 {
     fs_close_alloc(file_code);
     //TODO ashell_remove_file(file_code);
     return RET_OK;
 }
 
-int32_t ashell_eval_javascript(const char *buf, uint32_t len)
+s32_t ashell_eval_javascript(const char *buf, u32_t len)
 {
     const char *src = buf;
 
     while (len > 0) {
-        uint8_t byte = *buf++;
+        u8_t byte = *buf++;
         if (!isprint(byte)) {
             switch (byte) {
             case ASCII_END_OF_TRANS:
@@ -387,12 +387,12 @@ int32_t ashell_eval_javascript(const char *buf, uint32_t len)
     return RET_OK;
 }
 
-int32_t ashell_raw_capture(const char *buf, uint32_t len)
+s32_t ashell_raw_capture(const char *buf, u32_t len)
 {
-    uint8_t eol = '\n';
+    u8_t eol = '\n';
 
     while (len > 0) {
-        uint8_t byte = *buf++;
+        u8_t byte = *buf++;
         if (!isprint(byte)) {
             switch (byte) {
             case ASCII_END_OF_TRANS:
@@ -431,7 +431,7 @@ int32_t ashell_raw_capture(const char *buf, uint32_t len)
     return RET_OK_NO_RET;
 }
 
-int32_t ashell_set_echo_mode(char *buf)
+s32_t ashell_set_echo_mode(char *buf)
 {
     if (!strcmp("on", buf)) {
         comms_print("echo_on");
@@ -443,7 +443,7 @@ int32_t ashell_set_echo_mode(char *buf)
     return RET_OK;
 }
 
-int32_t ashell_read_data(char *buf)
+s32_t ashell_read_data(char *buf)
 {
     if (shell.state_flags & kShellTransferIhex) {
         ashell_process_close();
@@ -471,7 +471,7 @@ int32_t ashell_read_data(char *buf)
     return RET_OK;
 }
 
-int32_t ashell_js_immediate_mode(char *buf)
+s32_t ashell_js_immediate_mode(char *buf)
 {
     shell.state_flags |= kShellEvalJavascript;
     comms_print(ANSI_CLEAR);
@@ -480,7 +480,7 @@ int32_t ashell_js_immediate_mode(char *buf)
     return RET_OK;
 }
 
-int32_t ashell_set_transfer_state(char *buf)
+s32_t ashell_set_transfer_state(char *buf)
 {
     char *next;
     if (buf == 0) {
@@ -506,7 +506,7 @@ int32_t ashell_set_transfer_state(char *buf)
     return RET_UNKNOWN;
 }
 
-int32_t ashell_set_state(char *buf)
+s32_t ashell_set_state(char *buf)
 {
     if (buf == 0) {
         comms_print(ERROR_NOT_ENOUGH_ARGUMENTS);
@@ -521,7 +521,7 @@ int32_t ashell_set_state(char *buf)
     return RET_UNKNOWN;
 }
 
-int32_t ashell_get_state(char *buf)
+s32_t ashell_get_state(char *buf)
 {
     if (buf == 0) {
         comms_print(ERROR_NOT_ENOUGH_ARGUMENTS);
@@ -543,28 +543,28 @@ int32_t ashell_get_state(char *buf)
     return RET_UNKNOWN;
 }
 
-int32_t ashell_at(char *buf)
+s32_t ashell_at(char *buf)
 {
     comms_print("OK\r\n\r\n");
     return RET_OK;
 }
 
-int32_t ashell_clear(char *buf)
+s32_t ashell_clear(char *buf)
 {
     comms_print(ANSI_CLEAR);
     return RET_OK;
 }
 
-int32_t ashell_stop_javascript(char *buf)
+s32_t ashell_stop_javascript(char *buf)
 {
     javascript_stop();
     return RET_OK;
 }
 
-int32_t ashell_check_control(const char *buf, uint32_t len)
+s32_t ashell_check_control(const char *buf, u32_t len)
 {
     while (len > 0) {
-        uint8_t byte = *buf++;
+        u8_t byte = *buf++;
         if (!isprint(byte)) {
             switch (byte) {
                 case ASCII_SUBSTITUTE:
@@ -581,7 +581,7 @@ int32_t ashell_check_control(const char *buf, uint32_t len)
     return RET_OK;
 }
 
-int32_t ashell_set_bootcfg(char *buf)
+s32_t ashell_set_bootcfg(char *buf)
 {
     if (!fs_exist(buf)) {
         comms_print("File passed to cfg doesn't exist\n\r\n");
@@ -645,11 +645,11 @@ static const struct ashell_cmd commands[] =
 
 #define ASHELL_COMMANDS_COUNT (sizeof(commands)/sizeof(*commands))
 
-int32_t ashell_help(char *buf)
+s32_t ashell_help(char *buf)
 {
     comms_print("'A Shell' bash\r\n\r\n");
     comms_print("Commands list:\r\n");
-    for (uint32_t t = 0; t < ASHELL_COMMANDS_COUNT; t++) {
+    for (u32_t t = 0; t < ASHELL_COMMANDS_COUNT; t++) {
         // skip commands with empty description
         if (!commands[t].syntax[0]) {
             continue;
@@ -701,7 +701,7 @@ void ashell_run_boot_cfg()
     fs_close_alloc(file);
 }
 
-int32_t ashell_main_state(char *buf, uint32_t len)
+s32_t ashell_main_state(char *buf, u32_t len)
 {
     /* Raw line to be evaluated by JS */
     if (shell.state_flags & kShellEvalJavascript) {
@@ -717,7 +717,7 @@ int32_t ashell_main_state(char *buf, uint32_t len)
     DBG("[BOF]%s[EOF]", buf);
     ashell_check_control(buf, len);
 
-    uint32_t argc = ashell_get_argc(buf, len);
+    u32_t argc = ashell_get_argc(buf, len);
     DBG("[ARGS %u]\n", argc);
 
     if (argc == 0)
@@ -737,9 +737,9 @@ int32_t ashell_main_state(char *buf, uint32_t len)
         comms_print("[BCMD]\n");
     }
 
-    for (uint8_t t = 0; t < ASHELL_COMMANDS_COUNT; t++) {
+    for (u8_t t = 0; t < ASHELL_COMMANDS_COUNT; t++) {
         if (!strcmp(commands[t].cmd_name, buf)) {
-            int32_t res = commands[t].cb(next);
+            s32_t res = commands[t].cb(next);
             /* End command */
             if (shell.state_flags & kShellTransferIhex) {
                 comms_print("[ECMD]\n");
