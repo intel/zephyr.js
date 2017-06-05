@@ -5,7 +5,7 @@
 
 #include "jerryscript.h"
 
-enum SPITopology {
+enum spi_topology {
     ZJS_TOPOLOGY_FULL_DUPLEX,
     ZJS_TOPOLOGY_SINGLE_READ,
     ZJS_TOPOLOGY_SINGLE_WRITE,
@@ -13,7 +13,7 @@ enum SPITopology {
     ZJS_TOPOLOGY_DAISY_CHAIN
 };
 
-enum direction {
+enum spi_direction {
     ZJS_SPI_DIR_READ,
     ZJS_SPI_DIR_WRITE,
     ZJS_SPI_DIR_READ_WRITE
@@ -21,7 +21,7 @@ enum direction {
 
 typedef struct spi_handle {
     struct device *spi_device;
-    enum SPITopology topology;
+    enum spi_topology topology;
     bool closed;
 } spi_handle_t;
 

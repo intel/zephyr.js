@@ -77,7 +77,7 @@ static ZJS_DECL_FUNC(zjs_spi_transceive)
     }
 
     char dirString[13];
-    enum direction dirArg;
+    enum spi_direction dirArg;
 
     // Set the direction default based on the topology.
     if (handle->topology == ZJS_TOPOLOGY_SINGLE_READ)
@@ -196,7 +196,7 @@ static ZJS_DECL_FUNC(zjs_spi_open)
     uint32_t phase = 0;
     char topologyStr[13] = "";
     char busStr[9];
-    enum SPITopology topology = ZJS_TOPOLOGY_FULL_DUPLEX;
+    enum spi_topology topology = ZJS_TOPOLOGY_FULL_DUPLEX;
     uint32_t frameGap = 0;
     struct spi_config config = { 0 };
 
