@@ -71,7 +71,7 @@ static ZJS_DECL_FUNC(zjs_spi_transceive)
 
     // If only a slave is given, this must be a single read or its invalid
     if (argc == 1) {
-        if (handle->topology != ZJS_TOPOLOGY_SINGLE_READ) {
+        if (handle->topology != ZJS_TOPOLOGY_READ) {
             return ZJS_STD_ERROR(RangeError, "Missing transmit buffer");
         }
     }
@@ -80,9 +80,9 @@ static ZJS_DECL_FUNC(zjs_spi_transceive)
     enum spi_direction dirArg;
 
     // Set the direction default based on the topology.
-    if (handle->topology == ZJS_TOPOLOGY_SINGLE_READ)
+    if (handle->topology == ZJS_TOPOLOGY_READ)
         dirArg = ZJS_SPI_DIR_READ;
-    else if (handle->topology == ZJS_TOPOLOGY_SINGLE_WRITE)
+    else if (handle->topology == ZJS_TOPOLOGY_WRITE)
         dirArg = ZJS_SPI_DIR_WRITE;
     else
         dirArg = ZJS_SPI_DIR_READ_WRITE;
@@ -102,9 +102,9 @@ static ZJS_DECL_FUNC(zjs_spi_transceive)
             return ZJS_STD_ERROR(RangeError, "Invalid direction");
 
         // If topology conflicts with direction given
-        if ((handle->topology == ZJS_TOPOLOGY_SINGLE_WRITE &&
+        if ((handle->topology == ZJS_TOPOLOGY_WRITE &&
             dirArg != ZJS_SPI_DIR_WRITE) ||
-            (handle->topology == ZJS_TOPOLOGY_SINGLE_READ &&
+            (handle->topology == ZJS_TOPOLOGY_READ &&
             dirArg != ZJS_SPI_DIR_READ)) {
             return ZJS_STD_ERROR(NotSupportedError, "Direction conflicts with topology");
         }
@@ -236,10 +236,10 @@ static ZJS_DECL_FUNC(zjs_spi_open)
         zjs_obj_get_string(init, "topology", topologyStr, 13);
         if (strncmp(topologyStr, "full-duplex", 12) == 0)
             topology = ZJS_TOPOLOGY_FULL_DUPLEX;
-        else if (strncmp(topologyStr, "single-read", 12) == 0)
-            topology = ZJS_TOPOLOGY_SINGLE_READ;
-        else if (strncmp(topologyStr, "single-write", 12) == 0)
-            topology = ZJS_TOPOLOGY_SINGLE_WRITE;
+        else if (strncmp(topologyStr, "read", 12) == 0)
+            topology = ZJS_TOPOLOGY_READ;
+        else if (strncmp(topologyStr, "write", 12) == 0)
+            topology = ZJS_TOPOLOGY_WRITE;
         else if (strncmp(topologyStr, "multiplexed", 11) == 0)
             topology = ZJS_TOPOLOGY_MULTIPLEXED;
         else if (strncmp(topologyStr, "daisy-chain", 11) == 0)
