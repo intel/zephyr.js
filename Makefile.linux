@@ -125,7 +125,7 @@ all: linux
 
 .PHONY: setup
 setup:
-	./scripts/analyze BOARD=linux RESTRICT=$(LINUX_MODULES)
+	./scripts/analyze BOARD=linux RESTRICT=$(LINUX_MODULES) V=$(V)
 
 $(BUILD_DIR)/%.o:%.c
 	@mkdir -p $(@D)

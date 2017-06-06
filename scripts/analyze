@@ -5,6 +5,7 @@ import sys
 import json
 import re
 import shutil
+import pprint
 
 featurefile = ''
 
@@ -28,17 +29,21 @@ jrs_conf = []
 lsrc = []
 js_modules = []
 
+def do_print(s):
+    if 'V' in args and args['V'] == '1':
+        p = pprint.PrettyPrinter(indent=1)
+        p.pprint(s)
+
 def merge_lists(l1, l2):
     if l1 != None:
-        if l2 != None:
             for i in l2:
                 if i not in l1:
                     l1.append(i)
 
-def parse_list(tree, list):
+def parse_list(tree, list=[], force=[]):
     for file in list:
         if file.endswith(".json"):
-            print("opening " + file)
+            do_print("opening " + file)
             with open("src/" + file) as f:
                 data = json.load(f)
             # Index the entry by the require name, if exists
@@ -59,11 +64,13 @@ def parse_list(tree, list):
             else:
                 print("Error: JSON entry %s must have either 'module' or 'require'" % file)
 
-def build_tree(tree, restrict):
-    if restrict == []:
-        parse_list(tree, os.listdir("src/"))
+def build_tree(tree, restrict, force):
+    if restrict == [] and force == []:
+        parse_list(tree, list=os.listdir("src/"))
+    elif restrict == [] and force != []:
+        parse_list(tree, list=os.listdir("src/"), force=force)
     else:
-        parse_list(tree, restrict)
+        parse_list(tree, list=restrict)
 
 def get_dep_list_helper(dlist, dep, board, tree):
     if dep in tree:
@@ -83,20 +90,17 @@ def get_dep_list(dlist, board, tree):
         get_dep_list_helper(dlist, dep, board, tree)
 
 def gather_deps_helper(js, dep, dlist, zlist, zjslist, jrslist, srclist, tree):
-    print("dep=" + dep)
     if dep in tree:
-        print("looking at dep: " + dep)
         entry = tree[dep]
         if 'targets' in entry:
             if args['BOARD'] not in entry.get('targets', []):
                 return
         for i in entry.get('depends', []):
-            print("gathering deps for " + i)
+            do_print("gathering dependencies for " + i)
             if i not in dlist:
                 dlist.append(i)
-            gather_deps_helper(js, i, list, zlist, zjslist, jrslist, srclist, tree)
+            gather_deps_helper(js, i, dlist, zlist, zjslist, jrslist, srclist, tree)
         if 'src' in entry:
-            print("looking at src for " + dep)
             src = entry['src']
             if isinstance(src, list):
                 merge_lists(srclist, src)
@@ -134,27 +138,32 @@ def gather_deps_helper(js, dep, dlist, zlist, zjslist, jrslist, srclist, tree):
         if 'zjs_config' in entry:
             merge_lists(zjslist, entry['zjs_config'])
 
-def gather_deps(file, dlist, zlist, zjslist, jrslist, srclist, tree):
+def gather_deps(file, dlist, zlist, zjslist, jrslist, srclist, tree, force=[]):
     with open(file) as js:
         text = js.read()
-    for i in tree:
-        if 'require' in tree[i]:
-            if re.search(r"require\([\'\"]%s[\"\']\)" % tree[i]['require'], text):
-                if i not in dlist:
-                    dlist.append(i)
-                print("found dep: " + i)
-                gather_deps_helper(text, i, dlist, zlist, zjslist, jrslist, srclist, tree)
-        elif 'constructor' in tree[i]:
-            if re.search(r"%s\(.*" % tree[i]['constructor'], text):
-                if i not in dlist:
-                    dlist.append(i)
-                print("found dep: " + i)
-                gather_deps_helper(text, i, dlist, zlist, zjslist, jrslist, srclist, tree)
-        if 'object' in tree[i]:
-            if re.search(r"%s\." % tree[i]['object'], text):
-                merge_lists(zjslist, tree[i]['zjs_config'])
-                merge_lists(srclist, tree[i]['src'])
-                dlist.append(tree[i]['object'])
+
+    if force != []:
+        for f in force:
+            with open("src/" + f) as file:
+                data = json.load(file)
+                gather_deps_helper(text, data['module'], dlist, zlist, zjslist, jrslist, srclist, tree)
+    else:
+        for i in tree:
+            if 'require' in tree[i]:
+                if re.search(r"require\([\'\"]%s[\"\']\)" % tree[i]['require'], text):
+                    if i not in dlist:
+                        dlist.append(i)
+                    gather_deps_helper(text, i, dlist, zlist, zjslist, jrslist, srclist, tree)
+            elif 'constructor' in tree[i]:
+                if re.search(r"%s\(.*" % tree[i]['constructor'], text):
+                    if i not in dlist:
+                        dlist.append(i)
+                    gather_deps_helper(text, i, dlist, zlist, zjslist, jrslist, srclist, tree)
+            if 'object' in tree[i]:
+                if re.search(r"%s\." % tree[i]['object'], text):
+                    merge_lists(zjslist, tree[i]['zjs_config'])
+                    merge_lists(srclist, tree[i]['src'])
+                    dlist.append(tree[i]['object'])
 
     # Get any deps for the board
     gather_deps_helper(text, args['BOARD'], dlist, zlist, zjslist, jrslist, srclist, tree)
@@ -197,23 +206,17 @@ def write_modules(list, tree):
         for i in list:
             entry = tree.get(i, None)
             if entry:
-                print("FOUND DEP: " + i)
                 if 'init' in entry:
-                    print("init=" + str(entry['init']))
                     inits[i] = {}
                     inits[i]["inits"] = entry['init']
                 if 'cleanup' in entry:
-                    print("cleanup=" + str(entry['cleanup']))
                     inits[i]["cleanups"] = entry['cleanup']
                 if 'header' in entry:
-                    print("header=" + str(entry['header']))
                     merge_lists(headers, entry['header'])
                 if 'global_init' in entry:
-                    print("glb_init=" + str(entry['global_init']))
                     gbl_inits[i] = {}
                     gbl_inits[i]["inits"] = entry['global_init']
                 if 'global_cleanup' in entry:
-                    print("gbl_cleanup=" + str(entry['global_cleanup']))
                     gbl_inits[i]["cleanups"] = entry['global_cleanup']
         # Add include headers
         file.write("// This is a generated file\n")
@@ -251,12 +254,11 @@ module_t zjs_modules_array[] = {\n""")
 
 if args['BOARD'] == 'linux':
     restrict = args['RESTRICT'].split(',')
-    print(str(restrict))
-    build_tree(json_tree, restrict)
-    print("Tree=" + str(json_tree))
+    build_tree(json_tree, restrict, [])
+    do_print(json_tree)
     all_list = []
     get_dep_list(all_list, args['BOARD'], json_tree)
-    print("list: " + str(all_list))
+    do_print("dependencies: " + str(all_list))
     write_modules(all_list, json_tree)
 else:
     if 'JS' in args:
@@ -275,18 +277,28 @@ else:
     else:
         js_file = args['SCRIPT']
 
-    restrict = args.get('RESTRICT', [])
-    if restrict != []:
+    restrict = args.get('RESTRICT', '')
+    if restrict != '':
         restrict = restrict.split(',')
+        do_print("Only using modules: " + str(restrict))
+    else:
+        restrict = []
 
-    build_tree(json_tree, restrict)
-    gather_deps(js_file, deps_list, zconf, zjs_conf, jrs_conf, lsrc, json_tree)
+    force = args.get('FORCE', '')
+    if force != '':
+        force = force.split(',')
+        do_print("Forcing inclusion of: " + str(force))
+    else:
+        force = []
 
-    print("DEPENDENCIES: " + str(deps_list))
-    print("ZEPHYR_CONFIG: " + str(zconf))
-    print("ZJS_CONFIG: " + str(zjs_conf))
-    print("JRS_CONFIG: " + str(jrs_conf))
-    print("SRC: " + str(lsrc))
+    if force != [] and restrict != []:
+        print("Error: cannot use FORCE and RESTRICT flags together")
+        quit()
+
+    build_tree(json_tree, restrict, force)
+    do_print(json_tree)
+    gather_deps(js_file, deps_list, zconf, zjs_conf, jrs_conf, lsrc, json_tree, force=force)
+    do_print("dependencies:" + str(deps_list))
 
     write_zconf(zconf, args['PRJCONF'])
     write_makefile(lsrc, zjs_conf, args['MAKEFILE'])

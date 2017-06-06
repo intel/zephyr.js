@@ -8,6 +8,7 @@ OS := $(shell uname)
 BOARD ?= arduino_101
 RAM ?= 55
 ROM ?= 144
+V ?= 0
 
 # Dump memory information: on = print allocs, full = print allocs + dump pools
 TRACE ?= off
@@ -85,7 +86,7 @@ endif
 # Settings for ashell builds
 ifneq (,$(filter $(MAKECMDGOALS),ide ashell))
 CONFIG ?= fragments/zjs.conf.dev
-ASHELL=ashell
+ASHELL=zjs_ashell.json
 ZJS_FLAGS := "$(ZJS_FLAGS) -DZJS_FIND_FUNC_NAME"
 endif
 
@@ -231,7 +232,7 @@ analyze: $(JS)
 	@mkdir -p outdir/include
 	@echo "% This is a generated file" > prj.mdef
 
-	./scripts/analyze SCRIPT=$(JS) JS=js.tmp BOARD=$(BOARD) FORCE=$(ASHELL) PRJCONF=prj.conf MAKEFILE=src/Makefile MAKEBASE=src/Makefile.base PROFILE=outdir/$(BOARD)/jerry_feature.profile
+	./scripts/analyze V=$(V) SCRIPT=$(JS) JS=js.tmp BOARD=$(BOARD) FORCE=$(ASHELL) PRJCONF=prj.conf MAKEFILE=src/Makefile MAKEBASE=src/Makefile.base PROFILE=outdir/$(BOARD)/jerry_feature.profile
 
 	@if [ "$(TRACE)" = "on" ] || [ "$(TRACE)" = "full" ]; then \
 		echo "ccflags-y += -DZJS_TRACE_MALLOC" >> src/Makefile; \
@@ -371,7 +372,7 @@ qemu: zephyr
 # Builds ARC binary
 .PHONY: arc
 arc: analyze
-	./scripts/analyze SCRIPT=$(JS) BOARD=arc PRJCONF=arc/prj.conf MAKEFILE=arc/src/Makefile MAKEBASE=arc/src/Makefile.base RESTRICT="zjs_ipm_arc.json,zjs_i2c_arc.json,zjs_arc.json,zjs_pme_arc.json"
+	./scripts/analyze V=$(V) SCRIPT=$(JS) BOARD=arc PRJCONF=arc/prj.conf MAKEFILE=arc/src/Makefile MAKEBASE=arc/src/Makefile.base RESTRICT="zjs_ipm_arc.json,zjs_i2c_arc.json,zjs_arc.json,zjs_pme_arc.json"
 
 	@printf "CONFIG_SRAM_SIZE=%d\n" $$((79 - $(RAM))) >> arc/prj.conf
 	@printf "CONFIG_FLASH_BASE_ADDRESS=0x400%x\n" $$((($(ROM) + 64) * 1024)) >> arc/prj.conf
