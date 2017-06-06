@@ -134,14 +134,16 @@ static ZJS_DECL_FUNC(zjs_spi_transceive)
             }
         }
         else {
-            len = jerry_get_string_size(buffer);
-            txBuf_obj = zjs_buffer_create(len, &txBuf);
-            if (jerry_string_to_char_buffer(argv[1], (jerry_char_t *)txBuf->buffer, len) != len)
-                return ZJS_STD_ERROR(SystemError, "SPI failed to create transmit buffer");
+            txBuf_obj = zjs_buffer_create(jerry_get_string_size(buffer), &txBuf);
+            // zjs_copy_jstring adds a null terminator, which we don't want
+            // so make a new string instead and remove it.
+            char *tmpBuf = zjs_alloc_from_jstring(argv[1], NULL);
+            strncpy(txBuf->buffer, tmpBuf, txBuf->bufsize);
+            zjs_free(tmpBuf);
         }
         // If this is a read / write
         if (dirArg == ZJS_SPI_DIR_READ_WRITE) {
-            rxBuf_obj = zjs_buffer_create(len, &rxBuf);
+            rxBuf_obj = zjs_buffer_create(txBuf->bufsize, &rxBuf);
             // Send the data and read from the device
             if (spi_transceive(handle->spi_device, txBuf->buffer , txBuf->bufsize, rxBuf->buffer, rxBuf->bufsize) != 0) {
                 return ZJS_STD_ERROR(SystemError, "SPI transceive failed");
