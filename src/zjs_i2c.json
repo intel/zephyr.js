@@ -1,12 +1,15 @@
 {
     "module": "i2c",
     "require": "i2c",
-    "depends": ["buffer", "ipm"],
+    "depends": ["buffer", "i2c_frdm", "i2c_a101"],
     "zephyr_conf": {
         "all": [
             "CONFIG_I2C=y"
         ]
     },
     "zjs_config": ["-DBUILD_MODULE_I2C"],
-    "src": ["zjs_i2c.c", "zjs_i2c_ipm_handler.c"]
+    "src": ["zjs_i2c.c"],
+    "header": ["zjs_i2c.h"],
+    "init": ["zjs_i2c_init"],
+    "cleanup": ["zjs_i2c_cleanup"]
 }

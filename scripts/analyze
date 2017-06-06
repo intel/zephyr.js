@@ -64,13 +64,11 @@ def parse_list(tree, list=[], force=[]):
             else:
                 print("Error: JSON entry %s must have either 'module' or 'require'" % file)
 
-def build_tree(tree, restrict, force):
-    if restrict == [] and force == []:
-        parse_list(tree, list=os.listdir("src/"))
-    elif restrict == [] and force != []:
-        parse_list(tree, list=os.listdir("src/"), force=force)
-    else:
+def build_tree(tree, restrict):
+    if restrict != []:
         parse_list(tree, list=restrict)
+    else:
+        parse_list(tree, list=os.listdir("src/"))
 
 def get_dep_list_helper(dlist, dep, board, tree):
     if dep in tree:
@@ -254,7 +252,7 @@ module_t zjs_modules_array[] = {\n""")
 
 if args['BOARD'] == 'linux':
     restrict = args['RESTRICT'].split(',')
-    build_tree(json_tree, restrict, [])
+    build_tree(json_tree, restrict)
     do_print(json_tree)
     all_list = []
     get_dep_list(all_list, args['BOARD'], json_tree)
@@ -291,11 +289,7 @@ else:
     else:
         force = []
 
-    if force != [] and restrict != []:
-        print("Error: cannot use FORCE and RESTRICT flags together")
-        quit()
-
-    build_tree(json_tree, restrict, force)
+    build_tree(json_tree, restrict)
     do_print(json_tree)
     gather_deps(js_file, deps_list, zconf, zjs_conf, jrs_conf, lsrc, json_tree, force=force)
     do_print("dependencies:" + str(deps_list))

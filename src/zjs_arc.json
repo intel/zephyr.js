@@ -8,11 +8,8 @@
             "CONFIG_CONSOLE=y",
             "CONFIG_SERIAL=n",
             "CONFIG_NS16550=n",
-            "CONFIG_NANO_TIMEOUTS=y",
-            "CONFIG_IPM=y",
-            "CONFIG_IPM_QUARK_SE=y",
-            "CONFIG_IPM_CONSOLE_SENDER=y"
+            "CONFIG_NANO_TIMEOUTS=y"
         ]
     },
-    "src": ["../../src/zjs_common.c", "../../src/zjs_ipm.c", "../../src/zjs_i2c_handler.c"]
+    "src": ["../../src/zjs_common.c"]
 }

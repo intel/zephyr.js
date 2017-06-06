@@ -40,9 +40,10 @@
 #endif
 
 static struct k_sem arc_sem;
+#ifdef CONFIG_IPM
 static struct zjs_ipm_message msg_queue[QUEUE_SIZE];
 static struct zjs_ipm_message *end_of_queue_ptr = msg_queue + QUEUE_SIZE;
-
+#endif
 #if defined(BUILD_MODULE_AIO) || defined(BUILD_MODULE_SENSOR_LIGHT)
 static struct device *adc_dev = NULL;
 static uint32_t pin_values[ARC_AIO_LEN] = {};
@@ -82,6 +83,7 @@ static double gyro_last_value[3];
 static double temp_last_value;
 #endif
 
+#ifdef CONFIG_IPM
 int ipm_send_msg(struct zjs_ipm_message *msg)
 {
     msg->flags &= ~MSG_ERROR_FLAG;
@@ -97,6 +99,7 @@ static int ipm_send_error(struct zjs_ipm_message *msg,
     DBG_PRINT("send error %u\n", msg->error_code);
     return zjs_ipm_send(msg->id, msg);
 }
+#endif
 
 #if defined(BUILD_MODULE_AIO) || defined(BUILD_MODULE_SENSOR_LIGHT)
 static uint32_t pin_read(uint8_t pin)
@@ -131,6 +134,7 @@ static uint32_t pin_read(uint8_t pin)
 }
 #endif
 
+#ifdef CONFIG_IPM
 static void queue_message(struct zjs_ipm_message *incoming_msg)
 {
     struct zjs_ipm_message *msg = msg_queue;
@@ -166,6 +170,7 @@ static void ipm_msg_receive_callback(void *context, uint32_t id, volatile void *
         ERR_PRINT("message is NULL\n");
     }
 }
+#endif
 
 #ifdef BUILD_MODULE_AIO
 static void handle_aio(struct zjs_ipm_message *msg)
@@ -1168,7 +1173,7 @@ static void handle_pme(struct zjs_ipm_message* msg)
     zjs_ipm_send(msg->id, msg);
 }
 #endif // BUILD_MODULE_PME
-
+#ifdef CONFIG_IPM
 static void process_messages()
 {
     struct zjs_ipm_message *msg = msg_queue;
@@ -1213,6 +1218,7 @@ static void process_messages()
         msg++;
     }
 }
+#endif
 
 void main(void)
 {
@@ -1220,11 +1226,12 @@ void main(void)
 
     k_sem_init(&arc_sem, 0, 1);
     k_sem_give(&arc_sem);
-
+#ifdef CONFIG_IPM
     memset(msg_queue, 0, sizeof(struct zjs_ipm_message) * QUEUE_SIZE);
 
     zjs_ipm_init();
     zjs_ipm_register_callback(-1, ipm_msg_receive_callback); // MSG_ID ignored
+#endif
 
 #if defined(BUILD_MODULE_AIO) || defined(BUILD_MODULE_SENSOR_LIGHT)
     adc_dev = device_get_binding(ADC_DEVICE_NAME);
@@ -1233,7 +1240,9 @@ void main(void)
 
     int tick_count = 0;
     while (1) {
+#ifdef CONFIG_IPM
         process_messages();
+#endif
 #ifdef BUILD_MODULE_AIO
         if (tick_count % AIO_UPDATE_INTERVAL == 0) {
             process_aio_updates();

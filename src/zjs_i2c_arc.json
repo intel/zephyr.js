@@ -7,5 +7,6 @@
         "arc": [
             "CONFIG_I2C=y"
         ]
-    }
+    },
+    "src": ["../../src/zjs_ipm.c", "../../src/zjs_i2c_handler.c"]
 }

@@ -1,0 +1,12 @@
+{
+    "module": "i2c_a101",
+    "depends": ["ipm"],
+    "targets": ["arduino_101"],
+    "zephyr_conf": {
+        "all": [
+            "CONFIG_I2C=y"
+        ]
+    },
+    "zjs_config": ["-DBUILD_MODULE_I2C"],
+    "src": ["zjs_i2c_ipm_handler.c"]
+}

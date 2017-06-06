@@ -1,0 +1,5 @@
+{
+    "module": "ashell_arc",
+    "depends": ["i2c", "i2c_arc", "pme_arc"],
+    "targets": ["arc"]
+}
