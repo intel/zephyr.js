@@ -1,28 +1,84 @@
 // Copyright (c) 2016-2017, Intel Corporation.
 
+console.log("Test BLE APIs as server");
 console.log("Wire IO7 to IO8");
 
 var gpio = require("gpio");
 var ble = require ("ble");
 var assert = require("Assert.js");
 
-var deviceName, bufferData, pinA, pinB, disconnectClient,
-    readValue, acceptClient, rssiValue, tmpValue;
-var writeValue = 1;
-var poweredOnFlag = false;
-var advertisingFlag = false;
-var writeFlag = true;
-var readFlag = true;
-var rssiFlag = true;
-var notifyFlag = true;
-var acceptFlag = true;
-var disconnectFlag = false;
-var advertiseFlag = true;
-var totalFlag = false;
-var stopFlag = true;
+var deviceName, bufferData, pinA, pinB,
+    disconnectClient, acceptclient, readValue;
 
-pinA = gpio.open({ pin: "IO7" });
-pinB = gpio.open({ pin: "IO8", direction: "in" });
+var clientCount = 0;
+var clients = {
+    client1: null,
+    client2: null,
+    client3: null,
+    client4: null
+}
+
+var AcceptMoreClientsFlag = true;
+var MaxClientsFlag = true;
+var acceptClients = function(clientAddress) {
+    if (clients.client1 === null) {
+        clients.client1 = clientAddress;
+        clientCount++;
+    } else if (clients.client2 === null) {
+        clients.client2 = clientAddress;
+        clientCount++;
+
+        if (AcceptMoreClientsFlag) {
+            assert(1 < clientCount && clientCount < 5,
+                   "connection: accept multiple clients to connected");
+
+            AcceptMoreClientsFlag = false;
+        }
+    } else if (clients.client3 === null) {
+        clients.client3 = clientAddress;
+        clientCount++;
+        return clientCount;
+    } else if (clients.client4 === null) {
+        clients.client4 = clientAddress;
+        clientCount++;
+
+        if (MaxClientsFlag) {
+            assert(clientCount === 4,
+                   "connection: accept max clients to connected");
+
+            MaxClientsFlag = false;
+        }
+    } else {
+        console.log("Can not connect more client");
+    }
+
+    return clientCount;
+}
+
+var DisconnectMoreClientsFlag = false;
+var disconnectClients = function(clientAddress) {
+    if (clients.client4 === clientAddress) {
+        clients.client4 = null;
+        clientCount--;
+    } else if (clients.client3 === clientAddress) {
+        clients.client3 = null;
+        clientCount--;
+    } else if (clients.client2 === clientAddress) {
+        clients.client2 = null;
+        clientCount--;
+    } else if (clients.client1 === clientAddress) {
+        clients.client1 = null;
+        clientCount--;
+    } else {
+        console.log("Can not disconnect client");
+    }
+
+    return clientCount;
+}
+
+var writeValue = 1;
+pinA = gpio.open({pin: "IO7"});
+pinB = gpio.open({pin: "IO8", mode: "in", edge: "none"});
 pinA.write(writeValue);
 readValue = pinB.read();
 
@@ -30,211 +86,239 @@ bufferData = new Buffer(1);
 bufferData.writeUInt8(0);
 
 var writeCharacteristic = new ble.Characteristic({
-    uuid: 'aa00',
-    properties: ['write'],
+    uuid: "aa00",
+    properties: ["write"],
     descriptors: [
         new ble.Descriptor({
-            uuid: '2901',
-            value: 'write'
+            uuid: "2901",
+            value: "write"
         })
     ]
 });
 
-var keywordResult = [ true, true, true, true ];
+var WriteRequestFlags = {
+    offset: true,
+    type: true,
+    length: true,
+    success: true
+}
 
+var writeFlag = true;
 writeCharacteristic.onWriteRequest = function(data, offset, withoutResponse,
                                               callback) {
-    if (data.toString('hex') === "01") {
-        writeValue = 1;
-    } else if (data.toString('hex') === "00") {
-        writeValue = 0;
-    } else {
-        tmpValue = writeValue;
-        writeValue = null;
-    }
-
-    if (offset !== 0) {
-        if (keywordResult[3]) {
-            keywordResult[3] = false;
-            assert(true, "result: RESULT_INVALID_OFFSET");
-        }
-
-        callback(this.RESULT_INVALID_OFFSET);
-        return;
-    }
-
-    if (typeof writeValue !== "number") {
-        if (keywordResult[1]) {
-            keywordResult[1] = false;
-            assert(true, "result: RESULT_UNLIKELY_ERROR");
-       }
-
-        writeValue = tmpValue;
-        callback(this.RESULT_UNLIKELY_ERROR);
-        return;
-    }
-
-    bufferData = data;
-    if (bufferData.length !== 1) {
-        if (keywordResult[2]) {
-            keywordResult[2] = false;
-            assert(true, "result: RESULT_INVALID_ATTRIBUTE_LENGTH");
-        }
-
-        callback(this.RESULT_INVALID_ATTRIBUTE_LENGTH);
-        return;
-    }
-
-    pinA.write(writeValue);
-    if (keywordResult[0]) {
-        keywordResult[0] = false;
-        assert(true, "result: RESULT_SUCCESS");
-    }
-
-    callback(this.RESULT_SUCCESS);
-
     if (writeFlag) {
         assert(pinB.read() === writeValue,
                "characteristic: respond to write request");
 
         writeFlag = false;
     }
+
+    if (data.toString("hex") === "01") {
+        writeValue = 1;
+    } else if (data.toString("hex") === "00") {
+        writeValue = 0;
+    } else {
+        writeValue = null;
+    }
+
+    bufferData = data;
+    if (offset !== 0) {
+        if (WriteRequestFlags.offset) {
+            assert(WriteRequestResults.offset,
+                   "result: RESULT_INVALID_OFFSET");
+
+            WriteRequestFlags.offset = false;
+        }
+
+        callback(this.RESULT_INVALID_OFFSET);
+        return;
+    } else if (bufferData.length !== 1) {
+        if (WriteRequestFlags.length) {
+            assert(WriteRequestFlags.length,
+                   "result: RESULT_INVALID_ATTRIBUTE_LENGTH");
+
+            WriteRequestFlags.length = false;
+        }
+
+        console.log("Please write value as '0x00' by writeCharacteristic");
+
+        callback(this.RESULT_INVALID_ATTRIBUTE_LENGTH);
+        return;
+    } else if (typeof writeValue !== "number") {
+        if (WriteRequestFlags.type) {
+            assert(WriteRequestFlags.type, "result: RESULT_UNLIKELY_ERROR");
+
+            WriteRequestFlags.type = false;
+       }
+
+        console.log("Please write value as '0x5555' by writeCharacteristic");
+
+        callback(this.RESULT_UNLIKELY_ERROR);
+        return;
+    } else {
+        if (WriteRequestFlags.success) {
+            assert(WriteRequestFlags.success, "result: RESULT_SUCCESS");
+
+            WriteRequestFlags.success = false;
+        }
+
+        pinA.write(writeValue);
+        console.log("Please read value by readCharacteristic");
+
+        callback(this.RESULT_SUCCESS);
+    }
 };
 
 var readCharacteristic = new ble.Characteristic({
-    uuid: 'aa01',
-    properties: ['read', 'notify'],
+    uuid: "aa01",
+    properties: ["read", "notify"],
     descriptors: [
         new ble.Descriptor({
-            uuid: '2901',
-            value: 'read'
+            uuid: "2901",
+            value: "read"
         })
     ]
 });
 
+var readFlag = true;
 readCharacteristic.onReadRequest = function(offset, callback) {
-    readValue = pinB.read();
-    callback(this.RESULT_SUCCESS, bufferData);
-
     if (readFlag) {
         assert(pinB.read() === writeValue,
                "characteristic: respond to read request");
 
+        console.log("Please Subscribe by readCharacteristic");
+
         readFlag = false;
     }
+
+    readValue = pinB.read();
+    callback(this.RESULT_SUCCESS, bufferData);
 };
 
+var notifyFlag = true;
 readCharacteristic.onSubscribe = function(maxValueSize, callback) {
-    readValue = pinB.read();
-    callback(bufferData);
-
     if (notifyFlag) {
         assert(readValue === writeValue,
                "characteristic: respond to subscribe request");
 
         notifyFlag = false;
     }
+
+    readValue = pinB.read();
+
+    setTimeout(function() {
+        ble.disconnect(acceptclient);
+    }, 3000);
+
+    callback(bufferData);
 };
 
-ble.on('stateChange', function (state) {
-    if (state === 'poweredOn') {
-        assert(true, "start-up: powered on");
+var poweredOnFlag = false;
+var setServicesFlag = false;
+ble.on("stateChange", function(state) {
+    if (state === "poweredOn") {
         poweredOnFlag = true;
         deviceName = "BLE SERVICE is very good and so cool";
 
         assert.throws(function () {
-            ble.startAdvertising(deviceName, ['abcdef']);
-        }, "advertising: invalid deviceName and UUID");
+            ble.startAdvertising(deviceName, ["abcdef"]);
+        }, "BLEService: advertising with invalid deviceName and UUID");
 
         deviceName = "BLE SERVICE";
-        ble.startAdvertising(deviceName, ['abcd']);
+        ble.startAdvertising(deviceName, ["abcd"]);
 
         ble.updateRssi();
 
         ble.setServices([
             new ble.PrimaryService({
-                uuid: 'a000',
+                uuid: "a000",
                 characteristics: [
                     writeCharacteristic,
                     readCharacteristic
                 ]
             })
-        ], function (error) {
-            if (error) {
-                assert(false, "service: fail to setup");
-            }
+        ], function(error) {
+            console.log("service: error " + error.name);
+            return;
         });
+
+        setServicesFlag = true;
     }
 });
 
-ble.on('advertisingStart', function (error) {
-    if (error) {
-        assert(false, "advertising: be starting");
-        return;
-    }
-
-    if (advertiseFlag) {
-        assert(true, "advertising: starting with deviceName and UUID");
-
-        advertiseFlag = false;
-    }
+var advertiseFlag = false;
+ble.on("advertisingStart", function(error) {
+    advertiseFlag = true;
 });
 
-ble.on('accept', function (clientAddress) {
-    if (acceptFlag) {
+var acceptFirstFlag = true;
+ble.on("accept", function(clientAddress) {
+    var count = acceptClients(clientAddress);
+
+    console.log("Accept " + clientAddress);
+    console.log("There are " + count + " clients to connected");
+
+    if (acceptFirstFlag) {
         assert(clientAddress !== null,
-               "connection: Accept " + clientAddress + " to connect");
+               "connection: accept to connected");
 
-        acceptFlag = false;
-    }
+        acceptclient = clientAddress;
 
-    acceptclient = clientAddress;
+        console.log("Please write value as '0x05' by writeCharacteristic");
 
-    if (stopFlag) {
-        setTimeout(function () {
-            ble.disconnect(clientAddress);
-            console.log("please connect again");
-        }, 1000);
+        acceptFirstFlag = false;
     }
 });
 
-ble.on('disconnect', function (clientAddress) {
-    if (disconnectFlag) {
+var disconnectFirstFlag = true;
+ble.on("disconnect", function(clientAddress) {
+    var count = disconnectClients(clientAddress);
+
+    console.log("Disconnect " + clientAddress);
+    console.log("There are " + count + " clients to connected");
+
+    if (clients.client1 === null &&
+        clients.client2 === null &&
+        clients.client3 === null &&
+        clients.client4 === null) {
+        if (DisconnectMoreClientsFlag) {
+            assert(clientCount === 0,
+                   "connection: disconnect all clients");
+
+            assert.result();
+
+            DisconnectMoreClientsFlag = false;
+        }
+    }
+
+    if (disconnectFirstFlag) {
         assert(clientAddress !== null,
                "connection: " + clientAddress + " is disconnected");
 
-        disconnectFlag = false;
-        totalFlag = true;
-    }
-
-    disconnectClient = clientAddress;
-
-    if (stopFlag) {
+        disconnectClient = clientAddress;
         assert(disconnectClient === acceptclient,
-               "disconnect: " + clientAddress
-               + " connected and disconnected");
+               "connection: " + clientAddress + " connected and disconnected");
 
-        disconnectFlag = true;
-        stopFlag = false;
-    }
+        console.log("Please connected multiple clients and max clients as '4'");
 
-    if (totalFlag) {
-        totalFlag = false;
-
-        assert.result();
+        DisconnectMoreClientsFlag = true;
+        disconnectFirstFlag = false;
     }
 });
 
-ble.on('rssiUpdate', function (rssi) {
-    if (rssiFlag) {
-        assert(rssi === -50, "rssi: set default RSSI value");
+var rssiFlag = false;
+var rssiValueFlag = false;
+ble.on("rssiUpdate", function(rssi) {
+    if (rssi === -50) rssiValueFlag = true;
 
-        rssiFlag = false;
-    }
+    rssiFlag = true;
 });
 
-setTimeout(function () {
-    if (!poweredOnFlag) {
-        assert(false, "start-up: powered on");
-    }
-}, 1000);
+setTimeout(function() {
+    assert(poweredOnFlag, "BLEService: powered on");
+    assert(setServicesFlag, "BLEService: be creating");
+    assert(advertiseFlag, "BLEService: advertising is starting");
+    assert(rssiValueFlag && rssiFlag, "BLEService: set default RSSI value");
+
+    console.log("Please connect one BLE client");
+}, 3000);
