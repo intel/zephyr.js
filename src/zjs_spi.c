@@ -21,6 +21,20 @@
 #define MAX_READ_BUFF 1000
 #define MAX_DIR_LEN 13
 
+enum spi_topology {
+    ZJS_TOPOLOGY_FULL_DUPLEX,
+    ZJS_TOPOLOGY_READ,
+    ZJS_TOPOLOGY_WRITE,
+    ZJS_TOPOLOGY_MULTIPLEXED,
+    ZJS_TOPOLOGY_DAISY_CHAIN
+};
+
+typedef struct spi_handle {
+    struct device *spi_device;
+    enum spi_topology topology;
+    bool closed;
+} spi_handle_t;
+
 static jerry_value_t zjs_spi_prototype;
 
 static void zjs_spi_callback_free(void *native)
@@ -60,10 +74,10 @@ static ZJS_DECL_FUNC(zjs_spi_transceive)
 
     size_t len;
     jerry_value_t buffer;
-    zjs_buffer_t *txBuf;
-    zjs_buffer_t *rxBuf;
-    jerry_value_t rxBuf_obj = jerry_create_null();
-    jerry_value_t txBuf_obj;
+    zjs_buffer_t *tx_buf;
+    zjs_buffer_t *rx_buf;
+    jerry_value_t rx_buf_obj = jerry_create_null();
+    jerry_value_t tx_buf_obj;
 
     if (spi_slave_select(handle->spi_device, jerry_get_number_value(argv[0]))) {
         return zjs_error("SPI slave select failed\n");
@@ -76,95 +90,90 @@ static ZJS_DECL_FUNC(zjs_spi_transceive)
         }
     }
 
-    char dirString[13];
-    enum spi_direction dirArg;
-
+    char dir_str[13];
     // Set the direction default based on the topology.
-    if (handle->topology == ZJS_TOPOLOGY_READ)
-        dirArg = ZJS_SPI_DIR_READ;
-    else if (handle->topology == ZJS_TOPOLOGY_WRITE)
-        dirArg = ZJS_SPI_DIR_WRITE;
-    else
-        dirArg = ZJS_SPI_DIR_READ_WRITE;
+    enum spi_direction dir_arg = handle->topology;
 
     // If we have a 'direction' arg, get it and validate
     if (argc == 3) {
         uint32_t dirLen = jerry_get_string_size(argv[2]) + 1;
-        zjs_copy_jstring(argv[2], dirString, &dirLen);
+        zjs_copy_jstring(argv[2], dir_str, &dirLen);
 
-        if (strncmp(dirString, "read-write", 11) == 0)
-            dirArg = ZJS_SPI_DIR_READ_WRITE;
-        else if (strncmp(dirString, "read", 5) == 0)
-            dirArg = ZJS_SPI_DIR_READ;
-        else if (strncmp(dirString, "write", 6) == 0)
-            dirArg = ZJS_SPI_DIR_WRITE;
+        if (strncmp(dir_str, "read-write", 11) == 0)
+            dir_arg = ZJS_TOPOLOGY_FULL_DUPLEX;
+        else if (strncmp(dir_str, "read", 5) == 0)
+            dir_arg = ZJS_TOPOLOGY_READ;
+        else if (strncmp(dir_str, "write", 6) == 0)
+            dir_arg = ZJS_TOPOLOGY_WRITE;
         else
             return ZJS_STD_ERROR(RangeError, "Invalid direction");
 
         // If topology conflicts with direction given
         if ((handle->topology == ZJS_TOPOLOGY_WRITE &&
-            dirArg != ZJS_SPI_DIR_WRITE) ||
+            dir_arg != ZJS_TOPOLOGY_WRITE) ||
             (handle->topology == ZJS_TOPOLOGY_READ &&
-            dirArg != ZJS_SPI_DIR_READ)) {
+            dir_arg != ZJS_TOPOLOGY_READ)) {
             return ZJS_STD_ERROR(NotSupportedError, "Direction conflicts with topology");
         }
         // If reading only, the 2nd arg should be NULL
-        if (dirArg == ZJS_SPI_DIR_READ && !jerry_value_is_null(argv[1])) {
-            return ZJS_STD_ERROR(NotSupportedError, "Direction conflicts with topology");
+        if (dir_arg == ZJS_TOPOLOGY_READ && !jerry_value_is_null(argv[1])) {
+            return ZJS_STD_ERROR(NotSupportedError, "Buffer should be null when direction is read");
         }
     }
 
     // If we need to write a buffer
-    if (dirArg != ZJS_SPI_DIR_READ) {
+    if (dir_arg != ZJS_TOPOLOGY_READ) {
         buffer = argv[1];
         // Figure out if the buffer is an array or string, handle accordingly
         if (jerry_value_is_array(argv[1])) {
             len = jerry_get_array_length(buffer);
-            txBuf_obj = zjs_buffer_create(len, &txBuf);
-            if (txBuf) {
+            tx_buf_obj = zjs_buffer_create(len, &tx_buf);
+            if (tx_buf) {
                 for (int i = 0; i < len; i++) {
                     ZVAL item = jerry_get_property_by_index(buffer, i);
                     if (jerry_value_is_number(item)) {
-                        txBuf->buffer[i] = (uint8_t)jerry_get_number_value(item);
+                        tx_buf->buffer[i] = (uint8_t)jerry_get_number_value(item);
                     } else {
                         ERR_PRINT("non-numeric value in array, treating as 0\n");
-                        txBuf->buffer[i] = 0;
+                        tx_buf->buffer[i] = 0;
                     }
                 }
             }
         }
         else {
-            txBuf_obj = zjs_buffer_create(jerry_get_string_size(buffer), &txBuf);
+            tx_buf_obj = zjs_buffer_create(jerry_get_string_size(buffer), &tx_buf);
             // zjs_copy_jstring adds a null terminator, which we don't want
             // so make a new string instead and remove it.
             char *tmpBuf = zjs_alloc_from_jstring(argv[1], NULL);
-            strncpy(txBuf->buffer, tmpBuf, txBuf->bufsize);
+            strncpy(tx_buf->buffer, tmpBuf, tx_buf->bufsize);
             zjs_free(tmpBuf);
         }
         // If this is a read / write
-        if (dirArg == ZJS_SPI_DIR_READ_WRITE) {
-            rxBuf_obj = zjs_buffer_create(txBuf->bufsize, &rxBuf);
+        if (dir_arg == ZJS_TOPOLOGY_FULL_DUPLEX) {
+            rx_buf_obj = zjs_buffer_create(tx_buf->bufsize, &rx_buf);
             // Send the data and read from the device
-            if (spi_transceive(handle->spi_device, txBuf->buffer , txBuf->bufsize, rxBuf->buffer, rxBuf->bufsize) != 0) {
+            if (spi_transceive(handle->spi_device, tx_buf->buffer , tx_buf->bufsize, rx_buf->buffer, rx_buf->bufsize) != 0) {
+                zjs_free(rx_buf_obj);
                 return ZJS_STD_ERROR(SystemError, "SPI transceive failed");
             }
         }
         // This is a write only operation, return a NULL buffer
         else {
-            if (spi_write(handle->spi_device, txBuf->buffer , txBuf->bufsize) !=0) {
+            if (spi_write(handle->spi_device, tx_buf->buffer , tx_buf->bufsize) !=0) {
                 return ZJS_STD_ERROR(SystemError, "SPI transceive failed");
             }
-            rxBuf_obj = jerry_create_null();
+            rx_buf_obj = jerry_create_null();
         }
     }   // This is a read only operation
     else {
-        rxBuf_obj = zjs_buffer_create(MAX_READ_BUFF, &rxBuf);
+        rx_buf_obj = zjs_buffer_create(MAX_READ_BUFF, &rx_buf);
         // Read the data from the device
-        if (spi_read(handle->spi_device, rxBuf->buffer, rxBuf->bufsize) !=0) {
+        if (spi_read(handle->spi_device, rx_buf->buffer, rx_buf->bufsize) !=0) {
+            zjs_free(rx_buf_obj);
             return ZJS_STD_ERROR(SystemError, "SPI transceive failed");
         }
     }
-    return rxBuf_obj;
+    return rx_buf_obj;
 }
 
 static ZJS_DECL_FUNC(zjs_spi_close)
@@ -185,10 +194,6 @@ static ZJS_DECL_FUNC(zjs_spi_open)
 
     ZJS_VALIDATE_ARGS(Z_OPTIONAL Z_OBJECT);
 
-    jerry_value_t init = 0;
-    if (argc >= 1)
-        init = argv[0];
-
     // Default values
     uint32_t bus = 0;
     double speed = 10;
@@ -196,79 +201,79 @@ static ZJS_DECL_FUNC(zjs_spi_open)
     uint32_t bits = 8;
     uint32_t polarity = 0;
     uint32_t phase = 0;
-    char topologyStr[13] = "";
-    char busStr[9];
+    char topology_str[13] = "";
+    char bus_str[9];
     enum spi_topology topology = ZJS_TOPOLOGY_FULL_DUPLEX;
-    uint32_t frameGap = 0;
+    uint32_t frame_gap = 0;
     struct spi_config config = { 0 };
 
     // Get any provided optional args
-    if (init) {
-        zjs_obj_get_uint32(init, "bus", &bus);
+    if (argc >= 1) {
+        zjs_obj_get_uint32(argv[0], "bus", &bus);
         if (bus < MAX_SPI_BUS) {
-            snprintf(busStr, 9, "%s%lu", SPI_BUS, bus);
+            snprintf(bus_str, 9, "%s%lu", SPI_BUS, bus);
         }
         else
             return ZJS_STD_ERROR(RangeError, "Invalid bus");
 
         // Bus speed in MHz
-        zjs_obj_get_double(init, "speed", &speed);
+        zjs_obj_get_double(argv[0], "speed", &speed);
 
         // Most significant bit sent first
-        zjs_obj_get_boolean(init, "msbFirst", &msbFirst);
+        zjs_obj_get_boolean(argv[0], "msbFirst", &msbFirst);
 
         // Number of data bits, valid options are 1, 2, 4, 8, or 16
-        zjs_obj_get_uint32(init, "bits", &bits);
+        zjs_obj_get_uint32(argv[0], "bits", &bits);
         if (bits > 16 || (bits != 1 && bits % 2 != 0))
             return ZJS_STD_ERROR(RangeError, "Invalid bits");
 
         // Polarity value, valid options are 0 or 2
-        zjs_obj_get_uint32(init, "polarity", &polarity);
+        zjs_obj_get_uint32(argv[0], "polarity", &polarity);
         if (polarity != 0 && polarity != 2)
             return ZJS_STD_ERROR(TypeError, "Invalid polarity");
 
         // Clock phase value, valid options are 0 or 1
-        zjs_obj_get_uint32(init, "phase", &phase);
+        zjs_obj_get_uint32(argv[0], "phase", &phase);
         if (phase != 0 && phase != 2)
             return ZJS_STD_ERROR(TypeError, "Invalid phase");
 
         // Connection type
-        zjs_obj_get_string(init, "topology", topologyStr, 13);
-        if (strncmp(topologyStr, "full-duplex", 12) == 0)
+        zjs_obj_get_string(argv[0], "topology", topology_str, 13);
+        if (strncmp(topology_str, "full-duplex", 12) == 0)
             topology = ZJS_TOPOLOGY_FULL_DUPLEX;
-        else if (strncmp(topologyStr, "read", 12) == 0)
+        else if (strncmp(topology_str, "read", 12) == 0)
             topology = ZJS_TOPOLOGY_READ;
-        else if (strncmp(topologyStr, "write", 12) == 0)
+        else if (strncmp(topology_str, "write", 12) == 0)
             topology = ZJS_TOPOLOGY_WRITE;
-        else if (strncmp(topologyStr, "multiplexed", 11) == 0)
+        else if (strncmp(topology_str, "multiplexed", 11) == 0)
             topology = ZJS_TOPOLOGY_MULTIPLEXED;
-        else if (strncmp(topologyStr, "daisy-chain", 11) == 0)
+        else if (strncmp(topology_str, "daisy-chain", 11) == 0)
             topology = ZJS_TOPOLOGY_DAISY_CHAIN;
-        else if (strncmp(topologyStr, "", 2) != 0)
+        else if (strncmp(topology_str, "", 2) != 0)
             return ZJS_STD_ERROR(RangeError, "Invalid topology");
 
-        zjs_obj_get_uint32(init, "frameGap", &frameGap);
-
-        config.config |= SPI_WORD(bits);
-
-        if (msbFirst)
-            config.config |= SPI_TRANSFER_MSB;
-        else
-            config.config |= SPI_TRANSFER_LSB;
-
-        if (speed > 0)
-            config.max_sys_freq = speed;
-
-        // Note: The mode is determined by adding the polarity and phase bits
-        // together, this is why polarity is either 0 or 2
-        if (polarity == 2)
-            config.config |= SPI_MODE_CPOL;
-
-        if (phase == 1)
-            config.config |= SPI_MODE_CPHA;
+        zjs_obj_get_uint32(argv[0], "frame_gap", &frame_gap);
     }
 
-    struct device *spi_device = device_get_binding(busStr);
+    config.config |= SPI_WORD(bits);
+
+    if (msbFirst)
+        config.config |= SPI_TRANSFER_MSB;
+    else
+        config.config |= SPI_TRANSFER_LSB;
+
+    if (speed > 0)
+        config.max_sys_freq = speed;
+
+    // Note: The mode is determined by adding the polarity and phase bits
+    // together, this is why polarity is either 0 or 2
+    if (polarity == 2)
+        config.config |= SPI_MODE_CPOL;
+
+    if (phase == 1)
+        config.config |= SPI_MODE_CPHA;
+
+    struct device *spi_device = device_get_binding(bus_str);
 
     if (!spi_device) {
         return zjs_error("Could not find SPI driver\n");
