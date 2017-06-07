@@ -92,7 +92,7 @@ static ZJS_DECL_FUNC(zjs_spi_transceive)
 
     char dir_str[13];
     // Set the direction default based on the topology.
-    enum spi_direction dir_arg = handle->topology;
+    enum spi_topology dir_arg = handle->topology;
 
     // If we have a 'direction' arg, get it and validate
     if (argc == 3) {
@@ -153,7 +153,7 @@ static ZJS_DECL_FUNC(zjs_spi_transceive)
             rx_buf_obj = zjs_buffer_create(tx_buf->bufsize, &rx_buf);
             // Send the data and read from the device
             if (spi_transceive(handle->spi_device, tx_buf->buffer , tx_buf->bufsize, rx_buf->buffer, rx_buf->bufsize) != 0) {
-                zjs_free(rx_buf_obj);
+                jerry_release_value(rx_buf_obj);
                 return ZJS_STD_ERROR(SystemError, "SPI transceive failed");
             }
         }
@@ -169,7 +169,7 @@ static ZJS_DECL_FUNC(zjs_spi_transceive)
         rx_buf_obj = zjs_buffer_create(MAX_READ_BUFF, &rx_buf);
         // Read the data from the device
         if (spi_read(handle->spi_device, rx_buf->buffer, rx_buf->bufsize) !=0) {
-            zjs_free(rx_buf_obj);
+            jerry_release_value(rx_buf_obj);
             return ZJS_STD_ERROR(SystemError, "SPI transceive failed");
         }
     }
