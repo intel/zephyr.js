@@ -18,8 +18,8 @@ var clients = {
     client4: null
 }
 
-var AcceptMoreClientsFlag = true;
-var MaxClientsFlag = true;
+var acceptMoreClientsFlag = true;
+var maxClientsFlag = true;
 var acceptClients = function(clientAddress) {
     if (clients.client1 === null) {
         clients.client1 = clientAddress;
@@ -55,7 +55,7 @@ var acceptClients = function(clientAddress) {
     return clientCount;
 }
 
-var DisconnectMoreClientsFlag = false;
+var disconnectMoreClientsFlag = false;
 var disconnectClients = function(clientAddress) {
     if (clients.client4 === clientAddress) {
         clients.client4 = null;
@@ -96,7 +96,7 @@ var writeCharacteristic = new ble.Characteristic({
     ]
 });
 
-var WriteRequestFlags = {
+var writeRequestFlags = {
     offset: true,
     type: true,
     length: true,
@@ -123,21 +123,21 @@ writeCharacteristic.onWriteRequest = function(data, offset, withoutResponse,
 
     bufferData = data;
     if (offset !== 0) {
-        if (WriteRequestFlags.offset) {
-            assert(WriteRequestResults.offset,
+        if (writeRequestFlags.offset) {
+            assert(writeRequestFlags.offset,
                    "result: RESULT_INVALID_OFFSET");
 
-            WriteRequestFlags.offset = false;
+            writeRequestFlags.offset = false;
         }
 
         callback(this.RESULT_INVALID_OFFSET);
         return;
     } else if (bufferData.length !== 1) {
-        if (WriteRequestFlags.length) {
-            assert(WriteRequestFlags.length,
+        if (writeRequestFlags.length) {
+            assert(writeRequestFlags.length,
                    "result: RESULT_INVALID_ATTRIBUTE_LENGTH");
 
-            WriteRequestFlags.length = false;
+            writeRequestFlags.length = false;
         }
 
         console.log("Please write value as '0x00' by writeCharacteristic");
@@ -145,10 +145,10 @@ writeCharacteristic.onWriteRequest = function(data, offset, withoutResponse,
         callback(this.RESULT_INVALID_ATTRIBUTE_LENGTH);
         return;
     } else if (typeof writeValue !== "number") {
-        if (WriteRequestFlags.type) {
-            assert(WriteRequestFlags.type, "result: RESULT_UNLIKELY_ERROR");
+        if (writeRequestFlags.type) {
+            assert(writeRequestFlags.type, "result: RESULT_UNLIKELY_ERROR");
 
-            WriteRequestFlags.type = false;
+            writeRequestFlags.type = false;
        }
 
         console.log("Please write value as '0x5555' by writeCharacteristic");
@@ -156,10 +156,10 @@ writeCharacteristic.onWriteRequest = function(data, offset, withoutResponse,
         callback(this.RESULT_UNLIKELY_ERROR);
         return;
     } else {
-        if (WriteRequestFlags.success) {
-            assert(WriteRequestFlags.success, "result: RESULT_SUCCESS");
+        if (writeRequestFlags.success) {
+            assert(writeRequestFlags.success, "result: RESULT_SUCCESS");
 
-            WriteRequestFlags.success = false;
+            writeRequestFlags.success = false;
         }
 
         pinA.write(writeValue);
@@ -186,7 +186,7 @@ readCharacteristic.onReadRequest = function(offset, callback) {
         assert(pinB.read() === writeValue,
                "characteristic: respond to read request");
 
-        console.log("Please Subscribe by readCharacteristic");
+        console.log("Please subscribe by readCharacteristic");
 
         readFlag = false;
     }
