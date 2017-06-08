@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2017, Intel Corporation.
 
 #ifndef __ashell_def_h__
 #define __ashell_def_h__

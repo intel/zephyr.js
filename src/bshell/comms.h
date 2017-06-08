@@ -1,6 +1,4 @@
-/*
- * Copyright (c) 2016 Intel Corporation
- */
+// Copyright (c) 2017, Intel Corporation.
 
 #ifndef __comms_h__
 #define __comms_h__
