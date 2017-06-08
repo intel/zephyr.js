@@ -237,6 +237,7 @@ analyze: $(JS)
 		SCRIPT=$(JS) \
 		JS=js.tmp \
 		BOARD=$(BOARD) \
+		JSON_DIR=src/ \
 		FORCE=$(ASHELL) \
 		PRJCONF=prj.conf \
 		MAKEFILE=src/Makefile \
@@ -396,10 +397,10 @@ arc: analyze
 	./scripts/analyze	V=$(V) \
 		SCRIPT=$(JS) \
 		BOARD=arc \
+		JSON_DIR=arc/src/ \
 		PRJCONF=arc/prj.conf \
 		MAKEFILE=arc/src/Makefile \
 		MAKEBASE=arc/src/Makefile.base \
-		RESTRICT=$(ARC_RESTRICT) \
 		FORCE=$(ASHELL_ARC)
 
 	@printf "CONFIG_SRAM_SIZE=%d\n" $$((79 - $(RAM))) >> arc/prj.conf

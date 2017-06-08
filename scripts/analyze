@@ -44,7 +44,7 @@ def parse_list(tree, list=[]):
     for file in list:
         if file.endswith(".json"):
             do_print("opening " + file)
-            with open("src/" + file) as f:
+            with open(args['JSON_DIR'] + file) as f:
                 data = json.load(f)
             if 'targets' in data:
                 if args['BOARD'] not in data['targets']:
@@ -71,7 +71,7 @@ def build_tree(tree, restrict):
     if restrict != []:
         parse_list(tree, list=restrict)
     else:
-        parse_list(tree, list=os.listdir("src/"))
+        parse_list(tree, list=os.listdir(args['JSON_DIR']))
 
 def get_dep_list_helper(dlist, dep, board, tree):
     if dep in tree:
@@ -145,7 +145,7 @@ def gather_deps(file, dlist, zlist, zjslist, jrslist, srclist, tree, force=[]):
 
     if force != []:
         for f in force:
-            with open("src/" + f) as file:
+            with open(args['JSON_DIR'] + f) as file:
                 data = json.load(file)
                 gather_deps_helper(text, data['module'], dlist, zlist, zjslist, jrslist, srclist, tree)
     else:

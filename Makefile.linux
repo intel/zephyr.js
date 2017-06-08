@@ -134,7 +134,7 @@ all: linux
 
 .PHONY: setup
 setup:
-	./scripts/analyze BOARD=linux RESTRICT=$(LINUX_MODULES) V=$(V)
+	./scripts/analyze BOARD=linux RESTRICT=$(LINUX_MODULES) V=$(V) JSON_DIR=src/
 
 $(BUILD_DIR)/%.o:%.c
 	@mkdir -p $(@D)
