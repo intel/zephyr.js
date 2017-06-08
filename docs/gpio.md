@@ -136,5 +136,3 @@ Sample Apps
   * [Arduino Button sample](../samples/arduino/digital/Button.js)
   * [ButtonLEDs sample](../samples/ButtonLEDs.js)
   * [TwoButtons sample](../samples/TwoButtons.js)
-* Using openAsync
-  * [Async ButtonLEDs sample](../samples/ButtonLEDsAsync.js)
