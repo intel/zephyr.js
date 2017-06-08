@@ -233,7 +233,15 @@ analyze: $(JS)
 	@mkdir -p outdir/include
 	@echo "% This is a generated file" > prj.mdef
 
-	./scripts/analyze V=$(V) SCRIPT=$(JS) JS=js.tmp BOARD=$(BOARD) FORCE=$(ASHELL) PRJCONF=prj.conf MAKEFILE=src/Makefile MAKEBASE=src/Makefile.base PROFILE=outdir/$(BOARD)/jerry_feature.profile
+	./scripts/analyze	V=$(V) \
+		SCRIPT=$(JS) \
+		JS=js.tmp \
+		BOARD=$(BOARD) \
+		FORCE=$(ASHELL) \
+		PRJCONF=prj.conf \
+		MAKEFILE=src/Makefile \
+		MAKEBASE=src/Makefile.base \
+		PROFILE=outdir/$(BOARD)/jerry_feature.profile
 
 	@if [ "$(TRACE)" = "on" ] || [ "$(TRACE)" = "full" ]; then \
 		echo "ccflags-y += -DZJS_TRACE_MALLOC" >> src/Makefile; \
@@ -370,10 +378,29 @@ qemu: zephyr
 		NETWORK_BUILD=$(NET_BUILD) \
 		ZJS_FLAGS=$(ZJS_FLAGS)
 
+ARC_RESTRICT="zjs_ipm_arc.json,\
+		zjs_i2c_arc.json,\
+		zjs_arc.json,\
+		zjs_pme_arc.json,\
+		zjs_ashell_arc.json,\
+		zjs_sensor_arc.json,\
+		zjs_sensor_accel_arc.json,\
+		zjs_sensor_light_arc.json,\
+		zjs_sensor_gyro_arc.json,\
+		zjs_sensor_temp_arc.json"
+
 # Builds ARC binary
 .PHONY: arc
 arc: analyze
-	./scripts/analyze V=$(V) SCRIPT=$(JS) BOARD=arc PRJCONF=arc/prj.conf MAKEFILE=arc/src/Makefile MAKEBASE=arc/src/Makefile.base RESTRICT="zjs_ipm_arc.json,zjs_i2c_arc.json,zjs_arc.json,zjs_pme_arc.json,zjs_ashell_arc.json" FORCE=$(ASHELL_ARC)
+	# Restrict ARC build to only certain "arc specific" modules
+	./scripts/analyze	V=$(V) \
+		SCRIPT=$(JS) \
+		BOARD=arc \
+		PRJCONF=arc/prj.conf \
+		MAKEFILE=arc/src/Makefile \
+		MAKEBASE=arc/src/Makefile.base \
+		RESTRICT=$(ARC_RESTRICT) \
+		FORCE=$(ASHELL_ARC)
 
 	@printf "CONFIG_SRAM_SIZE=%d\n" $$((79 - $(RAM))) >> arc/prj.conf
 	@printf "CONFIG_FLASH_BASE_ADDRESS=0x400%x\n" $$((($(ROM) + 64) * 1024)) >> arc/prj.conf

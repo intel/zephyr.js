@@ -1,0 +1,7 @@
+{
+    "module": "sensor_light_arc",
+    "constructor": "AmbientLightSensor",
+    "depends": ["sensor_arc"],
+    "targets": ["arc"],
+    "zjs_config": ["-DBUILD_MODULE_SENSOR_LIGHT"]
+}

@@ -1,0 +1,7 @@
+{
+    "module": "sensor_temp_arc",
+    "constructor": "TemperatureSensor",
+    "depends": ["sensor_arc"],
+    "targets": ["arc"],
+    "zjs_config": ["-DBUILD_MODULE_SENSOR_TEMP"]
+}

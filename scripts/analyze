@@ -40,12 +40,15 @@ def merge_lists(l1, l2):
                 if i not in l1:
                     l1.append(i)
 
-def parse_list(tree, list=[], force=[]):
+def parse_list(tree, list=[]):
     for file in list:
         if file.endswith(".json"):
             do_print("opening " + file)
             with open("src/" + file) as f:
                 data = json.load(f)
+            if 'targets' in data:
+                if args['BOARD'] not in data['targets']:
+                    continue;
             # Index the entry by the require name, if exists
             if 'require' in data:
                 # if the require name exists, index by module
@@ -252,11 +255,13 @@ module_t zjs_modules_array[] = {\n""")
 
 if args['BOARD'] == 'linux':
     restrict = args['RESTRICT'].split(',')
+    restrict = [i.strip() for i in restrict]
     build_tree(json_tree, restrict)
     do_print(json_tree)
     all_list = []
     get_dep_list(all_list, args['BOARD'], json_tree)
-    do_print("dependencies: " + str(all_list))
+    for i in all_list:
+        print("Using module: " + i)
     write_modules(all_list, json_tree)
 else:
     if 'JS' in args:
@@ -278,6 +283,7 @@ else:
     restrict = args.get('RESTRICT', '')
     if restrict != '':
         restrict = restrict.split(',')
+        restrict = [i.strip() for i in restrict]
         do_print("Only using modules: " + str(restrict))
     else:
         restrict = []
@@ -292,7 +298,8 @@ else:
     build_tree(json_tree, restrict)
     do_print(json_tree)
     gather_deps(js_file, deps_list, zconf, zjs_conf, jrs_conf, lsrc, json_tree, force=force)
-    do_print("dependencies:" + str(deps_list))
+    for i in deps_list:
+        print("Using module: " + i)
 
     write_zconf(zconf, args['PRJCONF'])
     write_makefile(lsrc, zjs_conf, args['MAKEFILE'])

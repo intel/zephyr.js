@@ -1,6 +1,7 @@
 {
     "module": "sensor_arc",
     "targets": ["arc"],
+    "depends": ["ipm_arc"],
     "zephyr_conf": {
         "arc": [
             "CONFIG_SENSOR=y",
@@ -17,5 +18,6 @@
             "CONFIG_BMI160_TRIGGER=y",
             "CONFIG_BMI160_TRIGGER_OWN_THREAD=y"
         ]
-    }
+    },
+    "zjs_config": ["-DBUILD_MODULE_SENSOR"]
 }

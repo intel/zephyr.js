@@ -2,7 +2,7 @@
     "module": "sensor_accel",
     "constructor": "Accelerometer",
     "targets": ["arduino_101"],
-    "depends": ["sensor", "sensor_arc"],
+    "depends": ["sensor"],
     "zjs_config": ["-DBUILD_MODULE_SENSOR_ACCEL"],
     "src": ["sensors/zjs_sensor_accel.c"]
 }
