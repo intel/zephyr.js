@@ -487,7 +487,6 @@ static const struct
 } commands[] = {
     { "help",   ashell_help,         "This help" },
     { "clear",  ashell_cmd_clear,    "Clear the terminal screen" },
-    { "save",   ashell_cmd_save,     "<FILE> Save input to file" },
     { "parse",  ashell_cmd_parse,    "<FILE> Parse JavaScript file" },
     { "run",    ashell_cmd_run,      "<FILE> Run JavaScript file" },
     { "stop",   ashell_cmd_stop,     "Stop current JavaScript execution" },
@@ -500,7 +499,8 @@ static const struct
     { "mv",     ashell_cmd_move,     "<SOURCE> <DEST> Rename file" },
     // { "mkdir",  ashell_cmd_mkdir,    "[DIR] Create directory" },
     // { "rmdir",  ashell_cmd_rmdir,    "[DIR] Remove empty directory" },
-    { "reboot", ashell_cmd_reboot,   "Reboot the device" }
+    { "reboot", ashell_cmd_reboot,   "Reboot the device" },
+    { "save",   ashell_cmd_save,     "<FILE> Save input to file" }
 };
 
 #define ASHELL_CMD_COUNT (sizeof(commands)/sizeof(*commands))
@@ -508,7 +508,7 @@ static const struct
 void ashell_help()
 {
     PRINT("Commands:\r\n");
-    for (uint32_t i = 0; i < ASHELL_CMD_COUNT; i++) {
+    for (uint32_t i = 0; i < ASHELL_CMD_COUNT - 1; i++) {
         PRINTF("%8s %s\r\n", commands[i].cmd, commands[i].help);
     }
 }

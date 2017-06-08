@@ -197,4 +197,3 @@ void webusb_register_handlers()
     /* Set the custom and vendor request handlers */
     webusb_register_request_handlers(&req_handlers);
 }
-

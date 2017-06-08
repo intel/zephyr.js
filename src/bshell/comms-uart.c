@@ -432,4 +432,3 @@ comms_driver_t *comms_uart()
 {
     return &uart_transport;
 }
-

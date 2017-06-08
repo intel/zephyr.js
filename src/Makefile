@@ -1,0 +1,118 @@
+# This is a generated file
+# ZJS flags set by analyze.sh and fragments/zjs.conf.dev
+export ZJS_CONSOLE=y
+# ---------------------------
+# Copyright (c) 2016-2017, Intel Corporation.
+
+JERRY_BASE ?= $(ZJS_BASE)/deps/jerryscript
+OCF_ROOT ?= deps/iotivity-constrained
+
+ccflags-y += -Wall -Werror $(ZJS_FLAGS)
+
+# TODO: iotivity-constrained gives some warnings and until we figure out how to
+#       disable them just for iotivity-constrained, we need to turn them back
+#       into warnings
+ccflags-y += -Wno-error=format
+
+# Select extended ANSI C/POSIX function set in recent Newlib versions
+ccflags-y += -D_XOPEN_SOURCE=700
+
+ccflags-y += -I$(JERRY_BASE)/jerry-core
+ccflags-y += -I$(JERRY_BASE)/jerry-core/jrt
+ccflags-y += -I$(ZEPHYR_BASE)/drivers
+ccflags-y += -I$(ZJS_BASE)/outdir/include
+
+ifneq (,$(filter $(ZJS_DGRAM) $(ZJS_OCF) $(ZJS_NET) $(ZJS_WS), y))
+ifeq ($(BOARD), arduino_101)
+obj-y += ../deps/zephyr/samples/bluetooth/gatt/ipss.o
+ccflags-y += -I${ZEPHYR_BASE}/samples/bluetooth
+endif
+endif
+
+ifeq ($(VARIANT), debug)
+ccflags-y += -DDEBUG_BUILD
+ccflags-y += -g
+endif
+
+ifeq ($(BOARD), qemu_x86)
+ccflags-y += -DQEMU_BUILD
+endif
+
+ifeq ($(CB_STATS), on)
+ccflags-y += -DZJS_PRINT_CALLBACK_STATS
+endif
+
+ifeq ($(PRINT_FLOAT), on)
+export LDFLAGS += -u _printf_float
+ccflags-y += -DZJS_PRINT_FLOATS
+endif
+
+ifneq ($(BLE_ADDR), none)
+ccflags-y += -DZJS_CONFIG_BLE_ADDRESS=\"$(BLE_ADDR)\"
+endif
+
+obj-y += main.o \
+         zjs_callbacks.o \
+         zjs_common.o \
+         zjs_error.o \
+         zjs_modules.o \
+         zjs_script.o \
+         zjs_timers.o \
+         zjs_util.o \
+         jerry-port/zjs_jerry_port.o
+
+obj-$(ZJS_BOARD) += zjs_board.o
+obj-$(ZJS_BUFFER) += zjs_buffer.o
+obj-$(ZJS_CONSOLE) += zjs_console.o
+obj-$(ZJS_DGRAM) += zjs_dgram.o
+obj-$(ZJS_NET) += zjs_net.o
+obj-$(ZJS_EVENTS) += zjs_event.o
+obj-$(ZJS_FS) += zjs_fs.o
+obj-$(ZJS_GPIO) += zjs_gpio.o
+ifeq ($(filter $(ZJS_FLAGS),-DZJS_GPIO_MOCK),-DZJS_GPIO_MOCK)
+obj-y += zjs_gpio_mock.o
+endif
+obj-$(ZJS_BLE) += zjs_ble.o
+obj-$(ZJS_PWM) += zjs_pwm.o
+obj-$(ZJS_PERFORMANCE) += zjs_performance.o
+obj-$(ZJS_UART) += zjs_uart.o
+obj-$(ZJS_OCF) += zjs_ocf_client.o \
+                  zjs_ocf_server.o \
+                  zjs_ocf_common.o
+obj-$(ZJS_TEST_PROMISE) += zjs_test_promise.o
+obj-$(ZJS_TEST_CALLBACKS) += zjs_test_callbacks.o
+obj-$(ZJS_NET_CONFIG) += zjs_net_config.o
+obj-$(ZJS_WS) += zjs_web_sockets.o
+
+ccflags-$(ZJS_SENSOR) += -I$(ZJS_BASE)/src/sensors
+obj-$(ZJS_SENSOR) += sensors/
+obj-$(ZJS_SENSOR) += zjs_sensor.o
+
+# skip for now for frdm_k64f
+ifeq ($(BOARD), arduino_101)
+obj-$(ZJS_AIO) += zjs_aio.o
+obj-$(ZJS_GROVE_LCD) += zjs_grove_lcd_ipm.o
+obj-$(ZJS_I2C) += zjs_i2c.o \
+                  zjs_i2c_ipm_handler.o
+obj-$(ZJS_PME) += zjs_pme.o
+else
+obj-$(ZJS_GROVE_LCD) += zjs_grove_lcd.o
+obj-$(ZJS_I2C) += zjs_i2c.o \
+                  zjs_i2c_handler.o
+endif
+
+obj-$(CONFIG_BOARD_ARDUINO_101) += \
+	zjs_a101_pins.o \
+	zjs_ipm.o
+
+obj-$(CONFIG_BOARD_FRDM_K64F) += \
+	zjs_k64f_pins.o \
+	zjs_pinmux.o
+
+ifeq ($(ASHELL), y)
+$(info Insecure Mode (development))
+export JERRY_INCLUDE = $(JERRY_BASE)/jerry-core/
+obj-y += bshell/
+ccflags-y += -DZJS_ASHELL
+endif
+ccflags-y += -DBUILD_MODULE_CONSOLE
