@@ -99,54 +99,17 @@ char *ashell_next_token(char *str, size_t tsize,
     return str;
 }
 
-/** @brief Check a buffer for a parameter
- * Parameters are single characters in a '-xyz' sequence
- *
- * @param buf          Null terminated string
- * @param option       Token we are looking for
- * @return bool        Returns if the parameter is on the string
- */
-bool ashell_check_cmdline_option(const char *buf, const char option)
-{
-    size_t t = 0;
-    bool space = true;
-    bool token = false;
-
-    if (buf == NULL)
-        return false;
-
-    while (buf[t] != 0) {
-        char byte = buf[t];
-        if (space && byte == '-')
-            token = true;
-
-        if (byte == ' ') {
-            space = true;
-            token = false;
-        } else {
-            space = false;
-        }
-
-        if (token && byte == option) {
-            return true;
-        }
-        t++;
-    }
-    return false;
-}
 /* =============================================================== */
 
 size_t ashell_get_filename(char **buf, char *dest)
 {
     size_t arg_len = 0;
     size_t len = strnlen(*buf, MAX_FILENAME_SIZE);
+
     if (len == 0 || !*buf || (*buf)[0] == '-')
         return 0;
 
-    INFO("[DBG] next_token input: %s\r\n", *buf);
     *buf = ashell_next_token(*buf, len, dest, &arg_len);
-    INFO("[DBG] next_token output: %s, len: %d.\r\n", dest, arg_len);
-    INFO("[DBG] remaining command line: %s\r\n", *buf);
 
     if (arg_len == 0 || arg_len > MAX_FILENAME_SIZE) {
         *dest = '\0';
@@ -157,7 +120,7 @@ size_t ashell_get_filename(char **buf, char *dest)
     return arg_len;
 }
 
-void ashell_clear()
+void ashell_cmd_clear()
 {
     PRINT("\x1b[2J\x1b[H");
 }
@@ -165,7 +128,7 @@ void ashell_clear()
 /**
  * Save consecutive lines to a file specified by the argument until Ctrl+D.
  */
-void ashell_save(char *args)  // Former ashell_read_data()
+void ashell_cmd_save(char *args)  // Former ashell_read_data()
 {
     char filename[MAX_FILENAME_SIZE];
     if (ashell_get_filename(&args, filename) <= 0) {
@@ -190,16 +153,13 @@ void ashell_save(char *args)  // Former ashell_read_data()
     return;
 }
 
-void ashell_print_file(char *buf)
+void ashell_cmd_print(char *buf)
 {
-    char filename[MAX_FILENAME_SIZE];
-    char data[ASHELL_MAX_LINE_LEN];
-    size_t count;
-    size_t line = 1;
+    #define READ_BUFFER_SIZE 80
 
-    // Show not printing
-    bool hidden = ashell_check_cmdline_option(buf, 'v');
-    bool lines = ashell_check_cmdline_option(buf, 'n');
+    char filename[MAX_FILENAME_SIZE];
+    char data[READ_BUFFER_SIZE];
+    size_t count;
 
     if (ashell_get_filename(&buf, filename) <= 0) {
         return;
@@ -219,25 +179,26 @@ void ashell_print_file(char *buf)
     }
 
     fs_seek(file, 0, SEEK_SET);
-    if (lines)
-        PRINTF("%5d  ", line++);
 
+    int lineStart = 0;
     do {
-        count = fs_read(file, data, 4);
+        count = fs_read(file, data, READ_BUFFER_SIZE);
         for (int t = 0; t < count; t++) {
-            uint8_t byte = data[t];
-            if (byte == '\n' || byte == '\r') {
+            if (data[t] == '\n' || data[t] == '\r') {
+                int strLen = t - lineStart;
+                SEND(&data[lineStart], strLen);
                 SEND("\r\n", 2);
-                if (lines)
-                    PRINTF("%5d  ", line++);
-
-            } else {
-                if (hidden && !isprint(byte)) {
-                    PRINTF("(%x)", byte);
-                } else
-                    PRINTCH(byte);
+                lineStart = t + 1;
             }
         }
+        // If we have data left that doesn't end in a newline, print it.
+        if (lineStart < count)
+        {
+            int strLen = count - lineStart;
+            SEND(&data[lineStart], strLen);
+        }
+        // Reset the line start
+        lineStart = 0;
     } while (count > 0);
 
     SEND("\r\n", 2);
@@ -245,7 +206,7 @@ void ashell_print_file(char *buf)
 }
 
 // ashell_js_immediate_mode
-void ashell_eval_js(char *input)
+void ashell_cmd_eval(char *input)
 {
     PRINT("Evaluate JavaScript. Press Ctrl+D to return to shell.\r\n");
     SET_FLAG(kShellEvalJavascript);
@@ -254,30 +215,19 @@ void ashell_eval_js(char *input)
 
 void ashell_eval_capture(const char *buf)
 {
-    const char *src = buf;
     uint32_t len = strnlen(buf, ASHELL_MAX_LINE_LEN);
 
-    while (len > 0) {
-        uint8_t byte = *buf++;
-        if (!isprint(byte)) {
-            switch (byte) {
-            case ASCII_END_OF_TRANS:
-            // case ASCII_SUBSTITUTE:
-            // case ASCII_END_OF_TEXT:
-            // case ASCII_CANCEL:
-                RESET_FLAG(kShellEvalJavascript);
-                ashell_reset_prompt();
-                return;
-            }
-        }
-        len--;
+    if (len > 0 && buf[len - 1] == ASCII_END_OF_TRANS) {
+        RESET_FLAG(kShellEvalJavascript);
+        ashell_reset_prompt();
+        return;
     }
 
-    javascript_eval(src, strnlen(src, len));
+    javascript_eval(buf, len);
 }
 
 // ashell_parse_javascript
-void ashell_parse_js(char *buf)
+void ashell_cmd_parse(char *buf)
 {
     char filename[MAX_FILENAME_SIZE];
     if (ashell_get_filename(&buf, filename) <= 0) {
@@ -288,7 +238,7 @@ void ashell_parse_js(char *buf)
 }
 
 // ashell_run_javascript
-void ashell_run_js(char *buf)
+void ashell_cmd_run(char *buf)
 {
     char filename[MAX_FILENAME_SIZE];
     if (ashell_get_filename(&buf, filename) <= 0) {
@@ -298,13 +248,13 @@ void ashell_run_js(char *buf)
 }
 
 // ashell_stop_javascript()
-void ashell_stop_js(char *buf)
+void ashell_cmd_stop(char *buf)
 {
     javascript_stop();
 }
 
 // Former ashell_set_bootcfg
-void ashell_bootfile(char *file_name)
+void ashell_cmd_bootfile(char *file_name)
 {
     if (!fs_exist(file_name)) {
         ERROR("File %s doesn't exist.\r\n", file_name);
@@ -327,13 +277,8 @@ void ashell_bootfile(char *file_name)
     return;
 }
 
-void ashell_file_size(char *buf)
+void ashell_file_size(char* filename)
 {
-    char filename[MAX_FILENAME_SIZE];
-    if (ashell_get_filename(&buf, filename) <= 0) {
-        return;
-    }
-
     fs_file_t *file = fs_open_alloc(filename, "r");
     if (file == NULL) {
         ERROR("File %s not found.", filename);
@@ -345,7 +290,16 @@ void ashell_file_size(char *buf)
     PRINTF("%5d %s\n", (unsigned int)size, filename);
 }
 
-void ashell_list_dir(char *buf)
+void ashell_cmd_fsize(char *buf)
+{
+    char filename[MAX_FILENAME_SIZE];
+    if (ashell_get_filename(&buf, filename) <= 0) {
+        return;
+    }
+    ashell_file_size(filename);
+}
+
+void ashell_cmd_list(char *buf)
 {
     char filename[MAX_FILENAME_SIZE];
     static struct fs_dirent entry;
@@ -387,26 +341,30 @@ void ashell_list_dir(char *buf)
             for (; *p; ++p)
                 *p = tolower((int)*p);
 
-            PRINTF("%5u %s\n", (unsigned int)entry.size, entry.name);
+            PRINTF("%5u\t%s\r\n", (unsigned int)entry.size, entry.name);
         }
     }
 
     fs_closedir(&dp);
 }
 
-void ashell_remove_file(char *buf)
+void ashell_remove_file(char* filename)
 {
-    char filename[MAX_FILENAME_SIZE];
-    if (ashell_get_filename(&buf, filename) <= 0) {
-        return;
-    }
-
     if (fs_unlink(filename)) {
         ERROR("Cannot remove %s.\r\n", filename);
     }
 }
 
-void ashell_move_file(char *args)
+void ashell_cmd_remove(char *buf)
+{
+    char filename[MAX_FILENAME_SIZE];
+    if (ashell_get_filename(&buf, filename) <= 0) {
+        return;
+    }
+    ashell_remove_file(filename);
+}
+
+void ashell_cmd_move(char *args)
 {
     static struct fs_dirent entry;
     char path_org[MAX_FILENAME_SIZE];
@@ -452,17 +410,18 @@ static inline void ashell_discard_capture()
 bool ashell_raw_capture(const char *input)
 {
     uint8_t eol = '\n';
-    uint32_t len = strnlen(input, ASHELL_MAX_LINE_LEN);
-
-    while (len > 0) {
-        uint8_t byte = *input++;
+    uint32_t len = 0;
+    const char *src = input;
+    while (*src) {
+        uint8_t byte = *src++;
         if (!isprint(byte)) {
             switch (byte) {
             case ASCII_END_OF_TRANS:
             case ASCII_SUBSTITUTE:
                 if (ECHO_MODE()) {
-                    PRINT("File saved.\r\n");
+                    PRINTF("File saved.\r\n");
                 }
+                fs_write(shell.fp, &eol, 1);
                 RESET_FLAG(kShellCaptureRaw);
                 ashell_reset_prompt();
                 ashell_close_capture();
@@ -488,20 +447,21 @@ bool ashell_raw_capture(const char *input)
                 }
                 break;
             }
-        } else {
-            size_t written = fs_write(shell.fp, &byte, 1);
-            if (written == 0) {
-                return false;
-            }
+        } else if (fs_write(shell.fp, &byte, 1) < 0) {
+            return false;
         }
-        len--;
+
+        if (++len > ASHELL_MAX_LINE_LEN) {
+            ERROR("File too big.");
+            return false;
+        }
     }
 
     fs_write(shell.fp, &eol, 1);
     return true;
 }
 
-void ashell_reboot(char *buf)
+void ashell_cmd_reboot(char *buf)
 {
     PRINT("Rebooting now!\r\n");
 
@@ -526,21 +486,21 @@ static const struct
     const char *help;
 } commands[] = {
     { "help",   ashell_help,         "This help" },
-    { "clear",  ashell_clear,        "Clear the terminal screen" },
-    { "save",   ashell_save,         "<FILE> Save input to file" },
-    { "parse",  ashell_parse_js,     "<FILE> Parse JavaScript file" },
-    { "run",    ashell_run_js,       "<FILE> Run JavaScript file" },
-    { "stop",   ashell_stop_js,      "Stop current JavaScript execution" },
-    { "bootf",  ashell_bootfile,     "<FILE> Set JavaScript file run at boot" },
-    { "eval",   ashell_eval_js,      "Evaluate JavaScript" },
-    { "ls",     ashell_list_dir,     "List directory contents" },
-    { "cat",    ashell_print_file,   "<FILE> [-nv] Print file" },
-    { "fsize",  ashell_file_size,    "<FILE> Print file size" },
-    { "rm",     ashell_remove_file,  "<FILE> Remove file" },
-    { "mv",     ashell_move_file,    "<SOURCE> <DEST> Rename file" },
-    // { "mkdir",  ashell_make_dir,     "[DIR] Create directory" },
-    // { "rmdir",  ashell_remove_dir,   "[DIR] Remove empty directory" },
-    { "reboot", ashell_reboot,       "Reboot the device" }
+    { "clear",  ashell_cmd_clear,    "Clear the terminal screen" },
+    { "save",   ashell_cmd_save,     "<FILE> Save input to file" },
+    { "parse",  ashell_cmd_parse,    "<FILE> Parse JavaScript file" },
+    { "run",    ashell_cmd_run,      "<FILE> Run JavaScript file" },
+    { "stop",   ashell_cmd_stop,     "Stop current JavaScript execution" },
+    { "bootf",  ashell_cmd_bootfile, "<FILE> Set JavaScript file run at boot" },
+    { "eval",   ashell_cmd_eval,     "Evaluate JavaScript" },
+    { "ls",     ashell_cmd_list,     "List directory contents" },
+    { "print",  ashell_cmd_print,    "<FILE> [-nv] Print file" },
+    { "fsize",  ashell_cmd_fsize,    "<FILE> Print file size" },
+    { "rm",     ashell_cmd_remove,   "<FILE> Remove file" },
+    { "mv",     ashell_cmd_move,     "<SOURCE> <DEST> Rename file" },
+    // { "mkdir",  ashell_cmd_mkdir,    "[DIR] Create directory" },
+    // { "rmdir",  ashell_cmd_rmdir,    "[DIR] Remove empty directory" },
+    { "reboot", ashell_cmd_reboot,   "Reboot the device" }
 };
 
 #define ASHELL_CMD_COUNT (sizeof(commands)/sizeof(*commands))
@@ -558,7 +518,7 @@ void ashell_help()
  */
 void ashell_process_line(char *line, size_t len)
 {
-    INFO("[DBG] process_line: '%s'.\r\n", line);
+    // INFO("[DBG] process_line (len: %d): '%s'.\r\n", len, line);
 
     if (!line || !*line) {
         ashell_send_prompt();
@@ -566,14 +526,14 @@ void ashell_process_line(char *line, size_t len)
     }
 
     if (TEST_FLAG(kShellEvalJavascript)) {
-        INFO("[DBG] Eval JS\r\n");
+        // INFO("[DBG] Eval JS\r\n");
         ashell_eval_capture(line);  // evaluate raw line
         ashell_send_prompt();
         return;
     }
 
     if (TEST_FLAG(kShellCaptureRaw)) {
-        INFO("[DBG] Capture file\r\n");
+        INFO("[DBG] Capture file: %s\r\n", line);
         ashell_raw_capture(line);  // save line in file
         ashell_send_prompt();
         return;
@@ -590,8 +550,7 @@ void ashell_process_line(char *line, size_t len)
             return;
         }
     }
-    ERROR("Command %s not found.\r\n", token);
-    // ERROR("Type 'help' for available commands.\r\n");
+    ERROR("Command '%s' not found. Type 'help' to list commands.\r\n", token);
     ashell_send_prompt();
 }
 
@@ -620,7 +579,7 @@ void ashell_bootstrap_js()
 
             if (count > 0) {
                 filename[filenamesize] = '\0';
-                ashell_run_js(filename);
+                javascript_run(filename);
             }
         }
         else {

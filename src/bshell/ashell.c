@@ -22,7 +22,7 @@ static const char banner[] = "\r\nZephyr.js shell " __DATE__ " " __TIME__ "\r\n"
 ashell_config_t ashell_config = {
     .echo = true,
     .verbose = true,
-    .mode = ASHELL_MODE_CHAR,
+    .mode = ASHELL_MODE_CHAR,  // this could also be a #define
     .comms = NULL
 };
 
@@ -72,14 +72,15 @@ void zjs_ashell_process()
  * Dispatch data received from comms either to line editor or command parser.
  * Called from the comms->process().
  */
-extern void ashell_process_char(const char *buf, size_t len);  // ashell-ed.c
-extern void ashell_process_line(const char *buf, size_t len);  // ashell-cmd.c
-// extern void ashell_process_json(const char *buf, size_t len);  // ashell-json.c
-
 void ashell_process(char *buf, size_t len)
 {
+    extern void ashell_process_char(const char *buf, size_t len);
+    extern void ashell_process_line(const char *buf, size_t len);
+    // extern void ashell_process_json(const char *buf, size_t len);
+
     switch (ashell_config.mode) {
         case ASHELL_MODE_CHAR:
+            // in char mode, len == 1
             ashell_process_char(buf, len);  // line editor, then parser
             return;
         case ASHELL_MODE_LINE:

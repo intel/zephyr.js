@@ -7,7 +7,6 @@
 * this is a basic stub, do not expect a full implementation.
 */
 
-#include <nanokernel.h>
 #include <arch/cpu.h>
 #include <fs.h>
 
@@ -50,7 +49,6 @@ fs_file_t *fs_open_alloc(const char *filename, const char *mode)
     else {
         /* Return NULL if trying to read from a nonexistent file */
         if (!fs_exist(filename)) {
-            printf("[ERR] %s not found\n", filename);
             return NULL;
         }
     }

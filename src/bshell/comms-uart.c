@@ -11,10 +11,6 @@
  * Hooks into the printk and fputc (for printf) modules. Poll driven.
  */
 
-// TODO: clean up includes!!!
-
-#include <nanokernel.h>
-
 #include <arch/cpu.h>
 
 #include <stdbool.h>
@@ -37,7 +33,6 @@
 #include <misc/printk.h>
 
 #include <fs.h>
-#include "../zjs_util.h"
 
 #ifndef CONFIG_USB_CDC_ACM
 #include "webusb.h"
@@ -45,7 +40,9 @@
 
 #include "comms.h"
 
-// TODO: remove max line limitation
+#include "../zjs_util.h"
+
+// TODO: remove max line limit / implement segmentation/reassembly protocol
 #define MAX_LINE_LEN 90
 
 extern void webusb_register_handlers();
@@ -54,6 +51,8 @@ extern void __stdout_hook_install(int(*fn)(int));
 
 extern void ashell_init();
 extern void ashell_process(char *buf, size_t len);
+
+/**************************** UART CAPTURE **********************************/
 
 enum
 {
@@ -81,7 +80,7 @@ enum
 };
 
 
-struct uart_input
+struct comms_input
 {
     int _unused;
     char line[MAX_LINE_LEN + 1];
@@ -93,7 +92,7 @@ static struct uart_context {
     atomic_t state;
     volatile bool data_transmitted;
 
-    struct uart_input *isr_data;
+    struct comms_input *isr_data;
     uint8_t fifo_size;
     uint8_t max_fifo;
     uint32_t tail;
@@ -112,7 +111,45 @@ static struct uart_context {
     .buf = NULL
 };
 
-// inline static bool uart_process_done() { return uartc.process_done; }
+/**************************** FIFO HANDLING **********************************/
+
+struct comms_input *fifo_get_isr_buffer()
+{
+    void *data = k_fifo_get(&uartc.avail_queue, K_NO_WAIT);
+    if (!data) {
+        data = (void *)zjs_malloc(sizeof(struct comms_input));
+        memset(data, '*', sizeof(struct comms_input));
+        uartc.fifo_size++;
+        if (uartc.fifo_size > uartc.max_fifo)
+            uartc.max_fifo = uartc.fifo_size;
+    }
+    return (struct comms_input *) data;
+}
+
+void fifo_cache_clear()
+{
+    while(uartc.fifo_size > 0) {
+        void *data = k_fifo_get(&uartc.avail_queue, K_NO_WAIT);
+        if (!data)
+            return;
+
+        zjs_free(data);
+        uartc.fifo_size--;
+    }
+    uartc.tail = 0;
+    uartc.buf = NULL;
+    uartc.isr_data = NULL;
+}
+
+void fifo_recycle_buffer(struct comms_input *data)
+{
+    if (uartc.fifo_size > 1) {
+        zjs_free(data);
+        uartc.fifo_size--;
+        return;
+    }
+    k_fifo_put(&uartc.avail_queue, data);
+}
 
 /*************************** ACM OUTPUT *******************************/
 
@@ -186,79 +223,13 @@ void uart_error(const char *format, ...)
     va_end(args);
 }
 
+/**************************** UART INTERRUPT *********************************/
 
-// ====================================================================
-
-struct uart_input *fifo_get_isr_buffer()
-{
-    void *data = k_fifo_get(&uartc.avail_queue, K_NO_WAIT);
-    if (!data) {
-        data = (void *)zjs_malloc(sizeof(struct uart_input));
-        memset(data, '*', sizeof(struct uart_input));
-        uartc.fifo_size++;
-        if (uartc.fifo_size > uartc.max_fifo)
-            uartc.max_fifo = uartc.fifo_size;
-    }
-    return (struct uart_input *) data;
-}
-
-void fifo_cache_clear()
-{
-    while(uartc.fifo_size > 0) {
-        void *data = k_fifo_get(&uartc.avail_queue, K_NO_WAIT);
-        if (!data)
-            return;
-
-        zjs_free(data);
-        uartc.fifo_size--;
-    }
-    uartc.tail = 0;
-    uartc.buf = NULL;
-    uartc.isr_data = NULL;
-}
-
-void fifo_recycle_buffer(struct uart_input *data)
-{
-    if (uartc.fifo_size > 1) {
-        zjs_free(data);
-        uartc.fifo_size--;
-        return;
-    }
-    k_fifo_put(&uartc.avail_queue, data);
-}
-
-void uart_close(void)
-{
-    // former comms_clear()
-    void *data = NULL;
-    do {
-        if (data != NULL)
-            zjs_free(data);
-        data = k_fifo_get(&uartc.avail_queue, K_NO_WAIT);
-    } while (data);
-
-    do {
-        if (data != NULL)
-            zjs_free(data);
-        data = k_fifo_get(&uartc.data_queue, K_NO_WAIT);
-    } while (data);
-
-    uart_irq_rx_disable(uartc.dev);
-    uart_irq_tx_disable(uartc.dev);
-
-    atomic_set(&uartc.state, UART_CLOSE);
-
-    // TODO: check if other stuff is needed to close the UART
-    // Note that this function is not used at the moment.
-}
-
-/**************************** UART CAPTURE **********************************/
-#define CTRL_START           0x00
-#define CTRL_END             0x1F
-
-// TODO: check if these are done correctly
 static void comms_interrupt_handler(struct device *dev)
 {
+    #define CTRL_START           0x00
+    #define CTRL_END             0x1F
+
     char byte;
 
     uint32_t bytes_read = 0;
@@ -291,18 +262,14 @@ static void comms_interrupt_handler(struct device *dev)
             * but we want to flush as soon as we have processed the data on the task
             * so we don't queue too much and delay the system response.
             *
-            * When the process has finished dealing with the data it signals this method
-            * with a 'i am ready to continue' by changing uartc.process_done.
-            *
-            * It is also imperative to flush when we reach the limit of the buffer.
+            * It is imperative to flush when we reach the limit of the buffer.
             *
             * If we are still fine in the cache limits, then we keep flushing every
             * time we get a byte.
             */
             bool flush = false;
 
-            if (uartc.fifo_size == 1 ||
-                uartc.tail == MAX_LINE_LEN) {
+            if (uartc.fifo_size == 1 || uartc.tail == MAX_LINE_LEN) {
                 flush = true;
             } else {
                 /* Check for line ends, to flush the data. The decoder / shell will probably
@@ -340,6 +307,8 @@ static void comms_interrupt_handler(struct device *dev)
     atomic_set(&uartc.state, UART_ISR_END);
 }
 
+/**************************** UART PROCESS ***********************************/
+
 /**
  * Init UART/ACM to start getting input from user
  */
@@ -369,10 +338,10 @@ void uart_init()
 
 #ifdef CONFIG_UART_LINE_CTRL
     uint32_t dtr = 0;
-    while (!dtr) {
+    do {
         uart_line_ctrl_get(uartc.dev, LINE_CTRL_DTR, &dtr);
         k_sleep(1000);  // needed to allow the javascript in boot.cfg to run
-    }
+    } while (!dtr);
 #endif
 
     uart_irq_rx_disable(uartc.dev);
@@ -393,13 +362,33 @@ void uart_init()
     ashell_init();
 }
 
+void uart_close(void)
+{
+    void *data = NULL;
+    do {
+        if (data != NULL)
+            zjs_free(data);
+        data = k_fifo_get(&uartc.avail_queue, K_NO_WAIT);
+    } while (data);
+
+    do {
+        if (data != NULL)
+            zjs_free(data);
+        data = k_fifo_get(&uartc.data_queue, K_NO_WAIT);
+    } while (data);
+
+    uart_irq_rx_disable(uartc.dev);
+    uart_irq_tx_disable(uartc.dev);
+
+    atomic_set(&uartc.state, UART_CLOSE);
+}
+
 /*
  * Process user input
  */
 void uart_process()
 {
-    static struct uart_input *data = NULL;
-    char *buf = NULL;
+    static struct comms_input *data = NULL;
 
     atomic_set(&uartc.state, UART_WAITING);
     data = k_fifo_get(&uartc.data_queue, K_NO_WAIT);
@@ -418,14 +407,14 @@ void uart_process()
                 // DBG("Capturing buffer\n");
                 uartc.isr_data->line[uartc.tail] = 0;
                 uartc.tail = 0;
-                data = uartc.isr_data;
-                buf = data->line;
                 uartc.isr_data = NULL;
                 atomic_set(&uartc.state, UART_TASK_DATA_CAPTURE);
             }
         }
     }
 }
+
+/*************************** UART TRANSPORT *******************************/
 
 static comms_driver_t uart_transport =
 {
@@ -436,8 +425,7 @@ static comms_driver_t uart_transport =
     .printch = uart_printch,
     .print = uart_print,
     .printf = uart_printf,
-    .error = uart_error,
-    // .process_done = uart_process_done
+    .error = uart_error
 };
 
 comms_driver_t *comms_uart()
@@ -445,58 +433,3 @@ comms_driver_t *comms_uart()
     return &uart_transport;
 }
 
-
-#if 0
-
-/* Experimental stuff.
-If the receive side can take limited short buffers, some flow control is needed.
-1. The sender needs to figure out the max buffer size of the receiver.
-2. After the user typing that amount of characters, the sender sends it over.
-3. A newline terminates the long line. Previous consecutive fragments are joined.
-
-Control separator characters:
-- GROUP: starts a long line (first char of first line)
-- RECORD: at the end of each line fragment
-- UNIT: at the end of the long line.
-*/
-
-/**
- * Handle input defragmentation.
- */
-#define ASCII_FILE_SEP       0x1C
-#define ASCII_GROUP_SEP      0x1D
-#define ASCII_RECORD_SEP     0x1E
-#define ASCII_UNIT_SEP       0x1F
-
-char *ashell_defrag_input(char *line, size_t len, char *prev, size_t plen)
-{
-    static char *prev_line = NULL;
-    static size_t prev_len = 0;
-    uint8_t last = *(line + len - 1);
-    char *temp;
-
-    switch (last) {
-    case '\n':
-    case '\r':
-        // full line, no change
-        // remove previous lines
-        prev_line = NULL;
-        prev_len = 0;
-        return line;
-    case ASCII_GROUP_SEP:
-    default:
-        // the line continues in the next buffer
-        if (prev_line && prev_len) {
-            // if there was a previous line, join them
-            prev_line = ashell_join_lines(prev_line, prev_len, line, len);
-            *(line + len - 1) = '\0';
-            prev_len = prev_len + len - 1;
-        } else {
-            prev_line = line;
-            prev_len = len - 1; // don't count the trailing control char
-        }
-        *(line + len - 1) = '\0';
-        return prev_line;
-    }
-}
-#endif

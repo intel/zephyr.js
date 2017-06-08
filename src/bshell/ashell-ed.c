@@ -24,32 +24,29 @@ enum
 };
 
 static struct {
-    char *shell_line;
-    uint8_t tail;
-    uint8_t cur;
-    uint8_t end;
-    bool flush_line;
-    unsigned int ansi_val;
-    unsigned int ansi_val_2;
+    char shell_line[ASHELL_MAX_LINE_LEN];
+    uint32_t cur;         // cursor position
+    uint32_t back;        // position after pressing arrows
+    uint32_t ansi_val;
+    uint32_t ansi_val_2;
     atomic_t esc_state;
+    bool flush_line;
 } ed = {
-    .shell_line = NULL,
-    .tail = 0,
     .cur = 0,
-    .end = 0,
+    .back = 0,
     .flush_line = false,
 };
 
 static inline void cursor_forward(unsigned int count)
 {
-    while (count--) {
+    while(count--) {
         PRINT("\x1b[1C");
     }
 }
 
 static inline void cursor_backward(unsigned int count)
 {
-    while (count--) {
+    while(count--) {
         PRINT("\x1b[1D");
     }
 }
@@ -83,34 +80,15 @@ static void insert_char(char *pos, char c, uint8_t end)
     cursor_save();
 
     while (end-- > 0) {
-        PRINTCH(tmp);
+        if (ECHO_MODE()) {
+            PRINTCH(tmp);
+        }
         c = *pos;
         *(pos++) = tmp;
         tmp = c;
     }
 
     /* Move cursor back to right place */
-    cursor_restore();
-}
-
-static void del_char(char *pos, uint8_t end)
-{
-    PRINTCH('\b');
-
-    if (end == 0) {
-        PRINTCH(' ');
-        PRINTCH('\b');
-        return;
-    }
-
-    cursor_save();
-
-    while (end-- > 0) {
-        *pos = *(pos + 1);
-        PRINTCH(*(pos++));
-    }
-
-    PRINTCH(' ');
     cursor_restore();
 }
 
@@ -157,16 +135,16 @@ ansi_cmd:
             break;
         }
 
-        ed.end += ed.ansi_val;
+        ed.back += ed.ansi_val;
         ed.cur -= ed.ansi_val;
         cursor_backward(ed.ansi_val);
         break;
     case ANSI_FORWARD:
-        if (ed.ansi_val > ed.end) {
+        if (ed.ansi_val > ed.back) {
             break;
         }
 
-        ed.end -= ed.ansi_val;
+        ed.back -= ed.ansi_val;
         ed.cur += ed.ansi_val;
         cursor_forward(ed.ansi_val);
         break;
@@ -200,19 +178,42 @@ bool handle_escape(uint8_t byte)
     return false;
 }
 
+static void shift_left(char *pos, uint32_t n)
+{
+    if (n == 0) {
+        PRINTCH(' ');
+        PRINTCH('\b');
+        return;
+    }
+    cursor_save();
+    while(n--) {
+        *pos = *(pos + 1);
+        PRINTCH(*pos++);
+    }
+    PRINTCH(' ');  // overwrite the last char
+    cursor_restore();
+}
+
+/**
+ * Issue: a lot of special keys just return 27 (Escape): Del, PgUp, PgDown, arrows, etc
+ * Left-Right Arrows work because handled by ANSI sequence
+ */
 void handle_control_chars(uint8_t byte)
 {
-    /* Handle special control characters */
     if (!isprint(byte)) {
         switch (byte) {
+        case ASCII_DEL:
         case ASCII_BKSP:
             if (ed.cur > 0) {
-                del_char(ed.shell_line + --ed.cur, ed.end);
+                // delete one char before ed.cur and shift the rest left
+                PRINTCH('\b');
+                shift_left(ed.shell_line + --ed.cur, ed.back);
             }
             break;
-        case ASCII_DEL:
-            del_char(ed.shell_line + ed.cur + 1, ed.end);
-            break;
+                // delete one char after ed.cur and shift the rest left
+            // case ASCII_DEL:
+            //     shift_left(ed.shell_line + ed.cur, ed.back);
+            //     break;
         case ASCII_ESC:
             atomic_set_bit(&ed.esc_state, ESC_ESC);
             break;
@@ -229,35 +230,30 @@ void handle_control_chars(uint8_t byte)
         case ASCII_TAB:
             // TODO: autocomplete
             break;
-        default:
+        case ASCII_END_OF_TEXT:
+        case ASCII_END_OF_TRANS:
+        case ASCII_CANCEL:
+        case ASCII_SUBSTITUTE:
             ed.flush_line = true;
+        default:
             ed.shell_line[ed.cur++] = byte;
             break;
         }
     }
 }
 
-extern void ashell_process_line(char *line, size_t len);
-
+/**
+ * If char mode enabled, first process that, then call command line processing
+ */
 void ashell_process_char(const char *buf, size_t len)
 {
-    uint32_t processed = 0;
-
-    if (ed.shell_line == NULL) {
-        DBG("[Process]%d\n", (int)len);
-        DBG("[%s]\n", buf);
-        ed.shell_line = (char *)zjs_malloc(ASHELL_MAX_LINE_LEN);
-        memset(ed.shell_line, 0, ASHELL_MAX_LINE_LEN);
-        ed.tail = 0;
-    }
-
+    extern void ashell_process_line(char *line, size_t len);
     while (len-- > 0) {
-        processed++;
         uint8_t byte = *buf++;
 
-        if (ed.tail == ASHELL_MAX_LINE_LEN) {
-            DBG("Line size exceeded \n");
-            ed.tail = 0;
+        if (ed.back == ASHELL_MAX_LINE_LEN) {
+            ERROR("Line size exceeded \n");
+            return;
         }
 
         if (handle_escape(byte))
@@ -266,35 +262,20 @@ void ashell_process_char(const char *buf, size_t len)
         handle_control_chars(byte);
 
         if (ed.flush_line) {
-            DBG("Line %u %u \n", ed.cur, ed.end);
-            ed.shell_line[ed.cur + ed.end] = '\0';
+            ed.shell_line[ed.cur + ed.back] = '\0';
             if (ECHO_MODE()) {
                 SEND("\r\n", 2);
             }
-
             uint32_t length = strnlen(ed.shell_line, ASHELL_MAX_LINE_LEN);
-
             ashell_process_line(ed.shell_line, length);
-
-            ed.cur = ed.end = 0;
+            ed.cur = ed.back = 0;
             ed.flush_line = false;
         } else
             if (isprint(byte)) {
                 /* Ignore characters if there's no more buffer space */
-                if (ed.cur + ed.end < ASHELL_MAX_LINE_LEN - 1) {
-                    insert_char(&ed.shell_line[ed.cur++], byte, ed.end);
-                } else {
-                    DBG("Max line\n");
+                if (ed.cur < ASHELL_MAX_LINE_LEN - 1) {
+                    insert_char(ed.shell_line + ed.cur++, byte, ed.back);
                 }
             }
-
     }
-
-    /* Done processing line */
-    if (ed.cur == 0 && ed.end == 0 && ed.shell_line != NULL) {
-        DBG("[Free]\n");
-        zjs_free(ed.shell_line);
-        ed.shell_line = NULL;
-    }
-    DBG("Processed chars: %u", processed);
 }

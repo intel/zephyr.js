@@ -1,9 +1,9 @@
 // Copyright (c) 2016, Intel Corporation.
 
-#ifndef __ashell_h__
-#define __ashell_h__
+#ifndef __ashell_def_h__
+#define __ashell_def_h__
 
-#define ASHELL_MAX_LINE_LEN  600
+#define ASHELL_MAX_LINE_LEN  90
 #define ASHELL_MAX_CMD_LEN   10
 
 /* Control characters */
@@ -89,4 +89,4 @@ ashell_config_t *ashell_get_config();
     #define INFO(...)  while(0)
 #endif
 
-#endif  // __ashell_h__
+#endif  // __ashell_def_h__

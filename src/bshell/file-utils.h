@@ -12,13 +12,9 @@
 #define MAX_ASHELL_JS_MODULE_LEN 12
 
 fs_file_t *fs_open_alloc(const char *filename, const char *mode);
-
 int fs_close_alloc(fs_file_t *fp);
-
 int fs_exist(const char *path);
-
 ssize_t fs_size(fs_file_t *file);
-
 bool fs_valid_filename(char *filename);
 
 #endif // __file_wrapper_h__
