@@ -1,6 +1,6 @@
 [submodule "deps/zephyr"]
 	path = deps/zephyr
-	url = https://gerrit.zephyrproject.org/r/zephyr
+	url = https://github.com/zephyrproject-rtos/zephyr.git
 [submodule "deps/jerryscript"]
 	path = deps/jerryscript
 	url = https://github.com/jerryscript-project/jerryscript.git
