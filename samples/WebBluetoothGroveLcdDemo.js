@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 // Test code for Arduino 101 that replicates the WebBluetooth demo
 // using BLE to advertise temperature changes and allow LED color changes
@@ -63,7 +63,7 @@ var tmp36 = aio.open({ device: 0, pin: pins.A0 });
 
 TemperatureCharacteristic.onReadRequest = function(offset, callback) {
     if (!this._lastValue) {
-        var rawValue = pinA0.read();
+        var rawValue = tmp36.read();
         if (rawValue == 0) {
             console.log("PinA: invalid temperature value");
             callback(this.RESULT_UNLIKELY_ERROR, null);
