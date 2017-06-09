@@ -138,7 +138,11 @@ static const jerry_object_native_info_t net_type_info =
 };
 
 #define CHECK(x) \
-    ret = (x); if (ret < 0) { ERR_PRINT("Error in " #x ": %d\n", ret); return zjs_error(#x); }
+    ret = (x); \
+    if (ret < 0) { \
+        ERR_PRINT("Error in " #x ": %d\n", ret); \
+        return zjs_error(#x); \
+    }
 
 #define NET_DEFAULT_MAX_CONNECTIONS 5
 #define NET_HOSTNAME_MAX            32
@@ -187,7 +191,8 @@ static void start_socket_timeout(sock_handle_t *handle, uint32_t time)
         }
         k_timer_start(&handle->timer, time, time);
         if (handle->tcp_timeout_id == -1) {
-            handle->tcp_timeout_id = zjs_add_c_callback(handle, tcp_c_timeout_callback);
+            handle->tcp_timeout_id = zjs_add_c_callback(handle,
+                                                        tcp_c_timeout_callback);
         }
         DBG_PRINT("starting socket timeout: %u\n", time);
     } else if (handle->timer_started) {
@@ -248,14 +253,16 @@ static void post_closed(void *handle)
                     jerry_release_value(cur->socket);
                     zjs_free(cur->rbuf);
                     zjs_free(cur);
-                    DBG_PRINT("Freed socket: opened_sockets=%p\n", opened_sockets);
+                    DBG_PRINT("Freed socket: opened_sockets=%p\n",
+                              opened_sockets);
                 }
             }
         }
         if (net) {
             if (net->listening == 0 && opened_sockets == NULL) {
                 // no more sockets open and not listening, close server
-                zjs_trigger_event(net->server, "close", NULL, 0, post_server_closed, net);
+                zjs_trigger_event(net->server, "close", NULL, 0,
+                                  post_server_closed, net);
                 DBG_PRINT("server signaled to close\n");
             }
         }
@@ -278,8 +285,11 @@ static void tcp_received(struct net_context *context,
         // TODO: Probably not the right way to check if a socket is closed
         if (len == 0 && data == NULL) {
             // socket close
-            DBG_PRINT("closing socket, context=%p, socket=%u\n", context, handle->socket);
-            ZVAL_MUTABLE error = zjs_custom_error("ReadError",  "socket has been closed", 0, 0);
+            DBG_PRINT("closing socket, context=%p, socket=%u\n", context,
+                      handle->socket);
+            ZVAL_MUTABLE error = zjs_custom_error("ReadError",
+                                                  "socket has been closed",
+                                                  0, 0);
             jerry_value_clear_error_flag(&error);
             zjs_trigger_event(handle->socket, "error", &error, 1, NULL, NULL);
             zjs_trigger_event(handle->socket, "close", NULL, 0, post_closed,
@@ -289,17 +299,20 @@ static void tcp_received(struct net_context *context,
         }
 
         if (len && data) {
-            DBG_PRINT("received data, context=%p, data=%p, len=%u\n", context, data, len);
+            DBG_PRINT("received data, context=%p, data=%p, len=%u\n", context,
+                      data, len);
 
             memcpy(handle->wptr, data, len);
             handle->wptr += len;
 
             // if not paused, call the callback to get JS the data
             if (!handle->paused) {
-                handle->tcp_read_id = zjs_add_c_callback(handle, tcp_c_callback);
+                handle->tcp_read_id = zjs_add_c_callback(handle,
+                                                         tcp_c_callback);
                 zjs_signal_callback(handle->tcp_read_id, NULL, 0);
 
-                DBG_PRINT("data recieved on context %p: data=%p, len=%u\n", context, data, len);
+                DBG_PRINT("data received on context %p: data=%p, len=%u\n",
+                          context, data, len);
             }
         }
 
@@ -369,12 +382,14 @@ static ZJS_DECL_FUNC(socket_write)
         net_pkt_unref(send_buf);
         zjs_remove_callback(id);
         // TODO: may need to check the specific error to determine action
-        DBG_PRINT("write failed, context=%p, socket=%u\n", handle->tcp_sock, handle->socket);
+        DBG_PRINT("write failed, context=%p, socket=%u\n", handle->tcp_sock,
+                  handle->socket);
         ZVAL_MUTABLE error = zjs_custom_error("WriteError",
                                               "error writing to socket", this,
                                               function_obj);
         jerry_value_clear_error_flag(&error);
-        zjs_trigger_event(handle->socket, "error", &error, 1, post_closed, handle);
+        zjs_trigger_event(handle->socket, "error", &error, 1, post_closed,
+                          handle);
         return jerry_create_boolean(false);
     }
 
@@ -551,12 +566,14 @@ static void add_socket_connection(jerry_value_t socket,
 static void post_connection(void *handle)
 {
     sock_handle_t *sock_handle = (sock_handle_t *)handle;
-    int ret = net_context_recv(sock_handle->tcp_sock, tcp_received, 0, sock_handle);
+    int ret = net_context_recv(sock_handle->tcp_sock, tcp_received, 0,
+                               sock_handle);
     if (ret < 0) {
         ERR_PRINT("Cannot receive TCP packet (family %d)\n",
-                net_context_get_family(sock_handle->tcp_sock));
+                  net_context_get_family(sock_handle->tcp_sock));
         // this seems to mean the remote exists but the connection was not made
-        zjs_trigger_event(sock_handle->handle->server, "error", NULL, 0, NULL, NULL);
+        zjs_trigger_event(sock_handle->handle->server, "error", NULL, 0, NULL,
+                          NULL);
         return;
     }
 }
@@ -584,7 +601,8 @@ static void tcp_accepted(struct net_context *context,
     sock_handle->next = opened_sockets;
     opened_sockets = sock_handle;
 
-    zjs_trigger_event(handle->server, "connection", &sock, 1, post_connection, sock_handle);
+    zjs_trigger_event(handle->server, "connection", &sock, 1, post_connection,
+                      sock_handle);
 }
 
 /**
@@ -609,7 +627,8 @@ static ZJS_DECL_FUNC(server_close)
     }
     // If there are no connections the server can be closed
     if (opened_sockets == NULL) {
-        zjs_trigger_event(handle->server, "close", NULL, 0, post_server_closed, handle);
+        zjs_trigger_event(handle->server, "close", NULL, 0, post_server_closed,
+                          handle);
         DBG_PRINT("server signaled to close\n");
     }
     return ZJS_UNDEFINED;
@@ -620,7 +639,8 @@ static ZJS_DECL_FUNC(server_close)
  *
  * @name getConnections
  * @memberof Net.Server
- * @param {function} Callback function. Called with the number of opened connections
+ * @param {function} Callback function. Called with the number of opened
+ *                    connections
  */
 static ZJS_DECL_FUNC(server_get_connections)
 {
@@ -737,7 +757,7 @@ static ZJS_DECL_FUNC(net_create_server)
     }
 
     CHECK(net_context_get(AF_INET6, SOCK_STREAM, IPPROTO_TCP,
-            &handle->tcp_sock))
+                          &handle->tcp_sock))
 
     jerry_set_object_native_pointer(server, handle, &net_type_info);
 
@@ -755,7 +775,8 @@ static void tcp_connected_c_callback(void *handle, const void *args)
     if (sock_handle) {
         // set socket.connecting property == false
         zjs_obj_add_boolean(sock_handle->socket, false, "connecting");
-        zjs_add_event_listener(sock_handle->socket, "connect", sock_handle->connect_listener);
+        zjs_add_event_listener(sock_handle->socket, "connect",
+                               sock_handle->connect_listener);
         zjs_trigger_event(sock_handle->socket, "connect", NULL, 0, NULL, NULL);
         zjs_remove_callback(sock_handle->tcp_connect_id);
     }
@@ -780,7 +801,8 @@ static void tcp_connected(struct net_context *context,
             sock_handle->tcp_connect_id = zjs_add_c_callback(sock_handle, tcp_connected_c_callback);
             zjs_signal_callback(sock_handle->tcp_connect_id, NULL, 0);
 
-            DBG_PRINT("connection success, context=%p, socket=%u\n", context, sock_handle->socket);
+            DBG_PRINT("connection success, context=%p, socket=%u\n", context,
+                      sock_handle->socket);
         }
     } else {
         DBG_PRINT("connect failed, status=%d\n", status);
@@ -837,7 +859,8 @@ static ZJS_DECL_FUNC(socket_connect)
     }
     // TODO: get: .hints, .lookup
 
-    DBG_PRINT("port: %u, host: %s, localPort: %u, localAddress: %s, socket=%u\n", (uint32_t)port, host, (uint32_t)localPort, localAddress, this);
+    DBG_PRINT("port=%u, host=%s, localPort=%u, localAddress=%s, socket=%u\n",
+              (uint32_t)port, host, (uint32_t)localPort, localAddress, this);
 
     if (fam == 6) {
         if (!handle->bound) {
@@ -874,7 +897,7 @@ static ZJS_DECL_FUNC(socket_connect)
             DBG_PRINT("connect failed\n");
             zjs_obj_add_boolean(this, false, "connecting");
             ZVAL_MUTABLE error = zjs_custom_error("NotFoundError",
-                                                  "Connection could not be made",
+                                                  "failed to make connection",
                                                   this, function_obj);
             jerry_value_clear_error_flag(&error);
             zjs_trigger_event(this, "error", &error, 1, NULL, NULL);
@@ -914,7 +937,7 @@ static ZJS_DECL_FUNC(socket_connect)
             DBG_PRINT("connect failed\n");
             zjs_obj_add_boolean(this, false, "connecting");
             ZVAL_MUTABLE error = zjs_custom_error("NotFoundError",
-                                                  "Connection could not be made",
+                                                  "failed to make connection",
                                                   this, function_obj);
             jerry_value_clear_error_flag(&error);
             zjs_trigger_event(this, "error", &error, 1, NULL, NULL);
@@ -959,7 +982,8 @@ static ZJS_DECL_FUNC(net_socket)
         return zjs_error("could not alloc socket handle");
     }
 
-    DBG_PRINT("socket created, context=%p, sock=%u\n", sock_handle->tcp_sock, socket);
+    DBG_PRINT("socket created, context=%p, sock=%u\n", sock_handle->tcp_sock,
+              socket);
 
     return socket;
 }
