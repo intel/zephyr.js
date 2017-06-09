@@ -13,11 +13,11 @@
 #include <sections.h>
 #include <errno.h>
 
-#include <net/nbuf.h>
-#include <net/net_if.h>
-#include <net/net_core.h>
 #include <net/net_context.h>
+#include <net/net_core.h>
+#include <net/net_if.h>
 #include <net/net_mgmt.h>
+#include <net/net_pkt.h>
 
 #if defined(CONFIG_NET_L2_BLUETOOTH)
 #include <bluetooth/bluetooth.h>
@@ -263,7 +263,7 @@ static void post_closed(void *handle)
 }
 
 static void tcp_received(struct net_context *context,
-                         struct net_buf *buf,
+                         struct net_pkt *buf,
                          int status,
                          void *user_data)
 {
@@ -272,8 +272,8 @@ static void tcp_received(struct net_context *context,
     if (handle && buf) {
         start_socket_timeout(handle, handle->timeout);
 
-        uint32_t len = net_nbuf_appdatalen(buf);
-        uint8_t *data = net_nbuf_appdata(buf);
+        u32_t len = net_pkt_appdatalen(buf);
+        u8_t *data = net_pkt_appdata(buf);
 
         // TODO: Probably not the right way to check if a socket is closed
         if (len == 0 && data == NULL) {
@@ -282,8 +282,9 @@ static void tcp_received(struct net_context *context,
             ZVAL_MUTABLE error = zjs_custom_error("ReadError",  "socket has been closed", 0, 0);
             jerry_value_clear_error_flag(&error);
             zjs_trigger_event(handle->socket, "error", &error, 1, NULL, NULL);
-            zjs_trigger_event(handle->socket, "close", NULL, 0, post_closed, handle);
-            net_buf_unref(buf);
+            zjs_trigger_event(handle->socket, "close", NULL, 0, post_closed,
+                              handle);
+            net_pkt_unref(buf);
             return;
         }
 
@@ -302,7 +303,7 @@ static void tcp_received(struct net_context *context,
             }
         }
 
-        net_buf_unref(buf);
+        net_pkt_unref(buf);
     }
 }
 
@@ -340,16 +341,17 @@ static ZJS_DECL_FUNC(socket_write)
     start_socket_timeout(handle, handle->timeout);
 
     zjs_buffer_t *buf = zjs_buffer_find(argv[0]);
-    struct net_buf *send_buf;
-    send_buf = net_nbuf_get_tx(handle->tcp_sock, K_NO_WAIT);
+    struct net_pkt *send_buf;
+    send_buf = net_pkt_get_tx(handle->tcp_sock, K_NO_WAIT);
     if (!send_buf) {
         ERR_PRINT("cannot acquire send_buf\n");
         return jerry_create_boolean(false);
     }
 
-    bool status = net_nbuf_append(send_buf, buf->bufsize, buf->buffer, K_NO_WAIT);
+    bool status = net_pkt_append(send_buf, buf->bufsize, buf->buffer,
+                                 K_NO_WAIT);
     if (!status) {
-        net_nbuf_unref(send_buf);
+        net_pkt_unref(send_buf);
         ERR_PRINT("cannot populate send_buf\n");
         return jerry_create_boolean(false);
     }
@@ -360,11 +362,11 @@ static ZJS_DECL_FUNC(socket_write)
     }
     int ret = net_context_send(send_buf, pkt_sent,
                                K_NO_WAIT,
-                               UINT_TO_POINTER(net_buf_frags_len(send_buf)),
+                               UINT_TO_POINTER(net_pkt_get_len(send_buf)),
                                INT_TO_POINTER((int32_t)id));
     if (ret < 0) {
         ERR_PRINT("Cannot send data to peer (%d)\n", ret);
-        net_nbuf_unref(send_buf);
+        net_pkt_unref(send_buf);
         zjs_remove_callback(id);
         // TODO: may need to check the specific error to determine action
         DBG_PRINT("write failed, context=%p, socket=%u\n", handle->tcp_sock, handle->socket);
@@ -376,7 +378,7 @@ static ZJS_DECL_FUNC(socket_write)
         return jerry_create_boolean(false);
     }
 
-    net_nbuf_unref(send_buf);
+    net_pkt_unref(send_buf);
 
     return jerry_create_boolean(true);
 }

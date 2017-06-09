@@ -5,11 +5,11 @@
 #include <sections.h>
 #include <errno.h>
 
-#include <net/nbuf.h>
-#include <net/net_if.h>
-#include <net/net_core.h>
 #include <net/net_context.h>
+#include <net/net_core.h>
+#include <net/net_if.h>
 #include <net/net_mgmt.h>
+#include <net/net_pkt.h>
 #include "mbedtls/sha1.h"
 #include "mbedtls/base64.h"
 
@@ -148,32 +148,30 @@ static jerry_value_t push_array(jerry_value_t array, jerry_value_t val)
 
 static void tcp_send(struct net_context *context, void *data, uint32_t len)
 {
-    struct net_buf *send_buf;
-    send_buf = net_nbuf_get_tx(context, K_NO_WAIT);
-    if (!send_buf) {
-        ERR_PRINT("cannot acquire send_buf\n");
+    struct net_pkt *send_pkt;
+    send_pkt = net_pkt_get_tx(context, K_NO_WAIT);
+    if (!send_pkt) {
+        ERR_PRINT("cannot acquire send_pkt\n");
         return;
     }
 
-    bool status = net_nbuf_append(send_buf, len, data, K_NO_WAIT);
+    bool status = net_pkt_append(send_pkt, len, data, K_NO_WAIT);
     if (!status) {
-        net_nbuf_unref(send_buf);
-        ERR_PRINT("cannot populate send_buf\n");
+        net_pkt_unref(send_pkt);
+        ERR_PRINT("cannot populate send_pkt\n");
         return;
     }
 
-    int ret = net_context_send(send_buf,
-                               NULL,
-                               K_NO_WAIT,
-                               UINT_TO_POINTER(net_buf_frags_len(send_buf)),
+    int ret = net_context_send(send_pkt, NULL, K_NO_WAIT,
+                               UINT_TO_POINTER(net_pkt_get_len(send_pkt)),
                                NULL);
     if (ret < 0) {
         ERR_PRINT("Cannot send data to peer (%d)\n", ret);
-        net_nbuf_unref(send_buf);
+        net_pkt_unref(send_pkt);
         return;
     }
 
-    net_nbuf_unref(send_buf);
+    net_pkt_unref(send_pkt);
 }
 
 // generate an accept key given an input key
@@ -539,15 +537,16 @@ static jerry_value_t create_ws_connection(ws_connection_t *con)
 }
 
 static void tcp_received(struct net_context *context,
-                         struct net_buf *buf,
+                         struct net_pkt *pkt,
                          int status,
                          void *user_data)
 {
     ws_connection_t *con = (ws_connection_t *)user_data;
-    uint32_t len = net_nbuf_appdatalen(buf);
-    uint8_t *buffer = net_nbuf_appdata(buf);
+    uint32_t len = net_pkt_appdatalen(pkt);
+    uint8_t *buffer = net_pkt_appdata(pkt);
 
-    DBG_PRINT("data recieved on context %p: data=%p, len=%u\n", con->tcp_sock, buffer, len);
+    DBG_PRINT("data recieved on context %p: data=%p, len=%u\n", con->tcp_sock,
+              buffer, len);
 
     if (buffer && len == 0) {
         // ack from accept
@@ -565,8 +564,8 @@ static void tcp_received(struct net_context *context,
     }
 
     if (len && buffer) {
-        struct net_buf *tmp = buf->frags;
-        uint32_t header_len = net_nbuf_appdata(buf) - tmp->data;
+        struct net_buf *tmp = pkt->frags;
+        uint32_t header_len = net_pkt_appdata(pkt) - tmp->data;
         // move past IP header
         net_buf_pull(tmp, header_len);
 
@@ -576,7 +575,7 @@ static void tcp_received(struct net_context *context,
             ZVAL_MUTABLE error = zjs_error_context("out of memory", 0, 0);
             jerry_value_clear_error_flag(&error);
             zjs_trigger_event(con->server, "error", &error, 1, NULL, NULL);
-            net_nbuf_unref(buf);
+            net_pkt_unref(pkt);
             return;
         }
         uint8_t *wptr = data;
@@ -594,7 +593,7 @@ static void tcp_received(struct net_context *context,
             ZVAL_MUTABLE error = zjs_error_context("payload too large", 0, 0);
             jerry_value_clear_error_flag(&error);
             zjs_trigger_event(con->server, "error", &error, 1, NULL, NULL);
-            net_nbuf_unref(buf);
+            net_pkt_unref(pkt);
             zjs_free(data);
             return;
         }
@@ -606,7 +605,7 @@ static void tcp_received(struct net_context *context,
                 ZVAL_MUTABLE error = zjs_error_context("out of memory", 0, 0);
                 jerry_value_clear_error_flag(&error);
                 zjs_trigger_event(con->server, "error", &error, 1, NULL, NULL);
-                net_nbuf_unref(buf);
+                net_pkt_unref(pkt);
                 zjs_free(data);
                 return;
             }
@@ -672,7 +671,7 @@ static void tcp_received(struct net_context *context,
                                                            0, 0);
                     jerry_value_clear_error_flag(&error);
                     zjs_trigger_event(con->server, "error", &error, 1, NULL, NULL);
-                    net_nbuf_unref(buf);
+                    net_pkt_unref(pkt);
                     zjs_free(data);
                     return;
                 }
@@ -707,7 +706,7 @@ static void tcp_received(struct net_context *context,
         zjs_trigger_event(con->conn, "close", args, 2, NULL, NULL);
         close_connection(con);
     }
-    net_nbuf_unref(buf);
+    net_pkt_unref(pkt);
 }
 
 static void post_accept_handler(void *handle, jerry_value_t ret_val)

@@ -4,7 +4,7 @@
 
 // Zephyr includes
 #include <net/net_context.h>
-#include <net/nbuf.h>
+#include <net/net_pkt.h>
 #if defined(CONFIG_NET_L2_BLUETOOTH)
 #include <bluetooth/bluetooth.h>
 #include <gatt/ipss.h>
@@ -85,17 +85,17 @@ static const jerry_object_native_info_t dgram_type_info =
    .free_cb = zjs_dgram_free_cb
 };
 
-// Copy data from Zephyr net_buf chain into linear buffer
-static char *net_buf_gather(struct net_buf *buf, char *to)
+// Copy data from Zephyr net_pkt chain into linear buffer
+static char *net_pkt_gather(struct net_pkt *pkt, char *to)
 {
-    struct net_buf *tmp = buf->frags;
-    int header_len = net_nbuf_appdata(buf) - tmp->data;
+    struct net_buf *tmp = pkt->frags;
+    int header_len = net_pkt_appdata(pkt) - tmp->data;
     net_buf_pull(tmp, header_len);
 
     while (tmp) {
         memcpy(to, tmp->data, tmp->len);
         to += tmp->len;
-        tmp = net_buf_frag_del(buf, tmp);
+        tmp = net_pkt_frag_del(pkt, NULL, tmp);
     }
 
     return to;
@@ -103,27 +103,27 @@ static char *net_buf_gather(struct net_buf *buf, char *to)
 
 // Zephyr "packet received" callback
 static void udp_received(struct net_context *context,
-                         struct net_buf *net_buf,
+                         struct net_pkt *net_pkt,
                          int status,
                          void *user_data)
 {
     DBG_PRINT("udp_received: %p, buf=%p, st=%d, appdatalen=%d, udata=%p\n",
-              context, net_buf, status, net_nbuf_appdatalen(net_buf),
+              context, net_pkt, status, net_pkt_appdatalen(net_pkt),
               user_data);
 
     dgram_handle_t *handle = user_data;
     if (handle->message_cb_id == -1)
         return;
 
-    int recv_len = net_nbuf_appdatalen(net_buf);
-    sa_family_t family = net_nbuf_family(net_buf);
+    int recv_len = net_pkt_appdatalen(net_pkt);
+    sa_family_t family = net_pkt_family(net_pkt);
     char addr_str[40];
 
     void *addr;
     if (family == AF_INET) {
-        addr = &NET_IPV4_BUF(net_buf)->src;
+        addr = &NET_IPV4_HDR(net_pkt)->src;
     } else {
-        addr = &NET_IPV6_BUF(net_buf)->src;
+        addr = &NET_IPV6_HDR(net_pkt)->src;
     }
     net_addr_ntop(family, addr, addr_str, sizeof(addr_str));
 
@@ -131,14 +131,14 @@ static void udp_received(struct net_context *context,
     ZVAL_MUTABLE buf_js = zjs_buffer_create(recv_len, &buf);
     ZVAL rinfo = jerry_create_object();
     if (buf) {
-        zjs_obj_add_number(rinfo, ntohs(NET_UDP_BUF(net_buf)->src_port),
+        zjs_obj_add_number(rinfo, ntohs(NET_UDP_HDR(net_pkt)->src_port),
                            "port");
         zjs_obj_add_string(rinfo, family == AF_INET ? "IPv4" : "IPv6",
                            "family");
         zjs_obj_add_string(rinfo, addr_str, "address");
 
-        net_buf_gather(net_buf, buf->buffer);
-        net_nbuf_unref(net_buf);
+        net_pkt_gather(net_pkt, buf->buffer);
+        net_pkt_unref(net_pkt);
     }
     else {
         // can't pass object with error flag as a JS arg
@@ -264,11 +264,11 @@ static ZJS_DECL_FUNC(zjs_dgram_sock_send)
     if (err != ZJS_UNDEFINED)
         return err;
 
-    struct net_buf *send_buf = net_nbuf_get_tx(handle->udp_sock, K_NO_WAIT);
+    struct net_pkt *send_buf = net_pkt_get_tx(handle->udp_sock, K_NO_WAIT);
     if (!send_buf) {
         return zjs_error("no netbuf");
     }
-    if (!net_nbuf_append(send_buf, len, buf->buffer + offset, K_NO_WAIT)) {
+    if (!net_pkt_append(send_buf, len, buf->buffer + offset, K_NO_WAIT)) {
         return zjs_error("no data netbuf");
     }
 
