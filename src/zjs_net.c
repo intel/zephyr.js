@@ -606,6 +606,36 @@ static void tcp_accepted(struct net_context *context,
 }
 
 /**
+ * Retrieve address information from the bound server socket
+ *
+ * @name address
+ * @memberof Net.Server
+ * @return {AddressObject}
+ */
+static ZJS_DECL_FUNC(server_address)
+{
+    ZJS_GET_HANDLE(this, net_handle_t, handle, net_type_info);
+
+    jerry_value_t info = jerry_create_object();
+    zjs_obj_add_number(info, handle->port, "port");
+
+    sa_family_t family = net_context_get_family(handle->tcp_sock);
+    if (family == AF_INET6) {
+        zjs_obj_add_string(info, "IPv6", "family");
+    } else {
+        zjs_obj_add_string(info, "IPv4", "family");
+    }
+
+    // FIXME: this seems to return :: instead of the real address
+    char ipstr[INET6_ADDRSTRLEN];
+    struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)&handle->local;
+    net_addr_ntop(family, &addr6->sin6_addr, ipstr, INET6_ADDRSTRLEN);
+    zjs_obj_add_string(info, ipstr, "address");
+
+    return info;
+}
+
+/**
  * Signal the server to close. Any opened sockets will remain open, and the
  * 'close' event will be called when these remaining sockets are closed.
  *
@@ -1106,6 +1136,7 @@ jerry_value_t zjs_net_init()
             { NULL, NULL }
     };
     zjs_native_func_t server_array[] = {
+            { server_address, "address" },
             { server_listen, "listen" },
             { server_close, "close" },
             { server_get_connections, "getConnections" },
