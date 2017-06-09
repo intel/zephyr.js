@@ -539,7 +539,7 @@ static void add_socket_connection(jerry_value_t socket,
         return;
     }
 
-    memcpy(&handle->remote, remote, sizeof(struct sockaddr));
+    handle->remote = *remote;
     handle->handle = net;
     handle->tcp_sock = new;
 
@@ -696,19 +696,19 @@ static ZJS_DECL_FUNC(server_listen)
         zjs_add_event_listener(this, "listening", argv[1]);
     }
 
-    struct sockaddr_in6 my_addr6 = { 0 };
+    struct sockaddr addr;
+    memset(&addr, 0, sizeof(struct sockaddr));
+    struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)&addr;
 
-    my_addr6.sin6_family = AF_INET6;
-    my_addr6.sin6_port = htons((int)port);
+    addr6->sin6_family = AF_INET6;
+    addr6->sin6_port = htons((int)port);
 
-    CHECK(net_context_bind(handle->tcp_sock,
-                           (struct sockaddr *)&my_addr6,
-                           sizeof(struct sockaddr_in6)));
+    CHECK(net_context_bind(handle->tcp_sock, &addr, sizeof(struct sockaddr)));
     CHECK(net_context_listen(handle->tcp_sock, (int)backlog));
 
     handle->listening = 1;
     handle->port = (uint16_t)port;
-    memcpy(&handle->local, &my_addr6, sizeof(struct sockaddr *));
+    handle->local = addr;
     zjs_obj_add_boolean(this, true, "listening");
 
     zjs_trigger_event(this, "listening", NULL, 0, NULL, NULL);
