@@ -20,7 +20,7 @@ BINARY=/tmp/zjs_source
 PASSCOUNT=0
 TOTAL=0
 
-CFLAGS="-m32 -DCONFIG_X86 -DCONFIG_PREEMPT_ENABLED -DCONFIG_LOAPIC_BASE_ADDRESS=0xFEE00000 -I. -I../deps/jerryscript/jerry-core -I../deps/zephyr/include -I../deps/iotivity-constrained/include -I../deps/iotivity-constrained -include ../deps/iotivity-constrained/port/zephyr/src/config.h"
+CFLAGS="-m32 -DCONFIG_X86 -DCONFIG_PREEMPT_ENABLED -DCONFIG_LOAPIC_BASE_ADDRESS=0xFEE00000 -I. -I../deps/jerryscript/jerry-core -I../deps/zephyr/include -I../deps/zephyr/arch/x86/include -I../deps/iotivity-constrained/include -I../deps/iotivity-constrained -include ../deps/iotivity-constrained/port/zephyr/src/config.h"
 FAILURES=
 
 function create_source()  # HEADER
@@ -65,7 +65,7 @@ echo RESULTS: $PASSCOUNT/$TOTAL passed
 if [ $PASSCOUNT -ne $TOTAL ]; then
     # on Ubuntu ensure libc6-dev-i386
     if which dpkg > /dev/null; then
-        if ! dpkg -l lib6-dev-i386 > /dev/null 2>&1; then
+        if ! dpkg -l libc6-dev-i386 > /dev/null 2>&1; then
             echo
             echo WARNING: package libc6-dev-i386 not found
             echo You may need to run: sudo apt install libc6-dev-i386

@@ -7,6 +7,9 @@
 #include <unistd.h>
 #include <time.h>
 
+// define Zephyr numeric types we use
+typedef uint32_t u32_t;
+
 typedef struct zjs_port_timer {
     uint32_t sec;
     uint32_t milli;

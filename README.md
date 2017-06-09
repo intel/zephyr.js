@@ -59,11 +59,13 @@ default with Ubuntu:
 
 ```bash
 sudo apt-get update
-sudo apt-get install cmake dfu-util git python-yaml screen uglifyjs
+sudo apt-get install cmake dfu-util git python3-yaml screen uglifyjs
 ```
 
-Note: python-yaml is a recent requirement for the frdm-k64f build due to some
+Note: python3-yaml is a recent requirement for the frdm-k64f build due to a
 change in Zephyr, so it could be left out currently if you don't use k64f.
+Before that, for a while python-yaml was needed when the script was using
+Python 2.
 
 #### Clone the ZJS repo
 Next, clone this git repo:

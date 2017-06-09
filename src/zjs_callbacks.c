@@ -462,7 +462,7 @@ void signal_callback_priv(zjs_callback_id id,
     int ret = zjs_port_ring_buf_put(&ring_buffer,
             (uint16_t)id,
             0,  // we use value for CB_FLUSH_ONE/ALL
-            (uint32_t *)args,
+            (u32_t *)args,
             (uint8_t)((size + 3) / 4));
     if (ret != 0) {
         if (GET_TYPE(cb_map[id]->flags) == CALLBACK_TYPE_JS) {
@@ -630,7 +630,7 @@ uint8_t zjs_service_callbacks(void)
                 // item in ring buffer with size > 0, has args
                 // pull from ring buffer
                 uint8_t sz = size;
-                uint32_t data[sz];
+                u32_t data[sz];
                 if (ret == -EMSGSIZE) {
                     ret = zjs_port_ring_buf_get(&ring_buffer,
                                                 &id,

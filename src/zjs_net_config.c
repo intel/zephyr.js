@@ -1,8 +1,8 @@
 // Copyright (c) 2016-2017, Intel Corporation.
 
 #include <net/net_context.h>
-#include <net/nbuf.h>
 #include <net/net_if.h>
+#include <net/net_pkt.h>
 #if defined(CONFIG_NET_L2_BLUETOOTH)
 #include <bluetooth/bluetooth.h>
 #include <gatt/ipss.h>
