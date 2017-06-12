@@ -1,5 +1,5 @@
 {
-    "module": "pwm_arc",
+    "module": "pme_arc",
     "require": "pme",
     "targets": ["arc"],
     "src": ["arc_curie_pme.c"]

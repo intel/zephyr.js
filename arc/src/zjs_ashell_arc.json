@@ -2,6 +2,7 @@
     "module": "ashell_arc",
     "depends": ["i2c",
                 "i2c_arc",
+                "aio_arc",
                 "sensor_accel_arc",
                 "sensor_gyro_arc",
                 "sensor_light_arc",

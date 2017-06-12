@@ -1,5 +1,5 @@
 {
-    "module": "pwm",
+    "module": "pme",
     "require": "pme",
     "depends": ["ipm"],
     "zjs_config": ["-DBUILD_MODULE_PME"],

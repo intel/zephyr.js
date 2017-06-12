@@ -1,0 +1,10 @@
+{
+    "module": "grove_lcd_a101",
+    "depends": ["ipm"],
+    "targets": ["arduino_101"],
+    "zjs_config": ["-DBUILD_MODULE_GROVE_LCD"],
+    "src": ["zjs_grove_lcd_ipm.c"],
+    "header": ["zjs_grove_lcd.h"],
+    "init": ["zjs_grove_lcd_init"],
+    "cleanup": ["zjs_grove_lcd_cleanup"]
+}

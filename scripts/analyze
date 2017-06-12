@@ -50,22 +50,11 @@ def parse_list(tree, list=[]):
                 if args['BOARD'] not in data['targets']:
                     continue;
             # Index the entry by the require name, if exists
-            if 'require' in data:
-                # if the require name exists, index by module
-                # this is done due to some targets needing a restricted set of
-                # .json files (ARC). When this subset of files is looked at
-                # against the JS file, the require's still need to be parsed
-                # correctly so we have to add a second entry in the tree that
-                # is specific to this target (ARC).
-                if data['require'] in tree:
-                    tree[data['module']] = data
+            if 'module' in data:
+                if data['module'] in tree:
+                    print("Error: JSON entry %s is a duplicate" % data['module'])
                 else:
-                    tree[data['require']] = data
-            # else index by the module name
-            elif 'module' in data:
-                tree[data['module']] = data
-            else:
-                print("Error: JSON entry %s must have either 'module' or 'require'" % file)
+                    tree[data['module']] = data;
 
 def build_tree(tree, restrict):
     if restrict != []:

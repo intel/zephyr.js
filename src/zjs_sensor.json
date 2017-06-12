@@ -3,8 +3,9 @@
     "targets": ["arduino_101"],
     "depends": ["ipm"],
     "zjs_config": ["-DBUILD_MODULE_SENSOR"],
+    "zjs_config": ["-I$(ZJS_BASE)/src/sensors", "-DBUILD_MODULE_SENSOR"],
     "zephyr_conf": {
-        "arc": [
+        "arduino_101": [
             "CONFIG_SENSOR=y",
             "CONFIG_GPIO=y",
             "CONFIG_SPI=y",
@@ -20,7 +21,6 @@
             "CONFIG_BMI160_TRIGGER_OWN_THREAD=y"
         ]
     },
-    "zjs_config": ["-I$(ZJS_BASE)/src/sensors", "-DBUILD_MODULE_SENSOR"],
     "src": ["zjs_sensor.c"],
     "header": ["zjs_sensor.h"],
     "global_init": ["zjs_sensor_init"],

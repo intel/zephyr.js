@@ -383,6 +383,7 @@ ARC_RESTRICT="zjs_ipm_arc.json,\
 		zjs_i2c_arc.json,\
 		zjs_arc.json,\
 		zjs_pme_arc.json,\
+		zjs_aio_arc.json,\
 		zjs_ashell_arc.json,\
 		zjs_sensor_arc.json,\
 		zjs_sensor_accel_arc.json,\
