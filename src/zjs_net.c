@@ -684,6 +684,7 @@ static ZJS_DECL_FUNC(server_get_connections)
         if (cur->handle == handle) {
             count++;
         }
+        cur = cur->next;
     }
 
     ZVAL err = jerry_create_number(0);
@@ -691,7 +692,7 @@ static ZJS_DECL_FUNC(server_get_connections)
     jerry_value_t args[2] = {err, num};
 
     zjs_callback_id id = zjs_add_callback_once(argv[0], this, NULL, NULL);
-    zjs_signal_callback(id, args, 2);
+    zjs_signal_callback(id, args, sizeof(args));
 
     return ZJS_UNDEFINED;
 }
