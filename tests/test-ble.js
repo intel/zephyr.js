@@ -281,13 +281,13 @@ ble.on("disconnect", function(clientAddress) {
         clients.client2 === null &&
         clients.client3 === null &&
         clients.client4 === null) {
-        if (DisconnectMoreClientsFlag) {
+        if (disconnectMoreClientsFlag) {
             assert(clientCount === 0,
                    "connection: disconnect all clients");
 
             assert.result();
 
-            DisconnectMoreClientsFlag = false;
+            disconnectMoreClientsFlag = false;
         }
     }
 
@@ -301,7 +301,7 @@ ble.on("disconnect", function(clientAddress) {
 
         console.log("Please connected multiple clients and max clients as '4'");
 
-        DisconnectMoreClientsFlag = true;
+        disconnectMoreClientsFlag = true;
         disconnectFirstFlag = false;
     }
 });
