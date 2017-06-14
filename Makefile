@@ -235,7 +235,7 @@ analyze: $(JS)
 
 	./scripts/analyze	V=$(V) \
 		SCRIPT=$(JS) \
-		JS=js.tmp \
+		JS_OUT=js.tmp \
 		BOARD=$(BOARD) \
 		JSON_DIR=src/ \
 		FORCE=$(ASHELL) \
