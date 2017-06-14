@@ -61,7 +61,7 @@ static struct ocf_handler *new_ocf_handler(struct client_resource *res)
         ERR_PRINT("could not allocate OCF handle, out of memory\n");
         return NULL;
     }
-    memset(h, 0, sizeof(struct ocf_handler *));
+    memset(h, 0, sizeof(struct ocf_handler));
     h->res = res;
 
     return h;
