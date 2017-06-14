@@ -513,7 +513,7 @@ if check_for_feature "Accelerometer\|Gyroscope\|AmbientLightSensor\|TemperatureS
             echo "CONFIG_BMI160_SPI_PORT_NAME=\"SPI_SS_1\"" >> $ARCPRJFILE
             echo "CONFIG_BMI160_SLAVE=1" >> $ARCPRJFILE
             echo "CONFIG_BMI160_SPI_BUS_FREQ=88" >> $ARCPRJFILE
-            if $gpio; then
+            if [ $gpio ]; then
                 # Workaround for Zephyr bug ZEP-2024: conflict with BMI160 trigger
                 # and GPIO, so trigger mode can only be enabled for non-ashell mode
                 # and ashell will default to polling
@@ -524,7 +524,7 @@ if check_for_feature "Accelerometer\|Gyroscope\|AmbientLightSensor\|TemperatureS
                 echo "CONFIG_BMI160_TRIGGER_OWN_THREAD=y" >> $ARCPRJFILE
             fi
         fi
-        if $sensor_light; then
+        if [ $sensor_light ]; then
             echo "CONFIG_ADC=y" >> $ARCPRJFILE
         fi
     fi
