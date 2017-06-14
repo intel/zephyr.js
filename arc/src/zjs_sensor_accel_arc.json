@@ -1,0 +1,7 @@
+{
+    "module": "sensor_accel_arc",
+    "constructor": "Accelerometer",
+    "targets": ["arc"],
+    "depends": ["sensor_arc"],
+    "zjs_config": ["-DBUILD_MODULE_SENSOR_ACCEL"]
+}

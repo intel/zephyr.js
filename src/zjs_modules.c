@@ -10,149 +10,17 @@
 
 #ifndef ZJS_LINUX_BUILD
 #include "zjs_zephyr_port.h"
+#include "zjs_ipm.h"
 #else
 #include "zjs_linux_port.h"
 #endif
 
-// ZJS includes
-#if defined(CONFIG_BOARD_ARDUINO_101) || defined(ZJS_LINUX_BUILD)
-#include "zjs_a101_pins.h"
-#endif
-#ifdef BUILD_MODULE_BUFFER
-#include "zjs_buffer.h"
-#endif
-#ifdef BUILD_MODULE_CONSOLE
-#include "zjs_console.h"
-#endif
-#include "zjs_board.h"
-#include "zjs_dgram.h"
-#include "zjs_net.h"
-#include "zjs_web_sockets.h"
-#include "zjs_event.h"
-#include "zjs_gpio.h"
 #include "zjs_modules.h"
-#include "zjs_performance.h"
-#include "zjs_callbacks.h"
-#ifdef BUILD_MODULE_SENSOR
-#include "zjs_sensor.h"
-#endif
-#include "zjs_timers.h"
+#include "zjs_modules_gen.h"
 #include "zjs_util.h"
-#ifdef BUILD_MODULE_OCF
-#include "zjs_ocf_common.h"
-#endif
-#ifdef BUILD_MODULE_TEST_PROMISE
-#include "zjs_test_promise.h"
-#endif
-#ifdef BUILD_MODULE_TEST_CALLBACKS
-#include "zjs_test_callbacks.h"
-#endif
-
-#ifndef ZJS_LINUX_BUILD
-#include "zjs_aio.h"
-#include "zjs_ble.h"
-#include "zjs_grove_lcd.h"
-#include "zjs_i2c.h"
-#include "zjs_pwm.h"
-#include "zjs_uart.h"
-#include "zjs_fs.h"
-#ifdef CONFIG_BOARD_ARDUINO_101
-#include "zjs_ipm.h"
-#ifdef BUILD_MODULE_PME
-#include "zjs_pme.h"
-#endif
-#endif
-#ifdef CONFIG_BOARD_FRDM_K64F
-#include "zjs_k64f_pins.h"
-#endif
-#else
+#include "zjs_callbacks.h"
 #include "zjs_script.h"
-#endif // ZJS_LINUX_BUILD
-
-typedef jerry_value_t (*initcb_t)();
-typedef void (*cleanupcb_t)();
-
-typedef struct module {
-    const char *name;
-    initcb_t init;
-    cleanupcb_t cleanup;
-    jerry_value_t instance;
-} module_t;
-
-// init function is required, cleanup is optional in these entries
-module_t zjs_modules_array[] = {
-#ifndef ZJS_LINUX_BUILD
-#ifndef QEMU_BUILD
-#ifndef CONFIG_BOARD_FRDM_K64F
-#ifdef BUILD_MODULE_AIO
-    { "aio", zjs_aio_init, zjs_aio_cleanup },
-#endif
-#endif
-#ifdef BUILD_MODULE_BLE
-    { "ble", zjs_ble_init, zjs_ble_cleanup },
-#endif
-#ifdef BUILD_MODULE_GROVE_LCD
-    { "grove_lcd", zjs_grove_lcd_init, zjs_grove_lcd_cleanup },
-#endif
-#ifdef BUILD_MODULE_PWM
-    { "pwm", zjs_pwm_init, zjs_pwm_cleanup },
-#endif
-#ifdef BUILD_MODULE_I2C
-    { "i2c", zjs_i2c_init },
-#endif
-#ifdef BUILD_MODULE_FS
-    { "fs", zjs_fs_init, zjs_fs_cleanup },
-#endif
-#ifdef CONFIG_BOARD_FRDM_K64F
-    { "k64f_pins", zjs_k64f_init },
-#endif
-#endif // QEMU_BUILD
-#ifdef BUILD_MODULE_UART
-    { "uart", zjs_uart_init, zjs_uart_cleanup },
-#endif
-#endif // ZJS_LINUX_BUILD
-#ifdef BUILD_MODULE_BOARD
-    { "board", zjs_board_init },
-#endif
-#ifdef BUILD_MODULE_A101
-    { "arduino101_pins", zjs_a101_init },
-#endif
-#ifdef BUILD_MODULE_GPIO
-    { "gpio", zjs_gpio_init, zjs_gpio_cleanup },
-#endif
-#ifdef BUILD_MODULE_DGRAM
-    { "dgram", zjs_dgram_init, zjs_dgram_cleanup },
-#endif
-#ifdef BUILD_MODULE_NET
-    { "net", zjs_net_init, zjs_net_cleanup },
-#endif
-#ifdef BUILD_MODULE_WS
-    { "ws", zjs_ws_init, zjs_ws_cleanup },
-#endif
-#ifdef BUILD_MODULE_EVENTS
-    { "events", zjs_event_init, zjs_event_cleanup },
-#endif
-#ifdef BUILD_MODULE_PERFORMANCE
-    { "performance", zjs_performance_init },
-#endif
-#ifdef CONFIG_BOARD_ARDUINO_101
-#ifdef BUILD_MODULE_A101
-    { "arduino101_pins", zjs_a101_init },
-#endif
-#ifdef BUILD_MODULE_PME
-    { "pme", zjs_pme_init },
-#endif
-#endif
-#ifdef BUILD_MODULE_OCF
-    { "ocf", zjs_ocf_init, zjs_ocf_cleanup },
-#endif
-#ifdef BUILD_MODULE_TEST_PROMISE
-    { "test_promise", zjs_test_promise_init },
-#endif
-#ifdef BUILD_MODULE_TEST_CALLBACKS
-    { "test_callbacks", zjs_test_callbacks_init }
-#endif
-};
+#include "zjs_timers.h"
 
 struct routine_map {
     zjs_service_routine func;
@@ -264,9 +132,11 @@ static ZJS_DECL_FUNC(native_print_handler)
 
 static ZJS_DECL_FUNC(stop_js_handler)
 {
-    #ifdef CONFIG_BOARD_ARDUINO_101
+#ifdef CONFIG_BOARD_ARDUINO_101
+#ifdef CONFIG_IPM
     zjs_ipm_free_callbacks();
-    #endif
+#endif
+#endif
     zjs_modules_cleanup();
     jerry_cleanup();
     return ZJS_UNDEFINED;
@@ -303,19 +173,15 @@ void zjs_modules_init()
             break;
         }
     }
+    int gbl_modcount = sizeof(zjs_global_array) / sizeof(gbl_module_t);
+    for (int i = 0; i < gbl_modcount; i++) {
+        gbl_module_t *mod = &zjs_global_array[i];
+        mod->init();
+    }
     zjs_init_callbacks();
     // initialize fixed modules
     zjs_error_init();
     zjs_timers_init();
-#ifdef BUILD_MODULE_CONSOLE
-    zjs_console_init();
-#endif
-#ifdef BUILD_MODULE_BUFFER
-    zjs_buffer_init();
-#endif
-#ifdef BUILD_MODULE_SENSOR
-    zjs_sensor_init();
-#endif
 }
 
 void zjs_modules_cleanup()
@@ -334,23 +200,15 @@ void zjs_modules_cleanup()
             mod->instance = 0;
         }
     }
-
+    int gbl_modcount = sizeof(zjs_global_array) / sizeof(gbl_module_t);
+    for (int i = 0; i < gbl_modcount; i++) {
+        gbl_module_t *mod = &zjs_global_array[i];
+        if (mod->cleanup) {
+            mod->cleanup();
+        }
+    }
     // clean up fixed modules
     zjs_error_cleanup();
-#ifdef BUILD_MODULE_CONSOLE
-    zjs_console_cleanup();
-#endif
-#ifdef BUILD_MODULE_BUFFER
-    zjs_buffer_cleanup();
-#endif
-#ifdef BUILD_MODULE_SENSOR
-    zjs_sensor_cleanup();
-#endif
-#ifdef CONFIG_BOARD_ARDUINO_101
-#ifdef BUILD_MODULE_PME
-    zjs_pme_cleanup();
-#endif
-#endif
 }
 
 void zjs_register_service_routine(void *handle, zjs_service_routine func)

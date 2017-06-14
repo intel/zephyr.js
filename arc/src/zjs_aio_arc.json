@@ -1,0 +1,10 @@
+{
+    "module": "aio_arc",
+    "require": "aio",
+    "depends": ["ipm_arc"],
+    "targets": ["arc"],
+    "zephyr_conf": {
+        "arc": ["CONFIG_ADC=y"]
+    },
+    "zjs_config": ["-DBUILD_MODULE_AIO"]
+}

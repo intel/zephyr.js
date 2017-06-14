@@ -1,0 +1,12 @@
+{
+    "module": "ipm_arc",
+    "targets": ["arc"],
+    "zephyr_conf": {
+        "arc": [
+            "CONFIG_IPM=y",
+            "CONFIG_IPM_QUARK_SE=y",
+            "CONFIG_IPM_CONSOLE_SENDER=y"
+        ]
+    },
+    "src":["../../src/zjs_ipm.c", "../../src/zjs_i2c_handler.c"]
+}

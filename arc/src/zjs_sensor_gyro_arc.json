@@ -1,0 +1,7 @@
+{
+    "module": "sensor_gyro_arc",
+    "constructor": "Gyroscope",
+    "depends": ["sensor_arc"],
+    "targets": ["arc"],
+    "zjs_config": ["-DBUILD_MODULE_SENSOR_GYRO"]
+}

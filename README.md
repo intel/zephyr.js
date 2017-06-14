@@ -21,6 +21,7 @@ everything else.
 * [Supported modules on Linux and Zephyr](#supported-modules-on-linux-and-zephyr)
 * [Networking with QEMU](#networking-with-qemu)
 * [Networking with BLE](#networking-with-ble)
+* [Adding New Modules](./src/MODULES.md)
 
 ## Getting Started
 

@@ -95,6 +95,16 @@ endif
 
 BUILD_OBJ = $(CORE_OBJ:%.o=$(BUILD_DIR)/%.o)
 
+LINUX_MODULES="zjs_buffer.json,\
+zjs_console.json,\
+zjs_event.json,\
+zjs_iotivity_constrained.json,\
+zjs_ocf.json,\
+zjs_performance.json,\
+zjs_promise.json,\
+zjs_test_callbacks.json,\
+zjs_test_promise.json,\
+zjs_gpio.json"
 
 UNAME := $(shell uname)
 ifneq ($(UNAME),Darwin)
@@ -111,15 +121,20 @@ LINUX_INCLUDES += 	-I$(OCF_ROOT)/deps/tinydtls \
 			-I$(OCF_ROOT)/util \
 			-I$(OCF_ROOT)/messaging/coap \
 			-I$(OCF_ROOT)/api \
-			-include $(ZJS_BASE)/src/zjs_ocf_config.h
+			-include $(ZJS_BASE)/src/zjs_ocf_config.h \
+			-Ioutdir/include
 
 include Makefile.ocf_linux
 
-LINUX_DEFINES += -DOC_SERVER -DOC_CLIENT -DBUILD_MODULE_OCF
+LINUX_DEFINES += -DOC_SERVER -DOC_CLIENT -DBUILD_MODULE_OCF -DZJS_GPIO_MOCK
 endif
 
 .PHONY: all
 all: linux
+
+.PHONY: setup
+setup:
+	./scripts/analyze BOARD=linux RESTRICT=$(LINUX_MODULES) V=$(V) JSON_DIR=src/
 
 $(BUILD_DIR)/%.o:%.c
 	@mkdir -p $(@D)
@@ -127,7 +142,7 @@ $(BUILD_DIR)/%.o:%.c
 	@gcc -c -o $@ $< -Wall -Werror $(LINUX_INCLUDES) $(LINUX_DEFINES) $(LINUX_FLAGS)
 
 .PHONY: linux
-linux: $(BUILD_OBJ)
+linux: setup $(BUILD_OBJ)
 	@cd deps/jerryscript; python ./tools/build.py \
 		--error-messages ON $(VERBOSE) \
 		--mem-heap 16 \
