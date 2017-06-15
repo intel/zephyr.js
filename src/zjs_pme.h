@@ -15,4 +15,4 @@ jerry_value_t zjs_pme_init();
 /** Release resources held by the pme module */
 void zjs_pme_cleanup();
 
-#endif // __zjs_pme_h__
+#endif  // __zjs_pme_h__

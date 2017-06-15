@@ -134,7 +134,7 @@ static ZJS_DECL_FUNC(zjs_pme_learn)
             return zjs_error("invalid vector type");
         }
         uint8_t byte = jerry_get_number_value(num);
-        memcpy(&send.data.pme.vector[i], &byte, sizeof(uint8_t));
+        send.data.pme.vector[i] = byte;
     }
 
     send.data.pme.vector_size = vector_len;
@@ -164,7 +164,7 @@ static ZJS_DECL_FUNC(zjs_pme_classify)
             return zjs_error("invalid vector type");
         }
         uint8_t byte = jerry_get_number_value(num);
-        memcpy(&send.data.pme.vector[i], &byte, sizeof(uint8_t));
+        send.data.pme.vector[i] = byte;
     }
 
     send.data.pme.vector_size = vector_len;
@@ -219,7 +219,7 @@ static ZJS_DECL_FUNC(zjs_pme_write_vector)
             return zjs_error("invalid vector type");
         }
         uint8_t byte = jerry_get_number_value(num);
-        memcpy(&send.data.pme.vector[i], &byte, sizeof(uint8_t));
+        send.data.pme.vector[i] = byte;
     }
 
     send.data.pme.vector_size = vector_len;
@@ -441,7 +441,7 @@ static ZJS_DECL_FUNC(zjs_pme_restore_neurons)
                  return zjs_error("invalid vector type");
             }
             uint8_t byte = jerry_get_number_value(num);
-            memcpy(&send.data.pme.vector[i], &byte, sizeof(uint8_t));
+            send.data.pme.vector[i] = byte;
         }
 
         send.data.pme.vector_size = vector_len;

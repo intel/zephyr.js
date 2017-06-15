@@ -1002,8 +1002,7 @@ static void handle_pme(struct zjs_ipm_message* msg)
         break;
     case TYPE_PME_CONFIGURE:
         // valid range is 1-127
-        if (msg->data.pme.g_context < 1 ||
-            msg->data.pme.g_context > 127) {
+        if (msg->data.pme.g_context < 1 || msg->data.pme.g_context > 127) {
             ERR_PRINT("context range has to be 1-127\n");
             ipm_send_error(msg, ERROR_IPM_INVALID_PARAMETER);
             return;
@@ -1080,16 +1079,12 @@ static void handle_pme(struct zjs_ipm_message* msg)
         msg->data.pme.min_if = data.min_if;
         memcpy(msg->data.pme.vector, data.vector, sizeof(data.vector));
         DBG_PRINT("neuron: id=%d, CTX=%d, AIF=%d MIF=%d, cat=%d\n",
-                  data.context & NCR_ID,
-                  data.context & NCR_CONTEXT,
-                  data.aif,
-                  data.min_if,
-                  data.category);
+                  data.context & NCR_ID, data.context & NCR_CONTEXT,
+                  data.aif, data.min_if, data.category);
         break;
     case TYPE_PME_WRITE_VECTOR:
         DBG_PRINT("write vector: %lu byte vector\n",
-                  msg->data.pme.category,
-                  msg->data.pme.vector_size);
+                  msg->data.pme.category, msg->data.pme.vector_size);
         if (msg->data.pme.vector_size > MAX_VECTOR_SIZE) {
             ERR_PRINT("vector cannot be greater than %d\n", MAX_VECTOR_SIZE);
             ipm_send_error(msg, ERROR_IPM_INVALID_PARAMETER);
@@ -1108,23 +1103,19 @@ static void handle_pme(struct zjs_ipm_message* msg)
 
         curie_pme_write_vector(msg->data.pme.vector,
                                msg->data.pme.vector_size);
-        DBG_PRINT("\nwrote with %d neruons\n",
-                  curie_pme_get_committed_count());
+        DBG_PRINT("\nwrote with %d neruons\n", curie_pme_get_committed_count());
         break;
     case TYPE_PME_GET_COMMITED_COUNT:
         msg->data.pme.committed_count = curie_pme_get_committed_count();
-        DBG_PRINT("committed count: %d\n",
-                  msg->data.pme.committed_count);
+        DBG_PRINT("committed count: %d\n", msg->data.pme.committed_count);
         break;
     case TYPE_PME_GET_GLOBAL_CONTEXT:
         msg->data.pme.g_context = curie_pme_get_global_context();
-        DBG_PRINT("global context: %d\n",
-                  msg->data.pme.g_context);
+        DBG_PRINT("global context: %d\n", msg->data.pme.g_context);
         break;
     case TYPE_PME_SET_GLOBAL_CONTEXT:
         // valid range is 1-127
-        if (msg->data.pme.g_context < 1 ||
-            msg->data.pme.g_context > 127) {
+        if (msg->data.pme.g_context < 1 || msg->data.pme.g_context > 127) {
             ERR_PRINT("context range has to be 1-127\n");
             ipm_send_error(msg, ERROR_IPM_INVALID_PARAMETER);
             return;
@@ -1139,8 +1130,7 @@ static void handle_pme(struct zjs_ipm_message* msg)
         break;
     case TYPE_PME_SET_NEURON_CONTEXT:
         // valid range is 1-127
-        if (msg->data.pme.n_context < 1 ||
-            msg->data.pme.n_context > 127) {
+        if (msg->data.pme.n_context < 1 || msg->data.pme.n_context > 127) {
             ERR_PRINT("context range has to be 1-127\n");
             ipm_send_error(msg, ERROR_IPM_INVALID_PARAMETER);
             return;
@@ -1197,12 +1187,8 @@ static void handle_pme(struct zjs_ipm_message* msg)
         msg->data.pme.min_if = data.min_if;
         memcpy(msg->data.pme.vector, data.vector, sizeof(data.vector));
         DBG_PRINT("save neuron: id=%d, CTX=%d, AIF=%d MIF=%d, cat=%d\n",
-                  data.context & NCR_ID,
-                  data.context & NCR_CONTEXT,
-                  data.aif,
-                  data.min_if,
-                  data.category);
-
+                  data.context & NCR_ID, data.context & NCR_CONTEXT,
+                  data.aif, data.min_if, data.category);
         break;
     case TYPE_PME_END_SAVE_MODE:
         curie_pme_end_save_mode();
@@ -1227,11 +1213,8 @@ static void handle_pme(struct zjs_ipm_message* msg)
         memcpy(data.vector, msg->data.pme.vector, sizeof(msg->data.pme.vector));
         curie_pme_iterate_neurons_to_restore(&data);
         DBG_PRINT("restore neuron: id=%d, CTX=%d, AIF=%d MIF=%d, cat=%d\n",
-                  data.context & NCR_ID,
-                  data.context & NCR_CONTEXT,
-                  data.aif,
-                  data.min_if,
-                  data.category);
+                  data.context & NCR_ID, data.context & NCR_CONTEXT,
+                  data.aif, data.min_if, data.category);
 
         break;
     case TYPE_PME_END_RESTORE_MODE:
@@ -1253,6 +1236,7 @@ static void handle_pme(struct zjs_ipm_message* msg)
     ipm_send_msg(msg);
 }
 #endif // BUILD_MODULE_PME
+
 #ifdef CONFIG_IPM
 static void process_messages()
 {
