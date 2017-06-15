@@ -1,6 +1,7 @@
 // Copyright (c) 2017, Intel Corporation.
 
-console.log("Test board API");
+console.log("Test board API by manual");
+
 var board = require("board");
 
 var expectedName = [
@@ -18,6 +19,3 @@ console.log("expected result:");
 for (var i = 0; i < expectedName.length; i++) {
     console.log("    " + expectedName[i][0] + " : " + expectedName[i][1]);
 }
-
-console.log("\n\rBoard version: " + board.version);
-console.log("expected result '0.1'");
