@@ -59,22 +59,7 @@ below instructions to connect to the device from the browser IDE directly.
 
 * **On Windows 8.1 and above:**
 
-  WebUSB compatible device is not appearing on Windows by default for some reason,
-  so try installing WinUSB driver with the Zadig utility.
-
-  Here are the steps for installing the WinUSB driver with the Zadig utility:
-
-1. Download the [Zadig](http://zadig.akeo.ie/downloads/zadig-2.3.exe) utility.
-2. Connect WebUSB device to host
-3. Start Zadig
-4. In Zadig app under "Options" check the "List All Devices" option
-5. In the drop down box select WebUSB (Interface 1)
-6. Select the WinUSB driver
-7. Press the "Install Driver" or "Reinstall Driver" button to install the WinUSB driver
-8. After installation is done, select WebUSB (Interface 2) from the drop down box
-   and install the WinUSB driver same as above.
-9. Disconnect and reconnect the WebUSB device.
-10. The landing page detection is disabled on Windows on Chrome so you don't see a
+    The landing page detection is disabled on Windows on Chrome so you don't see a
     notification in the upper right corner when the device is connected to the host,
     but the WebUSB will continue to work. Visit the [IDE](https://01.org/iot-ide)
     site and click on connect.

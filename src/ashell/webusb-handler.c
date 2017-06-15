@@ -14,7 +14,7 @@
 /* WebUSB Platform Capability Descriptor */
 static const uint8_t webusb_bos_descriptor[] = {
     /* Binary Object Store descriptor */
-    0x05, 0x0F, 0x1D, 0x00, 0x01,
+    0x05, 0x0F, 0x39, 0x00, 0x02,
 
     /* WebUSB Platform Capability Descriptor:
      * https://wicg.github.io/webusb/#webusb-platform-capability-descriptor
@@ -39,7 +39,7 @@ static const uint8_t webusb_bos_descriptor[] = {
     0x00, 0x00, 0x03, 0x06,
 
     /* Descriptor set length, Vendor code, Alternate enumeration code */
-    0x2e, 0x00, 0x02, 0x00
+    0xB2, 0x00, 0x02, 0x00
 };
 
 /* Microsoft OS 2.0 Descriptor Set */
@@ -47,27 +47,47 @@ static const uint8_t ms_os_20_descriptor_set[] = {
     0x0A, 0x00,  // wLength
     0x00, 0x00,  // MS OS 2.0 descriptor set header
     0x00, 0x00, 0x03, 0x06,  // Windows 8.1
-    0x2e, 0x00,  // Size, MS OS 2.0 descriptor set
+    0xB2, 0x00,  // Size, MS OS 2.0 descriptor set
 
     // Configuration subset header
     0x08, 0x00,  // wLength
     0x01, 0x00,  // wDescriptorType
     0x00,        // bConfigurationValue
     0x00,        // bReserved
-    0x24, 0x00,  // wTotalLength of this subset header
+    0xA8, 0x00,  // wTotalLength of this subset header
 
     // Function subset header
     0x08, 0x00,  // wLength
     0x02, 0x00,  // wDescriptorType
     0x02,        // bFirstInterface
     0x00,        // bReserved
-    0x1c, 0x00,  // wTotalLength of this subset header
+    0xA0, 0x00,  // wTotalLength of this subset header
 
     // Compatible ID descriptor
     0x14, 0x00,  // wLength
     0x03, 0x00,  // wDescriptorType
     'W',  'I',  'N',  'U',  'S',  'B',  0x00, 0x00, // compatible ID
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // subCompatibleID
+
+    // Extended properties descriptor with interface GUID
+    0x84, 0x00,   // wLength
+    0x04, 0x00,   // wDescriptorType
+    0x07, 0x00,   // wPropertyDataType
+    0x2A, 0x00,   // wPropertyNameLength
+    // Property name : DeviceInterfaceGUIDs
+    'D', 0x00, 'e', 0x00, 'v', 0x00, 'i', 0x00, 'c', 0x00, 'e', 0x00,
+    'I', 0x00, 'n', 0x00, 't', 0x00, 'e', 0x00, 'r', 0x00, 'f', 0x00,
+    'a', 0x00, 'c', 0x00, 'e', 0x00, 'G', 0x00, 'U', 0x00, 'I', 0x00,
+    'D', 0x00, 's', 0x00, 0x00, 0x00,
+    0x50, 0x00,   // wPropertyDataLength
+    // Property data: {9D32F82C-1FB2-4486-8501-B6145B5BA336}
+    '{', 0x00, '9', 0x00, 'D', 0x00, '3', 0x00, '2', 0x00, 'F', 0x00,
+    '8', 0x00, '2', 0x00, 'C', 0x00, '-', 0x00, '1', 0x00, 'F', 0x00,
+    'B', 0x00, '2', 0x00, '-', 0x00, '4', 0x00, '4', 0x00, '8', 0x00,
+    '6', 0x00, '-', 0x00, '8', 0x00, '5', 0x00, '0', 0x00, '1', 0x00,
+    '-', 0x00, 'B', 0x00, '6', 0x00, '1', 0x00, '4', 0x00, '5', 0x00,
+    'B', 0x00, '5', 0x00, 'B', 0x00, 'A', 0x00, '3', 0x00, '3', 0x00,
+    '6', 0x00, '}', 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
 /* WebUSB Device Requests */
