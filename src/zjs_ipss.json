@@ -1,0 +1,6 @@
+{
+    "module": "ipss",
+    "targets": ["arduino_101"],
+    "src": ["../deps/zephyr/samples/bluetooth/gatt/ipss.c"],
+    "zjs_config": ["-I$(ZEPHYR_BASE)/samples/bluetooth"]
+}
