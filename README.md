@@ -11,17 +11,22 @@ everything else.
 
 ### Index
 * [Getting Started](#getting-started)
-* [Contributing](#contributing)
-* [Repo Organization](#repo-organization)
+* [Developing with the Web-based IDE](#developing-with-the-web-based-ide)
+* [Classical 'Build and Flash' development](#classical-build-and-flash-development)
 * [Increase space on A101](#getting-more-space-on-your-arduino-101)
 * [JS Minifier](#js-minifier)
-* [FRDM-K64F Platform](#frdm-k64f-platform)
-* [Building and running on Linux](#building-and-running-on-linux)
-* [Building and running on Mac OSX](#building-and-running-on-mac-osx)
-* [Supported modules on Linux and Zephyr](#supported-modules-on-linux-and-zephyr)
+* [Other HW Platforms](#other-hw-platforms)
+   + [nRF52 Platform](#nrf52-platform)
+   + [FRDM-K64F Platform](#frdm-k64f-platform)
+* [Running the JS app on Linux or Mac](#running-the-js-app-on-linux-or-mac)
+   + [Building and running on Linux](#building-and-running-on-linux)
+   + [Building and running on Mac OSX](#building-and-running-on-mac-osx)
+   + [Supported modules on Linux and Zephyr](#supported-modules-on-linux-and-zephyr)
 * [Networking with QEMU](#networking-with-qemu)
 * [Networking with BLE](#networking-with-ble)
 * [Adding New Modules](./src/MODULES.md)
+* [Contributing](#contributing)
+* [Repo Organization](#repo-organization)
 
 ## Getting Started
 
@@ -33,9 +38,15 @@ application on Arduino 101\*.
 * Ubuntu\* 16.04 host; adapt as necessary for other platforms.
 * If you're behind a proxy, go through all the [usual pain](https://github.com/01org/zephyr.js/wiki/Proxy) to get ssh working to
 github.com and http working to zephyrproject.org.
-* If you are a board pre-flashed with IDE, you can follow the ashell/IDE [guide](./docs/ashell.md) on how to build
-and run your app using Web IDE.
+* If you wish to use the [Web IDE] (highly recommended!), please follow the [Zephyr Project JavaScript & WebIDE Tutorial](http://www.youtube.com/watch?v=4ZrrsCVbPJs).
 
+
+## Developing with the Web-based IDE
+The easiest way to develop your JavaScript app on Zephyr is using our Web-based IDE which allows you to write JS apps on the fly in our online editor and upload them directly to the Arduino 101 board through WebUSB. Please follow our [Zephyr Project JavaScript & WebIDE Tutorial](http://www.youtube.com/watch?v=4ZrrsCVbPJs) to get started with the [Web IDE] and check out the [ashell guide](./docs/ashell.md) for more advanced usages.
+
+[![Zephyr Project JavaScript & WebIDE Tutorial](http://img.youtube.com/vi/4ZrrsCVbPJs/0.jpg)](http://www.youtube.com/watch?v=4ZrrsCVbPJs)
+
+## Classical 'Build and Flash' development
 ### Initial Setup
 ***Windows and OSX users***: These instructions are for Ubuntu 16.04. Be sure to
 also consult Zephyr Project's [Getting Started](https://www.zephyrproject.org/doc/getting_started/getting_started.html)
@@ -179,8 +190,7 @@ make dfu
 
 This will flash both the images to the device using the dfu-util program.
 
-If you get a permission error, make sure you followed the 'Join the plugdev
-group' instructions above for this user. You shouldn't need to run this command
+If you get a permission error, make sure you followed the [plugdev group](#join-the-plugdev-group) instructions above for this user. You shouldn't need to run this command
 with `sudo`.
 
 After this flashing completes successfully, reboot the device with the Master
@@ -191,11 +201,6 @@ You have built and run your first ZJS application!
 
 If you want to make changes to the application, or run a different .js sample,
 you just need to repeat the steps the desired JavaScript filename.
-
-### Build with Web-based IDE
-You can also build your app using our Web-based IDE, which allows you to write JS apps on the fly
-in our online editor and upload them directly to the Arduino 101 board through WebUSB.  To use the
-Web IDE, follow the [instructions](./docs/ashell.md) here to build and connect tto the IDE.
 
 ### Next steps
 
@@ -232,53 +237,6 @@ to connect to the device with a debugger. Then you can set breakpoints such as
 
 See below for a few more tips, such as increasing the space available for your
 application on the Arduino 101, or how to use ZJS with the FRDM-K64F.
-
-## Contributing
-
-If you want to contribute code to the ZJS project, first you need to fork the
-project. The next step is to send a pull request (PR) for review to the ZJS
-repository. The PR will be reviewed by the project team members. You need at
-least two plus-ones (+1) , "Look Good To Me (LGTM)" or other positive signals
-for the project members. Once you have gained the required signals the project
-maintainers will merge the PR.
-
-### Travis and local sanity checking
-
-We run a series of tests on each pull request and merged commit using Travis.
-This relies on a script in the repo called `trlite`. One easy way to run these
-tests on your local $ZJS_BASE git tree is to use `make check` or
-`make quickcheck` for a faster subset of the tests. These run with your code as
-it stands in your tree. This will not catch a problem like you failing to
-add a new file to your commit.
-
-For a slightly safer sanity check, which might catch that kind of problem, you
-can run `trlite` directly or `trlite linux` for the "quick subset". This will
-clone a second copy of your git tree into a .trlite subdirectory, apply changes
-that `git diff` knows about, and run the build tests. Another option `trlite -j`
-will cause it to run four threads of tests to speed up execution; these will
-use four directories named `.trlite[1-4]`. If there is a test failure, the
-affected `.trlite*` trees are left in place so that you can investigate.
-
-## Repo Organization
-
-### File Descriptions
-* `zjs-env.sh` - Source this file to set environment variables and path to be
-able to use tools from ```scripts/``` anywhere.
-* `prj.conf` - The main configuration file for a Zephyr application; overrides
-settings from a defconfig file in the Zephyr tree. In the ZJS builds, we
-assemble the prj.conf file at build time from other fragments.
-* `prj.mdef` - Another configuration file for a Zephyr application; we use it to
-configure the heap size available to the ZJS API.
-
-### Subdirectories
-- `arc/` - Contains sensor subsystem code for ARC side of the Arduino 101.
-- `deps/` - Contains dependency repos and scripts for working with them.
-- `docs/` - Documentation in Markdown format (use API.md as index).
-- `outdir/` - Directory generated by build, can be safely removed.
-- `samples/` - Sample JavaScript files that can be built with make JS=<path>.
-- `scripts/` - Subdirectory containing tools useful during development.
-- `src/` - JS API bindings for JerryScript written directly on top of Zephyr.
-- `tests/` - JavaScript unit tests (incomplete).
 
 ## Getting more space on your Arduino 101
 Arduino 101 comes with a **144K** X86 partition, but we're able to use more
@@ -317,7 +275,8 @@ install this earlier, you can do so with the command:
 sudo apt-get install node-uglify
 ```
 
-## nRF52 Platform
+## Other HW Platforms
+### nRF52 Platform
 This is an experimental ZJS platform and has not been tested. There should be
 no expectation that any given sample/test/application will work at all on this
 platform. The good news is that there have been ZJS networking samples run
@@ -353,7 +312,7 @@ reset the board and you should see your application output on /dev/ttyACM0
 From here the device can be connected with BLE to a Linux machine as you do with
 an Arduino 101.
 
-## FRDM-K64F Platform
+### FRDM-K64F Platform
 
 See the
 [Zephyr Project Wiki](https://wiki.zephyrproject.org/view/NXP_FRDM-K64F)
@@ -411,7 +370,10 @@ Using the same procedure as above, once you hit Reset you should see
 
 Zephyr is a trademark of the Linux Foundation. *Other names and brands may be claimed as the property of others.
 
-## Building and running on Linux
+## Running the JS app on Linux or Mac
+
+### Building and running on Linux
+
 In addition to Zephyr there is a "linux" target which does not use Zephyr at all
 and instead uses the host OS. This can be built on Linux or Mac OSX using the
 command:
@@ -456,7 +418,7 @@ on it, specifically the hardware modules (AIO, I2C, GPIO etc.). There are some
 modules which can be used though like Events, Promises, Performance and OCF. This
 list may grow if other modules are ported to the Linux target.
 
-## Building and running on Mac OSX
+### Building and running on Mac OSX
 
 Mac support is still limited at this point. As Zephyr does not provide the SDK/toolchain
 to compile on Mac OSX natively, you will have to build your own or use a 3rd-party toolchain.
@@ -471,7 +433,7 @@ of issues. Currently we enable Travis CI to build the linux target only against 
 latest OSX (10.12) and XCode Command Line Tools (provided by XCode SDK) for sanity check
 purposes.
 
-### Set up
+#### Set up
 The basic requirement for building Zephyr boards is that you'll need to install and
 setup the correct cross-compiler toolchain on your Mac for the boards you are trying to
 build. You need to install crosstool-ng, which allows you to build the x86 images
@@ -510,10 +472,10 @@ make update
 source deps/zephyr/zephyr-env.sh
 ```
 
-### Building Linux target
+#### Building Linux target
 You can build the "linux" target on Mac OSX using BOARD=linux, follow instructions for "Building and running on Linux". This will create the jslinux ouput.
 
-### Building QEMU and Arduino 101 targets
+#### Building QEMU and Arduino 101 targets
 You can build QEMU with BOARD=qemu_x86 and Arduino 101 with BOARD=arduino_101, you'll need to install crosstool-ng and ARC compiler from Arduino IDE. (**Note** there's a linker issue currently with crosstool-ng when building Arduino 101 see [here](https://jira.zephyrproject.org/browse/ZEP-1994), but qemu_x86 should work)
 
 Install crosstool-ng following the Zephyr instructions [here](https://www.zephyrproject.org/doc/getting_started/installation_mac.html)
@@ -620,7 +582,7 @@ make JS=samples/HelloWorld.js ARC_CROSS_COMPILE=/Volumes/CrossToolNG/arc-elf32/1
 **Note** There's currently a bug that you'll run into a linker issue using the latest Zephyr (1.7.0).
 We filed a bug upstream to track this; we'll update this document once that is fixed.
 
-### Other targets like FRDM-K64F or possibly other ARM boards on Mac
+#### Other targets like FRDM-K64F or possibly other ARM boards on Mac
 These also have limited support currently. The requiremenet is that you'll
 need to install the GCC ARM Embedded cross compiler [here](https://developer.arm.com/open-source/gnu-toolchain/gnu-rm/downloads)
 
@@ -637,7 +599,7 @@ make JS=samples/HelloWorld.js BOARD=frdm_k64f CROSS_COMPILE=~/Downloads/gcc-arm-
 
 For additional information, see [here](https://www.zephyrproject.org/doc/getting_started/getting_started.html#third-party-x-compilers) on how to setup third-party compilers.
 
-## Supported modules on Linux and Zephyr
+### Supported modules on Linux and Zephyr
 There is only partial support for modules on Linux compared to Zephyr. Any hardware
 specific module (I2C, UART, GPIO, ADC etc.) is not supported on Linux. Trying
 to run a Zephyr specific module on Linux will result in the JavaScript not running
@@ -706,8 +668,59 @@ normal you can usually fix it by restarting the two scripts and running QEMU
 again.
 
 The original instructions document can be found on the Zephyr website
-(here)[https://www.zephyrproject.org/doc/subsystems/networking/qemu_setup.html]
+[here](https://www.zephyrproject.org/doc/subsystems/networking/qemu_setup.html)
 
 ## Networking with BLE
-It is possible to use IP networking over BLE using 6lowpan. This is explained
-in a dedicated [document](./docs/6lowpan-ble.md)
+It is possible to use IP networking over BLE using 6LowPAN. This is explained
+in a dedicated [document](./docs/6lowpan-ble.md).
+
+
+## Contributing
+
+If you want to contribute code to the ZJS project, first you need to fork the
+project. The next step is to send a pull request (PR) for review to the ZJS
+repository. The PR will be reviewed by the project team members. You need at
+least two plus-ones (+1) , "Look Good To Me (LGTM)" or other positive signals
+for the project members. Once you have gained the required signals the project
+maintainers will merge the PR.
+
+### Travis and local sanity checking
+
+We run a series of tests on each pull request and merged commit using Travis.
+This relies on a script in the repo called `trlite`. One easy way to run these
+tests on your local `$ZJS_BASE` git tree is to use `make check` or
+`make quickcheck` for a faster subset of the tests. These run with your code as
+it stands in your tree. This will not catch a problem like you failing to
+add a new file to your commit.
+
+For a slightly safer sanity check, which might catch that kind of problem, you
+can run `trlite` directly or `trlite linux` for the "quick subset". This will
+clone a second copy of your git tree into a .trlite subdirectory, apply changes
+that `git diff` knows about, and run the build tests. Another option `trlite -j`
+will cause it to run four threads of tests to speed up execution; these will
+use four directories named `.trlite[1-4]`. If there is a test failure, the
+affected `.trlite*` trees are left in place so that you can investigate.
+
+## Repo Organization
+
+### File Descriptions
+* `zjs-env.sh` - Source this file to set environment variables and path to be
+able to use tools from ```scripts/``` anywhere.
+* `prj.conf` - The main configuration file for a Zephyr application; overrides
+settings from a defconfig file in the Zephyr tree. In the ZJS builds, we
+assemble the prj.conf file at build time from other fragments.
+* `prj.mdef` - Another configuration file for a Zephyr application; we use it to
+configure the heap size available to the ZJS API.
+
+### Subdirectories
+- `arc/` - Contains sensor subsystem code for ARC side of the Arduino 101.
+- `deps/` - Contains dependency repos and scripts for working with them.
+- `docs/` - Documentation in Markdown format (use API.md as index).
+- `outdir/` - Directory generated by build, can be safely removed.
+- `samples/` - Sample JavaScript files that can be built with make JS=<path>.
+- `scripts/` - Subdirectory containing tools useful during development.
+- `src/` - JS API bindings for JerryScript written directly on top of Zephyr.
+- `tests/` - JavaScript unit tests (incomplete).
+
+
+[Web IDE]: https://01org.github.io/zephyrjs-ide
