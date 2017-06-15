@@ -1,0 +1,8 @@
+{
+    "module": "sensor_light",
+    "constructor": "AmbientLightSensor",
+    "depends": ["sensor"],
+    "targets": ["arduino_101"],
+    "zjs_config": ["-DBUILD_MODULE_SENSOR_LIGHT"],
+    "src": ["sensors/zjs_sensor_light.c"]
+}

@@ -1,0 +1,14 @@
+{
+    "module": "ipm",
+    "targets": ["arduino_101"],
+    "zephyr_conf": {
+        "arduino_101": [
+            "CONFIG_IPM=y",
+            "CONFIG_IPM_QUARK_SE=y",
+            "CONFIG_IPM_QUARK_SE_MASTER=y",
+            "CONFIG_IPM_CONSOLE_RECEIVER=y",
+            "CONFIG_ARC_INIT=y"
+        ]
+    },
+    "src":["zjs_ipm.c"]
+}

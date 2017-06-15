@@ -1,0 +1,10 @@
+{
+    "module": "sensor_light_arc",
+    "constructor": "AmbientLightSensor",
+    "depends": ["sensor_arc"],
+    "targets": ["arc"],
+    "zephyr_conf": {
+        "arc": ["CONFIG_ADC=y"]
+    },
+    "zjs_config": ["-DBUILD_MODULE_SENSOR_LIGHT"]
+}

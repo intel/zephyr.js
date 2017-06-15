@@ -21,6 +21,7 @@ everything else.
 * [Supported modules on Linux and Zephyr](#supported-modules-on-linux-and-zephyr)
 * [Networking with QEMU](#networking-with-qemu)
 * [Networking with BLE](#networking-with-ble)
+* [Adding New Modules](./src/MODULES.md)
 
 ## Getting Started
 
@@ -659,15 +660,15 @@ reason we have the following possibilities for support:
 |  BLE      |       |      X      |       |   NT  |             |           |
 |  UART     |       |      X      |   X   |   NT  |      NT     |     NT    |
 | Sensor    |       |      X      |       |       |             |           |
-| Buffer    |   X   |      X      |   X   |   E   |      E      |     E     |
-| Console   |   X   |      X      |   X   |   E   |      E      |     E     |
-| Event     |   X   |      X      |   X   |   E   |      E      |     E     |
-|File System|       |      X      |       |       |             |           |
-| OCF       |   X   |      X      |   NT  |   E   |             |           |
-|Performance|   X   |      X      |   X   |   E   |      E      |     E     |
-| Timers    |   X   |      X      |   X   |   E   |      E      |     E     |
-| Dgram     |       |      X      |   NT  |   NT  |             |           |
-| Net       |       |      X      |   NT  |   NT  |             |           |
+| Buffer    |   X   |      X      |   X   |   E   |      E      |     X     |
+| Console   |   X   |      X      |   X   |   E   |      E      |     X     |
+| Event     |   X   |      X      |   X   |   E   |      E      |     X     |
+|File System|       |      X      |   X   |       |             |     X     |
+| OCF       |   X   |      X      |   X   |   E   |             |           |
+|Performance|   X   |      X      |   X   |   E   |      E      |     X     |
+| Timers    |   X   |      X      |   X   |   E   |      E      |     X     |
+| Dgram     |       |      X      |   X   |   NT  |             |           |
+| Net       |       |      X      |   X   |   NT  |             |           |
 | WebSocket |       |      X      |   NT  |   NT  |             |           |
 
 ## Networking with QEMU

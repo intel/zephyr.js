@@ -8,6 +8,7 @@ OS := $(shell uname)
 BOARD ?= arduino_101
 RAM ?= 55
 ROM ?= 144
+V ?= 0
 
 # Dump memory information: on = print allocs, full = print allocs + dump pools
 TRACE ?= off
@@ -85,7 +86,8 @@ endif
 # Settings for ashell builds
 ifneq (,$(filter $(MAKECMDGOALS),ide ashell))
 CONFIG ?= fragments/zjs.conf.dev
-ASHELL=y
+ASHELL=zjs_ashell.json
+ASHELL_ARC=zjs_ashell_arc.json
 ZJS_FLAGS := "$(ZJS_FLAGS) -DZJS_FIND_FUNC_NAME"
 endif
 
@@ -227,36 +229,39 @@ $(JS):
 # Find the modules the JS file depends on
 .PHONY: analyze
 analyze: $(JS)
+	@mkdir -p outdir/$(BOARD)/
+	@mkdir -p outdir/include
 	@echo "% This is a generated file" > prj.mdef
-	@echo "# This is a generated file" > src/Makefile
-	@cat src/Makefile.base >> src/Makefile
-	@echo "# This is a generated file" > src/sensors/Makefile
-	@cat src/sensors/Makefile.base >> src/sensors/Makefile
+
+	./scripts/analyze	V=$(V) \
+		SCRIPT=$(JS) \
+		JS_OUT=js.tmp \
+		BOARD=$(BOARD) \
+		JSON_DIR=src/ \
+		FORCE=$(ASHELL) \
+		PRJCONF=prj.conf \
+		MAKEFILE=src/Makefile \
+		MAKEBASE=src/Makefile.base \
+		PROFILE=outdir/$(BOARD)/jerry_feature.profile
+
 	@if [ "$(TRACE)" = "on" ] || [ "$(TRACE)" = "full" ]; then \
 		echo "ccflags-y += -DZJS_TRACE_MALLOC" >> src/Makefile; \
 	fi
 	@if [ "$(SNAPSHOT)" = "on" ]; then \
 		echo "ccflags-y += -DZJS_SNAPSHOT_BUILD" >> src/Makefile; \
 	fi
-	@echo "ccflags-y += $(shell ./scripts/analyze.sh $(BOARD) $(JS) $(CONFIG) $(ASHELL))" | tee -a src/Makefile src/sensors/Makefile
-	@if [ "$(OS)" = "Darwin" ]; then \
-		sed -i.bu '/This is a generated file/r./zjs.conf.tmp' src/Makefile; \
-	else \
-		sed -i '/This is a generated file/r./zjs.conf.tmp' src/Makefile; \
-	fi
 	@# Add bluetooth debug configs if BLE is enabled
 	@if grep -q BUILD_MODULE_BLE src/Makefile; then \
 		if [ "$(VARIANT)" = "debug" ]; then \
-			echo "CONFIG_BLUETOOTH_DEBUG_LOG=y" >> prj.conf.tmp; \
+			echo "CONFIG_BLUETOOTH_DEBUG_LOG=y" >> prj.conf; \
 		fi \
 	fi
-	@# Add the include for the OCF Makefile only if the script is using OCF
+
 	@if grep -q BUILD_MODULE_OCF src/Makefile; then \
-		echo "CONFIG_BLUETOOTH_DEVICE_NAME=\"$(DEVICE_NAME)\"" >> prj.conf.tmp; \
-		echo "include \$$(ZJS_BASE)/Makefile.ocf_zephyr" >> src/Makefile; \
+		echo "CONFIG_BLUETOOTH_DEVICE_NAME=\"$(DEVICE_NAME)\"" >> prj.conf; \
 	fi
 	@if grep -q BUILD_MODULE_DGRAM src/Makefile; then \
-		echo "CONFIG_BLUETOOTH_DEVICE_NAME=\"$(DEVICE_NAME)\"" >> prj.conf.tmp; \
+		echo "CONFIG_BLUETOOTH_DEVICE_NAME=\"$(DEVICE_NAME)\"" >> prj.conf; \
 	fi
 	@if [ -e outdir/$(BOARD)/jerry_feature.profile.bak ]; then \
 		if ! cmp outdir/$(BOARD)/jerry_feature.profile.bak outdir/$(BOARD)/jerry_feature.profile; \
@@ -276,18 +281,12 @@ update:
 # set up prj.conf file
 -.PHONY: setup
 setup:
-	@echo "# This is a generated file" > prj.conf
-	@cat fragments/prj.conf.base >> prj.conf
-
 ifeq ($(BOARD), qemu_x86)
-ifeq ($(OS), Darwin)
-	@cat fragments/prj.conf.qemu_x86_osx >> prj.conf
-else
-	@cat fragments/prj.conf.qemu_x86 >> prj.conf
+ifneq ($(OS), Darwin)
+	echo "CONFIG_XIP=y" >> prj.conf
 endif
 else
-ifeq ($(ASHELL), y)
-	@cat fragments/prj.conf.ashell >> prj.conf
+ifeq ($(ASHELL), ashell)
 	@cat fragments/prj.mdef.ashell >> prj.mdef
 ifeq ($(filter ide,$(MAKECMDGOALS)),ide)
 	@echo CONFIG_USB_CDC_ACM=n >> prj.conf
@@ -296,7 +295,6 @@ else
 endif
 endif
 ifeq ($(BOARD), arduino_101)
-	@cat fragments/prj.conf.arduino_101 >> prj.conf
 ifeq ($(OS), Darwin)
 	# work around for OSX where the xtool toolchain do not
 	# support iamcu instruction set on the Arduino 101
@@ -307,14 +305,7 @@ endif
 	@echo "CONFIG_ROM_SIZE=$(ROM)" >> prj.conf
 	@printf "CONFIG_SS_RESET_VECTOR=0x400%x\n" $$((($(ROM) + 64) * 1024)) >> prj.conf
 endif
-ifeq ($(BOARD), frdm_k64f)
-	@cat fragments/prj.conf.frdm_k64f >> prj.conf
 endif
-endif
-# Append script specific modules to prj.conf
-	@if [ -e prj.conf.tmp ]; then \
-		cat prj.conf.tmp >> prj.conf; \
-	fi
 
 .PHONY: cleanlocal
 cleanlocal:
@@ -388,17 +379,31 @@ qemu: zephyr
 		NETWORK_BUILD=$(NET_BUILD) \
 		ZJS_FLAGS=$(ZJS_FLAGS)
 
+ARC_RESTRICT="zjs_ipm_arc.json,\
+		zjs_i2c_arc.json,\
+		zjs_arc.json,\
+		zjs_pme_arc.json,\
+		zjs_aio_arc.json,\
+		zjs_ashell_arc.json,\
+		zjs_sensor_arc.json,\
+		zjs_sensor_accel_arc.json,\
+		zjs_sensor_light_arc.json,\
+		zjs_sensor_gyro_arc.json,\
+		zjs_sensor_temp_arc.json"
+
 # Builds ARC binary
 .PHONY: arc
 arc: analyze
-	@echo "# This is a generated file" > arc/prj.conf
-	@cat arc/fragments/prj.conf.base >> arc/prj.conf
-	@if [ -e arc/prj.conf.tmp ]; then \
-		cat arc/prj.conf.tmp >> arc/prj.conf; \
-	fi
-	@echo "# This is a generated file" > arc/src/Makefile
-	@cat arc/src/Makefile.base >> arc/src/Makefile
-	@echo "ccflags-y += $(shell ./scripts/analyze.sh $(BOARD) $(JS) $(CONFIG) $(ASHELL))" >> arc/src/Makefile
+	# Restrict ARC build to only certain "arc specific" modules
+	./scripts/analyze	V=$(V) \
+		SCRIPT=$(JS) \
+		BOARD=arc \
+		JSON_DIR=arc/src/ \
+		PRJCONF=arc/prj.conf \
+		MAKEFILE=arc/src/Makefile \
+		MAKEBASE=arc/src/Makefile.base \
+		FORCE=$(ASHELL_ARC)
+
 	@printf "CONFIG_SRAM_SIZE=%d\n" $$((79 - $(RAM))) >> arc/prj.conf
 	@printf "CONFIG_FLASH_BASE_ADDRESS=0x400%x\n" $$((($(ROM) + 64) * 1024)) >> arc/prj.conf
 	@if [ "$(OS)" = "Darwin" ]; then \

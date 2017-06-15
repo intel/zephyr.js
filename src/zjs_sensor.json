@@ -1,0 +1,11 @@
+{
+    "module": "sensor",
+    "targets": ["arduino_101"],
+    "depends": ["ipm"],
+    "zjs_config": ["-DBUILD_MODULE_SENSOR"],
+    "zjs_config": ["-I$(ZJS_BASE)/src/sensors", "-DBUILD_MODULE_SENSOR"],
+    "src": ["zjs_sensor.c"],
+    "header": ["zjs_sensor.h"],
+    "global_init": ["zjs_sensor_init"],
+    "global_cleanup": ["zjs_sensor_cleanup"]
+}
