@@ -404,8 +404,8 @@ static ZJS_DECL_FUNC(zjs_sensor_stop)
 
     ZJS_GET_HANDLE(this, sensor_handle_t, handle, sensor_type_info);
 
-    if (jerry_value_has_error_flag(zjs_sensor_start_sensor(this))) {
-        zjs_sensor_trigger_error(this, "SensorError", "start failed");
+    if (jerry_value_has_error_flag(zjs_sensor_stop_sensor(this))) {
+        zjs_sensor_trigger_error(this, "SensorError", "stop failed");
     }
 
     zjs_sensor_set_state(this, SENSOR_STATE_IDLE);
