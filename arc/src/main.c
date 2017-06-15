@@ -3,9 +3,9 @@
 // Zephyr includes
 #include <zephyr.h>
 
-#include <string.h>
 #include <device.h>
 #include <init.h>
+#include <string.h>
 #if defined(BUILD_MODULE_AIO) || defined(BUILD_MODULE_SENSOR_LIGHT)
 #include <adc.h>
 #endif
@@ -81,6 +81,11 @@ static bool temp_poll = false;          // polling mode
 static double accel_last_value[3];
 static double gyro_last_value[3];
 static double temp_last_value;
+#endif
+
+#ifdef BUILD_MODULE_PME
+static bool save_mode = false;
+static bool restore_mode = false;
 #endif
 
 #ifdef CONFIG_IPM
@@ -986,6 +991,7 @@ static void handle_sensor(struct zjs_ipm_message *msg)
 static void handle_pme(struct zjs_ipm_message* msg)
 {
     uint32_t error_code = ERROR_IPM_NONE;
+    neuron_data_t data;
 
     switch (msg->type) {
     case TYPE_PME_BEGIN:
@@ -1002,13 +1008,15 @@ static void handle_pme(struct zjs_ipm_message* msg)
             return;
         }
 
-        if (msg->data.pme.c_mode != RBF_MODE && msg->data.pme.c_mode != KNN_MODE) {
+        if (msg->data.pme.c_mode != RBF_MODE &&
+            msg->data.pme.c_mode != KNN_MODE) {
             ERR_PRINT("invalid classifier mode\n");
             ipm_send_error(msg, ERROR_IPM_INVALID_PARAMETER);
             return;
         }
 
-        if (msg->data.pme.d_mode != L1_DISTANCE && msg->data.pme.d_mode != LSUP_DISTANCE) {
+        if (msg->data.pme.d_mode != L1_DISTANCE &&
+            msg->data.pme.d_mode != LSUP_DISTANCE) {
             ERR_PRINT("invalid distance mode\n");
             ipm_send_error(msg, ERROR_IPM_INVALID_PARAMETER);
             return;
@@ -1035,7 +1043,8 @@ static void handle_pme(struct zjs_ipm_message* msg)
 
         curie_pme_learn(msg->data.pme.vector, msg->data.pme.vector_size,
                         msg->data.pme.category);
-        DBG_PRINT("\nlearned with %d neruons\n", curie_pme_get_committed_count());
+        DBG_PRINT("\nlearned with %d neruons\n",
+                  curie_pme_get_committed_count());
         break;
     case TYPE_PME_CLASSIFY:
         DBG_PRINT("classify: %lu byte vector\n", msg->data.pme.category,
@@ -1056,28 +1065,26 @@ static void handle_pme(struct zjs_ipm_message* msg)
         break;
     case TYPE_PME_READ_NEURON:
         DBG_PRINT("read: neuron id=%d\n", msg->data.pme.neuron_id);
-        if (msg->data.pme.neuron_id < 1 || msg->data.pme.neuron_id > 128) {
+        if (msg->data.pme.neuron_id < 1 ||
+            msg->data.pme.neuron_id > 128) {
             ERR_PRINT("invalid neuron id, must be between 1 and 128\n");
             ipm_send_error(msg, ERROR_IPM_INVALID_PARAMETER);
             return;
         }
 
-        neuron_data_t data;
         curie_pme_read_neuron(msg->data.pme.neuron_id, &data);
         msg->data.pme.category = data.category;
         msg->data.pme.n_context = data.context;
         msg->data.pme.aif = data.aif;
         msg->data.pme.min_if = data.min_if;
         memcpy(msg->data.pme.vector, data.vector, sizeof(data.vector));
-        DBG_PRINT("neuron: id=%d, CTX=%d, AIF=%d MIF=%d, cat=%d\n", data.context & NCR_ID,
-                                                                    data.conext & NCR_CONTEXT,
-                                                                    data.aif,
-                                                                    data.min_if
-                                                                    data.category);
+        DBG_PRINT("neuron: id=%d, CTX=%d, AIF=%d MIF=%d, cat=%d\n",
+                  data.context & NCR_ID, data.context & NCR_CONTEXT,
+                  data.aif, data.min_if, data.category);
         break;
     case TYPE_PME_WRITE_VECTOR:
-        DBG_PRINT("write vector: %lu byte vector\n", msg->data.pme.category,
-                  msg->data.pme.vector_size);
+        DBG_PRINT("write vector: %lu byte vector\n",
+                  msg->data.pme.category, msg->data.pme.vector_size);
         if (msg->data.pme.vector_size > MAX_VECTOR_SIZE) {
             ERR_PRINT("vector cannot be greater than %d\n", MAX_VECTOR_SIZE);
             ipm_send_error(msg, ERROR_IPM_INVALID_PARAMETER);
@@ -1094,7 +1101,8 @@ static void handle_pme(struct zjs_ipm_message* msg)
             DBG_PRINT("%d ", msg->data.pme.vector[i]);
         }
 
-        curie_pme_write_vector(msg->data.pme.vector, msg->data.pme.vector_size);
+        curie_pme_write_vector(msg->data.pme.vector,
+                               msg->data.pme.vector_size);
         DBG_PRINT("\nwrote with %d neruons\n", curie_pme_get_committed_count());
         break;
     case TYPE_PME_GET_COMMITED_COUNT:
@@ -1136,7 +1144,8 @@ static void handle_pme(struct zjs_ipm_message* msg)
         DBG_PRINT("classifier mode: %d\n", msg->data.pme.c_mode);
         break;
     case TYPE_PME_SET_CLASSIFIER_MODE:
-        if (msg->data.pme.c_mode != RBF_MODE && msg->data.pme.c_mode != KNN_MODE) {
+        if (msg->data.pme.c_mode != RBF_MODE &&
+            msg->data.pme.c_mode != KNN_MODE) {
             ERR_PRINT("invalid classifier mode\n");
             ipm_send_error(msg, ERROR_IPM_INVALID_PARAMETER);
             return;
@@ -1150,7 +1159,8 @@ static void handle_pme(struct zjs_ipm_message* msg)
         DBG_PRINT("distance mode: %d\n", msg->data.pme.d_mode);
         break;
     case TYPE_PME_SET_DISTANCE_MODE:
-        if (msg->data.pme.d_mode != L1_DISTANCE && msg->data.pme.d_mode != LSUP_DISTANCE) {
+        if (msg->data.pme.d_mode != L1_DISTANCE &&
+            msg->data.pme.d_mode != LSUP_DISTANCE) {
             ERR_PRINT("invalid distance mode\n");
             ipm_send_error(msg, ERROR_IPM_INVALID_PARAMETER);
             return;
@@ -1158,6 +1168,59 @@ static void handle_pme(struct zjs_ipm_message* msg)
 
         curie_pme_set_distance_mode(msg->data.pme.d_mode);
         DBG_PRINT("distance mode: %d\n", msg->data.pme.d_mode);
+        break;
+    case TYPE_PME_BEGIN_SAVE_MODE:
+        curie_pme_begin_save_mode();
+        save_mode = true;
+        DBG_PRINT("begin save mode\n");
+        break;
+    case TYPE_PME_ITERATE_TO_SAVE:
+        if (!save_mode) {
+            ERR_PRINT("not in save mode");
+            ipm_send_error(msg, ERROR_IPM_OPERATION_FAILED);
+        }
+
+        curie_pme_iterate_neurons_to_save(&data);
+        msg->data.pme.category = data.category;
+        msg->data.pme.n_context = data.context;
+        msg->data.pme.aif = data.aif;
+        msg->data.pme.min_if = data.min_if;
+        memcpy(msg->data.pme.vector, data.vector, sizeof(data.vector));
+        DBG_PRINT("save neuron: id=%d, CTX=%d, AIF=%d MIF=%d, cat=%d\n",
+                  data.context & NCR_ID, data.context & NCR_CONTEXT,
+                  data.aif, data.min_if, data.category);
+        break;
+    case TYPE_PME_END_SAVE_MODE:
+        curie_pme_end_save_mode();
+        save_mode = false;
+        DBG_PRINT("end save mode\n");
+        break;
+    case TYPE_PME_BEGIN_RESTORE_MODE:
+        curie_pme_begin_restore_mode();
+        restore_mode = true;
+        DBG_PRINT("begin restore mode\n");
+        break;
+    case TYPE_PME_ITERATE_TO_RESTORE:
+        if (!restore_mode) {
+            ERR_PRINT("not in restore mode");
+            ipm_send_error(msg, ERROR_IPM_OPERATION_FAILED);
+        }
+
+        data.category = msg->data.pme.category;
+        data.context = msg->data.pme.n_context;
+        data.aif = msg->data.pme.aif;
+        data.min_if = msg->data.pme.min_if;
+        memcpy(data.vector, msg->data.pme.vector, sizeof(msg->data.pme.vector));
+        curie_pme_iterate_neurons_to_restore(&data);
+        DBG_PRINT("restore neuron: id=%d, CTX=%d, AIF=%d MIF=%d, cat=%d\n",
+                  data.context & NCR_ID, data.context & NCR_CONTEXT,
+                  data.aif, data.min_if, data.category);
+
+        break;
+    case TYPE_PME_END_RESTORE_MODE:
+        curie_pme_end_restore_mode();
+        restore_mode = false;
+        DBG_PRINT("end retore mode\n");
         break;
 
     default:
@@ -1170,9 +1233,10 @@ static void handle_pme(struct zjs_ipm_message* msg)
         return;
     }
 
-    zjs_ipm_send(msg->id, msg);
+    ipm_send_msg(msg);
 }
 #endif // BUILD_MODULE_PME
+
 #ifdef CONFIG_IPM
 static void process_messages()
 {

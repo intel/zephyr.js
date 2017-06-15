@@ -55,9 +55,9 @@ void curie_pme_begin_save_mode(void); // saves the contents of the NSR register
 uint16_t curie_pme_iterate_neurons_to_save(neuron_data_t *data_array);
 void curie_pme_end_save_mode(void); // restores the NSR value saved by beginSaveMode
 
-void CuriePME_beginRestoreMode(void);
-uint16_t CuriePME_iterateNeuronsToRestore(neuron_data_t *data_array);
-void CuriePME_endRestoreMode(void);
+void curie_pme_begin_restore_mode(void);
+uint16_t curie_pme_iterate_neurons_to_restore(neuron_data_t *data_array);
+void curie_pme_end_restore_mode(void);
 
 // getter and setters
 PATTERN_MATCHING_DISTANCE_MODE curie_pme_get_distance_mode(void);
