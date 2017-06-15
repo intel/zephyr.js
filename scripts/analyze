@@ -334,7 +334,7 @@ if board == 'linux':
     do_print(json_tree)
     all_list = []
     create_dep_list(all_list, board, json_tree)
-    for i in all_list:
+    for i in sorted(all_list):
         print("Using module: " + i)
     write_modules(all_list, json_tree)
 # normal case
@@ -373,7 +373,7 @@ else:
     build_tree(json_tree, restrict)
     do_print(json_tree)
     parse_json_tree(js_file, deps_list, zconf, zjs_conf, jrs_conf, lsrc, json_tree, force=force)
-    for i in deps_list:
+    for i in sorted(deps_list):
         print("Using module: " + i)
 
     write_zconf(zconf, args['PRJCONF'])
