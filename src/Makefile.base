@@ -50,9 +50,9 @@ obj-y += main.o \
          zjs_util.o \
          jerry-port/zjs_jerry_port.o
 
+
+
 ifeq ($(ASHELL), zjs_ashell.json)
 $(info Insecure Mode (development))
 export JERRY_INCLUDE = $(JERRY_BASE)/jerry-core/
-obj-y += bshell/
-ccflags-y += -DZJS_ASHELL
 endif

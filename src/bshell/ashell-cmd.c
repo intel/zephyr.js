@@ -13,7 +13,7 @@
 #include <misc/printk.h>
 #include <misc/reboot.h>
 #include <ctype.h>
-#include <jerry-port.h>
+#include <jerryscript-port.h>
 #include "ashell-def.h"
 #include "file-utils.h"
 #include "script-handler.h"
