@@ -54,16 +54,15 @@ static const jerry_object_native_info_t spi_type_info =
 
 static ZJS_DECL_FUNC(zjs_spi_transceive)
 {
-    // requires: Writes and reads from the SPI bus, takes one argument
-    //           arg[0] - Buffer to write to the SPI bus
-    //  effects: Writes the buffer to the SPI bus and returns the buffer
-    //           received on the SPI in reply.
+    // requires: Writes and reads from the SPI bus, takes one to three arguments
+    //           arg[0] - The targeted slave device
+    //           arg[1] - Buffer to write to the SPI bus
+    //           arg[2] - Direction of the data flow
+    //  effects: Writes the buffer to the SPI bus and if one is given,
+    //           returns the buffer received on the SPI in reply.  Otherwise
+    //           returns NULL.
 
     ZJS_VALIDATE_ARGS(Z_NUMBER, Z_OPTIONAL Z_ARRAY Z_STRING, Z_OPTIONAL Z_STRING);
-
-    // No more than 3 args
-    if (argc > 3)
-        return ZJS_STD_ERROR(RangeError, "Invalid args");
 
     ZJS_GET_HANDLE(this, spi_handle_t, handle, spi_type_info);
 
@@ -90,14 +89,14 @@ static ZJS_DECL_FUNC(zjs_spi_transceive)
         }
     }
 
-    char dir_str[13];
+    jerry_size_t dir_len = 13;
+    char dir_str[dir_len];
     // Set the direction default based on the topology.
     enum spi_topology dir_arg = handle->topology;
 
     // If we have a 'direction' arg, get it and validate
-    if (argc == 3) {
-        uint32_t dirLen = jerry_get_string_size(argv[2]) + 1;
-        zjs_copy_jstring(argv[2], dir_str, &dirLen);
+    if (argc >= 3) {
+        zjs_copy_jstring(argv[2], dir_str, &dir_len);
 
         if (strncmp(dir_str, "read-write", 11) == 0)
             dir_arg = ZJS_TOPOLOGY_FULL_DUPLEX;
@@ -106,7 +105,7 @@ static ZJS_DECL_FUNC(zjs_spi_transceive)
         else if (strncmp(dir_str, "write", 6) == 0)
             dir_arg = ZJS_TOPOLOGY_WRITE;
         else
-            return ZJS_STD_ERROR(RangeError, "Invalid direction");
+            return ZJS_STD_ERROR(Error, "Invalid direction");
 
         // If topology conflicts with direction given
         if ((handle->topology == ZJS_TOPOLOGY_WRITE &&
@@ -133,11 +132,15 @@ static ZJS_DECL_FUNC(zjs_spi_transceive)
                     ZVAL item = jerry_get_property_by_index(buffer, i);
                     if (jerry_value_is_number(item)) {
                         tx_buf->buffer[i] = (uint8_t)jerry_get_number_value(item);
-                    } else {
+                    }
+                    else {
                         ERR_PRINT("non-numeric value in array, treating as 0\n");
                         tx_buf->buffer[i] = 0;
                     }
                 }
+            }
+            else {
+                 return ZJS_STD_ERROR(Error, "Failed to get TX buffer");
             }
         }
         else {
