@@ -21,7 +21,6 @@ static const char banner[] = "\r\nZephyr.js shell " __DATE__ " " __TIME__ "\r\n"
 
 ashell_config_t ashell_config = {
     .echo = true,
-    .verbose = true,
     .mode = ASHELL_MODE_CHAR,  // this could also be a #define
     .comms = NULL
 };
@@ -81,13 +80,10 @@ void ashell_process(char *buf, size_t len)
     switch (ashell_config.mode) {
         case ASHELL_MODE_CHAR:
             // in char mode, len == 1
-            ashell_process_char(buf, len);  // line editor, then parser
+            ashell_process_char(buf, len);  // goes to line editor, then parser
             return;
         case ASHELL_MODE_LINE:
-            ashell_process_line(buf, len);  // text based command line parser
-            return;
-        case ASHELL_MODE_JSON:
-            // ashell_process_json(buf, len);  // JSON based command parser
+            ashell_process_line(buf, len);  // goes to command line parser
             return;
     }
 }

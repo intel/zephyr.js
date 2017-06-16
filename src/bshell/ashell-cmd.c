@@ -201,7 +201,7 @@ void ashell_cmd_print(char *buf)
         lineStart = 0;
     } while (count > 0);
 
-    SEND("\r\n", 2);
+    // SEND("\r\n", 2);
     fs_close_alloc(file);
 }
 

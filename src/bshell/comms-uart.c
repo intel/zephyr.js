@@ -166,7 +166,6 @@ void uart_send(const char *buf, size_t len)
     uart_irq_tx_enable(uartc.dev);
     uartc.data_transmitted = false;
 
-    // uart_fifo_fill(uartc.dev, buf, len);
     int bytes = 0;
     while (bytes != len) {
         buf += bytes;
@@ -179,6 +178,24 @@ void uart_send(const char *buf, size_t len)
     }
 
     uart_irq_tx_disable(uartc.dev);
+}
+
+/**
+ * @brief Output one character to UART ACM
+ * @param i Character to output
+ * @return success
+ */
+int uart_out(int c)
+{
+    static char buf[80];
+    static int size = 0;
+    char ch = (char)c;
+    buf[size++] = ch;
+    if (ch == '\n' || size == 80) {
+        uart_send(buf, size);
+        size = 0;
+    }
+    return 1;
 }
 
 /**
@@ -352,7 +369,7 @@ void uart_init()
     /* Enable rx interrupts */
     uart_irq_rx_enable(uartc.dev);
 
-    __stdout_hook_install(uart_printch);
+    __stdout_hook_install(uart_out);
 
     // Disable buffering on stdout since some parts write directly to uart fifo
     setbuf(stdout, NULL);

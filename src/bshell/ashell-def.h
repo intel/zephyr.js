@@ -53,14 +53,12 @@
 #include "comms.h"
 
 typedef enum {
-    ASHELL_MODE_CHAR,  // for UART, CDC_ACM, WebUSB, with ashell line editing
-    ASHELL_MODE_LINE,  // for all transports, with client side line editor
-    ASHELL_MODE_JSON   // for all transports, with client side line editor
+    ASHELL_MODE_CHAR,  // with ashell line editing
+    ASHELL_MODE_LINE,  // with client (IDE) side line editor
 } ashell_mode_t;
 
 typedef struct {
     bool echo;
-    bool verbose;
     ashell_mode_t mode;
     comms_driver_t *comms;
 } ashell_config_t;
