@@ -1,0 +1,25 @@
+{
+    "module": "spi",
+    "require": "spi",
+    "depends": ["buffer"],
+    "zephyr_conf": {
+        "all": [
+            "CONFIG_SPI=y",
+            "CONFIG_SPI_0=y",
+            "CONFIG_SPI_0_NAME=\"SPI_0\"",
+            "CONFIG_SPI_0_IRQ_PRI=2",
+            "CONFIG_SPI_0_DEFAULT_CFG=0x80",
+            "SPI_0_DEFAULT_BAUD_RATE=500000",
+            "CONFIG_SPI_1=y",
+            "CONFIG_SPI_1_NAME=\"SPI_1\"",
+            "CONFIG_SPI_1_IRQ_PRI=2",
+            "CONFIG_SPI_1_DEFAULT_CFG=0x80",
+            "SPI_1_DEFAULT_BAUD_RATE=500000"
+        ]
+    },
+    "zjs_config": ["-DBUILD_MODULE_SPI"],
+    "src": ["zjs_spi.c"],
+    "header": ["zjs_spi.h"],
+    "init": ["zjs_spi_init"],
+    "cleanup": ["zjs_spi_cleanup"]
+}
