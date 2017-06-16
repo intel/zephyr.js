@@ -92,12 +92,15 @@ static ZJS_DECL_FUNC(native_require_handler)
         return SYSTEM_ERROR("exports object not found");
     }
 
-    for (int i = 0; i < 4; i++) {
-        // Strip the ".js"
-        module[size-i] = '\0';
+    // TODO: maybe we should just error if no .js extension here
+    char mod_trim[size];
+    strncpy(mod_trim, module, size);
+    if (size > 3 && !strncmp(mod_trim + size - 3, ".js", 3)) {
+        // strip the ".js"
+        mod_trim[size - 3] = '\0';
     }
 
-    ZVAL found_obj = zjs_get_property(exports_obj, module);
+    ZVAL found_obj = zjs_get_property(exports_obj, mod_trim);
     if (!jerry_value_is_object(found_obj)) {
         char err[80];
         snprintf(err, 80, "module not found: '%s'", module);
