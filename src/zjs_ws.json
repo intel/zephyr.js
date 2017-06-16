@@ -1,5 +1,5 @@
 {
-    "module": "websockets",
+    "module": "ws",
     "require": "ws",
     "depends": ["buffer", "events", "net_config"],
     "zephyr_conf": {
