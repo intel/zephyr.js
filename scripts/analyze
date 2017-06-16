@@ -123,6 +123,16 @@ def create_dep_list(dlist, board, tree):
             merge_lists(dlist, [dep])
         create_dep_list_helper(dlist, dep, board, tree)
 
+def match_require(js, module, child=None):
+    # requires: js is a string chunk of JS code, module is a string module name
+    #             we're searching for a require() for, child is an optional
+    #             name of a child object e.g. 'client' in require('ocf').client
+    child_regex = ""
+    if child:
+        child_regex = "\.%s " % child
+    regex = r"\brequire *\([\'\"]%s[\"\']\)%s" % (module, child_regex)
+    return re.search(regex, js)
+
 def parse_json_tree_helper(js, dep, dlist, zlist, zjslist, jrslist, srclist, tree):
     """Recursive helper for parse_json_tree()"""
     if dep in tree:
@@ -160,8 +170,7 @@ def parse_json_tree_helper(js, dep, dlist, zlist, zjslist, jrslist, srclist, tre
                 for key, value in src.items():
                     if key != "common":
                         # var x = require(module).key
-                        off_req = re.search(r"var .*require\([\'\"]%s[\"\']\)\.%s" % (entry['require'], key), js)
-                        if off_req:
+                        if match_require(js, entry['require'], key):
                             if 'src' in value:
                                 merge_lists(srclist, value['src'])
                             if 'zjs_config' in value:
@@ -169,8 +178,8 @@ def parse_json_tree_helper(js, dep, dlist, zlist, zjslist, jrslist, srclist, tre
                         else:
                             # var x = require(module)
                             # var y = x.y
-                            match_name = re.search(r"var .*require\([\'\"]%s[\"\']\)" % entry['require'], js)
-                            var_name = match_name.group(0).split(' ')[1]
+                            match_name = re.search(r"var\s+(\w+)\s*=\s*require\([\'\"](%s)[\"\']\)" % entry['require'], js)
+                            var_name = match_name.groups()[0]
                             match_use = re.search(r"%s\.%s" % (var_name, key), js)
                             if match_use:
                                 if 'src' in value:
@@ -218,7 +227,7 @@ def parse_json_tree(file, dlist, zlist, zjslist, jrslist, srclist, tree, force=[
         for i in tree:
             # find any matching require lines
             if 'require' in tree[i]:
-                if re.search(r"require\([\'\"]%s[\"\']\)" % tree[i]['require'], text):
+                if match_require(text, tree[i]['require']):
                     if i not in dlist:
                         dlist.append(i)
                     parse_json_tree_helper(text, i, dlist, zlist, zjslist, jrslist, srclist, tree)
@@ -344,7 +353,7 @@ else:
             js = s.read()
         with open(args['JS_OUT'], 'w') as f:
             for i in os.listdir("modules/"):
-                if re.search(r"require\([\'\"]%s[\"\']\)" % i, js):
+                if match_require(js, i):
                     js_modules += [i]
             for i in js_modules:
                 with open('modules/' + i) as mod:
