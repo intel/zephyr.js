@@ -407,19 +407,25 @@ static inline void ashell_discard_capture()
 /**
  * Called in 'save' (raw transfer) mode for each line.
  */
-bool ashell_raw_capture(const char *src, size_t len)
+#if 1
+bool ashell_raw_capture(const char *input)
 {
-    #define OUT_BUF_SIZE 80
-    static uint8_t buffer[OUT_BUF_SIZE + 1];  // file write buffer
-    uint32_t ptr = 0;
+    #define OUT_BUF_SIZE 40
     uint8_t eol = '\n';
+    static uint32_t len = 0;
+    static uint8_t buffer[OUT_BUF_SIZE + 1];  // file write buffer
 
-    while (len > 0) {
+    const char *src = input;
+    while (*src) {
         uint8_t byte = *src++;
         if (!isprint(byte)) {
             switch (byte) {
             case ASCII_END_OF_TRANS:
             case ASCII_SUBSTITUTE:
+                if (fs_write(shell.fp, buffer, len) < 0) {
+                    return false;
+                }
+                len = 0;
                 if (ECHO_MODE()) {
                     PRINTF("File saved.");
                 }
@@ -435,16 +441,18 @@ bool ashell_raw_capture(const char *src, size_t len)
                 ashell_reset_prompt();
                 ashell_discard_capture();
                 return true;
-#if 0
             case ASCII_CR:
             case ASCII_NL:
-            case '\0':
                 if (ECHO_MODE()) {
                     PRINT("\n");
                 }
-                //buffer[ptr++] = '\n';
+                buffer[len++] = '\n';
+                if (fs_write(shell.fp, buffer, len) < 0) {
+                    return false;
+                }
+                fs_write(shell.fp, &eol, 1);
+                len = 0;
                 break;
-#endif
             default:
                 if (ECHO_MODE()) {
                     PRINTF("%c", byte);
@@ -452,22 +460,64 @@ bool ashell_raw_capture(const char *src, size_t len)
                 break;
             }
         } else {
-            buffer[ptr++] = byte;
-            if (ptr == OUT_BUF_SIZE) {
-                if (fs_write(shell.fp, buffer, ptr) < 0)
+            buffer[len++] = byte;
+            if (len == OUT_BUF_SIZE) {
+                if (fs_write(shell.fp, buffer, len) < 0)
                     return false;
-                ptr = 0;
+                len = 0;
             }
         }
-        len--;
     }
 
-    if (ptr > 0 && fs_write(shell.fp, buffer, ptr) < 0)
-        return false;
-    ptr = 0;
+    // fs_write(shell.fp, &eol, 1);
+    return true;
+}
+#else
+bool ashell_raw_capture(const char *input)
+{
+    uint8_t eol = '\n';
+    //uint32_t len = 0;
+    const char *src = input;
+    bool done = false;
+    while (!done) {
+        uint8_t byte = *src++;
+        if (!isprint(byte)) {
+            switch (byte) {
+            case ASCII_END_OF_TRANS:
+            case ASCII_SUBSTITUTE:
+                fs_write(shell.fp, &eol, 1);
+                RESET_FLAG(kShellCaptureRaw);
+                ashell_reset_prompt();
+                ashell_close_capture();
+                return true;
+            case ASCII_END_OF_TEXT:
+            case ASCII_CANCEL:
+                PRINT("Aborted.");
+                RESET_FLAG(kShellCaptureRaw);
+                ashell_reset_prompt();
+                ashell_discard_capture();
+                return true;
+            case ASCII_CR:
+            case ASCII_NL:
+                if (ECHO_MODE()) {
+                    PRINT("\r\n");
+                }
+                break;
+            default:
+                if (ECHO_MODE()) {
+                    PRINTCH(byte);
+                }
+                break;
+            }
+        } else {
+            fs_write(shell.fp, &byte, 1);
+        }
+
+    }
     fs_write(shell.fp, &eol, 1);
     return true;
 }
+#endif
 
 void ashell_cmd_reboot(char *buf)
 {
@@ -542,7 +592,9 @@ void ashell_process_line(char *line, size_t len)
 
     if (TEST_FLAG(kShellCaptureRaw)) {
         INFO("[DBG] Capture file: %s\r\n", line);
-        ashell_raw_capture(line, len);  // save line in file
+        if (!ashell_raw_capture(line)) {  // save line in file
+            ERROR("Cannot save line.");
+        }
         ashell_send_prompt();
         return;
     }
