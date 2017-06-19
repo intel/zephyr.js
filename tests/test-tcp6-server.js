@@ -36,7 +36,7 @@ assert(typeof IPResult1 === "number" && IPResult1 === 6,
 
 IPResult1 = net.isIP(noIPAddress);
 assert(typeof IPResult1 === "number" && IPResult1 === 0,
-       "IPAddress: check IP address as 'IvalidIP'");
+       "IPAddress: check IP address as 'InvalidIP'");
 
 IPResult1 = net.isIPv4(IPv4Address);
 IPResult2 = net.isIPv4(IPv6Address);
@@ -90,7 +90,7 @@ setTimeout(function() {
     assert(listeningFlag === true,
            "ServerObject: begin to listen without callback function");
 
-    serverA.getConnections(function(count, error) {
+    serverA.getConnections(function(error, count) {
         assert(typeof count === "number" && count === 0,
                "ServerObject: get default connection as '0'");
     });
@@ -121,14 +121,15 @@ setTimeout(function() {
                typeof info.address === "string" && info.address !== null,
                "SocketObject: all socket address information are defined");
 
-        console.log("socket.bufferSize:", sock.bufferSize);
-        console.log("socket.bytesRead:", sock.bytesRead);
-        console.log("socket.bytesWritten:", sock.bytesWritten);
-        console.log("socket.localPort:", sock.localPort);
-        console.log("socket.localAddress:", sock.localAddress);
-        console.log("socket.remotePort:", sock.remotePort);
-        console.log("socket.remoteAddress:", sock.remoteAddress);
-        console.log("socket.remoteFamily:", sock.remoteFamily);
+        console.log("socket information:");
+        console.log("    socket.bufferSize:", sock.bufferSize);
+        console.log("    socket.bytesRead:", sock.bytesRead);
+        console.log("    socket.bytesWritten:", sock.bytesWritten);
+        console.log("    socket.localPort:", sock.localPort);
+        console.log("    socket.localAddress:", sock.localAddress);
+        console.log("    socket.remotePort:", sock.remotePort);
+        console.log("    socket.remoteAddress:", sock.remoteAddress);
+        console.log("    socket.remoteFamily:", sock.remoteFamily);
 
         var properties = [
             [sock.bufferSize, "number", "bufferSize", 1],
@@ -264,8 +265,17 @@ setTimeout(function() {
         if (connectionFlag) {
             assert(true, "ServerEvent: be called as 'connection' event");
 
+            server.getConnections(function(error, count) {
+                assert(typeof count === "number" && count === 1,
+                       "ServerObject: get socket connection as '1'");
+            });
+
             connectionFlag = false;
         }
+
+        server.getConnections(function(error, count) {
+            console.log("There is " + count + " socket connections");
+        });
 
         console.log("TCP server accept connection: " + sock.address().address +
                     ":" + sock.address().port);
@@ -273,6 +283,21 @@ setTimeout(function() {
 
     server.on("listening", function() {
         assert(true, "ServerEvent: be called as 'listening' event");
+
+        var Info = server.address();
+        assert(typeof Info === "object" && Info !== null,
+               "ServerObject: get server address information");
+        assert(typeof Info.port === "number" && Info.port === IPv6Port,
+               "ServerObject: get server port as '" + Info.port + "'");
+        assert(typeof Info.address === "string" && Info.address === IPv6Address,
+               "ServerObject: get server address as '" + Info.address + "'");
+        assert(typeof Info.family === "string" && Info.family === "IPv6",
+               "ServerObject: get server family as '" + Info.family + "'");
+
+        console.log("server address information:");
+        console.log("    server.address:", Info.address);
+        console.log("    server.port:", Info.port);
+        console.log("    server.family:", Info.family);
 
         console.log("TCP server listen: " + IPv6Address + ":" + IPv6Port);
         console.log("If using Bluetooth communication," +
