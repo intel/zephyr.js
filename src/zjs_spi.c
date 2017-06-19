@@ -73,8 +73,8 @@ static ZJS_DECL_FUNC(zjs_spi_transceive)
 
     size_t len;
     jerry_value_t buffer;
-    zjs_buffer_t *tx_buf;
-    zjs_buffer_t *rx_buf;
+    zjs_buffer_t *tx_buf = NULL;
+    zjs_buffer_t *rx_buf = NULL;
     jerry_value_t rx_buf_obj = jerry_create_null();
     jerry_value_t tx_buf_obj;
 
@@ -116,7 +116,11 @@ static ZJS_DECL_FUNC(zjs_spi_transceive)
         }
         // If reading only, the 2nd arg should be NULL
         if (dir_arg == ZJS_TOPOLOGY_READ && !jerry_value_is_null(argv[1])) {
-            return ZJS_STD_ERROR(NotSupportedError, "Buffer should be null when direction is read");
+            return ZJS_STD_ERROR(NotSupportedError, "Buffer should be NULL when direction is read");
+        }
+
+        if (dir_arg != ZJS_TOPOLOGY_READ && jerry_value_is_null(argv[1])) {
+            return ZJS_STD_ERROR(NotSupportedError, "Write buffer is NULL");
         }
     }
 
@@ -138,9 +142,6 @@ static ZJS_DECL_FUNC(zjs_spi_transceive)
                         tx_buf->buffer[i] = 0;
                     }
                 }
-            }
-            else {
-                 return ZJS_STD_ERROR(Error, "Failed to get TX buffer");
             }
         }
         else {
