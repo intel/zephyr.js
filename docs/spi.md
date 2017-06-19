@@ -54,7 +54,7 @@ dictionary SPIOptions {
     long phase;
     unsigned long frameGap;
     string topology;
-    
+
 };
 
 [NoInterfaceObject]
