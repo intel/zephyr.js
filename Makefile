@@ -85,7 +85,6 @@ endif
 
 # Settings for ashell builds
 ifneq (,$(filter $(MAKECMDGOALS),ide ashell))
-CONFIG ?= fragments/zjs.conf.dev
 ASHELL=zjs_ashell.json
 ASHELL_ARC=zjs_ashell_arc.json
 ZJS_FLAGS := "$(ZJS_FLAGS) -DZJS_FIND_FUNC_NAME"
