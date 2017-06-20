@@ -33,12 +33,6 @@
 
 #define MAX_BUFFER_SIZE 256
 
-#ifdef CONFIG_BMI160_NAME
-#define BMI160_NAME CONFIG_BMI160_NAME
-#else
-#define BMI160_NAME BMI160_DEVICE_NAME
-#endif
-
 static struct k_sem arc_sem;
 #ifdef CONFIG_IPM
 static struct zjs_ipm_message msg_queue[QUEUE_SIZE];
@@ -529,7 +523,7 @@ static void process_temp_data(struct device *dev)
     struct sensor_value val;
     double dval;
 
-    if (sensor_channel_get(bmi160, SENSOR_CHAN_TEMP, &val) < 0) {
+    if (sensor_channel_get(dev, SENSOR_CHAN_TEMP, &val) < 0) {
         ERR_PRINT("failed to read temperature channel\n");
         return;
     }

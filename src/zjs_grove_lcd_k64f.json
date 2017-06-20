@@ -1,8 +1,8 @@
 {
-    "module": "grove_lcd_frdm",
+    "module": "grove_lcd_k64f",
     "targets": ["frdm_k64f"],
     "zephyr_conf": {
-        "all": [
+        "frdm_k64f": [
             "CONFIG_I2C=y",
             "CONFIG_GROVE=y",
             "CONFIG_GROVE_LCD_RGB=y",

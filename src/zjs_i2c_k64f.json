@@ -1,5 +1,5 @@
 {
-    "module": "i2c_frdm",
+    "module": "i2c_k64f",
     "targets": ["frdm_k64f"],
     "zephyr_conf": {
         "all": [

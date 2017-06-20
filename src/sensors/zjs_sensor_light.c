@@ -65,7 +65,7 @@ sensor_instance_t *zjs_sensor_light_init()
 void zjs_sensor_light_cleanup()
 {
     if (g_instance) {
-        zjs_free(g_instance);
+        zjs_sensor_free_instance(g_instance);
         g_instance = NULL;
     }
 }

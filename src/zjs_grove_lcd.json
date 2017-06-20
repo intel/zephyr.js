@@ -1,7 +1,7 @@
 {
     "module": "grove_lcd",
     "require": "grove_lcd",
-    "depends": ["grove_lcd_a101", "grove_lcd_frdm"],
+    "depends": ["grove_lcd_a101", "grove_lcd_k64f"],
     "header": ["zjs_grove_lcd.h"],
     "init": ["zjs_grove_lcd_init"],
     "cleanup": ["zjs_grove_lcd_cleanup"]

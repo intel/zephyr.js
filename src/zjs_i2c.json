@@ -1,7 +1,7 @@
 {
     "module": "i2c",
     "require": "i2c",
-    "depends": ["buffer", "i2c_frdm", "i2c_a101"],
+    "depends": ["buffer", "i2c_a101", "i2c_k64f"],
     "zjs_config": ["-DBUILD_MODULE_I2C"],
     "src": ["zjs_i2c.c"],
     "header": ["zjs_i2c.h"],
