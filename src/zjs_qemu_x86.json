@@ -4,10 +4,6 @@
     "zephyr_conf": {
         "qemu_x86": [
             "CONFIG_MAIN_STACK_SIZE=2048",
-            "CONFIG_STDOUT_CONSOLE=y",
-            "CONFIG_NEWLIB_LIBC=y",
-            "CONFIG_FLOAT=y",
-            "CONFIG_RING_BUFFER=y",
             "CONFIG_RAM_SIZE=80",
             "CONFIG_ROM_SIZE=256"
         ]
