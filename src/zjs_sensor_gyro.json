@@ -2,7 +2,7 @@
     "module": "sensor_gyro",
     "constructor": "Gyroscope",
     "depends": ["sensor"],
-    "targets": ["arduino_101", "frdm_k64f"],
+    "targets": ["arduino_101"],
     "zjs_config": ["-DBUILD_MODULE_SENSOR_GYRO"],
     "src": ["sensors/zjs_sensor_gyro.c"]
 }
