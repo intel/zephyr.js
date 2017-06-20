@@ -214,7 +214,7 @@ static ZJS_DECL_FUNC(zjs_spi_open)
     if (argc >= 1) {
         zjs_obj_get_uint32(argv[0], "bus", &bus);
         if (bus < MAX_SPI_BUS) {
-            snprintf(bus_str, 9, "%s%lu", SPI_BUS, bus);
+            snprintf(bus_str, 9, "%s%u", SPI_BUS, bus);
         }
         else
             return ZJS_STD_ERROR(RangeError, "Invalid bus");
