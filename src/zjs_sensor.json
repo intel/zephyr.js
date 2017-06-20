@@ -1,6 +1,6 @@
 {
     "module": "sensor",
-    "depends": ["sensor_a101", "sensor_frdm"],
+    "depends": ["sensor_a101", "sensor_k64f"],
     "zjs_config": ["-I$(ZJS_BASE)/src/sensors", "-DBUILD_MODULE_SENSOR"],
     "src": ["zjs_sensor.c"],
     "header": ["zjs_sensor.h"],

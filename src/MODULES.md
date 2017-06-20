@@ -231,7 +231,7 @@ Virtual modules can also be used to selectively build certain files for certain
 targets. Using the I2C example again, the Arduino 101 require IPM, the the K64F
 can just directly call I2C APIs. In this case we have a generic I2C JSON file
 (zjs_i2c.json) which has platform agnostic information, but then has a "depends"
-array which includes "i2c_frdm" and "i2c_a101". Then these two modules use the
+array which includes "i2c_k64f" and "i2c_a101". Then these two modules use the
 "targets" property so that they wont be included if building for the wrong
 target and include only target specific source files.
 

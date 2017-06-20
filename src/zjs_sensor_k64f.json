@@ -1,5 +1,5 @@
 {
-    "module": "sensor_frdm",
+    "module": "sensor_k64f",
     "targets": ["frdm_k64f"],
     "zephyr_conf": {
         "frdm_k64f": [
@@ -11,5 +11,5 @@
         ]
     },
     "zjs_config": ["-DBUILD_MODULE_SENSOR"],
-    "src": ["zjs_sensor_board_frdm.c"]
+    "src": ["zjs_sensor_board_k64f.c"]
 }

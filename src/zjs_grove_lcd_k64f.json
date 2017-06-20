@@ -1,5 +1,5 @@
 {
-    "module": "grove_lcd_frdm",
+    "module": "grove_lcd_k64f",
     "targets": ["frdm_k64f"],
     "zephyr_conf": {
         "frdm_k64f": [
