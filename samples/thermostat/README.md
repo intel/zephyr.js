@@ -5,7 +5,7 @@ This folder contains the example code for building a ZJS based thermostat using 
 
 | Filename | Description |
 |----------|-------------|
-| [th02.js](./th02.js)     | Read the environmental data from the sensor and display the data on the serial console | 
+| [th02.js](./th02.js)     | Read the environmental data from the sensor and display the data on the serial console |
 | [th02-ess.js](./th02-ess.js) | Expose the sensed environmental data through Bluetooth ESS |
 | [th02-ocf.js](./th02-ocf.js) | Expose the sensed environmental data through through OCF |
 
