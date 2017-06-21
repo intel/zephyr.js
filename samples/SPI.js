@@ -7,7 +7,7 @@ try {
     var spi = require("spi");
     var spiBus1 = spi.open({speed:20, bus:1, polarity:0, phase:0, bits:16});
 
-    var buffer = spiBus1.transceive(1, "Hello World\0");
+    var buffer = spiBus1.transceive(1, "Hello World");
     console.log("From SPI device 1: " + buffer.toString('ascii'));
 
     buffer = spiBus1.transceive(1, [1,2,3,4]);
