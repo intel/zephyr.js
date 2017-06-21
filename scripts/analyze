@@ -217,7 +217,6 @@ def parse_json_tree(file, dlist, zlist, zjslist, jrslist, srclist, tree, force=[
         text = js.read()
 
     if force != []:
-        # parse only the forced JSON files
         for f in force:
             with open(args['JSON_DIR'] + f) as file:
                 data = json.load(file)
