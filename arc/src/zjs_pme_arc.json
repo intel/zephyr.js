@@ -4,5 +4,5 @@
     "targets": ["arc"],
     "depends": ["ipm_arc"],
     "zjs_config": ["-DBUILD_MODULE_PME"],
-    "src": ["arc_curie_pme.c"]
+    "src": ["arc_pme.c", "arc_curie_pme.c"]
 }

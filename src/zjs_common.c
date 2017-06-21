@@ -27,7 +27,7 @@ char *zjs_shorten_filepath(char *filepath)
 
 #ifdef DEBUG_BUILD
 
-static uint8_t init = 0;
+static u8_t init = 0;
 static int seconds = 0;
 
 #ifdef ZJS_LINUX_BUILD
