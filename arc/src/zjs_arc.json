@@ -7,8 +7,7 @@
             "CONFIG_PRINTK=y",
             "CONFIG_CONSOLE=y",
             "CONFIG_SERIAL=n",
-            "CONFIG_NS16550=n",
-            "CONFIG_NANO_TIMEOUTS=y"
+            "CONFIG_NS16550=n"
         ]
     },
     "src": ["../../src/zjs_common.c"]
