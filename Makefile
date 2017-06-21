@@ -235,7 +235,7 @@ analyze: $(JS)
 
 	./scripts/analyze	V=$(V) \
 		SCRIPT=$(JS) \
-		JS_OUT=JS_TMP \
+		JS_OUT=$(JS_TMP) \
 		BOARD=$(BOARD) \
 		JSON_DIR=src/ \
 		FORCE=$(ASHELL) \
@@ -323,7 +323,7 @@ cleanlocal:
 	@rm -f prj.conf.tmp
 	@rm -f prj.mdef
 	@rm -f zjs.conf.tmp
-	@rm -f JS_TMP
+	@rm -f $(JS_TMP)
 
 # Explicit clean
 .PHONY: clean
@@ -354,17 +354,17 @@ ifeq ($(SNAPSHOT), on)
 	fi
 	@echo Creating snapshot bytecode from JS application...
 	@if [ -x /usr/bin/uglifyjs ]; then \
-		uglifyjs JS_TMP -nc -mt > outdir/jsgen.tmp; \
+		uglifyjs $(JS_TMP) -nc -mt > outdir/jsgen.tmp; \
 	else \
-		cat JS_TMP > outdir/jsgen.tmp; \
+		cat $(JS_TMP) > outdir/jsgen.tmp; \
 	fi
 	@outdir/snapshot/snapshot outdir/jsgen.tmp > outdir/include/zjs_snapshot_gen.h
 else
 	@echo Creating C string from JS application...
 ifeq ($(BOARD), linux)
-	@./scripts/convert.sh JS_TMP outdir/include/zjs_script_gen.h
+	@./scripts/convert.sh $(JS_TMP) outdir/include/zjs_script_gen.h
 else
-	@./scripts/convert.sh JS_TMP outdir/include/zjs_script_gen.h
+	@./scripts/convert.sh $(JS_TMP) outdir/include/zjs_script_gen.h
 endif
 endif
 
@@ -396,7 +396,7 @@ ARC_RESTRICT="zjs_ipm_arc.json,\
 arc: analyze
 	# Restrict ARC build to only certain "arc specific" modules
 	./scripts/analyze	V=$(V) \
-		SCRIPT=JS_TMP \
+		SCRIPT=$(JS_TMP) \
 		BOARD=arc \
 		JSON_DIR=arc/src/ \
 		PRJCONF=arc/prj.conf \
