@@ -461,7 +461,7 @@ static ZJS_DECL_FUNC(ocf_register)
 
     for (i = 0; i < resource->num_types; ++i) {
         ZVAL type_val = jerry_get_property_by_index(res_type_array, i);
-        jerry_value_t size = OCF_MAX_RES_TYPE_LEN;
+        jerry_size_t size = OCF_MAX_RES_TYPE_LEN;
         resource->resource_types[i] = zjs_alloc_from_jstring(type_val, &size);
         if (!resource->resource_types[i]) {
             REJECT("InternalError", "resourceType alloc failed");
@@ -482,7 +482,7 @@ static ZJS_DECL_FUNC(ocf_register)
 
     for (i = 0; i < resource->num_ifaces; ++i) {
         ZVAL val = jerry_get_property_by_index(iface_array, i);
-        jerry_value_t size = OCF_MAX_RES_TYPE_LEN;
+        jerry_size_t size = OCF_MAX_RES_TYPE_LEN;
         resource->resource_ifaces[i] = zjs_alloc_from_jstring(val, &size);
         if (!resource->resource_ifaces[i]) {
             REJECT("InternalError", "resourceType alloc failed");

@@ -223,7 +223,7 @@ void zjs_set_uuid(char *uuid)
 
 static void platform_init(void *data)
 {
-    jerry_value_t size;
+    jerry_size_t size;
     ZVAL platform = zjs_get_property(ocf_object, "platform");
     if (!jerry_value_is_undefined(platform)) {
         // osVersion
@@ -328,7 +328,7 @@ static void platform_init(void *data)
 
 static int app_init(void)
 {
-    jerry_value_t size;
+    jerry_size_t size;
     // device props
     char *name = NULL;
     char *spec_version = NULL;
