@@ -242,6 +242,37 @@ function try_test()
     echo Success: $LABEL
 }
 
+# requires: first arg is tmpfile name, second arg is modules array, third arg
+#             is sensors array
+#  effects: writes test to given tmpfile that uses all the given modules and
+#             sensors, as well as basic common modules
+function write_modules_test()
+{
+    TMPFILE=$1
+    MODULES=$2
+    SENSORS=$3
+
+    MODNUM=0
+    rm $TMPFILE
+    for index in "${!MODULES[@]}"; do
+        MODNUM=$((MODNUM + 1))
+        MODULE=${MODULES[index]}
+        echo "var module$MODNUM = require('$MODULE');" >> $TMPFILE
+    done
+
+    # add sensor modules
+    SENSORNUM=0
+    for index in "${!SENSORS[@]}"; do
+        SENSORNUM=$((SENSORNUM + 1))
+        MODULE=${SENSORS[index]}
+        echo "var sensor$SENSORNUM = $MODULE({});" >> $TMPFILE
+    done
+
+    # add use of built-in modules
+    echo "var buf = new Buffer(10);" >> $TMPFILE
+    echo "setTimeout(function() {}, 10);" >> $TMPFILE
+}
+
 #
 # Tests from VM #1
 #
@@ -253,29 +284,10 @@ if [ "$RUN" == "all" -o "$RUN" == "1" ]; then
     # A101 build tests spanning all modules
     try_command "hello world" make $VERBOSE
 
-    MODULES=(aio arduino101_pins ble dgram events gpio grove_lcd i2c k64f_pins \
+    MODULES=(aio arduino101_pins ble dgram events gpio grove_lcd i2c \
              performance pwm uart)
-
-    MODNUM=0
-    rm $TMPFILE
-    for index in "${!MODULES[@]}"; do
-        MODNUM=$((MODNUM + 1))
-        MODULE=${MODULES[index]}
-        echo "var module$MODNUM = require('$MODULE');" >> $TMPFILE
-    done
-
-    # add sensor modules
     SENSORS=(Accelerometer Gyroscope AmbientLightSensor TemperatureSensor)
-    SENSORNUM=0
-    for index in "${!SENSORS[@]}"; do
-        SENSORNUM=$((SENSORNUM + 1))
-        MODULE=${SENSORS[index]}
-        echo "var sensor$SENSORNUM = $MODULE({});" >> $TMPFILE
-    done
-
-    # add use of built-in modules
-    echo "var buf = new Buffer(10);" >> $TMPFILE
-    echo "setTimeout(function() {}, 10);" >> $TMPFILE
+    write_modules_test $TMPFILE $MODULES $SENSORS
 
     # also, try printing a float w/o PRINT_FLOAT
     echo "console.log(3.14159);" >> $TMPFILE
@@ -325,6 +337,11 @@ if [ "$RUN" == "all" -o "$RUN" == "2" ]; then
 
     # k64f build tests
     try_command "k64f hello" make $VERBOSE BOARD=frdm_k64f
+
+    MODULES=(ble dgram events gpio grove_lcd i2c k64f_pins performance pwm uart)
+    SENSORS=(Accelerometer)
+    write_modules_test $TMPFILE $MODULES $SENSORS
+    try_command "k64f module" make $VERBOSE JS=$TMPFILE ROM=256 BOARD=frdm_k64f
 
     # check that headers include all needed dependencies
     try_command "headers" checkheaders -v
