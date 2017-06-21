@@ -718,7 +718,7 @@ static void post_accept_handler(void *handle, jerry_value_t ret_val)
         tcp_send(con->tcp_sock, send_data, strlen(send_data));
         return;
     }
-    u32_t size = 32;
+    jerry_value_t size = 32;
     char proto[size];
     zjs_copy_jstring(ret_val, proto, &size);
     if (!size) {
