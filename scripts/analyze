@@ -222,27 +222,27 @@ def parse_json_tree(file, dlist, zlist, zjslist, jrslist, srclist, tree, force=[
             with open(args['JSON_DIR'] + f) as file:
                 data = json.load(file)
                 parse_json_tree_helper(text, data['module'], dlist, zlist, zjslist, jrslist, srclist, tree)
-    else:
-        # iterate the JSON tree
-        for i in tree:
-            # find any matching require lines
-            if 'require' in tree[i]:
-                if match_require(text, tree[i]['require']):
-                    if i not in dlist:
-                        dlist.append(i)
-                    parse_json_tree_helper(text, i, dlist, zlist, zjslist, jrslist, srclist, tree)
-            # find any matching constructor calls
-            elif 'constructor' in tree[i]:
-                if re.search(r"%s\(.*" % tree[i]['constructor'], text):
-                    if i not in dlist:
-                        dlist.append(i)
-                    parse_json_tree_helper(text, i, dlist, zlist, zjslist, jrslist, srclist, tree)
-            # find any matching uses of object
-            if 'object' in tree[i]:
-                if re.search(r"%s\." % tree[i]['object'], text):
-                    merge_lists(zjslist, tree[i]['zjs_config'])
-                    merge_lists(srclist, tree[i]['src'])
-                    dlist.append(tree[i]['object'])
+    
+    # iterate the JSON tree
+    for i in tree:
+        # find any matching require lines
+        if 'require' in tree[i]:
+            if match_require(text, tree[i]['require']):
+                if i not in dlist:
+                    dlist.append(i)
+                parse_json_tree_helper(text, i, dlist, zlist, zjslist, jrslist, srclist, tree)
+        # find any matching constructor calls
+        elif 'constructor' in tree[i]:
+            if re.search(r"%s\(.*" % tree[i]['constructor'], text):
+                if i not in dlist:
+                    dlist.append(i)
+                parse_json_tree_helper(text, i, dlist, zlist, zjslist, jrslist, srclist, tree)
+        # find any matching uses of object
+        if 'object' in tree[i]:
+            if re.search(r"%s\." % tree[i]['object'], text):
+                merge_lists(zjslist, tree[i]['zjs_config'])
+                merge_lists(srclist, tree[i]['src'])
+                dlist.append(tree[i]['object'])
 
     # Get any deps for the board
     parse_json_tree_helper(text, board, dlist, zlist, zjslist, jrslist, srclist, tree)
