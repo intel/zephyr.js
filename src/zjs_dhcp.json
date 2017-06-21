@@ -1,0 +1,20 @@
+{
+    "module": "dhcp",
+    "require": "dhcp",
+    "zephyr_conf": {
+        "all": [
+            "CONFIG_NETWORKING=y",
+            "CONFIG_NET_DHCPV4=y",
+            "CONFIG_NET_IPV4=y",
+            "CONFIG_NET_MGMT=y",
+            "CONFIG_NET_MGMT_EVENT=y"
+        ],
+        "frdm_k64f": [
+            "CONFIG_NET_L2_ETHERNET=y"
+        ]
+    },
+    "src": ["zjs_dhcp.c"],
+    "header": ["zjs_dhcp.h"],
+    "init": ["zjs_dhcp_init"],
+    "cleanup": ["zjs_dhcp_cleanup"]
+}
