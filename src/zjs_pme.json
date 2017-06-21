@@ -1,7 +1,7 @@
 {
     "module": "pme",
     "require": "pme",
-    "depends": ["buffer", "ipm"],
+    "depends": ["buffer", "ipm", "json"],
     "zjs_config": ["-DBUILD_MODULE_PME"],
     "src": ["zjs_pme.c"],
     "header": ["zjs_pme.h"],
