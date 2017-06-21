@@ -361,7 +361,11 @@ ifeq ($(SNAPSHOT), on)
 	@outdir/snapshot/snapshot outdir/jsgen.tmp > outdir/include/zjs_snapshot_gen.h
 else
 	@echo Creating C string from JS application...
+ifeq ($(BOARD), linux)
+	@./scripts/convert.sh $(JS) outdir/include/zjs_script_gen.h
+else
 	@./scripts/convert.sh $(JS_TMP) outdir/include/zjs_script_gen.h
+endif
 endif
 
 NET_BUILD=$(shell grep -q -E "BUILD_MODULE_OCF|BUILD_MODULE_DGRAM|BUILD_MODULE_NET|BUILD_MODULE_WS" src/Makefile && echo y)
