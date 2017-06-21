@@ -395,7 +395,7 @@ ARC_RESTRICT="zjs_ipm_arc.json,\
 arc: analyze
 	# Restrict ARC build to only certain "arc specific" modules
 	./scripts/analyze	V=$(V) \
-		SCRIPT=$(JS) \
+		SCRIPT=js.tmp \
 		BOARD=arc \
 		JSON_DIR=arc/src/ \
 		PRJCONF=arc/prj.conf \
