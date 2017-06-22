@@ -221,7 +221,7 @@ def parse_json_tree(file, dlist, zlist, zjslist, jrslist, srclist, tree, force=[
             with open(args['JSON_DIR'] + f) as file:
                 data = json.load(file)
                 parse_json_tree_helper(text, data['module'], dlist, zlist, zjslist, jrslist, srclist, tree)
-    
+
     # iterate the JSON tree
     for i in tree:
         # find any matching require lines
