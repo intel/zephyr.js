@@ -1033,7 +1033,7 @@ static ZJS_DECL_FUNC(net_is_ip)
     if (!jerry_value_is_string(argv[0]) || argc < 1) {
         return jerry_create_number(0);
     }
-    u32_t size = 64;
+    jerry_size_t size = 64;
     char ip[size];
     zjs_copy_jstring(argv[0], ip, &size);
     if (!size) {
