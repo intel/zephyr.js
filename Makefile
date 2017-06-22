@@ -287,6 +287,8 @@ setup:
 ifeq ($(BOARD), qemu_x86)
 ifneq ($(OS), Darwin)
 	echo "CONFIG_XIP=y" >> prj.conf
+else
+	echo "CONFIG_RAM_SIZE=192" >> prj.conf
 endif
 else
 ifeq ($(ASHELL), ashell)

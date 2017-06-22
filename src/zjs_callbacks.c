@@ -9,8 +9,8 @@
 #endif
 #include <string.h>
 
-#include "zjs_util.h"
 #include "zjs_callbacks.h"
+#include "zjs_util.h"
 
 #include "jerryscript.h"
 
