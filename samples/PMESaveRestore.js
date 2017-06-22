@@ -30,7 +30,7 @@ function pme_stats() {
     var mode = pme.getClassifierMode();
     if (mode === pme.RBF_MODE) {
         console.log("Classification mode: RBF_MODE");
-    } else if (mode === pme.RBF_MODE) {
+    } else if (mode === pme.KNN_MODE) {
         console.log("Classification mode: KNN_MODE");
     }
 
