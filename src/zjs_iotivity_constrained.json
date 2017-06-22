@@ -43,6 +43,7 @@
         "-I$(OCF_ROOT)/deps/tinydtls",
         "-DWITH_OCF",
         "-DNDEBUG",
+        "-include $(ZJS_BASE)/src/zjs_ocf_config.h",
         "-include $(ZJS_BASE)/$(OCF_ROOT)/port/zephyr/src/config.h",
         "-I$(ZJS_BASE)/$(OCF_ROOT)/$(OCF_ROOT)/include",
         "-I$(ZJS_BASE)/$(OCF_ROOT)"

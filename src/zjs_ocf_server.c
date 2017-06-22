@@ -515,6 +515,10 @@ void zjs_ocf_register_resources(void)
         struct server_resource *resource = cur->resource;
 
         resource->res = oc_new_resource(resource->resource_path, resource->num_types, 0);
+        if (!resource->res) {
+            ERR_PRINT("failed to create new resource\n");
+            return;
+        }
         for (i = 0; i < resource->num_types; ++i) {
             oc_resource_bind_resource_type(resource->res, resource->resource_types[i]);
         }
