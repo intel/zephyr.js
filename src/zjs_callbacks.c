@@ -465,6 +465,7 @@ void signal_callback_priv(zjs_callback_id id,
             0,  // we use value for CB_FLUSH_ONE/ALL
             (u32_t *)args,
             (u8_t)((size + 3) / 4));
+    UNLOCK();
     if (ret != 0) {
         if (GET_TYPE(cb_map[id]->flags) == CALLBACK_TYPE_JS) {
             // for JS, acquire values and release them after servicing callback
@@ -481,7 +482,6 @@ void signal_callback_priv(zjs_callback_id id,
 #ifndef ZJS_LINUX_BUILD
     zjs_loop_unblock();
 #endif
-    UNLOCK();
 }
 
 zjs_callback_id zjs_add_c_callback(void *handle, zjs_c_callback_func callback)
