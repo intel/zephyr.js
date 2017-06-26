@@ -908,7 +908,7 @@ static ZJS_DECL_FUNC_ARGS(zjs_fs_read_file, u8_t async)
     }
 #endif
     jerry_value_t buffer = ZJS_UNDEFINED;
-    u32_t size = 32;
+    jerry_size_t size = 32;
     char *path = zjs_alloc_from_jstring(argv[0], &size);
     if (!path) {
         return zjs_error("path string too long");
