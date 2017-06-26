@@ -466,6 +466,9 @@ void signal_callback_priv(zjs_callback_id id,
             (u32_t *)args,
             (u8_t)((size + 3) / 4));
     // Need to unlock here or callback may be blocked when it gets called.
+    // NOTE: this is a temporary fix, we should implement a lock ID system
+    // rather than locking everything, as we are only trying to prevent a callback
+    // from being edited and called at the same time.
     UNLOCK();
 #ifndef ZJS_LINUX_BUILD
     zjs_loop_unblock();
