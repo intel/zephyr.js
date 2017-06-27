@@ -30,7 +30,6 @@ static void aio_read_thread(void *p1, void *p2, void *p3)
             if (pin_enabled[i]) {
                 u32_t value = arc_pin_read(ARC_AIO_MIN + i);
                 atomic_set(&pin_values[i], value);
-                atomic_set(&pin_last_values[i], value);
             }
         }
     }
@@ -96,6 +95,7 @@ void arc_process_aio_updates()
             msg.data.aio.pin = ARC_AIO_MIN + i;
             msg.data.aio.value = pin_values[i];
             ipm_send_msg(&msg);
+            atomic_set(&pin_last_values[i], pin_values[i]);
         }
     }
 }
@@ -117,7 +117,7 @@ void arc_handle_aio(struct zjs_ipm_message *msg)
         atomic_set(&pin_enabled[pin - ARC_AIO_MIN], 1);
         break;
     case TYPE_AIO_PIN_READ:
-        reply_value = pin_last_values[pin - ARC_AIO_MIN];
+        reply_value = pin_values[pin - ARC_AIO_MIN];
         break;
     case TYPE_AIO_PIN_ABORT:
         // NO OP - always success
