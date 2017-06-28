@@ -5,7 +5,7 @@
 console.log("SPI test starting..");
 try {
     var spi = require("spi");
-    var spiBus1 = spi.open({speed:20, bus:1, polarity:0, phase:0, bits:16});
+    var spiBus1 = spi.open({speed:20000, bus:1, polarity:0, phase:0, bits:16});
 
     var buffer = spiBus1.transceive(1, "Hello World\0");
     console.log("From SPI device 1: " + buffer.toString('hex'));
@@ -27,7 +27,7 @@ try {
     buffer = spiBus1.transceive(1, [1, 2, 3, 4]);
 
     // Open again
-    spiBus1 = spi.open({speed:20, bus:1, polarity:0, phase:0, bits:16});
+    spiBus1 = spi.open({speed:20000, bus:1, polarity:0, phase:0, bits:8});
     buffer = spiBus1.transceive(1, [1, 2, 3, 4]);
     console.log("From SPI device 1: " + buffer.toString('hex'));
 } catch (err) {

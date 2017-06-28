@@ -15,7 +15,8 @@
             "CONFIG_SPI_1_IRQ_PRI=2",
             "CONFIG_SPI_1_DEFAULT_CFG=0x80",
             "SPI_1_DEFAULT_BAUD_RATE=500000"
-        ]
+        ],
+        "frdm_k64f": ["CONFIG_SPI_MCUX_DSPI=y"]
     },
     "zjs_config": ["-DBUILD_MODULE_SPI"],
     "src": ["zjs_spi.c"],
