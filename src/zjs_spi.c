@@ -62,7 +62,7 @@ static ZJS_DECL_FUNC(zjs_spi_transceive)
     //           returns the buffer received on the SPI in reply.  Otherwise
     //           returns NULL.
 
-    ZJS_VALIDATE_ARGS(Z_NUMBER, Z_OPTIONAL Z_ARRAY Z_STRING, Z_OPTIONAL Z_STRING);
+    ZJS_VALIDATE_ARGS(Z_NUMBER, Z_OPTIONAL Z_ARRAY Z_STRING Z_BUFFER, Z_OPTIONAL Z_STRING);
 
     ZJS_GET_HANDLE(this, spi_handle_t, handle, spi_type_info);
 
@@ -144,13 +144,18 @@ static ZJS_DECL_FUNC(zjs_spi_transceive)
                 }
             }
         }
-        else {
+        else if (jerry_value_is_string(argv[1])){
             tx_buf_obj = zjs_buffer_create(jerry_get_string_size(buffer), &tx_buf);
             // zjs_copy_jstring adds a null terminator, which we don't want
             // so make a new string instead and remove it.
             char *tmpBuf = zjs_alloc_from_jstring(argv[1], NULL);
             strncpy(tx_buf->buffer, tmpBuf, tx_buf->bufsize);
             zjs_free(tmpBuf);
+        }
+        else {
+            // If we were passed a buffer just use it as is
+            tx_buf = zjs_buffer_find(argv[1]);
+            tx_buf_obj = buffer;
         }
         // If this is a read / write
         if (dir_arg == ZJS_TOPOLOGY_FULL_DUPLEX) {
