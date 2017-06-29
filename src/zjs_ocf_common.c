@@ -466,7 +466,6 @@ jerry_value_t zjs_ocf_init()
 #if defined(CONFIG_NET_L2_BLUETOOTH)
     // init BLE address
     zjs_init_ble_address();
-    zjs_obj_add_function(ocf_object, zjs_set_ble_address, "setBleAddress");
 #endif
 #endif
     return ocf_object;

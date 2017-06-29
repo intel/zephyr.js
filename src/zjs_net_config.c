@@ -1,25 +1,35 @@
 // Copyright (c) 2016-2017, Intel Corporation.
 
-// Zephyr includes
-#include <net/net_context.h>
 #include <net/net_if.h>
-#include <net/net_pkt.h>
+#ifdef BUILD_MODULE_NET_CONFIG
+#include <net/net_mgmt.h>
+#include <net/net_context.h>
+#endif
+
 #if defined(CONFIG_NET_L2_BLUETOOTH)
 #include <bluetooth/bluetooth.h>
+#include <bluetooth/storage.h>
 #include <gatt/ipss.h>
 #endif
 
-// ZJS includes
-#include "zjs_net_config.h"
 #include "zjs_util.h"
+#include "zjs_net_config.h"
+#include "zjs_callbacks.h"
+#include "zjs_event.h"
 
+#ifndef BUILD_MODULE_NET_CONFIG
 static u8_t net_enabled = 0;
+#endif
 #if defined(CONFIG_NET_L2_BLUETOOTH)
 static u8_t ble_enabled = 0;
 #endif
 
-void zjs_net_config(void)
+void zjs_net_config_default(void)
 {
+    /*
+     * if net-config was not included, just do the default configuration
+     */
+#ifndef BUILD_MODULE_NET_CONFIG
 #if defined(CONFIG_NET_L2_BLUETOOTH)
     if (!ble_enabled) {
         zjs_init_ble_address();
@@ -47,11 +57,33 @@ void zjs_net_config(void)
 #endif
         net_enabled = 1;
     }
+#endif
 }
 
+struct sockaddr *zjs_net_config_get_ip(struct net_context *context)
+{
+    struct net_if *iface = net_context_get_iface(context);
+    if (net_context_get_family(context) == AF_INET) {
+#ifndef CONFIG_NET_IPV4
+        return NULL;
+#else
+        return (struct sockaddr *)&iface->ipv4.unicast[0].address.in_addr;
+#endif
+    } else {
+#ifndef CONFIG_NET_IPV6
+        return NULL;
+#else
+        return (struct sockaddr *)&iface->ipv6.unicast[0].address.in6_addr;
+#endif
+    }
+}
+
+#ifdef CONFIG_NET_L2_BLUETOOTH
 static bt_addr_le_t id_addr;
 #ifdef ZJS_CONFIG_BLE_ADDRESS
 static char default_ble[18] = ZJS_CONFIG_BLE_ADDRESS;
+#else
+static char default_ble[18] = "AA:BB:CC:DD:EE:FF";
 #endif
 
 static ssize_t zjs_ble_storage_read(const bt_addr_le_t *addr, u16_t key,
@@ -101,7 +133,95 @@ static int str2bt_addr_le(const char *str, const char *type, bt_addr_le_t *addr)
     return 0;
 }
 
-ZJS_DECL_FUNC(zjs_set_ble_address)
+void zjs_init_ble_address()
+{
+    static const struct bt_storage storage = {
+        .read = zjs_ble_storage_read,
+        .write = NULL,
+        .clear = NULL,
+    };
+
+    if (str2bt_addr_le(default_ble, "random", &id_addr) < 0) {
+        ERR_PRINT("bad BLE address string\n");
+        return;
+    }
+    DBG_PRINT("BLE addr is set to: %s\n", default_ble);
+    BT_ADDR_SET_STATIC(&id_addr.a);
+    bt_storage_register(&storage);
+}
+#endif
+
+#ifdef BUILD_MODULE_NET_CONFIG
+#ifdef CONFIG_NET_DHCPV4
+static struct net_mgmt_event_callback dhcp_cb;
+static zjs_callback_id dhcp_id = -1;
+
+static void dhcp_callback(struct net_mgmt_event_callback *cb,
+                          u32_t mgmt_event,
+                          struct net_if *iface)
+{
+    int i = 0;
+
+    if (mgmt_event != NET_EVENT_IPV4_ADDR_ADD) {
+        return;
+    }
+
+    for (i = 0; i < NET_IF_MAX_IPV4_ADDR; i++) {
+        char buf[NET_IPV4_ADDR_LEN];
+
+        if (iface->ipv4.unicast[i].addr_type != NET_ADDR_DHCP) {
+            continue;
+        }
+
+        net_addr_ntop(AF_INET,
+                      &iface->ipv4.unicast[i].address.in_addr,
+                      buf,
+                      sizeof(buf));
+        ZVAL addr = jerry_create_string(buf);
+
+        // NET_INFO("Lease time: %u seconds", iface->dhcpv4.lease_time);
+        net_addr_ntop(AF_INET,
+                      &iface->ipv4.netmask,
+                      buf,
+                      sizeof(buf));
+        ZVAL subnet = jerry_create_string(buf);
+
+        net_addr_ntop(AF_INET,
+                      &iface->ipv4.gw,
+                      buf,
+                      sizeof(buf));
+        ZVAL gateway = jerry_create_string(buf);
+
+        jerry_value_t args[] = { addr, subnet, gateway };
+        zjs_signal_callback(dhcp_id, args, sizeof(jerry_value_t) * 3);
+        dhcp_id = -1;
+
+        return;
+    }
+}
+
+static ZJS_DECL_FUNC(dhcp)
+{
+    ZJS_VALIDATE_ARGS(Z_FUNCTION);
+
+    struct net_if *iface;
+
+    net_mgmt_init_event_callback(&dhcp_cb, dhcp_callback,
+            NET_EVENT_IPV4_ADDR_ADD);
+    net_mgmt_add_event_callback(&dhcp_cb);
+
+    iface = net_if_get_default();
+
+    dhcp_id = zjs_add_callback_once(argv[0], this, NULL, NULL);
+
+    net_dhcpv4_start(iface);
+
+    return ZJS_UNDEFINED;
+}
+#endif
+
+#ifdef CONFIG_NET_L2_BLUETOOTH
+static ZJS_DECL_FUNC(set_ble_address)
 {
 #ifndef ZJS_CONFIG_BLE_ADDRESS
     // args: address
@@ -126,22 +246,104 @@ ZJS_DECL_FUNC(zjs_set_ble_address)
 #endif
     return ZJS_UNDEFINED;
 }
-
-void zjs_init_ble_address()
-{
-#ifdef ZJS_CONFIG_BLE_ADDRESS
-    static const struct bt_storage storage = {
-        .read = zjs_ble_storage_read,
-        .write = NULL,
-        .clear = NULL,
-    };
-
-    if (str2bt_addr_le(default_ble, "random", &id_addr) < 0) {
-        ERR_PRINT("bad BLE address string\n");
-        return;
-    }
-    DBG_PRINT("BLE addr is set to: %s\n", default_ble);
-    BT_ADDR_SET_STATIC(&id_addr.a);
-    bt_storage_register(&storage);
 #endif
+
+static ZJS_DECL_FUNC(set_ip)
+{
+    ZJS_VALIDATE_ARGS(Z_STRING);
+
+    uint32_t size = 64;
+    char str[size];
+
+    zjs_copy_jstring(argv[0], str, &size);
+    if (!size) {
+        return RANGE_ERROR("IP address is too long");
+    }
+
+    struct sockaddr_in6 tmp = { 0 };
+
+    // check if v6
+    if(net_addr_pton(AF_INET6,
+            str,
+            &tmp.sin6_addr) < 0) {
+        // check if v4
+        struct sockaddr_in tmp1 = { 0 };
+        if(net_addr_pton(AF_INET,
+                str,
+                &tmp1.sin_addr) < 0) {
+#ifndef CONFIG_NET_IPv4
+            return NOTSUPPORTED_ERROR("IPv4 not supported");
+#else
+            if (!net_if_ipv4_addr_add(net_if_get_default(), &tmp1.sin_addr,
+                    NET_ADDR_MANUAL, 0)) {
+                return jerry_create_boolean(false);
+            }
+#endif
+        } else {
+            return TYPE_ERROR("String was not an IP address");
+        }
+    } else {
+#ifndef CONFIG_NET_IPV6
+        return NOTSUPPORTED_ERROR("IPv6 not supported");
+#else
+        if (!net_if_ipv6_addr_add(net_if_get_default(), &tmp.sin6_addr,
+                NET_ADDR_MANUAL, 0)) {
+            return jerry_create_boolean(false);
+        }
+#endif
+    }
+
+    return jerry_create_boolean(true);
 }
+
+static jerry_value_t config;
+
+static struct net_mgmt_event_callback cb;
+static void iface_event(struct net_mgmt_event_callback *cb,
+        u32_t mgmt_event, struct net_if *iface)
+{
+    if (mgmt_event & NET_EVENT_IF_UP) {
+        zjs_trigger_event(config, "netup", NULL, 0, NULL, NULL);
+    } else if (mgmt_event & NET_EVENT_IF_DOWN) {
+        zjs_trigger_event(config, "netdown", NULL, 0, NULL, NULL);
+    }
+}
+
+jerry_value_t zjs_net_config_init(void)
+{
+    config = jerry_create_object();
+
+    zjs_obj_add_function(config, set_ip, "setStaticIp");
+#ifdef CONFIG_NET_DHCPV4
+    zjs_obj_add_function(config, dhcp, "dhcp");
+#endif
+#ifdef CONFIG_NET_L2_BLUETOOTH
+    zjs_obj_add_function(config, set_ble_address, "setBleAddress");
+#endif
+    zjs_make_event(config, ZJS_UNDEFINED);
+
+    struct net_if *iface = net_if_get_default();
+    if (atomic_test_bit(iface->flags, NET_IF_UP)) {
+        // networking is already up
+        zjs_trigger_event(config, "netup", NULL, 0, NULL, NULL);
+    }
+    // notify when networking goes up/down
+    net_mgmt_init_event_callback(&cb, iface_event,
+            NET_EVENT_IF_UP | NET_EVENT_IF_DOWN);
+    net_mgmt_add_event_callback(&cb);
+
+#if defined(CONFIG_NET_L2_BLUETOOTH)
+    if (!ble_enabled) {
+        zjs_init_ble_address();
+        if (bt_enable(NULL)) {
+            return zjs_error_context("could not initialize BLE", 0, 0);
+        }
+        ipss_init();
+        ipss_advertise();
+        ble_enabled = 1;
+    }
+#endif
+
+    return config;
+}
+#endif
