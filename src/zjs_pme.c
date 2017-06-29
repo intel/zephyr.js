@@ -11,8 +11,16 @@
 #include "zjs_util.h"
 
 #define ZJS_PME_TIMEOUT_TICKS 5000
-#define MAX_NEURONS 128
+
+#define MAX_NEURONS     128
 #define MAX_VECTOR_SIZE 128
+
+#define RBF_MODE      0
+#define KNN_MODE      1
+#define L1_DISTANCE   0
+#define LSUP_DISTANCE 1
+
+#define NO_MATCH      0x7fff
 
 static struct k_sem pme_sem;
 
@@ -300,9 +308,14 @@ static ZJS_DECL_FUNC(zjs_pme_set_classifier_mode)
     // args: classifier mode
     ZJS_VALIDATE_ARGS(Z_NUMBER);
 
+    u32_t mode = jerry_get_number_value(argv[0]);
+    if (mode != RBF_MODE && mode != KNN_MODE) {
+        return zjs_error("invalid classifier mode");
+    }
+
     zjs_ipm_message_t send;
     send.type = TYPE_PME_SET_CLASSIFIER_MODE;
-    send.data.pme.c_mode = jerry_get_number_value(argv[0]);
+    send.data.pme.c_mode = mode;
 
     CALL_REMOTE_FUNCTION_NO_REPLY(send);
     return ZJS_UNDEFINED;
@@ -322,9 +335,14 @@ static ZJS_DECL_FUNC(zjs_pme_set_distance_mode)
     // args: distance mode
     ZJS_VALIDATE_ARGS(Z_NUMBER);
 
+    u32_t mode = jerry_get_number_value(argv[0]);
+    if (mode != L1_DISTANCE && mode != LSUP_DISTANCE) {
+        return zjs_error("invalid distance mode");
+    }
+
     zjs_ipm_message_t send;
     send.type = TYPE_PME_SET_DISTANCE_MODE;
-    send.data.pme.d_mode = jerry_get_number_value(argv[0]);
+    send.data.pme.d_mode = mode;
 
     CALL_REMOTE_FUNCTION_NO_REPLY(send);
     return ZJS_UNDEFINED;
@@ -497,23 +515,23 @@ jerry_value_t zjs_pme_init()
 
     // create object properties
     jerry_value_t val;
-    val = jerry_create_number(0);
+    val = jerry_create_number(RBF_MODE);
     zjs_set_property(pme_obj, "RBF_MODE", val);
     jerry_release_value(val);
 
-    val = jerry_create_number(1);
+    val = jerry_create_number(KNN_MODE);
     zjs_set_property(pme_obj, "KNN_MODE", val);
     jerry_release_value(val);
 
-    val = jerry_create_number(0);
+    val = jerry_create_number(L1_DISTANCE);
     zjs_set_property(pme_obj, "L1_DISTANCE", val);
     jerry_release_value(val);
 
-    val = jerry_create_number(1);
+    val = jerry_create_number(LSUP_DISTANCE);
     zjs_set_property(pme_obj, "LSUP_DISTANCE", val);
     jerry_release_value(val);
 
-    val = jerry_create_number(0x7fff);
+    val = jerry_create_number(NO_MATCH);
     zjs_set_property(pme_obj, "NO_MATCH", val);
     jerry_release_value(val);
 
