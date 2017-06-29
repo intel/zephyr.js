@@ -9,6 +9,8 @@ OCF_ROOT ?= deps/iotivity-constrained
 
 BUILD_DIR = $(ZJS_BASE)/outdir/linux/$(VARIANT)
 
+UNAME := $(shell uname)
+
 CORE_SRC +=	src/zjs_a101_pins.c \
 		src/zjs_board.c \
 		src/zjs_buffer.c \
@@ -97,18 +99,20 @@ BUILD_OBJ = $(CORE_OBJ:%.o=$(BUILD_DIR)/%.o)
 
 LINUX_MODULES="zjs_buffer.json,\
 zjs_console.json,\
-zjs_event.json,\
-zjs_iotivity_constrained.json,\
-zjs_ocf.json,\
-zjs_performance.json,\
+zjs_event.json,
+ifneq ($(UNAME),Darwin)
+LINUX_MODULES += zjs_iotivity_constrained.json,\
+zjs_ocf.json,
+endif
+LINUX_MODULES += zjs_performance.json,\
 zjs_promise.json,\
 zjs_test_callbacks.json,\
 zjs_test_promise.json,\
 zjs_gpio.json"
 
-UNAME := $(shell uname)
 ifneq ($(UNAME),Darwin)
 # Only build OCF on linux, until iotivity-constrained is fixed on Mac
+
 CORE_SRC +=	src/zjs_ocf_common.c \
 		src/zjs_ocf_client.c \
 		src/zjs_ocf_server.c

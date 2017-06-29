@@ -5,7 +5,7 @@
  * slightly modified to run on Linux.
  */
 
-#include "zjs_linux_port.h"
+#include "zjs_util.h"
 
 #ifndef likely
 #define likely(x)   __builtin_expect((long)!!(x), 1L)
