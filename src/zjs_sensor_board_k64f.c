@@ -136,8 +136,8 @@ static void zjs_sensor_fetch_sample(sensor_handle_t *handle)
 
     double reading[3];
     reading[0] = sensor_value_to_double(&val[0]);
-    reading[1] = sensor_value_to_double(&val[0]);
-    reading[2] = sensor_value_to_double(&val[0]);
+    reading[1] = sensor_value_to_double(&val[1]);
+    reading[2] = sensor_value_to_double(&val[2]);
 
     sensor_handle_t *h = handle;
     while (h) {
