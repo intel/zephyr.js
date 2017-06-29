@@ -5,7 +5,7 @@
                 "sensor_accel", "sensor_gyro", "sensor_light", "sensor_temp",
                 "spi"],
     "targets": ["arduino_101"],
-    "src": ["ashell/"],
+    "src": ["bshell/"],
     "zephyr_conf": {
         "arduino_101": [
             "CONFIG_EARLY_CONSOLE=y",
