@@ -48,7 +48,7 @@ interface PME {
     learn(number[] pattern, unsigned long category);
     unsigned long classify(number[] pattern);
     Neuron readNeuron(unsigned long id);
-    writeVector(unsigned char[] pattern);
+    writeVector(number[] pattern);
     unsigned short getCommittedCount();
     unsigned short getGlobalContext();
     setGlobalContext(unsigned short context);
@@ -123,7 +123,7 @@ The `maxIF` is the maximum influence value used on the neuron.
 
 ### PME.learn
 
-`void learn(unsigned char[] pattern, unsigned long category);`
+`void learn(number[] pattern, unsigned long category);`
 
 Takes a pattern and commits it to the network as training data for a given category.
 
@@ -132,7 +132,7 @@ The `category` indicates to the PME which category this training vector belongs 
 
 ### PME.classify
 
-`unsigned long classify(unsigned char[] pattern);`
+`unsigned long classify(number[] pattern);`
 
 Takes a pattern and uses the committed neurons in the network to classify the pattern.
 
@@ -152,7 +152,7 @@ Returns the `Neuron` object in which to write the neuron data.
 
 ### PME.writeVector (KNN_MODE only)
 
-`void writeVector(unsigned char[] pattern);`
+`void writeVector(number[] pattern);`
 
 (Should only be used in KNN_MODE.) Takes a pattern and uses the committed neurons in the network to classify the pattern.
 
@@ -164,7 +164,7 @@ The `pattern` is an array of bytes, up to 128 bytes in length.
 
 Gets the number of committed neurons in the network.
 
-Returns the number of comitted neurons in the network (a value between 1-128).
+Returns the number of comitted neurons in the network (a value between 0-128).
 
 ### PME.getGlobalContext
 
