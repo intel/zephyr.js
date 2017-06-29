@@ -465,6 +465,14 @@ void signal_callback_priv(zjs_callback_id id,
             0,  // we use value for CB_FLUSH_ONE/ALL
             (u32_t *)args,
             (u8_t)((size + 3) / 4));
+    // Need to unlock here or callback may be blocked when it gets called.
+    // NOTE: this is a temporary fix, we should implement a lock ID system
+    // rather than locking everything, as we are only trying to prevent a callback
+    // from being edited and called at the same time.
+    UNLOCK();
+#ifndef ZJS_LINUX_BUILD
+    zjs_loop_unblock();
+#endif
     if (ret != 0) {
         if (GET_TYPE(cb_map[id]->flags) == CALLBACK_TYPE_JS) {
             // for JS, acquire values and release them after servicing callback
@@ -478,10 +486,6 @@ void signal_callback_priv(zjs_callback_id id,
         zjs_ringbuf_error_count++;
         zjs_ringbuf_last_error = ret;
     }
-#ifndef ZJS_LINUX_BUILD
-    zjs_loop_unblock();
-#endif
-    UNLOCK();
 }
 
 zjs_callback_id zjs_add_c_callback(void *handle, zjs_c_callback_func callback)
