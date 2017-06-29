@@ -1,0 +1,6 @@
+{
+    "module": "net_config_default",
+    "depends": ["ipss"],
+    "src": ["zjs_net_config.c"],
+    "zjs_config": ["-I$(ZEPHYR_BASE)/samples/bluetooth"]
+}

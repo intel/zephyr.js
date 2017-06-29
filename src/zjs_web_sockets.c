@@ -867,7 +867,7 @@ static ZJS_DECL_FUNC(ws_server)
 
 jerry_value_t zjs_ws_init()
 {
-    zjs_net_config();
+    zjs_net_config_default();
 
     jerry_value_t ws = jerry_create_object();
     zjs_obj_add_function(ws, ws_server, "Server");

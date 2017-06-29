@@ -1,7 +1,7 @@
 {
     "module": "ocf",
     "require": "ocf",
-    "depends": ["events", "buffer", "promise", "net_config", "iotivity_constrained"],
+    "depends": ["events", "buffer", "promise", "net_config_default", "iotivity_constrained"],
     "src": {
         "client": {
             "src": ["zjs_ocf_client.c"],

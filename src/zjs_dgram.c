@@ -323,7 +323,7 @@ static ZJS_DECL_FUNC(zjs_dgram_sock_close)
 
 jerry_value_t zjs_dgram_init()
 {
-    zjs_net_config();
+    zjs_net_config_default();
 
     // create socket prototype object
     zjs_native_func_t array[] = {

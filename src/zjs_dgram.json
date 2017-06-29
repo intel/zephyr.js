@@ -1,7 +1,7 @@
 {
     "module": "dgram",
     "require": "dgram",
-    "depends": ["buffer", "net_config"],
+    "depends": ["buffer", "net_config_default"],
     "zephyr_conf": {
         "all": [
             "CONFIG_NETWORKING=y",

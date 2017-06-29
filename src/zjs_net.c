@@ -11,14 +11,7 @@
 #include <net/net_context.h>
 #include <net/net_core.h>
 #include <net/net_if.h>
-#include <net/net_mgmt.h>
 #include <net/net_pkt.h>
-
-#if defined(CONFIG_NET_L2_BLUETOOTH)
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
-#include <gatt/ipss.h>
-#endif
 
 // ZJS includes
 #include "zjs_buffer.h"
@@ -277,27 +270,25 @@ static void tcp_received(struct net_context *context,
 {
     sock_handle_t *handle = (sock_handle_t *)user_data;
 
+    if (status == 0 && buf == NULL) {
+        // socket close
+        DBG_PRINT("closing socket, context=%p, socket=%u\n", context,
+                handle->socket);
+        ZVAL_MUTABLE error = zjs_custom_error("ReadError",
+                "socket has been closed",
+                0, 0);
+        jerry_value_clear_error_flag(&error);
+        zjs_trigger_event(handle->socket, "error", &error, 1, NULL, NULL);
+        zjs_trigger_event(handle->socket, "close", NULL, 0, post_closed,
+                handle);
+        return;
+    }
+
     if (handle && buf) {
         start_socket_timeout(handle, handle->timeout);
 
         u32_t len = net_pkt_appdatalen(buf);
         u8_t *data = net_pkt_appdata(buf);
-
-        // TODO: Probably not the right way to check if a socket is closed
-        if (len == 0 && data == NULL) {
-            // socket close
-            DBG_PRINT("closing socket, context=%p, socket=%u\n", context,
-                      handle->socket);
-            ZVAL_MUTABLE error = zjs_custom_error("ReadError",
-                                                  "socket has been closed",
-                                                  0, 0);
-            jerry_value_clear_error_flag(&error);
-            zjs_trigger_event(handle->socket, "error", &error, 1, NULL, NULL);
-            zjs_trigger_event(handle->socket, "close", NULL, 0, post_closed,
-                              handle);
-            net_pkt_unref(buf);
-            return;
-        }
 
         if (len && data) {
             DBG_PRINT("received data, context=%p, data=%p, len=%u\n", context,
@@ -546,7 +537,6 @@ static void add_socket_connection(jerry_value_t socket,
     net_addr_ntop(family, (const void *)remote, remote_ip, 64);
 
     zjs_obj_add_string(socket, remote_ip, "remoteAddress");
-    zjs_obj_add_string(socket, "IPv6", "remoteFamily");
     zjs_obj_add_number(socket, net->port, "remotePort");
 
     char local_ip[64];
@@ -556,23 +546,10 @@ static void add_socket_connection(jerry_value_t socket,
     zjs_obj_add_number(socket, net->port, "localPort");
     if (family == AF_INET6) {
         zjs_obj_add_string(socket, "IPv6", "family");
+        zjs_obj_add_string(socket, "IPv6", "remoteFamily");
     } else {
         zjs_obj_add_string(socket, "IPv4", "family");
-    }
-}
-
-static void post_connection(void *handle)
-{
-    sock_handle_t *sock_handle = (sock_handle_t *)handle;
-    int ret = net_context_recv(sock_handle->tcp_sock, tcp_received, 0,
-                               sock_handle);
-    if (ret < 0) {
-        ERR_PRINT("Cannot receive TCP packet (family %d)\n",
-                  net_context_get_family(sock_handle->tcp_sock));
-        // this seems to mean the remote exists but the connection was not made
-        zjs_trigger_event(sock_handle->handle->server, "error", NULL, 0, NULL,
-                          NULL);
-        return;
+        zjs_obj_add_string(socket, "IPv4", "remoteFamily");
     }
 }
 
@@ -599,8 +576,19 @@ static void tcp_accepted(struct net_context *context,
     sock_handle->next = opened_sockets;
     opened_sockets = sock_handle;
 
-    zjs_trigger_event(handle->server, "connection", &sock, 1, post_connection,
-                      sock_handle);
+    int ret = net_context_recv(context, tcp_received, 0, sock_handle);
+
+    if (ret < 0) {
+        ERR_PRINT("Cannot receive TCP packet (family %d), ret=%d\n",
+                net_context_get_family(sock_handle->tcp_sock), ret);
+        // this seems to mean the remote exists but the connection was not made
+        zjs_trigger_event(sock_handle->handle->server, "error", NULL, 0, NULL,
+                NULL);
+        return;
+    }
+
+    zjs_trigger_event(handle->server, "connection", &sock, 1, NULL,
+            sock_handle);
 }
 
 /**
@@ -618,17 +606,21 @@ static ZJS_DECL_FUNC(server_address)
     zjs_obj_add_number(info, handle->port, "port");
 
     sa_family_t family = net_context_get_family(handle->tcp_sock);
+    char ipstr[INET6_ADDRSTRLEN];
+
     if (family == AF_INET6) {
         zjs_obj_add_string(info, "IPv6", "family");
+        struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)&handle->local;
+        net_addr_ntop(family, &addr6->sin6_addr, ipstr, INET6_ADDRSTRLEN);
+        zjs_obj_add_string(info, ipstr, "address");
+
     } else {
         zjs_obj_add_string(info, "IPv4", "family");
+        struct sockaddr_in *addr = (struct sockaddr_in *)&handle->local;
+        net_addr_ntop(family, &addr->sin_addr, ipstr, INET6_ADDRSTRLEN);
+        zjs_obj_add_string(info, ipstr, "address");
     }
 
-    // FIXME: this seems to return :: instead of the real address
-    char ipstr[INET6_ADDRSTRLEN];
-    struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)&handle->local;
-    net_addr_ntop(family, &addr6->sin6_addr, ipstr, INET6_ADDRSTRLEN);
-    zjs_obj_add_string(info, ipstr, "address");
 
     return info;
 }
@@ -716,10 +708,12 @@ static ZJS_DECL_FUNC(server_listen)
     double backlog = 0;
     u32_t size = NET_HOSTNAME_MAX;
     char hostname[size];
+    double family = 0;
 
     zjs_obj_get_double(argv[0], "port", &port);
     zjs_obj_get_double(argv[0], "backlog", &backlog);
     zjs_obj_get_string(argv[0], "host", hostname, size);
+    zjs_obj_get_double(argv[0], "family", &family);
 
     if (optcount) {
         zjs_add_event_listener(this, "listening", argv[1]);
@@ -727,17 +721,38 @@ static ZJS_DECL_FUNC(server_listen)
 
     struct sockaddr addr;
     memset(&addr, 0, sizeof(struct sockaddr));
-    struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)&addr;
 
-    addr6->sin6_family = AF_INET6;
-    addr6->sin6_port = htons((int)port);
+    // default to IPv4
+    if (family == 0 || family == 4) {
+        family = 4;
+        CHECK(net_context_get(AF_INET, SOCK_STREAM, IPPROTO_TCP,
+                              &handle->tcp_sock))
+
+        struct sockaddr_in *addr4 = (struct sockaddr_in *)&addr;
+
+        addr4->sin_family = AF_INET;
+        addr4->sin_port = htons((int)port);
+
+        net_addr_pton(AF_INET, hostname, &addr4->sin_addr);
+    } else {
+        CHECK(net_context_get(AF_INET6, SOCK_STREAM, IPPROTO_TCP,
+                              &handle->tcp_sock))
+
+        struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)&addr;
+
+        addr6->sin6_family = AF_INET6;
+        addr6->sin6_port = htons((int)port);
+
+        net_addr_pton(AF_INET6, hostname, &addr6->sin6_addr);
+    }
 
     CHECK(net_context_bind(handle->tcp_sock, &addr, sizeof(struct sockaddr)));
     CHECK(net_context_listen(handle->tcp_sock, (int)backlog));
 
     handle->listening = 1;
     handle->port = (u16_t)port;
-    handle->local = addr;
+
+    memcpy(&handle->local, zjs_net_config_get_ip(handle->tcp_sock), sizeof(struct sockaddr));
     zjs_obj_add_boolean(this, true, "listening");
 
     zjs_trigger_event(this, "listening", NULL, 0, NULL, NULL);
@@ -767,7 +782,6 @@ static ZJS_DECL_FUNC(net_create_server)
 {
     ZJS_VALIDATE_ARGS_OPTCOUNT(optcount, Z_OPTIONAL Z_FUNCTION);
 
-    int ret;
     jerry_value_t server = jerry_create_object();
 
     zjs_obj_add_boolean(server, false, "listening");
@@ -784,9 +798,6 @@ static ZJS_DECL_FUNC(net_create_server)
         jerry_release_value(server);
         return zjs_error("could not alloc server handle");
     }
-
-    CHECK(net_context_get(AF_INET6, SOCK_STREAM, IPPROTO_TCP,
-                          &handle->tcp_sock))
 
     jerry_set_object_native_pointer(server, handle, &net_type_info);
 
@@ -1080,27 +1091,9 @@ static ZJS_DECL_FUNC(net_is_ip6)
 
 static jerry_value_t net_obj;
 
-#if defined(CONFIG_NET_L2_BLUETOOTH)
-static zjs_callback_id up_id = -1;
-
-static void up_callback(void *handle, const void *args)
-{
-    zjs_trigger_event(net_obj, "up", NULL, 0, NULL, NULL);
-    zjs_remove_callback(up_id);
-}
-
-static struct net_mgmt_event_callback cb;
-static void event_iface_up(struct net_mgmt_event_callback *cb,
-                           u32_t mgmt_event,
-                           struct net_if *iface)
-{
-    zjs_signal_callback(up_id, NULL, 0);
-}
-#endif
-
 jerry_value_t zjs_net_init()
 {
-    zjs_net_config();
+    zjs_net_config_default();
 
     zjs_native_func_t net_array[] = {
             { net_create_server, "createServer" },
@@ -1138,20 +1131,7 @@ jerry_value_t zjs_net_init()
     zjs_obj_add_functions(zjs_net_server_prototype, server_array);
 
     net_obj = jerry_create_object();
-    //jerry_set_prototype(net_obj, zjs_net_prototype);
-    zjs_make_event(net_obj, zjs_net_prototype);
-
-    /*
-     * TODO: move to net config?
-     */
-#if defined(CONFIG_NET_L2_BLUETOOTH)
-    struct net_if *iface = net_if_get_default();
-    if (!atomic_test_bit(iface->flags, NET_IF_UP)) {
-        net_mgmt_init_event_callback(&cb, event_iface_up, NET_EVENT_IF_UP);
-        net_mgmt_add_event_callback(&cb);
-    }
-    up_id = zjs_add_c_callback(NULL, up_callback);
-#endif
+    jerry_set_prototype(net_obj, zjs_net_prototype);
 
     return jerry_acquire_value(net_obj);
 }

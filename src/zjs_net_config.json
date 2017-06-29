@@ -1,6 +1,18 @@
 {
-    "module": "net_config",
-    "depends": ["ipss"],
-    "src": ["zjs_net_config.c"],
-    "zjs_config": ["-I$(ZEPHYR_BASE)/samples/bluetooth"]
+    "module": "net-config",
+    "require": "net-config",
+    "depends": ["events"],
+    "zjs_config": ["-DBUILD_MODULE_NET_CONFIG"],
+    "zephyr_conf": {
+        "all": [
+            "CONFIG_NETWORKING=y",
+            "CONFIG_NET_MGMT=y",
+            "CONFIG_NET_MGMT_EVENT=y"
+        ],
+        "frdm_k64f": [
+            "CONFIG_NET_DHCPV4=y"
+        ]
+    },
+    "init": ["zjs_net_config_init"],
+    "header": ["zjs_net_config.h"]
 }
