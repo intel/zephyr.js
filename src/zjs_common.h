@@ -74,6 +74,7 @@ int zjs_get_ms(void);
 #define TEMP_DEVICE_NAME BMI160_NAME
 #elif CONFIG_BOARD_FRDM_K64F
 #define ACCEL_DEVICE_NAME CONFIG_FXOS8700_NAME
+#define MAGN_DEVICE_NAME CONFIG_FXOS8700_NAME
 #endif
 
 // default to blank if not found in board configs
@@ -87,6 +88,10 @@ int zjs_get_ms(void);
 
 #ifndef LIGHT_DEVICE_NAME
 #define LIGHT_DEVICE_NAME ""
+#endif
+
+#ifndef MAGN_DEVICE_NAME
+#define MAGN_DEVICE_NAME ""
 #endif
 
 #ifndef TEMP_DEVICE_NAME

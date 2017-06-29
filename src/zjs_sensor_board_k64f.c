@@ -22,6 +22,9 @@
 #ifdef BUILD_MODULE_SENSOR_TEMP
 #include "zjs_sensor_temp.h"
 #endif
+#ifdef BUILD_MODULE_SENSOR_MAGN
+#include "zjs_sensor_magn.h"
+#endif
 
 typedef sensor_instance_t* (*initcb_t)();
 typedef void (*cleanupcb_t)();
@@ -46,6 +49,9 @@ sensor_module_t sensor_modules[] = {
 #ifdef BUILD_MODULE_SENSOR_TEMP
     { SENSOR_CHAN_TEMP, zjs_sensor_temp_init, zjs_sensor_temp_cleanup },
 #endif
+#ifdef BUILD_MODULE_SENSOR_MAGN
+    { SENSOR_CHAN_MAGN_XYZ, zjs_sensor_magn_init, zjs_sensor_magn_cleanup },
+#endif
 };
 
 int zjs_sensor_board_start(sensor_handle_t *handle)
@@ -58,6 +64,7 @@ int zjs_sensor_board_start(sensor_handle_t *handle)
     case SENSOR_CHAN_ACCEL_XYZ:
     case SENSOR_CHAN_GYRO_XYZ:
     case SENSOR_CHAN_LIGHT:
+    case SENSOR_CHAN_MAGN_XYZ:
     case SENSOR_CHAN_TEMP:
         break;
 
@@ -79,6 +86,7 @@ int zjs_sensor_board_stop(sensor_handle_t *handle)
     case SENSOR_CHAN_ACCEL_XYZ:
     case SENSOR_CHAN_GYRO_XYZ:
     case SENSOR_CHAN_LIGHT:
+    case SENSOR_CHAN_MAGN_XYZ:
     case SENSOR_CHAN_TEMP:
         break;
 
@@ -117,6 +125,11 @@ static void zjs_sensor_fetch_sample(sensor_handle_t *handle)
     if (handle->channel == SENSOR_CHAN_ACCEL_XYZ) {
         if (sensor_channel_get(handle->controller->dev, handle->channel, val) < 0) {
             ERR_PRINT("failed to read accelerometer channel\n");
+            return;
+        }
+    } else if (handle->channel == SENSOR_CHAN_MAGN_XYZ) {
+        if (sensor_channel_get(handle->controller->dev, handle->channel, val) < 0) {
+            ERR_PRINT("failed to read magnetometer channel\n");
             return;
         }
     }
