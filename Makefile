@@ -51,6 +51,13 @@ ifeq ($(filter $(MAKECMDGOALS),linux), linux)
 $(error 'linux' make target is deprecated, use "make BOARD=linux")
 endif
 
+ifeq ($(filter $(MAKECMDGOALS),ide), ide)
+ASHELL_TYPE=ide
+endif
+ifeq ($(filter $(MAKECMDGOALS),ashell), ashell)
+ASHELL_TYPE=cli
+endif
+
 OCF_ROOT ?= deps/iotivity-constrained
 JS ?= samples/HelloWorld.js
 VARIANT ?= release
@@ -87,7 +94,7 @@ endif
 # Settings for ashell builds
 FORCE=zjs_common.json
 ifneq (,$(filter $(MAKECMDGOALS),ide ashell))
-ASHELL=zjs_ashell.json
+ASHELL=zjs_ashell_$(ASHELL_TYPE).json
 FORCE=$(ASHELL)
 ASHELL_ARC=zjs_ashell_arc.json
 ZJS_FLAGS := "$(ZJS_FLAGS) -DZJS_FIND_FUNC_NAME"
