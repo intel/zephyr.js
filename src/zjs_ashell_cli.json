@@ -1,5 +1,5 @@
 {
-    "module": "ashell",
+    "module": "ashell_cli",
     "depends": ["aio", "arduino101_pins", "ble", "common", "console", "fs",
                 "gpio", "grove_lcd", "i2c", "performance", "pwm",
                 "sensor_accel", "sensor_gyro", "sensor_light", "sensor_temp",
@@ -34,7 +34,8 @@
             "CONFIG_BLUETOOTH_LE=y",
             "CONFIG_BLUETOOTH_SMP=y",
             "CONFIG_BLUETOOTH_PERIPHERAL=y",
-            "CONFIG_BLUETOOTH_GATT_DYNAMIC_DB=y"
+            "CONFIG_BLUETOOTH_GATT_DYNAMIC_DB=y",
+            "CONFIG_USB_CDC_ACM=y"
         ]
     },
     "zjs_config": ["-DZJS_ASHELL"]
