@@ -331,11 +331,13 @@ static bool load_require_modules(char *file_buffer)
                 cur->reqs_checked = true;
                 zjs_free(req_file_buffer);
                 if (!add_success) {
+                    ERR_PRINT("Failed to add JS module: %s\n", cur->file_name);
                     free_list(&req_list);
                     return false;
                 }
             }
             else {
+                ERR_PRINT("JS module not found: %s\n", cur->file_name);
                 free_list(&req_list);
                 return false;
             }
