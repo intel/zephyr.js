@@ -18,12 +18,12 @@ static const s32_t SAVE_RESTORE_SIZE = 128;
 typedef enum {
     RBF_MODE = 0,
     KNN_MODE = 1
-} PATTERN_MATCHING_CLASSIFICATION_MODE;
+} PME_CLASSIFICATION_MODE;
 
 typedef enum {
     L1_DISTANCE = 0,
     LSUP_DISTANCE = 1
-} PATTERN_MATCHING_DISTANCE_MODE;
+} PME_DISTANCE_MODE;
 
 typedef struct neuron_data {
     u16_t context;
@@ -38,12 +38,11 @@ void curie_pme_begin(void);
 
 void curie_pme_forget(void);
 
-void curie_pme_configure(
-    u16_t global_context,
-    PATTERN_MATCHING_DISTANCE_MODE distance_mode,
-    PATTERN_MATCHING_CLASSIFICATION_MODE classification_mode,
-    u16_t min_if,
-    u16_t max_if);
+void curie_pme_configure(u16_t global_context,
+                         PME_DISTANCE_MODE distance_mode,
+                         PME_CLASSIFICATION_MODE classification_mode,
+                         u16_t min_if,
+                         u16_t max_if);
 
 u16_t curie_pme_learn(u8_t *pattern_vector,
                       s32_t vector_length,
@@ -53,17 +52,17 @@ u16_t curie_pme_classify(u8_t *pattern_vector, s32_t vector_length);
 u16_t curie_pme_read_neuron(s32_t neuron_id, neuron_data_t *data_array);
 
 // save and restore knowledge
-void curie_pme_begin_save_mode(void);  // saves the contents of the NSR register
+void curie_pme_begin_save_mode(void);
 u16_t curie_pme_iterate_neurons_to_save(neuron_data_t *data_array);
-void curie_pme_end_save_mode(void);  // restores the NSR value saved
+void curie_pme_end_save_mode(void);
 
 void curie_pme_begin_restore_mode(void);
 u16_t curie_pme_iterate_neurons_to_restore(neuron_data_t *data_array);
 void curie_pme_end_restore_mode(void);
 
 // getter and setters
-PATTERN_MATCHING_DISTANCE_MODE curie_pme_get_distance_mode(void);
-void curie_pme_set_distance_mode(PATTERN_MATCHING_DISTANCE_MODE mode);
+PME_DISTANCE_MODE curie_pme_get_distance_mode(void);
+void curie_pme_set_distance_mode(PME_DISTANCE_MODE mode);
 u16_t curie_pme_get_global_context(void);
 void curie_pme_set_global_context(u16_t context);  // valid range is 1-127
 u16_t curie_pme_get_neuron_context(void);
@@ -76,9 +75,8 @@ void curie_pme_set_neuron_context(u16_t context);  // valid range is 1-127
 // begin_restore_mode() and end_restore_mode()
 u16_t curie_pme_get_committed_count(void);
 
-PATTERN_MATCHING_CLASSIFICATION_MODE
-curie_pme_get_classifier_mode(void);  // RBF or KNN
-void curie_pme_set_classifier_mode(PATTERN_MATCHING_CLASSIFICATION_MODE mode);
+PME_CLASSIFICATION_MODE curie_pme_get_classifier_mode(void);
+void curie_pme_set_classifier_mode(PME_CLASSIFICATION_MODE mode);
 
 // write vector is used for kNN recognition and does not alter
 // the CAT register, which moves the chain along.
