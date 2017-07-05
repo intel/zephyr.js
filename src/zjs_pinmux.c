@@ -39,13 +39,14 @@ int frdm_k64f_pinmux_setup(struct device *unused)
     pinmux_pin_set(portc,  4, PORT_PCR_MUX(kPORT_MuxAsGpio));
     pinmux_pin_set(portc, 16, PORT_PCR_MUX(kPORT_MuxAsGpio));
     pinmux_pin_set(portc, 17, PORT_PCR_MUX(kPORT_MuxAsGpio));
-
+#ifndef CONFIG_SPI_0
+    /* SPI0 CS0, SCK, SOUT, SIN */
     struct device *portd = device_get_binding(CONFIG_PINMUX_MCUX_PORTD_NAME);
     pinmux_pin_set(portd, 0, PORT_PCR_MUX(kPORT_MuxAsGpio));
     pinmux_pin_set(portd, 1, PORT_PCR_MUX(kPORT_MuxAsGpio));
     pinmux_pin_set(portd, 2, PORT_PCR_MUX(kPORT_MuxAsGpio));
     pinmux_pin_set(portd, 3, PORT_PCR_MUX(kPORT_MuxAsGpio));
-
+#endif
     struct device *porte = device_get_binding(CONFIG_PINMUX_MCUX_PORTE_NAME);
 #if CONFIG_I2C_0
     pinmux_pin_set(porte, 24, PORT_PCR_MUX(kPORT_MuxAlt5)
