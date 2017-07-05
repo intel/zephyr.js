@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 #ifndef __zjs_ocf_client__
 #define __zjs_ocf_client__
@@ -15,4 +15,4 @@ jerry_value_t zjs_ocf_client_init();
  */
 void zjs_ocf_client_cleanup();
 
-#endif // __zjs_ocf_client__
+#endif  // __zjs_ocf_client__

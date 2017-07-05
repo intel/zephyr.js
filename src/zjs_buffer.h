@@ -5,6 +5,9 @@
 
 #include "jerryscript.h"
 
+// ZJS includes
+#include "zjs_common.h"
+
 /** Initialize the buffer module, or reinitialize after cleanup */
 void zjs_buffer_init();
 

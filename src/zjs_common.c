@@ -1,5 +1,6 @@
 // Copyright (c) 2016-2017, Intel Corporation.
 
+// C includes
 #include <stdint.h>
 #include <string.h>
 
@@ -104,5 +105,5 @@ int zjs_get_ms(void)
     return milli;
 }
 
-#endif // ZJS_LINUX_BUILD
-#endif // DEBUG_BUILD
+#endif  // ZJS_LINUX_BUILD
+#endif  // DEBUG_BUILD

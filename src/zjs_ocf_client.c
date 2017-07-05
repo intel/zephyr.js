@@ -2,22 +2,25 @@
 
 #ifdef BUILD_MODULE_OCF
 
+// C includes
+#include <pthread.h>
+#include <signal.h>
+#include <stdio.h>
+
+// JerryScript includes
 #include "jerryscript.h"
 
-#include "zjs_util.h"
-#include "zjs_common.h"
-
-#include "zjs_ocf_client.h"
-#include "zjs_ocf_common.h"
-
+// OCF includes
 #include "oc_api.h"
-#include <stdio.h>
-#include <signal.h>
-#include <pthread.h>
 #include "port/oc_clock.h"
 
-#include "zjs_ocf_encoder.h"
+// ZJS includes
+#include "zjs_common.h"
 #include "zjs_event.h"
+#include "zjs_ocf_client.h"
+#include "zjs_ocf_common.h"
+#include "zjs_ocf_encoder.h"
+#include "zjs_util.h"
 
 //#define USE_PROMISES
 
@@ -67,7 +70,8 @@ static struct ocf_handler *new_ocf_handler(struct client_resource *res)
     return h;
 }
 
-static jerry_value_t make_ocf_error(const char *name, const char *msg, struct client_resource *res)
+static jerry_value_t make_ocf_error(const char *name, const char *msg,
+                                    struct client_resource *res)
 {
     if (res) {
         ZVAL ret = jerry_create_object();
@@ -137,24 +141,30 @@ static jerry_value_t get_props_from_response(oc_client_response_t *data)
     DBG_PRINT("properties:\n");
 
     while (rep != NULL) {
-        DBG_PRINT("Type: %u, Key: %s, Value: ", rep->type, oc_string(rep->name));
+        DBG_PRINT("Type: %u, Key: %s, Value: ", rep->type,
+                  oc_string(rep->name));
         switch (rep->type) {
         case BOOL:
-            zjs_obj_add_boolean(prop_object, rep->value.boolean, oc_string(rep->name));
+            zjs_obj_add_boolean(prop_object, rep->value.boolean,
+                                oc_string(rep->name));
             DBG_PRINT("%d\n", rep->value.boolean);
             break;
         case INT:
-            zjs_obj_add_number(prop_object, (double)rep->value.integer, oc_string(rep->name));
+            zjs_obj_add_number(prop_object, (double)rep->value.integer,
+                               oc_string(rep->name));
             DBG_PRINT("%ld\n", (u32_t)rep->value.integer);
             break;
         case BYTE_STRING:
         case STRING:
-            zjs_obj_add_string(prop_object, oc_string(rep->value.string), oc_string(rep->name));
+            zjs_obj_add_string(prop_object, oc_string(rep->value.string),
+                               oc_string(rep->name));
             DBG_PRINT("%s\n", oc_string(rep->value.string));
             break;
         case STRING_ARRAY:
             DBG_PRINT("[ ");
-            for (i = 0; i < oc_string_array_get_allocated_size(rep->value.array); i++) {
+            for (i = 0;
+                 i < oc_string_array_get_allocated_size(rep->value.array);
+                 i++) {
                 DBG_PRINT("%s ", oc_string_array_get_item(rep->value.array, i));
             }
             DBG_PRINT("]\n");
@@ -177,7 +187,8 @@ static void print_props_data(oc_client_response_t *data)
     int i;
     oc_rep_t *rep = data->payload;
     while (rep != NULL) {
-        ZJS_PRINT("Type: %u, Key: %s, Value: ", rep->type, oc_string(rep->name));
+        ZJS_PRINT("Type: %u, Key: %s, Value: ", rep->type,
+                  oc_string(rep->name));
         switch (rep->type) {
         case BOOL:
             ZJS_PRINT("%d\n", rep->value.boolean);
@@ -191,7 +202,9 @@ static void print_props_data(oc_client_response_t *data)
             break;
         case STRING_ARRAY:
             ZJS_PRINT("[ ");
-            for (i = 0; i < oc_string_array_get_allocated_size(rep->value.array); i++) {
+            for (i = 0;
+                 i < oc_string_array_get_allocated_size(rep->value.array);
+                 i++) {
                 ZJS_PRINT("%s ", oc_string_array_get_item(rep->value.array, i));
             }
             ZJS_PRINT("]\n");
@@ -268,7 +281,8 @@ static jerry_value_t create_resource(struct client_resource *client)
     zjs_set_property(resource, "resourceTypes", client->types_array);
     zjs_set_property(resource, "interfaces", client->iface_array);
 
-    DBG_PRINT("id=%s, path=%s, obj number=%lu\n", client->device_id, client->resource_path, resource);
+    DBG_PRINT("id=%s, path=%s, obj number=%lu\n", client->device_id,
+              client->resource_path, resource);
 
     return resource;
 }
@@ -300,15 +314,15 @@ static void free_client(void *native_p)
     }
 }
 
-static const jerry_object_native_info_t ocf_type_info =
-{
+static const jerry_object_native_info_t ocf_type_info = {
    .free_cb = free_client
 };
 
 /*
  * Add a discovered resource to the list of resource_list
  */
-static void add_resource(char *id, char *type, char *path, jerry_value_t client, jerry_value_t listener)
+static void add_resource(char *id, char *type, char *path,
+                         jerry_value_t client, jerry_value_t listener)
 {
     struct client_resource *new = zjs_malloc(sizeof(struct client_resource));
 
@@ -376,7 +390,7 @@ static oc_discovery_flags_t discovery(const char *di,
     struct ocf_handler *h = (struct ocf_handler *)user_handle;
     int i;
     int uri_len = strlen(uri);
-    uri_len = (uri_len >= MAX_URI_LENGTH)?MAX_URI_LENGTH-1:uri_len;
+    uri_len = (uri_len >= MAX_URI_LENGTH) ? MAX_URI_LENGTH - 1 : uri_len;
 
     for (i = 0; i < oc_string_array_get_allocated_size(types); i++) {
         char *t = oc_string_array_get_item(types, i);
@@ -533,8 +547,7 @@ static ZJS_DECL_FUNC(ocf_find_resources)
 
     if (jerry_value_is_function(argv[0])) {
         listener = argv[0];
-    }
-    else if (argc >= 2) {
+    } else if (argc >= 2) {
         listener = argv[1];
     }
 
@@ -573,7 +586,8 @@ static void ocf_get_handler(oc_client_response_t *data)
                 zjs_set_property(resource_val, "properties", properties_val);
                 zjs_trigger_event(resource->client, "update", &resource_val, 1,
                                   NULL, NULL);
-                jerry_resolve_or_reject_promise(h->promise_obj, resource_val, true);
+                jerry_resolve_or_reject_promise(h->promise_obj, resource_val,
+                                                true);
                 jerry_release_value(h->promise_obj);
 
                 DBG_PRINT("GET response OK, device_id=%s\n",
@@ -614,8 +628,7 @@ static ZJS_DECL_FUNC(ocf_retrieve)
     if (argc > 1) {
         if (jerry_value_is_function(argv[1])) {
             listener = argv[1];
-        }
-        else {
+        } else {
             options = argv[1];
             if (argc > 2) {
                 listener = argv[2];
@@ -674,12 +687,8 @@ static ZJS_DECL_FUNC(ocf_retrieve)
     h->res = resource;
     h->promise_obj = jerry_acquire_value(promise);
 
-    if (!oc_do_get(resource->resource_path,
-                   &resource->server,
-                   NULL,
-                   ocf_get_handler,
-                   LOW_QOS,
-                   h)) {
+    if (!oc_do_get(resource->resource_path, &resource->server, NULL,
+                   ocf_get_handler, LOW_QOS, h)) {
 
         ZVAL err = make_ocf_error("NetworkError", "GET call failed", resource);
         jerry_resolve_or_reject_promise(promise, err, false);
@@ -700,7 +709,8 @@ static void put_finished(oc_client_response_t *data)
                 DBG_PRINT("PUT response OK, device_id=%s\n",
                           resource->device_id);
                 ZVAL resource_val = create_resource(resource);
-                jerry_resolve_or_reject_promise(h->promise_obj, resource_val, true);
+                jerry_resolve_or_reject_promise(h->promise_obj, resource_val,
+                                                true);
                 jerry_release_value(h->promise_obj);
             } else {
                 ERR_PRINT("PUT response code %d\n", data->code);
@@ -708,7 +718,7 @@ static void put_finished(oc_client_response_t *data)
                                           "PUT response error code", resource);
                 jerry_resolve_or_reject_promise(h->promise_obj, err, false);
                 jerry_release_value(h->promise_obj);
-           }
+            }
         }
     }
 }
@@ -737,12 +747,8 @@ static ZJS_DECL_FUNC(ocf_update)
     h->res = resource;
     h->promise_obj = jerry_acquire_value(promise);
 
-    if (oc_init_put(resource->resource_path,
-                    &resource->server,
-                    NULL,
-                    put_finished,
-                    LOW_QOS,
-                    h)) {
+    if (oc_init_put(resource->resource_path, &resource->server, NULL,
+                    put_finished, LOW_QOS, h)) {
         ZVAL props = zjs_get_property(argv[0], "properties");
         void *ret;
         // Start the root encoding object
@@ -763,7 +769,7 @@ static ZJS_DECL_FUNC(ocf_update)
         ERR_PRINT("error initializing PUT\n");
         ZVAL err = make_ocf_error("NetworkError", "PUT init failed", resource);
         jerry_resolve_or_reject_promise(promise, err, false);
-            jerry_release_value(promise);
+        jerry_release_value(promise);
     }
 
     return promise;
@@ -866,30 +872,51 @@ static void ocf_get_platform_info_handler(oc_client_response_t *data)
             case BYTE_STRING:
             case STRING:
                 if (strcmp(oc_string(rep->name), "mnmn") == 0) {
-                    zjs_obj_add_readonly_string(platform_info, oc_string(rep->value.string), "manufacturerName");
+                    zjs_obj_add_readonly_string(platform_info,
+                                                oc_string(rep->value.string),
+                                                "manufacturerName");
                 } else if (strcmp(oc_string(rep->name), "pi") == 0) {
-                    zjs_obj_add_readonly_string(platform_info, oc_string(rep->value.string), "id");
+                    zjs_obj_add_readonly_string(platform_info,
+                                                oc_string(rep->value.string),
+                                                "id");
                 } else if (strcmp(oc_string(rep->name), "mnmo") == 0) {
-                    zjs_obj_add_readonly_string(platform_info, oc_string(rep->value.string), "model");
+                    zjs_obj_add_readonly_string(platform_info,
+                                                oc_string(rep->value.string),
+                                                "model");
                 } else if (strcmp(oc_string(rep->name), "mndt") == 0) {
-                    zjs_obj_add_readonly_string(platform_info, oc_string(rep->value.string), "manufacturerDate");
+                    zjs_obj_add_readonly_string(platform_info,
+                                                oc_string(rep->value.string),
+                                                "manufacturerDate");
                 } else if (strcmp(oc_string(rep->name), "mnpv") == 0) {
-                    zjs_obj_add_readonly_string(platform_info, oc_string(rep->value.string), "platformVersion");
+                    zjs_obj_add_readonly_string(platform_info,
+                                                oc_string(rep->value.string),
+                                                "platformVersion");
                 } else if (strcmp(oc_string(rep->name), "mnos") == 0) {
-                    zjs_obj_add_readonly_string(platform_info, oc_string(rep->value.string), "osVersion");
+                    zjs_obj_add_readonly_string(platform_info,
+                                                oc_string(rep->value.string),
+                                                "osVersion");
                 } else if (strcmp(oc_string(rep->name), "mnfv") == 0) {
-                    zjs_obj_add_readonly_string(platform_info, oc_string(rep->value.string), "firmwareVersion");
+                    zjs_obj_add_readonly_string(platform_info,
+                                                oc_string(rep->value.string),
+                                                "firmwareVersion");
                 } else if (strcmp(oc_string(rep->name), "mnml") == 0) {
-                    zjs_obj_add_readonly_string(platform_info, oc_string(rep->value.string), "manufacturerURL");
+                    zjs_obj_add_readonly_string(platform_info,
+                                                oc_string(rep->value.string),
+                                                "manufacturerURL");
                 } else if (strcmp(oc_string(rep->name), "mnsl") == 0) {
-                    zjs_obj_add_readonly_string(platform_info, oc_string(rep->value.string), "supportURL");
+                    zjs_obj_add_readonly_string(platform_info,
+                                                oc_string(rep->value.string),
+                                                "supportURL");
                 }
                 DBG_PRINT("%s\n", oc_string(rep->value.string));
                 break;
             case STRING_ARRAY:
                 DBG_PRINT("[ ");
-                for (i = 0; i < oc_string_array_get_allocated_size(rep->value.array); i++) {
-                    DBG_PRINT("%s ", oc_string_array_get_item(rep->value.array, i));
+                for (i = 0;
+                     i < oc_string_array_get_allocated_size(rep->value.array);
+                     i++) {
+                    DBG_PRINT("%s ", oc_string_array_get_item(rep->value.array,
+                                                              i));
                 }
                 DBG_PRINT("]\n");
                 break;
@@ -899,7 +926,8 @@ static void ocf_get_platform_info_handler(oc_client_response_t *data)
             rep = rep->next;
         }
 
-        zjs_trigger_event(resource->client, "platformfound", &platform_info, 1, NULL, NULL);
+        zjs_trigger_event(resource->client, "platformfound", &platform_info, 1,
+                          NULL, NULL);
         jerry_resolve_or_reject_promise(h->promise_obj, platform_info, true);
         jerry_release_value(h->promise_obj);
     }
@@ -925,13 +953,10 @@ static ZJS_DECL_FUNC(ocf_get_platform_info)
 
     DBG_PRINT("sending GET to /oic/p\n");
 
-    if (!oc_do_get("/oic/p",
-                   &resource->server,
-                   NULL,
-                   ocf_get_platform_info_handler,
-                   LOW_QOS,
-                   h)) {
-        jerry_value_t err = make_ocf_error("NetworkError", "GET call failed", resource);
+    if (!oc_do_get("/oic/p", &resource->server, NULL,
+                   ocf_get_platform_info_handler, LOW_QOS, h)) {
+        jerry_value_t err = make_ocf_error("NetworkError", "GET call failed",
+                                           resource);
         jerry_resolve_or_reject_promise(promise, err, false);
         jerry_release_value(promise);
     }
@@ -967,25 +992,35 @@ static void ocf_get_device_info_handler(oc_client_response_t *data)
             case BYTE_STRING:
             case STRING:
                 if (strcmp(oc_string(rep->name), "di") == 0) {
-                    zjs_obj_add_string(device_info, oc_string(rep->value.string), "uuid");
+                    zjs_obj_add_string(device_info,
+                                       oc_string(rep->value.string), "uuid");
                     /*
-                     * TODO: Where do we get the devices path to construct the URL.
-                     * For now, the existing resources path will be used, but this is
-                     * incorrect, because there could be devices found that are not
-                     * already in our list of resources.
+                     * TODO: Where do we get the devices path to construct the
+                     * URL. For now, the existing resources path will be used,
+                     * but this is incorrect, because there could be devices
+                     * found that are not already in our list of resources.
                      */
-                    zjs_obj_add_string(device_info, create_url(oc_string(rep->value.string), resource->resource_path), "url");
+                    zjs_obj_add_string(device_info,
+                                       create_url(oc_string(rep->value.string),
+                                                  resource->resource_path),
+                                       "url");
                 } else if (strcmp(oc_string(rep->name), "n") == 0) {
-                    zjs_obj_add_string(device_info, oc_string(rep->value.string), "name");
+                    zjs_obj_add_string(device_info,
+                                       oc_string(rep->value.string), "name");
                 } else if (strcmp(oc_string(rep->name), "icv") == 0) {
-                    zjs_obj_add_string(device_info, oc_string(rep->value.string), "coreSpecVersion");
+                    zjs_obj_add_string(device_info,
+                                       oc_string(rep->value.string),
+                                       "coreSpecVersion");
                 }
                 DBG_PRINT("%s\n", oc_string(rep->value.string));
                 break;
             case STRING_ARRAY:
                 DBG_PRINT("[ ");
-                for (i = 0; i < oc_string_array_get_allocated_size(rep->value.array); i++) {
-                    DBG_PRINT("%s ", oc_string_array_get_item(rep->value.array, i));
+                for (i = 0;
+                     i < oc_string_array_get_allocated_size(rep->value.array);
+                     i++) {
+                    DBG_PRINT("%s ", oc_string_array_get_item(rep->value.array,
+                                                              i));
                 }
                 DBG_PRINT("]\n");
                 break;
@@ -995,7 +1030,8 @@ static void ocf_get_device_info_handler(oc_client_response_t *data)
             rep = rep->next;
         }
 
-        zjs_trigger_event(resource->client, "devicefound", &device_info, 1, NULL, NULL);
+        zjs_trigger_event(resource->client, "devicefound", &device_info, 1,
+                          NULL, NULL);
         jerry_resolve_or_reject_promise(h->promise_obj, device_info, true);
         jerry_release_value(h->promise_obj);
     }
@@ -1022,12 +1058,8 @@ static ZJS_DECL_FUNC(ocf_get_device_info)
 
     DBG_PRINT("sending GET to /oic/d\n");
 
-    if (!oc_do_get("/oic/d",
-                   &resource->server,
-                   NULL,
-                   &ocf_get_device_info_handler,
-                   LOW_QOS,
-                   h)) {
+    if (!oc_do_get("/oic/d", &resource->server, NULL,
+                   &ocf_get_device_info_handler, LOW_QOS, h)) {
         ZVAL err = make_ocf_error("NetworkError", "GET call failed", resource);
         jerry_resolve_or_reject_promise(promise, err, false);
         jerry_release_value(promise);
@@ -1103,4 +1135,4 @@ void zjs_ocf_client_cleanup()
     }
 }
 
-#endif // BUILD_MODULE_OCF
+#endif  // BUILD_MODULE_OCF

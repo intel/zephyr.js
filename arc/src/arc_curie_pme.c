@@ -20,11 +20,12 @@ void curie_pme_begin(void)
     reg_write16(NSR, saved_nsr);
 }
 
-void curie_pme_configure(u16_t global_context,
-                         PATTERN_MATCHING_DISTANCE_MODE distance_mode,
-                         PATTERN_MATCHING_CLASSIFICATION_MODE classification_mode,
-                         u16_t min_if,
-                         u16_t max_if)
+void curie_pme_configure(
+    u16_t global_context,
+    PATTERN_MATCHING_DISTANCE_MODE distance_mode,
+    PATTERN_MATCHING_CLASSIFICATION_MODE classification_mode,
+    u16_t min_if,
+    u16_t max_if)
 {
     reg_write16(GCR, (global_context | (distance_mode << 7)));
     reg_write16(NSR, reg_read16(NSR) | (classification_mode << 5));
@@ -33,12 +34,13 @@ void curie_pme_configure(u16_t global_context,
 }
 
 // clear all commits in the network and make it ready to learn
-void curie_pme_forget(void) { reg_write16(FORGET_NCOUNT, 0); }
+void curie_pme_forget(void)
+{
+    reg_write16(FORGET_NCOUNT, 0);
+}
 
 // mark --learn and classify--
-u16_t curie_pme_learn(u8_t *pattern_vector,
-                      s32_t vector_length,
-                      u16_t category)
+u16_t curie_pme_learn(u8_t *pattern_vector, s32_t vector_length, u16_t category)
 {
     if (vector_length > MAX_VECTOR_SIZE)
         vector_length = MAX_VECTOR_SIZE;
@@ -51,7 +53,8 @@ u16_t curie_pme_learn(u8_t *pattern_vector,
 
     // Mask off the 15th bit-- valid categories range from 1-32766,
     // and bit 15 is used to indicate if a firing neuron has degenerated
-    reg_write16(CAT, (reg_read16(CAT) & ~CAT_CATEGORY) | (category & CAT_CATEGORY));
+    reg_write16(CAT,
+                (reg_read16(CAT) & ~CAT_CATEGORY) | (category & CAT_CATEGORY));
 
     return reg_read16(FORGET_NCOUNT);
 }
@@ -68,7 +71,7 @@ u16_t curie_pme_classify(u8_t *pattern_vector, s32_t vector_length)
     }
 
     reg_write16(LCOMP, current_vector[vector_length - 1]);
-    reg_read16(IDX_DIST); // Sort by distance by David Florey
+    reg_read16(IDX_DIST);
 
     return (reg_read16(CAT) & CAT_CATEGORY);
 }
@@ -187,12 +190,13 @@ void curie_pme_end_restore_mode(void)
 }
 
 // mark -- getter and setters--
-PATTERN_MATCHING_DISTANCE_MODE curie_pme_get_distance_mode(void) // L1 or LSup
+PATTERN_MATCHING_DISTANCE_MODE curie_pme_get_distance_mode(void)  // L1 or LSup
 {
     return (GCR_DIST & reg_read16(GCR)) ? LSUP_DISTANCE : L1_DISTANCE;
 }
 
-void curie_pme_set_distance_mode(PATTERN_MATCHING_DISTANCE_MODE mode) // L1 or LSup
+void curie_pme_set_distance_mode(
+    PATTERN_MATCHING_DISTANCE_MODE mode)  // L1 or LSup
 {
     u16_t rd = reg_read16(GCR);
 
@@ -232,7 +236,8 @@ u16_t curie_pme_get_committed_count(void)
     return (getFORGET_NCOUNT() & 0xff);
 }
 
-PATTERN_MATCHING_CLASSIFICATION_MODE curie_pme_get_classifier_mode(void) // RBF or KNN
+PATTERN_MATCHING_CLASSIFICATION_MODE
+curie_pme_get_classifier_mode(void)  // RBF or KNN
 {
     if (reg_read16(NSR) & NSR_CLASS_MODE)
         return KNN_MODE;

@@ -1,20 +1,21 @@
 // Copyright (c) 2016-2017, Intel Corporation.
 
 #ifndef QEMU_BUILD
+// C includes
+#include <string.h>
 
 // Zephyr includes
 #include <i2c.h>
-#include <string.h>
 
 // ZJS includes
-#include "zjs_i2c.h"
-#include "zjs_util.h"
 #include "zjs_buffer.h"
+#include "zjs_i2c.h"
 #include "zjs_i2c_handler.h"
+#include "zjs_util.h"
 
 #ifdef CONFIG_BOARD_ARDUINO_101
-#include "zjs_ipm.h"
 #include "zjs_i2c_ipm_handler.h"
+#include "zjs_ipm.h"
 #endif
 
 static jerry_value_t zjs_i2c_prototype;
@@ -57,20 +58,15 @@ static ZJS_DECL_FUNC_ARGS(zjs_i2c_read_base, bool burst)
                 // i2c_burst_read doesn't
                 buf->buffer[0] = (u8_t)register_addr;
             }
-            int error_msg = zjs_i2c_handle_read((u8_t)bus,
-                                                buf->buffer,
-                                                buf->bufsize,
-                                                (u16_t)address);
+            int error_msg = zjs_i2c_handle_read((u8_t)bus, buf->buffer,
+                                                buf->bufsize, (u16_t)address);
             if (error_msg != 0) {
                 ERR_PRINT("i2c_read failed with error %i\n", error_msg);
             }
-        }
-        else {
-            int error_msg = zjs_i2c_handle_burst_read((u8_t)bus,
-                                                      buf->buffer,
-                                                      buf->bufsize,
-                                                      (u16_t)address,
-                                                      (u16_t)register_addr);
+        } else {
+            int error_msg =
+                zjs_i2c_handle_burst_read((u8_t)bus, buf->buffer, buf->bufsize,
+                                          (u16_t)address, (u16_t)register_addr);
             if (error_msg != 0) {
                 ERR_PRINT("i2c_read failed with error %i\n", error_msg);
             }
@@ -141,10 +137,8 @@ static ZJS_DECL_FUNC(zjs_i2c_write)
 
     u32_t address = (u32_t)jerry_get_number_value(argv[0]);
 
-    int error_msg = zjs_i2c_handle_write((u8_t)bus,
-                                         dataBuf->buffer,
-                                         dataBuf->bufsize,
-                                         (u16_t)address);
+    int error_msg = zjs_i2c_handle_write((u8_t)bus, dataBuf->buffer,
+                                         dataBuf->bufsize, (u16_t)address);
 
     return jerry_create_number(error_msg);
 }
@@ -198,9 +192,9 @@ static ZJS_DECL_FUNC(zjs_i2c_open)
 
 jerry_value_t zjs_i2c_init()
 {
-    #ifdef CONFIG_BOARD_ARDUINO_101
+#ifdef CONFIG_BOARD_ARDUINO_101
     zjs_i2c_ipm_init();
-    #endif
+#endif
 
     zjs_native_func_t array[] = {
         { zjs_i2c_read, "read" },
@@ -224,4 +218,4 @@ void zjs_i2c_cleanup()
     jerry_release_value(zjs_i2c_prototype);
 }
 
-#endif // QEMU_BUILD
+#endif  // QEMU_BUILD

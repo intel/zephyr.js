@@ -1,13 +1,15 @@
 // Copyright (c) 2016-2017, Intel Corporation.
 
+// C includes
 #include <string.h>
 
-#include "zjs_util.h"
-#include "zjs_event.h"
+// ZJS includes
 #include "zjs_callbacks.h"
+#include "zjs_event.h"
+#include "zjs_util.h"
 
-#define ZJS_MAX_EVENT_NAME_SIZE     24
-#define DEFAULT_MAX_LISTENERS       10
+#define ZJS_MAX_EVENT_NAME_SIZE 24
+#define DEFAULT_MAX_LISTENERS   10
 
 static jerry_value_t zjs_event_emitter_prototype;
 
@@ -92,7 +94,7 @@ void zjs_add_event_listener(jerry_value_t obj, const char *event,
 
     // Event object to hold callback ID and eventually listener arguments
     ZVAL event_obj = jerry_value_is_object(event_prop) ? event_prop :
-        jerry_create_object();
+                                                         jerry_create_object();
 #ifdef ZJS_FIND_FUNC_NAME
     char name[strlen(event) + strlen("event: ") + 1];
     sprintf(name, "%s: %s", "event", event);
@@ -221,9 +223,7 @@ bool foreach_event_name(const jerry_value_t prop_name,
 {
     event_names_t *names = (event_names_t *)data;
 
-    jerry_set_property_by_index(names->name_array,
-                                names->idx++,
-                                prop_name);
+    jerry_set_property_by_index(names->name_array, names->idx++, prop_name);
     return true;
 }
 
@@ -371,8 +371,8 @@ bool zjs_trigger_event(jerry_value_t obj,
 
     zjs_signal_callback(callback_id, argv, argc * sizeof(jerry_value_t));
 
-    DBG_PRINT("triggering event '%s', args_cnt=%lu, callback_id=%ld\n",
-              event, argc, callback_id);
+    DBG_PRINT("triggering event '%s', args_cnt=%lu, callback_id=%ld\n", event,
+              argc, callback_id);
 
     return true;
 }
@@ -459,8 +459,7 @@ jerry_value_t zjs_event_init()
     zjs_event_emitter_prototype = jerry_create_object();
     zjs_obj_add_functions(zjs_event_emitter_prototype, array);
     zjs_obj_add_number(zjs_event_emitter_prototype,
-                       (double)DEFAULT_MAX_LISTENERS,
-                       "defaultMaxListeners");
+                       (double)DEFAULT_MAX_LISTENERS, "defaultMaxListeners");
 
     return jerry_create_external_function(event_constructor);
 }

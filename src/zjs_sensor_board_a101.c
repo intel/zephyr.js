@@ -1,7 +1,9 @@
 // Copyright (c) 2016-2017, Intel Corporation.
 
-// Zephyr includes
+// C includes
 #include <string.h>
+
+// Zephyr includes
 #include <zephyr.h>
 
 // ZJS includes
@@ -26,7 +28,7 @@
 
 static struct k_sem sensor_sem;
 
-typedef sensor_instance_t* (*initcb_t)();
+typedef sensor_instance_t *(*initcb_t)();
 typedef void (*cleanupcb_t)();
 
 typedef struct sensor_module {
@@ -111,8 +113,7 @@ static void zjs_sensor_signal_callbacks(struct sensor_data *data)
             // iterate all sensor handles to update readings and trigger event
             for (sensor_handle_t *h = handles; h; h = h->next) {
                 if (h->state == SENSOR_STATE_ACTIVATED) {
-                    zjs_signal_callback(h->onchange_cb_id,
-                                        &data->reading,
+                    zjs_signal_callback(h->onchange_cb_id, &data->reading,
                                         sizeof(data->reading));
                 }
             }
@@ -124,7 +125,8 @@ static void zjs_sensor_signal_callbacks(struct sensor_data *data)
 }
 
 // INTERRUPT SAFE FUNCTION: No JerryScript VM, allocs, or likely prints!
-static void ipm_msg_receive_callback(void *context, u32_t id, volatile void *data)
+static void ipm_msg_receive_callback(void *context, u32_t id,
+                                     volatile void *data)
 {
     if (id != MSG_ID_SENSOR)
         return;

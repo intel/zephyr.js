@@ -3,6 +3,7 @@
 #ifndef _ARC_CURIE_PME_H_
 #define _ARC_CURIE_PME_H_
 
+// Zephyr includes
 #include <zephyr/types.h>
 
 static const u32_t NO_MATCH = 0x7fff;
@@ -37,11 +38,12 @@ void curie_pme_begin(void);
 
 void curie_pme_forget(void);
 
-void curie_pme_configure(u16_t global_context,
-                         PATTERN_MATCHING_DISTANCE_MODE distance_mode,
-                         PATTERN_MATCHING_CLASSIFICATION_MODE classification_mode,
-                         u16_t min_if,
-                         u16_t max_if);
+void curie_pme_configure(
+    u16_t global_context,
+    PATTERN_MATCHING_DISTANCE_MODE distance_mode,
+    PATTERN_MATCHING_CLASSIFICATION_MODE classification_mode,
+    u16_t min_if,
+    u16_t max_if);
 
 u16_t curie_pme_learn(u8_t *pattern_vector,
                       s32_t vector_length,
@@ -51,9 +53,9 @@ u16_t curie_pme_classify(u8_t *pattern_vector, s32_t vector_length);
 u16_t curie_pme_read_neuron(s32_t neuron_id, neuron_data_t *data_array);
 
 // save and restore knowledge
-void curie_pme_begin_save_mode(void); // saves the contents of the NSR register
+void curie_pme_begin_save_mode(void);  // saves the contents of the NSR register
 u16_t curie_pme_iterate_neurons_to_save(neuron_data_t *data_array);
-void curie_pme_end_save_mode(void); // restores the NSR value saved by beginSaveMode
+void curie_pme_end_save_mode(void);  // restores the NSR value saved
 
 void curie_pme_begin_restore_mode(void);
 u16_t curie_pme_iterate_neurons_to_restore(neuron_data_t *data_array);
@@ -63,9 +65,9 @@ void curie_pme_end_restore_mode(void);
 PATTERN_MATCHING_DISTANCE_MODE curie_pme_get_distance_mode(void);
 void curie_pme_set_distance_mode(PATTERN_MATCHING_DISTANCE_MODE mode);
 u16_t curie_pme_get_global_context(void);
-void curie_pme_set_global_context(u16_t context); // valid range is 1-127
+void curie_pme_set_global_context(u16_t context);  // valid range is 1-127
 u16_t curie_pme_get_neuron_context(void);
-void curie_pme_set_neuron_context(u16_t context); // valid range is 1-127
+void curie_pme_set_neuron_context(u16_t context);  // valid range is 1-127
 
 // NOTE: get_committed_count() will give inaccurate value if the network is in
 // Save/Restore mode.
@@ -74,7 +76,8 @@ void curie_pme_set_neuron_context(u16_t context); // valid range is 1-127
 // begin_restore_mode() and end_restore_mode()
 u16_t curie_pme_get_committed_count(void);
 
-PATTERN_MATCHING_CLASSIFICATION_MODE curie_pme_get_classifier_mode(void); // RBF or KNN
+PATTERN_MATCHING_CLASSIFICATION_MODE
+curie_pme_get_classifier_mode(void);  // RBF or KNN
 void curie_pme_set_classifier_mode(PATTERN_MATCHING_CLASSIFICATION_MODE mode);
 
 // write vector is used for kNN recognition and does not alter
@@ -86,35 +89,35 @@ u16_t curie_pme_write_vector(u8_t *pattern_vector, s32_t vector_length);
 static const u32_t baseAddress = 0xB0600000L;
 
 typedef enum {
-    NCR = 0x00, // Neuron Context Register
-    COMP = 0x04, // Component Register
-    LCOMP = 0x08, // Last Component
-    IDX_DIST = 0x0C, // Write Component Index / Read Distance
-    CAT = 0x10, // Category Register
-    AIF = 0x14, // Active Influence Field
-    MINIF = 0x18, // Minimum Influence Field
-    MAXIF = 0x1C, // Maximum Influence Field
-    TESTCOMP = 0x20, // Write Test Component
-    TESTCAT = 0x24, // Write Test Category
-    NID = 0x28, // Network ID
-    GCR = 0x2C, // Global Context Register
-    RSTCHAIN = 0x30, // Reset Chain
-    NSR = 0x34, // Network Status Register
-    FORGET_NCOUNT = 0x3C // Forget Command / Neuron Count
+    NCR = 0x00,           // Neuron Context Register
+    COMP = 0x04,          // Component Register
+    LCOMP = 0x08,         // Last Component
+    IDX_DIST = 0x0C,      // Write Component Index / Read Distance
+    CAT = 0x10,           // Category Register
+    AIF = 0x14,           // Active Influence Field
+    MINIF = 0x18,         // Minimum Influence Field
+    MAXIF = 0x1C,         // Maximum Influence Field
+    TESTCOMP = 0x20,      // Write Test Component
+    TESTCAT = 0x24,       // Write Test Category
+    NID = 0x28,           // Network ID
+    GCR = 0x2C,           // Global Context Register
+    RSTCHAIN = 0x30,      // Reset Chain
+    NSR = 0x34,           // Network Status Register
+    FORGET_NCOUNT = 0x3C  // Forget Command / Neuron Count
 } registers_t;
 
 typedef enum {
-    NCR_ID = 0xFF00, // Upper 8-bit of Neuron ID
-    NCR_NORM = 0x0040, // 1 = LSUP, 0 = L1
-    NCR_CONTEXT = 0x007F, // Neuron Context
-    CAT_DEGEN = 0x8000, // Indicates neuron is degenerate
-    CAT_CATEGORY = 0x7FFF, // the category associated with a neuron
-    GCR_DIST = 0x0080, // distance type, 1 = Lsup, 0 = L1
-    GCR_GLOBAL = 0x007F, // the context of the neuron, used to segment the network
-    NSR_CLASS_MODE = 0x0020, // Classifier mode 1 = KNN, 0 = RBF (KNN not for learning mode)
-    NSR_NET_MODE = 0x0010, // 1 = SR (save/restore) 0 = LR (learn/recognize)
-    NSR_ID_FLAG = 0x0008, // Indicates positive identification
-    NSR_UNCERTAIN_FLAG = 0x0004, // Indicates uncertain identification
+    NCR_ID = 0xFF00,              // Upper 8-bit of Neuron ID
+    NCR_NORM = 0x0040,            // 1 = LSUP, 0 = L1
+    NCR_CONTEXT = 0x007F,         // Neuron Context
+    CAT_DEGEN = 0x8000,           // Indicates neuron is degenerate
+    CAT_CATEGORY = 0x7FFF,        // the category associated with a neuron
+    GCR_DIST = 0x0080,            // distance type, 1 = Lsup, 0 = L1
+    GCR_GLOBAL = 0x007F,          // the context of the neuron
+    NSR_CLASS_MODE =  0x0020,     // Classifier mode 1 = KNN, 0 = RBF
+    NSR_NET_MODE = 0x0010,        // 1 = save/restore 0 = learn/recognize
+    NSR_ID_FLAG = 0x0008,         // Indicates positive identification
+    NSR_UNCERTAIN_FLAG = 0x0004,  // Indicates uncertain identification
 } Masks;
 
 // all pattern matching accelerator registers are 16-bits wide, memory-addressed
@@ -124,7 +127,10 @@ inline volatile u16_t *reg_address(registers_t reg)
     return (u16_t *)(0xB0600000L + reg);
 }
 
-inline u16_t reg_read16(registers_t reg) { return *reg_address(reg); }
+inline u16_t reg_read16(registers_t reg)
+{
+    return *reg_address(reg);
+}
 
 inline void reg_write16(registers_t reg, u16_t value)
 {

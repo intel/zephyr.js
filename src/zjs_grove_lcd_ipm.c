@@ -2,12 +2,14 @@
 
 #ifdef BUILD_MODULE_GROVE_LCD
 #ifndef QEMU_BUILD
+// C includes
+#include <string.h>
+
 #ifndef ZJS_LINUX_BUILD
 // Zephyr includes
 #include <zephyr.h>
 #endif
 #include <device.h>
-#include <string.h>
 #include <display/grove_lcd.h>
 #include <misc/util.h>
 
@@ -24,7 +26,8 @@ static struct k_sem glcd_sem;
 static jerry_value_t zjs_glcd_prototype;
 
 static bool zjs_glcd_ipm_send_sync(zjs_ipm_message_t *send,
-                                   zjs_ipm_message_t *result) {
+                                   zjs_ipm_message_t *result)
+{
     send->id = MSG_ID_GLCD;
     send->flags = 0 | MSG_SYNC_FLAG;
     send->user_data = (void *)result;
@@ -79,7 +82,8 @@ static jerry_value_t zjs_glcd_call_remote_ignore(zjs_ipm_message_t *send)
     return ZJS_UNDEFINED;
 }
 
-static void ipm_msg_receive_callback(void *context, u32_t id, volatile void *data)
+static void ipm_msg_receive_callback(void *context, u32_t id,
+                                     volatile void *data)
 {
     if (id != MSG_ID_GLCD)
         return;
@@ -87,7 +91,7 @@ static void ipm_msg_receive_callback(void *context, u32_t id, volatile void *dat
     zjs_ipm_message_t *msg = (zjs_ipm_message_t *)(*(uintptr_t *)data);
 
     if ((msg->flags & MSG_SYNC_FLAG) == MSG_SYNC_FLAG) {
-         zjs_ipm_message_t *result = (zjs_ipm_message_t *)msg->user_data;
+        zjs_ipm_message_t *result = (zjs_ipm_message_t *)msg->user_data;
         // synchrounus ipm, copy the results
         if (result)
             memcpy(result, msg, sizeof(zjs_ipm_message_t));
@@ -340,5 +344,5 @@ void zjs_grove_lcd_cleanup()
     jerry_release_value(zjs_glcd_prototype);
 }
 
-#endif // QEMU_BUILD
-#endif // BUILD_MODULE_GROVE_LCD
+#endif  // QEMU_BUILD
+#endif  // BUILD_MODULE_GROVE_LCD

@@ -1,14 +1,19 @@
 // Copyright (c) 2016-2017, Intel Corporation.
-#include "zjs_i2c_handler.h"
-#include "zjs_ipm.h"
-#include "zjs_common.h"
+
+// C includes
 #include <string.h>
 
+// ZJS includes
+#include "zjs_common.h"
+#include "zjs_i2c_handler.h"
+#include "zjs_ipm.h"
+
 static struct k_sem i2c_sem;
-#define ZJS_I2C_TIMEOUT_TICKS                      5000
+#define ZJS_I2C_TIMEOUT_TICKS 5000
 
 static bool zjs_i2c_ipm_send_sync(zjs_ipm_message_t *send,
-                                  zjs_ipm_message_t *result) {
+                                  zjs_ipm_message_t *result)
+{
     send->id = MSG_ID_I2C;
     send->flags = 0 | MSG_SYNC_FLAG;
     send->user_data = (void *)result;
@@ -37,7 +42,7 @@ static void ipm_msg_receive_callback(void *context, u32_t id,
     zjs_ipm_message_t *msg = (zjs_ipm_message_t *)(*(uintptr_t *)data);
 
     if (msg->flags & MSG_SYNC_FLAG) {
-         zjs_ipm_message_t *result = (zjs_ipm_message_t *)msg->user_data;
+        zjs_ipm_message_t *result = (zjs_ipm_message_t *)msg->user_data;
         // synchronous ipm, copy the results
         if (result)
             memcpy(result, msg, sizeof(zjs_ipm_message_t));
@@ -50,7 +55,8 @@ static void ipm_msg_receive_callback(void *context, u32_t id,
     }
 }
 
-void zjs_i2c_ipm_init() {
+void zjs_i2c_ipm_init()
+{
     zjs_ipm_init();
     zjs_ipm_register_callback(MSG_ID_I2C, ipm_msg_receive_callback);
     k_sem_init(&i2c_sem, 0, 1);
@@ -66,7 +72,6 @@ int zjs_i2c_handle_write(u8_t msg_bus, u8_t *data, u32_t length, u16_t address)
     send.data.i2c.data = data;
     send.data.i2c.address = (u16_t)address;
     send.data.i2c.length = length;
-
 
     // We have ARC send it via ipm
     bool success = zjs_i2c_ipm_send_sync(&send, &reply);

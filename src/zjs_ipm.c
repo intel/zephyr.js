@@ -1,20 +1,32 @@
 // Copyright (c) 2016-2017, Intel Corporation.
 #ifndef QEMU_BUILD
 // ipm for ARC communication
-#include <ipm/ipm_quark_se.h>
+
+// C includes
 #include <string.h>
 
+// Zephyr includes
+#include <ipm/ipm_quark_se.h>
+
 // ZJS includes
-#include "zjs_ipm.h"
 #include "zjs_common.h"
+#include "zjs_ipm.h"
 
 #ifdef CONFIG_X86
 #include "zjs_util.h"
-QUARK_SE_IPM_DEFINE(ipm_msg_send, IPM_CHANNEL_X86_TO_ARC, QUARK_SE_IPM_OUTBOUND);
-QUARK_SE_IPM_DEFINE(ipm_msg_receive, IPM_CHANNEL_ARC_TO_X86, QUARK_SE_IPM_INBOUND);
+QUARK_SE_IPM_DEFINE(ipm_msg_send,
+                    IPM_CHANNEL_X86_TO_ARC,
+                    QUARK_SE_IPM_OUTBOUND);
+QUARK_SE_IPM_DEFINE(ipm_msg_receive,
+                    IPM_CHANNEL_ARC_TO_X86,
+                    QUARK_SE_IPM_INBOUND);
 #elif CONFIG_ARC
-QUARK_SE_IPM_DEFINE(ipm_msg_receive, IPM_CHANNEL_X86_TO_ARC, QUARK_SE_IPM_INBOUND);
-QUARK_SE_IPM_DEFINE(ipm_msg_send, IPM_CHANNEL_ARC_TO_X86, QUARK_SE_IPM_OUTBOUND);
+QUARK_SE_IPM_DEFINE(ipm_msg_receive,
+                    IPM_CHANNEL_X86_TO_ARC,
+                    QUARK_SE_IPM_INBOUND);
+QUARK_SE_IPM_DEFINE(ipm_msg_send,
+                    IPM_CHANNEL_ARC_TO_X86,
+                    QUARK_SE_IPM_OUTBOUND);
 #endif
 
 struct zjs_ipm_callback {
@@ -44,13 +56,13 @@ void zjs_ipm_init()
     ipm_send_dev = device_get_binding("ipm_msg_send");
 
     if (!ipm_send_dev) {
-        ERR_PRINT("Cannot find outbound ipm device!\n" );
+        ERR_PRINT("Cannot find outbound ipm device!\n");
     }
 
     ipm_receive_dev = device_get_binding("ipm_msg_receive");
 
     if (!ipm_receive_dev) {
-        ERR_PRINT("Cannot find inbound ipm device!\n" );
+        ERR_PRINT("Cannot find inbound ipm device!\n");
     }
 
 #ifdef CONFIG_X86
@@ -63,7 +75,7 @@ void zjs_ipm_init()
 int zjs_ipm_send(u32_t id, zjs_ipm_message_t *data)
 {
     if (!ipm_send_dev) {
-        ERR_PRINT("Cannot find outbound ipm device!\n" );
+        ERR_PRINT("Cannot find outbound ipm device!\n");
         return -1;
     }
 
@@ -74,13 +86,14 @@ int zjs_ipm_send(u32_t id, zjs_ipm_message_t *data)
 void zjs_ipm_register_callback(u32_t msg_id, ipm_callback_t cb)
 {
     if (!ipm_receive_dev) {
-        ERR_PRINT("Cannot find inbound ipm device!\n" );
+        ERR_PRINT("Cannot find inbound ipm device!\n");
         return;
     }
 
 #ifdef CONFIG_X86
     // x86, register for ipm message that matches the MSG_ID
-    struct zjs_ipm_callback *callback = zjs_malloc(sizeof(struct zjs_ipm_callback));
+    struct zjs_ipm_callback *callback =
+        zjs_malloc(sizeof(struct zjs_ipm_callback));
     if (!callback) {
         ERR_PRINT("failed to allocate callback\n");
         return;
@@ -98,14 +111,15 @@ void zjs_ipm_register_callback(u32_t msg_id, ipm_callback_t cb)
 #endif
 }
 
-void zjs_ipm_free_callbacks() {
-    #ifdef CONFIG_X86
+void zjs_ipm_free_callbacks()
+{
+#ifdef CONFIG_X86
     struct zjs_ipm_callback **pItem = &zjs_ipm_callbacks;
     while (*pItem) {
         zjs_free(*pItem);
         pItem = &(*pItem)->next;
     }
     zjs_ipm_callbacks = NULL;
-    #endif
+#endif
 }
-#endif // QEMU_BUILD
+#endif  // QEMU_BUILD

@@ -5,6 +5,7 @@
  * slightly modified to run on Linux.
  */
 
+// ZJS includes
 #include "zjs_util.h"
 
 #ifndef likely
@@ -15,9 +16,9 @@
 #endif
 
 struct ring_element {
-    u32_t  type   :16; /**< Application-specific */
-    u32_t  length :8;  /**< length in 32-bit chunks */
-    u32_t  value  :8;  /**< Room for small integral values */
+    u32_t type : 16;  /**< Application-specific */
+    u32_t length : 8; /**< length in 32-bit chunks */
+    u32_t value : 8;  /**< Room for small integral values */
 };
 
 static int get_space(struct zjs_port_ring_buf *buf)
@@ -43,7 +44,8 @@ void zjs_port_ring_buf_init(struct zjs_port_ring_buf *buf,
         if (size == (1 << i) * 4) {
             break;
         } else if (size < (1 << i) * 4) {
-            ERR_PRINT("size %u is not power of 2, setting size to %u\n", size, (1 << i) * 4);
+            ERR_PRINT("size %u is not power of 2, setting size to %u\n", size,
+                      (1 << i) * 4);
             break;
         }
     }
@@ -70,7 +72,7 @@ int zjs_port_ring_buf_get(struct zjs_port_ring_buf *buf,
         return -EAGAIN;
     }
 
-    header = (struct ring_element *) &buf->buf[buf->head];
+    header = (struct ring_element *)&buf->buf[buf->head];
 
     if (header->length > *size32) {
         *size32 = header->length;
@@ -95,8 +97,6 @@ int zjs_port_ring_buf_get(struct zjs_port_ring_buf *buf,
         buf->head = (buf->head + header->length + 1) % buf->size;
     }
 
-
-
     return 0;
 }
 
@@ -111,7 +111,7 @@ int zjs_port_ring_buf_put(struct zjs_port_ring_buf *buf,
     space = get_space(buf);
     if (space >= (size32 + 1)) {
         struct ring_element *header =
-                (struct ring_element *)&buf->buf[buf->tail];
+            (struct ring_element *)&buf->buf[buf->tail];
         header->type = type;
         header->length = size32;
         header->value = value;

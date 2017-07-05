@@ -1,7 +1,8 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
-#include "zjs_util.h"
+// ZJS includes
 #include "zjs_common.h"
+#include "zjs_util.h"
 
 /*
  * Initialize and return OCF server object

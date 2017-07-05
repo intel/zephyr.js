@@ -1,26 +1,28 @@
 // Copyright (c) 2016-2017, Intel Corporation.
 
 #ifndef ZJS_LINUX_BUILD
+// C includes
+#include <stdlib.h>
+#include <string.h>
+
 // Zephyr includes
 #include <zephyr.h>
 #endif
 
-#include <string.h>
-#include <stdlib.h>
-
 #ifndef ZJS_LINUX_BUILD
-#include "zjs_zephyr_port.h"
+// ZJS includes
 #include "zjs_ipm.h"
+#include "zjs_zephyr_port.h"
 #else
 #include "zjs_linux_port.h"
 #endif
 
+#include "zjs_callbacks.h"
 #include "zjs_modules.h"
 #include "zjs_modules_gen.h"
-#include "zjs_util.h"
-#include "zjs_callbacks.h"
 #include "zjs_script.h"
 #include "zjs_timers.h"
+#include "zjs_util.h"
 
 struct routine_map {
     zjs_service_routine func;

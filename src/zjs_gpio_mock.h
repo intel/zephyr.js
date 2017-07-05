@@ -59,9 +59,9 @@ int mock_gpio_pin_enable_callback(DEVICE port, u32_t pin);
 #define GPIO_PUD_PULL_UP      (1 << 8)
 #define GPIO_PUD_PULL_DOWN    (2 << 8)
 
-#define BIT(n)  (1UL << (n))
+#define BIT(n) (1UL << (n))
 #define CONTAINER_OF(ptr, type, field) \
-	((type *)(((char *)(ptr)) - offsetof(type, field)))
+    ((type *)(((char *)(ptr)) - offsetof(type, field)))
 #endif  // ZJS_LINUX_BUILD
 
 // hook to initialize mock before the rest of gpio init

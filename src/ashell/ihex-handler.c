@@ -8,14 +8,18 @@
  * Designed to be used from Javascript or a ECMAScript object file.
  */
 
-#include <zephyr.h>
+// C includes
 #include <stdio.h>
+
+// Zephyr includes
 #include <misc/printk.h>
+#include <zephyr.h>
 
 #include "jerry-code.h"
 
-#include "comms-uart.h"
+// ZJS includes
 #include "comms-shell.h"
+#include "comms-uart.h"
 #include "ihex/kk_ihex_read.h"
 
 #include "file-utils.h"
@@ -43,12 +47,11 @@ static s8_t upload_state = 0;
 #define UPLOAD_START       0
 #define UPLOAD_IN_PROGRESS 1
 #define UPLOAD_FINISHED    2
-#define UPLOAD_ERROR       -1
+#define UPLOAD_ERROR      -1
 
 /* Data received from the buffer */
-ihex_bool_t ihex_data_read(struct ihex_state *ihex,
-    ihex_record_type_t type,
-    ihex_bool_t checksum_error)
+ihex_bool_t ihex_data_read(struct ihex_state *ihex, ihex_record_type_t type,
+                           ihex_bool_t checksum_error)
 {
 
     if (checksum_error) {

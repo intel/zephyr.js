@@ -1,10 +1,11 @@
 // Copyright (c) 2017, Intel Corporation.
 
+// C includes
 #include <string.h>
 
 // ZJS includes
-#include "zjs_common.h"
 #include "zjs_board.h"
+#include "zjs_common.h"
 #include "zjs_gpio.h"
 #include "zjs_util.h"
 

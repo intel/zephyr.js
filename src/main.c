@@ -1,18 +1,21 @@
 // Copyright (c) 2016-2017, Intel Corporation.
 
 #ifndef ZJS_LINUX_BUILD
+// C inclues
+#include <string.h>
+
 // Zephyr includes
-#include <zephyr.h>
 #include "zjs_zephyr_port.h"
+#include <zephyr.h>
 #else
 #include "zjs_linux_port.h"
-#endif // ZJS_LINUX_BUILD
-#include <string.h>
+#endif  // ZJS_LINUX_BUILD
 #include "zjs_script.h"
 #include "zjs_util.h"
 #ifdef ZJS_ASHELL
 #include "ashell/comms-uart.h"
 #endif
+
 // JerryScript includes
 #include "jerryscript.h"
 
@@ -37,7 +40,7 @@
 #include "zjs_ipm.h"
 #endif
 
-#define ZJS_MAX_PRINT_SIZE      512
+#define ZJS_MAX_PRINT_SIZE 512
 
 #ifdef ZJS_SNAPSHOT_BUILD
 const uint32_t snapshot_bytecode[] = {
@@ -64,11 +67,9 @@ u8_t process_cmd_line(int argc, char *argv[])
         if (!strncmp(argv[i], "--unittest", 10)) {
             // run unit tests
             zjs_run_unit_tests();
-        }
-        else if (!strncmp(argv[i], "--noexit", 8)) {
+        } else if (!strncmp(argv[i], "--noexit", 8)) {
             no_exit = 1;
-        }
-        else if (!strncmp(argv[i], "-t", 2)) {
+        } else if (!strncmp(argv[i], "-t", 2)) {
             if (i == argc - 1) {
                 // no time argument, return error
                 ERR_PRINT("no time argument given after '-t'\n");
@@ -170,9 +171,7 @@ int main(int argc, char *argv[])
 #endif
 
 #ifdef ZJS_SNAPSHOT_BUILD
-    result = jerry_exec_snapshot(snapshot_bytecode,
-                                 snapshot_len,
-                                 false);
+    result = jerry_exec_snapshot(snapshot_bytecode, snapshot_len, false);
 #else
     result = jerry_run(code_eval);
 #endif
@@ -244,7 +243,7 @@ int main(int argc, char *argv[])
             struct timespec now;
             clock_gettime(CLOCK_MONOTONIC, &now);
             u32_t elapsed = (1000 * (now.tv_sec - exit_timer.tv_sec)) +
-                    ((now.tv_nsec / 1000000) - (exit_timer.tv_nsec / 1000000));
+                ((now.tv_nsec / 1000000) - (exit_timer.tv_nsec / 1000000));
             if (elapsed >= exit_after) {
                 ZJS_PRINT("%u milliseconds have passed, exiting!\n",
                           (unsigned int)elapsed);

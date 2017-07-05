@@ -2,9 +2,11 @@
 
 #ifdef BUILD_MODULE_AIO
 #ifndef QEMU_BUILD
+// C includes
+#include <string.h>
+
 // Zephyr includes
 #include <misc/util.h>
-#include <string.h>
 
 // ZJS includes
 #include "zjs_aio.h"
@@ -46,8 +48,7 @@ static void zjs_aio_free_callback(void *ptr, jerry_value_t rval)
     zjs_aio_free_cb(ptr);
 }
 
-static const jerry_object_native_info_t aio_type_info =
-{
+static const jerry_object_native_info_t aio_type_info = {
    .free_cb = zjs_aio_free_cb
 };
 
@@ -70,7 +71,8 @@ static bool zjs_aio_ipm_send_async(u32_t type, u32_t pin, void *data) {
 }
 
 static bool zjs_aio_ipm_send_sync(zjs_ipm_message_t *send,
-                                  zjs_ipm_message_t *result) {
+                                  zjs_ipm_message_t *result)
+{
     send->id = MSG_ID_AIO;
     send->flags = 0 | MSG_SYNC_FLAG;
     send->user_data = (void *)result;
@@ -139,7 +141,7 @@ static void ipm_msg_receive_callback(void *context, u32_t id,
         u32_t pin = msg->data.aio.pin;
 #endif
 
-        switch(msg->type) {
+        switch (msg->type) {
         case TYPE_AIO_PIN_READ:
         case TYPE_AIO_PIN_EVENT_VALUE_CHANGE:
             handle->value = (double)pin_value;
@@ -154,8 +156,7 @@ static void ipm_msg_receive_callback(void *context, u32_t id,
             break;
 
         default:
-            ERR_PRINT("IPM message not handled %u\n",
-                      (unsigned int)msg->type);
+            ERR_PRINT("IPM message not handled %u\n", (unsigned int)msg->type);
         }
     }
 }
@@ -330,5 +331,5 @@ void zjs_aio_cleanup()
     jerry_release_value(zjs_aio_prototype);
 }
 
-#endif // QEMU_BUILD
-#endif // BUILD_MODULE_AIO
+#endif  // QEMU_BUILD
+#endif  // BUILD_MODULE_AIO

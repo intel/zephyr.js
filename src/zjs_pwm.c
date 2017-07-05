@@ -1,11 +1,14 @@
 // Copyright (c) 2016-2017, Intel Corporation.
 
 #ifdef BUILD_MODULE_PWM
-// Zephyr includes
-#include <zephyr.h>
-#include <pwm.h>
-#include <misc/util.h>
+
+// C includes
 #include <string.h>
+
+// Zephyr includes
+#include <misc/util.h>
+#include <pwm.h>
+#include <zephyr.h>
 
 // ZJS includes
 #include "zjs_pwm.h"
@@ -24,8 +27,9 @@ static const char *ZJS_POLARITY_REVERSE = "reverse";
 
 static struct device *zjs_pwm_dev[PWM_DEV_COUNT];
 
-void (*zjs_pwm_convert_pin)(u32_t orig, int *dev, int *pin) =
-    zjs_default_convert_pin;
+void (*zjs_pwm_convert_pin)(u32_t orig,
+                            int *dev,
+                            int *pin) = zjs_default_convert_pin;
 
 static void zjs_pwm_set_cycles(jerry_value_t obj, u32_t periodHW,
                                u32_t pulseWidthHW)
@@ -126,8 +130,7 @@ static ZJS_DECL_FUNC(zjs_pwm_pin_set_ms)
     zjs_obj_add_number(this, period, "period");
     zjs_obj_add_number(this, period, "pulseWidth");
 
-    DBG_PRINT("period: %lu, pulse: %lu\n", (u32_t)period,
-              (u32_t)pulseWidth);
+    DBG_PRINT("period: %lu, pulse: %lu\n", (u32_t)period, (u32_t)pulseWidth);
 
     zjs_pwm_set_ms(this, period, pulseWidth);
     return ZJS_UNDEFINED;
@@ -196,8 +199,7 @@ jerry_value_t zjs_pwm_init()
         zjs_pwm_dev[i] = device_get_binding(devname);
         if (!zjs_pwm_dev[i]) {
             ERR_PRINT("DEVICE: '%s'\n", devname);
-            return zjs_error_context("cannot find PWM device",
-                                     0, 0);
+            return zjs_error_context("cannot find PWM device", 0, 0);
         }
     }
 
@@ -221,4 +223,4 @@ void zjs_pwm_cleanup()
     jerry_release_value(zjs_pwm_pin_prototype);
 }
 
-#endif // BUILD_MODULE_PWM
+#endif  // BUILD_MODULE_PWM

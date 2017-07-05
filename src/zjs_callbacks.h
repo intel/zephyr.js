@@ -5,6 +5,9 @@
 
 #include "jerryscript.h"
 
+// ZJS includes
+#include "zjs_common.h"
+
 typedef s16_t zjs_callback_id;
 
 /*
@@ -97,10 +100,11 @@ void signal_callback_priv(zjs_callback_id id,
                           const void *args,
                           u32_t size
 #ifdef DEBUG_BUILD
-                          , const char *file,
+                          ,
+                          const char *file,
                           const char *func);
 #else
-);
+                          );
 #endif
 
 #ifndef DEBUG_BUILD
@@ -125,13 +129,11 @@ void signal_callback_priv(zjs_callback_id id,
  * @param args          Arguments given to the JS/C callback
  * @param size          Size of arguments (in bytes)
  */
-#define zjs_signal_callback(id, args, size) \
-    signal_callback_priv(id, args, size)
+#define zjs_signal_callback(id, args, size) signal_callback_priv(id, args, size)
 #else
 #define zjs_signal_callback(id, args, size) \
     signal_callback_priv(id, args, size, __FILE__, __func__)
 #endif
-
 
 zjs_callback_id add_callback_priv(jerry_value_t js_func,
                                   jerry_value_t this,
@@ -139,7 +141,8 @@ zjs_callback_id add_callback_priv(jerry_value_t js_func,
                                   zjs_post_callback_func post,
                                   u8_t once
 #ifdef DEBUG_BUILD
-                                  , const char *file,
+                                  ,
+                                  const char *file,
                                   const char *func);
 #else
                                   );
@@ -153,7 +156,8 @@ zjs_callback_id add_callback_priv(jerry_value_t js_func,
 * @param handle        Module specific handle, given to pre/post
 * @param post          Function called after the JS function (explained above)
 *
-* @return              ID associated with this callback, use this ID to reference this CB
+* @return              ID associated with this callback, use this ID to
+*                        reference this CB
 */
 #define zjs_add_callback(func, this, handle, post) \
     add_callback_priv(func, this, handle, post, 0)
@@ -166,7 +170,8 @@ zjs_callback_id add_callback_priv(jerry_value_t js_func,
 * @param handle        Module specific handle, given to pre/post
 * @param post          Function called after the JS function (explained above)
 *
-* @return              ID associated with this callback, use this ID to reference this CB
+* @return              ID associated with this callback, use this ID to
+*                        reference this CB
 */
 #define zjs_add_callback_once(func, this, handle, post) \
     add_callback_priv(func, this, handle, post, 1);
@@ -183,7 +188,8 @@ zjs_callback_id add_callback_list_priv(jerry_value_t js_func,
                                        zjs_post_callback_func post,
                                        zjs_callback_id id
 #ifdef DEBUG_BUILD
-                                       , const char *file,
+                                       ,
+                                       const char *file,
                                        const char *func);
 #else
                                        );
@@ -209,7 +215,6 @@ zjs_callback_id add_callback_list_priv(jerry_value_t js_func,
     add_callback_list_priv(js_func, this, handle, post, id, __FILE__, __func__);
 #endif
 
-
 /*
  * Add/register a C callback
  *
@@ -222,7 +227,8 @@ zjs_callback_id zjs_add_c_callback(void *handle, zjs_c_callback_func callback);
 
 /*
  * Call a callback immediately. This should only be used when absolutely needed
- * and in a task context. If it is possible to use zjs_signal_callback(), use it.
+ * and in a task context. If it is possible to use zjs_signal_callback(), use
+ * it.
  * Using this function could result in a large recursion stack because it does
  * not wait until the main loop to call the JS function.
  *

@@ -5,14 +5,16 @@
 
 // This file includes code common to both X86 and ARC
 
+// C includes
 #include <stdio.h>
-#if CONFIG_ARC
-#include <misc/printk.h>
-#endif
 
 #ifdef ZJS_LINUX_BUILD
 #include "zjs_linux_port.h"
 #else
+// Zephyr includes
+#if CONFIG_ARC
+#include <misc/printk.h>
+#endif
 #include <zephyr/types.h>
 #endif
 
@@ -36,18 +38,23 @@ char *zjs_shorten_filepath(char *filepath);
 int zjs_get_sec(void);
 int zjs_get_ms(void);
 
-#define DBG_PRINT \
-    ZJS_PRINT("\n%u.%3.3u %s:%d %s():\n(INFO) ", zjs_get_sec(), zjs_get_ms(), zjs_shorten_filepath(__FILE__), __LINE__, __func__); \
+#define DBG_PRINT                                                             \
+    ZJS_PRINT("\n%u.%3.3u %s:%d %s():\n(INFO) ", zjs_get_sec(), zjs_get_ms(), \
+              zjs_shorten_filepath(__FILE__), __LINE__, __func__);            \
     ZJS_PRINT
 
-#define ERR_PRINT \
-    ZJS_PRINT("\n%u.%3.3u %s:%d %s():\n(ERROR) ", zjs_get_sec(), zjs_get_ms(), zjs_shorten_filepath(__FILE__), __LINE__, __func__); \
+#define ERR_PRINT                                                              \
+    ZJS_PRINT("\n%u.%3.3u %s:%d %s():\n(ERROR) ", zjs_get_sec(), zjs_get_ms(), \
+              zjs_shorten_filepath(__FILE__), __LINE__, __func__);             \
     ZJS_PRINT
 
 #else
-#define DBG_PRINT(fmat ...) do {} while(0);
-#define ERR_PRINT \
-    ZJS_PRINT("\n%s:%d %s():\n(ERROR) ", zjs_shorten_filepath(__FILE__), __LINE__, __func__); \
+#define DBG_PRINT(fmat...) \
+    do {                   \
+    } while (0);
+#define ERR_PRINT                                                        \
+    ZJS_PRINT("\n%s:%d %s():\n(ERROR) ", zjs_shorten_filepath(__FILE__), \
+              __LINE__, __func__);                                       \
     ZJS_PRINT
 #endif
 

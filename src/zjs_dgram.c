@@ -11,10 +11,10 @@
 #endif
 
 // ZJS includes
-#include "zjs_util.h"
 #include "zjs_buffer.h"
 #include "zjs_callbacks.h"
 #include "zjs_net_config.h"
+#include "zjs_util.h"
 
 static jerry_value_t zjs_dgram_socket_prototype;
 
@@ -24,17 +24,25 @@ typedef struct dgram_handle {
     zjs_callback_id error_cb_id;
 } dgram_handle_t;
 
-#define CHECK(x) \
-    ret = (x); if (ret < 0) { ERR_PRINT("Error in " #x ": %d\n", ret); return zjs_error(#x); }
+#define CHECK(x)                                 \
+    ret = (x);                                   \
+    if (ret < 0) {                               \
+        ERR_PRINT("Error in " #x ": %d\n", ret); \
+        return zjs_error(#x);                    \
+    }
 
 // FIXME: Quick hack to allow context into the regular CHECK while fixing build
 //        for call sites without JS binding context
-#define CHECK_ALT(x) \
-    ret = (x); if (ret < 0) { ERR_PRINT("Error in " #x ": %d\n", ret); return zjs_error_context(#x, 0, 0); }
+#define CHECK_ALT(x)                             \
+    ret = (x);                                   \
+    if (ret < 0) {                               \
+        ERR_PRINT("Error in " #x ": %d\n", ret); \
+        return zjs_error_context(#x, 0, 0);      \
+    }
 
-#define GET_STR(jval, buf) \
-    { \
-        jerry_size_t str_sz = sizeof(buf); \
+#define GET_STR(jval, buf)                    \
+    {                                         \
+        jerry_size_t str_sz = sizeof(buf);    \
         zjs_copy_jstring(jval, buf, &str_sz); \
     }
 
@@ -80,9 +88,8 @@ static void zjs_dgram_free_cb(void *native)
     zjs_free(handle);
 }
 
-static const jerry_object_native_info_t dgram_type_info =
-{
-   .free_cb = zjs_dgram_free_cb
+static const jerry_object_native_info_t dgram_type_info = {
+    .free_cb = zjs_dgram_free_cb
 };
 
 // Copy data from Zephyr net_pkt chain into linear buffer
@@ -108,8 +115,7 @@ static void udp_received(struct net_context *context,
                          void *user_data)
 {
     DBG_PRINT("udp_received: %p, buf=%p, st=%d, appdatalen=%d, udata=%p\n",
-              context, net_pkt, status, net_pkt_appdatalen(net_pkt),
-              user_data);
+              context, net_pkt, status, net_pkt_appdatalen(net_pkt), user_data);
 
     dgram_handle_t *handle = user_data;
     if (handle->message_cb_id == -1)
@@ -139,13 +145,12 @@ static void udp_received(struct net_context *context,
 
         net_pkt_gather(net_pkt, buf->buffer);
         net_pkt_unref(net_pkt);
-    }
-    else {
+    } else {
         // can't pass object with error flag as a JS arg
         jerry_value_clear_error_flag(&buf_js);
     }
 
-    jerry_value_t args[2] = {buf_js, rinfo};
+    jerry_value_t args[2] = { buf_js, rinfo };
     zjs_signal_callback(handle->message_cb_id, args, sizeof(args));
 }
 
@@ -302,7 +307,7 @@ static ZJS_DECL_FUNC(zjs_dgram_sock_bind)
         return err;
 
     CHECK(net_context_bind(handle->udp_sock, &sockaddr_buf,
-                               sizeof(sockaddr_buf)));
+                           sizeof(sockaddr_buf)));
     // See comment in createSocket() why this is called here
     CHECK(net_context_recv(handle->udp_sock, udp_received, K_NO_WAIT, handle));
 
@@ -342,4 +347,4 @@ void zjs_dgram_cleanup()
     jerry_release_value(zjs_dgram_socket_prototype);
 }
 
-#endif // BUILD_MODULE_DGRAM
+#endif  // BUILD_MODULE_DGRAM

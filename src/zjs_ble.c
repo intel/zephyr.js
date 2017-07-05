@@ -2,15 +2,17 @@
 
 #ifdef BUILD_MODULE_BLE
 #ifndef QEMU_BUILD
-// Zephyr includes
-#include <zephyr.h>
-#include <string.h>
+// C inclues
 #include <stdlib.h>
+#include <string.h>
+
+// Zephyr includes
 #include <bluetooth/bluetooth.h>
-#include <bluetooth/hci.h>
 #include <bluetooth/conn.h>
-#include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
+#include <bluetooth/hci.h>
+#include <bluetooth/uuid.h>
+#include <zephyr.h>
 
 // ZJS includes
 #include "zjs_ble.h"
@@ -83,8 +85,10 @@ typedef struct zjs_ble_handle {
     ble_connection_t *connections;
 } ble_handle_t;
 
-static struct bt_uuid *gatt_primary_service_uuid = BT_UUID_DECLARE_16(BT_UUID_GATT_PRIMARY_VAL);
-static struct bt_uuid *gatt_characteristic_uuid = BT_UUID_DECLARE_16(BT_UUID_GATT_CHRC_VAL);
+static struct bt_uuid *gatt_primary_service_uuid =
+    BT_UUID_DECLARE_16(BT_UUID_GATT_PRIMARY_VAL);
+static struct bt_uuid *gatt_characteristic_uuid =
+    BT_UUID_DECLARE_16(BT_UUID_GATT_CHRC_VAL);
 static struct bt_uuid *gatt_cud_uuid = BT_UUID_DECLARE_16(BT_UUID_GATT_CUD_VAL);
 static struct bt_uuid *gatt_ccc_uuid = BT_UUID_DECLARE_16(BT_UUID_GATT_CCC_VAL);
 
@@ -95,12 +99,12 @@ static ble_handle_t *ble_handle = NULL;
 static zjs_callback_id connected_cb_id = -1;
 static zjs_callback_id disconnected_cb_id = -1;
 
-static const jerry_object_native_info_t ble_type_info =
-{
+static const jerry_object_native_info_t ble_type_info = {
    .free_cb = free_handle_nop
 };
 
-struct bt_uuid *zjs_ble_new_uuid_16(u16_t value) {
+struct bt_uuid *zjs_ble_new_uuid_16(u16_t value)
+{
     struct bt_uuid_16 *uuid = zjs_malloc(sizeof(struct bt_uuid_16));
     if (!uuid) {
         ERR_PRINT("out of memory allocating struct bt_uuid_16\n");
@@ -111,10 +115,11 @@ struct bt_uuid *zjs_ble_new_uuid_16(u16_t value) {
 
     uuid->uuid.type = BT_UUID_TYPE_16;
     uuid->val = value;
-    return (struct bt_uuid *) uuid;
+    return (struct bt_uuid *)uuid;
 }
 
-static ble_connection_t *zjs_ble_new_connection(ble_connection_t **conns, struct bt_conn *conn)
+static ble_connection_t *zjs_ble_new_connection(ble_connection_t **conns,
+                                                struct bt_conn *conn)
 {
     ble_connection_t *new_conn = zjs_malloc(sizeof(ble_connection_t));
     if (!new_conn) {
@@ -129,7 +134,8 @@ static ble_connection_t *zjs_ble_new_connection(ble_connection_t **conns, struct
     return new_conn;
 }
 
-static void zjs_ble_release_connection(ble_connection_t **conns, ble_connection_t *conn)
+static void zjs_ble_release_connection(ble_connection_t **conns,
+                                       ble_connection_t *conn)
 {
     if (!conns || !conn)
         return;
@@ -223,14 +229,14 @@ static ZJS_DECL_FUNC(zjs_ble_read_callback_function)
 {
     // TODO: couldn't use ZJS_VALIDATE_ARGS here because it needs to give the
     //   semaphore on error case
-    if (argc != 2 ||
-        !jerry_value_is_number(argv[0]) ||
+    if (argc != 2 || !jerry_value_is_number(argv[0]) ||
         !zjs_value_is_buffer(argv[1])) {
         k_sem_give(&ble_sem);
         return zjs_error("invalid arguments");
     }
 
-    ZJS_GET_HANDLE(function_obj, struct zjs_ble_characteristic, chrc, ble_type_info);
+    ZJS_GET_HANDLE(function_obj, struct zjs_ble_characteristic, chrc,
+                   ble_type_info);
 
     chrc->read_cb.error_code = (u32_t)jerry_get_number_value(argv[0]);
 
@@ -258,7 +264,7 @@ static void zjs_ble_read_c_callback(void *handle, const void *argv)
 
     jerry_set_object_native_pointer(callback, handle, &ble_type_info);
 
-    jerry_value_t args[2] = {offset, callback};
+    jerry_value_t args[2] = { offset, callback };
     ZVAL rval = jerry_call_function(cb->js_callback, chrc->chrc_obj, args, 2);
     if (jerry_value_has_error_flag(rval)) {
         DBG_PRINT("failed to call onReadRequest function\n");
@@ -268,8 +274,7 @@ static void zjs_ble_read_c_callback(void *handle, const void *argv)
 // INTERRUPT SAFE FUNCTION: No JerryScript VM, allocs, or release prints!
 static ssize_t zjs_ble_read_attr_callback(struct bt_conn *conn,
                                           const struct bt_gatt_attr *attr,
-                                          void *buf, u16_t len,
-                                          u16_t offset)
+                                          void *buf, u16_t len, u16_t offset)
 {
     if (offset > len) {
         return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
@@ -322,13 +327,13 @@ static ZJS_DECL_FUNC(zjs_ble_write_callback_function)
 {
     // TODO: couldn't use ZJS_VALIDATE_ARGS here because it needs to give the
     //   semaphore on error case
-    if (argc != 1 ||
-        !jerry_value_is_number(argv[0])) {
+    if (argc != 1 || !jerry_value_is_number(argv[0])) {
         k_sem_give(&ble_sem);
         return zjs_error("invalid arguments");
     }
 
-    ZJS_GET_HANDLE(function_obj, struct zjs_ble_characteristic, chrc, ble_type_info);
+    ZJS_GET_HANDLE(function_obj, struct zjs_ble_characteristic, chrc,
+                   ble_type_info);
 
     // store the return value in the write_cb struct
     chrc->write_cb.error_code = (u32_t)jerry_get_number_value(argv[0]);
@@ -349,13 +354,11 @@ static void zjs_ble_write_c_callback(void *handle, const void *argv)
         buf_obj = zjs_buffer_create(cb->buffer_size, &buf);
         if (buf) {
             memcpy(buf->buffer, cb->buffer, cb->buffer_size);
-        }
-        else {
+        } else {
             // can't pass object with error flag as a JS arg
             jerry_value_clear_error_flag(&buf_obj);
         }
-    }
-    else {
+    } else {
         buf_obj = jerry_create_null();
     }
 
@@ -367,7 +370,7 @@ static void zjs_ble_write_c_callback(void *handle, const void *argv)
 
     jerry_set_object_native_pointer(callback, handle, &ble_type_info);
 
-    jerry_value_t args[4] = {buf_obj, offset, without_response, callback};
+    jerry_value_t args[4] = { buf_obj, offset, without_response, callback };
     ZVAL rval = jerry_call_function(cb->js_callback, chrc->chrc_obj, args, 4);
     if (jerry_value_has_error_flag(rval)) {
         DBG_PRINT("failed to call onWriteRequest function\n");
@@ -426,8 +429,8 @@ static ZJS_DECL_FUNC(zjs_ble_update_value_callback_function)
             // loop through all the connections
             ble_connection_t *conn = ble_handle->connections;
             while (conn) {
-                bt_gatt_notify(conn->bt_conn, chrc->chrc_attr,
-                               buf->buffer, buf->bufsize);
+                bt_gatt_notify(conn->bt_conn, chrc->chrc_attr, buf->buffer,
+                               buf->bufsize);
                 conn = conn->next;
             }
         }
@@ -445,7 +448,7 @@ static void zjs_ble_subscribe_c_callback(void *handle, const void *argv)
     ZVAL callback =
         jerry_create_external_function(zjs_ble_update_value_callback_function);
 
-    jerry_value_t args[2] = {max_size, callback};
+    jerry_value_t args[2] = { max_size, callback };
     ZVAL rval = jerry_call_function(cb->js_callback, chrc->chrc_obj, args, 2);
     if (jerry_value_has_error_flag(rval)) {
         DBG_PRINT("failed to call onSubscribe function\n");
@@ -491,7 +494,8 @@ static ble_characteristic_t *get_base_chrc(const struct bt_gatt_attr *attr)
 }
 
 // INTERRUPT SAFE FUNCTION: No JerryScript VM, allocs, or release prints!
-static void zjs_ble_blvl_ccc_cfg_changed(const struct bt_gatt_attr *attr, u16_t value)
+static void zjs_ble_blvl_ccc_cfg_changed(const struct bt_gatt_attr *attr,
+                                         u16_t value)
 {
     ble_characteristic_t *base_chrc = get_base_chrc(attr);
 
@@ -545,7 +549,8 @@ static void zjs_ble_connected(struct bt_conn *conn, u8_t err)
         ERR_PRINT("Connection failed (err %u)\n", err);
     } else {
         DBG_PRINT("new connection\n");
-        ble_connection_t *new_conn = zjs_ble_new_connection(&ble_handle->connections, conn);
+        ble_connection_t *new_conn =
+            zjs_ble_new_connection(&ble_handle->connections, conn);
         if (!new_conn) {
             ERR_PRINT("failed to create new client connection\n");
             return;
@@ -554,7 +559,8 @@ static void zjs_ble_connected(struct bt_conn *conn, u8_t err)
         char addr[BT_ADDR_LE_STR_LEN];
         bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
         new_conn->bt_conn = bt_conn_ref(conn);
-        connected_cb_id = zjs_add_c_callback(ble_handle, zjs_ble_connected_c_callback);
+        connected_cb_id = zjs_add_c_callback(ble_handle,
+                                             zjs_ble_connected_c_callback);
         zjs_signal_callback(connected_cb_id, addr, sizeof(addr));
         DBG_PRINT("client connected: %s\n", addr);
     }
@@ -568,7 +574,8 @@ static void zjs_ble_disconnected(struct bt_conn *conn, u8_t reason)
         if (ble_conn->bt_conn == conn) {
             char addr[BT_ADDR_LE_STR_LEN];
             bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-            disconnected_cb_id = zjs_add_c_callback(ble_handle, zjs_ble_disconnected_c_callback);
+            disconnected_cb_id =
+                zjs_add_c_callback(ble_handle, zjs_ble_disconnected_c_callback);
             zjs_signal_callback(disconnected_cb_id, addr, sizeof(addr));
             zjs_ble_release_connection(&ble_handle->connections, ble_conn);
             DBG_PRINT("client disconnected (reason %u): %s\n", reason, addr);
@@ -586,13 +593,13 @@ static struct bt_conn_cb zjs_ble_conn_callbacks = {
 
 static void zjs_ble_auth_cancel(struct bt_conn *conn)
 {
-        char addr[BT_ADDR_LE_STR_LEN];
-        bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-        DBG_PRINT("pairing cancelled: %s\n", addr);
+    char addr[BT_ADDR_LE_STR_LEN];
+    bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+    DBG_PRINT("pairing cancelled: %s\n", addr);
 }
 
 static struct bt_conn_auth_cb zjs_ble_auth_cb_display = {
-        .cancel = zjs_ble_auth_cancel,
+    .cancel = zjs_ble_auth_cancel,
 };
 
 static void zjs_ble_ready_c_callback(void *handle, const void *argv)
@@ -615,7 +622,8 @@ static void zjs_ble_bt_ready(int err)
     zjs_signal_callback(ble_handle->ready_cb_id, NULL, 0);
 }
 
-void zjs_ble_enable() {
+void zjs_ble_enable()
+{
     DBG_PRINT("Enabling the bluetooth, wait for bt_ready()...\n");
     bt_enable(zjs_ble_bt_ready);
     // setup connection callbacks
@@ -634,7 +642,8 @@ static ZJS_DECL_FUNC(zjs_ble_disconnect)
     ble_connection_t *conn = ble_handle->connections;
     while (conn) {
         char bt_addr[BT_ADDR_LE_STR_LEN];
-        bt_addr_le_to_str(bt_conn_get_dst(conn->bt_conn), bt_addr, sizeof(bt_addr));
+        bt_addr_le_to_str(bt_conn_get_dst(conn->bt_conn), bt_addr,
+                          sizeof(bt_addr));
         if (!strncmp(addr, bt_addr, BT_ADDR_LE_STR_LEN)) {
             int error = bt_conn_disconnect(conn->bt_conn,
                                            BT_HCI_ERR_REMOTE_USER_TERM_CONN);
@@ -698,8 +707,7 @@ static int zjs_encode_url_frame(jerry_value_t url, u8_t **frame, int *size)
 
     if (strncmp(buf + offset, "www.", 4)) {
         scheme += 2;
-    }
-    else {
+    } else {
         offset += 4;
     }
 
@@ -713,11 +721,11 @@ static int zjs_encode_url_frame(jerry_value_t url, u8_t **frame, int *size)
     if (!ptr)
         return ZJS_ALLOC_FAILED;
 
-    ptr[0] = 0xaa;  // Eddystone UUID
-    ptr[1] = 0xfe;  // Eddystone UUID
-    ptr[2] = 0x10;  // Eddystone-URL frame type
-    ptr[3] = 0x00;  // calibrated Tx power at 0m
-    ptr[4] = scheme; // encoded URL scheme prefix
+    ptr[0] = 0xaa;    // Eddystone UUID
+    ptr[1] = 0xfe;    // Eddystone UUID
+    ptr[2] = 0x10;    // Eddystone-URL frame type
+    ptr[3] = 0x00;    // calibrated Tx power at 0m
+    ptr[4] = scheme;  // encoded URL scheme prefix
     strncpy(ptr + 5, buf + offset, len);
 
     *size = len + 5;
@@ -772,7 +780,7 @@ static ZJS_DECL_FUNC(zjs_ble_start_advertising)
         return zjs_error("nothing to advertise");
     }
 
-    const u8_t url_adv[] = {0xaa, 0xfe};
+    const u8_t url_adv[] = { 0xaa, 0xfe };
 
     struct bt_data ad[records];
     int index = 0;
@@ -788,7 +796,7 @@ static ZJS_DECL_FUNC(zjs_ble_start_advertising)
         index = 2;
     }
 
-    for (int i=0; i<arraylen; i++) {
+    for (int i = 0; i < arraylen; i++) {
         ZVAL uuid = jerry_get_property_by_index(array, i);
         if (!jerry_value_is_string(uuid)) {
             return zjs_error("invalid uuid argument type");
@@ -821,8 +829,8 @@ static ZJS_DECL_FUNC(zjs_ble_start_advertising)
                               sd, ARRAY_SIZE(sd));
     ZVAL error = err ? zjs_error("advertising failed") : jerry_create_null();
 
-    zjs_trigger_event(ble_handle->ble_obj, "advertisingStart", &error,
-                      1, NULL, NULL);
+    zjs_trigger_event(ble_handle->ble_obj, "advertisingStart", &error, 1, NULL,
+                      NULL);
     DBG_PRINT("BLE event: adveristingStart\n");
 
     zjs_free(url_frame);
@@ -855,7 +863,7 @@ static bool zjs_ble_parse_characteristic(ble_characteristic_t *chrc)
         return false;
     }
 
-    for (int i=0; i<jerry_get_array_length(v_props); i++) {
+    for (int i = 0; i < jerry_get_array_length(v_props); i++) {
         ZVAL v_property = jerry_get_property_by_index(v_props, i);
 
         if (!jerry_value_is_string(v_property)) {
@@ -885,7 +893,7 @@ static bool zjs_ble_parse_characteristic(ble_characteristic_t *chrc)
         return false;
     }
 
-    for (int i=0; i<jerry_get_array_length(v_descs); i++) {
+    for (int i = 0; i < jerry_get_array_length(v_descs); i++) {
         ZVAL v_desc = jerry_get_property_by_index(v_descs, i);
 
         if (!jerry_value_is_object(v_desc)) {
@@ -928,7 +936,8 @@ static bool zjs_ble_parse_characteristic(ble_characteristic_t *chrc)
     ZVAL v_sub = zjs_get_property(chrc_obj, "onSubscribe");
     if (jerry_value_is_function(v_sub)) {
         chrc->subscribe_cb.js_callback = jerry_acquire_value(v_sub);
-        chrc->subscribe_cb.id = zjs_add_c_callback(chrc, zjs_ble_subscribe_c_callback);
+        chrc->subscribe_cb.id =
+            zjs_add_c_callback(chrc, zjs_ble_subscribe_c_callback);
     } else {
         chrc->subscribe_cb.id = -1;
     }
@@ -936,7 +945,8 @@ static bool zjs_ble_parse_characteristic(ble_characteristic_t *chrc)
     ZVAL v_unsub = zjs_get_property(chrc_obj, "onUnsubscribe");
     if (jerry_value_is_function(v_unsub)) {
         chrc->unsubscribe_cb.js_callback = jerry_acquire_value(v_unsub);
-        chrc->unsubscribe_cb.id = zjs_add_c_callback(chrc, zjs_ble_unsubscribe_c_callback);
+        chrc->unsubscribe_cb.id =
+            zjs_add_c_callback(chrc, zjs_ble_unsubscribe_c_callback);
     } else {
         chrc->unsubscribe_cb.id = -1;
     }
@@ -944,7 +954,8 @@ static bool zjs_ble_parse_characteristic(ble_characteristic_t *chrc)
     ZVAL v_notify = zjs_get_property(chrc_obj, "onNotify");
     if (jerry_value_is_function(v_notify)) {
         chrc->notify_cb.js_callback = jerry_acquire_value(v_notify);
-        chrc->notify_cb.id = zjs_add_c_callback(chrc, zjs_ble_notify_c_callback);
+        chrc->notify_cb.id =
+            zjs_add_c_callback(chrc, zjs_ble_notify_c_callback);
     } else {
         chrc->notify_cb.id = -1;
     }
@@ -973,7 +984,7 @@ static bool zjs_ble_parse_service(ble_service_t *service)
 
     char *errmsg = NULL;
     ble_characteristic_t *previous = NULL;
-    for (int i=0; i<jerry_get_array_length(v_chrcs); i++) {
+    for (int i = 0; i < jerry_get_array_length(v_chrcs); i++) {
         // FIXME: it would make sense to move these next few lines into
         //   parse_characteristic
         ZVAL v_chrc = jerry_get_property_by_index(v_chrcs, i);
@@ -1013,9 +1024,8 @@ static bool zjs_ble_parse_service(ble_service_t *service)
         if (!service->characteristics) {
             service->characteristics = chrc;
             previous = chrc;
-        }
-        else {
-           previous->next = chrc;
+        } else {
+            previous->next = chrc;
         }
     }
 
@@ -1036,24 +1046,25 @@ static bool zjs_ble_register_service(ble_service_t *service)
 
     // calculate the number of GATT attributes to allocate
     int entry_index = 0;
-    int num_of_entries = 1;   // 1 attribute for service uuid
+    int num_of_entries = 1;    // 1 attribute for service uuid
     ble_characteristic_t *ch = service->characteristics;
 
     while (ch) {
-        num_of_entries += 2;  // 2 attributes for uuid and descriptor
+        num_of_entries += 2;   // 2 attributes for uuid and descriptor
 
         if (ch->cud_value) {
-            num_of_entries++; // 1 attribute for cud
+            num_of_entries++;  // 1 attribute for cud
         }
 
         if ((ch->flags & BT_GATT_CHRC_NOTIFY) == BT_GATT_CHRC_NOTIFY) {
-            num_of_entries++; // 1 attribute for ccc
+            num_of_entries++;  // 1 attribute for ccc
         }
 
         ch = ch->next;
     }
 
-   struct bt_gatt_attr *bt_attrs = zjs_malloc(sizeof(struct bt_gatt_attr) * num_of_entries);
+   struct bt_gatt_attr *bt_attrs = zjs_malloc(sizeof(struct bt_gatt_attr) *
+                                              num_of_entries);
     if (!bt_attrs) {
         ERR_PRINT("out of memory allocating struct bt_gatt_attr\n");
         return false;
@@ -1072,7 +1083,8 @@ static bool zjs_ble_register_service(ble_service_t *service)
     ch = service->characteristics;
     while (ch) {
         // GATT Characteristic
-        struct bt_gatt_chrc *chrc_user_data = zjs_malloc(sizeof(struct bt_gatt_chrc));
+        struct bt_gatt_chrc *chrc_user_data =
+            zjs_malloc(sizeof(struct bt_gatt_chrc));
         if (!chrc_user_data) {
             ERR_PRINT("out of memory allocating struct bt_gatt_chrc\n");
             return false;
@@ -1129,7 +1141,8 @@ static bool zjs_ble_register_service(ble_service_t *service)
         // CCC
         if ((ch->flags & BT_GATT_CHRC_NOTIFY) == BT_GATT_CHRC_NOTIFY) {
             // add CCC only if notify flag is set
-            struct _bt_gatt_ccc *ccc_user_data = zjs_malloc(sizeof(struct _bt_gatt_ccc));
+            struct _bt_gatt_ccc *ccc_user_data =
+                zjs_malloc(sizeof(struct _bt_gatt_ccc));
             if (!ccc_user_data) {
                 ERR_PRINT("out of memory allocating struct bt_gatt_ccc\n");
                 return false;
@@ -1202,8 +1215,8 @@ static ZJS_DECL_FUNC(zjs_ble_set_services)
 
         // transfer ownership of v_service to service struct
         service->service_obj = jerry_acquire_value(v_service);
-        jerry_set_object_native_pointer(service->service_obj,
-                                        service, &ble_type_info);
+        jerry_set_object_native_pointer(service->service_obj, service,
+                                        &ble_type_info);
 
         // FIXME: The parse_service should take the service_obj instead and do
         //   all this above stuff in the loop, reducing error handling cruft.
@@ -1225,15 +1238,14 @@ static ZJS_DECL_FUNC(zjs_ble_set_services)
         if (!ble_handle->services) {
             ble_handle->services = service;
             previous = service;
-        }
-        else {
-           previous->next = service;
+        } else {
+            previous->next = service;
         }
     }
 
     if (argc > 1) {
-        ZVAL arg = success ? ZJS_UNDEFINED :
-              jerry_create_string("failed to register services");
+        ZVAL arg = success ? ZJS_UNDEFINED
+                           : jerry_create_string("failed to register services");
         ZVAL rval = jerry_call_function(argv[1], ZJS_UNDEFINED, &arg, 1);
         if (jerry_value_has_error_flag(rval)) {
             DBG_PRINT("failed to call callback function\n");
@@ -1323,7 +1335,8 @@ jerry_value_t zjs_ble_init()
     // create global BLE object
     jerry_value_t ble_obj = jerry_create_object();
     zjs_obj_add_function(ble_obj, zjs_ble_disconnect, "disconnect");
-    zjs_obj_add_function(ble_obj, zjs_ble_start_advertising, "startAdvertising");
+    zjs_obj_add_function(ble_obj, zjs_ble_start_advertising,
+                         "startAdvertising");
     zjs_obj_add_function(ble_obj, zjs_ble_stop_advertising, "stopAdvertising");
     zjs_obj_add_function(ble_obj, zjs_ble_set_services, "setServices");
     zjs_obj_add_function(ble_obj, zjs_ble_update_rssi, "updateRssi");

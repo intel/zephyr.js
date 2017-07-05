@@ -2,9 +2,11 @@
 
 #ifdef ZJS_LINUX_BUILD
 
+// C includes
 #include <stdint.h>
 #include <string.h>
 
+// ZJS includes
 #include "zjs_script.h"
 
 uint8_t zjs_read_script(char *name, char **script, uint32_t *length)

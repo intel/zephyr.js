@@ -5,25 +5,30 @@
  * @brief Shell to keep the different states of the machine
  */
 
-#include <zephyr/types.h>
+// C includes
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
+
+// Zephyr includes
 #include <atomic.h>
+#include <ctype.h>
+#include <fs.h>
 #include <malloc.h>
 #include <misc/printk.h>
-#include <fs.h>
-#include <ctype.h>
+#include <zephyr/types.h>
 
-#include "comms-uart.h"
+// ZJS includes
 #include "comms-shell.h"
+#include "comms-uart.h"
 #include "shell-state.h"
 
 #include "ihex-handler.h"
 
 #include "../zjs_util.h"
 
-static const char comms_default_prompt[] = ANSI_FG_YELLOW "acm> " ANSI_FG_RESTORE;
+static const char comms_default_prompt[] =
+    ANSI_FG_YELLOW "acm> " ANSI_FG_RESTORE;
 static const char *comms_prompt = NULL;
 
 void comms_set_prompt(const char *prompt)
@@ -241,12 +246,14 @@ u32_t ashell_get_argc(const char *str, u32_t nsize)
  *
  * @param str     Null terminated string
  * @param nsize   Checks line size boundaries.
- * @param str_arg Initialized destination for the argument. It always null terminates the string
+ * @param str_arg Initialized destination for the argument. It always null
+ *                  terminates the string
  * @param length  Returns length of the argument found.
  * @return 0      Pointer to where this argument finishes
  */
 
-const char *ashell_get_next_arg(const char *str, u32_t nsize, char *str_arg, u32_t *length)
+const char *
+ashell_get_next_arg(const char *str, u32_t nsize, char *str_arg, u32_t *length)
 {
     *length = 0;
     if (nsize == 0 || str == NULL || *str == '\0') {
@@ -271,7 +278,8 @@ const char *ashell_get_next_arg(const char *str, u32_t nsize, char *str_arg, u32
     return str;
 }
 
-/** @brief Safe function to copy the next argument into a destination argument string
+/** @brief Safe function to copy the next argument into a destination argument
+*     string
 *
 * @param str          Null terminated string
 * @param nsize        Checks line size boundaries.
@@ -281,7 +289,8 @@ const char *ashell_get_next_arg(const char *str, u32_t nsize, char *str_arg, u32
 * @return 0 Pointer to where this argument finishes
 */
 
-const char *ashell_get_next_arg_s(const char *str, u32_t nsize, char *str_arg, const u32_t max_arg_size, u32_t *length)
+const char *ashell_get_next_arg_s(const char *str, u32_t nsize, char *str_arg,
+                                  const u32_t max_arg_size, u32_t *length)
 {
     /* Check size and allocate for string termination */
     if (nsize >= max_arg_size) {
@@ -588,17 +597,18 @@ void ashell_process_start()
 }
 
 #ifdef CONFIG_SHELL_UNIT_TESTS
-struct shell_tests
-{
+struct shell_tests {
     char *str;
     u32_t size;
     u32_t result;
 };
 
-#define TEST_PARAMS(str,size, params) { str, size, params }
+#define TEST_PARAMS(str, size, params) \
+    {                                  \
+        str, size, params              \
+    }
 
-struct shell_tests test[] =
-{
+struct shell_tests test[] = {
     TEST_PARAMS(" ", 2, 0),
     TEST_PARAMS("     ", 6, 0),
     /* Wrong string length */
@@ -622,8 +632,7 @@ struct shell_tests test[] =
     TEST_PARAMS(NULL, 0, 0)
 };
 
-struct shell_tests param_test[] =
-{
+struct shell_tests param_test[] = {
     TEST_PARAMS("-xyz", 't', 0),
     TEST_PARAMS("-xyz ", 't', 0),
     TEST_PARAMS("-xyz ", 'x', 1),
@@ -649,10 +658,7 @@ void shell_unit_test()
     while (t != sizeof(test) / sizeof(shell_tests)) {
         argc = ashell_get_argc(test[t].str, test[t].size);
         if (argc != test[t].result) {
-            printf("Failed [%s] %d!=%d ",
-                test[t].str,
-                test[t].result,
-                argc);
+            printf("Failed [%s] %d!=%d ", test[t].str, test[t].result, argc);
             return;
         }
         t++;
@@ -709,9 +715,11 @@ void shell_unit_test()
 
     t = 0;
     while (t != sizeof(param_test) / sizeof(shell_tests)) {
-        u32_t res = ashell_check_parameter(param_test[t].str, (char)param_test[t].size);
+        u32_t res = ashell_check_parameter(param_test[t].str,
+                                           (char)param_test[t].size);
         if (res != param_test[t].result) {
-            printf("Failed test (%s) %c\n", param_test[t].str, (char)param_test[t].size);
+            printf("Failed test (%s) %c\n", param_test[t].str,
+                   (char)param_test[t].size);
         };
         t++;
     }

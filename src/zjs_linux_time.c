@@ -1,7 +1,10 @@
 // Copyright (c) 2016-2017, Intel Corporation.
 
-#include "zjs_linux_port.h"
+// C includes
 #include <time.h>
+
+// ZJS includes
+#include "zjs_linux_port.h"
 
 #define ZEPHYR_TICKS_PER_SEC
 
@@ -26,7 +29,8 @@ u8_t zjs_port_timer_test(zjs_port_timer_t *timer)
 
     clock_gettime(CLOCK_MONOTONIC, &now);
 
-    elapsed = (1000 * (now.tv_sec - timer->sec)) + ((now.tv_nsec / 1000000) - timer->milli);
+    elapsed = (1000 * (now.tv_sec - timer->sec)) +
+              ((now.tv_nsec / 1000000) - timer->milli);
 
     if (elapsed >= timer->interval) {
         return elapsed;

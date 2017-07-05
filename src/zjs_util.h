@@ -5,8 +5,13 @@
 
 // The util code is only for the X86 side
 
+// C includes
 #include <stdlib.h>
+
+// JerryScript includes
 #include "jerryscript.h"
+
+// ZJS includes
 #include "zjs_common.h"
 #include "zjs_error.h"
 
@@ -17,7 +22,6 @@
 #else
 #define ZJS_HIDDEN_PROP(n) "\377" n
 #endif
-
 
 /**
  * Call malloc but if it fails, run JerryScript garbage collection and retry
@@ -32,10 +36,24 @@ void *zjs_malloc_with_retry(size_t size);
 #else
 #include <zephyr.h>
 #ifdef ZJS_TRACE_MALLOC
-#define zjs_malloc(sz) ({void *zjs_ptr = zjs_malloc_with_retry(sz); ZJS_PRINT("%s:%d: allocating %lu bytes (%p)\n", __func__, __LINE__, (u32_t)sz, zjs_ptr); zjs_ptr;})
-#define zjs_free(ptr) (ZJS_PRINT("%s:%d: freeing %p\n", __func__, __LINE__, ptr), free(ptr))
+#define zjs_malloc(sz)                                                      \
+    ({                                                                      \
+        void *zjs_ptr = zjs_malloc_with_retry(sz);                          \
+        ZJS_PRINT("%s:%d: allocating %lu bytes (%p)\n", __func__, __LINE__, \
+                  (u32_t)sz, zjs_ptr);                                      \
+        zjs_ptr;                                                            \
+    })
+#define zjs_free(ptr) \
+    (ZJS_PRINT("%s:%d: freeing %p\n", __func__, __LINE__, ptr), free(ptr))
 #else
-#define zjs_malloc(sz) ({void *zjs_ptr = zjs_malloc_with_retry(sz); if (!zjs_ptr) {ERR_PRINT("malloc failed\n");} zjs_ptr;})
+#define zjs_malloc(sz)                             \
+    ({                                             \
+        void *zjs_ptr = zjs_malloc_with_retry(sz); \
+        if (!zjs_ptr) {                            \
+            ERR_PRINT("malloc failed\n");          \
+        }                                          \
+        zjs_ptr;                                   \
+    })
 #define zjs_free(ptr) free(ptr)
 #endif  // ZJS_TRACE_MALLOC
 #endif  // ZJS_LINUX_BUILD
@@ -44,7 +62,7 @@ void zjs_set_property(const jerry_value_t obj, const char *name,
                       const jerry_value_t prop);
 void zjs_set_readonly_property(const jerry_value_t obj, const char *name,
                                const jerry_value_t prop);
-jerry_value_t zjs_get_property (const jerry_value_t obj, const char *name);
+jerry_value_t zjs_get_property(const jerry_value_t obj, const char *name);
 bool zjs_delete_property(const jerry_value_t obj, const char *str);
 
 typedef struct zjs_native_func {
@@ -135,10 +153,9 @@ void zjs_print_error_message(jerry_value_t error, jerry_value_t func);
  *     return ZJS_UNDEFINED;
  * };
  */
-#define ZJS_DECL_FUNC(name)                               \
-    jerry_value_t name(const jerry_value_t function_obj,  \
-                       const jerry_value_t this,          \
-                       const jerry_value_t argv[],        \
+#define ZJS_DECL_FUNC(name)                                                  \
+    jerry_value_t name(const jerry_value_t function_obj,                     \
+                       const jerry_value_t this, const jerry_value_t argv[], \
                        const jerry_length_t argc)
 
 /**
@@ -154,12 +171,10 @@ void zjs_print_error_message(jerry_value_t error, jerry_value_t func);
  *     return ZJS_UNDEFINED;
  * };
  */
-#define ZJS_DECL_FUNC_ARGS(name, ...)                     \
-    jerry_value_t name(const jerry_value_t function_obj,  \
-                       const jerry_value_t this,          \
-                       const jerry_value_t argv[],        \
-                       const jerry_length_t argc,         \
-                       __VA_ARGS__)
+#define ZJS_DECL_FUNC_ARGS(name, ...)                                        \
+    jerry_value_t name(const jerry_value_t function_obj,                     \
+                       const jerry_value_t this, const jerry_value_t argv[], \
+                       const jerry_length_t argc, __VA_ARGS__)
 
 /**
  * Macro to call a function declared with ZJS_DECL_FUNC_ARGS from another API
@@ -170,7 +185,7 @@ void zjs_print_error_message(jerry_value_t error, jerry_value_t func);
  * Example:
  * jerry_value_t rval = ZJS_CHAIN_FUNC_ARGS(zjs_my_api_with_args, 1);
  */
-#define ZJS_CHAIN_FUNC_ARGS(name, ...)                 \
+#define ZJS_CHAIN_FUNC_ARGS(name, ...) \
     name(function_obj, this, argv, argc, __VA_ARGS__)
 
 /**
@@ -189,7 +204,7 @@ void zjs_free_value(const jerry_value_t *value);
  * Also, don't use this for a variable that holds a C copy of a value that was
  * passed into you, as those are owned by the caller.
  */
-#define ZVAL const jerry_value_t __attribute__ ((__cleanup__(zjs_free_value)))
+#define ZVAL const jerry_value_t __attribute__((__cleanup__(zjs_free_value)))
 
 /**
  * A non-const version of ZVAL
@@ -198,7 +213,7 @@ void zjs_free_value(const jerry_value_t *value);
  * should be used sparingly, because this is less safe; it's possible to
  * overwrite a value and forget to release the old one.
  */
-#define ZVAL_MUTABLE jerry_value_t __attribute__ ((__cleanup__(zjs_free_value)))
+#define ZVAL_MUTABLE jerry_value_t __attribute__((__cleanup__(zjs_free_value)))
 
 //
 // ztypes (for argument validation)
@@ -261,15 +276,15 @@ int zjs_validate_args(const char *expectations[], const jerry_length_t argc,
     }
 
 // Use this if you need an offset
-#define ZJS_VALIDATE_ARGS_OFFSET(offset, ...)           \
+#define ZJS_VALIDATE_ARGS_OFFSET(offset, ...) \
     ZJS_VALIDATE_ARGS_FULL(zjs_validate_rval, offset, __VA_ARGS__)
 
 // Use this if you need the number of optional args found
-#define ZJS_VALIDATE_ARGS_OPTCOUNT(optcount, ...)       \
+#define ZJS_VALIDATE_ARGS_OPTCOUNT(optcount, ...) \
     ZJS_VALIDATE_ARGS_FULL(optcount, 0, __VA_ARGS__)
 
 // Normally use this as a shortcut
-#define ZJS_VALIDATE_ARGS(...)                      \
+#define ZJS_VALIDATE_ARGS(...) \
     ZJS_VALIDATE_ARGS_FULL(zjs_validate_rval, 0, __VA_ARGS__)
 
 /**
@@ -300,9 +315,9 @@ int zjs_require_bool_if_prop(jerry_value_t obj, const char *prop, bool *result);
  * Returns an error from calling function if obj.prop exists but is not a
  *   boolean.
  */
-#define ZJS_REQUIRE_BOOL_IF_PROP(value, prop, result)         \
-    if (zjs_require_bool_if_prop(value, prop, result) < 0) {  \
-        return TYPE_ERROR("bool required");                   \
+#define ZJS_REQUIRE_BOOL_IF_PROP(value, prop, result)        \
+    if (zjs_require_bool_if_prop(value, prop, result) < 0) { \
+        return TYPE_ERROR("bool required");                  \
     }
 
 typedef struct str2int {
@@ -332,19 +347,19 @@ int zjs_require_string_if_prop_map(jerry_value_t obj, const char *prop,
  * Returns an error from calling function if obj.prop exists but is not a
  *   string, or if string is not one of the allowed values in map.
  */
-#define ZJS_REQUIRE_STR_IF_PROP_MAP(obj, prop, map, maxlen, result)  \
-    {                                                                \
-        int rval = zjs_require_string_if_prop_map(obj, prop, map,    \
-                                                  maxlen, result);   \
-        if (rval < 0) {                                              \
-            return TYPE_ERROR("one of specific strings required");   \
-        }                                                            \
+#define ZJS_REQUIRE_STR_IF_PROP_MAP(obj, prop, map, maxlen, result)         \
+    {                                                                       \
+        int rval =                                                          \
+            zjs_require_string_if_prop_map(obj, prop, map, maxlen, result); \
+        if (rval < 0) {                                                     \
+            return TYPE_ERROR("one of specific strings required");          \
+        }                                                                   \
     }
 
 void free_handle_nop(void *h);
 
 #ifndef ZJS_LINUX_BUILD
-#define LOCK  k_sched_lock
+#define LOCK   k_sched_lock
 #define UNLOCK k_sched_unlock
 
 #ifndef ZJS_ASHELL
@@ -390,30 +405,30 @@ void zjs_loop_init(void);
 
 // The above will return a list item whos `value` parameter == 42
 #define ZJS_LIST_FIND(type, list, cmp_element, cmp_to) \
-   ({ \
-       type *found = NULL; \
-       type *cur = list; \
-       while (cur) { \
-           if (cur->cmp_element == cmp_to) { \
-               found = cur; \
-               break; \
-           } \
-           cur = cur->next; \
-       } \
-       found; \
-   })
+    ({                                                 \
+        type *found = NULL;                            \
+        type *cur = list;                              \
+        while (cur) {                                  \
+            if (cur->cmp_element == cmp_to) {          \
+                found = cur;                           \
+                break;                                 \
+            }                                          \
+            cur = cur->next;                           \
+        }                                              \
+        found;                                         \
+    })
 
 // Append a new node to the end of a list
 // Example:
 //    list_item_t *item = new_list_item(...);
 //    ZJS_APPEND_NODE(list_item_t, my_list, item);
 #define ZJS_LIST_APPEND(type, list, p) \
-    { \
-        type **pnext = &list; \
-        while (*pnext) { \
-            pnext = &(*pnext)->next; \
-        } \
-        *pnext = p; \
+    {                                  \
+        type **pnext = &list;          \
+        while (*pnext) {               \
+            pnext = &(*pnext)->next;   \
+        }                              \
+        *pnext = p;                    \
     }
 
 // Prepend a new node to the beginning of a list
@@ -421,9 +436,9 @@ void zjs_loop_init(void);
 //    list_item_t *item = new_list_item(...);
 //    ZJS_PREPEND_NODE(list_item_t, my_list, item);
 #define ZJS_LIST_PREPEND(type, list, p) \
-    { \
-        p->next = list; \
-        list = p; \
+    {                                   \
+        p->next = list;                 \
+        list = p;                       \
     }
 
 // Remove a node from a list. Returns 1 if the node was removed.
@@ -431,76 +446,76 @@ void zjs_loop_init(void);
 //     void remove(list_item_t *to_remove) {
 //         ZJS_REMOVE_NODE(list_item_t, my_list, to_remove);
 //     }
-#define ZJS_LIST_REMOVE(type, list, p) \
-    ({ \
-        u8_t removed = 0; \
-        type *cur = list; \
-        if (p == list) { \
-            list = p->next; \
-        } else { \
-            while (cur->next) { \
-                if (cur->next == p) { \
+#define ZJS_LIST_REMOVE(type, list, p)   \
+    ({                                   \
+        u8_t removed = 0;                \
+        type *cur = list;                \
+        if (p == list) {                 \
+            list = p->next;              \
+        } else {                         \
+            while (cur->next) {          \
+                if (cur->next == p) {    \
                     cur->next = p->next; \
-                    removed = 1; \
-                    break; \
-                } \
-                cur = cur->next; \
-            } \
-        } \
-        removed; \
+                    removed = 1;         \
+                    break;               \
+                }                        \
+                cur = cur->next;         \
+            }                            \
+        }                                \
+        removed;                         \
     })
 
 // Free and iterate over a linked list, calling a callback for each list item
 // and removing the current item at each iteration.
 #define ZJS_LIST_FREE(type, list, callback) \
-    { \
-        while (list) { \
-            type *tmp = list->next; \
-            callback(list); \
-            list = tmp; \
-        } \
+    {                                       \
+        while (list) {                      \
+            type *tmp = list->next;         \
+            callback(list);                 \
+            list = tmp;                     \
+        }                                   \
     }
 
 // Get the length of a linked list
 #define ZJS_LIST_LENGTH(type, list) \
-    ({ \
-        int ret = 0; \
-        type *i = list; \
-        while (i) { \
-            ret++; \
-            i = i->next; \
-        } \
-        ret; \
+    ({                              \
+        int ret = 0;                \
+        type *i = list;             \
+        while (i) {                 \
+            ret++;                  \
+            i = i->next;            \
+        }                           \
+        ret;                        \
     })
 
-#define ZJS_GET_HANDLE(obj, type, var, info) \
-    type *var; \
-    { \
-        void *native; \
-        const jerry_object_native_info_t *tmp; \
+#define ZJS_GET_HANDLE(obj, type, var, info)                        \
+    type *var;                                                      \
+    {                                                               \
+        void *native;                                               \
+        const jerry_object_native_info_t *tmp;                      \
         if (!jerry_get_object_native_pointer(obj, &native, &tmp)) { \
-            return zjs_error("no native handle"); \
-        } \
-        if (tmp != &info) { \
-            return zjs_error("handle was incorrect type"); \
-        } \
-        var = (type *)native; \
+            return zjs_error("no native handle");                   \
+        }                                                           \
+        if (tmp != &info) {                                         \
+            return zjs_error("handle was incorrect type");          \
+        }                                                           \
+        var = (type *)native;                                       \
     }
 
 // FIXME: Quick hack to allow context into the regular macro while fixing build
 //        for call sites without JS binding context
-#define ZJS_GET_HANDLE_ALT(obj, type, var, info) \
-    type *var; \
-    { \
-        void *native; \
-        const jerry_object_native_info_t *tmp; \
-        if (!jerry_get_object_native_pointer(obj, &native, &tmp)) { \
-            return zjs_error_context("no native handle", 0, 0); \
-        } \
-        if (tmp != &info) { \
-            return zjs_error_context("handle was incorrect type", 0, 0);  \
-        } \
-        var = (type *)native; \
+#define ZJS_GET_HANDLE_ALT(obj, type, var, info)                         \
+    type *var;                                                           \
+    {                                                                    \
+        void *native;                                                    \
+        const jerry_object_native_info_t *tmp;                           \
+        if (!jerry_get_object_native_pointer(obj, &native, &tmp)) {      \
+            return zjs_error_context("no native handle", 0, 0);          \
+        }                                                                \
+        if (tmp != &info) {                                              \
+            return zjs_error_context("handle was incorrect type", 0, 0); \
+        }                                                                \
+        var = (type *)native;                                            \
     }
 
 #endif  // __zjs_util_h__

@@ -15,8 +15,7 @@
  * @brief State of the shell to control the data flow
  * and transactions.
  */
-enum
-{
+enum {
     kShellTransferRaw = (1 << 0),
     kShellTransferIhex = (1 << 1),
     kShellTransferSnapshot = (1 << 2),
@@ -27,13 +26,13 @@ enum
 /**
  * @brief Typedef callback for the command
  *
- * @param buf Raw buffer containing the rest of the parameters from the last command
+ * @param buf Raw buffer containing the rest of the parameters from the last
+ *              command
  * @return RET_OK, RET_ERROR, RET_UNKNOWN
  */
-typedef s32_t(*ashell_cmd)(char *buf);
+typedef s32_t (*ashell_cmd)(char *buf);
 
-struct ashell_cmd
-{
+struct ashell_cmd {
     const char *cmd_name;
     const char *args;
     const char *syntax;
@@ -43,13 +42,13 @@ struct ashell_cmd
 /**
  * @brief Current state of the shell
  */
-struct shell_state_config
-{
+struct shell_state_config {
     u32_t state_flags;
 };
 
 /**
- * @brief Main callback from the UART containing the line in the buffer for processing.
+ * @brief Main callback from the UART containing the line in the buffer for
+ *           processing.
  *
  * @param buf Zero terminated string, length of the buffer.
  * @return RET_OK, RET_ERROR, RET_UNKNOWN
@@ -57,8 +56,9 @@ struct shell_state_config
 s32_t ashell_main_state(char *buf, u32_t len);
 
 /**
- * @brief Gets called when main loop starts and runs the JavaScript file found in
- *  boot.cfg.  If no file exists, it simply exits and ashell starts normally.
+ * @brief Gets called when main loop starts and runs the JavaScript file found
+ *          in boot.cfg.  If no file exists, it simply exits and ashell starts
+ *          normally.
  */
 void ashell_run_boot_cfg();
 

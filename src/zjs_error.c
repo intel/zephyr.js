@@ -1,5 +1,6 @@
 // Copyright (c) 2017, Intel Corporation.
 
+// C includes
 #include <string.h>
 
 // ZJS includes
@@ -28,7 +29,7 @@ static ZJS_DECL_FUNC(error_handler)
 
     int count = sizeof(error_types) / sizeof(zjs_error_t);
     bool found = false;
-    for (int i=0; i<count; i++) {
+    for (int i = 0; i < count; i++) {
         if (function_obj == error_types[i].ctor) {
             zjs_obj_add_string(this, error_types[i].name, "name");
             found = true;
@@ -54,7 +55,7 @@ void zjs_error_init()
     ZVAL error_func = zjs_get_property(global, "Error");
 
     int count = sizeof(error_types) / sizeof(zjs_error_t);
-    for (int i=0; i<count; i++) {
+    for (int i = 0; i < count; i++) {
         ZVAL error_obj = jerry_construct_object(error_func, NULL, 0);
         if (jerry_value_is_undefined(error_obj)) {
             ERR_PRINT("Error object undefined\n");
@@ -72,7 +73,7 @@ void zjs_error_init()
 void zjs_error_cleanup()
 {
     int count = sizeof(error_types) / sizeof(zjs_error_t);
-    for (int i=0; i<count; i++) {
+    for (int i = 0; i < count; i++) {
         jerry_release_value(error_types[i].ctor);
     }
 }
@@ -179,8 +180,7 @@ jerry_value_t zjs_standard_error(zjs_error_type_t type, const char *message,
         ZJS_PRINT("[Error] %s\n", message);
 #endif
         error = jerry_create_error(JERRY_ERROR_TYPE, (jerry_char_t *)message);
-    }
-    else {
+    } else {
 #ifdef DEBUG_BUILD
         ZJS_PRINT("[%s] %s\n", error_types[type].name, message);
 #endif

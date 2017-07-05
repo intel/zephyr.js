@@ -1,7 +1,8 @@
 // Copyright (c) 2017, Intel Corporation.
 
-#include "zjs_common.h"
+// ZJS includes
 #include "zjs_callbacks.h"
+#include "zjs_common.h"
 #include "zjs_util.h"
 
 static ZJS_DECL_FUNC(add_callback)
@@ -16,10 +17,10 @@ static ZJS_DECL_FUNC(add_callback_list)
     ZJS_VALIDATE_ARGS(Z_FUNCTION, Z_ANY, Z_NUMBER);
 
     zjs_callback_id id = jerry_get_number_value(argv[2]);
-    zjs_callback_id new_id = zjs_add_callback_list(argv[0], argv[1], NULL, NULL, id);
+    zjs_callback_id new_id = zjs_add_callback_list(argv[0], argv[1], NULL,
+                                                   NULL, id);
     return jerry_create_number(new_id);
 }
-
 
 static ZJS_DECL_FUNC(remove_callback)
 {

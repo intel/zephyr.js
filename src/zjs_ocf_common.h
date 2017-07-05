@@ -1,13 +1,18 @@
 // Copyright (c) 2016-2017, Intel Corporation.
 
+// C includes
+#include <stdio.h>
+
+// JerryScript includes
 #include "jerryscript.h"
 
+// ZJS includes
 #include "zjs_common.h"
 #include "zjs_ocf_client.h"
 #include "zjs_util.h"
 
+// OCF includes
 #include "oc_api.h"
-#include <stdio.h>
 //#include "port/oc_signal_main_loop.h"
 #include "port/oc_clock.h"
 
@@ -28,14 +33,14 @@ struct props_handle {
 #define OCF_MAX_PROP_NAME_LEN 16
 
 // Helper to get the string from a jerry_value_t
-#define ZJS_GET_STRING(jval, name, maxlen)       \
-    jerry_size_t name##_size = maxlen; \
-    char name[name##_size]; \
+#define ZJS_GET_STRING(jval, name, maxlen) \
+    jerry_size_t name##_size = maxlen;     \
+    char name[name##_size];                \
     zjs_copy_jstring(jval, name, &name##_size);
 
-#define REJECT(err_name, err_msg) \
-    jerry_value_t promise = jerry_create_promise(); \
-    ZVAL error = make_ocf_error(err_name, err_msg, NULL); \
+#define REJECT(err_name, err_msg)                           \
+    jerry_value_t promise = jerry_create_promise();         \
+    ZVAL error = make_ocf_error(err_name, err_msg, NULL);   \
     jerry_resolve_or_reject_promise(promise, error, false); \
     return promise;
 
@@ -74,7 +79,7 @@ void zjs_ocf_free_props(void *h);
  *
  * @return              Time (ms) until next event
  */
-s32_t main_poll_routine(void* handle);
+s32_t main_poll_routine(void *handle);
 
 /**
  * Set the 'uuid' property in the device object. This API is required because

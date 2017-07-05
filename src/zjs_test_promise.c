@@ -2,9 +2,12 @@
 
 #ifdef BUILD_MODULE_TEST_PROMISE
 
+// JerryScript includes
 #include "jerryscript.h"
-#include "zjs_common.h"
+
+// ZJS includes
 #include "zjs_callbacks.h"
+#include "zjs_common.h"
 #include "zjs_util.h"
 
 static ZJS_DECL_FUNC(create_promise)
@@ -37,7 +40,6 @@ static ZJS_DECL_FUNC(test_reject)
     }
     return ZJS_UNDEFINED;
 }
-
 
 jerry_value_t zjs_test_promise_init(void)
 {

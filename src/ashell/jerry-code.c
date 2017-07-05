@@ -7,17 +7,19 @@
  * Reads a program from the ROM/RAM
  */
 
-/* Zephyr includes */
-#include <zephyr.h>
-#include <string.h>
+// C includes
 #include <ctype.h>
+#include <string.h>
 
-/* JerryScript includes */
-#include "jerryscript-port.h"
-#include "jerry-code.h"
+// Zephyr includes
+#include <zephyr.h>
+
+// JerryScript includes
 #include "file-utils.h"
+#include "jerry-code.h"
+#include "jerryscript-port.h"
 
-/* Zephyr.js init everything */
+// ZJS includes
 #include "../zjs_buffer.h"
 #include "../zjs_callbacks.h"
 #include "../zjs_ipm.h"
@@ -43,8 +45,7 @@ static bool list_contains(requires_list_t **list, const char *file_name)
     while (cur) {
         if (strcmp(file_name, cur->file_name) != 0) {
             cur = cur->next;
-        }
-        else {
+        } else {
             return true;
         }
     }
@@ -68,8 +69,7 @@ static requires_list_t *next_req_to_scan(requires_list_t **list)
     while (cur) {
         if (!cur->reqs_checked) {
             return cur;
-        }
-        else {
+        } else {
             cur = cur->next;
         }
     }
@@ -92,8 +92,7 @@ static void add_to_list(requires_list_t **list, const char *item)
         else
             *list = new;
         (*list)->prev = new;
-    }
-    else {
+    } else {
         new->prev = NULL;
         *list = new;
     }
@@ -116,7 +115,7 @@ static void javascript_print_value(const jerry_value_t value)
     else if (jerry_value_is_number(value)) {
         double val = jerry_get_number_value(value);
         // %lf prints an empty value :?
-        jerry_port_log(JERRY_LOG_LEVEL_TRACE, "Number [%d]\n", (int) val);
+        jerry_port_log(JERRY_LOG_LEVEL_TRACE, "Number [%d]\n", (int)val);
     }
     /* String value */
     else if (jerry_value_is_string(value)) {
@@ -126,8 +125,7 @@ static void javascript_print_value(const jerry_value_t value)
         if (str) {
             jerry_port_log(JERRY_LOG_LEVEL_TRACE, "%s", str);
             zjs_free(str);
-        }
-        else {
+        } else {
             jerry_port_log(JERRY_LOG_LEVEL_TRACE, "[String too long]");
         }
     }
@@ -201,8 +199,7 @@ static void skip_whitespace(char **ptr)
     while (**ptr != '\0') {
         if (**ptr == ' ' || **ptr == '\t' || **ptr == '\r' || **ptr == '\n') {
             ++(*ptr);
-        }
-        else {
+        } else {
             return;
         }
     }
@@ -304,8 +301,7 @@ static bool add_requires(requires_list_t **list, char *filebuf)
             !list_contains(list, filestr)) {
             if (fs_valid_filename(filestr)) {
                 add_to_list(list, filestr);
-            }
-            else {
+            } else {
                 return false;
             }
         }
@@ -334,8 +330,7 @@ static bool load_require_modules(char *file_buffer)
                     free_list(&req_list);
                     return false;
                 }
-            }
-            else {
+            } else {
                 free_list(&req_list);
                 return false;
             }
@@ -370,7 +365,7 @@ static void javascript_print_error(jerry_value_t error_value)
 
 void javascript_eval_code(const char *source_buffer, ssize_t size)
 {
-    ZVAL ret_val = jerry_eval((jerry_char_t *) source_buffer, size, false);
+    ZVAL ret_val = jerry_eval((jerry_char_t *)source_buffer, size, false);
 
     if (jerry_value_has_error_flag(ret_val)) {
         printf("[ERR] failed to evaluate JS\n");
@@ -381,7 +376,8 @@ void javascript_eval_code(const char *source_buffer, ssize_t size)
     }
 }
 
-void restore_zjs_api() {
+void restore_zjs_api()
+{
 #ifdef ZJS_POOL_CONFIG
     zjs_init_mem_pools();
 #ifdef DUMP_MEM_STATS
@@ -404,9 +400,9 @@ void javascript_stop()
     /* Cleanup engine */
     zjs_modules_cleanup();
     zjs_remove_all_callbacks();
-    #ifdef CONFIG_BOARD_ARDUINO_101
+#ifdef CONFIG_BOARD_ARDUINO_101
     zjs_ipm_free_callbacks();
-    #endif
+#endif
     jerry_cleanup();
 
     restore_zjs_api();
@@ -425,7 +421,7 @@ int javascript_parse_code(const char *file_name)
         // Find and load all required js modules
         if (load_require_modules(buf)) {
             /* Setup Global scope code */
-            parsed_code = jerry_parse((const jerry_char_t *) buf, size, false);
+            parsed_code = jerry_parse((const jerry_char_t *)buf, size, false);
             if (jerry_value_has_error_flag(parsed_code)) {
                 DBG_PRINT("Error parsing JS\n");
                 javascript_print_error(parsed_code);

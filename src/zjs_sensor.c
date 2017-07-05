@@ -2,11 +2,13 @@
 
 #ifndef QEMU_BUILD
 #ifndef ZJS_LINUX_BUILD
+
+// C includes
+#include <string.h>
+
 // Zephyr includes
 #include <zephyr.h>
 #endif
-
-#include <string.h>
 
 // ZJS includes
 #include "zjs_callbacks.h"
@@ -29,8 +31,7 @@ static void zjs_sensor_free_cb(void *native)
     zjs_free(handle);
 }
 
-static const jerry_object_native_info_t sensor_type_info =
-{
+static const jerry_object_native_info_t sensor_type_info = {
    .free_cb = zjs_sensor_free_cb
 };
 
@@ -210,8 +211,8 @@ void zjs_sensor_trigger_error(jerry_value_t obj,
         zjs_set_property(error_obj, "message", message_val);
         zjs_set_property(event, "error", error_obj);
 #ifdef ZJS_FIND_FUNC_NAME
-            zjs_obj_add_string(func, "sensor: onerror",
-                               ZJS_HIDDEN_PROP("function_name"));
+        zjs_obj_add_string(func, "sensor: onerror",
+                           ZJS_HIDDEN_PROP("function_name"));
 #endif
         zjs_callback_id id = zjs_add_callback_once(func, obj, NULL, NULL);
         zjs_signal_callback(id, &event, sizeof(event));
@@ -374,4 +375,4 @@ void zjs_sensor_cleanup()
     jerry_release_value(zjs_sensor_prototype);
 }
 
-#endif // QEMU_BUILD
+#endif  // QEMU_BUILD

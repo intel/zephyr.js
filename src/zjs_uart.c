@@ -2,22 +2,25 @@
 
 #ifdef BUILD_MODULE_UART
 
-#include <zephyr.h>
+// C includes
+#include <string.h>
+
+// Zephyr includes
 #include <device.h>
 #include <uart.h>
+#include <zephyr.h>
 
-#include "string.h"
-
+// ZJS includes
 #ifndef ZJS_LINUX_BUILD
 #include "zjs_zephyr_port.h"
 #else
 #include "zjs_linux_port.h"
 #endif
-#include "zjs_common.h"
-#include "zjs_util.h"
-#include "zjs_callbacks.h"
-#include "zjs_event.h"
 #include "zjs_buffer.h"
+#include "zjs_callbacks.h"
+#include "zjs_common.h"
+#include "zjs_event.h"
+#include "zjs_util.h"
 
 static jerry_value_t zjs_uart_prototype;
 
@@ -46,7 +49,7 @@ static uart_dev_map device_map[] = {
 #endif
 };
 
-#define UART_BUFFER_INITIAL_SIZE    16
+#define UART_BUFFER_INITIAL_SIZE 16
 
 static uart_handle *handle = NULL;
 static struct device *uart_dev = NULL;
@@ -110,7 +113,6 @@ static void uart_c_callback(void *h, const void *args)
         handle->buf_obj = zjs_buffer_create(handle->size, &buffer);
         if (buffer) {
             memcpy(buffer->buffer, args, handle->size);
-
         }
         zjs_trigger_event_now(handle->uart_obj, "read", &handle->buf_obj, 1,
                               post_event, NULL);
@@ -146,7 +148,9 @@ static int write_data(struct device *dev, const char *buf, int len)
 
     tx = false;
     int bytes = uart_fifo_fill(dev, buf, len);
-    while (tx == false);
+    while (tx == false) {
+        ;
+    }
 
     uart_irq_tx_disable(dev);
     return bytes;
@@ -163,8 +167,7 @@ static ZJS_DECL_FUNC(uart_write)
                            buffer->bufsize);
     if (wrote == buffer->bufsize) {
         return jerry_create_number(wrote);
-    }
-    else {
+    } else {
         return make_uart_error("WriteError", "incomplete write");
     }
 }
@@ -269,7 +272,8 @@ static ZJS_DECL_FUNC(uart_init)
 
     int test_baud = baud;
 
-    ret = uart_line_ctrl_get(uart_dev, LINE_CTRL_BAUD_RATE, (u32_t *)&test_baud);
+    ret = uart_line_ctrl_get(uart_dev, LINE_CTRL_BAUD_RATE,
+                             (u32_t *)&test_baud);
     if (ret) {
         DBG_PRINT("failed to get baudrate, ret code %d\n", ret);
     } else {
@@ -317,4 +321,4 @@ void zjs_uart_cleanup()
     jerry_release_value(zjs_uart_prototype);
 }
 
-#endif // BUILD_MODULE_UART
+#endif  // BUILD_MODULE_UART

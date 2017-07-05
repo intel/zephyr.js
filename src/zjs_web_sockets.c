@@ -1,33 +1,37 @@
 // Copyright (c) 2017, Intel Corporation.
 
-#include <zephyr.h>
-#include <random.h>
-#include <sections.h>
+// C includes
 #include <errno.h>
+#include <random.h>
 
+// Zephyr includes
+#include <sections.h>
+#include <zephyr.h>
+
+#include "mbedtls/base64.h"
+#include "mbedtls/sha1.h"
 #include <net/net_context.h>
 #include <net/net_core.h>
 #include <net/net_if.h>
 #include <net/net_mgmt.h>
 #include <net/net_pkt.h>
-#include "mbedtls/sha1.h"
-#include "mbedtls/base64.h"
 
 #ifdef CONFIG_NET_L2_BLUETOOTH
 #include <bluetooth/bluetooth.h>
-#include <gatt/ipss.h>
 #include <bluetooth/conn.h>
+#include <gatt/ipss.h>
 #endif
 
 // ZJS includes
-#include "zjs_util.h"
 #include "zjs_buffer.h"
 #include "zjs_callbacks.h"
 #include "zjs_event.h"
 #include "zjs_modules.h"
 #include "zjs_net_config.h"
+#include "zjs_util.h"
 #include "zjs_zephyr_port.h"
 
+// JerryScript includes
 #include "jerryscript.h"
 
 /*
@@ -35,9 +39,13 @@
  *   - Implement WebSocket client side
  */
 
-#define DEFAULT_WS_BUFFER_SIZE  256
-#define CHECK(x) \
-    ret = (x); if (ret < 0) { ERR_PRINT("Error in " #x ": %d\n", ret); return zjs_error(#x); }
+#define DEFAULT_WS_BUFFER_SIZE 256
+#define CHECK(x)                                 \
+    ret = (x);                                   \
+    if (ret < 0) {                               \
+        ERR_PRINT("Error in " #x ": %d\n", ret); \
+        return zjs_error(#x);                    \
+    }
 
 typedef enum {
     UNCONNECTED = 0,
@@ -92,8 +100,7 @@ typedef struct ws_packet {
     u8_t mask_bit;
 } ws_packet_t;
 
-static const jerry_object_native_info_t ws_type_info =
-{
+static const jerry_object_native_info_t ws_type_info = {
    .free_cb = free_handle_nop
 };
 
@@ -107,8 +114,7 @@ static void free_server(void *native)
     }
 }
 
-static const jerry_object_native_info_t server_type_info =
-{
+static const jerry_object_native_info_t server_type_info = {
    .free_cb = free_server
 };
 
@@ -199,9 +205,9 @@ static void generate_key(char *key, u32_t len, char *output, u32_t olen)
 static void dump_packet(ws_packet_t *packet)
 {
     ZJS_PRINT("FIN=         0x%02x\n", packet->fin);
-    ZJS_PRINT("RSV1=        0x%02x\n",packet->rsv1);
-    ZJS_PRINT("RSV2=        0x%02x\n",packet->rsv2);
-    ZJS_PRINT("RSV3=        0x%02x\n",packet->rsv3);
+    ZJS_PRINT("RSV1=        0x%02x\n", packet->rsv1);
+    ZJS_PRINT("RSV2=        0x%02x\n", packet->rsv2);
+    ZJS_PRINT("RSV3=        0x%02x\n", packet->rsv3);
     ZJS_PRINT("OPCODE=      0x%02x\n", packet->opcode);
     ZJS_PRINT("MASK=        0x%02x\n", packet->mask_bit);
     ZJS_PRINT("PayloadLen=  %d\n",  packet->payload_len);
@@ -228,8 +234,8 @@ static void dump_bytes(const char *tag, u8_t *data, u32_t len)
     u8_t idx = 0;
     u32_t i = 0;
     while (i < len) {
-        sprintf(line + (idx*3), "%02x ", data[i]);
-        line[(idx*3) + 3] = ' ';
+        sprintf(line + (idx * 3), "%02x ", data[i]);
+        line[(idx * 3) + 3] = ' ';
         if ((data[i] >= 32) && (data[i] <= 126)) {
             line[idx + offset] = data[i];
         } else {
@@ -237,7 +243,7 @@ static void dump_bytes(const char *tag, u8_t *data, u32_t len)
         }
         idx++;
         i++;
-        if ((((idx*3) + offset) >= 80) || (i >= len)) {
+        if ((((idx * 3) + offset) >= 80) || (i >= len)) {
             line[80] = '\0';
             ZJS_PRINT("%s\n", line);
             idx = 0;
@@ -248,11 +254,8 @@ static void dump_bytes(const char *tag, u8_t *data, u32_t len)
 #endif
 
 // encode data into a WS packet.
-static int encode_packet(ws_packet_type type,
-                         u8_t mask,
-                         void *payload,
-                         u16_t len,
-                         u8_t *out)
+static int encode_packet(ws_packet_type type, u8_t mask, void *payload,
+                         u16_t len, u8_t *out)
 {
     u8_t mask_offset = 2;
     u8_t byte1 = 0;
@@ -306,19 +309,19 @@ static int decode_packet(ws_packet_t *packet, u8_t *data, u32_t len)
     u32_t mask_offset = 2;
     u8_t byte1 = data[0];
     u8_t byte2 = data[1];
-    packet->fin = (byte1 & 0x1);            // FIN      bytes: 0 bits: 0
-    packet->rsv1 = (byte1 & 0x2);           // RSV1     bytes: 0 bits: 1
-    packet->rsv2 = (byte1 & 0x4);           // RSV2     bytes: 0 bits: 2
-    packet->rsv3 = (byte1 & 0x8);           // RSV3     bytes: 0 bits: 3
-    packet->opcode = (byte1 & 0xf);         // OPCODE   bytes: 0 bits: 4-7
-    packet->mask_bit = (byte2 & 0x1);       // MASK_BIT bytes: 1 bits: 0
-    packet->payload_len = (byte2 & 0x7f);   // PAY LEN  bytes: 1 bits: 1-7
+    packet->fin = (byte1 & 0x1);           // FIN      bytes: 0 bits: 0
+    packet->rsv1 = (byte1 & 0x2);          // RSV1     bytes: 0 bits: 1
+    packet->rsv2 = (byte1 & 0x4);          // RSV2     bytes: 0 bits: 2
+    packet->rsv3 = (byte1 & 0x8);          // RSV3     bytes: 0 bits: 3
+    packet->opcode = (byte1 & 0xf);        // OPCODE   bytes: 0 bits: 4-7
+    packet->mask_bit = (byte2 & 0x1);      // MASK_BIT bytes: 1 bits: 0
+    packet->payload_len = (byte2 & 0x7f);  // PAY LEN  bytes: 1 bits: 1-7
     // payload length is less than 125 bytes
     if (packet->payload_len <= 125) {
         packet->payload_offset = 6;
     } else if (packet->payload_len == 126) {
         // payload length is greater than 125 bytes
-        u8_t byte3 = data[2];            // PAY LEN  bytes: 2-3  bits: all
+        u8_t byte3 = data[2];              // PAY LEN  bytes: 2-3  bits: all
         u8_t byte4 = data[3];
         // decode payload length
         packet->payload_len = (byte3 << 8) | byte4;
@@ -345,7 +348,8 @@ static int decode_packet(ws_packet_t *packet, u8_t *data, u32_t len)
     int j = 0;
     int i;
     // decode payload using payload mask
-    for (i = packet->payload_offset; i < packet->payload_len + packet->payload_offset; i++) {
+    for (i = packet->payload_offset;
+         i < packet->payload_len + packet->payload_offset; i++) {
         packet->payload[j] = data[i] ^ packet->mask[j % 4];
         j++;
     }
@@ -459,7 +463,7 @@ static void process_packet(ws_connection_t *con, u8_t *data, u32_t len)
     len_encode |= (packet->opcode << 16);
     memcpy(con->wptr, packet->payload, packet->payload_len);
     con->wptr += packet->payload_len;
-    zjs_signal_callback(con->trigger_msg_id, (void*)&len_encode, 4);
+    zjs_signal_callback(con->trigger_msg_id, (void *)&len_encode, 4);
 
 #ifdef DEBUG_BUILD
     dump_packet(packet);
@@ -482,7 +486,7 @@ static ZJS_DECL_FUNC_ARGS(ws_send_data, ws_packet_type type)
         mask = jerry_get_boolean_value(argv[1]);
     }
     if (con->server_handle->max_payload &&
-       (buf->bufsize > con->server_handle->max_payload)) {
+        (buf->bufsize > con->server_handle->max_payload)) {
         return zjs_error("payload too large");
     }
     u8_t out[buf->bufsize + 10];
@@ -559,7 +563,8 @@ static void tcp_received(struct net_context *context,
         if (con->state == AWAITING_ACCEPT) {
             con->state = CONNECTED;
             con->conn = create_ws_connection(con);
-            zjs_trigger_event(con->server, "connection", &con->conn, 1, NULL, NULL);
+            zjs_trigger_event(con->server, "connection", &con->conn, 1, NULL,
+                              NULL);
         }
     }
 
@@ -610,12 +615,12 @@ static void tcp_received(struct net_context *context,
                 return;
             }
             char *i = data;
-            while ((i - (char*)data) < len) {
+            while ((i - (char *)data) < len) {
                 char *tmp1 = i;
-                while (*i != ':' && ((i - (char*)data) < len )) {
+                while (*i != ':' && ((i - (char *)data) < len)) {
                     i++;
                 }
-                if ((i - (char*)data) >= len) {
+                if ((i - (char *)data) >= len) {
                     break;
                 }
                 char field[(i - tmp1) + 1];
@@ -670,13 +675,14 @@ static void tcp_received(struct net_context *context,
                     ZVAL_MUTABLE error = zjs_error_context("out of memory",
                                                            0, 0);
                     jerry_value_clear_error_flag(&error);
-                    zjs_trigger_event(con->server, "error", &error, 1, NULL, NULL);
+                    zjs_trigger_event(con->server, "error", &error, 1, NULL,
+                                      NULL);
                     net_pkt_unref(pkt);
                     zjs_free(data);
                     return;
                 }
-                memset(send_data, 0, strlen(accept_header) +
-                                     strlen(con->accept_key) + 6);
+                memset(send_data, 0,
+                       strlen(accept_header) + strlen(con->accept_key) + 6);
                 memcpy(send_data, accept_header, strlen(accept_header));
                 strcat(send_data, con->accept_key);
                 strcat(send_data, "\r\n\r\n\0");
@@ -689,8 +695,7 @@ static void tcp_received(struct net_context *context,
                 con->accept_key = NULL;
             } else {
                 // handler registered, accepted based on return of handler
-                zjs_signal_callback(con->accept_handler_id,
-                                    &protocol_list,
+                zjs_signal_callback(con->accept_handler_id, &protocol_list,
                                     sizeof(jerry_value_t));
             }
         } else {
@@ -702,7 +707,7 @@ static void tcp_received(struct net_context *context,
         // close the socket
         ZVAL code = jerry_create_number(0);
         ZVAL reason = jerry_create_string("socket was closed");
-        jerry_value_t args[] = {code, reason};
+        jerry_value_t args[] = { code, reason };
         zjs_trigger_event(con->conn, "close", args, 2, NULL, NULL);
         close_connection(con);
     }
@@ -789,8 +794,7 @@ static void tcp_accepted(struct net_context *context,
     if (jerry_value_is_function(handle->accept_handler)) {
         new->accept_handler_id = zjs_add_callback(handle->accept_handler,
                                                   new->server_handle->server,
-                                                  new,
-                                                  post_accept_handler);
+                                                  new, post_accept_handler);
     } else {
         new->accept_handler_id = -1;
     }
@@ -800,7 +804,7 @@ static void tcp_accepted(struct net_context *context,
     ret = net_context_recv(context, tcp_received, 0, new);
     if (ret < 0) {
         ERR_PRINT("Cannot receive TCP packet (family %d)\n",
-            net_context_get_family(context));
+                  net_context_get_family(context));
         // this seems to mean the remote exists but the connection was not made
         zjs_trigger_event(handle->server, "error", NULL, 0, NULL, NULL);
         return;
@@ -834,15 +838,14 @@ static ZJS_DECL_FUNC(ws_server)
     }
 
     CHECK(net_context_get(AF_INET6, SOCK_STREAM, IPPROTO_TCP,
-                &handle->tcp_sock));
+                          &handle->tcp_sock));
 
     struct sockaddr_in6 my_addr6 = { 0 };
 
     my_addr6.sin6_family = AF_INET6;
     my_addr6.sin6_port = htons((int)port);
 
-    CHECK(net_context_bind(handle->tcp_sock,
-                           (struct sockaddr *)&my_addr6,
+    CHECK(net_context_bind(handle->tcp_sock, (struct sockaddr *)&my_addr6,
                            sizeof(struct sockaddr_in6)));
     CHECK(net_context_listen(handle->tcp_sock, (int)backlog));
     CHECK(net_context_accept(handle->tcp_sock, tcp_accepted, 0, handle));

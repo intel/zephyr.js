@@ -1,12 +1,13 @@
 // Copyright (c) 2016, Linaro Limited.
 #ifdef BUILD_MODULE_PERFORMANCE
 
-// ZJS includes
-#include "zjs_util.h"
-
 #ifdef ZJS_LINUX_BUILD
+// C includes
 #include <sys/time.h>
 #endif
+
+// ZJS includes
+#include "zjs_util.h"
 
 static ZJS_DECL_FUNC(zjs_performance_now)
 {
@@ -30,4 +31,4 @@ jerry_value_t zjs_performance_init()
     return performance_obj;
 }
 
-#endif // BUILD_MODULE_PERFORMANCE
+#endif  // BUILD_MODULE_PERFORMANCE
