@@ -143,9 +143,7 @@ function onfound2(resource) {
         });
 
         resource.properties.state = false;
-        client.update(resource).then(function(res) {
-        }).catch(function(error) {
-        });
+        client.update(resource);
 
         client.retrieve(resource.deviceId).then(function(res) {
             assert(res.properties.state === false,
