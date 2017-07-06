@@ -2,6 +2,7 @@
 
 // Zephyr includes
 #include <zephyr.h>
+#include <kernel.h>
 #include <adc.h>
 
 // ZJS includes
@@ -12,6 +13,7 @@
 #define STACK_SIZE 1024
 #define STACK_PRIORITY 7
 static char __stack stack[STACK_SIZE];
+static struct k_thread thread;
 
 // AIO
 static struct device *adc_dev = NULL;
@@ -40,8 +42,8 @@ void arc_aio_init()
     adc_dev = device_get_binding(ADC_DEVICE_NAME);
     adc_enable(adc_dev);
 
-    k_thread_spawn(stack, STACK_SIZE, aio_read_thread, NULL, NULL, NULL,
-                   STACK_PRIORITY, 0, K_NO_WAIT);
+    k_thread_create(&thread, stack, STACK_SIZE, aio_read_thread, NULL, NULL,
+                    NULL, STACK_PRIORITY, 0, K_NO_WAIT);
 }
 
 void arc_aio_cleanup()
