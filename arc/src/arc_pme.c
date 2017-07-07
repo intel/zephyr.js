@@ -1,8 +1,10 @@
 // Copyright (c) 2017, Intel Corporation.
 
+// C includes
+#include <string.h>
+
 // Zephyr includes
 #include <zephyr.h>
-#include <string.h>
 
 // ZJS includes
 #include "arc_common.h"
@@ -14,7 +16,7 @@ static bool save_mode = false;
 static bool restore_mode = false;
 #endif
 
-void arc_handle_pme(struct zjs_ipm_message* msg)
+void arc_handle_pme(struct zjs_ipm_message *msg)
 {
     u32_t error_code = ERROR_IPM_NONE;
 
@@ -102,12 +104,12 @@ void arc_handle_pme(struct zjs_ipm_message* msg)
         msg->data.pme.min_if = data.min_if;
         memcpy(msg->data.pme.vector, data.vector, sizeof(data.vector));
         DBG_PRINT("neuron: id=%d, CTX=%d, AIF=%d MIF=%d, cat=%d\n",
-                  data.context & NCR_ID, data.context & NCR_CONTEXT,
-                  data.aif, data.min_if, data.category);
+                  data.context & NCR_ID, data.context & NCR_CONTEXT, data.aif,
+                  data.min_if, data.category);
         break;
     case TYPE_PME_WRITE_VECTOR:
-        DBG_PRINT("write vector: %lu byte vector\n",
-                  msg->data.pme.category, msg->data.pme.vector_size);
+        DBG_PRINT("write vector: %lu byte vector\n", msg->data.pme.category,
+                  msg->data.pme.vector_size);
         if (msg->data.pme.vector_size > MAX_VECTOR_SIZE) {
             ERR_PRINT("vector cannot be greater than %d\n", MAX_VECTOR_SIZE);
             ipm_send_error(msg, ERROR_IPM_INVALID_PARAMETER);
@@ -124,10 +126,8 @@ void arc_handle_pme(struct zjs_ipm_message* msg)
             DBG_PRINT("%d ", msg->data.pme.vector[i]);
         }
 
-        curie_pme_write_vector(msg->data.pme.vector,
-                               msg->data.pme.vector_size);
-        DBG_PRINT("\nwrote with %d neruons\n",
-                  curie_pme_get_committed_count());
+        curie_pme_write_vector(msg->data.pme.vector, msg->data.pme.vector_size);
+        DBG_PRINT("\nwrote with %d neruons\n", curie_pme_get_committed_count());
         break;
     case TYPE_PME_GET_COMMITED_COUNT:
         msg->data.pme.committed_count = curie_pme_get_committed_count();
@@ -211,8 +211,8 @@ void arc_handle_pme(struct zjs_ipm_message* msg)
         msg->data.pme.min_if = data.min_if;
         memcpy(msg->data.pme.vector, data.vector, sizeof(data.vector));
         DBG_PRINT("save neuron: id=%d, CTX=%d, AIF=%d MIF=%d, cat=%d\n",
-                  data.context & NCR_ID, data.context & NCR_CONTEXT,
-                  data.aif, data.min_if, data.category);
+                  data.context & NCR_ID, data.context & NCR_CONTEXT, data.aif,
+                  data.min_if, data.category);
         break;
     case TYPE_PME_END_SAVE_MODE:
         curie_pme_end_save_mode();
@@ -237,8 +237,8 @@ void arc_handle_pme(struct zjs_ipm_message* msg)
         memcpy(data.vector, msg->data.pme.vector, sizeof(msg->data.pme.vector));
         curie_pme_iterate_neurons_to_restore(&data);
         DBG_PRINT("restore neuron: id=%d, CTX=%d, AIF=%d MIF=%d, cat=%d\n",
-                  data.context & NCR_ID, data.context & NCR_CONTEXT,
-                  data.aif, data.min_if, data.category);
+                  data.context & NCR_ID, data.context & NCR_CONTEXT, data.aif,
+                  data.min_if, data.category);
 
         break;
     case TYPE_PME_END_RESTORE_MODE:

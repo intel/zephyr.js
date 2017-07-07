@@ -1,19 +1,20 @@
 // Copyright (c) 2017, Intel Corporation.
 
 #ifndef ZJS_LINUX_BUILD
-#include "gpio.h"
+// Zephyr includes
+#include <gpio.h>
 #endif
 
-#include "zjs_common.h"
+// ZJS includes
 #include "zjs_board.h"
+#include "zjs_common.h"
 #include "zjs_gpio.h"
 #include "zjs_util.h"
 
 // mock headers should be included last
 #include "zjs_gpio_mock.h"
 
-static const jerry_object_native_info_t mock_type_info =
-{
+static const jerry_object_native_info_t mock_type_info = {
    .free_cb = free_handle_nop
 };
 
@@ -136,8 +137,7 @@ static ZJS_DECL_FUNC(zjs_gpio_mock_wire)
 
     ZVAL pin1_obj = get_pin(port1, pin1);
     ZVAL pin2_obj = get_pin(port2, pin2);
-    if (!jerry_value_is_object(pin1_obj) ||
-        !jerry_value_is_object(pin2_obj)) {
+    if (!jerry_value_is_object(pin1_obj) || !jerry_value_is_object(pin2_obj)) {
         return zjs_error("invalid pin object");
     }
 
@@ -276,7 +276,7 @@ int mock_gpio_pin_write(DEVICE port, u32_t pin, u32_t value)
 
                         if (BIT(conn_pin) & item->enabled_mask) {
                             item->handler(port, item->callback,
-                                    item->enabled_mask);
+                                          item->enabled_mask);
                         }
                     }
                 }
@@ -376,12 +376,10 @@ int mock_gpio_pin_enable_callback(DEVICE port, u32_t pin)
             u32_t bit = BIT(pin);
             if (bit & item->pin_mask) {
                 item->enabled_mask |= bit;
-                jerry_set_object_native_pointer(pin_obj,
-                                                item,
-                                                &mock_type_info);
+                jerry_set_object_native_pointer(pin_obj, item, &mock_type_info);
                 // FIXME: maybe need to clean up on re-open w/o close
                 break;
-           }
+            }
         }
         item = item->next;
     }

@@ -1,13 +1,13 @@
 // Copyright (c) 2017, Intel Corporation.
 
 // Zephyr includes
-#include <zephyr.h>
-#include <kernel.h>
 #include <adc.h>
+#include <kernel.h>
+#include <zephyr.h>
 
 // ZJS includes
-#include "arc_common.h"
 #include "arc_aio.h"
+#include "arc_common.h"
 
 // AIO thread
 #define STACK_SIZE 1024
@@ -76,8 +76,7 @@ u32_t arc_pin_read(u8_t pin)
     }
 
     // read from buffer, not sure if byte order is important
-    u32_t raw_value = (u32_t) seq_buffer[0]
-                    | (u32_t) seq_buffer[1] << 8;
+    u32_t raw_value = (u32_t)seq_buffer[0] | (u32_t)seq_buffer[1] << 8;
 
     return raw_value;
 }
@@ -85,8 +84,7 @@ u32_t arc_pin_read(u8_t pin)
 void arc_process_aio_updates()
 {
     for (int i = 0; i <= 5; i++) {
-        if (pin_send_updates[i] &&
-            pin_values[i] != pin_last_values[i]) {
+        if (pin_send_updates[i] && pin_values[i] != pin_last_values[i]) {
             // send updates only if value has changed
             // so it doesn't flood the IPM channel
             struct zjs_ipm_message msg;

@@ -1,5 +1,6 @@
 // Copyright (c) 2016-2017, Intel Corporation.
 
+// Zephyr includes
 #include <net/net_context.h>
 #include <net/net_if.h>
 #include <net/net_pkt.h>
@@ -7,8 +8,10 @@
 #include <bluetooth/bluetooth.h>
 #include <gatt/ipss.h>
 #endif
-#include "zjs_util.h"
+
+// ZJS includes
 #include "zjs_net_config.h"
+#include "zjs_util.h"
 
 static u8_t net_enabled = 0;
 #if defined(CONFIG_NET_L2_BLUETOOTH)
@@ -33,7 +36,8 @@ void zjs_net_config(void)
         // TODO: Provide way to configure IP address/DHCP if desired
 #ifdef CONFIG_NET_IPV4
         static struct in_addr in4addr_my = { { { 192, 0, 2, 1 } } };
-        net_if_ipv4_addr_add(net_if_get_default(), &in4addr_my, NET_ADDR_MANUAL, 0);
+        net_if_ipv4_addr_add(net_if_get_default(), &in4addr_my, NET_ADDR_MANUAL,
+                             0);
 #endif
 #ifdef CONFIG_NET_IPV6
         // 2001:db8::1
@@ -51,7 +55,7 @@ static char default_ble[18] = ZJS_CONFIG_BLE_ADDRESS;
 #endif
 
 static ssize_t zjs_ble_storage_read(const bt_addr_le_t *addr, u16_t key,
-    void *data, size_t length)
+                                    void *data, size_t length)
 {
     if (addr) {
         return -ENOENT;
@@ -79,7 +83,7 @@ static int str2bt_addr_le(const char *str, const char *type, bt_addr_le_t *addr)
         return -EINVAL;
     }
 
-    for (i = 5; i >= 0; str+=3, i--) {
+    for (i = 5; i >= 0; str += 3, i--) {
         if (!zjs_hex_to_byte(str, &tmp)) {
             return -EINVAL;
         }
@@ -108,9 +112,9 @@ ZJS_DECL_FUNC(zjs_set_ble_address)
     zjs_copy_jstring(argv[0], addr, &size);
 
     static const struct bt_storage storage = {
-            .read = zjs_ble_storage_read,
-            .write = NULL,
-            .clear = NULL,
+        .read = zjs_ble_storage_read,
+        .write = NULL,
+        .clear = NULL,
     };
 
     if (str2bt_addr_le(addr, "random", &id_addr) < 0) {
@@ -127,9 +131,9 @@ void zjs_init_ble_address()
 {
 #ifdef ZJS_CONFIG_BLE_ADDRESS
     static const struct bt_storage storage = {
-            .read = zjs_ble_storage_read,
-            .write = NULL,
-            .clear = NULL,
+        .read = zjs_ble_storage_read,
+        .write = NULL,
+        .clear = NULL,
     };
 
     if (str2bt_addr_le(default_ble, "random", &id_addr) < 0) {

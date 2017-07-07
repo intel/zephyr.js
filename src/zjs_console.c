@@ -2,6 +2,7 @@
 
 #ifdef BUILD_MODULE_CONSOLE
 
+// ZJS includes
 #include "zjs_common.h"
 #include "zjs_error.h"
 #include "zjs_util.h"
@@ -11,7 +12,7 @@
 #include "zjs_zephyr_port.h"
 #endif
 
-#define MAX_STR_LENGTH   256
+#define MAX_STR_LENGTH 256
 
 #ifdef ZJS_LINUX_BUILD
 #define STDERR_PRINT(s, ...) fprintf(stderr, s, __VA_ARGS__)
@@ -27,10 +28,11 @@
 
 static jerry_value_t gbl_time_obj;
 
-static int is_int(jerry_value_t val) {
+static int is_int(jerry_value_t val)
+{
     int ret = 0;
     double n = jerry_get_number_value(val);
-    ret = (n - (int) n == 0);
+    ret = (n - (int)n == 0);
     if (ret) {
         // Integer type
         if (n < 0) {
@@ -56,15 +58,12 @@ static bool value2str(const jerry_value_t value, char *buf, int maxlen,
         unsigned int len = jerry_get_array_length(value);
         sprintf(buf, "[Array - length %u]", len);
         return false;
-    }
-    else if (jerry_value_is_boolean(value)) {
+    } else if (jerry_value_is_boolean(value)) {
         u8_t val = jerry_get_boolean_value(value);
         sprintf(buf, (val) ? "true" : "false");
-    }
-    else if (jerry_value_is_function(value)) {
+    } else if (jerry_value_is_function(value)) {
         sprintf(buf, "[Function]");
-    }
-    else if (jerry_value_is_number(value)) {
+    } else if (jerry_value_is_number(value)) {
         int type = is_int(value);
         if (type == IS_NUMBER) {
 #ifdef ZJS_PRINT_FLOATS
@@ -81,34 +80,28 @@ static bool value2str(const jerry_value_t value, char *buf, int maxlen,
             int num = jerry_get_number_value(value);
             sprintf(buf, "%d", num);
         }
-    }
-    else if (jerry_value_is_null(value)) {
+    } else if (jerry_value_is_null(value)) {
         sprintf(buf, "null");
     }
     // NOTE: important that checks for function and array were above this
     else if (jerry_value_is_object(value)) {
         sprintf(buf, "[Object]");
-    }
-    else if (jerry_value_is_string(value)) {
+    } else if (jerry_value_is_string(value)) {
         jerry_size_t size = jerry_get_string_size(value);
         if (size >= maxlen) {
             sprintf(buf, "[String - length %u]", (unsigned int)size);
-        }
-        else {
+        } else {
             char buffer[++size];
             zjs_copy_jstring(value, buffer, &size);
             if (quotes) {
                 sprintf(buf, "\"%s\"", buffer);
-            }
-            else {
+            } else {
                 sprintf(buf, "%s", buffer);
             }
         }
-    }
-    else if (jerry_value_is_undefined(value)) {
+    } else if (jerry_value_is_undefined(value)) {
         sprintf(buf, "undefined");
-    }
-    else {
+    } else {
         // should never get this
         sprintf(buf, "UNKNOWN");
     }
@@ -132,8 +125,7 @@ static void print_value(const jerry_value_t value, FILE *out, bool deep,
             }
             fprintf(out, "]");
         }
-    }
-    else {
+    } else {
         fprintf(out, "%s", buf);
     }
 }

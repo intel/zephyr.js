@@ -44,10 +44,10 @@ static const u8_t webusb_bos_descriptor[] = {
 
 /* Microsoft OS 2.0 Descriptor Set */
 static const u8_t ms_os_20_descriptor_set[] = {
-    0x0A, 0x00,  // wLength
-    0x00, 0x00,  // MS OS 2.0 descriptor set header
+    0x0A, 0x00,              // wLength
+    0x00, 0x00,              // MS OS 2.0 descriptor set header
     0x00, 0x00, 0x03, 0x06,  // Windows 8.1
-    0xB2, 0x00,  // Size, MS OS 2.0 descriptor set
+    0xB2, 0x00,              // Size, MS OS 2.0 descriptor set
 
     // Configuration subset header
     0x08, 0x00,  // wLength
@@ -64,22 +64,22 @@ static const u8_t ms_os_20_descriptor_set[] = {
     0xA0, 0x00,  // wTotalLength of this subset header
 
     // Compatible ID descriptor
-    0x14, 0x00,  // wLength
-    0x03, 0x00,  // wDescriptorType
-    'W',  'I',  'N',  'U',  'S',  'B',  0x00, 0x00, // compatible ID
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // subCompatibleID
+    0x14, 0x00,                                      // wLength
+    0x03, 0x00,                                      // wDescriptorType
+    'W', 'I', 'N', 'U', 'S', 'B', 0x00, 0x00,        // compatible ID
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  // subCompatibleID
 
     // Extended properties descriptor with interface GUID
-    0x84, 0x00,   // wLength
-    0x04, 0x00,   // wDescriptorType
-    0x07, 0x00,   // wPropertyDataType
-    0x2A, 0x00,   // wPropertyNameLength
+    0x84, 0x00,  // wLength
+    0x04, 0x00,  // wDescriptorType
+    0x07, 0x00,  // wPropertyDataType
+    0x2A, 0x00,  // wPropertyNameLength
     // Property name : DeviceInterfaceGUIDs
     'D', 0x00, 'e', 0x00, 'v', 0x00, 'i', 0x00, 'c', 0x00, 'e', 0x00,
     'I', 0x00, 'n', 0x00, 't', 0x00, 'e', 0x00, 'r', 0x00, 'f', 0x00,
     'a', 0x00, 'c', 0x00, 'e', 0x00, 'G', 0x00, 'U', 0x00, 'I', 0x00,
     'D', 0x00, 's', 0x00, 0x00, 0x00,
-    0x50, 0x00,   // wPropertyDataLength
+    0x50, 0x00,  // wPropertyDataLength
     // Property data: {9D32F82C-1FB2-4486-8501-B6145B5BA336}
     '{', 0x00, '9', 0x00, 'D', 0x00, '3', 0x00, '2', 0x00, 'F', 0x00,
     '8', 0x00, '2', 0x00, 'C', 0x00, '-', 0x00, '1', 0x00, 'F', 0x00,
@@ -109,7 +109,7 @@ static const u8_t webusb_allowed_origins[] = {
 };
 
 /* Number of allowed origins */
-#define NUMBER_OF_ALLOWED_ORIGINS   2
+#define NUMBER_OF_ALLOWED_ORIGINS 2
 
 /* Microsoft OS 2.0 descriptor request */
 #define MS_OS_20_REQUEST_DESCRIPTOR 0x07
@@ -191,7 +191,7 @@ int webusb_vendor_handler(struct usb_setup_packet *pSetup, s32_t *len,
             return 0;
         }
     } else if (pSetup->bRequest == 0x02 &&
-        pSetup->wIndex == MS_OS_20_REQUEST_DESCRIPTOR) {
+               pSetup->wIndex == MS_OS_20_REQUEST_DESCRIPTOR) {
 
         *data = (u8_t *)(ms_os_20_descriptor_set);
         *len = sizeof(ms_os_20_descriptor_set);

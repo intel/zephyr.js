@@ -1,10 +1,11 @@
 // Copyright (c) 2016-2017, Intel Corporation.
 
+// C includes
 #include <string.h>
 
 // ZJS includes
-#include "zjs_common.h"
 #include "zjs_buffer.h"
+#include "zjs_common.h"
 #include "zjs_util.h"
 #ifndef ZJS_LINUX_BUILD
 #include "zjs_zephyr_port.h"
@@ -267,8 +268,7 @@ char *zjs_alloc_from_jstring(jerry_value_t jstr, jerry_size_t *maxlen)
         if (*maxlen && *maxlen < len) {
             DBG_PRINT("string limited to %u bytes\n", *maxlen);
             buffer[*maxlen] = '\0';
-        }
-        else {
+        } else {
             *maxlen = len;
         }
     }
@@ -282,7 +282,7 @@ bool zjs_hex_to_byte(const char *buf, u8_t *byte)
     //  effects: converts the first two hex chars in buf to a number and
     //             returns it in *byte; returns true on success, false otherwise
     u8_t num = 0;
-    for (int i=0; i<2; i++) {
+    for (int i = 0; i < 2; i++) {
         num <<= 4;
         if (buf[i] >= 'A' && buf[i] <= 'F')
             num += buf[i] - 'A' + 10;
@@ -290,13 +290,15 @@ bool zjs_hex_to_byte(const char *buf, u8_t *byte)
             num += buf[i] - 'a' + 10;
         else if (buf[i] >= '0' && buf[i] <= '9')
             num += buf[i] - '0';
-        else return false;
+        else
+            return false;
     }
     *byte = num;
     return true;
 }
 
-void zjs_default_convert_pin(u32_t orig, int *dev, int *pin) {
+void zjs_default_convert_pin(u32_t orig, int *dev, int *pin)
+{
     // effects: reads top three bits of the bottom byte of orig and writes them
     //            to dev and the bottom five bits and writes them to pin; thus
     //            up to eight devices are supported and up to 32 pins each; but
@@ -304,8 +306,7 @@ void zjs_default_convert_pin(u32_t orig, int *dev, int *pin) {
     if (orig == 0xff) {
         *dev = 0;
         *pin = -1;
-    }
-    else {
+    } else {
         *dev = (orig & 0xe0) >> 5;
         *pin = orig & 0x1f;
     }
@@ -470,8 +471,8 @@ static char *object_search(jerry_value_t obj, jerry_value_t start)
 }
 #endif
 
-#define MAX_ERROR_NAME_LENGTH       32
-#define MAX_ERROR_MESSAGE_LENGTH    128
+#define MAX_ERROR_NAME_LENGTH    32
+#define MAX_ERROR_MESSAGE_LENGTH 128
 
 void zjs_print_error_message(jerry_value_t error, jerry_value_t func)
 {
@@ -690,7 +691,9 @@ int zjs_require_string_if_prop_map(jerry_value_t obj, const char *prop,
     return ZJS_VALUE_NOT_IN_MAP;
 }
 
-void free_handle_nop(void *h) {}
+void free_handle_nop(void *h)
+{
+}
 
 #ifndef ZJS_LINUX_BUILD
 #ifndef ZJS_ASHELL

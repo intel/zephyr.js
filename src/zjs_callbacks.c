@@ -1,17 +1,23 @@
 // Copyright (c) 2016-2017, Intel Corporation.
 
+// C includes
+#include <string.h>
+
 #ifndef ZJS_LINUX_BUILD
-#include <zephyr.h>
+// Zephyr includes
 #include <misc/ring_buffer.h>
+#include <zephyr.h>
+
+// ZJS includes
 #include "zjs_zephyr_port.h"
 #else
 #include "zjs_linux_port.h"
 #endif
-#include <string.h>
 
 #include "zjs_callbacks.h"
 #include "zjs_util.h"
 
+// JerryScript includes
 #include "jerryscript.h"
 
 // this could be defined with config options in the future
@@ -27,7 +33,7 @@
 
 #define INITIAL_CALLBACK_SIZE  16
 #define CB_CHUNK_SIZE          16
-#define CB_LIST_MULTIPLIER  4
+#define CB_LIST_MULTIPLIER     4
 
 // flag bit value for JS callback
 #define CALLBACK_TYPE_JS    0
@@ -58,24 +64,24 @@
 #define CB_FLUSH_ONE 0xfe
 #define CB_FLUSH_ALL 0xff
 
-#define MAX_CALLER_CREATOR_LEN  128
+#define MAX_CALLER_CREATOR_LEN 128
 // FIXME: func_list is really an array :)
 typedef struct zjs_callback {
     void *handle;
     zjs_post_callback_func post;
     jerry_value_t this;
     union {
-        jerry_value_t js_func;          // Single JS function callback
-        jerry_value_t *func_list;       // JS callback list
-        zjs_c_callback_func function;   // C callback
+        jerry_value_t js_func;         // Single JS function callback
+        jerry_value_t *func_list;      // JS callback list
+        zjs_c_callback_func function;  // C callback
     };
     zjs_callback_id id;
-    u8_t flags;      // holds once and type bits
+    u8_t flags;  // holds once and type bits
     u8_t max_funcs;
     u8_t num_funcs;
 #ifdef DEBUG_BUILD
-    char creator[MAX_CALLER_CREATOR_LEN];      // file/function that created this callback
-    char caller[MAX_CALLER_CREATOR_LEN];       // file/function that signalled this callback
+    char creator[MAX_CALLER_CREATOR_LEN];  // file that created this callback
+    char caller[MAX_CALLER_CREATOR_LEN];   // file that signalled this callback
 #endif
 } zjs_callback_t;
 
@@ -140,8 +146,7 @@ static zjs_callback_id new_id(void)
 void zjs_init_callbacks(void)
 {
     if (!cb_map) {
-        size_t size = sizeof(zjs_callback_t *) *
-            INITIAL_CALLBACK_SIZE;
+        size_t size = sizeof(zjs_callback_t *) * INITIAL_CALLBACK_SIZE;
         cb_map = (zjs_callback_t **)zjs_malloc(size);
         if (!cb_map) {
             DBG_PRINT("error allocating space for CB map\n");
@@ -231,7 +236,8 @@ zjs_callback_id add_callback_list_priv(jerry_value_t js_func,
                                        zjs_post_callback_func post,
                                        zjs_callback_id id
 #ifdef DEBUG_BUILD
-                                       , const char *file,
+                                       ,
+                                       const char *file,
                                        const char *func)
 #else
                                        )
@@ -245,7 +251,7 @@ zjs_callback_id add_callback_list_priv(jerry_value_t js_func,
             if (cb_map[id]->num_funcs == cb_map[id]->max_funcs - 1) {
                 int i;
                 jerry_value_t *new_list = zjs_malloc((sizeof(jerry_value_t) *
-                        (cb_map[id]->max_funcs + CB_LIST_MULTIPLIER)));
+                   (cb_map[id]->max_funcs + CB_LIST_MULTIPLIER)));
                 for (i = 0; i < cb_map[id]->num_funcs; ++i) {
                     new_list[i] = cb_map[id]->func_list[i];
                 }
@@ -257,7 +263,7 @@ zjs_callback_id add_callback_list_priv(jerry_value_t js_func,
             } else {
                 // Add function to list
                 cb_map[id]->func_list[cb_map[id]->num_funcs] =
-                        jerry_acquire_value(js_func);
+                    jerry_acquire_value(js_func);
             }
             // If not already set, set the handle/pre/post provided. These will
             // only be set once, when the list is created.
@@ -321,7 +327,8 @@ zjs_callback_id add_callback_priv(jerry_value_t js_func,
                                   zjs_post_callback_func post,
                                   u8_t once
 #ifdef DEBUG_BUILD
-                                  , const char *file,
+                                  ,
+                                  const char *file,
                                   const char *func)
 #else
                                   )
@@ -352,8 +359,8 @@ zjs_callback_id add_callback_priv(jerry_value_t js_func,
         cb_size++;
     }
 
-    DBG_PRINT("adding new callback id %d, js_func=%u, once=%u\n",
-              new_cb->id, new_cb->js_func, once);
+    DBG_PRINT("adding new callback id %d, js_func=%u, once=%u\n", new_cb->id,
+              new_cb->js_func, once);
 
 #ifdef DEBUG_BUILD
     set_info_string(cb_map[new_cb->id]->creator, file, func);
@@ -432,10 +439,11 @@ void signal_callback_priv(zjs_callback_id id,
                           const void *args,
                           u32_t size
 #ifdef DEBUG_BUILD
-                          , const char *file,
+                          ,
+                          const char *file,
                           const char *func)
 #else
-)
+                          )
 #endif
 {
     LOCK();
@@ -453,21 +461,22 @@ void signal_callback_priv(zjs_callback_id id,
         // for JS, acquire values and release them after servicing callback
         int argc = size / sizeof(jerry_value_t);
         jerry_value_t *values = (jerry_value_t *)args;
-        for (int i=0; i<argc; i++) {
+        for (int i = 0; i < argc; i++) {
             jerry_acquire_value(values[i]);
         }
     }
 #ifdef DEBUG_BUILD
-        set_info_string(cb_map[id]->caller, file, func);
+    set_info_string(cb_map[id]->caller, file, func);
 #endif
     int ret = zjs_port_ring_buf_put(&ring_buffer,
-            (u16_t)id,
-            0,  // we use value for CB_FLUSH_ONE/ALL
-            (u32_t *)args,
-            (u8_t)((size + 3) / 4));
+                                    (u16_t)id,
+                                    0,  // we use value for CB_FLUSH_ONE/ALL
+                                    (u32_t *)args,
+                                    (u8_t)((size + 3) / 4));
     // Need to unlock here or callback may be blocked when it gets called.
     // NOTE: this is a temporary fix, we should implement a lock ID system
-    // rather than locking everything, as we are only trying to prevent a callback
+    // rather than locking everything, as we are only trying to prevent a
+    // callback
     // from being edited and called at the same time.
     UNLOCK();
 #ifndef ZJS_LINUX_BUILD
@@ -478,7 +487,7 @@ void signal_callback_priv(zjs_callback_id id,
             // for JS, acquire values and release them after servicing callback
             int argc = size / sizeof(jerry_value_t);
             jerry_value_t *values = (jerry_value_t *)args;
-            for (int i=0; i<argc; i++) {
+            for (int i = 0; i < argc; i++) {
                 jerry_release_value(values[i]);
             }
         }
@@ -548,11 +557,9 @@ void zjs_call_callback(zjs_callback_id id, const void *data, u32_t sz)
     LOCK();
     if (id == -1 || id > cb_size || !cb_map[id]) {
         ERR_PRINT("callback %d does not exist\n", id);
-    }
-    else if (GET_CB_REMOVED(cb_map[id]->flags)) {
+    } else if (GET_CB_REMOVED(cb_map[id]->flags)) {
         DBG_PRINT("callback %d has already been removed\n", id);
-    }
-    else {
+    } else {
         if (GET_TYPE(cb_map[id]->flags) == CALLBACK_TYPE_JS) {
             // Function list callback
             int i;
@@ -561,14 +568,12 @@ void zjs_call_callback(zjs_callback_id id, const void *data, u32_t sz)
             if (GET_JS_TYPE(cb_map[id]->flags) == JS_TYPE_SINGLE) {
                 if (!jerry_value_is_undefined(cb_map[id]->js_func)) {
                     rval = jerry_call_function(cb_map[id]->js_func,
-                                               cb_map[id]->this,
-                                               values,
-                                               sz);
+                                               cb_map[id]->this, values, sz);
                     if (jerry_value_has_error_flag(rval)) {
 #ifdef DEBUG_BUILD
                         DBG_PRINT("callback %d had error; creator: %s, "
-                                  "caller: %s\n", id, cb_map[id]->creator,
-                                  cb_map[id]->caller);
+                                  "caller: %s\n",
+                                  id, cb_map[id]->creator, cb_map[id]->caller);
 #endif
                         zjs_print_error_message(rval, cb_map[id]->js_func);
                     }
@@ -576,14 +581,12 @@ void zjs_call_callback(zjs_callback_id id, const void *data, u32_t sz)
             } else if (GET_JS_TYPE(cb_map[id]->flags) == JS_TYPE_LIST) {
                 for (i = 0; i < cb_map[id]->num_funcs; ++i) {
                     rval = jerry_call_function(cb_map[id]->func_list[i],
-                                               cb_map[id]->this,
-                                               values,
-                                               sz);
+                                               cb_map[id]->this, values, sz);
                     if (jerry_value_has_error_flag(rval)) {
 #ifdef DEBUG_BUILD
                         DBG_PRINT("callback %d had error; creator: %s, "
-                                  "caller: %s\n", id, cb_map[id]->creator,
-                                  cb_map[id]->caller);
+                                  "caller: %s\n",
+                                  id, cb_map[id]->creator, cb_map[id]->caller);
 #endif
                         zjs_print_error_message(rval, cb_map[id]->func_list[i]);
                     }

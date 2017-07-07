@@ -5,22 +5,28 @@
  * @brief Shell to keep the different states of the machine
  */
 
-#include <zephyr/types.h>
+// C includes
+#include <ctype.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
+
+// Zephyr includes
+#include "file-utils.h"
+#include "jerryscript-port.h"
 #include <atomic.h>
 #include <misc/printk.h>
 #include <misc/reboot.h>
-#include <ctype.h>
-#include "jerryscript-port.h"
-#include "file-utils.h"
+#include <zephyr/types.h>
 
-#include "comms-uart.h"
+// ZJS includes
 #include "comms-shell.h"
+#include "comms-uart.h"
 #include "shell-state.h"
 
 #include "ihex-handler.h"
+
+// JerryScript includes
 #include "jerry-code.h"
 
 #ifndef CONFIG_USB_CDC_ACM
@@ -28,7 +34,7 @@
 #endif
 
 #ifdef CONFIG_REBOOT
-//TODO Waiting for patch https://gerrit.zephyrproject.org/r/#/c/3161/
+// TODO Waiting for patch https://gerrit.zephyrproject.org/r/#/c/3161/
 #ifdef CONFIG_BOARD_ARDUINO_101
 #include <qm_init.h>
 #endif
@@ -55,14 +61,12 @@ const char MSG_FILE_SAVED[] =
 const char MSG_FILE_ABORTED[] = ANSI_FG_RED "Aborted!\r\n";
 const char MSG_EXIT[] = ANSI_FG_GREEN "Back to shell!\r\n";
 
-const char READY_FOR_RAW_DATA[] =
-    "Ready for JavaScript. \r\n" \
-    "\tCtrl+Z to finish transfer.\r\n" \
-    "\tCtrl+X to cancel.\r\n";
+const char READY_FOR_RAW_DATA[] = "Ready for JavaScript. \r\n"
+                                  "\tCtrl+Z to finish transfer.\r\n"
+                                  "\tCtrl+X to cancel.\r\n";
 
-const char MSG_IMMEDIATE_MODE[] =
-    "Ready to evaluate JavaScript.\r\n" \
-    "\tCtrl+D to return to shell.\r\n";
+const char MSG_IMMEDIATE_MODE[] = "Ready to evaluate JavaScript.\r\n"
+                                  "\tCtrl+D to return to shell.\r\n";
 
 const char hex_prompt[] = "[HEX]\r\n";
 const char raw_prompt[] = ANSI_FG_YELLOW "RAW> " ANSI_FG_RESTORE;
@@ -153,7 +157,8 @@ s32_t ashell_rename(char *buf)
     if (ashell_get_filename_buffer(buf, path_org) > 0) {
         /* Check if file or directory */
         if (fs_stat(path_org, &entry)) {
-            comms_printf("mv: cannot access '%s' no such file or directory\n", path_org);
+            comms_printf("mv: cannot access '%s' no such file or directory\n",
+                         path_org);
             return RET_ERROR;
         }
     }
@@ -171,7 +176,8 @@ s32_t ashell_rename(char *buf)
     if (ashell_get_filename_buffer(next, path_dest) > 0) {
         /* Check if file or directory */
         if (!fs_stat(path_dest, &entry)) {
-            comms_printf("mv: cannot access '%s' file already exists\n", path_dest);
+            comms_printf("mv: cannot access '%s' file already exists\n",
+                         path_dest);
             return RET_ERROR;
         }
         if (!fs_valid_filename(path_dest)) {
@@ -193,10 +199,10 @@ s32_t ashell_error(char *buf)
 s32_t ashell_reboot(char *buf)
 {
 #ifdef CONFIG_REBOOT
-    //TODO Waiting for patch https://gerrit.zephyrproject.org/r/#/c/3161/
-    #ifdef CONFIG_BOARD_ARDUINO_101
+// TODO Waiting for patch https://gerrit.zephyrproject.org/r/#/c/3161/
+#ifdef CONFIG_BOARD_ARDUINO_101
     QM_SCSS_PMU->rstc |= QM_COLD_RESET;
-    #endif
+#endif
 #endif
     sys_reboot(SYS_REBOOT_COLD);
     return RET_OK;
@@ -218,7 +224,8 @@ s32_t ashell_list_dir(char *buf)
                 return RET_OK;
             }
         } else {
-            printf("ls: cannot access %s: no such file or directory\n", filename);
+            printf("ls: cannot access %s: no such file or directory\n",
+                   filename);
             return RET_ERROR;
         }
     }
@@ -249,7 +256,8 @@ s32_t ashell_list_dir(char *buf)
             for (; *p; ++p)
                 *p = tolower((int)*p);
 
-            int filesizeStrLen = snprintf(filesizeStr, 16, "%d", (int)entry.size);
+            int filesizeStrLen = snprintf(filesizeStr, 16, "%d",
+                                          (int)entry.size);
             comms_write_buf(filesizeStr, filesizeStrLen);
             comms_write_buf("\t", 1);
             comms_print(entry.name);
@@ -301,8 +309,7 @@ s32_t ashell_print_file(char *buf)
             }
         }
         // If we have data left that doesn't end in a newline, print it.
-        if (lineStart < count)
-        {
+        if (lineStart < count) {
             int strLen = count - lineStart;
             comms_write_buf(&data[lineStart], strLen);
         }
@@ -358,7 +365,7 @@ s32_t ashell_close_capture()
 s32_t ashell_discard_capture()
 {
     fs_close_alloc(file_code);
-    //TODO ashell_remove_file(file_code);
+    // TODO ashell_remove_file(file_code);
     return RET_OK;
 }
 
@@ -447,8 +454,7 @@ s32_t ashell_read_data(char *buf)
 {
     if (shell.state_flags & kShellTransferIhex) {
         ashell_process_close();
-    }
-    else {
+    } else {
         if (!fs_valid_filename(buf)) {
             return RET_ERROR;
         }
@@ -567,13 +573,13 @@ s32_t ashell_check_control(const char *buf, u32_t len)
         u8_t byte = *buf++;
         if (!isprint(byte)) {
             switch (byte) {
-                case ASCII_SUBSTITUTE:
-                    DBG("<CTRL + Z>");
-                    break;
+            case ASCII_SUBSTITUTE:
+                DBG("<CTRL + Z>");
+                break;
 
-                case ASCII_END_OF_TRANS:
-                    DBG("<CTRL + D>");
-                    break;
+            case ASCII_END_OF_TRANS:
+                DBG("<CTRL + D>");
+                break;
             }
         }
         len--;
@@ -611,8 +617,7 @@ s32_t ashell_set_bootcfg(char *buf)
 #define IDE_SKIP(str) str
 #endif
 
-static const struct ashell_cmd commands[] =
-{
+static const struct ashell_cmd commands[] = {
     // CMD    ARGS      DESCRIPTION  IMPL
     {"help",  "",       "This help", ashell_help},
     {"eval",  "",       "Evaluate JavaScript in real time",
@@ -643,7 +648,7 @@ static const struct ashell_cmd commands[] =
     {"get",   "",       "", ashell_get_state},
 };
 
-#define ASHELL_COMMANDS_COUNT (sizeof(commands)/sizeof(*commands))
+#define ASHELL_COMMANDS_COUNT (sizeof(commands) / sizeof(*commands))
 
 s32_t ashell_help(char *buf)
 {
@@ -688,13 +693,11 @@ void ashell_run_boot_cfg()
                 filename[filenamesize] = '\0';
                 ashell_run_javascript(filename);
             }
-        }
-        else {
+        } else {
             // This is a newly flashed board, delete boot.cfg
             ashell_remove_file("boot.cfg");
         }
-    }
-    else {
+    } else {
         // boot.cfg is invalid, remove it
         ashell_remove_file("boot.cfg");
     }

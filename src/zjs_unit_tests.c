@@ -1,11 +1,13 @@
 // Copyright (c) 2016-2017, Intel Corporation.
 
+// C includes
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "zjs_util.h"
+// ZJS includes
 #include "zjs_callbacks.h"
+#include "zjs_util.h"
 
 static int passed = 0;
 static int total = 0;
@@ -71,7 +73,6 @@ static void c_callback5(void *handle, const void *args)
     if (h == 0x44332211) {
         handle_correct = 1;
     }
-
 }
 
 static void test_c_callbacks()
@@ -355,7 +356,7 @@ static void test_validate_args()
 
     // two optional arguments
     const char *expect_more[] = { Z_OPTIONAL Z_NUMBER, Z_OPTIONAL Z_NULL,
-                                Z_OBJECT, NULL };
+                                  Z_OBJECT, NULL };
     zjs_assert(zjs_validate_args(expect_more, 1, argv) == 0,
                "optional number and null, required object, pass object");
 
@@ -430,9 +431,12 @@ void test_list_macros()
     ZJS_LIST_APPEND(test_list_t, head, l3);
 
     // check lengths
-    zjs_assert(ZJS_LIST_LENGTH(test_list_t, head) == 3, "list length (l1) correct");
-    zjs_assert(ZJS_LIST_LENGTH(test_list_t, head->next) == 2, "list length (l2) correct");
-    zjs_assert(ZJS_LIST_LENGTH(test_list_t, head->next->next) == 1, "list length (l3) correct");
+    zjs_assert(ZJS_LIST_LENGTH(test_list_t, head) == 3,
+               "list length (l1) correct");
+    zjs_assert(ZJS_LIST_LENGTH(test_list_t, head->next) == 2,
+               "list length (l2) correct");
+    zjs_assert(ZJS_LIST_LENGTH(test_list_t, head->next->next) == 1,
+               "list length (l3) correct");
 
     // check values are correct
     test_list_t *tl1 = ZJS_LIST_FIND(test_list_t, head, value, 1);
@@ -450,7 +454,8 @@ void test_list_macros()
     if (ZJS_LIST_REMOVE(test_list_t, head, l2)) {
         zjs_assert(l1->next == l3, "middle element was removed");
         should_be_null = ZJS_LIST_FIND(test_list_t, head, value, 2);
-        zjs_assert(should_be_null == NULL, "middle element value was not found");
+        zjs_assert(should_be_null == NULL,
+                   "middle element value was not found");
     } else {
         zjs_assert(0, "element was not removed");
     }
@@ -458,7 +463,8 @@ void test_list_macros()
     // test prepend
     ZJS_LIST_PREPEND(test_list_t, head, l2);
     zjs_assert(head == l2, "prepended node");
-    zjs_assert(ZJS_LIST_LENGTH(test_list_t, l2) == 3, "list length (prepend) correct");
+    zjs_assert(ZJS_LIST_LENGTH(test_list_t, l2) == 3,
+               "list length (prepend) correct");
 
     ZJS_LIST_FREE(test_list_t, head, test_free_list);
     zjs_assert(l1_freed, "l1 freed");

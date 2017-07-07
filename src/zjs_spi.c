@@ -1,20 +1,22 @@
 // Copyright (c) 2017, Intel Corporation.
 
-// Zephyr includes
-#ifndef ZJS_LINUX_BUILD
-#include <zephyr.h>
-#include <spi.h>
-#include <misc/util.h>
-#endif
-#include <string.h>
+// C includes
 #include <stdlib.h>
+#include <string.h>
+
+#ifndef ZJS_LINUX_BUILD
+// Zephyr includes
+#include <misc/util.h>
+#include <spi.h>
+#include <zephyr.h>
+#endif
 
 // ZJS includes
-#include "zjs_spi.h"
-#include "zjs_util.h"
 #include "zjs_buffer.h"
 #include "zjs_callbacks.h"
 #include "zjs_error.h"
+#include "zjs_spi.h"
+#include "zjs_util.h"
 
 #define SPI_BUS "SPI_"
 #define MAX_SPI_BUS 127
@@ -47,8 +49,7 @@ static void zjs_spi_callback_free(void *native)
     zjs_free(handle);
 }
 
-static const jerry_object_native_info_t spi_type_info =
-{
+static const jerry_object_native_info_t spi_type_info = {
    .free_cb = zjs_spi_callback_free
 };
 
@@ -62,7 +63,8 @@ static ZJS_DECL_FUNC(zjs_spi_transceive)
     //           returns the buffer received on the SPI in reply.  Otherwise
     //           returns NULL.
 
-    ZJS_VALIDATE_ARGS(Z_NUMBER, Z_OPTIONAL Z_ARRAY Z_STRING Z_BUFFER, Z_OPTIONAL Z_STRING);
+    ZJS_VALIDATE_ARGS(Z_NUMBER, Z_OPTIONAL Z_ARRAY Z_STRING Z_BUFFER,
+                      Z_OPTIONAL Z_STRING);
 
     ZJS_GET_HANDLE(this, spi_handle_t, handle, spi_type_info);
 
@@ -109,14 +111,17 @@ static ZJS_DECL_FUNC(zjs_spi_transceive)
 
         // If topology conflicts with direction given
         if ((handle->topology == ZJS_TOPOLOGY_WRITE &&
-            dir_arg != ZJS_TOPOLOGY_WRITE) ||
+             dir_arg != ZJS_TOPOLOGY_WRITE) ||
             (handle->topology == ZJS_TOPOLOGY_READ &&
-            dir_arg != ZJS_TOPOLOGY_READ)) {
-            return ZJS_STD_ERROR(NotSupportedError, "Direction conflicts with topology");
+             dir_arg != ZJS_TOPOLOGY_READ)) {
+            return ZJS_STD_ERROR(NotSupportedError,
+                                 "Direction conflicts with topology");
         }
         // If reading only, the 2nd arg should be NULL
         if (dir_arg == ZJS_TOPOLOGY_READ && !jerry_value_is_null(argv[1])) {
-            return ZJS_STD_ERROR(NotSupportedError, "Buffer should be NULL when direction is read");
+            return ZJS_STD_ERROR(
+                NotSupportedError,
+                "Buffer should be NULL when direction is read");
         }
 
         if (dir_arg != ZJS_TOPOLOGY_READ && jerry_value_is_null(argv[1])) {
@@ -136,23 +141,22 @@ static ZJS_DECL_FUNC(zjs_spi_transceive)
                     ZVAL item = jerry_get_property_by_index(buffer, i);
                     if (jerry_value_is_number(item)) {
                         tx_buf->buffer[i] = (u8_t)jerry_get_number_value(item);
-                    }
-                    else {
-                        ERR_PRINT("non-numeric value in array, treating as 0\n");
+                    } else {
+                        ERR_PRINT(
+                            "non-numeric value in array, treating as 0\n");
                         tx_buf->buffer[i] = 0;
                     }
                 }
             }
-        }
-        else if (jerry_value_is_string(argv[1])){
-            tx_buf_obj = zjs_buffer_create(jerry_get_string_size(buffer), &tx_buf);
+        } else if (jerry_value_is_string(argv[1])) {
+            tx_buf_obj = zjs_buffer_create(jerry_get_string_size(buffer),
+                                           &tx_buf);
             // zjs_copy_jstring adds a null terminator, which we don't want
             // so make a new string instead and remove it.
             char *tmpBuf = zjs_alloc_from_jstring(argv[1], NULL);
             strncpy(tx_buf->buffer, tmpBuf, tx_buf->bufsize);
             zjs_free(tmpBuf);
-        }
-        else {
+        } else {
             // If we were passed a buffer just use it as is
             tx_buf = zjs_buffer_find(argv[1]);
             tx_buf_obj = buffer;
@@ -161,23 +165,27 @@ static ZJS_DECL_FUNC(zjs_spi_transceive)
         if (dir_arg == ZJS_TOPOLOGY_FULL_DUPLEX) {
             rx_buf_obj = zjs_buffer_create(tx_buf->bufsize, &rx_buf);
             // Send the data and read from the device
-            if (spi_transceive(handle->spi_device, tx_buf->buffer , tx_buf->bufsize, rx_buf->buffer, rx_buf->bufsize) != 0) {
+            if (spi_transceive(handle->spi_device, tx_buf->buffer,
+                               tx_buf->bufsize, rx_buf->buffer,
+                               rx_buf->bufsize) != 0) {
                 jerry_release_value(rx_buf_obj);
                 return ZJS_STD_ERROR(SystemError, "SPI transceive failed");
             }
         }
         // This is a write only operation, return a NULL buffer
         else {
-            if (spi_write(handle->spi_device, tx_buf->buffer , tx_buf->bufsize) !=0) {
+            if (spi_write(handle->spi_device, tx_buf->buffer,
+                          tx_buf->bufsize) != 0) {
                 return ZJS_STD_ERROR(SystemError, "SPI transceive failed");
             }
             rx_buf_obj = jerry_create_null();
         }
-    }   // This is a read only operation
+    }  // This is a read only operation
     else {
         rx_buf_obj = zjs_buffer_create(MAX_READ_BUFF, &rx_buf);
         // Read the data from the device
-        if (spi_read(handle->spi_device, rx_buf->buffer, rx_buf->bufsize) !=0) {
+        if (spi_read(handle->spi_device,
+                     rx_buf->buffer, rx_buf->bufsize) != 0) {
             jerry_release_value(rx_buf_obj);
             return ZJS_STD_ERROR(SystemError, "SPI transceive failed");
         }
@@ -197,7 +205,8 @@ static ZJS_DECL_FUNC(zjs_spi_close)
 
 static ZJS_DECL_FUNC(zjs_spi_open)
 {
-    // requires: This is a SPI object from zjs_spi_open, it has one optional args
+    // requires: This is a SPI object from zjs_spi_open, it has one optional
+    //             args
     //           arg[0] - config object
     //  effects: Creates the SPI object
 
@@ -221,8 +230,7 @@ static ZJS_DECL_FUNC(zjs_spi_open)
         zjs_obj_get_uint32(argv[0], "bus", &bus);
         if (bus < MAX_SPI_BUS) {
             snprintf(bus_str, 9, "%s%u", SPI_BUS, bus);
-        }
-        else
+        } else
             return ZJS_STD_ERROR(RangeError, "Invalid bus");
 
         // Bus speed in MHz

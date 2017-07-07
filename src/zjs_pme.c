@@ -1,7 +1,9 @@
 // Copyright (c) 2017, Intel Corporation.
 
-// Zephyr includes
+// C includes
 #include <string.h>
+
+// Zephyr includes
 #include <zephyr.h>
 
 // ZJS includes
@@ -44,7 +46,8 @@ static jerry_value_t zjs_pme_prototype;
     })
 
 static bool zjs_pme_ipm_send_sync(zjs_ipm_message_t *send,
-                                  zjs_ipm_message_t *result) {
+                                  zjs_ipm_message_t *result)
+{
     send->id = MSG_ID_PME;
     send->flags = 0 | MSG_SYNC_FLAG;
     send->user_data = (void *)result;
@@ -66,7 +69,8 @@ static bool zjs_pme_ipm_send_sync(zjs_ipm_message_t *send,
     return true;
 }
 
-static void ipm_msg_receive_callback(void *context, u32_t id, volatile void *data)
+static void ipm_msg_receive_callback(void *context, u32_t id,
+                                     volatile void *data)
 {
     if (id != MSG_ID_PME)
         return;
@@ -460,7 +464,7 @@ static ZJS_DECL_FUNC(zjs_pme_restore_neurons)
         for (int i = 0; i < vector_len; i++) {
             ZVAL num = jerry_get_property_by_index(vector, i);
             if (!jerry_value_is_number(num)) {
-                 return zjs_error("invalid vector type");
+                return zjs_error("invalid vector type");
             }
 
             u8_t byte = jerry_get_number_value(num);

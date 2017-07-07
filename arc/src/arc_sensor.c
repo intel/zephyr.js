@@ -1,9 +1,11 @@
 // Copyright (c) 2017, Intel Corporation.
 
-// Zephyr includes
-#include <zephyr.h>
-#include <sensor.h>
+// C includes
 #include <string.h>
+
+// Zephyr includes
+#include <sensor.h>
+#include <zephyr.h>
 
 // ZJS includes
 #include "arc_common.h"
@@ -26,13 +28,13 @@ static u8_t light_send_updates[ARC_AIO_LEN] = {};
 
 static struct device *bmi160 = NULL;
 #ifdef CONFIG_BMI160_TRIGGER
-static bool accel_trigger = false;      // trigger mode
-static bool gyro_trigger = false;       // trigger mode
+static bool accel_trigger = false;  // trigger mode
+static bool gyro_trigger = false;   // trigger mode
 #else
-static bool accel_poll = false;         // polling mode
-static bool gyro_poll = false;          // polling mode
+static bool accel_poll = false;     // polling mode
+static bool gyro_poll = false;      // polling mode
 #endif
-static bool temp_poll = false;          // polling mode
+static bool temp_poll = false;      // polling mode
 static double accel_last_value[3];
 static double gyro_last_value[3];
 static double temp_last_value;
@@ -65,7 +67,7 @@ static inline int sensor_value_snprintf(char *buf, size_t len,
         return snprintf(buf, len, "%d.%06d", val1, -val2);
     }
 }
-#endif // DEBUG_BUILD
+#endif  // DEBUG_BUILD
 
 static void send_sensor_data(enum sensor_channel channel,
                              union sensor_reading reading)
@@ -141,8 +143,7 @@ static void process_gyro_data(struct device *dev)
     dval[1] = convert_sensor_value(&val[1]);
     dval[2] = convert_sensor_value(&val[2]);
 
-    if (dval[0] != gyro_last_value[0] ||
-        dval[1] != gyro_last_value[1] ||
+    if (dval[0] != gyro_last_value[0] || dval[1] != gyro_last_value[1] ||
         dval[2] != gyro_last_value[2]) {
         union sensor_reading reading;
         gyro_last_value[0] = reading.x = dval[0];
@@ -187,8 +188,7 @@ static void process_temp_data(struct device *dev)
 }
 
 #ifdef CONFIG_BMI160_TRIGGER
-static void trigger_hdlr(struct device *dev,
-                         struct sensor_trigger *trigger)
+static void trigger_hdlr(struct device *dev, struct sensor_trigger *trigger)
 {
     if (trigger->type != SENSOR_TRIG_DELTA &&
         trigger->type != SENSOR_TRIG_DATA_READY) {
@@ -222,8 +222,8 @@ struct sensor_value acc_calib[] = {
 static int auto_calibration(struct device *dev)
 {
     /* calibrate accelerometer */
-    if (sensor_attr_set(dev, SENSOR_CHAN_ACCEL_XYZ,
-                        SENSOR_ATTR_CALIB_TARGET, acc_calib) < 0) {
+    if (sensor_attr_set(dev, SENSOR_CHAN_ACCEL_XYZ, SENSOR_ATTR_CALIB_TARGET,
+                        acc_calib) < 0) {
         return -1;
     }
 
@@ -232,8 +232,8 @@ static int auto_calibration(struct device *dev)
      * the target on all axis is set internally to 0. This is used just to
      * trigger a gyro calibration.
      */
-    if (sensor_attr_set(dev, SENSOR_CHAN_GYRO_XYZ,
-                        SENSOR_ATTR_CALIB_TARGET, NULL) < 0) {
+    if (sensor_attr_set(dev, SENSOR_CHAN_GYRO_XYZ, SENSOR_ATTR_CALIB_TARGET,
+                        NULL) < 0) {
         return -1;
     }
 
@@ -250,8 +250,8 @@ static int start_accel_trigger(struct device *dev, int freq)
     // units, convert the range to m/s^2.
     sensor_g_to_ms2(16, &attr);
 
-    if (sensor_attr_set(dev, SENSOR_CHAN_ACCEL_XYZ,
-                        SENSOR_ATTR_FULL_SCALE, &attr) < 0) {
+    if (sensor_attr_set(dev, SENSOR_CHAN_ACCEL_XYZ, SENSOR_ATTR_FULL_SCALE,
+                        &attr) < 0) {
         ERR_PRINT("failed to set accelerometer range\n");
         return -1;
     }
@@ -268,8 +268,8 @@ static int start_accel_trigger(struct device *dev, int freq)
     // set slope threshold to 0.1G (0.1 * 9.80665 = 4.903325 m/s^2).
     attr.val1 = 0;
     attr.val2 = 980665;
-    if (sensor_attr_set(dev, SENSOR_CHAN_ACCEL_XYZ,
-                        SENSOR_ATTR_SLOPE_TH, &attr) < 0) {
+    if (sensor_attr_set(dev, SENSOR_CHAN_ACCEL_XYZ, SENSOR_ATTR_SLOPE_TH,
+                        &attr) < 0) {
         ERR_PRINT("failed set slope threshold\n");
         return -1;
     }
@@ -277,8 +277,8 @@ static int start_accel_trigger(struct device *dev, int freq)
     // set slope duration to 2 consecutive samples
     attr.val1 = 2;
     attr.val2 = 0;
-    if (sensor_attr_set(dev, SENSOR_CHAN_ACCEL_XYZ,
-                        SENSOR_ATTR_SLOPE_DUR, &attr) < 0) {
+    if (sensor_attr_set(dev, SENSOR_CHAN_ACCEL_XYZ, SENSOR_ATTR_SLOPE_DUR,
+                        &attr) < 0) {
         ERR_PRINT("failed to set slope duration\n");
         return -1;
     }
@@ -476,7 +476,7 @@ static void handle_sensor_bmi160(struct zjs_ipm_message *msg)
 }
 
 #ifdef BUILD_MODULE_SENSOR_LIGHT
-static void handle_sensor_light(struct zjs_ipm_message* msg)
+static void handle_sensor_light(struct zjs_ipm_message *msg)
 {
     u32_t pin;
     u32_t error_code = ERROR_IPM_NONE;
@@ -582,8 +582,8 @@ void arc_fetch_light()
             u32_t value = arc_pin_read(ARC_AIO_MIN + i);
             atomic_set(&pin_values[i], value);
             if (pin_values[i] != pin_last_values[i]) {
-                // The formula for converting the analog value to lux is taken from
-                // the UPM project:
+                // The formula for converting the analog value to lux is taken
+                // from the UPM project:
                 //   https://github.com/intel-iot-devkit/upm/blob/master/src/grove/grove.cxx#L161
                 // v = 10000.0/pow(((1023.0-a)*10.0/a)*15.0,4.0/3.0)
                 // since pow() is not supported due to missing <math.h>
@@ -600,7 +600,8 @@ void arc_fetch_light()
                 } else {
                     resistance = (1023.0 - analog_val) * 10.0 / analog_val;
                     base = resistance * 15.0;
-                    reading.dval = 10000.0 / cube_root(base * base * base * base);
+                    reading.dval = 10000.0 /
+                                   cube_root(base * base * base * base);
                 }
                 send_sensor_data(SENSOR_CHAN_LIGHT, reading);
             }
@@ -608,7 +609,7 @@ void arc_fetch_light()
         }
     }
 }
-#endif // BUILD_MODULE_SENSOR_LIGHT
+#endif  // BUILD_MODULE_SENSOR_LIGHT
 
 void arc_fetch_sensor()
 {
@@ -616,10 +617,10 @@ void arc_fetch_sensor()
     // add support for other types of sensors
     if (bmi160 && (
 #ifndef CONFIG_BMI160_TRIGGER
-            accel_poll ||
-            gyro_poll ||
+        accel_poll ||
+        gyro_poll ||
 #endif
-            temp_poll)) {
+        temp_poll)) {
         if (sensor_sample_fetch(bmi160) < 0) {
             ERR_PRINT("failed to fetch sample from sensor\n");
             return;

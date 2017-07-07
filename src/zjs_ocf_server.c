@@ -2,17 +2,19 @@
 
 #ifdef BUILD_MODULE_OCF
 
+// OC includes
 #include "oc_api.h"
 #include "oc_core_res.h"
 #include "port/oc_clock.h"
 //#include "port/oc_signal_main_loop.h"
 
-#include "zjs_util.h"
+// ZJS includes
 #include "zjs_common.h"
+#include "zjs_util.h"
 
-#include "zjs_ocf_server.h"
-#include "zjs_ocf_encoder.h"
 #include "zjs_ocf_common.h"
+#include "zjs_ocf_encoder.h"
+#include "zjs_ocf_server.h"
 
 #include "zjs_event.h"
 
@@ -40,7 +42,7 @@ typedef struct resource_list {
 } resource_list_t;
 
 struct ocf_response {
-    oc_method_t method;         // Current method being executed
+    oc_method_t method;  // Current method being executed
     oc_request_t *request;
     struct server_resource *res;
 };
@@ -51,8 +53,7 @@ struct ocf_handler {
     struct server_resource *res;
 };
 
-static const jerry_object_native_info_t ocf_type_info =
-{
+static const jerry_object_native_info_t ocf_type_info = {
    .free_cb = free_handle_nop
 };
 
@@ -115,14 +116,16 @@ static jerry_value_t request_to_jerry_value(oc_request_t *request)
     while (rep != NULL) {
         switch (rep->type) {
         case BOOL:
-            zjs_obj_add_boolean(props, rep->value.boolean, oc_string(rep->name));
+            zjs_obj_add_boolean(props, rep->value.boolean,
+                                oc_string(rep->name));
             break;
         case INT:
             zjs_obj_add_number(props, rep->value.integer, oc_string(rep->name));
             break;
         case BYTE_STRING:
         case STRING:
-            zjs_obj_add_string(props, oc_string(rep->value.string), oc_string(rep->name));
+            zjs_obj_add_string(props, oc_string(rep->value.string),
+                               oc_string(rep->name));
             break;
             /*
              * TODO: Implement encoding for complex types
@@ -141,7 +144,8 @@ static jerry_value_t request_to_jerry_value(oc_request_t *request)
 
 struct server_resource *new_server_resource(char *path)
 {
-    struct server_resource *resource = zjs_malloc(sizeof(struct server_resource));
+    struct server_resource *resource =
+        zjs_malloc(sizeof(struct server_resource));
     if (!resource) {
         ERR_PRINT("new resource could not be allocated\n");
         return NULL;
@@ -160,7 +164,8 @@ struct server_resource *new_server_resource(char *path)
     return resource;
 }
 
-static struct ocf_response *create_response(struct server_resource *resource, oc_method_t method)
+static struct ocf_response *create_response(struct server_resource *resource,
+                                            oc_method_t method)
 {
     struct ocf_response *resp = zjs_malloc(sizeof(struct ocf_response));
     memset(resp, 0, sizeof(struct ocf_response));
@@ -170,7 +175,8 @@ static struct ocf_response *create_response(struct server_resource *resource, oc
     return resp;
 }
 
-static jerry_value_t create_resource(const char *path, jerry_value_t resource_init)
+static jerry_value_t create_resource(const char *path,
+                                     jerry_value_t resource_init)
 {
     jerry_value_t res = jerry_create_object();
 
@@ -250,7 +256,8 @@ static ZJS_DECL_FUNC(ocf_respond)
     } else {
         oc_send_response(h->req, OC_STATUS_OK);
     }
-    DBG_PRINT("responding to method type=%u, properties=%lu\n", h->resp->method, data);
+    DBG_PRINT("responding to method type=%u, properties=%lu\n", h->resp->method,
+              data);
 
     jerry_value_t promise = jerry_create_promise();
 
@@ -295,7 +302,8 @@ static void post_get(void *handler)
 }
 
 static void ocf_get_handler(oc_request_t *request,
-                            oc_interface_mask_t interface, void *user_data)
+                            oc_interface_mask_t interface,
+                            void *user_data)
 {
     ZJS_PRINT("ocf_get_handler()\n");
     struct ocf_handler *h =
@@ -310,7 +318,7 @@ static void ocf_get_handler(oc_request_t *request,
     ZVAL request_val = create_request(h->res, OC_GET, h);
     ZVAL flag = jerry_create_boolean(0);
 
-    jerry_value_t argv[2] = {request_val, flag};
+    jerry_value_t argv[2] = { request_val, flag };
     zjs_trigger_event_now(h->res->object, "retrieve", argv, 2, post_get, h);
 
     zjs_free(h->resp);
@@ -323,10 +331,12 @@ static void post_put(void *handler)
 }
 
 static void ocf_put_handler(oc_request_t *request,
-                            oc_interface_mask_t interface, void *user_data)
+                            oc_interface_mask_t interface,
+                            void *user_data)
 {
     ZJS_PRINT("ocf_put_handler()\n");
-    struct ocf_handler *h = new_ocf_handler((struct server_resource *)user_data);
+    struct ocf_handler *h =
+        new_ocf_handler((struct server_resource *)user_data);
     if (!h) {
         ERR_PRINT("handler was NULL\n");
         return;
@@ -355,9 +365,12 @@ static void post_delete(void *handler)
     // ZJS_PRINT("POST DELETE\n");
 }
 
-static void ocf_delete_handler(oc_request_t *request, oc_interface_mask_t interface, void *user_data)
+static void ocf_delete_handler(oc_request_t *request,
+                               oc_interface_mask_t interface,
+                               void *user_data)
 {
-    struct ocf_handler *h = new_ocf_handler((struct server_resource *)user_data);
+    struct ocf_handler *h =
+        new_ocf_handler((struct server_resource *)user_data);
     if (!h) {
         ERR_PRINT("handler was NULL\n");
         return;
@@ -475,7 +488,8 @@ static ZJS_DECL_FUNC(ocf_register)
     }
 
     resource->num_ifaces = jerry_get_array_length(iface_array);
-    resource->resource_ifaces = zjs_malloc(sizeof(char *) * resource->num_ifaces);
+    resource->resource_ifaces = zjs_malloc(sizeof(char *) *
+                                           resource->num_ifaces);
     if (!resource->resource_ifaces) {
         REJECT("InternalError", "interfaces alloc failed");
     }
@@ -514,13 +528,15 @@ void zjs_ocf_register_resources(void)
         int i;
         struct server_resource *resource = cur->resource;
 
-        resource->res = oc_new_resource(resource->resource_path, resource->num_types, 0);
+        resource->res = oc_new_resource(resource->resource_path,
+                                        resource->num_types, 0);
         if (!resource->res) {
             ERR_PRINT("failed to create new resource\n");
             return;
         }
         for (i = 0; i < resource->num_types; ++i) {
-            oc_resource_bind_resource_type(resource->res, resource->resource_types[i]);
+            oc_resource_bind_resource_type(resource->res,
+                                           resource->resource_types[i]);
         }
         for (i = 0; i < resource->num_ifaces; ++i) {
             if (strcmp(resource->resource_ifaces[i], "/oic/if/rw") == 0) {
@@ -550,9 +566,12 @@ void zjs_ocf_register_resources(void)
             oc_resource_set_periodic_observable(resource->res, 1);
         }
 
-        oc_resource_set_request_handler(resource->res, OC_GET, ocf_get_handler, resource);
-        oc_resource_set_request_handler(resource->res, OC_PUT, ocf_put_handler, resource);
-        oc_resource_set_request_handler(resource->res, OC_POST, ocf_put_handler, resource);
+        oc_resource_set_request_handler(resource->res, OC_GET, ocf_get_handler,
+                                        resource);
+        oc_resource_set_request_handler(resource->res, OC_PUT, ocf_put_handler,
+                                        resource);
+        oc_resource_set_request_handler(resource->res, OC_POST, ocf_put_handler,
+                                        resource);
 
         oc_add_resource(resource->res);
 
@@ -616,4 +635,4 @@ void zjs_ocf_server_cleanup()
     }
 }
 
-#endif // BUILD_MODULE_OCF
+#endif  // BUILD_MODULE_OCF

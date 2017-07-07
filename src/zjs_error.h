@@ -3,6 +3,7 @@
 #ifndef __zjs_error_h__
 #define __zjs_error_h__
 
+// JerryScript includes
 #include "jerryscript.h"
 
 typedef enum zjs_error_type {
@@ -55,9 +56,8 @@ jerry_value_t zjs_custom_error(const char *name, const char *message,
 jerry_value_t zjs_standard_error(zjs_error_type_t type, const char *message,
                                  jerry_value_t this, jerry_value_t func);
 
-
-#define ZJS_STD_ERROR(type, msg) (zjs_standard_error((type), (msg), \
-                                                     this, function_obj))
+#define ZJS_STD_ERROR(type, msg) \
+    (zjs_standard_error((type), (msg), this, function_obj))
 
 // Error Context
 //
@@ -76,8 +76,8 @@ jerry_value_t zjs_standard_error(zjs_error_type_t type, const char *message,
 // "In function MyGPIOObjects.led0.write():"
 //   to indicate where the error occurred since we can't currently provide line
 //   numbers.
-#define zjs_error_context(msg, this, func)  (zjs_standard_error(Error, (msg), \
-                                                                (this), (func)))
+#define zjs_error_context(msg, this, func) \
+    (zjs_standard_error(Error, (msg), (this), (func)))
 
 // The below functions when inside a ZJS_DECL_FUNC JS binding; they require
 //   that 'this' and 'function_obj' be defined.
@@ -96,8 +96,7 @@ jerry_value_t zjs_standard_error(zjs_error_type_t type, const char *message,
  * These macros expects function_obj and this to exist in a JerryScript native
  * function.
  */
-#define ZJS_ERROR(msg) \
-    (zjs_error_with_func(this, function_obj, Error, (msg)))
+#define ZJS_ERROR(msg) (zjs_error_with_func(this, function_obj, Error, (msg)))
 #define ZJS_CUSTOM_ERROR(name, msg) \
     (zjs_custom_error_with_func(this, function_obj, (name), (msg)))
 

@@ -2,15 +2,16 @@
 
 #ifdef BUILD_MODULE_BUFFER
 
+// C includes
 #include <string.h>
 
 // JerryScript includes
 #include "jerryscript.h"
 
 // ZJS includes
+#include "zjs_buffer.h"
 #include "zjs_common.h"
 #include "zjs_util.h"
-#include "zjs_buffer.h"
 
 static jerry_value_t zjs_buffer_prototype;
 
@@ -24,9 +25,8 @@ static void zjs_buffer_callback_free(void *handle)
     zjs_free(item);
 }
 
-static const jerry_object_native_info_t buffer_type_info =
-{
-   .free_cb = zjs_buffer_callback_free
+static const jerry_object_native_info_t buffer_type_info = {
+    .free_cb = zjs_buffer_callback_free
 };
 
 bool zjs_value_is_buffer(const jerry_value_t value)
@@ -188,7 +188,8 @@ static ZJS_DECL_FUNC(zjs_buffer_write_uint32_le)
     return zjs_buffer_write_bytes(function_obj, this, argv, argc, 4, false);
 }
 
-char zjs_int_to_hex(int value) {
+char zjs_int_to_hex(int value)
+{
     // requires: value is between 0 and 15
     //  effects: returns value as a lowercase hex digit 0-9a-f
     if (value < 10)
@@ -232,11 +233,11 @@ static ZJS_DECL_FUNC(zjs_buffer_to_string)
     } else if (strcmp(encoding, "hex") == 0) {
         if (buf && buf->bufsize > 0) {
             char hexbuf[buf->bufsize * 2 + 1];
-            for (int i=0; i<buf->bufsize; i++) {
+            for (int i = 0; i < buf->bufsize; i++) {
                 int high = (0xf0 & buf->buffer[i]) >> 4;
                 int low = 0xf & buf->buffer[i];
-                hexbuf[2*i] = zjs_int_to_hex(high);
-                hexbuf[2*i+1] = zjs_int_to_hex(low);
+                hexbuf[2 * i] = zjs_int_to_hex(high);
+                hexbuf[2 * i + 1] = zjs_int_to_hex(low);
             }
             hexbuf[buf->bufsize * 2] = '\0';
             return jerry_create_string((jerry_char_t *)hexbuf);
@@ -328,8 +329,8 @@ jerry_value_t zjs_buffer_create(u32_t size, zjs_buffer_t **ret_buf)
         maxLength = (1 << 30) - 1;
     }
     if (size > maxLength) {
-        return zjs_standard_error(RangeError, "size greater than max length",
-                                  0, 0);
+        return zjs_standard_error(RangeError, "size greater than max length", 0,
+                                  0);
     }
 
     void *buf = zjs_malloc(size);
@@ -376,19 +377,16 @@ static ZJS_DECL_FUNC(zjs_buffer)
         u32_t unum;
         if (dnum < 0) {
             unum = 0;
-        }
-        else if (dnum > 0xffffffff) {
+        } else if (dnum > 0xffffffff) {
             unum = 0xffffffff;
-        }
-        else {
+        } else {
             // round to the nearest integer
             unum = (u32_t)(dnum + 0.5);
         }
 
         // treat a number argument as a length
         return zjs_buffer_create(unum, NULL);
-    }
-    else if (jerry_value_is_array(argv[0])) {
+    } else if (jerry_value_is_array(argv[0])) {
         // treat array argument as byte initializers
         jerry_value_t array = argv[0];
         u32_t len = jerry_get_array_length(array);
@@ -407,8 +405,7 @@ static ZJS_DECL_FUNC(zjs_buffer)
             }
         }
         return new_buf;
-    }
-    else {
+    } else {
         // treat string argument as initializer
         jerry_size_t size = 0;
         char *str = zjs_alloc_from_jstring(argv[0], &size);
@@ -455,4 +452,4 @@ void zjs_buffer_cleanup()
 {
     jerry_release_value(zjs_buffer_prototype);
 }
-#endif // BUILD_MODULE_BUFFER
+#endif  // BUILD_MODULE_BUFFER

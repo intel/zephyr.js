@@ -2,27 +2,33 @@
 
 #ifdef BUILD_MODULE_OCF
 
+// JerryScript includes
 #include "jerryscript.h"
 
-#include "zjs_util.h"
-#include "zjs_common.h"
+// C includes
+#include <pthread.h>
+#include <signal.h>
+#include <stdio.h>
 
+// ZJS includes
+#include "zjs_common.h"
+#include "zjs_util.h"
+
+#include "zjs_net_config.h"
 #include "zjs_ocf_client.h"
-#include "zjs_ocf_server.h"
 #include "zjs_ocf_common.h"
 #include "zjs_ocf_encoder.h"
-#include "zjs_net_config.h"
+#include "zjs_ocf_server.h"
 
+// OCF includes
 #include "oc_api.h"
-#include <stdio.h>
-#include <signal.h>
-#include <pthread.h>
 #include "port/oc_clock.h"
 
-int zjs_ocf_is_int(jerry_value_t val) {
+int zjs_ocf_is_int(jerry_value_t val)
+{
     int ret = 0;
     double n = jerry_get_number_value(val);
-    ret = (n - (int) n == 0);
+    ret = (n - (int)n == 0);
     if (ret) {
         // Integer type
         if (n < 0) {
@@ -46,11 +52,13 @@ static bool ocf_foreach_prop(const jerry_value_t prop_name,
     /*
      * Use zjs_alloc_from_jstring
      */
-    // Skip id/resourcePath/resourceType because that is not a resource property that is sent out
+    // Skip id/resourcePath/resourceType because that is not a resource property
+    // that is sent out
     if ((strcmp(name, "deviceId") != 0) &&
         (strcmp(name, "resourcePath") != 0) &&
         (strcmp(name, "resourceType") != 0)) {
-        handle->names_array[handle->size] = zjs_malloc(jerry_get_string_size(prop_name) + 1);
+        handle->names_array[handle->size] =
+            zjs_malloc(jerry_get_string_size(prop_name) + 1);
         memcpy(handle->names_array[handle->size], name, strlen(name));
         handle->names_array[handle->size][strlen(name)] = '\0';
         ZVAL ret = jerry_set_property_by_index(handle->props_array,
@@ -84,14 +92,12 @@ static struct props_handle *ocf_get_all_properties(jerry_value_t resource)
     return handle;
 }
 
-
 /*
  * Takes an 'encoder' object and encodes properties found in 'props_object'. The
  * 'root' parameter should be true if this is being called on a root object,
  * otherwise it should be false and the encoder object should be provided.
  */
-void *zjs_ocf_props_setup(jerry_value_t props_object,
-                          CborEncoder *encoder,
+void *zjs_ocf_props_setup(jerry_value_t props_object, CborEncoder *encoder,
                           bool root)
 {
     void *ret = NULL;
@@ -242,8 +248,7 @@ static void platform_init(void *data)
 
         // model
         ZVAL model = zjs_get_property(platform, "model");
-        if (!jerry_value_is_undefined(model) &&
-            jerry_value_is_string(model)) {
+        if (!jerry_value_is_undefined(model) && jerry_value_is_string(model)) {
             size = 32;
             char s[size];
             zjs_copy_jstring(model, s, &size);
@@ -351,12 +356,11 @@ static int app_init(void)
     }
 
     int ret = oc_init_platform((manufacturer_name) ? manufacturer_name : "ZJS",
-                               platform_init,
-                               NULL);
+                               platform_init, NULL);
     if (manufacturer_name) {
         zjs_free(manufacturer_name);
     }
-    ZVAL device  = zjs_get_property(ocf_object, "device");
+    ZVAL device = zjs_get_property(ocf_object, "device");
     if (!jerry_value_is_undefined(device)) {
         ZVAL dev_name = zjs_get_property(device, "name");
         if (!jerry_value_is_undefined(dev_name) &&
@@ -397,9 +401,7 @@ static int app_init(void)
     /*
      * TODO: uuid and url are automatically generated and cannot be set from JS
      */
-    ret |= oc_add_device("/oic/d",
-                         "oic.d.zjs",
-                         (name) ? name : "ZJS Device",
+    ret |= oc_add_device("/oic/d", "oic.d.zjs", (name) ? name : "ZJS Device",
                          (spec_version) ? spec_version : "1.0",
                          (data_model_version) ? data_model_version : "1.0",
                          NULL, NULL);
@@ -415,20 +417,20 @@ static int app_init(void)
     return ret;
 }
 
-s32_t main_poll_routine(void* handle)
+s32_t main_poll_routine(void *handle)
 {
     return (s32_t)oc_main_poll();
 }
 
 static const oc_handler_t handler = {
 #ifdef OC_CLIENT
-                                      .requests_entry = issue_requests,
+    .requests_entry = issue_requests,
 #endif
 #ifdef OC_SERVER
-                                      .register_resources = zjs_ocf_register_resources,
+    .register_resources = zjs_ocf_register_resources,
 #endif
-                                      .init = app_init,
-                                      .signal_event_loop = oc_signal_main_loop,
+    .init = app_init,
+    .signal_event_loop = oc_signal_main_loop,
 };
 
 static ZJS_DECL_FUNC(ocf_start)
@@ -481,4 +483,4 @@ void zjs_ocf_cleanup()
     jerry_release_value(ocf_object);
 }
 
-#endif // BUILD_MODULE_OCF
+#endif  // BUILD_MODULE_OCF

@@ -1,7 +1,9 @@
 // Copyright (c) 2016-2017, Intel Corporation.
 
-// Zephyr includes
+// C includes
 #include <string.h>
+
+// Zephyr includes
 #include <zephyr.h>
 
 // ZJS includes
@@ -26,7 +28,7 @@
 #include "zjs_sensor_magn.h"
 #endif
 
-typedef sensor_instance_t* (*initcb_t)();
+typedef sensor_instance_t *(*initcb_t)();
 typedef void (*cleanupcb_t)();
 
 typedef struct sensor_module {
@@ -123,12 +125,14 @@ static void zjs_sensor_fetch_sample(sensor_handle_t *handle)
 
     struct sensor_value val[3];
     if (handle->channel == SENSOR_CHAN_ACCEL_XYZ) {
-        if (sensor_channel_get(handle->controller->dev, handle->channel, val) < 0) {
+        if (sensor_channel_get(handle->controller->dev,
+                               handle->channel, val) < 0) {
             ERR_PRINT("failed to read accelerometer channel\n");
             return;
         }
     } else if (handle->channel == SENSOR_CHAN_MAGN_XYZ) {
-        if (sensor_channel_get(handle->controller->dev, handle->channel, val) < 0) {
+        if (sensor_channel_get(handle->controller->dev,
+                               handle->channel, val) < 0) {
             ERR_PRINT("failed to read magnetometer channel\n");
             return;
         }
@@ -148,7 +152,7 @@ static void zjs_sensor_fetch_sample(sensor_handle_t *handle)
     }
 }
 
-static s32_t zjs_sensor_poll_routine(void* h)
+static s32_t zjs_sensor_poll_routine(void *h)
 {
     int modcount = sizeof(sensor_modules) / sizeof(sensor_module_t);
     u32_t uptime = k_uptime_get_32();

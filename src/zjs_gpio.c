@@ -1,20 +1,22 @@
 // Copyright (c) 2016-2017, Intel Corporation.
 
+// C includes
+#include <stdlib.h>
+#include <string.h>
+
 // Zephyr includes
 #ifndef ZJS_LINUX_BUILD
-#include <zephyr.h>
 #include <gpio.h>
 #include <misc/util.h>
+#include <zephyr.h>
 #endif
-#include <string.h>
-#include <stdlib.h>
 
 // ZJS includes
+#include "zjs_board.h"
+#include "zjs_callbacks.h"
 #include "zjs_common.h"
 #include "zjs_gpio.h"
-#include "zjs_board.h"
 #include "zjs_util.h"
-#include "zjs_callbacks.h"
 
 #ifdef ZJS_GPIO_MOCK
 #include "zjs_gpio_mock.h"
@@ -32,8 +34,8 @@ static jerry_value_t gpio_pin_prototype = 0;
 typedef struct gpio_handle {
     struct gpio_callback callback;  // Callback structure for zephyr
     DEVICE port;                    // Pin's port
-    u32_t pin;                   // Pin associated with this handle
-    u32_t value;                 // Value of the pin
+    u32_t pin;                      // Pin associated with this handle
+    u32_t value;                    // Value of the pin
     zjs_callback_id callbackId;     // ID for the C callback
     jerry_value_t pin_obj;          // Pin object returned from open()
     u32_t last;
@@ -44,9 +46,9 @@ typedef struct gpio_handle {
 
 static void zjs_gpio_close(gpio_handle_t *handle)
 {
-        zjs_remove_callback(handle->callbackId);
-        gpio_remove_callback(handle->port, &handle->callback);
-        handle->closed = true;
+    zjs_remove_callback(handle->callbackId);
+    gpio_remove_callback(handle->port, &handle->callback);
+    handle->closed = true;
 }
 
 static void zjs_gpio_free_cb(void *native)
@@ -58,14 +60,13 @@ static void zjs_gpio_free_cb(void *native)
     zjs_free(handle);
 }
 
-static const jerry_object_native_info_t gpio_type_info =
-{
-   .free_cb = zjs_gpio_free_cb
+static const jerry_object_native_info_t gpio_type_info = {
+    .free_cb = zjs_gpio_free_cb
 };
 
 // non-static so that mock can access it, meant to be private though
-void gpio_internal_lookup_pin(const jerry_value_t pin_obj,
-                                       DEVICE *port, int *pin)
+void gpio_internal_lookup_pin(const jerry_value_t pin_obj, DEVICE *port,
+                              int *pin)
 {
     gpio_handle_t *handle;
     const jerry_object_native_info_t *tmp;
@@ -111,7 +112,7 @@ static void zjs_gpio_zephyr_callback(DEVICE port, struct gpio_callback *cb,
     gpio_pin_read(port, handle->pin, &handle->value);
     if ((handle->edge_both && handle->value != handle->last) ||
         !handle->edge_both) {
-        u32_t args[] = {handle->value, pins};
+        u32_t args[] = { handle->value, pins };
         // Signal the C callback, where we call the JS callback
         zjs_signal_callback(handle->callbackId, args, sizeof(args));
         handle->last = handle->value;
@@ -161,8 +162,7 @@ static ZJS_DECL_FUNC(zjs_gpio_pin_write)
     if (jerry_value_is_boolean(argv[0])) {
         ZJS_PRINT("Deprecated! gpio.write() no longer takes a boolean!\n");
         value = jerry_get_boolean_value(argv[0]) ? 1 : 0;
-    }
-    else {
+    } else {
         value = (u32_t)jerry_get_number_value(argv[0]);
     }
 
@@ -254,26 +254,26 @@ static ZJS_DECL_FUNC(zjs_gpio_open)
         ZJS_REQUIRE_BOOL_IF_PROP(init, "activeLow", &active_low);
 
         str2int_t mode_map[] = {
-            {"in", ZJS_DIR_INPUT},
-            {"out", ZJS_DIR_OUTPUT},
-            {NULL, 0}
+            { "in", ZJS_DIR_INPUT },
+            { "out", ZJS_DIR_OUTPUT },
+            { NULL, 0 }
         };
         ZJS_REQUIRE_STR_IF_PROP_MAP(init, "mode", mode_map, 10, &dir);
 
         str2int_t edge_map[] = {
-            {"none", ZJS_EDGE_NONE},
-            {"rising", ZJS_EDGE_RISING},
-            {"falling", ZJS_EDGE_FALLING},
-            {"any", ZJS_EDGE_BOTH},
-            {NULL, 0}
+            { "none", ZJS_EDGE_NONE },
+            { "rising", ZJS_EDGE_RISING },
+            { "falling", ZJS_EDGE_FALLING },
+            { "any", ZJS_EDGE_BOTH },
+            { NULL, 0 }
         };
         ZJS_REQUIRE_STR_IF_PROP_MAP(init, "edge", edge_map, 10, &edge);
 
         str2int_t pull_map[] = {
-            {"none", ZJS_PULL_NONE},
-            {"pullup", ZJS_PULL_UP},
-            {"pulldown", ZJS_PULL_DOWN},
-            {NULL, 0}
+            { "none", ZJS_PULL_NONE },
+            { "pullup", ZJS_PULL_UP },
+            { "pulldown", ZJS_PULL_DOWN },
+            { NULL, 0 }
         };
         ZJS_REQUIRE_STR_IF_PROP_MAP(init, "state", pull_map, 10, &pull);
     }
@@ -282,14 +282,12 @@ static ZJS_DECL_FUNC(zjs_gpio_open)
     flags |= active_low ? GPIO_POL_INV : GPIO_POL_NORMAL;
     if (dir == ZJS_DIR_INPUT) {
         flags |= GPIO_DIR_IN | edge;
-    }
-    else {
+    } else {
         flags |= GPIO_DIR_OUT;
     }
     if (pull == ZJS_PULL_NONE) {
-       flags |= GPIO_PUD_NORMAL;
-    }
-    else {
+        flags |= GPIO_PUD_NORMAL;
+    } else {
         flags |= (pull == ZJS_PULL_UP) ? GPIO_PUD_PULL_UP : GPIO_PUD_PULL_DOWN;
     }
 

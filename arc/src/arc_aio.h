@@ -3,6 +3,9 @@
 #ifndef __arc_aio_h__
 #define __arc_aio_h__
 
+// ZJS includes
+#include "zjs_ipm.h"
+
 void arc_aio_init();
 
 void arc_aio_cleanup();

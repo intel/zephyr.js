@@ -1,8 +1,8 @@
 // Copyright (c) 2017, Intel Corporation.
 
 // Zephyr includes
-#include <zephyr.h>
 #include <i2c.h>
+#include <zephyr.h>
 
 // ZJS includes
 #include "arc_common.h"
@@ -21,8 +21,7 @@ void arc_handle_i2c(struct zjs_ipm_message *msg)
         error_code = zjs_i2c_handle_open(msg_bus);
         break;
     case TYPE_I2C_WRITE:
-        error_code = zjs_i2c_handle_write(msg_bus,
-                                          msg->data.i2c.data,
+        error_code = zjs_i2c_handle_write(msg_bus, msg->data.i2c.data,
                                           msg->data.i2c.length,
                                           msg->data.i2c.address);
         break;
@@ -30,14 +29,12 @@ void arc_handle_i2c(struct zjs_ipm_message *msg)
         DBG_PRINT("received TYPE_I2C_WRITE_BIT\n");
         break;
     case TYPE_I2C_READ:
-        error_code = zjs_i2c_handle_read(msg_bus,
-                                         msg->data.i2c.data,
+        error_code = zjs_i2c_handle_read(msg_bus, msg->data.i2c.data,
                                          msg->data.i2c.length,
                                          msg->data.i2c.address);
         break;
     case TYPE_I2C_BURST_READ:
-        error_code = zjs_i2c_handle_burst_read(msg_bus,
-                                               msg->data.i2c.data,
+        error_code = zjs_i2c_handle_burst_read(msg_bus, msg->data.i2c.data,
                                                msg->data.i2c.length,
                                                msg->data.i2c.address,
                                                msg->data.i2c.register_addr);

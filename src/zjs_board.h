@@ -5,6 +5,9 @@
 
 #include "jerryscript.h"
 
+// ZJS includes
+#include "zjs_common.h"
+
 struct device;
 
 /**

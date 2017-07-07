@@ -13,30 +13,34 @@
 
 #include <arch/cpu.h>
 
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdint.h>
-#include <stdarg.h>
-#include <string.h>
-#include <errno.h>
+// C includes
 #include <ctype.h>
+#include <errno.h>
+#include <stdarg.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
 
+// Zephyr includes
 #include <device.h>
 #include <init.h>
 
-#include <board.h>
-#include <uart.h>
-#include <toolchain.h>
-#include <sections.h>
 #include <atomic.h>
-
-#include <misc/printk.h>
+#include <board.h>
+#include <sections.h>
+#include <toolchain.h>
+#include <uart.h>
 
 #include <fs.h>
+#include <misc/printk.h>
+
+// JerryScript includes
 #include "jerry-code.h"
 
-#include "comms-uart.h"
+// ZJS includes
 #include "comms-shell.h"
+#include "comms-uart.h"
 #include "shell-state.h"
 
 #ifndef CONFIG_USB_CDC_ACM
@@ -56,7 +60,7 @@
 #define DBG printk
 #endif /* CONFIG_IHEX_DEBUG */
 
-extern void __stdout_hook_install(int(*fn)(int));
+extern void __stdout_hook_install(int (*fn)(int));
 
 static const char banner[] = "Zephyr.js DEV MODE " __DATE__ " " __TIME__ "\r\n";
 
@@ -85,8 +89,7 @@ static struct comms_cfg_data comms_config = {
     .print_state = NULL
 };
 
-struct comms_input
-{
+struct comms_input {
     int _unused;
     char line[MAX_LINE_LEN + 1];
 };
@@ -117,12 +120,12 @@ struct comms_input *fifo_get_isr_buffer()
         if (fifo_size > max_fifo_size)
             max_fifo_size = fifo_size;
     }
-    return (struct comms_input *) data;
+    return (struct comms_input *)data;
 }
 
 void fifo_cache_clear()
 {
-    while(fifo_size > 0) {
+    while (fifo_size > 0) {
         void *data = k_fifo_get(&avail_queue, K_NO_WAIT);
         if (!data)
             return;
@@ -158,8 +161,7 @@ u32_t bytes_processed = 0;
 
 atomic_t uart_state = 0;
 
-enum
-{
+enum {
     UART_INIT,
     UART_TX_READY,
     UART_IRQ_UPDATE,
@@ -216,28 +218,30 @@ static void comms_interrupt_handler(struct device *dev)
             bytes_received += bytes_read;
             tail += bytes_read;
 
-            /* We don't want to flush data too fast otherwise we would be allocating
-            * but we want to flush as soon as we have processed the data on the task
-            * so we don't queue too much and delay the system response.
+            /* We don't want to flush data too fast otherwise we would be
+            * allocating but we want to flush as soon as we have processed
+            * the data on the task so we don't queue too much and delay the
+            * system response.
             *
-            * When the process has finished dealing with the data it signals this method
-            * with a 'i am ready to continue' by changing uart_process_done.
+            * When the process has finished dealing with the data it signals
+            * this method with a 'i am ready to continue' by changing
+            * uart_process_done.
             *
-            * It is also imperative to flush when we reach the limit of the buffer.
+            * It is also imperative to flush when we reach the limit of the
+            * buffer.
             *
-            * If we are still fine in the cache limits, then we keep flushing every
-            * time we get a byte.
+            * If we are still fine in the cache limits, then we keep flushing
+            * every time we get a byte.
             */
             bool flush = false;
 
-            if (fifo_size == 1 ||
-                tail == MAX_LINE_LEN ||
-                uart_process_done) {
+            if (fifo_size == 1 || tail == MAX_LINE_LEN || uart_process_done) {
                 flush = true;
                 uart_process_done = false;
             } else {
-                /* Check for line ends, to flush the data. The decoder / shell will probably
-                 * sit for a bit in the data so it is better if we finish this buffer and send it.
+                /* Check for line ends, to flush the data. The decoder / shell
+                 * will probably sit for a bit in the data so it is better if
+                 * we finish this buffer and send it.
                  */
                 atomic_set(&uart_state, UART_FIFO_READ);
 
@@ -316,7 +320,9 @@ void comms_write_buf(const char *buf, int len)
         len -= bytes;
         bytes = uart_fifo_fill(dev_upload, (const u8_t *)buf, len);
     }
-    while (data_transmitted == false);
+    while (data_transmitted == false) {
+        ;
+    }
     uart_irq_tx_disable(dev_upload);
 }
 
@@ -354,7 +360,8 @@ u32_t comms_get_baudrate(void)
 void comms_print_status()
 {
     if (atomic_get(&uart_state) == UART_INIT)
-        printk(ANSI_FG_RED "JavaScript terminal not connected\n" ANSI_FG_RESTORE);
+        printk(ANSI_FG_RED
+               "JavaScript terminal not connected\n" ANSI_FG_RESTORE);
 
     if (comms_config.print_state != NULL)
         comms_config.print_state();
@@ -369,12 +376,13 @@ void comms_print_status()
     printk("[State] %d\n", (int)uart_state);
     printk("[Process State] %d\n", (int)process_state);
 
-    printk("[Mem] Fifo %d Max Fifo %d Alloc %d Free %d \n",
-        (int)fifo_size, (int)max_fifo_size, (int)alloc_count, (int)free_count);
-    printk("[Usage] Max fifo usage %d bytes\n", (int)(max_fifo_size * sizeof(struct comms_input)));
+    printk("[Mem] Fifo %d Max Fifo %d Alloc %d Free %d \n", (int)fifo_size,
+           (int)max_fifo_size, (int)alloc_count, (int)free_count);
+    printk("[Usage] Max fifo usage %d bytes\n",
+           (int)(max_fifo_size * sizeof(struct comms_input)));
     printk("[Queue size] %d\n", (int)data_queue_count);
-    printk("[Data] Received %d Processed %d \n",
-        (int)bytes_received, (int)bytes_processed);
+    printk("[Data] Received %d Processed %d \n", (int)bytes_received,
+           (int)bytes_processed);
 }
 
 void comms_runner_init()
@@ -428,8 +436,10 @@ void zjs_ashell_process()
             if (tail == 0) {
                 fifo_cache_clear();
             } else {
-                /* Wait for a timeout and flush data if there was not a carriage return */
-                if (atomic_get(&uart_state) == UART_ISR_END && isr_data != NULL) {
+                /* Wait for a timeout and flush data if there was not a carriage
+                 * return */
+                if (atomic_get(&uart_state) == UART_ISR_END &&
+                    isr_data != NULL) {
                     DBG("Capturing buffer\n");
                     process_state = 20;
                     isr_data->line[tail] = 0;

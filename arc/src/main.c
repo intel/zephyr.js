@@ -1,12 +1,15 @@
 // Copyright (c) 2016-2017, Intel Corporation.
 
+// C includes
+#include <string.h>
+
 // Zephyr includes
 #include <zephyr.h>
-#include <string.h>
 #ifdef BUILD_MODULE_AIO
 #include <adc.h>
 #endif
 
+// ZJS includes
 #include "arc_common.h"
 #ifdef BUILD_MODULE_AIO
 #include "arc_aio.h"
@@ -24,9 +27,9 @@
 #include "arc_sensor.h"
 #endif
 
-#define AIO_UPDATE_INTERVAL  200  // 2sec interval in between notifications
-#define QUEUE_SIZE            10  // max incoming message can handle
-#define SLEEP_TICKS            1  // 10ms sleep time in cpu ticks
+#define AIO_UPDATE_INTERVAL 200  // 2sec interval in between notifications
+#define QUEUE_SIZE 10            // max incoming message can handle
+#define SLEEP_TICKS 1            // 10ms sleep time in cpu ticks
 
 static struct k_sem arc_sem;
 
@@ -58,11 +61,11 @@ static void queue_message(struct zjs_ipm_message *incoming_msg)
     }
 
     k_sem_take(&arc_sem, K_FOREVER);
-    while(msg && msg < end_of_queue_ptr) {
-       if (msg->id == MSG_ID_DONE) {
-           break;
-       }
-       msg++;
+    while (msg && msg < end_of_queue_ptr) {
+        if (msg->id == MSG_ID_DONE) {
+            break;
+        }
+        msg++;
     }
 
     if (msg != end_of_queue_ptr) {
@@ -75,9 +78,11 @@ static void queue_message(struct zjs_ipm_message *incoming_msg)
     k_sem_give(&arc_sem);
 }
 
-static void ipm_msg_receive_callback(void *context, u32_t id, volatile void *data)
+static void ipm_msg_receive_callback(void *context, u32_t id,
+                                     volatile void *data)
 {
-    struct zjs_ipm_message *incoming_msg = (struct zjs_ipm_message*)(*(uintptr_t *)data);
+    struct zjs_ipm_message *incoming_msg =
+        (struct zjs_ipm_message *)(*(uintptr_t *)data);
     if (incoming_msg) {
         queue_message(incoming_msg);
     } else {
@@ -141,7 +146,7 @@ void main(void)
     memset(msg_queue, 0, sizeof(struct zjs_ipm_message) * QUEUE_SIZE);
 
     zjs_ipm_init();
-    zjs_ipm_register_callback(-1, ipm_msg_receive_callback); // MSG_ID ignored
+    zjs_ipm_register_callback(-1, ipm_msg_receive_callback);  // MSG_ID ignored
 #endif
 #ifdef BUILD_MODULE_AIO
     arc_aio_init();

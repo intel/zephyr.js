@@ -2,15 +2,18 @@
 
 #ifdef BUILD_MODULE_FS
 
-#include <zephyr.h>
-#include <fs.h>
-
+// C includes
 #include <string.h>
 
+// Zephyr includes
+#include <fs.h>
+#include <zephyr.h>
+
+// ZJS includes
+#include "zjs_buffer.h"
 #include "zjs_callbacks.h"
 #include "zjs_common.h"
 #include "zjs_util.h"
-#include "zjs_buffer.h"
 
 typedef enum {
     // Open for reading, file must already exist
@@ -59,8 +62,7 @@ static void free_stats(void *native)
     }
 }
 
-static const jerry_object_native_info_t stats_type_info =
-{
+static const jerry_object_native_info_t stats_type_info = {
    .free_cb = free_stats
 };
 
@@ -202,8 +204,7 @@ static ZJS_DECL_FUNC_ARGS(zjs_fs_open, u8_t async)
 
     FileMode m = get_mode(mode);
 
-    if ((m == MODE_R || m == MODE_R_PLUS)
-        && !file_exists(path)) {
+    if ((m == MODE_R || m == MODE_R_PLUS) && !file_exists(path)) {
         return zjs_error("file doesn't exist");
     }
 
@@ -234,7 +235,7 @@ static ZJS_DECL_FUNC_ARGS(zjs_fs_open, u8_t async)
     if (async) {
         ZVAL err = jerry_create_number(handle->error);
         ZVAL fd_val = jerry_create_number(handle->fd);
-        jerry_value_t args[] = {err, fd_val};
+        jerry_value_t args[] = { err, fd_val };
 
         zjs_callback_id id = zjs_add_callback_once(argv[2], this, handle, NULL);
         zjs_signal_callback(id, args, sizeof(args));
@@ -245,12 +246,14 @@ static ZJS_DECL_FUNC_ARGS(zjs_fs_open, u8_t async)
     return jerry_create_number(handle->fd);
 }
 
-static ZJS_DECL_FUNC(zjs_fs_open_sync) {
+static ZJS_DECL_FUNC(zjs_fs_open_sync)
+{
     return ZJS_CHAIN_FUNC_ARGS(zjs_fs_open, 0);
 }
 
 #ifdef ZJS_FS_ASYNC_APIS
-static ZJS_DECL_FUNC(zjs_fs_open_async) {
+static ZJS_DECL_FUNC(zjs_fs_open_async)
+{
     return ZJS_CHAIN_FUNC_ARGS(zjs_fs_open, 1);
 }
 #endif
@@ -278,10 +281,7 @@ static ZJS_DECL_FUNC_ARGS(zjs_fs_close, u8_t async)
     if (async) {
         ZVAL error = jerry_create_number(handle->error);
 
-        zjs_callback_id id = zjs_add_callback_once(argv[1],
-                                                   this,
-                                                   handle,
-                                                   NULL);
+        zjs_callback_id id = zjs_add_callback_once(argv[1], this, handle, NULL);
         zjs_signal_callback(id, &error, sizeof(error));
     }
 #endif
@@ -292,12 +292,14 @@ static ZJS_DECL_FUNC_ARGS(zjs_fs_close, u8_t async)
     return ZJS_UNDEFINED;
 }
 
-static ZJS_DECL_FUNC(zjs_fs_close_sync) {
+static ZJS_DECL_FUNC(zjs_fs_close_sync)
+{
     return ZJS_CHAIN_FUNC_ARGS(zjs_fs_close, 0);
 }
 
 #ifdef ZJS_FS_ASYNC_APIS
-static ZJS_DECL_FUNC(zjs_fs_close_async) {
+static ZJS_DECL_FUNC(zjs_fs_close_async)
+{
     return ZJS_CHAIN_FUNC_ARGS(zjs_fs_close, 1);
 }
 #endif
@@ -329,10 +331,7 @@ static ZJS_DECL_FUNC_ARGS(zjs_fs_unlink, u8_t async)
     if (async) {
         ZVAL error = jerry_create_number(ret);
 
-        zjs_callback_id id = zjs_add_callback_once(argv[1],
-                                                   this,
-                                                   NULL,
-                                                   NULL);
+        zjs_callback_id id = zjs_add_callback_once(argv[1], this, NULL, NULL);
         zjs_signal_callback(id, &error, sizeof(error));
     }
 #endif
@@ -340,12 +339,14 @@ static ZJS_DECL_FUNC_ARGS(zjs_fs_unlink, u8_t async)
     return ZJS_UNDEFINED;
 }
 
-static ZJS_DECL_FUNC(zjs_fs_unlink_sync) {
+static ZJS_DECL_FUNC(zjs_fs_unlink_sync)
+{
     return ZJS_CHAIN_FUNC_ARGS(zjs_fs_unlink, 0);
 }
 
 #ifdef ZJS_FS_ASYNC_APIS
-static ZJS_DECL_FUNC(zjs_fs_unlink_async) {
+static ZJS_DECL_FUNC(zjs_fs_unlink_async)
+{
     return ZJS_CHAIN_FUNC_ARGS(zjs_fs_unlink, 1);
 }
 #endif
@@ -411,7 +412,7 @@ static ZJS_DECL_FUNC_ARGS(zjs_fs_read, u8_t async)
               &handle->fp, buffer->buffer, (u32_t)offset, (u32_t)length);
 
     u32_t ret = fs_read(&handle->fp, buffer->buffer + (u32_t)offset,
-                           (u32_t)length);
+                        (u32_t)length);
 
     if (ret != (u32_t)length) {
         DBG_PRINT("could not read %lu bytes, only %lu were read\n",
@@ -424,12 +425,9 @@ static ZJS_DECL_FUNC_ARGS(zjs_fs_read, u8_t async)
     if (async) {
         ZVAL err_val = jerry_create_number(err);
         ZVAL ret_val = jerry_create_number(ret);
-        jerry_value_t args[] = {err_val, ret_val, argv[1]};
+        jerry_value_t args[] = { err_val, ret_val, argv[1] };
 
-        zjs_callback_id id = zjs_add_callback_once(argv[5],
-                                                   this,
-                                                   NULL,
-                                                   NULL);
+        zjs_callback_id id = zjs_add_callback_once(argv[5], this, NULL, NULL);
         zjs_signal_callback(id, args, sizeof(args));
         return ZJS_UNDEFINED;
     }
@@ -437,12 +435,14 @@ static ZJS_DECL_FUNC_ARGS(zjs_fs_read, u8_t async)
     return jerry_create_number(ret);
 }
 
-static ZJS_DECL_FUNC(zjs_fs_read_sync) {
+static ZJS_DECL_FUNC(zjs_fs_read_sync)
+{
     return ZJS_CHAIN_FUNC_ARGS(zjs_fs_read, 0);
 }
 
 #ifdef ZJS_FS_ASYNC_APIS
-static ZJS_DECL_FUNC(zjs_fs_read_async) {
+static ZJS_DECL_FUNC(zjs_fs_read_async)
+{
     return ZJS_CHAIN_FUNC_ARGS(zjs_fs_read, 1);
 }
 #endif
@@ -453,8 +453,8 @@ static ZJS_DECL_FUNC_ARGS(zjs_fs_write, u8_t async)
     ZJS_VALIDATE_ARGS_OPTCOUNT(optcount, Z_NUMBER, Z_BUFFER,
                                Z_OPTIONAL Z_NUMBER, Z_OPTIONAL Z_NUMBER,
                                Z_OPTIONAL Z_NUMBER);
-    // NOTE: Borrowing the optional parameters from Node 7.x, beyond 6.10 LTS
-    //         which we're currently targeting.
+// NOTE: Borrowing the optional parameters from Node 7.x, beyond 6.10 LTS
+//         which we're currently targeting.
 #ifdef ZJS_FS_ASYNC_APIS
     // async case adds callback arg
     int cbindex = 2 + optcount;
@@ -529,7 +529,7 @@ static ZJS_DECL_FUNC_ARGS(zjs_fs_write, u8_t async)
     if (async) {
         ZVAL err = jerry_create_number(0);
         ZVAL bytes = jerry_create_number(written);
-        jerry_value_t args[] = {err, bytes, argv[1]};
+        jerry_value_t args[] = { err, bytes, argv[1] };
 
         zjs_callback_id id = zjs_add_callback_once(argv[cbindex], this, NULL,
                                                    NULL);
@@ -540,12 +540,14 @@ static ZJS_DECL_FUNC_ARGS(zjs_fs_write, u8_t async)
     return jerry_create_number(written);
 }
 
-static ZJS_DECL_FUNC(zjs_fs_write_sync) {
+static ZJS_DECL_FUNC(zjs_fs_write_sync)
+{
     return ZJS_CHAIN_FUNC_ARGS(zjs_fs_write, 0);
 }
 
 #ifdef ZJS_FS_ASYNC_APIS
-static ZJS_DECL_FUNC(zjs_fs_write_async) {
+static ZJS_DECL_FUNC(zjs_fs_write_async)
+{
     return ZJS_CHAIN_FUNC_ARGS(zjs_fs_write, 1);
 }
 #endif
@@ -593,22 +595,21 @@ static ZJS_DECL_FUNC_ARGS(zjs_fs_truncate, u8_t async)
 
 #ifdef ZJS_FS_ASYNC_APIS
     if (async) {
-        zjs_callback_id id = zjs_add_callback_once(argv[2],
-                                                   this,
-                                                   NULL,
-                                                   NULL);
+        zjs_callback_id id = zjs_add_callback_once(argv[2], this, NULL, NULL);
         zjs_signal_callback(id, NULL, 0);
     }
 #endif
     return ZJS_UNDEFINED;
 }
 
-static ZJS_DECL_FUNC(zjs_fs_truncate_sync) {
+static ZJS_DECL_FUNC(zjs_fs_truncate_sync)
+{
     return ZJS_CHAIN_FUNC_ARGS(zjs_fs_truncate, 0);
 }
 
 #ifdef ZJS_FS_ASYNC_APIS
-static ZJS_DECL_FUNC(zjs_fs_truncate_async) {
+static ZJS_DECL_FUNC(zjs_fs_truncate_async)
+{
     return ZJS_CHAIN_FUNC_ARGS(zjs_fs_truncate, 1);
 }
 #endif
@@ -648,12 +649,14 @@ static ZJS_DECL_FUNC_ARGS(zjs_fs_mkdir, u8_t async)
     return ZJS_UNDEFINED;
 }
 
-static ZJS_DECL_FUNC(zjs_fs_mkdir_sync) {
+static ZJS_DECL_FUNC(zjs_fs_mkdir_sync)
+{
     return ZJS_CHAIN_FUNC_ARGS(zjs_fs_mkdir, 0);
 }
 
 #ifdef ZJS_FS_ASYNC_APIS
-static ZJS_DECL_FUNC(zjs_fs_mkdir_async) {
+static ZJS_DECL_FUNC(zjs_fs_mkdir_async)
+{
     return ZJS_CHAIN_FUNC_ARGS(zjs_fs_mkdir, 1);
 }
 #endif
@@ -726,7 +729,7 @@ static ZJS_DECL_FUNC_ARGS(zjs_fs_readdir, u8_t async)
 
         jerry_value_t value = jerry_create_string(entry.name);
 
-        jerry_set_property_by_index (array, i, value);
+        jerry_set_property_by_index(array, i, value);
     }
 
     fs_closedir(&dp);
@@ -734,12 +737,9 @@ static ZJS_DECL_FUNC_ARGS(zjs_fs_readdir, u8_t async)
 #ifdef ZJS_FS_ASYNC_APIS
     if (async) {
         ZVAL err = jerry_create_number(res);
-        jerry_value_t args[] = {err, array};
+        jerry_value_t args[] = { err, array };
 
-        zjs_callback_id id = zjs_add_callback_once(argv[1],
-                                               this,
-                                               NULL,
-                                               NULL);
+        zjs_callback_id id = zjs_add_callback_once(argv[1], this, NULL, NULL);
         zjs_signal_callback(id, args, sizeof(args));
         return ZJS_UNDEFINED;
     }
@@ -747,12 +747,14 @@ static ZJS_DECL_FUNC_ARGS(zjs_fs_readdir, u8_t async)
     return array;
 }
 
-static ZJS_DECL_FUNC(zjs_fs_readdir_sync) {
+static ZJS_DECL_FUNC(zjs_fs_readdir_sync)
+{
     return ZJS_CHAIN_FUNC_ARGS(zjs_fs_readdir, 0);
 }
 
 #ifdef ZJS_FS_ASYNC_APIS
-static ZJS_DECL_FUNC(zjs_fs_readdir_async) {
+static ZJS_DECL_FUNC(zjs_fs_readdir_async)
+{
     return ZJS_CHAIN_FUNC_ARGS(zjs_fs_readdir, 1);
 }
 #endif
@@ -786,12 +788,9 @@ static ZJS_DECL_FUNC_ARGS(zjs_fs_stat, u8_t async)
     if (async) {
         ZVAL ret_val = jerry_create_number(ret);
         ZVAL stats = create_stats_obj(&entry);
-        jerry_value_t args[] = {ret_val, stats};
+        jerry_value_t args[] = { ret_val, stats };
 
-        zjs_callback_id id = zjs_add_callback_once(argv[1],
-                                                   this,
-                                                   NULL,
-                                                   NULL);
+        zjs_callback_id id = zjs_add_callback_once(argv[1], this, NULL, NULL);
         zjs_signal_callback(id, args, sizeof(args));
         return ZJS_UNDEFINED;
     }
@@ -799,12 +798,14 @@ static ZJS_DECL_FUNC_ARGS(zjs_fs_stat, u8_t async)
     return create_stats_obj(&entry);
 }
 
-static ZJS_DECL_FUNC(zjs_fs_stat_sync) {
+static ZJS_DECL_FUNC(zjs_fs_stat_sync)
+{
     return ZJS_CHAIN_FUNC_ARGS(zjs_fs_stat, 0);
 }
 
 #ifdef ZJS_FS_ASYNC_APIS
-static ZJS_DECL_FUNC(zjs_fs_stat_async) {
+static ZJS_DECL_FUNC(zjs_fs_stat_async)
+{
     return ZJS_CHAIN_FUNC_ARGS(zjs_fs_stat, 1);
 }
 #endif
@@ -886,12 +887,14 @@ Finished:
     return ZJS_UNDEFINED;
 }
 
-static ZJS_DECL_FUNC(zjs_fs_write_file_sync) {
+static ZJS_DECL_FUNC(zjs_fs_write_file_sync)
+{
     return ZJS_CHAIN_FUNC_ARGS(zjs_fs_write_file, 0);
 }
 
 #ifdef ZJS_FS_ASYNC_APIS
-static ZJS_DECL_FUNC(zjs_fs_write_file_async) {
+static ZJS_DECL_FUNC(zjs_fs_write_file_async)
+{
     return ZJS_CHAIN_FUNC_ARGS(zjs_fs_write_file, 1);
 }
 #endif
@@ -940,7 +943,7 @@ Finished:
 #ifdef ZJS_FS_ASYNC_APIS
     if (async) {
         ZVAL err = jerry_create_number(ret);
-        jerry_value_t args[] = {err, buffer};
+        jerry_value_t args[] = { err, buffer };
 
         zjs_callback_id id = zjs_add_callback_once(argv[1], this, NULL, NULL);
         zjs_signal_callback(id, args, sizeof(jerry_value_t) * 2);
@@ -951,16 +954,17 @@ Finished:
     return buffer;
 }
 
-static ZJS_DECL_FUNC(zjs_fs_read_file_sync) {
+static ZJS_DECL_FUNC(zjs_fs_read_file_sync)
+{
     return ZJS_CHAIN_FUNC_ARGS(zjs_fs_read_file, 0);
 }
 
 #ifdef ZJS_FS_ASYNC_APIS
-static ZJS_DECL_FUNC(zjs_fs_read_file_async) {
+static ZJS_DECL_FUNC(zjs_fs_read_file_async)
+{
     return ZJS_CHAIN_FUNC_ARGS(zjs_fs_read_file, 1);
 }
 #endif
-
 
 jerry_value_t zjs_fs_init()
 {

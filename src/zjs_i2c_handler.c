@@ -1,4 +1,6 @@
 // Copyright (c) 2016-2017, Intel Corporation.
+
+// ZJS includes
 #include "zjs_i2c_handler.h"
 #include "zjs_common.h"
 
@@ -23,7 +25,7 @@ int zjs_i2c_handle_open(u8_t msg_bus)
         i2c_device[msg_bus] = device_get_binding(bus);
 
         if (!i2c_device[msg_bus]) {
-                ERR_PRINT("I2C bus %s not found.\n", bus);
+            ERR_PRINT("I2C bus %s not found.\n", bus);
         } else {
             /* TODO remove these hard coded numbers
              * once the config API is made */
@@ -35,7 +37,8 @@ int zjs_i2c_handle_open(u8_t msg_bus)
             error_code = i2c_configure(i2c_device[msg_bus], cfg.raw);
 
             if (error_code != 0) {
-                ERR_PRINT("I2C bus %s configure failed with %i.\n", bus, error_code);
+                ERR_PRINT("I2C bus %s configure failed with %i.\n", bus,
+                          error_code);
             }
         }
     } else {
@@ -44,23 +47,18 @@ int zjs_i2c_handle_open(u8_t msg_bus)
     return error_code;
 }
 
-int zjs_i2c_handle_write(u8_t msg_bus, u8_t *data,
-                         u32_t length, u16_t address)
+int zjs_i2c_handle_write(u8_t msg_bus, u8_t *data, u32_t length, u16_t address)
 {
     int error_code = -1;
     if (msg_bus < MAX_I2C_BUS) {
         // Write has to come after an Open I2C message
         if (i2c_device[msg_bus]) {
-            error_code = i2c_write(i2c_device[msg_bus],
-                                   data,
-                                   length,
-                                   address);
+            error_code = i2c_write(i2c_device[msg_bus], data, length, address);
 
-                if (error_code != 0) {
-                    ERR_PRINT("i2c_write failed with %i\n", error_code);
-                }
-        }
-        else {
+            if (error_code != 0) {
+                ERR_PRINT("i2c_write failed with %i\n", error_code);
+            }
+        } else {
             ERR_PRINT("no I2C device is ready yet\n");
         }
     } else {
@@ -69,24 +67,18 @@ int zjs_i2c_handle_write(u8_t msg_bus, u8_t *data,
     return error_code;
 }
 
-int zjs_i2c_handle_read(u8_t msg_bus, u8_t *data, u32_t length,
-                        u16_t address)
+int zjs_i2c_handle_read(u8_t msg_bus, u8_t *data, u32_t length, u16_t address)
 {
     int error_code = -1;
     if (msg_bus < MAX_I2C_BUS) {
         // Read has to come after an Open I2C message
         if (i2c_device[msg_bus]) {
 
-            error_code = i2c_read(i2c_device[msg_bus],
-                                  data,
-                                  length,
-                                  address);
-        }
-        else {
+            error_code = i2c_read(i2c_device[msg_bus], data, length, address);
+        } else {
             ERR_PRINT("No I2C device is ready yet\n");
         }
-    }
-    else {
+    } else {
         ERR_PRINT("I2C bus %s%i is not a valid I2C bus.\n", I2C_BUS, msg_bus);
     }
     return error_code;
@@ -99,17 +91,12 @@ int zjs_i2c_handle_burst_read(u8_t msg_bus, u8_t *data, u32_t length,
     if (msg_bus < MAX_I2C_BUS) {
         // Burst read has to come after an Open I2C message
         if (i2c_device[msg_bus]) {
-            error_code = i2c_burst_read(i2c_device[msg_bus],
-                                        address,
-                                        register_addr,
-                                        data,
-                                        length);
-        }
-        else {
+            error_code = i2c_burst_read(i2c_device[msg_bus], address,
+                                        register_addr, data, length);
+        } else {
             ERR_PRINT("No I2C device is ready yet\n");
         }
-    }
-    else {
+    } else {
         ERR_PRINT("I2C bus %s%i is not a valid I2C bus.\n", I2C_BUS, msg_bus);
     }
     return error_code;

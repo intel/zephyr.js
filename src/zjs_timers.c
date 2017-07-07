@@ -1,21 +1,22 @@
 // Copyright (c) 2016-2017, Intel Corporation.
 
+// C includes
+#include <string.h>
+
 #ifndef ZJS_LINUX_BUILD
 // Zephyr includes
-#include <zephyr.h>
 #include "zjs_zephyr_port.h"
+#include <zephyr.h>
 #else
 #include "zjs_linux_port.h"
 #endif
-
-#include <string.h>
 
 // JerryScript includes
 #include "jerryscript.h"
 
 // ZJS includes
-#include "zjs_util.h"
 #include "zjs_callbacks.h"
+#include "zjs_util.h"
 
 typedef struct zjs_timer {
     zjs_port_timer_t timer;
@@ -30,8 +31,7 @@ typedef struct zjs_timer {
 
 static zjs_timer_t *zjs_timers = NULL;
 
-static const jerry_object_native_info_t timer_type_info =
-{
+static const jerry_object_native_info_t timer_type_info = {
    .free_cb = free_handle_nop
 };
 
@@ -191,11 +191,10 @@ s32_t zjs_timers_process_events()
     for (zjs_timer_t *tm = zjs_timers; tm; tm = tm->next) {
         if (tm->completed) {
             delete_timer(tm->callback_id);
-        }
-        else if (zjs_port_timer_test(&tm->timer) > 0) {
+        } else if (zjs_port_timer_test(&tm->timer) > 0) {
             // timer has expired, signal the callback
             DBG_PRINT("signaling timer. id=%d, argv=%p, argc=%u\n",
-                    tm->callback_id, tm->argv, tm->argc);
+                      tm->callback_id, tm->argv, tm->argc);
             zjs_signal_callback(tm->callback_id, tm->argv,
                                 tm->argc * sizeof(jerry_value_t));
 

@@ -7,20 +7,23 @@
 * this is a basic stub, do not expect a full implementation.
 */
 
+// C includes
+#include <ctype.h>
+#include <errno.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
+
+// Zephyr includes
 #include <arch/cpu.h>
 #include <fs.h>
-
-#include <stdio.h>
-#include <stdint.h>
-#include <string.h>
-#include <errno.h>
-#include <ctype.h>
 
 #include <device.h>
 #include <init.h>
 
 #include <misc/printk.h>
 
+// ZJS includes
 #include "../zjs_util.h"
 
 int fs_exist(const char *path)
@@ -45,8 +48,7 @@ fs_file_t *fs_open_alloc(const char *filename, const char *mode)
                 return NULL;
             }
         }
-    }
-    else {
+    } else {
         /* Return NULL if trying to read from a nonexistent file */
         if (!fs_exist(filename)) {
             return NULL;
@@ -105,8 +107,7 @@ bool fs_valid_filename(char *filename)
 
         namelen = ptr1 - filename;
         extlen = size - namelen - 1;
-    }
-    else {
+    } else {
         // Filename has no extension
         namelen = size;
         extlen = 0;
@@ -115,8 +116,7 @@ bool fs_valid_filename(char *filename)
     if (namelen == 0) {
         printf("Filename length is zero\n");
         return false;
-    }
-    else if (namelen > 8 || extlen > 3) {
+    } else if (namelen > 8 || extlen > 3) {
         printf("Filename must be 8.3 format\n");
         return false;
     }

@@ -2,12 +2,15 @@
 
 #ifdef BUILD_MODULE_GROVE_LCD
 #ifndef QEMU_BUILD
+
+// C includes
+#include <string.h>
+
 #ifndef ZJS_LINUX_BUILD
 // Zephyr includes
 #include <zephyr.h>
 #endif
 #include <device.h>
-#include <string.h>
 #include <display/grove_lcd.h>
 #include <misc/util.h>
 
@@ -269,5 +272,5 @@ void zjs_grove_lcd_cleanup()
     jerry_release_value(zjs_glcd_prototype);
 }
 
-#endif // QEMU_BUILD
-#endif // BUILD_MODULE_GROVE_LCD
+#endif  // QEMU_BUILD
+#endif  // BUILD_MODULE_GROVE_LCD

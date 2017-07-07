@@ -4,8 +4,8 @@
 #include <string.h>
 
 // ZJS includes
-#include "zjs_sensor.h"
 #include "zjs_common.h"
+#include "zjs_sensor.h"
 #include "zjs_sensor_magn.h"
 #include "zjs_util.h"
 
@@ -62,8 +62,8 @@ sensor_instance_t *zjs_sensor_magn_init()
     if (g_instance)
         return g_instance;
 
-    g_instance =
-        zjs_sensor_create_instance("Magnetometer", zjs_sensor_constructor);
+    g_instance = zjs_sensor_create_instance("Magnetometer",
+                                            zjs_sensor_constructor);
     return g_instance;
 }
 

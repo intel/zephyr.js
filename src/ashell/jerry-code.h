@@ -10,4 +10,4 @@ void javascript_eval_code(const char *source_buffer, ssize_t size);
 int javascript_parse_code(const char *file_name);
 void javascript_stop();
 
-#endif // __jerry_code_runner_h__
+#endif  // __jerry_code_runner_h__

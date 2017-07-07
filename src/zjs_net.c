@@ -1,17 +1,12 @@
 // Copyright (c) 2017, Intel Corporation.
 #ifdef BUILD_MODULE_NET
 
-// ZJS includes
-#include "zjs_util.h"
-#include "zjs_buffer.h"
-#include "zjs_callbacks.h"
-#include "zjs_event.h"
-#include "zjs_modules.h"
-#include "zjs_net_config.h"
-
-#include <zephyr.h>
-#include <sections.h>
+// C includes
 #include <errno.h>
+
+// Zephyr includes
+#include <sections.h>
+#include <zephyr.h>
 
 #include <net/net_context.h>
 #include <net/net_core.h>
@@ -21,9 +16,17 @@
 
 #if defined(CONFIG_NET_L2_BLUETOOTH)
 #include <bluetooth/bluetooth.h>
-#include <gatt/ipss.h>
 #include <bluetooth/conn.h>
+#include <gatt/ipss.h>
 #endif
+
+// ZJS includes
+#include "zjs_buffer.h"
+#include "zjs_callbacks.h"
+#include "zjs_event.h"
+#include "zjs_modules.h"
+#include "zjs_net_config.h"
+#include "zjs_util.h"
 
 /**
  * Net module
@@ -127,21 +130,19 @@ typedef struct sock_handle {
 
 static sock_handle_t *opened_sockets = NULL;
 
-static const jerry_object_native_info_t socket_type_info =
-{
+static const jerry_object_native_info_t socket_type_info = {
+    .free_cb = free_handle_nop
+};
+
+static const jerry_object_native_info_t net_type_info = {
    .free_cb = free_handle_nop
 };
 
-static const jerry_object_native_info_t net_type_info =
-{
-   .free_cb = free_handle_nop
-};
-
-#define CHECK(x) \
-    ret = (x); \
-    if (ret < 0) { \
+#define CHECK(x)                                 \
+    ret = (x);                                   \
+    if (ret < 0) {                               \
         ERR_PRINT("Error in " #x ": %d\n", ret); \
-        return zjs_error(#x); \
+        return zjs_error(#x);                    \
     }
 
 #define NET_DEFAULT_MAX_CONNECTIONS 5
@@ -192,7 +193,7 @@ static void start_socket_timeout(sock_handle_t *handle, u32_t time)
         k_timer_start(&handle->timer, time, time);
         if (handle->tcp_timeout_id == -1) {
             handle->tcp_timeout_id = zjs_add_c_callback(handle,
-                                                        tcp_c_timeout_callback);
+                tcp_c_timeout_callback);
         }
         DBG_PRINT("starting socket timeout: %u\n", time);
     } else if (handle->timer_started) {
@@ -320,10 +321,8 @@ static void tcp_received(struct net_context *context,
     }
 }
 
-static inline void pkt_sent(struct net_context *context,
-                            int status,
-                            void *token,
-                            void *user_data)
+static inline void pkt_sent(struct net_context *context, int status,
+                            void *token, void *user_data)
 {
     if (!status) {
         int sent = POINTER_TO_UINT(token);
@@ -373,8 +372,7 @@ static ZJS_DECL_FUNC(socket_write)
     if (optcount) {
         id = zjs_add_callback_once(argv[1], this, NULL, NULL);
     }
-    int ret = net_context_send(send_buf, pkt_sent,
-                               K_NO_WAIT,
+    int ret = net_context_send(send_buf, pkt_sent, K_NO_WAIT,
                                UINT_TO_POINTER(net_pkt_get_len(send_buf)),
                                INT_TO_POINTER((s32_t)id));
     if (ret < 0) {
@@ -689,7 +687,7 @@ static ZJS_DECL_FUNC(server_get_connections)
 
     ZVAL err = jerry_create_number(0);
     ZVAL num = jerry_create_number(count);
-    jerry_value_t args[2] = {err, num};
+    jerry_value_t args[2] = { err, num };
 
     zjs_callback_id id = zjs_add_callback_once(argv[0], this, NULL, NULL);
     zjs_signal_callback(id, args, sizeof(args));
@@ -813,8 +811,7 @@ static void tcp_connected_c_callback(void *handle, const void *args)
     }
 }
 
-static void tcp_connected(struct net_context *context,
-                          int status,
+static void tcp_connected(struct net_context *context, int status,
                           void *user_data)
 {
     if (status == 0) {
@@ -829,7 +826,8 @@ static void tcp_connected(struct net_context *context,
             // activity, restart timeout
             start_socket_timeout(sock_handle, sock_handle->timeout);
 
-            sock_handle->tcp_connect_id = zjs_add_c_callback(sock_handle, tcp_connected_c_callback);
+            sock_handle->tcp_connect_id = zjs_add_c_callback(sock_handle,
+                tcp_connected_c_callback);
             zjs_signal_callback(sock_handle->tcp_connect_id, NULL, 0);
 
             DBG_PRINT("connection success, context=%p, socket=%u\n", context,
@@ -857,7 +855,7 @@ static ZJS_DECL_FUNC(socket_connect)
     ZJS_GET_HANDLE(this, sock_handle_t, handle, socket_type_info);
     if (!handle->tcp_sock) {
         CHECK(net_context_get(AF_INET6, SOCK_STREAM, IPPROTO_TCP,
-                    &handle->tcp_sock));
+                              &handle->tcp_sock));
     }
     if (!handle->tcp_sock) {
         DBG_PRINT("connect failed\n");
@@ -900,9 +898,7 @@ static ZJS_DECL_FUNC(socket_connect)
             my_addr6.sin6_family = AF_INET6;
             my_addr6.sin6_port = htons((u32_t)localPort);
 
-            CHECK(net_addr_pton(AF_INET6,
-                                localAddress,
-                                &my_addr6.sin6_addr));
+            CHECK(net_addr_pton(AF_INET6, localAddress, &my_addr6.sin6_addr));
             // bind to our local address
             CHECK(net_context_bind(handle->tcp_sock,
                                    (struct sockaddr *)&my_addr6,
@@ -913,18 +909,13 @@ static ZJS_DECL_FUNC(socket_connect)
         peer_addr6.sin6_family = AF_INET6;
         peer_addr6.sin6_port = htons((u32_t)port);
 
-        CHECK(net_addr_pton(AF_INET6,
-                            host,
-                            &peer_addr6.sin6_addr));
+        CHECK(net_addr_pton(AF_INET6, host, &peer_addr6.sin6_addr));
         // set socket.connecting property == true
         zjs_obj_add_boolean(this, true, "connecting");
         // connect to remote
-        if (net_context_connect(handle->tcp_sock,
-                                (struct sockaddr *)&peer_addr6,
-                                sizeof(peer_addr6),
-                                tcp_connected,
-                                1,
-                                handle) < 0) {
+        if (net_context_connect(
+                handle->tcp_sock, (struct sockaddr *)&peer_addr6,
+                sizeof(peer_addr6), tcp_connected, 1, handle) < 0) {
             DBG_PRINT("connect failed\n");
             zjs_obj_add_boolean(this, false, "connecting");
             ZVAL_MUTABLE error = zjs_custom_error("NotFoundError",
@@ -940,9 +931,7 @@ static ZJS_DECL_FUNC(socket_connect)
 
             my_addr4.sin_family = AF_INET;
             my_addr4.sin_port = htons((u32_t)localPort);
-            CHECK(net_addr_pton(AF_INET,
-                                localAddress,
-                                &my_addr4.sin_addr));
+            CHECK(net_addr_pton(AF_INET, localAddress, &my_addr4.sin_addr));
             // bind to our local address
             CHECK(net_context_bind(handle->tcp_sock,
                                    (struct sockaddr *)&my_addr4,
@@ -953,18 +942,14 @@ static ZJS_DECL_FUNC(socket_connect)
         peer_addr4.sin_family = AF_INET;
         peer_addr4.sin_port = htons((u32_t)port);
 
-        CHECK(net_addr_pton(AF_INET,
-                            host,
-                            &peer_addr4.sin_addr));
+        CHECK(net_addr_pton(AF_INET, host, &peer_addr4.sin_addr));
         // set socket.connecting property == true
         zjs_obj_add_boolean(this, true, "connecting");
         // connect to remote
         if (net_context_connect(handle->tcp_sock,
                                 (struct sockaddr *)&peer_addr4,
-                                sizeof(peer_addr4),
-                                tcp_connected,
-                                1,
-                                handle) < 0) {
+                                sizeof(peer_addr4), tcp_connected,
+                                1, handle) < 0) {
             DBG_PRINT("connect failed\n");
             zjs_obj_add_boolean(this, false, "connecting");
             ZVAL_MUTABLE error = zjs_custom_error("NotFoundError",
@@ -1042,14 +1027,10 @@ static ZJS_DECL_FUNC(net_is_ip)
     struct sockaddr_in6 tmp = { 0 };
 
     // check if v6
-    if(net_addr_pton(AF_INET6,
-                     ip,
-                     &tmp.sin6_addr) < 0) {
+    if (net_addr_pton(AF_INET6, ip, &tmp.sin6_addr) < 0) {
         // check if v4
         struct sockaddr_in tmp1 = { 0 };
-        if(net_addr_pton(AF_INET,
-                         ip,
-                         &tmp1.sin_addr) < 0) {
+        if (net_addr_pton(AF_INET, ip, &tmp1.sin_addr) < 0) {
             return jerry_create_number(0);
         } else {
             return jerry_create_number(4);
@@ -1110,7 +1091,8 @@ static void up_callback(void *handle, const void *args)
 
 static struct net_mgmt_event_callback cb;
 static void event_iface_up(struct net_mgmt_event_callback *cb,
-               u32_t mgmt_event, struct net_if *iface)
+                           u32_t mgmt_event,
+                           struct net_if *iface)
 {
     zjs_signal_callback(up_id, NULL, 0);
 }
@@ -1165,8 +1147,7 @@ jerry_value_t zjs_net_init()
 #if defined(CONFIG_NET_L2_BLUETOOTH)
     struct net_if *iface = net_if_get_default();
     if (!atomic_test_bit(iface->flags, NET_IF_UP)) {
-        net_mgmt_init_event_callback(&cb, event_iface_up,
-                NET_EVENT_IF_UP);
+        net_mgmt_init_event_callback(&cb, event_iface_up, NET_EVENT_IF_UP);
         net_mgmt_add_event_callback(&cb);
     }
     up_id = zjs_add_c_callback(NULL, up_callback);
@@ -1182,4 +1163,4 @@ void zjs_net_cleanup()
     jerry_release_value(zjs_net_server_prototype);
 }
 
-#endif // BUILD_MODULE_NET
+#endif  // BUILD_MODULE_NET

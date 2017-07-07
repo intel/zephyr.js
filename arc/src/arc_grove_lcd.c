@@ -1,10 +1,10 @@
 // Copyright (c) 2017, Intel Corporation.
 
 // Zephyr includes
-#include <zephyr.h>
 #include <device.h>
-#include <string.h>
 #include <display/grove_lcd.h>
+#include <string.h>
+#include <zephyr.h>
 
 // ZJS includes
 #include "arc_common.h"

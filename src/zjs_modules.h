@@ -19,11 +19,11 @@
  *
  * @return              Time until next event, ZJS_TICKS_FOREVER if unknown
  */
-typedef s32_t (*zjs_service_routine)(void* handle);
+typedef s32_t (*zjs_service_routine)(void *handle);
 
 void zjs_modules_init();
 void zjs_modules_cleanup();
-void zjs_register_service_routine(void* handle, zjs_service_routine func);
+void zjs_register_service_routine(void *handle, zjs_service_routine func);
 s32_t zjs_service_routines(void);
 
 #endif  // __zjs_modules_h__

@@ -7,4 +7,4 @@
 
 void webusb_register_handlers();
 
-#endif // __webusb_handler_h__
+#endif  // __webusb_handler_h__

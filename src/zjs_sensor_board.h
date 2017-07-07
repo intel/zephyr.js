@@ -8,22 +8,24 @@
 /*
  * Starts the sensor with the underlying board driver
  *
- * @param handle        the sensor object that was created from zjs_sensor_create
+ * @param handle        the sensor object that was created from
+ *                        zjs_sensor_create
  */
 int zjs_sensor_board_start(sensor_handle_t *handle);
 
 /*
  * Stops the sensor with the underlying board driver
  *
- * @param handle        the sensor object that was created from zjs_sensor_create
+ * @param handle        the sensor object that was created from
+ *                        zjs_sensor_create
  */
 int zjs_sensor_board_stop(sensor_handle_t *handle);
-
 
 /*
  * Create and initialize the sensor with the underlying driver
  *
- * @param handle        the sensor object that was created from zjs_sensor_create
+ * @param handle        the sensor object that was created from
+ *                        zjs_sensor_create
  */
 int zjs_sensor_board_create(sensor_handle_t *handle);
 

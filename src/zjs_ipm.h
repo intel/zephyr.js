@@ -111,7 +111,7 @@ typedef struct zjs_ipm_message {
             u32_t pin;
             u32_t value;
         } aio;
-#endif // AIO
+#endif  // AIO
 
 #ifdef BUILD_MODULE_I2C
         struct i2c_data {
@@ -122,7 +122,7 @@ typedef struct zjs_ipm_message {
             u8_t *data;
             u32_t length;
         } i2c;
-#endif // I2C
+#endif  // I2C
 
 #ifdef BUILD_MODULE_GROVE_LCD
         // GROVE_LCD
@@ -135,7 +135,7 @@ typedef struct zjs_ipm_message {
             u8_t color_b;
             void *buffer;
         } glcd;
-#endif // GROVE_LCD
+#endif  // GROVE_LCD
 
 #ifdef BUILD_MODULE_SENSOR
         struct sensor_data {
@@ -154,7 +154,7 @@ typedef struct zjs_ipm_message {
                 double dval;
             } reading;
         } sensor;
-#endif // SENSOR
+#endif  // SENSOR
 
 #ifdef BUILD_MODULE_PME
         struct pme_data {
@@ -171,7 +171,7 @@ typedef struct zjs_ipm_message {
             u16_t max_if;
             u32_t neuron_id;
         } pme;
-#endif // PME
+#endif  // PME
     } data;
 } zjs_ipm_message_t;
 
