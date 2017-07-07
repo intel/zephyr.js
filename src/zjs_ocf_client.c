@@ -345,7 +345,7 @@ static void add_resource(char *id, char *type, char *path,
         new->resource_path[strlen(path)] = '\0';
     }
 
-    new->client = client;
+    new->client = jerry_acquire_value(client);
 
     jerry_set_object_native_pointer(client, new, &ocf_type_info);
 
@@ -492,10 +492,13 @@ Found:
                 jerry_set_property_by_index(cur->iface_array, --sz, val);
             }
 
+            // Work-around for #1332
+            // Pass duplicate resource to trigger event and promise
             ZVAL res = create_resource(cur);
+            ZVAL res2 = create_resource(cur);
             zjs_trigger_event(cur->client, "resourcefound", &res, 1, NULL,
                               NULL);
-            jerry_resolve_or_reject_promise(h->promise_obj, res, true);
+            jerry_resolve_or_reject_promise(h->promise_obj, res2, true);
             jerry_release_value(h->promise_obj);
 
             DBG_PRINT("resource found, id=%s, path=%s\n", cur->device_id,
@@ -547,7 +550,7 @@ static ZJS_DECL_FUNC(ocf_find_resources)
 
     if (jerry_value_is_function(argv[0])) {
         listener = argv[0];
-    } else if (argc >= 2) {
+    } else if (argc >= 2 && jerry_value_is_function(argv[1])) {
         listener = argv[1];
     }
 
