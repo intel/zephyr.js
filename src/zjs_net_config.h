@@ -30,4 +30,9 @@ void zjs_init_ble_address();
  * IPv4 or IPv6 address depending on how the net_context was configured.
  */
 struct sockaddr *zjs_net_config_get_ip(struct net_context *context);
+
+/*
+ * Get the IP version of an IP address string
+ */
+int zjs_is_ip(char *addr);
 #endif

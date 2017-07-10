@@ -546,29 +546,40 @@ static void tcp_received(struct net_context *context,
                          void *user_data)
 {
     ws_connection_t *con = (ws_connection_t *)user_data;
-    u32_t len = net_pkt_appdatalen(pkt);
-    u8_t *buffer = net_pkt_appdata(pkt);
 
-    DBG_PRINT("data recieved on context %p: data=%p, len=%u\n", con->tcp_sock,
-              buffer, len);
-
-    if (buffer && len == 0) {
-        // ack from accept
-        /*
-         * TODO: there may be other cases where this is true but not an ACK.
-         *       it would be better to figure out how to process the IP header
-         *       and find if it was indeed an ACK, possibly storing the SEQ
-         *       number of the accept response to match it.
-         */
-        if (con->state == AWAITING_ACCEPT) {
-            con->state = CONNECTED;
-            con->conn = create_ws_connection(con);
-            zjs_trigger_event(con->server, "connection", &con->conn, 1, NULL,
-                              NULL);
+    if (status == 0 && pkt == NULL) {
+        DBG_PRINT("socket closed\n");
+        if (con) {
+            // close the socket
+            ZVAL code = jerry_create_number(0);
+            ZVAL reason = jerry_create_string("socket was closed");
+            jerry_value_t args[] = { code, reason };
+            zjs_trigger_event(con->conn, "close", args, 2, NULL, NULL);
+            close_connection(con);
+            return;
+        } else {
+            DBG_PRINT("socket closed before connection was opened\n");
+            // nothing we can do here
+            return;
         }
     }
 
-    if (len && buffer) {
+    /*
+     * If data has been received, after the accept packet, its safe to assume
+     * the client connection was successful.
+     */
+    if (con->state == AWAITING_ACCEPT) {
+        con->state = CONNECTED;
+        con->conn = create_ws_connection(con);
+        zjs_trigger_event(con->server, "connection", &con->conn, 1, NULL,
+                NULL);
+    }
+
+    if (con && pkt) {
+        u32_t len = net_pkt_appdatalen(pkt);
+
+        DBG_PRINT("data recieved on context %p: len=%u\n", con->tcp_sock, len);
+
         struct net_buf *tmp = pkt->frags;
         u32_t header_len = net_pkt_appdata(pkt) - tmp->data;
         // move past IP header
@@ -702,16 +713,9 @@ static void tcp_received(struct net_context *context,
             process_packet(con, data, len);
         }
         zjs_free(data);
-    } else if (buffer == NULL && len == 0) {
-        DBG_PRINT("socket closed\n");
-        // close the socket
-        ZVAL code = jerry_create_number(0);
-        ZVAL reason = jerry_create_string("socket was closed");
-        jerry_value_t args[] = { code, reason };
-        zjs_trigger_event(con->conn, "close", args, 2, NULL, NULL);
-        close_connection(con);
+
+        net_pkt_unref(pkt);
     }
-    net_pkt_unref(pkt);
 }
 
 static void post_accept_handler(void *handle, jerry_value_t ret_val)
@@ -819,6 +823,7 @@ static ZJS_DECL_FUNC(ws_server)
     double port = 0;
     bool backlog = 0;
     double max_payload = 0;
+    char host[64];
 
     server_handle_t *handle = zjs_malloc(sizeof(server_handle_t));
     if (!handle) {
@@ -832,21 +837,46 @@ static ZJS_DECL_FUNC(ws_server)
     zjs_obj_get_boolean(argv[0], "backlog", &backlog);
     zjs_obj_get_boolean(argv[0], "clientTracking", &handle->track);
     zjs_obj_get_double(argv[0], "maxPayload", &max_payload);
+    if (!zjs_obj_get_string(argv[0], "host", host, 64)) {
+        // no host given, default to 0.0.0.0 or ::
+#ifdef CONFIG_NET_IPV6
+        memcpy(host, "::", strlen("::") + 1);
+#else
+        memcpy(host, "0.0.0.0", strlen("0.0.0.0") + 1);
+#endif
+    }
     jerry_value_t accept_handler = zjs_get_property(argv[0], "acceptHandler");
     if (jerry_value_is_function(accept_handler)) {
         handle->accept_handler = jerry_acquire_value(accept_handler);
     }
 
-    CHECK(net_context_get(AF_INET6, SOCK_STREAM, IPPROTO_TCP,
-                          &handle->tcp_sock));
+    struct sockaddr addr;
+    memset(&addr, 0, sizeof(struct sockaddr));
 
-    struct sockaddr_in6 my_addr6 = { 0 };
+    if (zjs_is_ip(host) == 4) {
+        CHECK(net_context_get(AF_INET, SOCK_STREAM, IPPROTO_TCP,
+                &handle->tcp_sock));
 
-    my_addr6.sin6_family = AF_INET6;
-    my_addr6.sin6_port = htons((int)port);
+        struct sockaddr_in *my_addr = (struct sockaddr_in *)&addr;
 
-    CHECK(net_context_bind(handle->tcp_sock, (struct sockaddr *)&my_addr6,
-                           sizeof(struct sockaddr_in6)));
+        net_addr_pton(AF_INET, host, &my_addr->sin_addr);
+
+        my_addr->sin_family = AF_INET;
+        my_addr->sin_port = htons((int)port);
+    } else {
+        CHECK(net_context_get(AF_INET6, SOCK_STREAM, IPPROTO_TCP,
+                &handle->tcp_sock));
+
+        struct sockaddr_in6 *my_addr6 = (struct sockaddr_in6 *)&addr;
+
+        net_addr_pton(AF_INET6, host, &my_addr6->sin6_addr);
+
+        my_addr6->sin6_family = AF_INET6;
+        my_addr6->sin6_port = htons((int)port);
+    }
+
+    CHECK(net_context_bind(handle->tcp_sock, (struct sockaddr *)&addr,
+                           sizeof(struct sockaddr)));
     CHECK(net_context_listen(handle->tcp_sock, (int)backlog));
     CHECK(net_context_accept(handle->tcp_sock, tcp_accepted, 0, handle));
 

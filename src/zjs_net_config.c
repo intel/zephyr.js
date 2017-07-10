@@ -78,6 +78,24 @@ struct sockaddr *zjs_net_config_get_ip(struct net_context *context)
     }
 }
 
+int zjs_is_ip(char *addr)
+{
+    struct sockaddr_in6 tmp = { 0 };
+
+    // check if v6
+    if (net_addr_pton(AF_INET6, addr, &tmp.sin6_addr) < 0) {
+        // check if v4
+        struct sockaddr_in tmp1 = { 0 };
+        if (net_addr_pton(AF_INET, addr, &tmp1.sin_addr) < 0) {
+            return -1;
+        } else {
+            return 4;
+        }
+    } else {
+        return 6;
+    }
+}
+
 #ifdef CONFIG_NET_L2_BLUETOOTH
 static bt_addr_le_t id_addr;
 #ifdef ZJS_CONFIG_BLE_ADDRESS
