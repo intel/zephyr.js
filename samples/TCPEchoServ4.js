@@ -41,4 +41,3 @@ server.listen({port: 4242, host: "0.0.0.0", family: 4}, function() {
 server.on("close", function() {
     console.log("SERVER HAS CLOSED");
 });
-

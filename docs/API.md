@@ -37,6 +37,8 @@ Communications
 --------------
 [BLE](./ble.md)
 
+[Network Configuration](./net-config.md)
+
 [OCF](./ocf.md)
 
 [TCP Sockets (net)](./net.md)
