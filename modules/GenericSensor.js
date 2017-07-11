@@ -117,7 +117,8 @@ function GenericSensor() {
                     console.log("sensor.timestamp: " + sensor.timestamp);
                     console.log(sensorType + ": " + sensor.illuminance);
                 } else if (sensorType === "Accelerometer" ||
-                           sensorType === "Gyroscope") {
+                           sensorType === "Gyroscope" ||
+                           sensorType === "Magnetometer") {
                     assert(typeof sensor.x === "number" &&
                            sensor.x !== null &&
                            typeof sensor.y === "number" &&
@@ -126,8 +127,13 @@ function GenericSensor() {
                            sensor.z !== null,
                            "sensor: reading value for '" + sensorType + "'");
 
-                    assert(sensor.controller === "bmi160",
-                           "sensor: controller name as default");
+                    if (sensorType === "Magnetometer") {
+                        assert(sensor.controller === "FXOS8700",
+                               "sensor: controller name as default");
+                    } else {
+                        assert(sensor.controller === "bmi160",
+                               "sensor: controller name as default");
+                    }
                     console.log("sensor.controller : " + sensor.controller);
 
                     middleNumX = sensor.x;
