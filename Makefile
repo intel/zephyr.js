@@ -96,14 +96,18 @@ ifeq ($(FUNC_NAME), on)
 ZJS_FLAGS := "$(ZJS_FLAGS) -DZJS_FIND_FUNC_NAME"
 endif
 
+ifeq ($(FORCE),)
+FORCED := zjs_common.json
+else
+FORCED := $(FORCE),zjs_common.json
+endif
+
 # Settings for ashell builds
-FORCE=zjs_common.json
 ifneq (,$(filter $(MAKECMDGOALS),ide ashell))
 ASHELL=zjs_ashell_$(ASHELL_TYPE).json
-FORCE=$(ASHELL)
+FORCED := $(ASHELL),$(FORCED)
 ASHELL_ARC=zjs_ashell_arc.json
 ZJS_FLAGS := "$(ZJS_FLAGS) -DZJS_FIND_FUNC_NAME"
-else
 endif
 
 ifeq ($(BOARD), arduino_101)
@@ -253,7 +257,7 @@ analyze: $(JS)
 		JS_OUT=$(JS_TMP) \
 		BOARD=$(BOARD) \
 		JSON_DIR=src/ \
-		FORCE=$(FORCE) \
+		FORCE=$(FORCED) \
 		PRJCONF=prj.conf \
 		MAKEFILE=src/Makefile \
 		MAKEBASE=src/Makefile.base \
