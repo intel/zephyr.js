@@ -45,7 +45,7 @@ This event is emitted when the underlying network interface comes online. This
 becomes important when using a networking client on 6lowpan, because you may
 need to wait for a BLE connection before issuing any socket connections.
 
-### NetConfig.onup Event
+### NetConfig.ondown Event
 `void ondown(void);`
 
 The couterpart to `ondown`. This is issued when the networking interface goes
