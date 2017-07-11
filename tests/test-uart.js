@@ -7,7 +7,6 @@ console.log("UART APIs test");
 var board = require("uart");
 var assert = require("Assert.js");
 
-
 var t1 = board.init({ port: "invalid", baud: 115200 });
 assert(!("write" in t1), "UART: set port with invalid value");
 
@@ -25,4 +24,3 @@ assert.throws(function () {
 }, "UARTConnection: write error value");
 
 assert.result();
-
