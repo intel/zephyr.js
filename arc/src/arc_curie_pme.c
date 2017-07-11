@@ -187,12 +187,12 @@ void curie_pme_end_restore_mode(void)
     reg_write16(NSR, (nsr_save & ~NSR_NET_MODE));
 }
 
-E curie_pme_get_distance_mode(void)
+PME_DISTANCE_MODE curie_pme_get_distance_mode(void)
 {
     return (GCR_DIST & reg_read16(GCR)) ? LSUP_DISTANCE : L1_DISTANCE;
 }
 
-void curie_pme_set_distance_mode(E mode)
+void curie_pme_set_distance_mode(PME_DISTANCE_MODE mode)
 {
     u16_t rd = reg_read16(GCR);
 
