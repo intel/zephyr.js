@@ -77,7 +77,12 @@ def parse_list(tree, list):
         if file.endswith(".json"):
             do_print("opening " + file)
             with open(args['JSON_DIR'] + file) as f:
-                data = json.load(f)
+                try:
+                    data = json.load(f)
+                except:
+                    print("Error parsing JSON in file: %s" % file)
+                    print(sys.exc_info()[1])
+                    sys.exit(-1)
                 if 'targets' in data:
                     # exclude if not found in 'targets'
                     if board not in data['targets']:
