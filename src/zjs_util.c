@@ -10,9 +10,10 @@
 #ifndef ZJS_LINUX_BUILD
 #include "zjs_zephyr_port.h"
 #endif
-
+#ifdef ZJS_TRACE_MALLOC
 #define max_list_size 300
 mem_stats_t mem_list[max_list_size];
+#endif //ZJS_TRACE_MALLOC
 
 void *zjs_malloc_with_retry(size_t size)
 {
