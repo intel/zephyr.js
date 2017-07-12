@@ -1,10 +1,10 @@
 // Copyright (c) 2016-2017, Intel Corporation.
 
-#ifndef ZJS_LINUX_BUILD
 // C includes
 #include <stdlib.h>
 #include <string.h>
 
+#ifndef ZJS_LINUX_BUILD
 // Zephyr includes
 #include <zephyr.h>
 #endif
