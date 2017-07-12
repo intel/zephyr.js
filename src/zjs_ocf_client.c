@@ -362,7 +362,20 @@ static void add_resource(char *id, char *type, char *path,
  */
 static void observe_callback(oc_client_response_t *data)
 {
-    print_props_data(data);
+    if (data && data->user_data) {
+        struct client_resource *resource =
+            (struct client_resource *)data->user_data;
+        ZVAL resource_val = create_resource(resource);
+        ZVAL properties_val = get_props_from_response(data);
+
+        zjs_set_property(resource_val, "properties", properties_val);
+        zjs_trigger_event(resource->client, "update", &resource_val, 1, NULL,
+                          NULL);
+
+#ifdef DEBUG_BUILD
+        print_props_data(data);
+#endif
+    }
 }
 
 #if 0
@@ -587,8 +600,6 @@ static void ocf_get_handler(oc_client_response_t *data)
                 ZVAL properties_val = get_props_from_response(data);
 
                 zjs_set_property(resource_val, "properties", properties_val);
-                zjs_trigger_event(resource->client, "update", &resource_val, 1,
-                                  NULL, NULL);
                 jerry_resolve_or_reject_promise(h->promise_obj, resource_val,
                                                 true);
                 jerry_release_value(h->promise_obj);
