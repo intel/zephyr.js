@@ -11,6 +11,9 @@
 #include "zjs_zephyr_port.h"
 #endif
 
+#define max_list_size 300
+mem_stats_t mem_list[max_list_size];
+
 void *zjs_malloc_with_retry(size_t size)
 {
     void *ptr = malloc(size);
@@ -21,7 +24,53 @@ void *zjs_malloc_with_retry(size_t size)
     }
     return ptr;
 }
+#ifdef ZJS_TRACE_MALLOC
+void zjs_print_mem_stats()
+{
+    for (int i = 0; i < max_list_size; i++)
+    {
+        if (mem_list[i].ptr != NULL) {
+            ZJS_PRINT("index %i %s - %s:%d: %p\n", i, mem_list[i].file, mem_list[i].func, mem_list[i].line, mem_list[i].ptr);
+        }
+    }
+}
 
+void zjs_push_mem_stat(void *ptr, char *file, char *func, int line)
+{
+    int i = 0;
+    // Find an open spot
+    while (mem_list[i].ptr != NULL && i < max_list_size)
+    {
+        i++;
+    }
+
+    if (i > max_list_size) {
+        ZJS_PRINT("zjs_push_mem_stat no memory stat slots available\n");
+        return;
+    }
+
+    mem_list[i].ptr = ptr;
+    mem_list[i].file = file;
+    mem_list[i].func = func;
+    mem_list[i].line = line;
+}
+
+void zjs_pop_mem_stat(void *rm_ptr)
+{
+    if (rm_ptr != NULL) {
+        for (int i = 0; i < max_list_size; i++)
+        {
+            if (mem_list[i].ptr == rm_ptr) {
+                mem_list[i].ptr = NULL;
+                mem_list[i].file = "";
+                free(mem_list[i].func);
+                mem_list[i].line = 0;
+                mem_list[i].next = NULL;
+            }
+        }
+    }
+}
+#endif // ZJS_TRACE_MALLOC
 void zjs_set_property(const jerry_value_t obj, const char *name,
                       const jerry_value_t prop)
 {
