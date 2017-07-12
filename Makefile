@@ -72,6 +72,11 @@ EXT_JERRY_FLAGS ?=	-DENABLE_ALL_IN_ONE=ON \
 			-DJERRY_LIBM=OFF \
 			-DJERRY_PORT_DEFAULT=OFF
 
+# Work-around for #2363 until Zephyr fixes the SDK
+ifeq ($(VARIANT), release)
+KBUILD_CFLAGS_OPTIMIZE = -O2
+endif
+
 # Generate and run snapshot as byte code instead of running JS directly
 ifneq (,$(filter $(MAKECMDGOALS),ide ashell linux))
 SNAPSHOT=off
@@ -423,7 +428,7 @@ arc: analyze
 		cd arc; make BOARD=arduino_101_sss CROSS_COMPILE=$(ARC_CROSS_COMPILE); \
 	else \
 		sed -i '/This is a generated file/r./zjs.conf.tmp' arc/src/Makefile; \
-		cd arc; make BOARD=arduino_101_sss -j4; \
+		cd arc; make BOARD=arduino_101_sss KBUILD_CFLAGS_OPTIMIZE=$(KBUILD_CFLAGS_OPTIMIZE) -j4; \
 	fi
 ifeq ($(BOARD), arduino_101)
 	@echo
