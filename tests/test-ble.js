@@ -28,11 +28,11 @@ var acceptClients = function(clientAddress) {
         clients.client2 = clientAddress;
         clientCount++;
 
-        if (AcceptMoreClientsFlag) {
+        if (acceptMoreClientsFlag) {
             assert(1 < clientCount && clientCount < 5,
                    "connection: accept multiple clients to connected");
 
-            AcceptMoreClientsFlag = false;
+            acceptMoreClientsFlag = false;
         }
     } else if (clients.client3 === null) {
         clients.client3 = clientAddress;
@@ -42,11 +42,11 @@ var acceptClients = function(clientAddress) {
         clients.client4 = clientAddress;
         clientCount++;
 
-        if (MaxClientsFlag) {
+        if (maxClientsFlag) {
             assert(clientCount === 4,
                    "connection: accept max clients to connected");
 
-            MaxClientsFlag = false;
+            maxClientsFlag = false;
         }
     } else {
         console.log("Can not connect more client");
