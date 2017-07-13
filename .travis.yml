@@ -1,4 +1,4 @@
-language: generic # setting language to C will override cross-compiler and fail
+language: minimal # setting language to C will override cross-compiler and fail
 
 sudo: required
 dist: trusty
