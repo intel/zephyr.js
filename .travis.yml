@@ -2,6 +2,7 @@ language: generic # setting language to C will override cross-compiler and fail
 
 sudo: required
 dist: trusty
+group: deprecated-2017Q3
 
 notifications:
   irc:
