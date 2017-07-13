@@ -7,7 +7,6 @@
 #include <net/net_pkt.h>
 #if defined(CONFIG_NET_L2_BLUETOOTH)
 #include <bluetooth/bluetooth.h>
-#include <gatt/ipss.h>
 #endif
 
 // ZJS includes

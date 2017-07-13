@@ -19,7 +19,6 @@
 #ifdef CONFIG_NET_L2_BLUETOOTH
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
-#include <gatt/ipss.h>
 #endif
 
 // ZJS includes
