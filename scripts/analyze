@@ -10,16 +10,16 @@ import pprint
 def usage():
     print("Usage: ./analyze <options>")
     print("   Required:")
-    print("      BOARD=       Target being built")
-    print("      JSON_DIR=    Directory to look for JSON files")
-    print("      PRJCONF=     File to write the prj.conf info to")
-    print("      MAKEFILE=    Makefile to write source/options to")
-    print("      MAKEBASE=    Makefile to use as a base to write MAKEFILE")
+    print("      BOARD=      Target being built")
+    print("      JSON_DIR=   Directory to look for JSON files")
+    print("      PRJCONF=    File to write the prj.conf info to")
+    print("      MAKEFILE=   Makefile to write source/options to")
+    print("      MAKEBASE=   Makefile to use as a base to write MAKEFILE")
     print("   Optional:")
-    print("      SCRIPT=      JS script used to build")
-    print("      FORCE=       Force inclusion of certain JSON files")
-    print("      PROFILE=     Where to write the JerryScript profile")
-    print("      JS_OUT=      Output file if any JS modules are found in SCRIPT")
+    print("      SCRIPT=     JS script used to build")
+    print("      FORCE=      Force inclusion of certain JSON files")
+    print("      PROFILE=    Where to write the JerryScript profile")
+    print("      JS_OUT=     Output file if any JS modules are found in SCRIPT")
     quit()
 
 args = {}
@@ -37,7 +37,9 @@ jrs_conf = []
 lsrc = []
 js_modules = []
 
-if args['BOARD'] == 'linux':
+board = args['BOARD']
+
+if board == 'linux':
     req_options = ['BOARD', 'JSON_DIR']
 else:
     req_options = ['BOARD', 'JSON_DIR', 'PRJCONF', 'MAKEFILE', 'MAKEBASE']
@@ -46,8 +48,6 @@ for i in req_options:
     if i not in args:
         print("%s must be specified" % i)
         usage()
-
-board = args['BOARD']
 
 if 'SCRIPT' not in args:
     print("Generating modules header")
@@ -90,7 +90,8 @@ def parse_list(tree, list):
                 # index the entry by the module name, if exists
                 if 'module' in data:
                     if data['module'] in tree:
-                        print("Error: JSON entry %s is a duplicate" % data['module'])
+                        print("Error: JSON entry %s is a duplicate" %
+                              data['module'])
                     else:
                         tree[data['module']] = data;
 
@@ -138,74 +139,80 @@ def match_require(js, module, child=None):
     regex = r"\brequire *\([\'\"]%s[\"\']\)%s" % (module, child_regex)
     return re.search(regex, js)
 
-def parse_json_tree_helper(js, dep, dlist, zlist, zjslist, jrslist, srclist, tree):
+def parse_json_tree_helper(js, dep, dlist, zlist, zjslist, jrslist, srclist,
+                           tree):
     """Recursive helper for parse_json_tree()"""
-    if dep in tree:
-        entry = tree[dep]
-        if 'targets' in entry:
-            # exclude incorrect target
-            if board not in entry.get('targets', []):
-                return
-        for i in entry.get('depends', []):
-            do_print("gathering dependencies for " + i)
-            # add any new deps, and recursively find any more
-            if i not in dlist:
-                dlist.append(i)
-            parse_json_tree_helper(js, i, dlist, zlist, zjslist, jrslist, srclist, tree)
-        if 'src' in entry:
-            src = entry['src']
-            if isinstance(src, list):
-                # simple case, src is a list
-                merge_lists(srclist, src)
-            else:
-                # object case, this is for more complex JS parsing. If you need
-                # to selectively include certain files/options based on if an
-                # object is used. Currently only require objects are supported,
-                # and only 1 layer deep. e.g.
+    if dep not in tree:
+        print("Warning: Expected dependency " + dep)
+        return
 
-                # var ocf = require('ocf');
-                # var client = ocf.client;
+    entry = tree[dep]
+    if 'targets' in entry:
+        # exclude incorrect target
+        if board not in entry.get('targets', []):
+            return
+    for i in entry.get('depends', []):
+        do_print("gathering dependencies for " + i)
+        # add any new deps, and recursively find any more
+        if i not in dlist:
+            dlist.append(i)
+        parse_json_tree_helper(js, i, dlist, zlist, zjslist, jrslist, srclist,
+                               tree)
+    if 'src' in entry:
+        src = entry['src']
+        if isinstance(src, list):
+            # simple case, src is a list
+            merge_lists(srclist, src)
+        else:
+            # object case, this is for more complex JS parsing. If you need
+            # to selectively include certain files/options based on if an
+            # object is used. Currently only require objects are supported,
+            # and only 1 layer deep. e.g.
 
-                # And properties in the "src" object are searched for in the JS
-                # script. "common" is a special case, it will always be included
-                # in the build.
-                if 'common' in src:
-                    merge_lists(srclist, src['common'])
-                # iterate object properties of "src"
-                for key, value in src.items():
-                    if key != "common":
-                        # var x = require(module).key
-                        if match_require(js, entry['require'], key):
+            # var ocf = require('ocf');
+            # var client = ocf.client;
+
+            # And properties in the "src" object are searched for in the JS
+            # script. "common" is a special case, it will always be included
+            # in the build.
+            if 'common' in src:
+                merge_lists(srclist, src['common'])
+            # iterate object properties of "src"
+            for key, value in src.items():
+                if key != "common":
+                    # var x = require(module).key
+                    if match_require(js, entry['require'], key):
+                        if 'src' in value:
+                            merge_lists(srclist, value['src'])
+                        if 'zjs_config' in value:
+                            merge_lists(zjslist, value['zjs_config'])
+                    else:
+                        # var x = require(module)
+                        # var y = x.y
+                        match_name = re.search(r"var\s+(\w+)\s*=\s*require\([\'\"](%s)[\"\']\)" % entry['require'], js)
+                        var_name = match_name.groups()[0]
+                        match_use = re.search(r"%s\.%s" % (var_name, key), js)
+                        if match_use:
                             if 'src' in value:
                                 merge_lists(srclist, value['src'])
                             if 'zjs_config' in value:
                                 merge_lists(zjslist, value['zjs_config'])
-                        else:
-                            # var x = require(module)
-                            # var y = x.y
-                            match_name = re.search(r"var\s+(\w+)\s*=\s*require\([\'\"](%s)[\"\']\)" % entry['require'], js)
-                            var_name = match_name.groups()[0]
-                            match_use = re.search(r"%s\.%s" % (var_name, key), js)
-                            if match_use:
-                                if 'src' in value:
-                                    merge_lists(srclist, value['src'])
-                                if 'zjs_config' in value:
-                                    merge_lists(zjslist, value['zjs_config'])
-        # add in any zephyr config options
-        if 'zephyr_conf' in entry:
-            z_conf = entry['zephyr_conf']
-            if 'all' in z_conf:
-                merge_lists(zlist, z_conf['all'])
-            if board in z_conf:
-                merge_lists(zlist, z_conf[board])
-        # add in any JerryScript config options
-        if 'jrs_config' in entry:
-            merge_lists(jrslist, entry['jrs_config'])
-        # add in any ZJS config options
-        if 'zjs_config' in entry:
-            merge_lists(zjslist, entry['zjs_config'])
+    # add in any zephyr config options
+    if 'zephyr_conf' in entry:
+        z_conf = entry['zephyr_conf']
+        if 'all' in z_conf:
+            merge_lists(zlist, z_conf['all'])
+        if board in z_conf:
+            merge_lists(zlist, z_conf[board])
+    # add in any JerryScript config options
+    if 'jrs_config' in entry:
+        merge_lists(jrslist, entry['jrs_config'])
+    # add in any ZJS config options
+    if 'zjs_config' in entry:
+        merge_lists(zjslist, entry['zjs_config'])
 
-def parse_json_tree(file, dlist, zlist, zjslist, jrslist, srclist, tree, force=[]):
+def parse_json_tree(file, dlist, zlist, zjslist, jrslist, srclist, tree,
+                    force=[]):
     """Using a JS file as input, gather dependencies and generate separate lists
     for each aspect of the build (zephyr options, zjs options, jrs options, src)
 
@@ -225,7 +232,8 @@ def parse_json_tree(file, dlist, zlist, zjslist, jrslist, srclist, tree, force=[
         for f in force:
             with open(args['JSON_DIR'] + f) as file:
                 data = json.load(file)
-                parse_json_tree_helper(text, data['module'], dlist, zlist, zjslist, jrslist, srclist, tree)
+                parse_json_tree_helper(text, data['module'], dlist, zlist,
+                                       zjslist, jrslist, srclist, tree)
 
     # iterate the JSON tree
     for i in tree:
@@ -249,7 +257,8 @@ def parse_json_tree(file, dlist, zlist, zjslist, jrslist, srclist, tree, force=[
                 dlist.append(tree[i]['object'])
 
     # Get any deps for the board
-    parse_json_tree_helper(text, board, dlist, zlist, zjslist, jrslist, srclist, tree)
+    parse_json_tree_helper(text, board, dlist, zlist, zjslist, jrslist,
+                           srclist, tree)
 
 def write_jrsconfig(list):
     """Write a JerryScript profile file"""
@@ -385,7 +394,8 @@ else:
 
     build_tree(json_tree, restrict)
     do_print(json_tree)
-    parse_json_tree(js_file, deps_list, zconf, zjs_conf, jrs_conf, lsrc, json_tree, force=force)
+    parse_json_tree(js_file, deps_list, zconf, zjs_conf, jrs_conf, lsrc,
+                    json_tree, force=force)
     for i in sorted(deps_list):
         print("Using module: " + i)
 
