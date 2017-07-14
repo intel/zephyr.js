@@ -54,7 +54,7 @@ void zjs_pop_mem_stat(void *ptr);
         void *zjs_ptr = zjs_malloc_with_retry(sz);                              \
         ZJS_PRINT("%s:%d: allocating %u bytes (%p)\n", __func__, __LINE__,      \
                   (u32_t)sz, zjs_ptr);                                          \
-        zjs_push_mem_stat(zjs_ptr, __FILE__, __func__, __LINE__);  \
+        zjs_push_mem_stat(zjs_ptr, __FILE__, __func__, __LINE__);               \
         zjs_ptr;                                                                \
     })
 #define zjs_free(ptr) \
