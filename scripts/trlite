@@ -293,7 +293,7 @@ if [ "$RUN" == "all" -o "$RUN" == "1" ]; then
     echo "console.log(3.14159);" >> $TMPFILE
     try_command "modules" make $VERBOSE JS=$TMPFILE ROM=256
 
-    MODULES=(net ws)
+    MODULES=(net pme ws)
     write_modules_test $TMPFILE $MODULES
 
     # also, try printing a float w/ PRINT_FLOAT
@@ -305,11 +305,6 @@ if [ "$RUN" == "all" -o "$RUN" == "1" ]; then
     echo "var ocf = require('ocf');" > $TMPFILE
     echo "var client = ocf.client;" >> $TMPFILE
     echo "var server = ocf.server;" >> $TMPFILE
-    try_command "ocf" make $VERBOSE JS=$TMPFILE ROM=256
-
-    # PME test
-    MODULES=(pme)
-    write_modules_test $TMPFILE $MODULES
     try_command "ocf" make $VERBOSE JS=$TMPFILE ROM=256
 fi
 
