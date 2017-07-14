@@ -2,7 +2,7 @@
 
 #ifdef BUILD_MODULE_BLE
 #ifndef QEMU_BUILD
-// C inclues
+// C includes
 #include <stdlib.h>
 #include <string.h>
 

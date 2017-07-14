@@ -1,10 +1,10 @@
 // Copyright (c) 2016-2017, Intel Corporation.
 
-#ifndef QEMU_BUILD
-#ifndef ZJS_LINUX_BUILD
-
 // C includes
 #include <string.h>
+
+#ifndef QEMU_BUILD
+#ifndef ZJS_LINUX_BUILD
 
 // Zephyr includes
 #include <zephyr.h>
