@@ -23,7 +23,7 @@ typedef struct mem_stats {
     int line;
     struct mem_stats *next;
 } mem_stats_t;
-#endif //ZJS_TRACE_MALLOC
+#endif
 
 #define ZJS_UNDEFINED jerry_create_undefined()
 
