@@ -1,6 +1,6 @@
 // Copyright (c) 2016-2017, Intel Corporation.
 
-// C inclues
+// C includes
 #include <string.h>
 
 #ifndef ZJS_LINUX_BUILD
