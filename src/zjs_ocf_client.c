@@ -241,27 +241,6 @@ static struct client_resource *find_resource_by_id(const char *device_id)
     return NULL;
 }
 
-#if 0
-/*
- * Find a client_resource by searching with a resource path
- */
-static struct client_resource *find_resource_by_path(const char *path)
-{
-    if (path) {
-        struct client_resource *cur = resource_list;
-        while (cur) {
-            if (cur->state != RES_STATE_SEARCHING) {
-                if (strcmp(cur->resource_path, path) == 0) {
-                    return cur;
-                }
-            }
-            cur = cur->next;
-        }
-    }
-    return NULL;
-}
-#endif
-
 /*
  * Create a new resource object
  */
@@ -377,18 +356,6 @@ static void observe_callback(oc_client_response_t *data)
 #endif
     }
 }
-
-#if 0
-static oc_event_callback_retval_t stop_observe(void *data)
-{
-    struct client_resource *cli = (struct client_resource *)data;
-    oc_stop_observe(cli->resource_path, &cli->server);
-
-    DBG_PRINT("path=%s, id=%s\n", cli->resource_path, cli->device_id);
-
-    return DONE;
-}
-#endif
 
 /*
  * Callback for resource discovery
@@ -789,75 +756,6 @@ static ZJS_DECL_FUNC(ocf_update)
     return promise;
 }
 
-/*
- * TODO: delete not supported
- */
-#if 0
-static void delete_finished(oc_client_response_t *data)
-{
-    if (data && data->user_data) {
-        struct ocf_handler *h = (struct ocf_handler *)data->user_data;
-        struct client_resource *resource = h->res;
-        if (data->code == OC_STATUS_DELETED) {
-            zjs_fulfill_promise(h->promise_obj, NULL, 0);
-
-            DBG_PRINT("DELETE response OK, device_id=%s\n",
-                      resource->device_id);
-        } else {
-            ZVAL err = make_ocf_error("NetworkError", "DELETE had error code",
-                                      resource);
-            zjs_reject_promise(h->promise_obj, &err, 1);
-            ERR_PRINT("DELETE response code %d\n", data->code);
-        }
-    }
-}
-
-static ZJS_DECL_FUNC(ocf_delete)
-{
-    // args: device id
-    ZJS_VALIDATE_ARGS(Z_STRING);
-
-    struct ocf_handler *h;
-    jerry_value_t promise = jerry_create_object();
-
-    ZJS_GET_STRING(argv[0], uri, OCF_MAX_URI_LEN);
-
-    DBG_PRINT("DELETE call, uri=%s\n", uri);
-
-    struct client_resource *resource = find_resource_by_id(uri);
-    if (!resource) {
-        ERR_PRINT("resource '%s' not found\n", uri);
-        REJECT(promise, "NotFoundError", "resource was not found", h);
-        return promise;
-    }
-
-    h = new_ocf_handler(resource);
-    jerry_create_promise(promise, post_ocf_promise, h);
-    h->promise_obj = promise;
-
-    if (!oc_do_delete(uri, &resource->server, delete_finished, LOW_QOS, h)) {
-        ERR_PRINT("DELETE call failed\n");
-        h->argv = zjs_malloc(sizeof(jerry_value_t));
-        h->argv[0] = make_ocf_error("NetworkError", "DELETE call failed", resource);
-        zjs_reject_promise(promise, h->argv, 1);
-    }
-
-    return promise;
-}
-
-/*
- * TODO: create not supported
- */
-static ZJS_DECL_FUNC(ocf_create)
-{
-    struct ocf_handler *h;
-    jerry_value_t promise = jerry_create_object();
-    REJECT(promise, "NotSupportedError", "create() is not supported", h);
-    DBG_PRINT("create is not supported by iotivity-constrained\n");
-    return promise;
-}
-#endif
-
 static void ocf_get_platform_info_handler(oc_client_response_t *data)
 {
     if (data && data->user_data) {
@@ -1082,33 +980,6 @@ static ZJS_DECL_FUNC(ocf_get_device_info)
     return promise;
 }
 
-/*
- * TODO: find devices not supported
- */
-#if 0
-static ZJS_DECL_FUNC(ocf_find_devices)
-{
-    ERR_PRINT("findDevices() is not yet supported\n");
-    struct ocf_handler *h;
-    jerry_value_t promise = jerry_create_object();
-    REJECT(promise, "NotSupportedError", "findDevices() is not supported", h);
-    return promise;
-}
-
-/*
- * TODO: find platforms not supported
- */
-static ZJS_DECL_FUNC(ocf_find_platforms)
-{
-    ERR_PRINT("findPlatforms() is not yet supported\n");
-
-    jerry_value_t promise = jerry_create_object();
-    struct ocf_handler *h;
-    REJECT(promise, "NotSupportedError", "findPlatforms() is not supported", h);
-    return promise;
-}
-#endif
-
 jerry_value_t zjs_ocf_client_init()
 {
     jerry_value_t ocf_client = jerry_create_object();
@@ -1118,12 +989,6 @@ jerry_value_t zjs_ocf_client_init()
     zjs_obj_add_function(ocf_client, ocf_update, "update");
     zjs_obj_add_function(ocf_client, ocf_get_platform_info, "getPlatformInfo");
     zjs_obj_add_function(ocf_client, ocf_get_device_info, "getDeviceInfo");
-#if 0
-    zjs_obj_add_function(ocf_client, ocf_delete, "delete");
-    zjs_obj_add_function(ocf_client, ocf_create, "create");
-    zjs_obj_add_function(ocf_client, ocf_find_devices, "findDevices");
-    zjs_obj_add_function(ocf_client, ocf_find_platforms, "findPlatforms");
-#endif
 
     zjs_make_event(ocf_client, ZJS_UNDEFINED);
 
