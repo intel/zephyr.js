@@ -217,7 +217,7 @@ void zjs_modules_cleanup()
 
 #ifdef ZJS_TRACE_MALLOC
     zjs_print_mem_stats();
-#endif //ZJS_TRACE_MALLOC
+#endif  // ZJS_TRACE_MALLOC
 }
 
 void zjs_register_service_routine(void *handle, zjs_service_routine func)
