@@ -28,8 +28,7 @@ void *zjs_malloc_with_retry(size_t size)
 #ifdef ZJS_TRACE_MALLOC
 void zjs_print_mem_stats()
 {
-    for (int i = 0; i < max_list_size; i++)
-    {
+    for (int i = 0; i < max_list_size; i++) {
         if (mem_list[i].ptr != NULL) {
             ZJS_PRINT("index %i %s - %s:%d: %p\n", i, mem_list[i].file, mem_list[i].func, mem_list[i].line, mem_list[i].ptr);
         }
@@ -40,8 +39,7 @@ void zjs_push_mem_stat(void *ptr, char *file, char *func, int line)
 {
     int i = 0;
     // Find an open spot
-    while (mem_list[i].ptr != NULL && i < max_list_size)
-    {
+    while (mem_list[i].ptr != NULL && i < max_list_size) {
         i++;
     }
 
@@ -59,8 +57,7 @@ void zjs_push_mem_stat(void *ptr, char *file, char *func, int line)
 void zjs_pop_mem_stat(void *rm_ptr)
 {
     if (rm_ptr != NULL) {
-        for (int i = 0; i < max_list_size; i++)
-        {
+        for (int i = 0; i < max_list_size; i++) {
             if (mem_list[i].ptr == rm_ptr) {
                 mem_list[i].ptr = NULL;
                 mem_list[i].file = "";
