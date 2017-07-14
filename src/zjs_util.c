@@ -13,7 +13,7 @@
 #ifdef ZJS_TRACE_MALLOC
 #define MAX_LIST_SIZE 300
 mem_stats_t mem_array[MAX_LIST_SIZE];
-#endif //ZJS_TRACE_MALLOC
+#endif
 
 void *zjs_malloc_with_retry(size_t size)
 {
@@ -25,6 +25,7 @@ void *zjs_malloc_with_retry(size_t size)
     }
     return ptr;
 }
+
 #ifdef ZJS_TRACE_MALLOC
 void zjs_print_mem_stats()
 {
@@ -62,13 +63,13 @@ void zjs_pop_mem_stat(void *rm_ptr)
             if (mem_array[i].ptr == rm_ptr) {
                 mem_array[i].ptr = NULL;
                 mem_array[i].file = "";
-                //free(mem_array[i].func);
                 mem_array[i].line = 0;
             }
         }
     }
 }
-#endif // ZJS_TRACE_MALLOC
+#endif  // ZJS_TRACE_MALLOC
+
 void zjs_set_property(const jerry_value_t obj, const char *name,
                       const jerry_value_t prop)
 {
