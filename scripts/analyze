@@ -146,18 +146,21 @@ def parse_json_tree_helper(js, dep, dlist, zlist, zjslist, jrslist, srclist,
         print("Warning: Expected dependency " + dep)
         return
 
+    if dep not in dlist:
+        dlist.append(dep)
+
     entry = tree[dep]
     if 'targets' in entry:
         # exclude incorrect target
         if board not in entry.get('targets', []):
             return
+
     for i in entry.get('depends', []):
         do_print("gathering dependencies for " + i)
         # add any new deps, and recursively find any more
-        if i not in dlist:
-            dlist.append(i)
-        parse_json_tree_helper(js, i, dlist, zlist, zjslist, jrslist, srclist,
-                               tree)
+        parse_json_tree_helper(js, i, dlist, zlist, zjslist, jrslist,
+                               srclist, tree)
+
     if 'src' in entry:
         src = entry['src']
         if isinstance(src, list):
@@ -240,15 +243,13 @@ def parse_json_tree(file, dlist, zlist, zjslist, jrslist, srclist, tree,
         # find any matching require lines
         if 'require' in tree[i]:
             if match_require(text, tree[i]['require']):
-                if i not in dlist:
-                    dlist.append(i)
-                parse_json_tree_helper(text, i, dlist, zlist, zjslist, jrslist, srclist, tree)
+                parse_json_tree_helper(text, i, dlist, zlist, zjslist, jrslist,
+                                       srclist, tree)
         # find any matching constructor calls
         elif 'constructor' in tree[i]:
             if re.search(r"%s\(.*" % tree[i]['constructor'], text):
-                if i not in dlist:
-                    dlist.append(i)
-                parse_json_tree_helper(text, i, dlist, zlist, zjslist, jrslist, srclist, tree)
+                parse_json_tree_helper(text, i, dlist, zlist, zjslist, jrslist,
+                                       srclist, tree)
         # find any matching uses of object
         if 'object' in tree[i]:
             if re.search(r"%s\." % tree[i]['object'], text):
