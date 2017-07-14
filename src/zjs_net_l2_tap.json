@@ -1,0 +1,9 @@
+{
+    "module": "net-l2-tap",
+    "fulfills": "net-l2",
+    "description": "Enables tap networking for QEMU",
+    "targets": ["qemu_x86"],
+    "zephyr_conf": {
+        "qemu_x86": ["CONFIG_NET_SLIP_TAP=y"]
+    }
+}

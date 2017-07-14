@@ -1,0 +1,10 @@
+{
+    "module": "net-l2",
+    "description": "Virtual module to require an L2 network driver be present",
+    "virtual": "yes",
+    "defaults": {
+        "arduino_101": "net-l2-bluetooth",
+        "frdm_k64f": "net-l2-ethernet",
+        "qemu_x86": "net-l2-tap"
+    }
+}

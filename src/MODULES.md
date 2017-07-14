@@ -235,6 +235,49 @@ array which includes "i2c_k64f" and "i2c_a101". Then these two modules use the
 "targets" property so that they wont be included if building for the wrong
 target and include only target specific source files.
 
+## Virtual Dependencies
+A virtual dependency is one that can be fulfilled by one of a number of
+different packages. Instead of directly "including" a specified module, the
+JSON should specify default modules to be included for each board if the
+virtual dependency goes unfulfilled otherwise.
+
+The initial example of this is the "net-l2" virtual module. This means that
+a datalink (layer 2) driver is required, but it's up to the user to decide at
+build time which one it will be. For example, on the Arduino 101 the built-in
+Bluetooth can be used or an external Ethernet board (the ENC28J60) can be used.
+The built-in Bluetooth will be used if one is not specified, based on the
+defaults set in zjs_net_l2.json.
+
+To choose the ENC28J60 at build time, build with FORCE=zjs_net_l2_enc28j60.json
+on the command line. (We'll work on a more elegant way to do this in the
+future.)
+
+The mechanics of using virtual dependencies is as follows. For the virtual
+module itself, add a "defaults" property that is an object mapping board name
+strings to default module name strings. We also recommend you add the "virtual"
+property set to "yes", but this is not currently used; just useful to draw
+attention to the usage for human readers of the JSON.
+
+For example, here is the initial definition of the net-l2 module:
+```
+{
+    "module": "net-l2",
+    "description": "Virtual module to require an L2 network driver be present",
+    "virtual": "yes",
+    "defaults": {
+        "arduino_101": "net-l2-bluetooth",
+        "frdm_k64f": "net-l2-ethernet",
+        "qemu_x86": "net-l2-tap"
+    }
+}
+```
+
+## Descriptions
+We've also started adding a "description" property to the JSON objects; this is
+not used programmatically at this time, but useful to capture a human-readable
+comment describing the module to help readers understand what they're looking
+at.
+
 ## Analyze parameters
 The JSON parsing is done with `scripts/analyze`. The main Makefile is what
 executes it and provides the required command line options:

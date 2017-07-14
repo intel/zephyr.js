@@ -676,6 +676,29 @@ The original instructions document can be found on the Zephyr website
 It is possible to use IP networking over BLE using 6LowPAN. This is explained
 in a dedicated [document](./docs/6lowpan-ble.md).
 
+## Specific Device Support
+
+### ENC28J60 Ethernet Board
+This SPI Ethernet board is now supported for use with the Arduino 101. To
+configure it, wire IO10-IO13 (the SPI pins) to CS, SI, SCK, SO on the board,
+respectively. Then wire VCC to 3.3V power (somewhere online I saw a reference
+that some of these boards tolerate 5V and some do not) and GND to ground.
+Finally, wire INT on the board to pin IO4; this is a GPIO used to communicate
+with the board as well.
+
+Then when building a networking application, use FORCE=zjs_net_l2_enc28j60.json
+on your make command line to override the default Bluetooth/6LoWPAN networking.
+
+For a simple test configuration, connect the Ethernet port to a secondary
+Ethernet on your host PC (I use a USB Ethernet device). Configure that interface
+on your PC with static IPv4 or IPv6 addresses that work with what's configured
+on the device. With the TCPEchoServ[46].js samples at present, you would use
+something like 192.168.201.2 w/ 255.255.255.0 mask for IPv4, and 2001:db8::2 w/
+64 prefix for IPv6.
+
+(The simple board doesn't do auto-crossover detection so if your host Ethernet
+adapter doesn't either, you may need to use a crossover cable or hook them both
+up to a dedicated switch as I've done.)
 
 ## Contributing
 

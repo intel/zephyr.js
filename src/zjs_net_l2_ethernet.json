@@ -1,0 +1,9 @@
+{
+    "module": "net-l2-ethernet",
+    "fulfills": "net-l2",
+    "description": "Enables onboard Ethernet",
+    "targets": ["frdm_k64f"],
+    "zephyr_conf": {
+        "frdm_k64f": ["CONFIG_NET_L2_ETHERNET=y"]
+    }
+}

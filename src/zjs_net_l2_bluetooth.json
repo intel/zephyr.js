@@ -1,0 +1,21 @@
+{
+    "module": "net-l2-bluetooth",
+    "fulfills": "net-l2",
+    "description": "Enables IP over Bluetooth",
+    "targets": ["arduino_101"],
+    "zephyr_conf": {
+        "arduino_101": [
+            "CONFIG_BLUETOOTH=y",
+            "CONFIG_BLUETOOTH_SMP=y",
+            "CONFIG_BLUETOOTH_SIGNING=y",
+            "CONFIG_BLUETOOTH_PERIPHERAL=y",
+            "CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL=y",
+            "CONFIG_NETWORKING_WITH_6LOWPAN=y",
+            "CONFIG_6LOWPAN_COMPRESSION_IPHC=y",
+            "CONFIG_NET_L2_BLUETOOTH_ZEP1656=y",
+            "CONFIG_NET_L2_BLUETOOTH=y"
+        ]
+    },
+    "src": ["../deps/zephyr/samples/bluetooth/gatt/ipss.c"],
+    "zjs_config": ["-I$(ZEPHYR_BASE)/samples/bluetooth"]
+}
