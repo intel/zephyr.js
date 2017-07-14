@@ -1,7 +1,8 @@
 {
     "module": "ocf",
     "require": "ocf",
-    "depends": ["events", "buffer", "promise", "net_config_default", "iotivity_constrained"],
+    "depends": ["events", "buffer", "promise", "net_config_default",
+                "iotivity_constrained"],
     "src": {
         "client": {
             "src": ["zjs_ocf_client.c"],
@@ -14,6 +15,7 @@
         "common": ["zjs_ocf_common.c"]
     },
     "zjs_config": ["-DBUILD_MODULE_OCF"],
+    "virtualdeps": ["net-l2"],
     "zephyr_conf": {
         "all": [
             "CONFIG_NETWORKING=y",
@@ -21,27 +23,19 @@
             "CONFIG_NET_UDP=y",
             "CONFIG_TEST_RANDOM_GENERATOR=y",
             "CONFIG_INIT_STACKS=y",
-            "CONFIG_NET_NBUF_RX_COUNT=14",
-            "CONFIG_NET_NBUF_TX_COUNT=14",
+            "CONFIG_NET_BUF=y",
+            "CONFIG_NET_PKT_RX_COUNT=5",
+            "CONFIG_NET_PKT_TX_COUNT=2",
+            "CONFIG_NET_BUF_RX_COUNT=10",
+            "CONFIG_NET_BUF_TX_COUNT=6",
             "CONFIG_NET_IF_UNICAST_IPV6_ADDR_COUNT=1",
             "CONFIG_NET_IF_MCAST_IPV6_ADDR_COUNT=1",
             "CONFIG_NET_MAX_CONTEXTS=3"
         ],
         "arduino_101": [
-            "CONFIG_BLUETOOTH=y",
-            "CONFIG_BLUETOOTH_SMP=y",
-            "CONFIG_BLUETOOTH_SIGNING=y",
-            "CONFIG_BLUETOOTH_PERIPHERAL=y",
-            "CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL=y",
             "CONFIG_BLUETOOTH_L2CAP_TX_BUF_COUNT=15",
-            "CONFIG_BLUETOOTH_RX_BUF_COUNT=15",
-            "CONFIG_NETWORKING_WITH_6LOWPAN=y",
-            "CONFIG_6LOWPAN_COMPRESSION_IPHC=y",
-            "CONFIG_NET_L2_BLUETOOTH_ZEP1656=y",
-            "CONFIG_NET_L2_BLUETOOTH=y"
-        ],
-        "qemu_x86": ["CONFIG_NET_SLIP_TAP=y"],
-        "frdm_k64f": ["CONFIG_NET_L2_ETHERNET=y"]
+            "CONFIG_BLUETOOTH_RX_BUF_COUNT=15"
+        ]
     },
     "header": ["zjs_ocf_server.h", "zjs_ocf_client.h", "zjs_ocf_common.h"],
     "init": ["zjs_ocf_init"],

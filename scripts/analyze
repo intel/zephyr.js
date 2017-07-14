@@ -261,6 +261,32 @@ def parse_json_tree(file, dlist, zlist, zjslist, jrslist, srclist, tree,
     parse_json_tree_helper(text, board, dlist, zlist, zjslist, jrslist,
                            srclist, tree)
 
+    # check for any virtual deps
+    virtualdeps = []
+    fulfilled = set()
+    for i in dlist:
+        if 'virtualdeps' in tree[i]:
+            vdeps = tree[i]['virtualdeps']
+            merge_lists(virtualdeps, vdeps)
+        if 'fulfills' in tree[i]:
+            fulfilled.add(tree[i]['fulfills'])
+
+    # add default modules for any unfulfilled virtual deps
+    for vdep in virtualdeps:
+        if vdep in fulfilled:
+            # already fulfilled
+            continue
+        elif vdep not in tree:
+            print("Warning: expected JSON file for virtual dependency " + vdep)
+        else:
+            defaults = tree[vdep].get('defaults', {})
+            if board not in defaults:
+                print("Warning: no default found for %s/%s" % (vdep, board))
+            else:
+                default = defaults[board]
+                parse_json_tree_helper(text, default, dlist, zlist, zjslist,
+                                       jrslist, srclist, tree)
+
 def write_jrsconfig(list):
     """Write a JerryScript profile file"""
     if 'PROFILE' in args:
