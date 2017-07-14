@@ -6,6 +6,6 @@ console.log("starting dhcp");
 
 net_cfg.dhcp(function(address, subnet, gateway) {
     console.log("address=" + address);
-    console.log("subet=" + subnet);
+    console.log("subnet=" + subnet);
     console.log("gateway=" + gateway);
 });
