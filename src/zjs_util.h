@@ -15,6 +15,15 @@
 #include "zjs_common.h"
 #include "zjs_error.h"
 
+#ifdef ZJS_TRACE_MALLOC
+typedef struct mem_stats {
+    void *ptr;
+    char *file;
+    const char *func;
+    int line;
+} mem_stats_t;
+#endif
+
 #define ZJS_UNDEFINED jerry_create_undefined()
 
 #ifdef DEBUG_BUILD
@@ -30,21 +39,26 @@
  */
 void *zjs_malloc_with_retry(size_t size);
 
+void zjs_print_mem_stats();
+void zjs_push_mem_stat(void *ptr, char *file, const char *func, int line);
+void zjs_pop_mem_stat(void *ptr);
+
 #ifdef ZJS_LINUX_BUILD
 #define zjs_malloc(sz) malloc(sz)
 #define zjs_free(ptr) free(ptr)
 #else
 #include <zephyr.h>
 #ifdef ZJS_TRACE_MALLOC
-#define zjs_malloc(sz)                                                      \
-    ({                                                                      \
-        void *zjs_ptr = zjs_malloc_with_retry(sz);                          \
-        ZJS_PRINT("%s:%d: allocating %lu bytes (%p)\n", __func__, __LINE__, \
-                  (u32_t)sz, zjs_ptr);                                      \
-        zjs_ptr;                                                            \
+#define zjs_malloc(sz)                                                          \
+    ({                                                                          \
+        void *zjs_ptr = zjs_malloc_with_retry(sz);                              \
+        ZJS_PRINT("%s:%d: allocating %u bytes (%p)\n", __func__, __LINE__,      \
+                  (u32_t)sz, zjs_ptr);                                          \
+        zjs_push_mem_stat(zjs_ptr, __FILE__, __func__, __LINE__);               \
+        zjs_ptr;                                                                \
     })
 #define zjs_free(ptr) \
-    (ZJS_PRINT("%s:%d: freeing %p\n", __func__, __LINE__, ptr), free(ptr))
+    (ZJS_PRINT("%s:%d: freeing %p\n", __func__, __LINE__, ptr), zjs_pop_mem_stat(ptr), free(ptr))
 #else
 #define zjs_malloc(sz)                             \
     ({                                             \
