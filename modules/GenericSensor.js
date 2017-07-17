@@ -105,10 +105,6 @@ function GenericSensor() {
                            sensor.illuminance !== null,
                            "sensor: reading value for '" + sensorType + "'");
 
-                    assert(sensor.controller === "ADC_0",
-                           "sensor: controller name as default");
-                    console.log("sensor.controller : " + sensor.controller);
-
                     middleNum = sensor.illuminance;
                     sensor.illuminance = middleNum + 1;
                     assert(sensor.illuminance === middleNum,
@@ -126,15 +122,6 @@ function GenericSensor() {
                            typeof sensor.z === "number" &&
                            sensor.z !== null,
                            "sensor: reading value for '" + sensorType + "'");
-
-                    if (sensorType === "Magnetometer") {
-                        assert(sensor.controller === "FXOS8700",
-                               "sensor: controller name as default");
-                    } else {
-                        assert(sensor.controller === "bmi160",
-                               "sensor: controller name as default");
-                    }
-                    console.log("sensor.controller : " + sensor.controller);
 
                     middleNumX = sensor.x;
                     sensor.x = middleNumX + 1;
@@ -156,10 +143,6 @@ function GenericSensor() {
                     assert(typeof sensor.celsius === "number" &&
                            sensor.celsius !== null,
                            "sensor: reading value for '" + sensorType + "'");
-
-                    assert(sensor.controller === "bmi160",
-                           "sensor: controller name as default");
-                    console.log("sensor.controller : " + sensor.controller);
 
                     middleNum = sensor.celsius;
                     sensor.celsius = middleNum + 1;
