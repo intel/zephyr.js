@@ -140,6 +140,9 @@ static zjs_callback_id new_id(void)
     while (cb_map[id] != NULL) {
         id++;
     }
+    if (id >= cb_size) {
+        cb_size = id + 1;
+    }
     return id;
 }
 
@@ -309,10 +312,6 @@ zjs_callback_id add_callback_list_priv(jerry_value_t js_func,
         new_cb->func_list[0] = jerry_acquire_value(js_func);
         cb_map[new_cb->id] = new_cb;
 
-        if (new_cb->id >= cb_size - 1) {
-            cb_size++;
-        }
-
 #ifdef DEBUG_BUILD
         set_info_string(cb_map[new_cb->id]->creator, file, func);
 #endif
@@ -355,9 +354,6 @@ zjs_callback_id add_callback_priv(jerry_value_t js_func,
 
     // Add callback to list
     cb_map[new_cb->id] = new_cb;
-    if (new_cb->id >= cb_size - 1) {
-        cb_size++;
-    }
 
     DBG_PRINT("adding new callback id %d, js_func=%u, once=%u\n", new_cb->id,
               new_cb->js_func, once);
@@ -515,9 +511,6 @@ zjs_callback_id zjs_add_c_callback(void *handle, zjs_c_callback_func callback)
 
     // Add callback to list
     cb_map[new_cb->id] = new_cb;
-    if (new_cb->id >= cb_size - 1) {
-        cb_size++;
-    }
 
     DBG_PRINT("adding new C callback id %d\n", new_cb->id);
     UNLOCK();
