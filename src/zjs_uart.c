@@ -145,15 +145,27 @@ static void uart_irq_handler(struct device *dev)
 static int write_data(struct device *dev, const char *buf, int len)
 {
     uart_irq_tx_enable(dev);
+    int sent = 0;
+    int sent_total = 0;
 
-    tx = false;
-    int bytes = uart_fifo_fill(dev, buf, len);
-    while (tx == false) {
-        ;
+    // Due to ZEP-2401 - Transmission via CDC_ACM on Arduino 101 is limited to
+    // 4 bytes at a time, so we have to loop.
+    while (len > 0) {
+        tx = false;
+        sent = uart_fifo_fill(dev, (const u8_t *)buf, len);
+        if (!sent) {
+            return sent_total;
+        }
+
+        while (tx == false);
+
+        len -= sent;
+        buf += sent;
+        sent_total += sent;
     }
 
     uart_irq_tx_disable(dev);
-    return bytes;
+    return sent_total;
 }
 
 static ZJS_DECL_FUNC(uart_write)
@@ -186,10 +198,6 @@ static ZJS_DECL_FUNC(uart_set_read_range)
         memcpy(handle->buf, old, handle->size);
         handle->buf[handle->size] = '\0';
         zjs_free(old);
-        //if (handle->size >= min) {
-        //    jerry_value_t data = jerry_create_string((const jerry_char_t *)handle->buf);
-        //    zjs_trigger_event(handle->uart_obj, "read", &data, 1, NULL, NULL);
-        //}
     } else {
         handle->buf = zjs_malloc(max);
         memset(handle->buf, 0, max);
@@ -207,7 +215,7 @@ static ZJS_DECL_FUNC(uart_init)
     ZJS_VALIDATE_ARGS(Z_OBJECT);
 
     int i;
-    int baud = 115200;
+    u32_t baud = 115200;
 #ifdef CONFIG_UART_LINE_CTRL
     int ret, dtr;
 #endif
@@ -270,7 +278,7 @@ static ZJS_DECL_FUNC(uart_init)
         DBG_PRINT("Failed to set baud, ret code %d\n", ret);
     }
 
-    int test_baud = baud;
+    u32_t test_baud = baud;
 
     ret = uart_line_ctrl_get(uart_dev, LINE_CTRL_BAUD_RATE,
                              (u32_t *)&test_baud);
