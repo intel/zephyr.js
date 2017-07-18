@@ -6,6 +6,8 @@ var ws = new WebSocket("ws://[2001:db8::1]:8080", ["first", "testProtocol", "las
 
 ws.on("open", function open() {
     console.log("open WebSocket");
+
+    ws.send("hello world");
 });
 
 ws.on("message", function(data, flags) {
