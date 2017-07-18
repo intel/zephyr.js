@@ -101,7 +101,7 @@ static bt_addr_le_t id_addr;
 #ifdef ZJS_CONFIG_BLE_ADDRESS
 static char default_ble[18] = ZJS_CONFIG_BLE_ADDRESS;
 #else
-static char default_ble[18] = "AA:BB:CC:DD:EE:FF";
+static char default_ble[18] = "FF:EE:DD:CC:BB:AA";
 #endif
 
 static ssize_t zjs_ble_storage_read(const bt_addr_le_t *addr, u16_t key,
@@ -163,6 +163,24 @@ void zjs_init_ble_address()
         ERR_PRINT("bad BLE address string\n");
         return;
     }
+
+    // set the top two bits since Zephyr always sets them anyway, so we will
+    //   print the actual value the user will see
+    // TODO: find out why this happens and whether it must; if so, warn the
+    //   user at compile-time instead of just here
+    char hex[3];
+    hex[0] = default_ble[0];
+    hex[1] = '0';
+    hex[2] = '\0';
+    u8_t byte;
+    zjs_hex_to_byte(hex, &byte);
+    u8_t newbyte = byte | 0xC0;
+    if (byte != newbyte) {
+        ZJS_PRINT("Warning: Requested BLE address %s had to be modified!\n",
+                  default_ble);
+    }
+    default_ble[0] = 'C' + (newbyte >> 4) - 12;
+
     DBG_PRINT("BLE addr is set to: %s\n", default_ble);
     BT_ADDR_SET_STATIC(&id_addr.a);
     bt_storage_register(&storage);
