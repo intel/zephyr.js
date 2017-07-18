@@ -123,36 +123,6 @@ assert(globalContext === 1,
        "PMEContext: get default value for global context as '" +
        globalContext + "'");
 
-var neuronContext = pme.getNeuronContext();
-assert(neuronContext === 127,
-       "PMEContext: get default value for neuron context as '" +
-       neuronContext + "'");
-
-var contextValues = [ 1, 10, 100, 127, 200, 0, "string", true ];
-for (var i = 0; i < contextValues.length; i++) {
-    if (i <= 3) {
-        pme.setGlobalContext(contextValues[i]);
-        globalContext = pme.getGlobalContext();
-        assert(globalContext === contextValues[i],
-               "PMEContext: set and get global context as '" +
-               contextValues[i] + "'");
-
-        pme.setNeuronContext(contextValues[i]);
-        neuronContext = pme.getNeuronContext();
-        assert(neuronContext === contextValues[i],
-               "PMEContext: set and get neuron context as '" +
-               contextValues[i] + "'");
-    } else {
-        assert.throws(function() {
-            pme.setGlobalContext(contextValues[i]);
-        }, "PMEContext: set global context as '" + contextValues[i] + "'\n");
-
-        assert.throws(function() {
-            pme.setNeuronContext(contextValues[i]);
-        }, "PMEContext: set neuron context as '" + contextValues[i] + "'\n");
-    }
-}
-
 var defaultCommittedCount = pme.getCommittedCount();
 assert(defaultCommittedCount === 0,
        "PMEObject: get default value for committed neurons as '" +

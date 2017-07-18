@@ -50,7 +50,6 @@ console.log("Learned [ 10, 10, 10, 10 ] with category 100");
 pme.learn(training2, 200);
 console.log("Learned [ 20, 20, 20, 20 ] with category 200");
 console.log("Global context: " + pme.getGlobalContext());
-console.log("Neuron context: " + pme.getNeuronContext());
 console.log("Neuron count: " + pme.getCommittedCount());
 
 var category = pme.classify(classify1);

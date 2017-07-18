@@ -83,13 +83,10 @@ enum {
 #define TYPE_PME_WRITE_VECTOR                              0x0046
 #define TYPE_PME_GET_COMMITED_COUNT                        0x0047
 #define TYPE_PME_GET_GLOBAL_CONTEXT                        0x0048
-#define TYPE_PME_SET_GLOBAL_CONTEXT                        0x0049
-#define TYPE_PME_GET_NEURON_CONTEXT                        0x004A
-#define TYPE_PME_SET_NEURON_CONTEXT                        0x004B
-#define TYPE_PME_GET_CLASSIFIER_MODE                       0x004C
-#define TYPE_PME_SET_CLASSIFIER_MODE                       0x004D
-#define TYPE_PME_GET_DISTANCE_MODE                         0x004E
-#define TYPE_PME_SET_DISTANCE_MODE                         0x004F
+#define TYPE_PME_GET_CLASSIFIER_MODE                       0x0049
+#define TYPE_PME_SET_CLASSIFIER_MODE                       0x004A
+#define TYPE_PME_GET_DISTANCE_MODE                         0x004B
+#define TYPE_PME_SET_DISTANCE_MODE                         0x004C
 // PME save and restore
 #define TYPE_PME_BEGIN_SAVE_MODE                           0x0050
 #define TYPE_PME_ITERATE_TO_SAVE                           0x0051

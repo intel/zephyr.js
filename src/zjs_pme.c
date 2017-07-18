@@ -263,41 +263,6 @@ static ZJS_DECL_FUNC(zjs_pme_get_global_context)
     return jerry_create_number(reply.data.pme.g_context);
 }
 
-static ZJS_DECL_FUNC(zjs_pme_set_global_context)
-{
-    // args: global context
-    ZJS_VALIDATE_ARGS(Z_NUMBER);
-
-    zjs_ipm_message_t send;
-    send.type = TYPE_PME_SET_GLOBAL_CONTEXT;
-    send.data.pme.g_context = jerry_get_number_value(argv[0]);
-
-    CALL_REMOTE_FUNCTION_NO_REPLY(send);
-    return ZJS_UNDEFINED;
-}
-
-static ZJS_DECL_FUNC(zjs_pme_get_neuron_context)
-{
-    zjs_ipm_message_t send, reply;
-    send.type = TYPE_PME_GET_NEURON_CONTEXT;
-
-    CALL_REMOTE_FUNCTION(send, reply);
-    return jerry_create_number(reply.data.pme.n_context);
-}
-
-static ZJS_DECL_FUNC(zjs_pme_set_neuron_context)
-{
-    // args: neuron context
-    ZJS_VALIDATE_ARGS(Z_NUMBER);
-
-    zjs_ipm_message_t send;
-    send.type = TYPE_PME_SET_NEURON_CONTEXT;
-    send.data.pme.n_context = jerry_get_number_value(argv[0]);
-
-    CALL_REMOTE_FUNCTION_NO_REPLY(send);
-    return ZJS_UNDEFINED;
-}
-
 static ZJS_DECL_FUNC(zjs_pme_get_classifier_mode)
 {
     zjs_ipm_message_t send, reply;
@@ -499,9 +464,6 @@ jerry_value_t zjs_pme_init()
         { zjs_pme_write_vector, "writeVector" },
         { zjs_pme_get_committed_count, "getCommittedCount" },
         { zjs_pme_get_global_context, "getGlobalContext" },
-        { zjs_pme_set_global_context, "setGlobalContext" },
-        { zjs_pme_get_neuron_context, "getNeuronContext" },
-        { zjs_pme_set_neuron_context, "setNeuronContext" },
         { zjs_pme_get_classifier_mode, "getClassifierMode" },
         { zjs_pme_set_classifier_mode, "setClassifierMode" },
         { zjs_pme_get_distance_mode, "getDistanceMode" },
