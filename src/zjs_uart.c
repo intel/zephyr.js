@@ -160,7 +160,7 @@ static int write_data(struct device *dev, const char *buf, int len)
         while (tx == false) {
             ;
         }
-        
+
         len -= sent;
         buf += sent;
         sent_total += sent;
