@@ -157,8 +157,10 @@ static int write_data(struct device *dev, const char *buf, int len)
             return sent_total;
         }
 
-        while (tx == false);
-
+        while (tx == false) {
+            ;
+        }
+        
         len -= sent;
         buf += sent;
         sent_total += sent;
