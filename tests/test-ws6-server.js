@@ -1,11 +1,16 @@
 // Copyright (c) 2017, Intel Corporation.
 
-// Run this test case and run ws client on linux by /tests/test-ws-client-node.js
+// Run this test case and run ws client on linux by /tools/test-ws6-client.js
 // If on a101, please connect client with Bluetooth
-// Add soft router on linux:
-//     ip -6 route add 2001:db8::/64 dev bt0
+//     Add soft router on linux:
+//         ip -6 route add 2001:db8::/64 dev bt0
+// If on K64f:
+//     Add soft router on linux:
+//         ip -6 route add 2001:db8::/64 dev eno1
+//     Add IPv6 addr on linux:
+//         ip -6 addr add 2001:db8::2/64 dev eno1
 
-console.log("Test web socket server APIs");
+console.log("Test web socket server APIs about IPv6");
 
 var WebSocket = require("ws");
 var assert = require("Assert.js");
