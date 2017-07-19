@@ -178,148 +178,6 @@ bool zjs_edit_js_func(zjs_callback_id id, jerry_value_t func)
     }
 }
 
-bool zjs_edit_callback_handle(zjs_callback_id id, void *handle)
-{
-    if (id >= 0 && cb_map[id]) {
-        LOCK();
-        cb_map[id]->handle = handle;
-        UNLOCK();
-        return true;
-    } else {
-        return false;
-    }
-}
-
-bool zjs_remove_callback_list_func(zjs_callback_id id, jerry_value_t js_func)
-{
-    if (id >= 0 && cb_map[id]) {
-        LOCK();
-        int i;
-        for (i = 0; i < cb_map[id]->num_funcs; ++i) {
-            if (js_func == cb_map[id]->func_list[i]) {
-                int j;
-                jerry_release_value(cb_map[id]->func_list[i]);
-                for (j = i; j < cb_map[id]->num_funcs - 1; ++j) {
-                    cb_map[id]->func_list[j] = cb_map[id]->func_list[j + 1];
-                }
-                cb_map[id]->num_funcs--;
-                cb_map[id]->func_list[cb_map[id]->num_funcs] = 0;
-                UNLOCK();
-                return true;
-            }
-        }
-        UNLOCK();
-    }
-    DBG_PRINT("could not remove callback %u\n", id);
-    return false;
-}
-
-int zjs_get_num_callbacks(zjs_callback_id id)
-{
-    if (id >= 0 && cb_map[id]) {
-        return cb_map[id]->num_funcs;
-    }
-    return 0;
-}
-
-jerry_value_t *zjs_get_callback_func_list(zjs_callback_id id, int *count)
-{
-    if (id >= 0) {
-        if (cb_map[id]) {
-            *count = cb_map[id]->num_funcs;
-            return cb_map[id]->func_list;
-        }
-    }
-    return NULL;
-}
-
-zjs_callback_id add_callback_list_priv(jerry_value_t js_func,
-                                       jerry_value_t this,
-                                       void *handle,
-                                       zjs_post_callback_func post,
-                                       zjs_callback_id id
-#ifdef DEBUG_BUILD
-                                       ,
-                                       const char *file,
-                                       const char *func)
-#else
-                                       )
-#endif
-{
-    if (id >= 0) {
-        if (cb_map[id] && cb_map[id]->func_list) {
-            LOCK();
-            // The function list is full, allocate more space, copy the existing
-            // list, and add the new function
-            if (cb_map[id]->num_funcs == cb_map[id]->max_funcs - 1) {
-                int i;
-                jerry_value_t *new_list = zjs_malloc((sizeof(jerry_value_t) *
-                   (cb_map[id]->max_funcs + CB_LIST_MULTIPLIER)));
-                for (i = 0; i < cb_map[id]->num_funcs; ++i) {
-                    new_list[i] = cb_map[id]->func_list[i];
-                }
-                new_list[cb_map[id]->num_funcs] = jerry_acquire_value(js_func);
-
-                cb_map[id]->max_funcs += CB_LIST_MULTIPLIER;
-                zjs_free(cb_map[id]->func_list);
-                cb_map[id]->func_list = new_list;
-            } else {
-                // Add function to list
-                cb_map[id]->func_list[cb_map[id]->num_funcs] =
-                    jerry_acquire_value(js_func);
-            }
-            // If not already set, set the handle/pre/post provided. These will
-            // only be set once, when the list is created.
-            if (!cb_map[id]->handle) {
-                cb_map[id]->handle = handle;
-            }
-            if (!cb_map[id]->post) {
-                cb_map[id]->post = post;
-            }
-            cb_map[id]->num_funcs++;
-            UNLOCK();
-            return cb_map[id]->id;
-        } else {
-            DBG_PRINT("list handle was NULL\n");
-            return -1;
-        }
-    } else {
-        LOCK();
-        zjs_callback_t *new_cb = zjs_malloc(sizeof(zjs_callback_t));
-        if (!new_cb) {
-            DBG_PRINT("error allocating space for new callback\n");
-            UNLOCK();
-            return -1;
-        }
-        memset(new_cb, 0, sizeof(zjs_callback_t));
-
-        SET_ONCE(new_cb->flags, 0);
-        SET_TYPE(new_cb->flags, CALLBACK_TYPE_JS);
-        SET_JS_TYPE(new_cb->flags, JS_TYPE_LIST);
-        new_cb->id = new_id();
-        new_cb->this = jerry_acquire_value(this);
-        new_cb->post = post;
-        new_cb->handle = handle;
-        new_cb->max_funcs = CB_LIST_MULTIPLIER;
-        new_cb->num_funcs = 1;
-        new_cb->func_list = zjs_malloc(sizeof(jerry_value_t) *
-                                       CB_LIST_MULTIPLIER);
-        if (!new_cb->func_list) {
-            DBG_PRINT("could not allocate function list\n");
-            UNLOCK();
-            return -1;
-        }
-        new_cb->func_list[0] = jerry_acquire_value(js_func);
-        cb_map[new_cb->id] = new_cb;
-
-#ifdef DEBUG_BUILD
-        set_info_string(cb_map[new_cb->id]->creator, file, func);
-#endif
-        UNLOCK();
-        return new_cb->id;
-    }
-}
-
 zjs_callback_id add_callback_priv(jerry_value_t js_func,
                                   jerry_value_t this,
                                   void *handle,
@@ -445,6 +303,7 @@ void signal_callback_priv(zjs_callback_id id,
     LOCK();
     DBG_PRINT("pushing item to ring buffer. id=%d, args=%p, size=%u\n", id,
               args, size);
+    ZJS_PRINT("&&&& CBSIZE: %d, MAP %p\n", cb_size, cb_map[id]);
     if (id < 0 || id >= cb_size || !cb_map[id]) {
         DBG_PRINT("callback ID %u does not exist\n", id);
         return;
@@ -547,6 +406,7 @@ void print_callbacks(void)
 
 void zjs_call_callback(zjs_callback_id id, const void *data, u32_t sz)
 {
+    ZJS_PRINT("----- cb_size: %d, map[id]: %p\n", cb_size, cb_map[id]);
     LOCK();
     if (id == -1 || id >= cb_size || !cb_map[id]) {
         ERR_PRINT("callback %d does not exist\n", id);

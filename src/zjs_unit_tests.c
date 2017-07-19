@@ -66,15 +66,6 @@ static void c_callback4(void *handle, const void *args)
     cb4_called = 1;
 }
 
-static u8_t handle_correct = 0;
-static void c_callback5(void *handle, const void *args)
-{
-    u32_t h = *((u32_t *)handle);
-    if (h == 0x44332211) {
-        handle_correct = 1;
-    }
-}
-
 static void test_c_callbacks()
 {
     zjs_init_callbacks();
@@ -124,15 +115,6 @@ static void test_c_callbacks()
     zjs_call_callback(id4, NULL, 0);
     zjs_assert(cb4_called, "zjs_call_callback()");
     zjs_remove_callback(id4);
-
-    // test zjs_edit_callback_handle()
-    u32_t h1 = 0x11223344;
-    u32_t h2 = 0x44332211;
-    zjs_callback_id id5 = zjs_add_c_callback((void *)&h1, c_callback5);
-    zjs_signal_callback(id5, NULL, 0);
-    zjs_edit_callback_handle(id5, (void *)&h2);
-    zjs_service_callbacks();
-    zjs_assert(handle_correct, "zjs_edit_callback_handle()");
 }
 
 static void test_hex_to_byte()

@@ -34,7 +34,6 @@ typedef struct {
 // properly cleaned up after the callback is made
 typedef struct {
     jerry_value_t uart_obj;
-    jerry_value_t buf_obj;
     char *buf;
     u32_t size;
     u32_t min;
@@ -97,11 +96,6 @@ static uart_handle *new_uart_handle(void)
     return h;
 }
 
-static void post_event(void *h)
-{
-    jerry_release_value(handle->buf_obj);
-}
-
 static void uart_c_callback(void *h, const void *args)
 {
     if (!handle) {
@@ -110,12 +104,11 @@ static void uart_c_callback(void *h, const void *args)
     }
     if (handle->size >= handle->min) {
         zjs_buffer_t *buffer;
-        handle->buf_obj = zjs_buffer_create(handle->size, &buffer);
+        ZVAL buf = zjs_buffer_create(handle->size, &buffer);
         if (buffer) {
             memcpy(buffer->buffer, args, handle->size);
         }
-        zjs_trigger_event_now(handle->uart_obj, "read", &handle->buf_obj, 1,
-                              post_event, NULL);
+        zjs_emit_event(handle->uart_obj, "read", &buf, 1);
 
         handle->size = 0;
     }
@@ -304,7 +297,7 @@ static ZJS_DECL_FUNC(uart_init)
 
     handle->uart_obj = jerry_create_object();
 
-    zjs_make_event(handle->uart_obj, zjs_uart_prototype);
+    zjs_make_event(handle->uart_obj, zjs_uart_prototype, NULL, NULL);
 
     read_id = zjs_add_c_callback(handle, uart_c_callback);
 

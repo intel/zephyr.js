@@ -9,6 +9,8 @@
 // Then you can use a websocket client samples/websockets/NodeWebsocketClient.js
 // to connect and interact with the server.
 
+console.log("WebSocketServer sample...");
+
 var WebSocket = require('ws');
 
 var wss = new WebSocket.Server({
@@ -36,7 +38,7 @@ wss.on('connection', function(ws) {
                 ws.ping(new Buffer("PING"));
             }
             count++;
-        }, 1000);
+        }, 100);
     });
     ws.on('ping', function(data) {
         console.log("PING: " + data.toString('ascii'));

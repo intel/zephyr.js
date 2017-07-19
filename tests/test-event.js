@@ -56,7 +56,7 @@ eventEmitter.emit("event_moreArg", eventArg[0], eventArg[1], eventArg[2],
                                    eventArg[15], eventArg[16], eventArg[17],
                                    eventArg[18], eventArg[19]);
 
-// set 10 listener on one event
+// set 10 listeners on one event
 function event_listener_1 () {};
 function event_listener_2 () {};
 function event_listener_3 () {};
@@ -88,7 +88,7 @@ assert(listenersName.length === 10,
 // test events name
 var eventsName;
 eventsName = eventEmitter.eventNames();
-assert((eventsName.length - 9) === 3, "event: get all events name");
+assert(eventsName.length === 3, "event: get all events name");
 
 // test remove all listeners
 var oldAllListenersNum, newAllListenersNum;

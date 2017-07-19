@@ -51,8 +51,9 @@ void zjs_net_config_default(void)
 #endif
 #ifdef CONFIG_NET_IPV6
         // 2001:db8::1
-        static struct in6_addr in6addr_my = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
-                                                  0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+        static struct in6_addr in6addr_my = { { { 0x20, 0x01, 0x0d, 0xb8,
+                                                  0, 0, 0, 0, 0, 0, 0, 0,
+                                                  0, 0, 0, 0x1 } } };
         net_if_ipv6_addr_add(net_if_get_default(), &in6addr_my, NET_ADDR_MANUAL, 0);
 #endif
         net_enabled = 1;
@@ -339,9 +340,9 @@ static void iface_event(struct net_mgmt_event_callback *cb,
         u32_t mgmt_event, struct net_if *iface)
 {
     if (mgmt_event & NET_EVENT_IF_UP) {
-        zjs_trigger_event(config, "netup", NULL, 0, NULL, NULL);
+        zjs_defer_emit_event(config, "netup", NULL, 0, NULL, NULL);
     } else if (mgmt_event & NET_EVENT_IF_DOWN) {
-        zjs_trigger_event(config, "netdown", NULL, 0, NULL, NULL);
+        zjs_defer_emit_event(config, "netdown", NULL, 0, NULL, NULL);
     }
 }
 
@@ -356,12 +357,12 @@ jerry_value_t zjs_net_config_init(void)
 #ifdef CONFIG_NET_L2_BLUETOOTH
     zjs_obj_add_function(config, set_ble_address, "setBleAddress");
 #endif
-    zjs_make_event(config, ZJS_UNDEFINED);
+    zjs_make_event(config, ZJS_UNDEFINED, NULL, NULL);
 
     struct net_if *iface = net_if_get_default();
     if (atomic_test_bit(iface->flags, NET_IF_UP)) {
         // networking is already up
-        zjs_trigger_event(config, "netup", NULL, 0, NULL, NULL);
+        zjs_defer_emit_event(config, "netup", NULL, 0, NULL, NULL);
     }
     // notify when networking goes up/down
     net_mgmt_init_event_callback(&cb, iface_event,

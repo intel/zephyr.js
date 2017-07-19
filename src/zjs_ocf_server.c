@@ -187,7 +187,7 @@ static jerry_value_t create_resource(const char *path,
     ZVAL properties = zjs_get_property(resource_init, "properties");
     zjs_set_property(res, "properties", properties);
 
-    DBG_PRINT("path=%s, obj number=%lu\n", path, res);
+    DBG_PRINT("path=%s, obj number=%x\n", path, res);
 
     return res;
 }
@@ -256,7 +256,7 @@ static ZJS_DECL_FUNC(ocf_respond)
     } else {
         oc_send_response(h->req, OC_STATUS_OK);
     }
-    DBG_PRINT("responding to method type=%u, properties=%lu\n", h->resp->method,
+    DBG_PRINT("responding to method type=%u, properties=%x\n", h->resp->method,
               data);
 
     jerry_value_t promise = jerry_create_promise();
@@ -296,11 +296,6 @@ static jerry_value_t create_request(struct server_resource *resource,
     return object;
 }
 
-static void post_get(void *handler)
-{
-    // ZJS_PRINT("POST GET\n");
-}
-
 static void ocf_get_handler(oc_request_t *request,
                             oc_interface_mask_t interface,
                             void *user_data)
@@ -318,16 +313,11 @@ static void ocf_get_handler(oc_request_t *request,
     ZVAL request_val = create_request(h->res, OC_GET, h);
     ZVAL flag = jerry_create_boolean(0);
 
-    jerry_value_t argv[2] = { request_val, flag };
-    zjs_trigger_event_now(h->res->object, "retrieve", argv, 2, post_get, h);
+    jerry_value_t argv[2] = {request_val, flag};
+    zjs_emit_event(h->res->object, "retrieve", argv, 2);
 
     zjs_free(h->resp);
     zjs_free(h);
-}
-
-static void post_put(void *handler)
-{
-    // ZJS_PRINT("POST PUT\n");
 }
 
 static void ocf_put_handler(oc_request_t *request,
@@ -350,8 +340,7 @@ static void ocf_put_handler(oc_request_t *request,
     zjs_set_property(request_val, "data", data_val);
 
     h->req = request;
-    zjs_trigger_event_now(h->res->object, "update", &request_val, 1, post_put,
-                          h);
+    zjs_emit_event(h->res->object, "update", &request_val, 1);
 
     DBG_PRINT("sent PUT response, code=CHANGED\n");
 
@@ -360,11 +349,6 @@ static void ocf_put_handler(oc_request_t *request,
 }
 
 #ifdef ZJS_OCF_DELETE_SUPPORT
-static void post_delete(void *handler)
-{
-    // ZJS_PRINT("POST DELETE\n");
-}
-
 static void ocf_delete_handler(oc_request_t *request,
                                oc_interface_mask_t interface,
                                void *user_data)
@@ -375,7 +359,8 @@ static void ocf_delete_handler(oc_request_t *request,
         ERR_PRINT("handler was NULL\n");
         return;
     }
-    zjs_trigger_event_now(h->res->object, "delete", NULL, 0, post_delete, h);
+
+    zjs_emit_event(h->res->object, "delete", NULL, 0);
 
     oc_send_response(request, OC_STATUS_DELETED);
 
@@ -590,9 +575,10 @@ jerry_value_t zjs_ocf_server_init()
     jerry_value_t server = jerry_create_object();
 
     zjs_obj_add_function(server, ocf_register, "register");
+    // FIXME: document this function if it's supposed to be here
     zjs_obj_add_function(server, ocf_notify, "notify");
 
-    zjs_make_event(server, ZJS_UNDEFINED);
+    zjs_make_event(server, ZJS_UNDEFINED, NULL, NULL);
 
     return server;
 }

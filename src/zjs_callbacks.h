@@ -34,35 +34,6 @@ typedef void (*zjs_c_callback_func)(void *handle, const void *args);
 void zjs_init_callbacks(void);
 
 /*
- * Get the number of callback functions registered to this ID
- *
- * @param id            ID of callback list
- *
- * @return              Number of functions in the callback list
- */
-int zjs_get_num_callbacks(zjs_callback_id id);
-
-/*
- * Get the list of callback functions in a callback list
- *
- * @param id            ID of callback list
- * @param count         Number of functions
- *
- * @return              Array of functions
- */
-jerry_value_t *zjs_get_callback_func_list(zjs_callback_id id, int *count);
-
-/*
- * Remove a function from a list of callbacks
- *
- * @param id            Callback ID for the list
- * @param js_func       JS function to remove from list
- *
- * @return              True if function was removed, false if it did not exist
- */
-bool zjs_remove_callback_list_func(zjs_callback_id id, jerry_value_t js_func);
-
-/*
  * Change a callbacks JS function
  *
  * @param id            ID of callback
@@ -71,16 +42,6 @@ bool zjs_remove_callback_list_func(zjs_callback_id id, jerry_value_t js_func);
  * @return              true if edit was successful
  */
 bool zjs_edit_js_func(zjs_callback_id id, jerry_value_t func);
-
-/*
- * Change a callback ID's native handle
- *
- * @param id            ID of callback
- * @param handle        New callback handle
- *
- * @return              true if edit was successful
- */
-bool zjs_edit_callback_handle(zjs_callback_id id, void *handle);
 
 /*
  * Remove a function that was registered by zjs_add_callback(). If you remove a
@@ -180,39 +141,6 @@ zjs_callback_id add_callback_priv(jerry_value_t js_func,
     add_callback_priv(func, this, handle, post, 0, __FILE__, __func__)
 #define zjs_add_callback_once(func, this, handle, post) \
     add_callback_priv(func, this, handle, post, 1, __FILE__, __func__);
-#endif
-
-zjs_callback_id add_callback_list_priv(jerry_value_t js_func,
-                                       jerry_value_t this,
-                                       void *handle,
-                                       zjs_post_callback_func post,
-                                       zjs_callback_id id
-#ifdef DEBUG_BUILD
-                                       ,
-                                       const char *file,
-                                       const char *func);
-#else
-                                       );
-#endif
-
-#ifndef DEBUG_BUILD
-/*
-* Create/add a function to a callback list. If the 'id' parameter is -1, a new
-* callback list will be created. If the 'id' parameter matches an existing
-* callback list, the JS callback function will be added to the list.
-*
-* @param js_func       JS function to be added to the callback list
-* @param handle        Module specific handle, given to pre/post
-* @param post          Function called after the JS function (explained above)
-* @param id            ID for this callback list (-1 if its a new list)
-*
-* @return              New callback ID for this list (or existing ID)
-*/
-#define zjs_add_callback_list(js_func, this, handle, post, id) \
-    add_callback_list_priv(js_func, this, handle, post, id)
-#else
-#define zjs_add_callback_list(js_func, this, handle, post, id) \
-    add_callback_list_priv(js_func, this, handle, post, id, __FILE__, __func__);
 #endif
 
 /*
