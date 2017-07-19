@@ -9,11 +9,10 @@ var file = "neurons.txt";
 
 var workState = function() {
     var state;
-    var category = pme.classify(classifys);
+    var category = pme.classify(classifications);
 
     if (category === pme.NO_MATCH) {
         category = "no match";
-
         state = false;
     } else if (category === 2) {
         state = true;
@@ -30,7 +29,7 @@ var trainings = [
     [30, 30, 30, 30, 30]
 ];
 
-var classifys = [50, 52, 54, 52, 50];
+var classifications = [50, 52, 54, 52, 50];
 
 pme.begin();
 
@@ -47,7 +46,7 @@ console.log("Saved " + neurons.length + " neurons to file '" + file +
 var workOnNormal = workState();
 
 pme.forget();
-console.log("Cleare neurons");
+console.log("Cleared neurons");
 
 var workOnForget = workState();
 
