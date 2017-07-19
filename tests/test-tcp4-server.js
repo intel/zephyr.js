@@ -1,17 +1,13 @@
 // Copyright (c) 2017, Intel Corporation.
 
 // Run this test case and run simple TCP client on linux
-//     TCP client: /tests/tools/test-tcp6-client.py
-// If on a101 using Bluetooth communication, please connect client with Bluetooth:
-//     Add soft router on linux:
-//         ip -6 route add 2001:db8::/64 dev bt0
-// If on K64f:
-//     Add soft router on linux:
-//         ip -6 route add 2001:db8::/64 dev eno1
-//     Add IPv6 address on linux:
-//         ip -6 addr add 2001:db8::2/64 dev eno1
+//     TCP client: /tests/tools/test-tcp4-client.py
+// Add soft router on linux:
+//     ip -4 route add 192.0.2.0/24 dev eno1
+// Add IPv4 address on linux:
+//     ip -4 addr add 192.0.2.2/24 dev eno1
 
-console.log("Test TCP server for IPv6 and socket connection");
+console.log("Test TCP server for IPv4 and socket connection");
 
 var net = require("net");
 var assert = require("Assert.js");
@@ -19,8 +15,8 @@ var assert = require("Assert.js");
 var IPv4Address = "192.0.2.1";
 var IPv6Address = "2001:db8::1";
 var noIPAddress = "InvalidIP";
-var IPv6Port = 9876;
-var IPv6Family = 6;
+var IPv4Port = 9876;
+var IPv4Family = 4;
 var IPResult1, IPResult2, IPResult3;
 var noIPAddresses = [
     1024,
@@ -80,7 +76,7 @@ assert(typeof serverA === "object" && serverA !== null,
 
 var listeningAFlag = serverA.listening;
 var listeningFlag = true;
-serverA.listen({port: 4242, host: IPv6Address, family: IPv6Family});
+serverA.listen({port: 4242, host: IPv4Address, family: IPv4Family});
 
 serverA.on("listening", function() {
     listeningFlag = false;
@@ -253,9 +249,9 @@ setTimeout(function() {
           "ServerObject: server is defined with callback function");
 
     var serverOptions = {
-        port: IPv6Port,
-        host: IPv6Address,
-        family: IPv6Family
+        port: IPv4Port,
+        host: IPv4Address,
+        family: IPv4Family
     }
     server.listen(serverOptions, function() {
         assert(true, "ServerObject: begin to listen with callback function");
@@ -292,11 +288,11 @@ setTimeout(function() {
         var Info = server.address();
         assert(typeof Info === "object" && Info !== null,
                "ServerObject: get server address information");
-        assert(typeof Info.port === "number" && Info.port === IPv6Port,
+        assert(typeof Info.port === "number" && Info.port === IPv4Port,
                "ServerObject: get server port as '" + Info.port + "'");
-        assert(typeof Info.address === "string" && Info.address === IPv6Address,
+        assert(typeof Info.address === "string" && Info.address === IPv4Address,
                "ServerObject: get server address as '" + Info.address + "'");
-        assert(typeof Info.family === "string" && Info.family === "IPv6",
+        assert(typeof Info.family === "string" && Info.family === "IPv4",
                "ServerObject: get server family as '" + Info.family + "'");
 
         console.log("server address information:");
@@ -304,16 +300,11 @@ setTimeout(function() {
         console.log("    server.port:", Info.port);
         console.log("    server.family:", Info.family);
 
-        console.log("TCP server listen: " + IPv6Address + ":" + IPv6Port);
-        console.log("If on a101 using Bluetooth communication," +
-                    " please connect client with Bluetooth:");
-        console.log("    Add soft router on linux:");
-        console.log("        ip -6 route add 2001:db8::/64 dev bt0");
-        console.log("If on K64f:");
-        console.log("    Add soft router on linux:");
-        console.log("        ip -6 route add 2001:db8::/64 dev eno1");
-        console.log("    Add IPv6 address on linux:");
-        console.log("        ip -6 addr add 2001:db8::2/64 dev eno1");
+        console.log("TCP server listen: " + IPv4Address + ":" + IPv4Port);
+        console.log("Add soft router on linux:");
+        console.log("    ip -4 route add 192.0.2.0/24 dev eno1");
+        console.log("Add IPv4 address on linux:");
+        console.log("    ip -4 addr add 192.0.2.2/24 dev eno1");
     });
 
     var errorFlag = true;
