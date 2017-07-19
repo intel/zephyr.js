@@ -415,9 +415,9 @@ void zjs_loop_init(void);
 // @param cmp_to        Value to compare node element to
 
 // Example:
-//    list_item_t *item = ZJS_FIND_NODE(list_item_t, my_list, value, 42);
+//    list_item_t *item = ZJS_LIST_FIND(list_item_t, my_list, value, 42);
 
-// The above will return a list item whos `value` parameter == 42
+// The above will return a list item whose `value` parameter == 42
 #define ZJS_LIST_FIND(type, list, cmp_element, cmp_to) \
     ({                                                 \
         type *found = NULL;                            \
@@ -432,10 +432,26 @@ void zjs_loop_init(void);
         found;                                         \
     })
 
+// Version that takes a function used to compare with a value
+#define ZJS_LIST_FIND_CMP(type, list, cmp_func, cmp_to) \
+    ({                                                  \
+        type *found = NULL;                             \
+        type *cur = list;                               \
+        while (cur) {                                   \
+            if (!cmp_func(cur, cmp_to)) {               \
+                found = cur;                            \
+                break;                                  \
+            }                                           \
+            cur = cur->next;                            \
+        }                                               \
+        found;                                          \
+    })
+
 // Append a new node to the end of a list
+// Note: The caller should have set the item's next pointer to NULL.
 // Example:
 //    list_item_t *item = new_list_item(...);
-//    ZJS_APPEND_NODE(list_item_t, my_list, item);
+//    ZJS_LIST_APPEND(list_item_t, my_list, item);
 #define ZJS_LIST_APPEND(type, list, p) \
     {                                  \
         type **pnext = &list;          \
@@ -448,7 +464,7 @@ void zjs_loop_init(void);
 // Prepend a new node to the beginning of a list
 // Example:
 //    list_item_t *item = new_list_item(...);
-//    ZJS_PREPEND_NODE(list_item_t, my_list, item);
+//    ZJS_LIST_PREPEND(list_item_t, my_list, item);
 #define ZJS_LIST_PREPEND(type, list, p) \
     {                                   \
         p->next = list;                 \
@@ -458,7 +474,7 @@ void zjs_loop_init(void);
 // Remove a node from a list. Returns 1 if the node was removed.
 // Example:
 //     void remove(list_item_t *to_remove) {
-//         ZJS_REMOVE_NODE(list_item_t, my_list, to_remove);
+//         ZJS_LIST_REMOVE(list_item_t, my_list, to_remove);
 //     }
 #define ZJS_LIST_REMOVE(type, list, p)   \
     ({                                   \
@@ -481,6 +497,7 @@ void zjs_loop_init(void);
 
 // Free and iterate over a linked list, calling a callback for each list item
 // and removing the current item at each iteration.
+// NOTE: The intent is that you supply the free function as callback
 #define ZJS_LIST_FREE(type, list, callback) \
     {                                       \
         while (list) {                      \
@@ -514,6 +531,18 @@ void zjs_loop_init(void);
             return zjs_error("handle was incorrect type");          \
         }                                                           \
         var = (type *)native;                                       \
+    }
+
+// Variant that sets var to NULL on error
+#define ZJS_GET_HANDLE_OR_NULL(obj, type, var, info)               \
+    type *var = NULL;                                              \
+    {                                                              \
+        void *native;                                              \
+        const jerry_object_native_info_t *tmp;                     \
+        if (jerry_get_object_native_pointer(obj, &native, &tmp) && \
+            tmp == &info) {                                        \
+            var = (type *)native;                                  \
+        }                                                          \
     }
 
 // FIXME: Quick hack to allow context into the regular macro while fixing build

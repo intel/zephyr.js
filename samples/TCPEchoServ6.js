@@ -38,7 +38,7 @@ var server = net.createServer(function(sock) {
     });
 });
 
-server.listen({port: 4242, host: '2001:db8::1', family: 6}, function() {
+server.listen({port: 4242, host: '::', family: 6}, function() {
     console.log("listening");
 });
 

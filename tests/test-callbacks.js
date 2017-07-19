@@ -65,20 +65,7 @@ setTimeout(function() {
         cb.signalCallback(12345);
         setTimeout(function() {
             assert(true, "with bad ID's didn't crash");
-            var list_id = cb.addCallbackList(callback_l1, {prop: "list"}, -1);
-            cb.addCallbackList(callback_l2, {prop: "list"}, list_id);
-            cb.addCallbackList(callback_l3, {prop: "list"}, list_id);
-            cb.signalCallback(list_id, "one", false, undefined, null, 42);
-            setTimeout(function() {
-                assert(list_count === 3, "all three list callbacks called");
-                cb.removeCallback(list_id);
-                cb.signalCallback(list_id, "one", "two", "three");
-                setTimeout(function() {
-                    assert(list_count === 3,
-                           "removed list callback didn't get called");
-                    assert.result();
-                }, 100);
-            }, 0);
+            assert.result();
         }, 0);
     }, 0);
 }, 0);

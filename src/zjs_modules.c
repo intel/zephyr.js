@@ -187,6 +187,9 @@ void zjs_modules_init()
     zjs_set_property(global_obj, "process", process);
 #endif
 
+    // initialize callbacks early in case any init functions use them
+    zjs_init_callbacks();
+
     // auto-load the events module without waiting for require(); needed so its
     //   init function will run before it's used by UART, etc.
     int modcount = sizeof(zjs_modules_array) / sizeof(module_t);
@@ -204,7 +207,6 @@ void zjs_modules_init()
         gbl_module_t *mod = &zjs_global_array[i];
         mod->init();
     }
-    zjs_init_callbacks();
     // initialize fixed modules
     zjs_error_init();
     zjs_timers_init();

@@ -12,16 +12,6 @@ static ZJS_DECL_FUNC(add_callback)
     return jerry_create_number(zjs_add_callback(argv[0], argv[1], NULL, NULL));
 }
 
-static ZJS_DECL_FUNC(add_callback_list)
-{
-    ZJS_VALIDATE_ARGS(Z_FUNCTION, Z_ANY, Z_NUMBER);
-
-    zjs_callback_id id = jerry_get_number_value(argv[2]);
-    zjs_callback_id new_id = zjs_add_callback_list(argv[0], argv[1], NULL,
-                                                   NULL, id);
-    return jerry_create_number(new_id);
-}
-
 static ZJS_DECL_FUNC(remove_callback)
 {
     ZJS_VALIDATE_ARGS(Z_NUMBER);
@@ -50,7 +40,6 @@ jerry_value_t zjs_test_callbacks_init(void)
     zjs_obj_add_function(cb_obj, add_callback, "addCallback");
     zjs_obj_add_function(cb_obj, signal_callback, "signalCallback");
     zjs_obj_add_function(cb_obj, remove_callback, "removeCallback");
-    zjs_obj_add_function(cb_obj, add_callback_list, "addCallbackList");
 
     return cb_obj;
 }

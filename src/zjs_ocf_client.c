@@ -34,6 +34,8 @@ typedef enum {
 #define FLAG_SLOW           1 << 2
 #define FLAG_SECURE         1 << 3
 
+jerry_value_t ocf_client = 0;
+
 struct client_resource {
     char *device_id;
     char *resource_path;
@@ -42,7 +44,6 @@ struct client_resource {
     jerry_value_t iface_array;
     oc_server_handle_t server;
     resource_state state;
-    jerry_value_t client;
     u32_t flags;
     u32_t error_code;
     struct client_resource *next;
@@ -152,7 +153,7 @@ static jerry_value_t get_props_from_response(oc_client_response_t *data)
         case INT:
             zjs_obj_add_number(prop_object, (double)rep->value.integer,
                                oc_string(rep->name));
-            DBG_PRINT("%ld\n", (u32_t)rep->value.integer);
+            DBG_PRINT("%d\n", rep->value.integer);
             break;
         case BYTE_STRING:
         case STRING:
@@ -194,7 +195,7 @@ static void print_props_data(oc_client_response_t *data)
             ZJS_PRINT("%d\n", rep->value.boolean);
             break;
         case INT:
-            ZJS_PRINT("%ld\n", (u32_t)rep->value.integer);
+            ZJS_PRINT("%d\n", rep->value.integer);
             break;
         case BYTE_STRING:
         case STRING:
@@ -260,48 +261,39 @@ static jerry_value_t create_resource(struct client_resource *client)
     zjs_set_property(resource, "resourceTypes", client->types_array);
     zjs_set_property(resource, "interfaces", client->iface_array);
 
-    DBG_PRINT("id=%s, path=%s, obj number=%lu\n", client->device_id,
+    DBG_PRINT("id=%s, path=%s, obj number=%x\n", client->device_id,
               client->resource_path, resource);
 
     return resource;
 }
 
-static void free_client(void *native_p)
+// a zjs_event_free callback
+static void client_free_cb(void *native)
 {
-    struct client_resource *client = (struct client_resource *)native_p;
-    if (client) {
-        struct client_resource *cur = resource_list;
-        while (cur->next) {
-            if (cur->next == client) {
-                cur->next = client->next;
-                break;
-            }
-            cur = cur->next;
+    struct client_resource *cur = resource_list;
+    while (cur) {
+        if (cur->device_id) {
+            zjs_free(cur->device_id);
         }
-        if (client->device_id) {
-            zjs_free(client->device_id);
+        if (cur->resource_type) {
+            zjs_free(cur->resource_type);
         }
-        if (client->resource_path) {
-            zjs_free(client->resource_path);
+        if (cur->resource_path) {
+            zjs_free(cur->resource_path);
         }
-        if (client->resource_type) {
-            zjs_free(client->resource_type);
-        }
-        jerry_release_value(client->types_array);
-        jerry_release_value(client->iface_array);
-        zjs_free(client);
+        jerry_release_value(cur->types_array);
+        jerry_release_value(cur->iface_array);
+        resource_list = resource_list->next;
+        zjs_free(cur);
+        cur = resource_list;
     }
 }
-
-static const jerry_object_native_info_t ocf_type_info = {
-   .free_cb = free_client
-};
 
 /*
  * Add a discovered resource to the list of resource_list
  */
 static void add_resource(char *id, char *type, char *path,
-                         jerry_value_t client, jerry_value_t listener)
+                         jerry_value_t listener)
 {
     struct client_resource *new = zjs_malloc(sizeof(struct client_resource));
 
@@ -309,6 +301,7 @@ static void add_resource(char *id, char *type, char *path,
     new->state = RES_STATE_SEARCHING;
 
     if (id) {
+        // FIXME: use strcpy instead of calling strlen 3x
         new->device_id = zjs_malloc(strlen(id) + 1);
         memcpy(new->device_id, id, strlen(id));
         new->device_id[strlen(id)] = '\0';
@@ -324,12 +317,8 @@ static void add_resource(char *id, char *type, char *path,
         new->resource_path[strlen(path)] = '\0';
     }
 
-    new->client = jerry_acquire_value(client);
-
-    jerry_set_object_native_pointer(client, new, &ocf_type_info);
-
-    if (!jerry_value_is_undefined(listener)) {
-        zjs_add_event_listener(new->client, "resourcefound", listener);
+    if (jerry_value_is_function(listener)) {
+        zjs_add_event_listener(ocf_client, "resourcefound", listener);
     }
 
     new->next = resource_list;
@@ -337,19 +326,20 @@ static void add_resource(char *id, char *type, char *path,
 }
 
 /*
- * Callback to observe, does not do anything currently
+ * Callback to observe
  */
 static void observe_callback(oc_client_response_t *data)
 {
     if (data && data->user_data) {
         struct client_resource *resource =
             (struct client_resource *)data->user_data;
-        ZVAL resource_val = create_resource(resource);
+        jerry_value_t resource_val = create_resource(resource);
         ZVAL properties_val = get_props_from_response(data);
-
         zjs_set_property(resource_val, "properties", properties_val);
-        zjs_trigger_event(resource->client, "update", &resource_val, 1, NULL,
-                          NULL);
+
+        zjs_defer_emit_event(ocf_client, "update", &resource_val,
+                             sizeof(resource_val), zjs_copy_arg,
+                             zjs_release_args);
 
 #ifdef DEBUG_BUILD
         print_props_data(data);
@@ -474,10 +464,12 @@ Found:
 
             // Work-around for #1332
             // Pass duplicate resource to trigger event and promise
-            ZVAL res = create_resource(cur);
+            jerry_value_t res = create_resource(cur);
             ZVAL res2 = create_resource(cur);
-            zjs_trigger_event(cur->client, "resourcefound", &res, 1, NULL,
-                              NULL);
+            // FIXME: see if we can do without the second one now with the
+            //   emit_event implementation
+            zjs_defer_emit_event(ocf_client, "resourcefound", &res,
+                                 sizeof(res), zjs_copy_arg, zjs_release_args);
             jerry_resolve_or_reject_promise(h->promise_obj, res2, true);
             jerry_release_value(h->promise_obj);
 
@@ -534,7 +526,7 @@ static ZJS_DECL_FUNC(ocf_find_resources)
         listener = argv[1];
     }
 
-    add_resource(device_id, resource_type, resource_path, this, listener);
+    add_resource(device_id, resource_type, resource_path, listener);
 
     if (device_id) {
         zjs_free(device_id);
@@ -760,8 +752,7 @@ static void ocf_get_platform_info_handler(oc_client_response_t *data)
 {
     if (data && data->user_data) {
         struct ocf_handler *h = (struct ocf_handler *)data->user_data;
-        struct client_resource *resource = h->res;
-        ZVAL platform_info = jerry_create_object();
+        jerry_value_t platform_info = jerry_create_object();
 
         /*
          * TODO: This while loop is repeated in several functions. It would be
@@ -779,7 +770,7 @@ static void ocf_get_platform_info_handler(oc_client_response_t *data)
                 DBG_PRINT("%d\n", rep->value.boolean);
                 break;
             case INT:
-                DBG_PRINT("%ld\n", (u32_t)rep->value.integer);
+                DBG_PRINT("%d\n", rep->value.integer);
                 break;
             case BYTE_STRING:
             case STRING:
@@ -838,8 +829,9 @@ static void ocf_get_platform_info_handler(oc_client_response_t *data)
             rep = rep->next;
         }
 
-        zjs_trigger_event(resource->client, "platformfound", &platform_info, 1,
-                          NULL, NULL);
+        zjs_defer_emit_event(ocf_client, "platformfound", &platform_info,
+                             sizeof(platform_info), zjs_copy_arg,
+                             zjs_release_args);
         jerry_resolve_or_reject_promise(h->promise_obj, platform_info, true);
         jerry_release_value(h->promise_obj);
     }
@@ -881,7 +873,7 @@ static void ocf_get_device_info_handler(oc_client_response_t *data)
     if (data && data->user_data) {
         struct ocf_handler *h = (struct ocf_handler *)data->user_data;
         struct client_resource *resource = h->res;
-        ZVAL device_info = jerry_create_object();
+        jerry_value_t device_info = jerry_create_object();
 
         /*
          * TODO: This while loop is repeated in several functions. It would be
@@ -899,7 +891,7 @@ static void ocf_get_device_info_handler(oc_client_response_t *data)
                 DBG_PRINT("%d\n", rep->value.boolean);
                 break;
             case INT:
-                DBG_PRINT("%ld\n", (u32_t)rep->value.integer);
+                DBG_PRINT("%d\n", rep->value.integer);
                 break;
             case BYTE_STRING:
             case STRING:
@@ -946,8 +938,9 @@ static void ocf_get_device_info_handler(oc_client_response_t *data)
             rep = rep->next;
         }
 
-        zjs_trigger_event(resource->client, "devicefound", &device_info, 1,
-                          NULL, NULL);
+        zjs_defer_emit_event(ocf_client, "devicefound", &device_info,
+                             sizeof(device_info), zjs_copy_arg,
+                             zjs_release_args);
         jerry_resolve_or_reject_promise(h->promise_obj, device_info, true);
         jerry_release_value(h->promise_obj);
     }
@@ -986,36 +979,28 @@ static ZJS_DECL_FUNC(ocf_get_device_info)
 
 jerry_value_t zjs_ocf_client_init()
 {
-    jerry_value_t ocf_client = jerry_create_object();
+    // create Client API object
+    if (ocf_client) {
+        return jerry_acquire_value(ocf_client);
+    }
 
+    ocf_client = jerry_create_object();
     zjs_obj_add_function(ocf_client, ocf_find_resources, "findResources");
     zjs_obj_add_function(ocf_client, ocf_retrieve, "retrieve");
     zjs_obj_add_function(ocf_client, ocf_update, "update");
     zjs_obj_add_function(ocf_client, ocf_get_platform_info, "getPlatformInfo");
     zjs_obj_add_function(ocf_client, ocf_get_device_info, "getDeviceInfo");
 
-    zjs_make_event(ocf_client, ZJS_UNDEFINED);
+    zjs_make_event(ocf_client, ZJS_UNDEFINED, NULL, client_free_cb);
 
-    return ocf_client;
+    return jerry_acquire_value(ocf_client);
 }
 
 void zjs_ocf_client_cleanup()
 {
-    if (resource_list) {
-        struct client_resource *cur = resource_list;
-        while (cur) {
-            if (cur->resource_type) {
-                zjs_free(cur->resource_type);
-            }
-            if (cur->resource_path) {
-                zjs_free(cur->resource_path);
-            }
-            jerry_release_value(cur->client);
-            resource_list = resource_list->next;
-            zjs_free(cur);
-            cur = resource_list;
-        }
-    }
+    // the ocf client object going out of scope will clean up everything
+    jerry_release_value(ocf_client);
+    ocf_client = 0;
 }
 
 #endif  // BUILD_MODULE_OCF
