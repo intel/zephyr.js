@@ -5,7 +5,10 @@
 console.log("SPI test starting..");
 try {
     var spi = require("spi");
-    var spiBus1 = spi.open({speed:20000, bus:1, polarity:0, phase:0, bits:16});
+    var board = require('board');
+    // Arduino 101 uses SPI_1 while FRDM_K64F uses SPI_0
+    var busNum = board.name === "arduino_101" ? 1 : 0;
+    var spiBus1 = spi.open({speed:20000, bus:busNum, polarity:0, phase:0, bits:16});
 
     var buffer = spiBus1.transceive(1, "Hello World\0");
     console.log("From SPI device 1: " + buffer.toString('hex'));
@@ -27,7 +30,7 @@ try {
     buffer = spiBus1.transceive(1, [1, 2, 3, 4]);
 
     // Open again
-    spiBus1 = spi.open({speed:20000, bus:1, polarity:0, phase:0, bits:8});
+    spiBus1 = spi.open({speed:20000, bus:busNum, polarity:0, phase:0, bits:8});
     buffer = spiBus1.transceive(1, [1, 2, 3, 4]);
     console.log("From SPI device 1: " + buffer.toString('hex'));
 } catch (err) {
