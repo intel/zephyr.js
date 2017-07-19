@@ -53,9 +53,9 @@ server.register(resourceInit).then(function(resource) {
     });
     server.on("update", function(request) {
         console.log("on('update'): request.target.resourcePath=" + request.target.resourcePath);
-        if (request.resource.properties) {
-            console.log("properties.state=" + request.resource.properties.state);
-            MyProperties.state = request.resource.properties.state;
+        if (request.data.properties) {
+            console.log("properties.state=" + request.data.properties.state);
+            MyProperties.state = request.data.properties.state;
         } else {
             console.log("request.properties does not exist");
         }

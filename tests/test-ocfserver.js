@@ -93,13 +93,12 @@ function check_attribute(attribute, attributeName, type, attributeValue) {
            " as '" + attributeValue + "'");
 }
 
-var retrieveFlage = true;
-var RetrieveStrFlage = true;
-var RetrieveStateFlage = true;
-var RetrieveNumFlage = true;
-var RetrieveInvalidFlage = true;
+var retrieveFlag = true;
+var retrieveStrFlag = true;
+var retrieveStateFlag = true;
+var retrieveNumFlag = true;
 function onRetrieve(request, observe) {
-    if (retrieveFlage) {
+    if (retrieveFlag) {
         assert(typeof request === "object" && !!request &&
                typeof observe === "boolean" && observe !== null,
                "OCFServer: callback for event 'retrieve'");
@@ -108,7 +107,7 @@ function onRetrieve(request, observe) {
                request.target.resourcePath !== undefined,
                "OCFServer: request target/destination resource");
 
-        retrieveFlage = false;
+        retrieveFlag = false;
     }
 
     console.log("on('retrieve'): request.target.resourcePath = " +
@@ -118,18 +117,18 @@ function onRetrieve(request, observe) {
         console.log("retrieve properties.str = " + TestPropertiesStr.str);
 
         request.respond(TestPropertiesStr).then(function() {
-            if (RetrieveStrFlage) {
+            if (retrieveStrFlag) {
                 assert(true, "OCFServer: respond for event " +
                        "'retrieve' with 'string'");
 
-                RetrieveStrFlage = false;
+                retrieveStrFlag = false;
             }
         }).catch(function(error) {
-            if (RetrieveStrFlage) {
+            if (retrieveStrFlag) {
                 assert(false, "OCFServer: respond for event " +
                        "'retrieve' with 'string'");
 
-                RetrieveStrFlage = false;
+                retrieveStrFlag = false;
             }
         });
     } else if (request.target.resourcePath === "/test/state") {
@@ -137,36 +136,36 @@ function onRetrieve(request, observe) {
                     TestPropertiesState.state);
 
         request.respond(TestPropertiesState).then(function() {
-            if (RetrieveStateFlage) {
+            if (retrieveStateFlag) {
                 assert(true, "OCFServer: respond for event " +
                        "'retrieve' with 'boolean'");
 
-                RetrieveStateFlage = false;
+                retrieveStateFlag = false;
             }
         }).catch(function(error) {
-            if (RetrieveStateFlage) {
+            if (retrieveStateFlag) {
                 assert(false, "OCFServer: respond for event " +
                        "'retrieve' with 'boolean'");
 
-                RetrieveStateFlage = false;
+                retrieveStateFlag = false;
             }
         });
     } else if (request.target.resourcePath === "/test/num") {
         console.log("retrieve properties.num = " + TestPropertiesNum.num);
 
         request.respond(TestPropertiesNum).then(function() {
-            if (RetrieveNumFlage) {
+            if (retrieveNumFlag) {
                 assert(true, "OCFServer: respond for event " +
                        "'retrieve' with 'number'");
 
-                RetrieveNumFlage = false;
+                retrieveNumFlag = false;
             }
         }).catch(function(error) {
-            if (RetrieveNumFlage) {
+            if (retrieveNumFlag) {
                 assert(false, "OCFServer: respond for event " +
                        "'retrieve' with 'number'");
 
-                RetrieveNumFlage = false;
+                retrieveNumFlag = false;
             }
         });
 
@@ -181,33 +180,33 @@ function onRetrieve(request, observe) {
 
 }
 
-var updateFlage = true;
+var updateFlag = true;
 var respondData;
 function onUpdate(request) {
-    if (updateFlage) {
+    if (updateFlag) {
         assert(typeof request === "object" && !!request,
                "OCFServer: callback for event 'update'");
 
-        assert(typeof request.resource.properties === "object" &&
-               request.resource.properties !== undefined,
+        assert(typeof request.data.properties === "object" &&
+               request.data.properties !== undefined,
                "OCFServer: request source/origin resource");
     }
 
     console.log("on('update'): request.target.resourcePath = " +
                 request.target.resourcePath);
 
-    if (request.resource.properties) {
+    if (request.data.properties) {
         if (TestPropertiesState.state !== undefined &&
-            request.resource.properties.state !== undefined) {
-            TestPropertiesState.state = request.resource.properties.state;
+            request.data.properties.state !== undefined) {
+            TestPropertiesState.state = request.data.properties.state;
             respondData = TestPropertiesState;
 
             console.log("update properties.state = " + TestPropertiesState.state);
         }
 
         if (TestPropertiesNum.num !== undefined &&
-            request.resource.properties.num !== undefined) {
-            TestPropertiesNum.num = request.resource.properties.num;
+            request.data.properties.num !== undefined) {
+            TestPropertiesNum.num = request.data.properties.num;
 
             respondData = TestPropertiesNum;
 
@@ -216,16 +215,16 @@ function onUpdate(request) {
     }
 
     request.respond(respondData).then(function() {
-        if (updateFlage) {
+        if (updateFlag) {
             assert(true, "OCFServer: respond for event 'update'");
 
-            updateFlage = false;
+            updateFlag = false;
         }
     }).catch(function(error) {
-        if (updateFlage) {
+        if (updateFlag) {
             assert(false, "OCFServer: respond for event 'update'");
 
-            updateFlage = false;
+            updateFlag = false;
         }
     });
 }

@@ -344,10 +344,10 @@ static void ocf_put_handler(oc_request_t *request,
 
     ZVAL request_val = create_request(h->res, OC_PUT, h);
     ZVAL props_val = request_to_jerry_value(request);
-    ZVAL resource_val = jerry_create_object();
+    ZVAL data_val = jerry_create_object();
 
-    zjs_set_property(resource_val, "properties", props_val);
-    zjs_set_property(request_val, "resource", resource_val);
+    zjs_set_property(data_val, "properties", props_val);
+    zjs_set_property(request_val, "data", data_val);
 
     h->req = request;
     zjs_trigger_event_now(h->res->object, "update", &request_val, 1, post_put,
