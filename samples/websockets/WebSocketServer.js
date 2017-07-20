@@ -24,12 +24,13 @@ var wss = new WebSocket.Server({
 });
 
 var count = 0;
+var t = null;
 
 wss.on('connection', function(ws) {
     console.log("CONNECTION");
     ws.on('message', function(message) {
         console.log("MESSAGE: " + message.toString('ascii'));
-        setTimeout(function() {
+        t = setTimeout(function() {
             ws.send(new Buffer("A MESSAGE"), true);
             if (count % 10 == 0) {
                 ws.ping(new Buffer("PING"));
@@ -46,8 +47,10 @@ wss.on('connection', function(ws) {
     });
     ws.on('close', function(code, reason) {
         console.log("close event: " + reason);
+        clearTimeout(t);
     });
     ws.on('error', function(error) {
         console.log(error.name + " : " + error.message);
+        clearTimeout(t);
     });
 });
