@@ -175,8 +175,6 @@ static void tcp_send(struct net_context *context, void *data, u32_t len)
         net_pkt_unref(send_pkt);
         return;
     }
-
-    net_pkt_unref(send_pkt);
 }
 
 // generate an accept key given an input key
