@@ -445,7 +445,7 @@ void signal_callback_priv(zjs_callback_id id,
     LOCK();
     DBG_PRINT("pushing item to ring buffer. id=%d, args=%p, size=%u\n", id,
               args, size);
-    if (id < 0 || id > cb_size || !cb_map[id]) {
+    if (id < 0 || id >= cb_size || !cb_map[id]) {
         DBG_PRINT("callback ID %u does not exist\n", id);
         return;
     }
@@ -548,7 +548,7 @@ void print_callbacks(void)
 void zjs_call_callback(zjs_callback_id id, const void *data, u32_t sz)
 {
     LOCK();
-    if (id == -1 || id > cb_size || !cb_map[id]) {
+    if (id == -1 || id >= cb_size || !cb_map[id]) {
         ERR_PRINT("callback %d does not exist\n", id);
     } else if (GET_CB_REMOVED(cb_map[id]->flags)) {
         DBG_PRINT("callback %d has already been removed\n", id);
