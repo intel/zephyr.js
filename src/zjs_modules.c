@@ -147,6 +147,21 @@ static ZJS_DECL_FUNC(stop_js_handler)
     return ZJS_UNDEFINED;
 }
 
+#ifdef ZJS_LINUX_BUILD
+static ZJS_DECL_FUNC(process_exit)
+{
+    ZJS_VALIDATE_ARGS(Z_OPTIONAL Z_NUMBER);
+
+    int status = 0;
+
+    if (argc > 0) {
+        status = jerry_get_number_value(argv[0]);
+    }
+    ZJS_PRINT("Exiting with code=%d\n", status);
+    exit(status);
+}
+#endif
+
 void zjs_modules_init()
 {
     // Add module.exports to global namespace
@@ -165,6 +180,12 @@ void zjs_modules_init()
 
     // create the C handler for require JS call
     zjs_obj_add_function(global_obj, native_require_handler, "require");
+
+#ifdef ZJS_LINUX_BUILD
+    ZVAL process = jerry_create_object();
+    zjs_obj_add_function(process, process_exit, "exit");
+    zjs_set_property(global_obj, "process", process);
+#endif
 
     // auto-load the events module without waiting for require(); needed so its
     //   init function will run before it's used by UART, etc.
