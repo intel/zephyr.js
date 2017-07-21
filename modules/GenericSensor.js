@@ -105,10 +105,6 @@ function GenericSensor() {
                            sensor.illuminance !== null,
                            "sensor: reading value for '" + sensorType + "'");
 
-                    assert(sensor.controller === "ADC_0",
-                           "sensor: controller name as default");
-                    console.log("sensor.controller : " + sensor.controller);
-
                     middleNum = sensor.illuminance;
                     sensor.illuminance = middleNum + 1;
                     assert(sensor.illuminance === middleNum,
@@ -117,7 +113,8 @@ function GenericSensor() {
                     console.log("sensor.timestamp: " + sensor.timestamp);
                     console.log(sensorType + ": " + sensor.illuminance);
                 } else if (sensorType === "Accelerometer" ||
-                           sensorType === "Gyroscope") {
+                           sensorType === "Gyroscope" ||
+                           sensorType === "Magnetometer") {
                     assert(typeof sensor.x === "number" &&
                            sensor.x !== null &&
                            typeof sensor.y === "number" &&
@@ -125,10 +122,6 @@ function GenericSensor() {
                            typeof sensor.z === "number" &&
                            sensor.z !== null,
                            "sensor: reading value for '" + sensorType + "'");
-
-                    assert(sensor.controller === "bmi160",
-                           "sensor: controller name as default");
-                    console.log("sensor.controller : " + sensor.controller);
 
                     middleNumX = sensor.x;
                     sensor.x = middleNumX + 1;
@@ -150,10 +143,6 @@ function GenericSensor() {
                     assert(typeof sensor.celsius === "number" &&
                            sensor.celsius !== null,
                            "sensor: reading value for '" + sensorType + "'");
-
-                    assert(sensor.controller === "bmi160",
-                           "sensor: controller name as default");
-                    console.log("sensor.controller : " + sensor.controller);
 
                     middleNum = sensor.celsius;
                     sensor.celsius = middleNum + 1;
