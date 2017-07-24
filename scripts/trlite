@@ -286,15 +286,15 @@ if [ "$RUN" == "all" -o "$RUN" == "1" ]; then
 
     MODULES=(aio arduino101_pins ble dgram events gpio grove_lcd i2c \
              performance pwm uart)
-    SENSORS=(Accelerometer Gyroscope AmbientLightSensor TemperatureSensor)
+    SENSORS=(Accelerometer AmbientLightSensor Gyroscope Magnetometer TemperatureSensor)
     write_modules_test $TMPFILE $MODULES $SENSORS
 
     # also, try printing a float w/o PRINT_FLOAT
     echo "console.log(3.14159);" >> $TMPFILE
     try_command "modules" make $VERBOSE JS=$TMPFILE ROM=256
 
-    MODULES=(net ws)
-    write_modules_test $TMPFILE $MODULES $SENSORS
+    MODULES=(net pme ws)
+    write_modules_test $TMPFILE $MODULES
 
     # also, try printing a float w/ PRINT_FLOAT
     echo "console.log(3.14159);" >> $TMPFILE
