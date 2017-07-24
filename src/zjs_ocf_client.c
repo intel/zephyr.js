@@ -923,6 +923,10 @@ static void ocf_get_device_info_handler(oc_client_response_t *data)
                     zjs_obj_add_string(device_info,
                                        oc_string(rep->value.string),
                                        "coreSpecVersion");
+                } else if (strcmp(oc_string(rep->name), "dmv") == 0) {
+                    zjs_obj_add_string(device_info,
+                                       oc_string(rep->value.string),
+                                       "dataModels");
                 }
                 DBG_PRINT("%s\n", oc_string(rep->value.string));
                 break;
