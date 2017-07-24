@@ -255,7 +255,7 @@ def parse_json_tree(file, dlist, zlist, zjslist, jrslist, srclist, tree,
             if re.search(r"%s\." % tree[i]['object'], text):
                 merge_lists(zjslist, tree[i]['zjs_config'])
                 merge_lists(srclist, tree[i]['src'])
-                dlist.append(tree[i]['object'])
+                dlist.append(tree[i]['module'])
 
     # Get any deps for the board
     parse_json_tree_helper(text, board, dlist, zlist, zjslist, jrslist,
