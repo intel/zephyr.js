@@ -101,6 +101,7 @@ interface Resource {
 interface Request {
     OCFResource target;       // Target/destination resource
     OCFResource source;       // Source/origin resource
+    object data;              // resource representation
     Promise<void> respond(object data);
 };
 
