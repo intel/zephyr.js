@@ -79,8 +79,9 @@ static ZJS_DECL_FUNC(zjs_spi_transceive)
     zjs_buffer_t *rx_buf = NULL;
     jerry_value_t rx_buf_obj = jerry_create_null();
     jerry_value_t tx_buf_obj;
-
-    if (spi_slave_select(handle->spi_device, jerry_get_number_value(argv[0]))) {
+    u32_t slave_num = (u32_t)jerry_get_number_value(argv[0]);
+    // Valid numbers are 0 thru 127
+    if (slave_num > 127 || spi_slave_select(handle->spi_device, slave_num)) {
         return zjs_error("SPI slave select failed\n");
     }
 
