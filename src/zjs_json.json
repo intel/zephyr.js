@@ -1,6 +1,6 @@
 {
     "module": "json",
-    "object": "JSON",
+    "object": "json",
     "zjs_config": [],
     "src": [],
     "jrs_config": ["CONFIG_DISABLE_JSON_BUILTIN"]
