@@ -15,17 +15,17 @@ try {
 
     var spiBus = spi.open({speed:20000, bus:busNum, polarity:0, phase:0, bits:16});
     var buffer = spiBus.transceive(deviceNum, "Hello World\0");
-    console.log("From SPI device " + deviceNum+ ": " + buffer.toString('hex'));
+    console.log("From SPI device " + deviceNum + ": " + buffer.toString('hex'));
 
     buffer = spiBus.transceive(deviceNum, [1, 2, 3, 4]);
-    console.log("From SPI device " + deviceNum+ ": " + buffer.toString('hex'));
+    console.log("From SPI device " + deviceNum + ": " + buffer.toString('hex'));
 
     var bufobj = new Buffer("Hello World\0");
     buffer = spiBus.transceive(deviceNum, bufobj);
-    console.log("From SPI device " + deviceNum+ ": " + buffer.toString('hex'));
+    console.log("From SPI device " + deviceNum + ": " + buffer.toString('hex'));
 
     buffer = spiBus.transceive(deviceNum, new Buffer([1, 2, 3, 4]));
-    console.log("From SPI device " + deviceNum+ ": " + buffer.toString('hex'));
+    console.log("From SPI device " + deviceNum + ": " + buffer.toString('hex'));
 
     spiBus.close();
     console.log("Closed");
@@ -36,7 +36,7 @@ try {
     // Open again
     spiBus = spi.open({speed:20000, bus:busNum, polarity:0, phase:0, bits:8});
     buffer = spiBus.transceive(deviceNum, [1, 2, 3, 4]);
-    console.log("From SPI device " + deviceNum+ ": " + buffer.toString('hex'));
+    console.log("From SPI device " + deviceNum + ": " + buffer.toString('hex'));
 } catch (err) {
   console.log("SPI error: " + err.message);
 }
