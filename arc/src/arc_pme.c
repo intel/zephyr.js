@@ -137,32 +137,6 @@ void arc_handle_pme(struct zjs_ipm_message *msg)
         msg->data.pme.g_context = curie_pme_get_global_context();
         DBG_PRINT("global context: %d\n", msg->data.pme.g_context);
         break;
-    case TYPE_PME_SET_GLOBAL_CONTEXT:
-        // valid range is 1-127
-        if (msg->data.pme.g_context < 1 || msg->data.pme.g_context > 127) {
-            ERR_PRINT("context range has to be 1-127\n");
-            ipm_send_error(msg, ERROR_IPM_INVALID_PARAMETER);
-            return;
-        }
-
-        curie_pme_set_global_context(msg->data.pme.g_context);
-        DBG_PRINT("global context: %d\n", msg->data.pme.g_context);
-        break;
-    case TYPE_PME_GET_NEURON_CONTEXT:
-        msg->data.pme.n_context = curie_pme_get_neuron_context();
-        DBG_PRINT("neuron context: %d\n", msg->data.pme.n_context);
-        break;
-    case TYPE_PME_SET_NEURON_CONTEXT:
-        // valid range is 1-127
-        if (msg->data.pme.n_context < 1 || msg->data.pme.n_context > 127) {
-            ERR_PRINT("context range has to be 1-127\n");
-            ipm_send_error(msg, ERROR_IPM_INVALID_PARAMETER);
-            return;
-        }
-
-        curie_pme_set_neuron_context(msg->data.pme.n_context);
-        DBG_PRINT("neuron context: %d\n", msg->data.pme.n_context);
-        break;
     case TYPE_PME_GET_CLASSIFIER_MODE:
         msg->data.pme.c_mode = curie_pme_get_classifier_mode();
         DBG_PRINT("classifier mode: %d\n", msg->data.pme.c_mode);

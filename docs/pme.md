@@ -51,9 +51,6 @@ interface PME {
     writeVector(number[] pattern);
     unsigned short getCommittedCount();
     unsigned short getGlobalContext();
-    setGlobalContext(unsigned short context);
-    unsigned short getNeuronContext();
-    setNeuronContext(unsigned short context);
     unsigned short getClassifierMode();
     setClassifierMode(unsigned short mode);
     unsigned short getDistanceMode();
@@ -173,30 +170,6 @@ Returns the number of comitted neurons in the network (a value between 0-128).
 Reads the Global Context Register.
 
 Returns the contents of the Global Context Register (a value between 0-127).
-
-### PME.setGlobalContext
-
-`void setGlobalContext(unsigned short context);`
-
-Writes a value to the Global Context Register.
-
-The `context` is valid context value range between 1-127. A context value of 0 enables all neurons, with no regard to their context.
-
-### PME.getNeuronContext
-
-`unsigned short getNeuronContext();`
-
-Reads the Neuron Context Register.
-
-Returns the contents of the Neuron Context Register (a value between 0-127).
-
-### PME.setNeuronContext
-
-`void setNeuronContext(unsigned short context);`
-
-Writes a value to the Neuron Context Register.
-
-The `context` is valid context value range between 1-127. A context value of 0 enables all neurons, with no regard to their context.
 
 ### PME.getClassifierMode
 
