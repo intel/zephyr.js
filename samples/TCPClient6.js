@@ -11,15 +11,15 @@
 //
 // Note: There is some weirdness with network clients on Zephyr. There seems to
 //       be an issue with trying to connect before the bluetooth interface has
-//       come up. This is why we have the net.onup event, which is not part of
-//       the node.js spec. This sample also does not issue the first connect
-//       until 10 seconds after you make the BLE connection. This is done to
-//       give you enough time to setup the IP route and start the TCP server
-//       on the host (e.g. Linux) side.
+//       come up. This is why we have the netup event. This sample also does
+//       not issue the first connect until 10 seconds after you make the BLE
+//       connection. This is done to give you enough time to setup the IP route
+//       and start the TCP server on the host (e.g. Linux) side.
 
 var net = require('net');
+var net_cfg = require('net-config');
 
-net.on('up', function() {
+net_cfg.on('netup', function() {
 	console.log("network up");
 	setTimeout(function() {
 		console.log("starting client");

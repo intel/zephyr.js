@@ -13,6 +13,7 @@ console.log("Test socket connection as TCP client for IPv6");
 var net = require("net");
 var board = require("board");
 var assert = require("Assert.js");
+var net_cfg = require("net-config");
 
 var IPv6Address = "2001:db8::2";
 var IPv6Port = 9876;
@@ -103,7 +104,7 @@ if (board.name === "frdm_k64f") {
         });
     }, 30000);
 } else {
-    net.on("up", function() {
+    net_cfg.on("netup", function() {
         assert(true, "NetEvent: be called as 'up' event");
         console.log("TCP client will be connecting after 30s");
 

@@ -21,8 +21,6 @@ specific API functions.
 // var net = require('net');
 
 interface Net {
-    // Net events
-    onup();
     // create a server object
     Server createServer(callback onconnection);
     // Socket constructor, create a new Socket
@@ -89,13 +87,6 @@ dictionary AddressInfo {
 
 API Documentation
 -----------------
-### Net.onup Event
-`void onup(void);`
-
-This event is emitted when the underlying network interface comes online. This
-is only relevant (currently) when using 6lowpan. This event is not part of the
-Node.js spec, and was added because in the 6lowpan case you do not want to
-start making TCP calls until the other end of the BLE connection has connected.
 
 ### Net.createServer
 `Server createServer(callback onconnection)`
