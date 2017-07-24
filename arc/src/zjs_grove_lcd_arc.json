@@ -1,10 +1,10 @@
 {
     "module": "grove_lcd_arc",
     "require": "grove_lcd",
-    "depends": ["ipm_arc", "i2c_arc"],
+    "depends": ["ipm_arc"],
     "targets": ["arc"],
     "zephyr_conf": {
-        "all": [
+        "arc": [
             "CONFIG_I2C=y",
             "CONFIG_GROVE=y",
             "CONFIG_GROVE_LCD_RGB=y",
