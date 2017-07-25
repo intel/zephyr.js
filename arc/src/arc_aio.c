@@ -54,7 +54,7 @@ void arc_aio_cleanup()
 u32_t arc_pin_read(u8_t pin)
 {
     struct adc_seq_entry entry = {
-        .sampling_delay = 12,
+        .sampling_delay = 30,
         .channel_id = pin,
         .buffer = seq_buffer,
         .buffer_length = ADC_BUFFER_SIZE,
