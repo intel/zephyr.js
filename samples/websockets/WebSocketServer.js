@@ -36,6 +36,7 @@ wss.on('connection', function(ws) {
                 ws.ping(new Buffer("PING"));
             }
             count++;
+            clearTimeout(t);
         }, 1000);
     });
     ws.on('ping', function(data) {
