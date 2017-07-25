@@ -63,8 +63,6 @@ initialize. The Arduino 101, for example, should be "tty0".
 `void write(Buffer data);`
 
 Write data out to the UART TX line. `data` is a string that will be written.
-Returned is a Promise that, on success will be void, and upon error will contain
-an `Error` object with a name and message for the error.
 
 ### UARTConnection.setReadRange
 
