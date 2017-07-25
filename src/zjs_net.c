@@ -204,27 +204,15 @@ static void post_closed(void *handle)
     sock_handle_t *h = (sock_handle_t *)handle;
     if (h) {
         net_handle_t *net = h->handle;
-        sock_handle_t *cur = opened_sockets;
-        if (cur->next == NULL) {
-            opened_sockets = NULL;
-            net_context_put(cur->tcp_sock);
-            jerry_release_value(cur->socket);
-            zjs_free(cur->rbuf);
-            zjs_free(cur);
-            DBG_PRINT("Freed socket: opened_sockets=%p\n", opened_sockets);
-        } else {
-            while (cur->next) {
-                if (cur->next == h) {
-                    cur->next = cur->next->next;
-                    net_context_put(cur->tcp_sock);
-                    jerry_release_value(cur->socket);
-                    zjs_free(cur->rbuf);
-                    zjs_free(cur);
-                    DBG_PRINT("Freed socket: opened_sockets=%p\n",
-                              opened_sockets);
-                }
-            }
+        if (ZJS_LIST_REMOVE(sock_handle_t, opened_sockets, h)) {
+            DBG_PRINT("Freeing socket %p: opened_sockets=%p\n", h, opened_sockets);
+
+            net_context_put(h->tcp_sock);
+            jerry_release_value(h->socket);
+            zjs_free(h->rbuf);
+            zjs_free(h);
         }
+
         if (net) {
             if (net->listening == 0 && opened_sockets == NULL) {
                 // no more sockets open and not listening, close server
