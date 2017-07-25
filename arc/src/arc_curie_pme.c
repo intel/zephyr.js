@@ -24,8 +24,8 @@ void curie_pme_configure(u16_t global_context, PME_DISTANCE_MODE distance_mode,
                          PME_CLASSIFICATION_MODE classification_mode,
                          u16_t min_if, u16_t max_if)
 {
-    reg_write16(GCR, (global_context | (distance_mode << 7)));
-    reg_write16(NSR, reg_read16(NSR) | (classification_mode << 5));
+    curie_pme_set_distance_mode(distance_mode);
+    curie_pme_set_classifier_mode(classification_mode);
     reg_write16(MINIF, min_if);
     reg_write16(MAXIF, max_if);
 }
