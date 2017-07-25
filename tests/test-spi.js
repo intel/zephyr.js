@@ -5,26 +5,31 @@ console.log("Wire IO11 to IO12");
 
 var spi = require("spi");
 var assert = require("Assert.js");
+var board = require('board');
 
-var spiBus, spiBuffer, bufferData;
+var spiBus, spiBuffer, bufferData, busNum;
+var deviceNum = 1;
+var busSpeed = 20000;
+busNum = board.name === "arduino_101" ? 1 : 0;
+
 assert.throws(function() {
-    spiBus = spi.open({speed:20, bus:128, polarity:0, phase:0, bits:16});
+    spiBus = spi.open({speed:busSpeed, bus:128, polarity:0, phase:0, bits:16});
 }, "SPIBusObject: set SPI bus as '128'");
 
-spiBus = spi.open({speed:20, bus:1, polarity:0, phase:0, bits:16});
+spiBus = spi.open({speed:busSpeed, bus:busNum, polarity:0, phase:0, bits:16});
 assert(typeof spiBus === "object" && spiBus !== null,
        "SPIBusObject: be defined");
 
 spiBuffer = "testNumber";
 bufferData = [04, 05, 06, 07];
-spiBuffer = spiBus.transceive(1, bufferData);
+spiBuffer = spiBus.transceive(deviceNum, bufferData);
 assert(spiBuffer.toString("hex") !== "testNumber" &&
        spiBuffer.toString("hex") === "04050607",
        "SPIBusObject: read and write buffer as 'number'");
 
 spiBuffer = "testString";
 bufferData = "Hello World";
-spiBuffer = spiBus.transceive(1, bufferData);
+spiBuffer = spiBus.transceive(deviceNum, bufferData);
 assert(spiBuffer.toString("ascii") !== "testString" &&
        spiBuffer.toString("ascii") === bufferData,
        "SPIBusObject: read and write buffer as 'string'");
@@ -33,7 +38,7 @@ spiBus.close();
 
 spiBuffer = "testClose";
 bufferData = "closeTest";
-spiBuffer = spiBus.transceive(1, bufferData);
+spiBuffer = spiBus.transceive(deviceNum, bufferData);
 assert(spiBuffer !== "closeTest" && spiBuffer === null,
        "SPIBusObject: SPI bus is closed");
 
@@ -55,8 +60,8 @@ var checkNumber = [
 
 for (var i = 0; i < spiBusBits.length; i++) {
     var init = {
-        speed: 20,
-        bus: 1,
+        speed: busSpeed,
+        bus: busNum,
         polarity: 0,
         phase: 0,
         bits: spiBusBits[i]
@@ -65,14 +70,14 @@ for (var i = 0; i < spiBusBits.length; i++) {
     spiBus = spi.open(init);
 
     for (var j = 0; j < dataNumber.length; j++) {
-        var bufferNumber = spiBus.transceive(1, dataNumber[j]);
+        var bufferNumber = spiBus.transceive(deviceNum, dataNumber[j]);
         assert(bufferNumber.toString("hex") === checkNumber[i][j],
                "SPIBusTransceive: read and write number array by bits '" +
                spiBusBits[i] + "'");
     }
 
     if (0 < i) {
-        var bufferString = spiBus.transceive(1, dataString);
+        var bufferString = spiBus.transceive(deviceNum, dataString);
         assert(bufferString.toString("ascii") === "testSPIBusTransceive",
                "SPIBusTransceive: read and write string by bits '" +
                spiBusBits[i] + "'");
