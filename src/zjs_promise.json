@@ -1,12 +1,20 @@
 {
     "module": "promise",
     "constructor": "Promise",
-    "zjs_config": ["-DBUILD_MODULE_PROMISE"],
-    "src": ["jerry-port/zjs_jerry_port.c"],
-    "zjs_config": ["-DJERRY_PORT_ENABLE_JOBQUEUE"],
+    "zjs_config": [
+        "-DBUILD_MODULE_PROMISE",
+        "-DJERRY_PORT_ENABLE_JOBQUEUE"
+    ],
     "jrs_config": [
         "CONFIG_DISABLE_ES2015_PROMISE_BUILTIN",
         "CONFIG_DISABLE_ES2015_BUILTIN",
         "CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN"
-    ]
+    ],
+    "src":[
+        "jerry-port/zjs_jerry_port.c",
+        "zjs_promise.c"
+    ],
+    "header": ["zjs_promise.h"],
+    "init": ["zjs_promise_init"],
+    "cleanup": ["zjs_promise_cleanup"]
 }

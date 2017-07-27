@@ -10,6 +10,7 @@
 
 // ZJS includes
 #include "zjs_common.h"
+#include "zjs_promise.h"
 #include "zjs_util.h"
 
 #include "zjs_ocf_common.h"
@@ -192,42 +193,6 @@ static jerry_value_t create_resource(const char *path,
     return res;
 }
 
-#if 0
-static void print_props_data(oc_request_t *data)
-{
-    int i;
-    oc_rep_t *rep = data->request_payload;
-    while (rep != NULL) {
-        ZJS_PRINT("Type: %u, Key: %s, Value: ", rep->type, oc_string(rep->name));
-        switch (rep->type) {
-        case BOOL:
-            ZJS_PRINT("%d\n", rep->value_boolean);
-            break;
-        case INT:
-            ZJS_PRINT("%ld\n", (s32_t)rep->value_int);
-            break;
-        case BYTE_STRING:
-        case STRING:
-            ZJS_PRINT("%s\n", oc_string(rep->value_string));
-            break;
-        case STRING_ARRAY:
-            ZJS_PRINT("[ ");
-            for (i = 0; i < oc_string_array_get_allocated_size(rep->value_array); i++) {
-                ZJS_PRINT("%s ", oc_string_array_get_item(rep->value_array, i));
-            }
-            ZJS_PRINT("]\n");
-            break;
-        case OBJECT:
-            ZJS_PRINT("{ Object }\n");
-            break;
-        default:
-            break;
-        }
-        rep = rep->next;
-    }
-}
-#endif
-
 static ZJS_DECL_FUNC(ocf_respond)
 {
     // args: properties object
@@ -259,11 +224,7 @@ static ZJS_DECL_FUNC(ocf_respond)
     DBG_PRINT("responding to method type=%u, properties=%x\n", h->resp->method,
               data);
 
-    jerry_value_t promise = jerry_create_promise();
-
-    jerry_resolve_or_reject_promise(promise, ZJS_UNDEFINED, true);
-
-    return promise;
+    RESOLVE(ZJS_UNDEFINED);
 }
 
 static jerry_value_t create_request(struct server_resource *resource,
@@ -397,14 +358,14 @@ static ZJS_DECL_FUNC(ocf_register)
     ZVAL resource_path_val = zjs_get_property(argv[0], "resourcePath");
     if (!jerry_value_is_string(resource_path_val)) {
         ERR_PRINT("resourcePath not found\n");
-        REJECT("TypeMismatchError", "resourcePath not found");
+        REJECT("TypeMismatchError", "resourcePath not found", NULL);
     }
     ZJS_GET_STRING(resource_path_val, resource_path, OCF_MAX_RES_PATH_LEN);
 
     ZVAL res_type_array = zjs_get_property(argv[0], "resourceTypes");
     if (!jerry_value_is_array(res_type_array)) {
         ERR_PRINT("resourceTypes array not found\n");
-        REJECT("TypeMismatchError", "resourceTypes array not found");
+        REJECT("TypeMismatchError", "resourceTypes array not found", NULL);
     }
 
     // Optional
@@ -439,11 +400,11 @@ static ZJS_DECL_FUNC(ocf_register)
 
     resource_list_t *new = zjs_malloc(sizeof(resource_list_t));
     if (!new) {
-        REJECT("InternalError", "Could not allocate resource list");
+        REJECT("InternalError", "Could not allocate resource list", NULL);
     }
     resource = new_server_resource(resource_path);
     if (!resource) {
-        REJECT("InternalError", "Could not allocate resource");
+        REJECT("InternalError", "Could not allocate resource", NULL);
     }
     new->resource = resource;
     new->next = res_list;
@@ -454,7 +415,7 @@ static ZJS_DECL_FUNC(ocf_register)
     resource->num_types = jerry_get_array_length(res_type_array);
     resource->resource_types = zjs_malloc(sizeof(char *) * resource->num_types);
     if (!resource->resource_types) {
-        REJECT("InternalError", "resourceType alloc failed");
+        REJECT("InternalError", "resourceType alloc failed", NULL);
     }
 
     for (i = 0; i < resource->num_types; ++i) {
@@ -462,21 +423,21 @@ static ZJS_DECL_FUNC(ocf_register)
         jerry_size_t size = OCF_MAX_RES_TYPE_LEN;
         resource->resource_types[i] = zjs_alloc_from_jstring(type_val, &size);
         if (!resource->resource_types[i]) {
-            REJECT("InternalError", "resourceType alloc failed");
+            REJECT("InternalError", "resourceType alloc failed", NULL);
         }
     }
 
     ZVAL iface_array = zjs_get_property(argv[0], "interfaces");
     if (!jerry_value_is_array(iface_array)) {
         ERR_PRINT("interfaces array not found\n");
-        REJECT("TypeMismatchError", "resourceTypes array not found");
+        REJECT("TypeMismatchError", "resourceTypes array not found", NULL);
     }
 
     resource->num_ifaces = jerry_get_array_length(iface_array);
     resource->resource_ifaces = zjs_malloc(sizeof(char *) *
                                            resource->num_ifaces);
     if (!resource->resource_ifaces) {
-        REJECT("InternalError", "interfaces alloc failed");
+        REJECT("InternalError", "interfaces alloc failed", NULL);
     }
 
     for (i = 0; i < resource->num_ifaces; ++i) {
@@ -484,15 +445,11 @@ static ZJS_DECL_FUNC(ocf_register)
         jerry_size_t size = OCF_MAX_RES_TYPE_LEN;
         resource->resource_ifaces[i] = zjs_alloc_from_jstring(val, &size);
         if (!resource->resource_ifaces[i]) {
-            REJECT("InternalError", "resourceType alloc failed");
+            REJECT("InternalError", "resourceType alloc failed", NULL);
         }
     }
 
     jerry_value_t res = create_resource(resource_path, argv[0]);
-
-    jerry_value_t promise = jerry_create_promise();
-    jerry_resolve_or_reject_promise(promise, res, true);
-
     /*
      * TODO: Add native handle to ensure it gets freed,
      *       check if we can reference with 'this'
@@ -503,7 +460,7 @@ static ZJS_DECL_FUNC(ocf_register)
 
     DBG_PRINT("registered resource, path=%s\n", resource_path);
 
-    return promise;
+    RESOLVE(res);
 }
 
 void zjs_ocf_register_resources(void)

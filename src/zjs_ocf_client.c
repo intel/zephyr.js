@@ -20,6 +20,7 @@
 #include "zjs_ocf_client.h"
 #include "zjs_ocf_common.h"
 #include "zjs_ocf_encoder.h"
+#include "zjs_promise.h"
 #include "zjs_util.h"
 
 //#define USE_PROMISES
@@ -50,7 +51,7 @@ struct client_resource {
 };
 
 struct ocf_handler {
-    jerry_value_t promise_obj;
+    zjs_promise_t *promise;
     struct client_resource *res;
 };
 
@@ -159,7 +160,7 @@ static jerry_value_t get_props_from_response(oc_client_response_t *data)
         case STRING:
             zjs_obj_add_string(prop_object, oc_string(rep->value.string),
                                oc_string(rep->name));
-            DBG_PRINT("%s\n", oc_string(rep->value.string));
+            DBG_PRINT("%u\n", oc_string(rep->value.string));
             break;
         case STRING_ARRAY:
             DBG_PRINT("[ ");
@@ -462,16 +463,10 @@ Found:
                 jerry_set_property_by_index(cur->iface_array, --sz, val);
             }
 
-            // Work-around for #1332
-            // Pass duplicate resource to trigger event and promise
             jerry_value_t res = create_resource(cur);
-            ZVAL res2 = create_resource(cur);
-            // FIXME: see if we can do without the second one now with the
-            //   emit_event implementation
             zjs_defer_emit_event(ocf_client, "resourcefound", &res,
                                  sizeof(res), zjs_copy_arg, zjs_release_args);
-            jerry_resolve_or_reject_promise(h->promise_obj, res2, true);
-            jerry_release_value(h->promise_obj);
+            zjs_resolve_promise(h->promise, res);
 
             DBG_PRINT("resource found, id=%s, path=%s\n", cur->device_id,
                       cur->resource_path);
@@ -535,9 +530,8 @@ static ZJS_DECL_FUNC(ocf_find_resources)
         zjs_free(resource_path);
     }
 
-    jerry_value_t promise = jerry_create_promise();
     struct ocf_handler *h = new_ocf_handler(NULL);
-    h->promise_obj = jerry_acquire_value(promise);
+    h->promise = zjs_create_promise(argv, argc);
 
     oc_do_ip_discovery(resource_type, discovery, h);
 
@@ -545,7 +539,7 @@ static ZJS_DECL_FUNC(ocf_find_resources)
         zjs_free(resource_type);
     }
 
-    return promise;
+    return jerry_acquire_value(h->promise->promise_obj);
 }
 
 static void ocf_get_handler(oc_client_response_t *data)
@@ -559,9 +553,7 @@ static void ocf_get_handler(oc_client_response_t *data)
                 ZVAL properties_val = get_props_from_response(data);
 
                 zjs_set_property(resource_val, "properties", properties_val);
-                jerry_resolve_or_reject_promise(h->promise_obj, resource_val,
-                                                true);
-                jerry_release_value(h->promise_obj);
+                zjs_resolve_promise(h->promise, resource_val);
 
                 DBG_PRINT("GET response OK, device_id=%s\n",
                           resource->device_id);
@@ -572,8 +564,7 @@ static void ocf_get_handler(oc_client_response_t *data)
                  */
                 ZVAL err = make_ocf_error("NetworkError", "Error code from GET",
                                           resource);
-                jerry_resolve_or_reject_promise(h->promise_obj, err, false);
-                jerry_release_value(h->promise_obj);
+                zjs_reject_promise(h->promise, err);
 
                 ERR_PRINT("GET response code %d\n", data->code);
             }
@@ -595,7 +586,7 @@ static ZJS_DECL_FUNC(ocf_retrieve)
     struct client_resource *resource = find_resource_by_id(device_id);
     if (!resource) {
         ERR_PRINT("could not find resource %s\n", device_id);
-        REJECT("NotFoundError", "resource was not found");
+        REJECT("NotFoundError", "resource was not found", NULL);
     }
 
     if (argc > 1) {
@@ -655,20 +646,17 @@ static ZJS_DECL_FUNC(ocf_retrieve)
     DBG_PRINT("resource found in lookup: path=%s, id=%s\n",
               resource->resource_path, resource->device_id);
 
-    jerry_value_t promise = jerry_create_promise();
     h = new_ocf_handler(resource);
     h->res = resource;
-    h->promise_obj = jerry_acquire_value(promise);
+    h->promise = zjs_create_promise(argv, argc);
 
     if (!oc_do_get(resource->resource_path, &resource->server, NULL,
                    ocf_get_handler, LOW_QOS, h)) {
 
-        ZVAL err = make_ocf_error("NetworkError", "GET call failed", resource);
-        jerry_resolve_or_reject_promise(promise, err, false);
-        jerry_release_value(h->promise_obj);
+        REJECT("NetworkError", "GET call failed", resource);
     }
 
-    return promise;
+    return jerry_acquire_value(h->promise->promise_obj);
 }
 
 static void put_finished(oc_client_response_t *data)
@@ -682,15 +670,12 @@ static void put_finished(oc_client_response_t *data)
                 DBG_PRINT("PUT response OK, device_id=%s\n",
                           resource->device_id);
                 ZVAL resource_val = create_resource(resource);
-                jerry_resolve_or_reject_promise(h->promise_obj, resource_val,
-                                                true);
-                jerry_release_value(h->promise_obj);
+                zjs_resolve_promise(h->promise, resource_val);
             } else {
                 ERR_PRINT("PUT response code %d\n", data->code);
                 ZVAL err = make_ocf_error("NetworkError",
                                           "PUT response error code", resource);
-                jerry_resolve_or_reject_promise(h->promise_obj, err, false);
-                jerry_release_value(h->promise_obj);
+                zjs_reject_promise(h->promise, err);
             }
         }
     }
@@ -710,15 +695,14 @@ static ZJS_DECL_FUNC(ocf_update)
     struct client_resource *resource = find_resource_by_id(device_id);
     if (!resource) {
         ERR_PRINT("could not find resource %s\n", device_id);
-        REJECT("NotFoundError", "resource was not found");
+        REJECT("NotFoundError", "resource was not found", NULL);
     }
 
     DBG_PRINT("update resource '%s'\n", resource->device_id);
 
-    jerry_value_t promise = jerry_create_promise();
     h = new_ocf_handler(resource);
     h->res = resource;
-    h->promise_obj = jerry_acquire_value(promise);
+    h->promise = zjs_create_promise(argv, argc);
 
     if (oc_init_put(resource->resource_path, &resource->server, NULL,
                     put_finished, LOW_QOS, h)) {
@@ -735,17 +719,15 @@ static ZJS_DECL_FUNC(ocf_update)
             ERR_PRINT("error sending PUT request\n");
             ZVAL err = make_ocf_error("NetworkError", "PUT call failed",
                                       resource);
-            jerry_resolve_or_reject_promise(promise, err, false);
-            jerry_release_value(promise);
+            zjs_reject_promise(h->promise, err);
         }
     } else {
         ERR_PRINT("error initializing PUT\n");
         ZVAL err = make_ocf_error("NetworkError", "PUT init failed", resource);
-        jerry_resolve_or_reject_promise(promise, err, false);
-        jerry_release_value(promise);
+            zjs_reject_promise(h->promise, err);
     }
 
-    return promise;
+    return jerry_acquire_value(h->promise->promise_obj);
 }
 
 static void ocf_get_platform_info_handler(oc_client_response_t *data)
@@ -832,8 +814,7 @@ static void ocf_get_platform_info_handler(oc_client_response_t *data)
         zjs_defer_emit_event(ocf_client, "platformfound", &platform_info,
                              sizeof(platform_info), zjs_copy_arg,
                              zjs_release_args);
-        jerry_resolve_or_reject_promise(h->promise_obj, platform_info, true);
-        jerry_release_value(h->promise_obj);
+        zjs_resolve_promise(h->promise, platform_info);
     }
 }
 
@@ -848,24 +829,20 @@ static ZJS_DECL_FUNC(ocf_get_platform_info)
     struct client_resource *resource = find_resource_by_id(device_id);
     if (!resource) {
         ERR_PRINT("%s: %s\n", "resource was not found", device_id);
-        REJECT("NotFoundError", "resource was not found");
+        REJECT("NotFoundError", "resource was not found", NULL);
     }
 
-    jerry_value_t promise = jerry_create_promise();
     h = new_ocf_handler(resource);
-    h->promise_obj = jerry_acquire_value(promise);
+    h->promise = zjs_create_promise(argv, argc);
 
     DBG_PRINT("sending GET to /oic/p\n");
 
     if (!oc_do_get("/oic/p", &resource->server, NULL,
                    ocf_get_platform_info_handler, LOW_QOS, h)) {
-        jerry_value_t err = make_ocf_error("NetworkError", "GET call failed",
-                                           resource);
-        jerry_resolve_or_reject_promise(promise, err, false);
-        jerry_release_value(promise);
+        REJECT("NetworkError", "GET call failed", resource)
     }
 
-    return promise;
+    return jerry_acquire_value(h->promise->promise_obj);
 }
 
 static void ocf_get_device_info_handler(oc_client_response_t *data)
@@ -941,8 +918,7 @@ static void ocf_get_device_info_handler(oc_client_response_t *data)
         zjs_defer_emit_event(ocf_client, "devicefound", &device_info,
                              sizeof(device_info), zjs_copy_arg,
                              zjs_release_args);
-        jerry_resolve_or_reject_promise(h->promise_obj, device_info, true);
-        jerry_release_value(h->promise_obj);
+        zjs_resolve_promise(h->promise, device_info);
     }
 }
 
@@ -958,23 +934,20 @@ static ZJS_DECL_FUNC(ocf_get_device_info)
     struct client_resource *resource = find_resource_by_id(device_id);
     if (!resource) {
         ERR_PRINT("%s: %s\n", "resource was not found", device_id);
-        REJECT("NotFoundError", "resource was not found");
+        REJECT("NotFoundError", "resource was not found", NULL);
     }
 
-    jerry_value_t promise = jerry_create_promise();
     h = new_ocf_handler(resource);
-    h->promise_obj = jerry_acquire_value(promise);
+    h->promise = zjs_create_promise(argv, argc);
 
     DBG_PRINT("sending GET to /oic/d\n");
 
     if (!oc_do_get("/oic/d", &resource->server, NULL,
                    &ocf_get_device_info_handler, LOW_QOS, h)) {
-        ZVAL err = make_ocf_error("NetworkError", "GET call failed", resource);
-        jerry_resolve_or_reject_promise(promise, err, false);
-        jerry_release_value(promise);
+        REJECT("NetworkError", "GET call failed", resource);
     }
 
-    return promise;
+    return jerry_acquire_value(h->promise->promise_obj);
 }
 
 jerry_value_t zjs_ocf_client_init()

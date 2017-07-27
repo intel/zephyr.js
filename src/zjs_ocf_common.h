@@ -38,9 +38,14 @@ struct props_handle {
     char name[name##_size];                \
     zjs_copy_jstring(jval, name, &name##_size);
 
-#define REJECT(err_name, err_msg)                           \
+#define RESOLVE(arg)                                     \
+    jerry_value_t promise = jerry_create_promise();      \
+    jerry_resolve_or_reject_promise(promise, arg, true); \
+    return promise;
+
+#define REJECT(err_name, err_msg, arg)                      \
     jerry_value_t promise = jerry_create_promise();         \
-    ZVAL error = make_ocf_error(err_name, err_msg, NULL);   \
+    ZVAL error = make_ocf_error(err_name, err_msg, arg);    \
     jerry_resolve_or_reject_promise(promise, error, false); \
     return promise;
 

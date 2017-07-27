@@ -26,6 +26,7 @@ CORE_SRC +=	src/zjs_a101_pins.c \
 		src/main.c \
 		src/zjs_modules.c \
 		src/zjs_performance.c \
+		src/zjs_promise.c \
 		src/zjs_script.c \
 		src/zjs_timers.c \
 		src/zjs_test_promise.c \
