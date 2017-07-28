@@ -34,6 +34,7 @@ interface Buffer {
     unsigned long readUInt32LE(unsigned long offset);
     void writeUInt32LE(unsigned long value, unsigned long offset);
     string toString(string encoding);
+    Buffer fill(integer or buffer or string value, unsigned long offset, unsigned long end, string encoding);
     readonly attribute unsigned long length;
 };
 ```
@@ -90,6 +91,15 @@ The `BE` or `LE` refers to whether the value will be written in big-endian
 Currently, the only supported `encoding` is 'hex'. If 'hex' is given, returns
 the contents of the Buffer encoded in hexadecimal digits. Otherwises, returns an
 error.
+
+### Buffer.fill
+
+`Buffer fill(integer or buffer or string value, unsigned long offset, unsigned long end, string encoding);`
+
+Copies bytes from the source number, buffer, or string, until the buffer is
+filled from `offset` to `end` (which default to the beginning and end of the
+buffer. Only default "utf8" encoding is accepted currently. Treats numbers as
+four byte integers.
 
 Sample Apps
 -----------

@@ -262,11 +262,16 @@ static ZJS_DECL_FUNC(zjs_buffer_write_string)
     ZJS_VALIDATE_ARGS(Z_STRING, Z_OPTIONAL Z_NUMBER, Z_OPTIONAL Z_NUMBER,
                       Z_OPTIONAL Z_STRING);
 
+    zjs_buffer_t *buf = zjs_buffer_find(this);
+    if (!buf) {
+        return zjs_error("buffer not found");
+    }
+
     // Check if the encoding string is anything other than utf8
     if (argc > 3) {
         char *encoding = zjs_alloc_from_jstring(argv[3], NULL);
         if (!encoding) {
-            return zjs_error("allocation failure");
+            return zjs_error("out of memory");
         }
 
         // ask for one more char than needed to make sure not just prefix match
@@ -282,13 +287,7 @@ static ZJS_DECL_FUNC(zjs_buffer_write_string)
     jerry_size_t size = 0;
     char *str = zjs_alloc_from_jstring(argv[0], &size);
     if (!str) {
-        return zjs_error("string too long");
-    }
-
-    zjs_buffer_t *buf = zjs_buffer_find(this);
-    if (!buf) {
-        zjs_free(str);
-        return zjs_error("buffer not found");
+        return zjs_error("out of memory");
     }
 
     u32_t offset = 0;
@@ -313,6 +312,106 @@ static ZJS_DECL_FUNC(zjs_buffer_write_string)
     zjs_free(str);
 
     return jerry_create_number(length);
+}
+
+static ZJS_DECL_FUNC(zjs_buffer_fill)
+{
+    // requires: string - what will be written to buf
+    //           offset - where to start writing (Default: 0)
+    //           length - how many bytes to write (Default: buf.length -offset)
+    //           encoding - the character encoding of string. Currently only
+    //             supports the default of utf8
+    //  effects: writes string to buf at offset according to the character
+    //             encoding in encoding.
+
+    // args: data[, offset[, length[, encoding]]]
+    ZJS_VALIDATE_ARGS(Z_STRING Z_NUMBER Z_BUFFER, Z_OPTIONAL Z_NUMBER,
+                      Z_OPTIONAL Z_NUMBER, Z_OPTIONAL Z_STRING);
+
+    u32_t num;
+    char *source = NULL;
+    char *str = NULL;
+    u32_t srclen = 0;
+
+    if (jerry_value_is_number(argv[0])) {
+        u32_t srcnum = (u32_t)jerry_get_number_value(argv[0]);
+
+        // convert in case of endian difference
+        source = (char *)&num;
+        source[0] = (0xff000000 & srcnum) >> 24;
+        source[1] = (0x00ff0000 & srcnum) >> 16;
+        source[2] = (0x0000ff00 & srcnum) >> 8;
+        source[3] = 0x000000ff & srcnum;
+        srclen = sizeof(u32_t);
+    }
+    else if (zjs_value_is_buffer(argv[0])) {
+        zjs_buffer_t *srcbuf = zjs_buffer_find(argv[0]);
+        source = srcbuf->buffer;
+        srclen = srcbuf->bufsize;
+    }
+
+    zjs_buffer_t *buf = zjs_buffer_find(this);
+    if (!buf) {
+        return zjs_error("buffer not found");
+    }
+
+    // Check if the encoding string is anything other than utf8
+    if (argc > 3) {
+        char *encoding = zjs_alloc_from_jstring(argv[3], NULL);
+        if (!encoding) {
+            return zjs_error("out of memory");
+        }
+
+        // ask for one more char than needed to make sure not just prefix match
+        const char *utf8_encoding = "utf8";
+        int utf8_len = strlen(utf8_encoding);
+        int rval = strncmp(encoding, utf8_encoding, utf8_len + 1);
+        zjs_free(encoding);
+        if (rval != 0) {
+            return NOTSUPPORTED_ERROR("only utf8 encoding supported");
+        }
+    }
+
+    u32_t offset = 0;
+    if (argc > 1)
+        offset = (u32_t)jerry_get_number_value(argv[1]);
+
+    u32_t end = buf->bufsize;
+    if (argc > 2) {
+        end = (u32_t)jerry_get_number_value(argv[2]);
+        if (end > buf->bufsize) {
+            end = buf->bufsize;
+        }
+    }
+
+    if (offset >= end) {
+        // nothing to do
+        return jerry_acquire_value(this);
+    }
+
+    if (jerry_value_is_string(argv[0])) {
+        jerry_size_t size = 0;
+        char *str = zjs_alloc_from_jstring(argv[0], &size);
+        if (!str) {
+            return zjs_error("out of memory");
+        }
+        source = str;
+        srclen = size;
+    }
+
+    u32_t bytes_left = end - offset;
+    while (bytes_left > 0) {
+        u32_t bytes = srclen;
+        if (bytes > bytes_left) {
+            bytes = bytes_left;
+        }
+        memcpy(buf->buffer + offset, source, bytes);
+        offset += bytes;
+        bytes_left -= bytes;
+    }
+
+    zjs_free(str);
+    return jerry_acquire_value(this);
 }
 
 jerry_value_t zjs_buffer_create(u32_t size, zjs_buffer_t **ret_buf)
@@ -442,6 +541,7 @@ void zjs_buffer_init()
         { zjs_buffer_write_uint32_le, "writeUInt32LE" },
         { zjs_buffer_to_string, "toString" },
         { zjs_buffer_write_string, "write" },
+        { zjs_buffer_fill, "fill" },
         { NULL, NULL }
     };
     zjs_buffer_prototype = jerry_create_object();
