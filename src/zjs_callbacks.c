@@ -20,6 +20,9 @@
 // JerryScript includes
 #include "jerryscript.h"
 
+// enable for verbose callback detail
+#define DEBUG_CALLBACKS 0
+
 // this could be defined with config options in the future
 #ifndef ZJS_CALLBACK_BUF_SIZE
 #define ZJS_CALLBACK_BUF_SIZE   1024
@@ -301,9 +304,10 @@ void signal_callback_priv(zjs_callback_id id,
 #endif
 {
     LOCK();
+#if DEBUG_CALLBACKS
     DBG_PRINT("pushing item to ring buffer. id=%d, args=%p, size=%u\n", id,
               args, size);
-    ZJS_PRINT("&&&& CBSIZE: %d, MAP %p\n", cb_size, cb_map[id]);
+#endif
     if (id < 0 || id >= cb_size || !cb_map[id]) {
         DBG_PRINT("callback ID %u does not exist\n", id);
         return;
@@ -406,7 +410,6 @@ void print_callbacks(void)
 
 void zjs_call_callback(zjs_callback_id id, const void *data, u32_t sz)
 {
-    ZJS_PRINT("----- cb_size: %d, map[id]: %p\n", cb_size, cb_map[id]);
     LOCK();
     if (id == -1 || id >= cb_size || !cb_map[id]) {
         ERR_PRINT("callback %d does not exist\n", id);
@@ -499,8 +502,10 @@ u8_t zjs_service_callbacks(void)
                         ERR_PRINT("pulling from ring buffer: ret = %u\n", ret);
                         break;
                     }
+#if DEBUG_CALLBACKS
                     DBG_PRINT("calling callback with args. id=%u, args=%p, "
                               "sz=%u, ret=%i\n", id, data, sz, ret);
+#endif
                     bool is_js = GET_TYPE(cb_map[id]->flags) ==
                         CALLBACK_TYPE_JS;
                     zjs_call_callback(id, data, sz);
@@ -524,9 +529,11 @@ u8_t zjs_service_callbacks(void)
 
                     default:
                         // item in ring buffer with size == 0, no args
+#if DEBUG_CALLBACKS
                         DBG_PRINT("calling callback with no args, "
                                   "original vals id=%u, size=%u, ret=%i\n",
                                   id, size, ret);
+#endif
                         zjs_call_callback(id, NULL, 0);
                     }
                 }
