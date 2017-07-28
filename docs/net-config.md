@@ -26,7 +26,7 @@ interface NetConfig {
     EventListener onup(void);
     EventListener ondown(void);
     // set a static IP
-    Boolean setStaticIP(String ip);
+    Boolean setStaticIp(String ip);
     // start DHCP
     void dhcp(DHCPCallback callback);
     // set the BLE MAC address
@@ -51,8 +51,8 @@ need to wait for a BLE connection before issuing any socket connections.
 The couterpart to `ondown`. This is issued when the networking interface goes
 offline.
 
-### NetConfig.setStaticIP
-`Boolean setStaticIP(String ip)`
+### NetConfig.setStaticIp
+`Boolean setStaticIp(String ip)`
 
 Set the device to use a static IP address.
 
