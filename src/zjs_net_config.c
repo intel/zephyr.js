@@ -349,7 +349,7 @@ jerry_value_t zjs_net_config_init(void)
 {
     config = jerry_create_object();
 
-    zjs_obj_add_function(config, set_ip, "setStaticIp");
+    zjs_obj_add_function(config, set_ip, "setStaticIP");
 #ifdef CONFIG_NET_DHCPV4
     zjs_obj_add_function(config, dhcp, "dhcp");
 #endif
