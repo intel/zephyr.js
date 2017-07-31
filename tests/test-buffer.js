@@ -127,6 +127,31 @@ assert(buff.toString('hex') === expected,
        "The value of toString('hex') expected:" + expected +
        " got:" + buff.toString('hex'));
 
+// Test fill funciton w/ string source
+buff = new Buffer(10);
+buff.fill('abc');
+assert(buff.toString('hex') === '61626361626361626361');
+
+// Test fill funciton w/ integer source
+buff.fill(257);
+assert(buff.toString('hex') === '00000101000001010000');
+
+// Test fill funciton w/ buffer source
+var srcbuf = new Buffer(3);
+srcbuf.writeUInt8(1, 0);
+srcbuf.writeUInt8(2, 1);
+srcbuf.writeUInt8(3, 2);
+buff.fill(srcbuf);
+assert(buff.toString('hex') === '01020301020301020301');
+
+// Test offset argument with some a chars at the end
+buff.fill('a', 8);
+assert(buff.toString('hex') === '01020301020301026161');
+
+// Test end argument with some b chars in the middle
+buff.fill('b', 5, 8);
+assert(buff.toString('hex') === '01020301026262626161');
+
 assert.throws(function () {
     // unsupported encoding
     buff.toString("utf8");
