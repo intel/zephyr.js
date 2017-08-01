@@ -221,16 +221,21 @@ static ZJS_DECL_FUNC(zjs_buffer_to_string)
         return zjs_error("encoding argument too long");
     }
 
-    if (strcmp(encoding, "ascii") == 0) {
-        // prevent buffer from accessing hidden properties
-        for (int i = 0; i < buf->bufsize; ++i) {
-            if (buf->buffer[i] == 0xff) {
-                return zjs_error("buffer has invalid ascii");
-            }
+    if (!strcmp(encoding, "ascii")) {
+        char *str = zjs_malloc(buf->bufsize);
+        if (!str) {
+            return zjs_error("out of memory");
         }
-        buf->buffer[buf->bufsize] = '\0';
-        return jerry_create_string((jerry_char_t *)buf->buffer);
-    } else if (strcmp(encoding, "hex") == 0) {
+
+        for (int i = 0; i < buf->bufsize; ++i) {
+            // strip off high bit if present
+            str[i] = buf->buffer[i] & 0x7f;
+        }
+        jerry_value_t jstr = jerry_create_string_sz((jerry_char_t *)str,
+                                                    buf->bufsize);
+        zjs_free(str);
+        return jstr;
+    } else if (!strcmp(encoding, "hex")) {
         if (buf && buf->bufsize > 0) {
             char hexbuf[buf->bufsize * 2 + 1];
             for (int i = 0; i < buf->bufsize; i++) {
