@@ -439,8 +439,6 @@ static ZJS_DECL_FUNC(socket_write)
         return jerry_create_boolean(false);
     }
 
-    net_pkt_unref(send_buf);
-
     return jerry_create_boolean(true);
 }
 
