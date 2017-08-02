@@ -48,7 +48,7 @@ wss.on('connection', function(ws) {
         console.log("PONG: " + data.toString('ascii'));
     });
     ws.on('close', function(code, reason) {
-        console.log("close event: " + reason);
+        console.log("close event: " + reason + " code: " + code);
         clearTimeout(t);
     });
     ws.on('error', function(error) {
