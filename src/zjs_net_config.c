@@ -339,9 +339,9 @@ static struct net_mgmt_event_callback cb;
 static void iface_event(struct net_mgmt_event_callback *cb,
         u32_t mgmt_event, struct net_if *iface)
 {
-    if (mgmt_event & NET_EVENT_IF_UP) {
+    if (mgmt_event == NET_EVENT_IF_UP) {
         zjs_defer_emit_event(config, "netup", NULL, 0, NULL, NULL);
-    } else if (mgmt_event & NET_EVENT_IF_DOWN) {
+    } else if (mgmt_event == NET_EVENT_IF_DOWN) {
         zjs_defer_emit_event(config, "netdown", NULL, 0, NULL, NULL);
     }
 }
