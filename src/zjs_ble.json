@@ -5,7 +5,6 @@
     "zephyr_conf": {
         "all": [
             "CONFIG_BLUETOOTH=y",
-            "CONFIG_BLUETOOTH_STACK_NBLE=y",
             "CONFIG_NBLE=y",
             "CONFIG_BLUETOOTH_SMP=y",
             "CONFIG_BLUETOOTH_PERIPHERAL=y",
