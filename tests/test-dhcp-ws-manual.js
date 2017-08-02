@@ -65,15 +65,15 @@ if (board.name === "arduino_101") {
         console.log("'onup' Event: expected result 'Connected'\n");
 
         try {
-            IPState = netConfig.setStaticIp(IPv4);
+            IPState = netConfig.setStaticIP(IPv4);
         } catch (e) {
-            console.log("setStaticIp(IPv4): misconfiguration " +
+            console.log("setStaticIP(IPv4): misconfiguration " +
                         "expected result 'error'");
             console.log("    " + e.name + " : " + e.message);
         }
 
-        IPState = netConfig.setStaticIp(IPv6);
-        console.log("setStaticIp(IPv6): '" + IPState +
+        IPState = netConfig.setStaticIP(IPv6);
+        console.log("setStaticIP(IPv6): '" + IPState +
                     "' expected result 'true'\n");
 
         console.log("Add soft router on linux:");
