@@ -74,11 +74,10 @@ assert(typeof serverA === "object" && serverA !== null,
        "ServerObject: server is defined without callback function");
 
 var listeningAFlag = serverA.listening;
-var listeningFlag = true;
 serverA.listen({port: 4242, host: IPv6Address, family: IPv6Family});
 
 serverA.on("listening", function() {
-    listeningFlag = false;
+    assert(true, "ServerObject: begin to listen without callback function");
 });
 
 serverA.on("close", function() {
@@ -87,8 +86,6 @@ serverA.on("close", function() {
 
 setTimeout(function() {
     var listeningBFlag = serverA.listening;
-    assert(listeningFlag === true,
-           "ServerObject: begin to listen without callback function");
 
     serverA.getConnections(function(error, count) {
         assert(typeof count === "number" && count === 0,
