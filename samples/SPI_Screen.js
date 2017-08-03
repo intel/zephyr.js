@@ -1,5 +1,11 @@
 // Copyright (c) 2017, Intel Corporation.
 // JS for using the SPI LCD screen ST7735 module
+// Setup:
+// DC - Pin 8
+// CS - Pin 4
+// RST - Pin 7
+// SCL - Pin 13
+// SDA - Pin 11
 
 // Color definitions
 var BLACK =  [0x00,0x00];
@@ -12,7 +18,9 @@ var YELLOW =  [0xFF,0xE0];
 var WHITE =  [0xFF,0xFF];
 
 var LCD = require("ST7735.js");
-
+st7735API.dcPin = gpio.open(8);   // Command / Data select pin
+    st7735API.csPin = gpio.open(4);   // SPI slave pin
+    st7735API.rstPin = gpio.open(7);  // Reset pin
 console.log("SPI screen test starting..");
 
 try {
