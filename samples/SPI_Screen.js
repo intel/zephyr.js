@@ -26,6 +26,3 @@ try {
 } catch (err) {
   console.log("SPI error: " + err.message);
 }
-
-
-
