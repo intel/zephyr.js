@@ -1,5 +1,5 @@
 // Copyright (c) 2017, Intel Corporation.
-// JavaScript library for the BMP280 sensor
+// JavaScript library for the ST7735 sensor
 
 function ST7735() {
 
@@ -12,6 +12,7 @@ function ST7735() {
     var gpio = require('gpio');
     var spi = require("spi");
     var spiBus = spi.open({bus:1, polarity:0, phase:0, bits:8});
+    // BJONES TODO move this so that the SPI_Screen.js sets the pins.
     st7735API.dcPin = gpio.open(8);   // Command / Data select pin
     st7735API.csPin = gpio.open(4);   // SPI slave pin
     st7735API.rstPin = gpio.open(7);  // Reset pin
