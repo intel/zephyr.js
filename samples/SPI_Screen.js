@@ -1,4 +1,5 @@
-// JS for using the SPI screen
+// Copyright (c) 2017, Intel Corporation.
+// JS for using the SPI LCD screen ST7735
 
 // Color definitions
 var BLACK =  [0x00,0x00];
