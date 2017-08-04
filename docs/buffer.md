@@ -8,8 +8,7 @@ ZJS API for Buffer
 
 Introduction
 ------------
-Buffer is a [node.js API]
-(https://nodejs.org/dist/latest-v6.x/docs/api/buffer.html)
+Buffer is a [node.js API](https://nodejs.org/dist/latest-v6.x/docs/api/buffer.html)
 to read and write binary data accurately from JavaScript. ZJS supports a minimal
 subset of this API that will be expanded as the need arises.
 
