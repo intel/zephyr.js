@@ -13,7 +13,7 @@ var Port = 8080;
 
 var ServerHandler = function(protos) {
     for (var i = 0; i < protos.length; i++) {
-        if (protos[i] == "testProtocol") {
+        if (protos[i] === "testProtocol") {
             return protos[i];
         }
     }
@@ -23,7 +23,7 @@ var ServerHandler = function(protos) {
 
 var SocketBody = function(server) {
     server.on("connection", function(websocket) {
-        console.log("\nCreat web socket connection successful");
+        console.log("\nCreate web socket connection successful");
 
         websocket.on("message", function(message) {
             console.log("Receive data: " + message.toString("ascii"));
@@ -42,14 +42,14 @@ var SocketBody = function(server) {
         });
 
         websocket.on("close", function(code, reason) {
-            console.log("ReceiveClose: " + code + " : " + reason);
+            console.log("Closed: " + code + " : " + reason);
             if (board.name === "frdm_k64f") {
                 console.log("Testing completed");
             }
         });
 
         websocket.on("error", function(error) {
-            console.log("ReceiveError: " + error.name + " : " + error.message);
+            console.log("Error: " + error.name + " : " + error.message);
         });
     });
 }
@@ -62,7 +62,7 @@ if (board.name === "arduino_101") {
     console.log("setBleAddress(bleAddr): expected result 'F1:E2:D3:C4:B5:A6'\n");
 
     netConfig.on("netup", function() {
-        console.log("'onup' Event: expected result 'Connected'\n");
+        console.log("'onnetup' Event: expected result 'Connected'\n");
 
         try {
             IPState = netConfig.setStaticIP(IPv4);
@@ -95,7 +95,7 @@ if (board.name === "arduino_101") {
     });
 
     netConfig.on("netdown", function() {
-        console.log("'ondown' Event: expected result 'Disconnected'\n");
+        console.log("'onnetdown' Event: expected result 'Disconnected'\n");
         console.log("Testing completed");
     });
 } else if (board.name === "frdm_k64f") {
