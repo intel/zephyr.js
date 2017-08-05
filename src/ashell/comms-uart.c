@@ -313,16 +313,20 @@ void comms_write_buf(const char *buf, int len)
         return;
 
     uart_irq_tx_enable(dev_upload);
-    data_transmitted = false;
-    int bytes = 0;
-    while (bytes != len) {
-        buf += bytes;
-        len -= bytes;
-        bytes = uart_fifo_fill(dev_upload, (const u8_t *)buf, len);
+    int sent = 0;
+
+    while (len > 0) {
+        data_transmitted = false;
+        sent = uart_fifo_fill(dev_upload, (const u8_t *)buf, len);
+
+        while (data_transmitted == false) {
+            ;
+        }
+
+        len -= sent;
+        buf += sent;
     }
-    while (data_transmitted == false) {
-        ;
-    }
+
     uart_irq_tx_disable(dev_upload);
 }
 
