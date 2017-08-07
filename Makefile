@@ -6,7 +6,7 @@ ZJS_FLAGS :=
 OS := $(shell uname)
 
 BOARD ?= arduino_101
-RAM ?= 55
+RAM ?= 64
 ROM ?= 144
 V ?= 0
 JS_TMP = js.tmp
