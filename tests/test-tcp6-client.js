@@ -1,12 +1,17 @@
 // Copyright (c) 2017, Intel Corporation.
 
 // Run this test case and run simple TCP server on linux
-//     TCP server: /tests/tools/test-socket-server.py
-// If using Bluetooth communication, please connect server with Bluetooth
-// Add soft router on linux:
-//     ip -6 route add 2001:db8::/64 dev bt0
-// And add Lan IPv6 address on linux:
-//     ip -6 addr add 2001:db8::2/64 dev bt0
+//     TCP server: /tests/tools/test-tcp6-server.py
+// If on a101 using Bluetooth communication, please connect server with Bluetooth:
+//     Add soft router on linux:
+//         ip -6 route add 2001:db8::/64 dev bt0
+//     Add IPv6 address on linux:
+//         ip -6 addr add 2001:db8::2/64 dev bt0
+// If on K64f:
+//     Add soft router on linux:
+//         ip -6 route add 2001:db8::/64 dev eno1
+//     Add IPv6 address on linux:
+//         ip -6 addr add 2001:db8::2/64 dev eno1
 
 console.log("Test socket connection as TCP client for IPv6");
 
@@ -89,11 +94,17 @@ socket.on("error", function(err) {
     }
 });
 
-console.log("If using Bluetooth communication, please connect server with Bluetooth");
-console.log("Add soft router on linux:");
-console.log("    ip -6 route add 2001:db8::/64 dev bt0");
-console.log("And add Lan IPv6 address on linux:");
-console.log("    ip -6 addr add 2001:db8::2/64 dev bt0");
+console.log("If on a101 using Bluetooth communication," +
+            " please connect server with Bluetooth:");
+console.log("    Add soft router on linux:");
+console.log("        ip -6 route add 2001:db8::/64 dev bt0");
+console.log("    Add IPv6 address on linux:");
+console.log("        ip -6 addr add 2001:db8::2/64 dev bt0");
+console.log("If on K64f:");
+console.log("    Add soft router on linux:");
+console.log("        ip -6 route add 2001:db8::/64 dev eno1");
+console.log("    Add IPv6 address on linux:");
+console.log("        ip -6 addr add 2001:db8::2/64 dev eno1");
 
 if (board.name === "frdm_k64f") {
     console.log("TCP client will be connecting after 30s on K64f board");
