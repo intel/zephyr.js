@@ -61,7 +61,7 @@ static const jerry_object_native_info_t emitter_type_info = {
 
 static int compare_name(event_t *event, const char *name)
 {
-    return strncmp(event->name, name, event->namelen);
+    return strncmp(event->name, name, event->namelen + 1);
 }
 
 jerry_value_t zjs_add_event_listener(jerry_value_t obj, const char *event_name,
