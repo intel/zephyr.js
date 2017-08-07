@@ -16,7 +16,7 @@ uint8_t zjs_read_script(char *name, char **script, uint32_t *length)
         uint32_t size;
         FILE *f = fopen(name, "r");
         if (!f) {
-            ERR_PRINT("error opening file\n");
+            ERR_PRINT("error opening file '%s'\n", name);
             return 1;
         }
         if (fseek(f, 0L, SEEK_END)) {
