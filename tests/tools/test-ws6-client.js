@@ -1,11 +1,16 @@
 // Copyright (c) 2017, Intel Corporation.
 
+// CMD: node test-ws6-client.js
+
 var WebSocket = require("ws");
 
-var ws = new WebSocket("ws://[2001:db8::1]:8080", ["first", "testProtocol", "last"] );
+var ws = new WebSocket("ws://[2001:db8::1]:8080",
+                       ["first", "testProtocol", "last"] );
 
-ws.on("open", function open() {
+ws.on("open", function() {
     console.log("open WebSocket");
+
+    ws.send("hello world");
 });
 
 ws.on("message", function(data, flags) {
@@ -40,7 +45,7 @@ ws.on("pong", function(data, flags) {
     console.log("Receive 'pong' and send 'ping': " + data);
 });
 
-ws.on("close", function open() {
+ws.on("close", function() {
     console.log("close WebSocket");
 });
 
