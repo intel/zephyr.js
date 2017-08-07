@@ -9,41 +9,19 @@
 #include "arc_aio.h"
 #include "arc_common.h"
 
-// AIO thread
-#define STACK_SIZE 1024
-#define STACK_PRIORITY 7
-static char __stack stack[STACK_SIZE];
-static struct k_thread thread;
-
 // AIO
 static struct device *adc_dev = NULL;
-static atomic_t pin_enabled[ARC_AIO_LEN] = {};
-static atomic_t pin_values[ARC_AIO_LEN] = {};
-static atomic_t pin_last_values[ARC_AIO_LEN] = {};
+static uint8_t pin_enabled[ARC_AIO_LEN] = {};
+static uint32_t pin_values[ARC_AIO_LEN] = {};
+static uint32_t pin_last_values[ARC_AIO_LEN] = {};
 static u8_t seq_buffer[ADC_BUFFER_SIZE];
 static void *pin_user_data[ARC_AIO_LEN] = {};
 static u8_t pin_send_updates[ARC_AIO_LEN] = {};
-
-// AIO thread spawned to read from ADC
-static void aio_read_thread(void *p1, void *p2, void *p3)
-{
-    while (1) {
-        for (int i = 0; i <= 5; i++) {
-            if (pin_enabled[i]) {
-                u32_t value = arc_pin_read(ARC_AIO_MIN + i);
-                atomic_set(&pin_values[i], value);
-            }
-        }
-    }
-}
 
 void arc_aio_init()
 {
     adc_dev = device_get_binding(ADC_DEVICE_NAME);
     adc_enable(adc_dev);
-
-    k_thread_create(&thread, stack, STACK_SIZE, aio_read_thread, NULL, NULL,
-                    NULL, STACK_PRIORITY, 0, K_NO_WAIT);
 }
 
 void arc_aio_cleanup()
@@ -54,7 +32,7 @@ void arc_aio_cleanup()
 u32_t arc_pin_read(u8_t pin)
 {
     struct adc_seq_entry entry = {
-        .sampling_delay = 12,
+        .sampling_delay = 26, // anything smaller than 26 have error
         .channel_id = pin,
         .buffer = seq_buffer,
         .buffer_length = ADC_BUFFER_SIZE,
@@ -84,18 +62,21 @@ u32_t arc_pin_read(u8_t pin)
 void arc_process_aio_updates()
 {
     for (int i = 0; i <= 5; i++) {
-        if (pin_send_updates[i] && pin_values[i] != pin_last_values[i]) {
-            // send updates only if value has changed
-            // so it doesn't flood the IPM channel
-            struct zjs_ipm_message msg;
-            msg.id = MSG_ID_AIO;
-            msg.type = TYPE_AIO_PIN_EVENT_VALUE_CHANGE;
-            msg.flags = 0;
-            msg.user_data = pin_user_data[i];
-            msg.data.aio.pin = ARC_AIO_MIN + i;
-            msg.data.aio.value = pin_values[i];
-            ipm_send_msg(&msg);
-            atomic_set(&pin_last_values[i], pin_values[i]);
+        if (pin_send_updates[i]) {
+            pin_values[i] = arc_pin_read(ARC_AIO_MIN + i);
+            if (pin_values[i] != pin_last_values[i]) {
+                // send updates only if value has changed
+                // so it doesn't flood the IPM channel
+                struct zjs_ipm_message msg;
+                msg.id = MSG_ID_AIO;
+                msg.type = TYPE_AIO_PIN_EVENT_VALUE_CHANGE;
+                msg.flags = 0;
+                msg.user_data = pin_user_data[i];
+                msg.data.aio.pin = ARC_AIO_MIN + i;
+                msg.data.aio.value = pin_values[i];
+                ipm_send_msg(&msg);
+                pin_last_values[i] = pin_values[i];
+            }
         }
     }
 }
@@ -114,16 +95,16 @@ void arc_handle_aio(struct zjs_ipm_message *msg)
 
     switch (msg->type) {
     case TYPE_AIO_OPEN:
-        atomic_set(&pin_enabled[pin - ARC_AIO_MIN], 1);
+        pin_enabled[pin - ARC_AIO_MIN] = 1;
         break;
     case TYPE_AIO_PIN_READ:
-        reply_value = pin_values[pin - ARC_AIO_MIN];
+        reply_value = arc_pin_read(pin);
         break;
     case TYPE_AIO_PIN_ABORT:
         // NO OP - always success
         break;
     case TYPE_AIO_PIN_CLOSE:
-        atomic_set(&pin_enabled[pin - ARC_AIO_MIN], 0);
+        pin_enabled[pin - ARC_AIO_MIN] = 0;
         break;
     case TYPE_AIO_PIN_SUBSCRIBE:
         pin_send_updates[pin - ARC_AIO_MIN] = 1;
