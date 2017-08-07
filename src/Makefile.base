@@ -13,7 +13,7 @@ ccflags-y += -Wno-error=format
 # Select extended ANSI C/POSIX function set in recent Newlib versions
 ccflags-y += -D_XOPEN_SOURCE=700
 
-ccflags-y += -I$(JERRY_BASE)/jerry-core
+ccflags-y += -I$(JERRY_BASE)/jerry-core/include
 ccflags-y += -I$(JERRY_BASE)/jerry-core/jrt
 ccflags-y += -I$(ZEPHYR_BASE)/drivers
 ccflags-y += -I$(ZJS_BASE)/outdir/include
@@ -52,5 +52,5 @@ obj-y += main.o \
 
 ifneq (,$(findstring zjs_ashell,$(ASHELL)))
 $(info Insecure Mode (development))
-export JERRY_INCLUDE = $(JERRY_BASE)/jerry-core/
+export JERRY_INCLUDE = $(JERRY_BASE)/jerry-core/include
 endif

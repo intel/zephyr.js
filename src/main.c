@@ -224,6 +224,18 @@ int main(int argc, char *argv[])
         if (zjs_service_callbacks()) {
             serviced = 1;
         }
+
+#ifdef BUILD_MODULE_PROMISE
+        // run queued jobs for promises
+        result = jerry_run_all_enqueued_jobs();
+        if (jerry_value_has_error_flag(result))
+        {
+            DBG_PRINT("Error running JS in promise jobqueue\n");
+            zjs_print_error_message(result, ZJS_UNDEFINED);
+            goto error;
+        }
+#endif
+
 #ifndef ZJS_LINUX_BUILD
         zjs_loop_block(wait_time);
 #endif

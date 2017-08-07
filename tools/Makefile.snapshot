@@ -32,7 +32,7 @@ CORE_SRC +=		tools/snapshot.c \
 CORE_OBJ =		$(CORE_SRC:%.c=%.o)
 
 SNAPSHOT_INCLUDES += 	-Isrc/ \
-			-I$(JERRY_BASE)/jerry-core
+			-I$(JERRY_BASE)/jerry-core/include
 
 JERRY_LIBS += 		-l jerry-core -lm
 
