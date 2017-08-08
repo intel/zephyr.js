@@ -9,7 +9,7 @@
 // Then you can initiate a TCP connection and see the data you sent being
 // echo'ed back:
 //
-// echo "hello" | nc 192.0.2.0 4242
+// echo "hello" | nc 192.0.2.1 4242
 
 var net = require('net');
 
