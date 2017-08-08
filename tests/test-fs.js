@@ -212,6 +212,8 @@ fs.writeSync(fd1, new Buffer('over'));
 rbuf = new Buffer(8);
 rlen = fs.readSync(fd1, rbuf, 0, 8, 0);
 assert(rlen == 4, "length correct: " + rlen);
+// null terminate at index 4
+rbuf.writeUInt8(0x00, 4);
 assert(rbuf.toString('ascii') == 'over',
     "file was overwritten with 'w': " + rbuf.toString('ascii'));
 fs.closeSync(fd1);
