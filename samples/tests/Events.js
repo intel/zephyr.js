@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 // Simple test to utilize the event module. This test creates an event emitter,
 // registers two event listeners, and emits the events.
 var pass = true;
