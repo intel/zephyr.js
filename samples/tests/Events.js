@@ -31,7 +31,7 @@ myEmitter.on('test_event1', function(arg1, arg2) {
 });
 
 var testEventNames = myEmitter.eventNames();
-for (var i = 0; i < testEventNames.length - 1; i++) {
+for (var i = 0; i < testEventNames.length; i++) {
     console.log("EventName[" + i + "]: " + testEventNames[i]);
 }
 
