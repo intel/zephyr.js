@@ -433,32 +433,29 @@ static void trigger_data(void *h, jerry_value_t argv[], u32_t *argc,
     }
 }
 
+static void pre_close_connection(void *handle, jerry_value_t argv[], u32_t *argc,
+                                 const char *buffer, u32_t length)
+{
+    jerry_value_t code = jerry_create_number(*((int*)buffer));
+    jerry_value_t reason = jerry_create_string(buffer + sizeof(int));
+
+    argv[0] = code;
+    argv[1] = reason;
+    *argc = 2;
+}
+
 // a zjs_post_emit callback
 static void close_connection(void *h, jerry_value_t argv[], u32_t argc)
 {
     ws_connection_t *con = (ws_connection_t *)h;
 
-    ws_connection_t **pcur = &connections;
-    ws_connection_t *cur = connections;
-    while (cur) {
-        if (cur == con) {
-            break;
-        }
-        pcur = &cur->next;
-        cur = cur->next;
-    }
+    ZJS_LIST_REMOVE(ws_connection_t, connections, con);
 
-    if (!cur) {
-        ERR_PRINT("connection handle %p does not exist\n", con);
-        return;
-    }
-
-    *pcur = cur->next;
-    net_context_put(cur->tcp_sock);
-    zjs_free(cur->rbuf);
-    zjs_free(cur->accept_key);
-    zjs_remove_callback(cur->accept_handler_id);
-    zjs_free(cur);
+    net_context_put(con->tcp_sock);
+    zjs_free(con->rbuf);
+    zjs_free(con->accept_key);
+    zjs_remove_callback(con->accept_handler_id);
+    zjs_free(con);
     DBG_PRINT("Freed socket: opened_sockets=%p\n", connections);
 }
 
@@ -608,8 +605,12 @@ static void tcp_received(struct net_context *context,
         net_pkt_unref(pkt);
         if (con) {
             // close the socket
-            zjs_defer_emit_event(con->conn, "close", NULL, 0, NULL,
-                                 close_connection);
+            char buf[sizeof(int) + 13 + 1];
+            memcpy(buf, &status, sizeof(int));
+            memcpy(buf + sizeof(int), "socket closed", 13);
+            buf[sizeof(int) + 13] = '\0';
+            zjs_defer_emit_event(con->conn, "close", buf, sizeof(int) + 14,
+                                 pre_close_connection, close_connection);
             return;
         } else {
             DBG_PRINT("socket closed before connection was opened\n");
