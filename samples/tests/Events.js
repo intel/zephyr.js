@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 // Simple test to utilize the event module. This test creates an event emitter,
 // registers two event listeners, and emits the events.
 var pass = true;
@@ -31,7 +31,7 @@ myEmitter.on('test_event1', function(arg1, arg2) {
 });
 
 var testEventNames = myEmitter.eventNames();
-for (var i = 0; i < testEventNames.length - 1; i++) {
+for (var i = 0; i < testEventNames.length; i++) {
     console.log("EventName[" + i + "]: " + testEventNames[i]);
 }
 
