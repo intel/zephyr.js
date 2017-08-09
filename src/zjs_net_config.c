@@ -300,9 +300,7 @@ static ZJS_DECL_FUNC(set_ip)
     struct sockaddr_in6 tmp = { 0 };
 
     // check if v6
-    if(net_addr_pton(AF_INET6,
-            str,
-            &tmp.sin6_addr) < 0) {
+    if (net_addr_pton(AF_INET6, str, &tmp.sin6_addr) < 0) {
         // check if v4
         struct sockaddr_in tmp1 = { 0 };
         if(net_addr_pton(AF_INET,
@@ -334,8 +332,8 @@ static ZJS_DECL_FUNC(set_ip)
 }
 
 static jerry_value_t config;
-
 static struct net_mgmt_event_callback cb;
+
 static void iface_event(struct net_mgmt_event_callback *cb,
         u32_t mgmt_event, struct net_if *iface)
 {

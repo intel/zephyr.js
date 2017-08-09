@@ -19,6 +19,8 @@
 var net = require('net');
 var net_cfg = require('net-config');
 
+net_cfg.setStaticIP('2001:db8::1');
+
 net_cfg.on('netup', function() {
 	console.log("network up");
 	setTimeout(function() {
