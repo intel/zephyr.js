@@ -37,7 +37,7 @@ interface BLE {
     void on(string eventType, EventCallback callback);
     void startAdvertising(string name, string[] uuids, string url);
     void stopAdvertising();
-    void setServices(PrimaryService service[]);
+    void setServices(PrimaryService services[]);
     void updateRssi();
     PrimaryService PrimaryService(PrimaryServiceInit init);
     Characteristic Characteristic(CharacteristicInit init);
