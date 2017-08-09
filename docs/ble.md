@@ -10,7 +10,7 @@ ZJS API for Bluetooth Low Energy (BLE)
 Introduction
 ------------
 The BLE API is based off the [bleno API](https://github.com/sandeepmistry/bleno). Bluetooth Low Energy (aka
-[Bluetooth Smart](https://www.bluetooth.com/what-is-bluetooth-technology/bluetooth-technology-basics/low-energy)) is a power-friendly version of Bluetooth
+[Bluetooth LE: Broadcast](https://www.bluetooth.com/what-is-bluetooth-technology/how-it-works/le-broadcast)) is a power-friendly version of Bluetooth
 intended for IoT devices. It provides the ability to support low-bandwidth data
 services to nearby devices.
 
@@ -37,7 +37,7 @@ interface BLE {
     void on(string eventType, EventCallback callback);
     void startAdvertising(string name, string[] uuids, string url);
     void stopAdvertising();
-    void setServices();
+    void setServices(PrimaryService services[]);
     void updateRssi();
     PrimaryService PrimaryService(PrimaryServiceInit init);
     Characteristic Characteristic(CharacteristicInit init);
