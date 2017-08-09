@@ -19,6 +19,7 @@
 #include "zjs_util.h"
 
 #define SPI_BUS "SPI_"
+#define SPI_MAX_CLK_FREQ_250KHZ 250000
 #define MAX_SPI_BUS 127
 #define MAX_READ_BUFF 1000
 #define MAX_DIR_LEN 13
@@ -69,7 +70,7 @@ static ZJS_DECL_FUNC(zjs_spi_transceive)
     ZJS_GET_HANDLE(this, spi_handle_t, handle, spi_type_info);
 
     if (handle->closed == true) {
-        ZJS_PRINT("SPI bus is closed\n");
+        ZJS_ERROR("SPI bus is closed\n");
         return jerry_create_null();
     }
 
@@ -215,7 +216,7 @@ static ZJS_DECL_FUNC(zjs_spi_open)
 
     // Default values
     u32_t bus = 0;
-    double speed = 10;
+    double speed = SPI_MAX_CLK_FREQ_250KHZ;  // default bus speed in Hz
     bool msbFirst = true;
     u32_t bits = 8;
     u32_t polarity = 0;
@@ -280,15 +281,24 @@ static ZJS_DECL_FUNC(zjs_spi_open)
     else
         config.config |= SPI_TRANSFER_LSB;
 
-    if (speed > 0)
+    if (speed > 0) {
+#ifdef CONFIG_BOARD_FRDM_K64F
+        // Note: on the FRDM-K64F using MCUX driver, it is set to the baud rate
         config.max_sys_freq = speed;
+#else
+        // Note: on the Arduino 101 using QMSI driver, the max_sys_freq is set
+        // to clock speed divider, so we take the clock speed of 32MHz and
+        // divided by the bus speed to get the clock divider
+        config.max_sys_freq = 32000000 / speed;
+#endif
+    }
 
     // Note: The mode is determined by adding the polarity and phase bits
     // together, this is why polarity is either 0 or 2
     if (polarity == 2)
         config.config |= SPI_MODE_CPOL;
 
-    if (phase == 1)
+    if (phase == 2)
         config.config |= SPI_MODE_CPHA;
 
     struct device *spi_device = device_get_binding(bus_str);
@@ -306,6 +316,11 @@ static ZJS_DECL_FUNC(zjs_spi_open)
     jerry_set_prototype(spi_obj, zjs_spi_prototype);
 
     spi_handle_t *handle = zjs_malloc(sizeof(spi_handle_t));
+    if (!handle) {
+        jerry_release_value(spi_obj);
+        return ZJS_ERROR("could not allocate handle\n");
+    }
+
     handle->spi_device = spi_device;
     handle->closed = false;
     handle->topology = topology;

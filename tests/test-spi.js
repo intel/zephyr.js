@@ -9,7 +9,7 @@ var board = require('board');
 
 var spiBus, spiBuffer, bufferData, busNum;
 var deviceNum = 1;
-var busSpeed = 20000;
+var busSpeed = 2000000;  // in Hz
 busNum = board.name === "arduino_101" ? 1 : 0;
 
 assert.throws(function() {

@@ -48,7 +48,7 @@ interface SPI {
 
 dictionary SPIOptions {
     octet bus;
-    long speed;
+    long speed;  // bus clock frequency in Hz
     bool msbFirst;
     long polarity;
     long phase;
