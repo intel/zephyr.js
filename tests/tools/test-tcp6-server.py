@@ -6,10 +6,10 @@ import socket
 import SocketServer
 
 def main():
-    print "Socket server creat successful"
-
     host = "2001:db8::2"
     port = 9876
+    print "Creating socket server on " + host + " port " + str(port) + "..."
+
     addr = (host, port)
     Timeout = 80
     bufSize = 1024

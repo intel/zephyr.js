@@ -2,7 +2,7 @@
 
 // Run this test case and run simple TCP server on linux
 //     TCP server: /tests/tools/test-tcp6-server.py
-// If on a101 using Bluetooth communication, please connect server with Bluetooth:
+// If on A101 using Bluetooth communication, connect server with Bluetooth:
 //     Add soft router on linux:
 //         ip -6 route add 2001:db8::/64 dev bt0
 //     Add IPv6 address on linux:
@@ -20,12 +20,15 @@ var board = require("board");
 var assert = require("Assert.js");
 var net_cfg = require("net-config");
 
+var my_addr = '2001:db8::1';
+net_cfg.setStaticIP(my_addr);
+
 var IPv6Address = "2001:db8::2";
 var IPv6Port = 9876;
 var addressOptions = {
     port: IPv6Port,
     host: IPv6Address,
-    localAddress: "2001:db8::1",
+    localAddress: my_addr,
     localPort: 8484,
     family: 6
 }
