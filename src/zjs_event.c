@@ -217,7 +217,7 @@ static ZJS_DECL_FUNC(get_event_names)
     int i = 0;
     while (event) {
         jerry_set_property_by_index(rval, i++,
-                                    jerry_create_string(event->name));
+            jerry_create_string((jerry_char_t *)event->name));
         event = event->next;
     }
 
@@ -415,6 +415,9 @@ bool zjs_emit_event(jerry_value_t obj, const char *event_name,
     listener_t *listener = event->listeners;
     while (listener) {
         ZVAL rval = jerry_call_function(listener->func, obj, argv, argc);
+	if (jerry_value_has_error_flag(rval)) {
+            ERR_PRINT("error calling listener\n");
+	}
         listener = listener->next;
     }
 
