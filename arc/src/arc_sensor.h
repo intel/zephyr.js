@@ -3,7 +3,7 @@
 #ifndef __arc_sensor_h__
 #define __arc_sensor_h__
 
-static u32_t sensor_poll_freq = 20;  // default poll frequency
+extern u32_t sensor_poll_freq;
 
 void arc_handle_sensor(struct zjs_ipm_message *msg);
 

@@ -20,6 +20,8 @@
 #define BMI160_NAME BMI160_DEVICE_NAME
 #endif
 
+u32_t sensor_poll_freq = 20;        // default polling frequency
+
 #ifdef BUILD_MODULE_SENSOR_LIGHT
 static atomic_t pin_values[ARC_AIO_LEN] = {};
 static atomic_t pin_last_values[ARC_AIO_LEN] = {};
