@@ -991,7 +991,7 @@ jerry_value_t zjs_ocf_client_init()
     zjs_obj_add_function(ocf_client, ocf_get_platform_info, "getPlatformInfo");
     zjs_obj_add_function(ocf_client, ocf_get_device_info, "getDeviceInfo");
 
-    zjs_make_event(ocf_client, ZJS_UNDEFINED, NULL, client_free_cb);
+    zjs_make_emitter(ocf_client, ZJS_UNDEFINED, NULL, client_free_cb);
 
     return jerry_acquire_value(ocf_client);
 }

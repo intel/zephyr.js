@@ -424,14 +424,9 @@ bool zjs_emit_event(jerry_value_t obj, const char *event_name,
     return true;
 }
 
-void zjs_make_event(jerry_value_t obj, jerry_value_t prototype,
-                    void *user_data, zjs_event_free free_cb)
+void zjs_make_emitter(jerry_value_t obj, jerry_value_t prototype,
+                      void *user_data, zjs_event_free free_cb)
 {
-    ZVAL event_obj = jerry_create_object();
-
-    ZVAL map = jerry_create_object();
-    zjs_set_property(event_obj, "map", map);
-
     jerry_value_t proto = zjs_event_emitter_prototype;
     if (jerry_value_is_object(prototype)) {
         jerry_set_prototype(prototype, proto);
@@ -459,7 +454,7 @@ void *zjs_event_get_user_handle(jerry_value_t obj)
 static ZJS_DECL_FUNC(event_constructor)
 {
     jerry_value_t new_emitter = jerry_create_object();
-    zjs_make_event(new_emitter, ZJS_UNDEFINED, NULL, NULL);
+    zjs_make_emitter(new_emitter, ZJS_UNDEFINED, NULL, NULL);
     return new_emitter;
 }
 

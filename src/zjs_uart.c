@@ -297,7 +297,7 @@ static ZJS_DECL_FUNC(uart_init)
 
     handle->uart_obj = jerry_create_object();
 
-    zjs_make_event(handle->uart_obj, zjs_uart_prototype, NULL, NULL);
+    zjs_make_emitter(handle->uart_obj, zjs_uart_prototype, NULL, NULL);
 
     read_id = zjs_add_c_callback(handle, uart_c_callback);
 
