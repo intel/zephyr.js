@@ -5,7 +5,7 @@ var assert = require("Assert.js");
 
 // Clean up any test files left from previous tests
 var stats = fs.statSync('testfile.txt');
-if (stats.isFile() || stats.isDirectory()) {
+if (stats && (stats.isFile() || stats.isDirectory())) {
     fs.unlinkSync('testfile.txt');
     console.log('removing testfile.txt');
 }
@@ -15,7 +15,7 @@ var fd = fs.openSync('testfile.txt', 'a');
 fs.closeSync(fd);
 var fd_stats = fs.statSync('testfile.txt');
 var success = false;
-if (fd_stats.isFile()) {
+if (fd_stats && fd_stats.isFile()) {
 	success = true;
 }
 assert(success, "create file");
@@ -24,7 +24,7 @@ assert(success, "create file");
 fs.unlinkSync('testfile.txt');
 fd_stats = fs.statSync('testfile.txt');
 success = false;
-if (!fd_stats.isFile()) {
+if (!fd_stats || !fd_stats.isFile()) {
 	success = true;
 }
 assert(success, "remove file");

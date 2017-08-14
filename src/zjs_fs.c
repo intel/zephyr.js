@@ -326,6 +326,10 @@ static ZJS_DECL_FUNC_ARGS(zjs_fs_unlink, u8_t async)
     }
 
     ret = fs_unlink(path);
+    if (ret != 0) {
+        ERR_PRINT("failed to unlink %s with error [%d]\n", path, ret);
+        return ZJS_UNDEFINED;
+    }
 
 #ifdef ZJS_FS_ASYNC_APIS
     if (async) {
@@ -783,15 +787,26 @@ static ZJS_DECL_FUNC_ARGS(zjs_fs_stat, u8_t async)
     struct fs_dirent entry;
 
     ret = fs_stat(path, &entry);
+    if (ret != 0) {
+        // ToDo: Decide what to do with FStat if the file doesn't exists,
+        // the current work-around is to return undefined value.
+        return ZJS_UNDEFINED;
+    }
 
 #ifdef ZJS_FS_ASYNC_APIS
     if (async) {
-        ZVAL ret_val = jerry_create_number(ret);
-        ZVAL stats = create_stats_obj(&entry);
-        jerry_value_t args[] = { ret_val, stats };
+        if (ret != 0) {
+            jerry_value_t args[] = { ZJS_UNDEFINED };
+            zjs_callback_id id = zjs_add_callback_once(argv[1], this, NULL, NULL);
+            zjs_signal_callback(id, args, sizeof(args));
+        } else {
+            ZVAL ret_val = jerry_create_number(ret);
+            ZVAL stats = create_stats_obj(&entry);
+            jerry_value_t args[] = { ret_val, stats };
 
-        zjs_callback_id id = zjs_add_callback_once(argv[1], this, NULL, NULL);
-        zjs_signal_callback(id, args, sizeof(args));
+            zjs_callback_id id = zjs_add_callback_once(argv[1], this, NULL, NULL);
+            zjs_signal_callback(id, args, sizeof(args));
+        }
         return ZJS_UNDEFINED;
     }
 #endif
