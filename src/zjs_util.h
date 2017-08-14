@@ -561,4 +561,12 @@ void zjs_loop_init(void);
         var = (type *)native;                                            \
     }
 
+// nasty hack to get reference count from a JerryScript object
+#define CHECK_REF_COUNT(str, obj)                              \
+    {                                                          \
+        uint16_t *ptr = (uint16_t *)(uintptr_t)(obj - 3);      \
+        ZJS_PRINT("%s: %p %x\n", str, (void *)(uintptr_t)obj,  \
+                  (uint32_t)(*ptr) >> 6);                      \
+    }
+
 #endif  // __zjs_util_h__
