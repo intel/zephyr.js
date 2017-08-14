@@ -546,7 +546,7 @@ static jerry_value_t create_socket(u8_t client, sock_handle_t **handle_out)
     sock_handle->socket = socket;
     sock_handle->rptr = sock_handle->wptr = sock_handle->rbuf;
 
-    zjs_make_event(socket, zjs_net_socket_prototype, sock_handle, NULL);
+    zjs_make_emitter(socket, zjs_net_socket_prototype, sock_handle, NULL);
 
     *handle_out = sock_handle;
 
@@ -849,7 +849,7 @@ static ZJS_DECL_FUNC(net_create_server)
     handle->server = server;
     handle->listening = 0;
 
-    zjs_make_event(server, zjs_net_server_prototype, handle, NULL);
+    zjs_make_emitter(server, zjs_net_server_prototype, handle, NULL);
 
     if (optcount) {
         zjs_add_event_listener(server, "connection", argv[0]);

@@ -582,7 +582,7 @@ static void create_ws_connection(void *h, jerry_value_t argv[], u32_t *argc,
     zjs_obj_add_function(conn, ws_ping, "ping");
     zjs_obj_add_function(conn, ws_pong, "pong");
     zjs_obj_add_function(conn, ws_terminate, "terminate");
-    zjs_make_event(conn, ZJS_UNDEFINED, con, NULL);
+    zjs_make_emitter(conn, jerry_create_object(), con, NULL);
     if (con->server_handle->track) {
         ZVAL clients = zjs_get_property(con->server_handle->server, "clients");
         ZVAL new = push_array(clients, conn);
@@ -937,7 +937,7 @@ static ZJS_DECL_FUNC(ws_server)
     CHECK(net_context_listen(handle->tcp_sock, (int)backlog));
     CHECK(net_context_accept(handle->tcp_sock, tcp_accepted, 0, handle));
 
-    zjs_make_event(server, ZJS_UNDEFINED, handle, free_server);
+    zjs_make_emitter(server, jerry_create_object(), handle, free_server);
 
     handle->server = server;
     handle->max_payload = (u16_t)max_payload;

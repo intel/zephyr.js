@@ -578,7 +578,7 @@ jerry_value_t zjs_ocf_server_init()
     // FIXME: document this function if it's supposed to be here
     zjs_obj_add_function(server, ocf_notify, "notify");
 
-    zjs_make_event(server, ZJS_UNDEFINED, NULL, NULL);
+    zjs_make_emitter(server, ZJS_UNDEFINED, NULL, NULL);
 
     return server;
 }

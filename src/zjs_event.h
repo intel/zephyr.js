@@ -17,7 +17,7 @@
  *
  * The callback is responsible for setting up the arguments
  *
- * @param handle        Event user handle provided to zjs_make_event
+ * @param handle        Event user handle provided to zjs_make_emitter
  * @param argv          Arg array w/ max of four args to be set up
  * @param argc          Pointer to arg count to be set (default 0)
  * @param buffer        Data provided to zjs_defer_emit_event from which to
@@ -30,7 +30,7 @@ typedef void (*zjs_pre_emit)(void *handle, jerry_value_t argv[], u32_t *argc,
 /**
  * Callback prototype for after an event is emitted
  *
- * @param handle        Event user handle provided to zjs_make_event
+ * @param handle        Event user handle provided to zjs_make_emitter
  * @param argv          Arg array w/ max of four args to be cleaned up
  * @param argc          Arg count
  */
@@ -46,28 +46,30 @@ typedef void (*zjs_post_event)(void *handle);
 /**
  * Callback prototype for when an event object is freed
  *
- * @param handle        Handle given to zjs_make_event()
+ * @param handle        Handle given to zjs_make_emitter()
  */
 typedef void (*zjs_event_free)(void *handle);
 
 /**
- * Turn an object into an event object. After this call the object will have
- * all the event functions like addListener(), on(), etc. This object can also
- * be used to trigger events in C. If the object needs no other prototype, pass
- * undefined and the event emitter prototype will be used. If a prototype is
- * given, it will be used as the object's prototype but its prototype in turn
- * will be set to the event emitter prototype.
+ * Turns an object into an event emitter object
+ *
+ * After this call the object will have all the event functions like
+ * addListener(), on(), etc. This object can also be used to trigger events in
+ * C. If the object needs no other prototype, pass undefined and the event
+ * emitter prototype will be used. If a prototype is given, it will be used as
+ * the object's prototype but its prototype in turn will be set to the event
+ * emitter prototype.
  *
  * @param obj           Object to turn into an event object
  * @param prototype     Object to decorate and use as prototype, or undefined
  * @param user_handle   A handle the caller can get back later
  * @param free_cb       A callback for cleanup related to user_handle
  */
-void zjs_make_event(jerry_value_t obj, jerry_value_t prototype,
-                    void *user_handle, zjs_event_free free_cb);
+void zjs_make_emitter(jerry_value_t obj, jerry_value_t prototype,
+                      void *user_handle, zjs_event_free free_cb);
 
 /**
- * Get back the user handle for this event supplied to zjs_make_event
+ * Get back the user handle for this event supplied to zjs_make_emitter
  *
  * @param obj           Object to turn into an event object
  */
