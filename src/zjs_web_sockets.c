@@ -455,6 +455,8 @@ static void close_connection(void *h, jerry_value_t argv[], u32_t argc)
     zjs_free(con->rbuf);
     zjs_free(con->accept_key);
     zjs_remove_callback(con->accept_handler_id);
+    zjs_destroy_emitter(con->conn);
+    jerry_release_value(con->conn);
     zjs_free(con);
     DBG_PRINT("Freed socket: opened_sockets=%p\n", connections);
 }
@@ -588,7 +590,7 @@ static void create_ws_connection(void *h, jerry_value_t argv[], u32_t *argc,
         ZVAL new = push_array(clients, conn);
         zjs_set_property(con->server_handle->server, "clients", new);
     }
-    con->conn = conn;
+    con->conn = jerry_acquire_value(conn);
     argv[0] = conn;
     *argc = 1;
 }

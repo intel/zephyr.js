@@ -113,8 +113,8 @@ static bool delete_timer(s32_t id)
         for (int i = 0; i < tm->argc; ++i) {
             jerry_release_value(tm->argv[i]);
         }
-        // only remove interval timers, timeouts get removed automatically
-        if (tm->repeat) {
+        // remove callbacks except for expired once timers
+        if (tm->repeat || !tm->completed) {
             zjs_remove_callback(tm->callback_id);
         }
         ZJS_LIST_REMOVE(zjs_timer_t, zjs_timers, tm);
