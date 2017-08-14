@@ -442,6 +442,24 @@ void zjs_make_emitter(jerry_value_t obj, jerry_value_t prototype,
     jerry_set_object_native_pointer(obj, emitter, &emitter_type_info);
 }
 
+void zjs_destroy_emitter(jerry_value_t obj)
+{
+    // FIXME: probably better to more fully free in case JS keeps obj around
+    ZJS_GET_HANDLE_OR_NULL(obj, emitter_t, handle, emitter_type_info);
+    if (handle) {
+        event_t *event = handle->events;
+        while (event) {
+            listener_t *listener = event->listeners;
+            while (listener) {
+                jerry_release_value(listener->func);
+                listener->func = 0;
+                listener = listener->next;
+            }
+            event = event->next;
+        }
+    }
+}
+
 void *zjs_event_get_user_handle(jerry_value_t obj)
 {
     ZJS_GET_HANDLE_OR_NULL(obj, emitter_t, handle, emitter_type_info);

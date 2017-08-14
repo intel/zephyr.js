@@ -69,6 +69,25 @@ void zjs_make_emitter(jerry_value_t obj, jerry_value_t prototype,
                       void *user_handle, zjs_event_free free_cb);
 
 /**
+ * Remove all events and listeners from the event emitter
+ *
+ * This should be called for C-based event emitters when we know that the
+ * emitter has become inactive; it allows the listener functions to be freed
+ * so they won't hold circular references to the emitter object.
+ *
+ * TODO: Later we may want to add finer-granularity support for unregistering
+ * one event at a time, but that doesn't seem to be needed now.
+ *
+ * FIXME: There is still a problem in JS-based event emitters that we will
+ * not know when to "destroy" them like this. A simple but Node-incompatible
+ * solution would be to expose this as a JS API. Another is to revert to
+ * storing the listeners in a hidden property array; properties are held with
+ * a looser reference than a refcount and allowed by JrS to be freed along
+ * with an object.
+ */
+void zjs_destroy_emitter(jerry_value_t obj);
+
+/**
  * Get back the user handle for this event supplied to zjs_make_emitter
  *
  * @param obj           Object to turn into an event object
