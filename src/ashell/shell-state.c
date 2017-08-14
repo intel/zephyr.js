@@ -189,13 +189,6 @@ s32_t ashell_rename(char *buf)
     return RET_OK;
 }
 
-s32_t ashell_error(char *buf)
-{
-    printk("[Error](%s)\n", buf);
-    jerry_port_log(JERRY_LOG_LEVEL_ERROR, "stderr test (%s)\n", buf);
-    return 0;
-}
-
 s32_t ashell_reboot(char *buf)
 {
 #ifdef CONFIG_REBOOT
@@ -642,7 +635,6 @@ static const struct ashell_cmd commands[] = {
     {"reboot", "",      "Reboots the device", ashell_reboot},
 
     // undocumented commands used by IDE
-    {"error", "",       "", ashell_error},
     {"echo",  "on/off", "", ashell_set_echo_mode},
     {"set",   "",       "", ashell_set_state},
     {"get",   "",       "", ashell_get_state},
