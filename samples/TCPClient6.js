@@ -16,8 +16,23 @@
 //       connection. This is done to give you enough time to setup the IP route
 //       and start the TCP server on the host (e.g. Linux) side.
 
+console.log("Starting TCPClient6.js sample...");
+
 var net = require('net');
 var net_cfg = require('net-config');
+
+var localIP = "2001:db8::1";
+var localPort = 8484;
+var remoteIP = "2001:db8::2";
+var remotePort = 4242;
+
+var connectOptions = {
+    host: remoteIP,
+    port: remotePort,
+    localAddress: localIP,
+    localPort: localPort,
+    family: 6
+};
 
 net_cfg.setStaticIP('2001:db8::1');
 
@@ -49,13 +64,13 @@ net_cfg.on('netup', function() {
 				console.log("Server not found, retrying in 2 seconds");
 				setTimeout(function() {
 					if (!is_connected) {
-						client.connect({port: 4242, host:'fe80::5ef3:70ff:fe78:1080', localAddress:'2001:db8::1', localPort: 8484, family: 6}, connected);
+						client.connect(connectOptions, connected);
 					}
 				}, 2000);
 			}
 		});
 
-		console.log("Connecting");
-		client.connect({port: 4242, host:'fe80::5ef3:70ff:fe78:1080', localAddress:'2001:db8::1', localPort: 8484, family: 6}, connected);
+		console.log("Connecting...");
+		client.connect(connectOptions, connected);
 	}, 10000);
 });
