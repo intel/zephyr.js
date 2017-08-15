@@ -7,9 +7,9 @@ console.log('File System sample');
 fs.open('testfile.txt', 'w+', function(err, fd) {
     console.log('opened file error=' + err);
     fs.stat('testfile.txt', function(err, stats) {
-        if (stats.isFile()) {
+        if (stats && stats.isFile()) {
             console.log('fd is file');
-        } else if (stats.isDirectory()) {
+        } else if (stats && stats.isDirectory()) {
             console.log('fd is directory');
         } else {
             console.log('fd has unknown type');

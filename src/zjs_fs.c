@@ -327,7 +327,7 @@ static ZJS_DECL_FUNC_ARGS(zjs_fs_unlink, u8_t async)
 
     ret = fs_unlink(path);
     if (ret != 0) {
-        ERR_PRINT("failed to unlink %s with error [%d]\n", path, ret);
+        DBG_PRINT("failed to unlink %s with error [%d]\n", path, ret);
         return ZJS_UNDEFINED;
     }
 
@@ -788,7 +788,7 @@ static ZJS_DECL_FUNC_ARGS(zjs_fs_stat, u8_t async)
 
     ret = fs_stat(path, &entry);
     if (ret != 0) {
-        // ToDo: Decide what to do with FStat if the file doesn't exists,
+        // TODO: Decide what to do with FStat if the file doesn't exists,
         // the current work-around is to return undefined value.
         return ZJS_UNDEFINED;
     }
