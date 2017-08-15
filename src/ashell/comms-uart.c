@@ -317,10 +317,13 @@ void comms_write_buf(const char *buf, int len)
 
     while (len > 0) {
         data_transmitted = false;
+        // FIXME: docs indicate this function should only be called from ISR
+        //   context; check on that in Zephyr code/samples and our usage
         sent = uart_fifo_fill(dev_upload, (const u8_t *)buf, len);
 
-        while (data_transmitted == false) {
-            ;
+        if (sent) {
+            // wait for data
+            while (data_transmitted == false) {}
         }
 
         len -= sent;
