@@ -612,19 +612,19 @@ s32_t ashell_set_bootcfg(char *buf)
 
 static const struct ashell_cmd commands[] = {
     // CMD    ARGS      DESCRIPTION  IMPL
-    {"help",  "",       "This help", ashell_help},
+    {"help",  "",       "Display this help information", ashell_help},
     {"eval",  "",       "Evaluate JavaScript in real time",
                           ashell_js_immediate_mode},
-    {"load",  "FILE",   IDE_SKIP("Saves the input text into a file"),
+    {"load",  "FILE",   IDE_SKIP("Save the input text into a file"),
                           ashell_read_data},
-    {"run",   "FILE",   "Runs the JavaScript program in the file",
+    {"run",   "FILE",   "Run the JavaScript program in the file",
                           ashell_run_javascript},
     {"parse", "FILE",   IDE_SKIP("Check if the JS syntax is correct"),
                           ashell_parse_javascript},
-    {"stop",  "",       "Stops current JavaScript execution",
+    {"stop",  "",       "Stop current JavaScript execution",
                           ashell_stop_javascript},
     {"ls",    "",       "List all files", ashell_list_dir},
-    {"cat",   "FILE",   "Print the file contents of a file", ashell_print_file},
+    {"cat",   "FILE",   "Print the contents of a file", ashell_print_file},
     {"du",    "FILE",   IDE_SKIP("Estimate file space usage"),
                           ashell_disk_usage},
     {"rm",    "FILE",   "Remove file or directory", ashell_remove_file},
@@ -632,7 +632,7 @@ static const struct ashell_cmd commands[] = {
     {"clear", "",       "Clear the terminal screen", ashell_clear},
     {"boot",  "FILE",   "Set the file that should run at boot",
                           ashell_set_bootcfg},
-    {"reboot", "",      "Reboots the device", ashell_reboot},
+    {"reboot", "",      "Reboot the device", ashell_reboot},
 
     // undocumented commands used by IDE
     {"echo",  "on/off", "", ashell_set_echo_mode},
@@ -644,8 +644,8 @@ static const struct ashell_cmd commands[] = {
 
 s32_t ashell_help(char *buf)
 {
-    comms_print("'A Shell' bash\r\n\r\n");
-    comms_print("Commands list:\r\n");
+    comms_print("Welcome to the ZJS 'A Shell' interface!\r\n\r\n");
+    comms_print("Command list:\r\n");
     for (u32_t t = 0; t < ASHELL_COMMANDS_COUNT; t++) {
         // skip commands with empty description
         if (!commands[t].syntax[0]) {

@@ -71,24 +71,26 @@ To get a full list of commands, run the help command.
 
 ```
 acm> help
-'A Shell' bash
+Welcome to the ZJS 'A Shell' interface!
 
-Commands list:
-    help        This help
-    eval        Evaluate JavaScript in real time
-     run FILE   Runs the JavaScript program in the file
-    stop        Stops current JavaScript execution
- bootcfg FILE   Set the file that should run at boot
-      ls        List all files
-     cat FILE   Print the file contents of a file
-      rm FILE   Remove file or directory
-      mv F1 F2  Move a file F1 to destination F2
-   clear        Clear the terminal screen
-    boot FILE   Set the file that should run at boot
-  reboot        Reboots the device
+Command list:
+    help           Display this help information
+    eval           Evaluate JavaScript in real time
+    load   FILE    Save the input text into a file
+    run    FILE    Run the JavaScript program in the file
+    parse  FILE    Check if the JS syntax is correct
+    stop           Stop current JavaScript execution
+    ls             List all files
+    cat    FILE    Print the contents of a file
+    du     FILE    Estimate file space usage
+    rm     FILE    Remove file or directory
+    mv     F1 F2   Move a file F1 to destination F2
+    clear          Clear the terminal screen
+    boot   FILE    Set the file that should run at boot
+    reboot         Reboot the device
 ```
 
-### Eval
+### eval
 
 `eval`
 
@@ -106,40 +108,12 @@ From that point on it will evaluate each line of JavaScript independently
 so you can run commands, create functions (as far as they fit in one line)
 and get results.
 
-### cat
-
-`cat <filename>`
-
-Output the text from file to the terminal
-
-### run
-
-`run <filename>`
-
-The program will be loaded from disk into memory, parsed
-and run.
-
-In case of an error while parsing it will stop parsing and output
-"Failed parsing JS"
-
-### ls
-
-`ls`
-
-List contents of current root folder
-
-### rm
-
-`rm <filename>`
-
-Remove file
-
-### Load
+### load
 
 `load <filename>`
 
-Sets the device ready to get raw or ihex text input.
-The text will be recorded in the FAT File system.
+Sets the device ready to get raw text input.
+The text will be saved to the FAT File system.
 
 Example of raw text input:
 ```
@@ -152,45 +126,75 @@ Ready for JavaScript.
 RAW>
 ```
 
-### Data transfer
+### run
 
-Set the mode to accept data when the 'load' transmission starts
+`run <filename>`
 
-1. Raw data
-`set transfer raw`
+The program will be loaded from disk into memory, parsed and run.
 
-Will be plain text that contains the code. No CRC or error checking.
-After the transmission is finished you can parse or run the code.
+In case of an error while parsing it will stop parsing and output
+"Failed parsing JS".
 
-2. Intel Hex
-`set transfer ihex`
-Basic CRC, hexadecimal data with data sections and regions.
-It might be that the code is divided in sections and you will only update a section of the memory.
-This will be used for the future integration to support JS Snapshots.
+### parse
 
-## Data transaction example using IHEX
+`parse <filename>`
 
-The motivation of the IHEX use is to be able to upload binary or text
-files and have some basic support for CRC.
+Parses the given file to check for errors without running it.
 
-```
-acm> set transfer ihex
-HEX> load
-```
+### stop
 
-Then paste ihex data. For example:
-```bash
-:2000000066756E6374696F6E2074657374696E67286E756D62657229207B0A097265747514
-:20002000726E206E756D6265722A323B0A7D3B0A7072696E742822486920776F726C642044
-:0F004000222B74657374696E6728313829293B48
-:00000001FF
-```
+`stop`
 
-Move the temporary file to a destination file:
-```
-HEX> mv temp.dat test.js
-HEX> run test.js
-```
+Stops execution of any running JS script.
+
+### ls
+
+`ls`
+
+List contents of current root folder.
+
+### cat
+
+`cat <filename>`
+
+Print the contents of the given file to the terminal.
+
+### du
+
+`du <filename>`
+
+Estimates the file usage of the given file.
+
+### rm
+
+`rm <filename>`
+
+Deletes the specified file.
+
+### mv
+
+`mv <filename1> <filename2>`
+
+Renames filename1 to filename2.
+
+### clear
+
+`clear`
+
+Clears the terminal screen.
+
+### boot
+
+`boot <filename>`
+
+Sets the specified file as a script to run automatically each time the device
+boots.
+
+### reboot
+
+`reboot`
+
+Reboots the device.
 
 Connect using serial console
 ----------------------------
