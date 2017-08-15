@@ -1,7 +1,7 @@
 // Copyright (c) 2017, Intel Corporation.
 
-// Build this test case and check random ble address,
-//   and check default device name as "ZJS Device":
+// Build this test case and check default ble address as "FF:EE:DD:CC:BB:AA",
+//   and check default device name as "Zephyr":
 //     make JS=tests/test-6lowpan-ocfserver-manual.js ROM=256
 // Build this test case with BLE_ADDR flag again:
 //     make JS=tests/test-6lowpan-ocfserver-manual.js ROM=256 BLE_ADDR="F2:E3:D4:C5:B6:A7"
@@ -17,12 +17,12 @@ console.log("Please connect server with Bluetooth....\n");
 console.log("If build with 'BLE_ADDR' flag:");
 console.log("    OCF BLE address: expected result 'F2:E3:D4:C5:B6:A7'");
 console.log("If not:");
-console.log("    OCF BLE address: expected result 'random'\n");
+console.log("    OCF BLE address: expected result 'FF:EE:DD:CC:BB:AA'\n");
 
 console.log("If build with 'DEVICE_NAME' flag:");
 console.log("    OCF BLE address: expected result 'MyServer'");
 console.log("If not:");
-console.log("    OCF BLE address: expected result 'ZJS Device'");
+console.log("    OCF BLE address: expected result 'Zephyr'");
 
 var TestProperties = {
     state: true
