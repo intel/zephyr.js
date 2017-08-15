@@ -1,5 +1,5 @@
 ZJS API for Web Sockets
-============================
+=======================
 
 * [Introduction](#introduction)
 * [Web IDL](#web-idl)
@@ -24,18 +24,9 @@ interface WebSocket {
     WebSocketServer Server(Object options);
 };
 
-interface WebSocketServer {
-    // WebSocketServer Events
-    onconnection(WebSocketConnection ws);
-};
+interface WebSocketServer: EventEmitter;
 
-interface WebSocketConnection {
-    // WebSocketConnection Events
-    onmessage(Buffer data);
-    onping(Buffer data);
-    onpong(Buffer data);
-    onclose(Number code, String reason);
-    onerror(Error e);
+interface WebSocketConnection: EventEmitter {
     // WebSocketConnection methods
     void send(Buffer data, Boolean mask);
     void ping(Buffer data, Boolean mask);
@@ -43,13 +34,26 @@ interface WebSocketConnection {
 };
 ```
 
-API Documentation
------------------
-### WebSocket.Server
+WebSocket API Documentation
+---------------------------
 
+### WebSocket.Server
 `WebSocketServer Server(Object options)`
 
 Create a Web Socket server object. Options object may contain:
+
+WebSocketServer API Documentation
+---------------------------------
+
+WebSocketServer is [EventEmitter](./events.md) with the following events:
+
+### Event: 'connection'
+
+* `WebSocketConnection` `conn`
+
+Emitted when a client has connected to the server. The argument to any
+registered listener will be a `WebSocketConnection` object which can be used to
+communicate with the client.
 ```
 {
     port : Port to bind to
@@ -66,47 +70,42 @@ strings from the handler.
 
 Returns a `WebSocketServer` object.
 
-### WebSocketServer.onconnection Event
+WebSocketConnection API Documentation
+-------------------------------------
 
-`onconnection(WebSocketConnection con)`
+WebSocketServer is [EventEmitter](./events.md) with the following events:
 
-The `connection` event is emitted when a client has connected to the server. The
-argument to any registered listener will be a `WebSocketConnection` object which
-can be used to communicate with the client.
+### Event: 'close'
 
-### WebSocketConnection.onmessage Event
+Emitted when the web socket has closed.
 
-`onmessage(Buffer data)`
+### Event: 'error'
 
-The `message` event is emitted when the web socket has received data. The data
-will be contained in the `data` argument.
+* `Error` `err`
 
-### WebSocketConnection.onping Event
+Emitted when the web socket has an error. They type of error can be found in
+the `err` object argument.
 
-`onping(Buffer data)`
+### Event: 'message'
 
-The `ping` event is emitted when the web socket has received a ping. The ping's
-payload is contained in the `data` argument
+* `Buffer` `data`
 
-### WebSocketConnection.onpong Event
+Emitted when the web socket has received data. The data will be contained in
+the `data` Buffer argument.
 
-`onpong(Buffer data)`
+### Event: 'ping'
 
-The `pong` event is emitted when the web socket has received a pong. The pong's
-payload is contained in the `data` argument
+* `Buffer` `data`
 
-### WebSocketConnection.onclose Event
+Emitted when the socket has received a ping. The ping's payload is contained in
+the `data` argument.
 
-`onclose(void)`
+### Event: 'pong'
 
-The `close` event is emitted when the web socket has closed.
+* `Buffer` `data`
 
-### WebSocketConnection.onerror Event
-
-`onerror(Error e)`
-
-The `error` event is emitted when the web socket has an error. The type of
-error (name/message) can be found in the `e` argument.
+Emitted when the socket has received a pong. The pong's payload is contained in
+the `data` argument.
 
 ### WebSocketConnection.send
 

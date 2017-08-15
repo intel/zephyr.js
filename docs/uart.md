@@ -1,5 +1,5 @@
 Zephyr.js API for UART
-==================================
+======================
 
 * [Introduction](#introduction)
 * [Web IDL](#web-idl)
@@ -42,7 +42,7 @@ dictionary UARTOptions {
 };
 
 [NoInterfaceObject]
-interface UARTConnection {
+interface UARTConnection: EventEmitter {
     // void close();
     void write(Buffer data);
     void setReadRange(number min, number max);
@@ -51,12 +51,24 @@ interface UARTConnection {
 
 API Documentation
 -----------------
+## UART interface
+
 ### UART.init
 
 `UARTConnection init(UARTOptions options);`
 
 The `options` object lets you choose the UART device/port you would like to
 initialize. The Arduino 101, for example, should be "tty0".
+
+## UARTConnection interface
+UARTConnection is an [EventEmitter](./events.md) with the following events:
+
+### Event: 'read'
+
+* `Buffer` `data`
+
+Emitted when data is received on the UART RX line. The `data` parameter is a
+`Buffer` with the recieved data.
 
 ### UARTConnection.write
 
@@ -71,16 +83,6 @@ Write data out to the UART TX line. `data` is a string that will be written.
 Set the minimum and maximum number of bytes for triggering the `onread` event.
 Whenever at least the `min` number of bytes is available, a `Buffer` object
 containing at most `max` number of bytes is sent with the `onread` event.
-
-## Events
-
-### onread
-
-`function onread(Buffer data);`
-
-A function can be registered to the `read` event which will be called
-when data is recieved on the UART RX line. The `data` parameter is a `Buffer`
-with the recieved data.
 
 Sample Apps
 -----------

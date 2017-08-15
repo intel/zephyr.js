@@ -1,5 +1,5 @@
 ZJS API for Network Configuration
-==================
+=================================
 
 * [Introduction](#introduction)
 * [Web IDL](#web-idl)
@@ -25,10 +25,7 @@ specific API functions.
 // require returns a Net object
 // var net_cfg = require('net-config');
 
-interface NetConfig {
-    // net-config events
-    EventListener onup(void);
-    EventListener ondown(void);
+interface NetConfig: EventEmitter {
     // set a static IP
     Boolean setStaticIP(String ip);
     // start DHCP
@@ -42,18 +39,17 @@ callback DHCPCallback = void (String address, String subnet, String gateway);
 
 API Documentation
 -----------------
-### NetConfig.onup Event
-`void onup(void);`
+NetConfig is an [EventEmitter](./events.md) with the following events:
 
-This event is emitted when the underlying network interface comes online. This
-becomes important when using a networking client on 6lowpan, because you may
-need to wait for a BLE connection before issuing any socket connections.
+### Event: 'netup'
 
-### NetConfig.ondown Event
-`void ondown(void);`
+Emitted when the underlying network interface comes online. This becomes
+important when using a networking client on 6lowpan, because you may need to
+wait for a BLE connection before issuing any socket connections.
 
-The couterpart to `ondown`. This is issued when the networking interface goes
-offline.
+### Event: 'netdown'
+
+Emitted when the networking interface goes offline.
 
 ### NetConfig.setStaticIP
 `Boolean setStaticIP(String ip)`
