@@ -20,25 +20,28 @@ def main():
     mySocket.bind(addr)
     mySocket.listen(5)
 
-    client, clientaddr = mySocket.accept()
-    print "Connected from: ", client.getpeername()
+    connection, clientaddr = mySocket.accept()
+    print "Connected from: ", clientaddr
 
     while 1:
         try :
-            Data = mySocket.recv(bufSize)
+            Data = connection.recv(bufSize)
             Data = Data.strip()
             print "Got data: ", Data
 
             time.sleep(2)
 
             if Data == "close":
-                mySocket.close()
+                connection.close()
                 print "close socket"
 
                 break
             else:
-                mySocket.sendall(Data)
+                connection.sendall(Data)
                 print "Send data: ", Data
+        except KeyboardInterrupt :
+            print "exit server"
+            break
         except :
             print "time out"
             continue
