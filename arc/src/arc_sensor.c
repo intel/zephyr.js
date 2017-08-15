@@ -615,7 +615,7 @@ void arc_fetch_light()
 
 void arc_fetch_sensor()
 {
-    // ToDo: currently only supports BMI160 temperature
+    // TODO: currently only supports BMI160 temperature
     // add support for other types of sensors
     if (bmi160 && (
 #ifndef CONFIG_BMI160_TRIGGER

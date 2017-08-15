@@ -8,9 +8,9 @@ var fd = fs.openSync('testfile.txt', 'w+');
 
 var stats = fs.statSync('testfile.txt');
 
-if (stats.isFile()) {
+if (stats && stats.isFile()) {
     console.log('fd is file');
-} else if (stats.isDirectory()) {
+} else if (stats && stats.isDirectory()) {
     console.log('fd is directory');
 } else {
     console.log('fd has unknown type');

@@ -159,7 +159,7 @@ Get stats about a file or directory.
 
 `path` name of file or directory.
 
-Returns a `Stat` object for that file or directory.
+Returns a `Stat` object for that file or directory or undefined if file or directory does not exist.
 
 ### FS.writeFileSync
 `void writeFileSync(string file, [string|buffer] data);`
