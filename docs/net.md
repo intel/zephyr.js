@@ -1,5 +1,5 @@
 ZJS API for Net
-==================
+===============
 
 * [Introduction](#introduction)
 * [Web IDL](#web-idl)
@@ -30,13 +30,7 @@ interface Net {
     Boolean isIPv6(input);
 };
 
-interface Socket {
-    // Socket events
-    onclose();
-    onconnect();
-    ondata(Buffer buf);
-    onerror();
-    ontimeout();
+interface Socket: EventEmitter {
     // Socket methods
     void connect(Object options, callback onconnect);
     void pause();
@@ -54,12 +48,7 @@ interface Socket {
     Number remotePort;    // Remote port
 };
 
-interface Server {
-    // Server events
-    onclose();
-    onconnection(Socket sock);
-    onerror();
-    onlistening();
+interface Server: EventEmitter {
     // Server methods
     AddressInfo address();
     void close();
@@ -85,8 +74,8 @@ dictionary AddressInfo {
 }
 ```
 
-API Documentation
------------------
+Net API Documentation
+---------------------
 
 ### Net.createServer
 `Server createServer(callback onconnection)`
@@ -126,34 +115,33 @@ Checks if input is an IPv6 address.
 
 Returns true if input is IPv6.
 
-### Socket.onclose Event
-`void onclose(void)`
+Socket API Documentation
+------------------------
 
-`close` event emitted when the socket has been closed, either by you or by
-the remote end.
+Socket is an [EventEmitter](./events.md) with the following events:
 
-### Socket.onconnect Event
-`void onconnect(void)`
+### Event: 'close'
 
-`connect` event emitted when the socket has made a successful connection to a
-remote TCP server.
+Emitted when the socket is closed, either by you or the remote end.
 
-### Socket.ondata Event
-`void ondata(Buffer buf)`
+### Event: 'connect'
 
-`data` event emitted when the socket has received data. `buf` is a Buffer
-containing the data received.
+Emitted when the socket has made a successful connection to a remote TCP server.
 
-### Socket.onerror Event
-`void onerror(void)`
+### Event: 'data'
 
-`error` event emitted when there was an error on the socket (read/write/connect).
+* `Buffer` `buf`
 
-### Socket.ontimeout Event
-`void ontimeout(void)`
+Emitted when the socket has received data. `buf` is a Buffer containg the data
+received.
 
-`timeout` event emitted when the socket has timed out. This can only happen
-if a timeout was set with `setTimeout`.
+### Event: 'error'
+
+Emitted when there was an error on the socket during read, write, or connect.
+
+### Event: 'timeout'
+
+Emitted only when a timeout set with `setTimeout` expires.
 
 ### Socket.connect
 `void connect(AddressOptions options, callback onconnect)`
@@ -193,30 +181,31 @@ Send data on the socket.
 
 `writeDone` is optional and will be called once the data is written.
 
-### Server.onclose Event
-`void onclose(void)`
+Server API Documentation
+------------------------
 
-`close` event emitted when the server has closed. This only happens after a
-server has called `close()` and all its connections have been closed. Calling
-`close()` does not close all opened connections; that must be done manually.
+Server is an [EventEmitter](./events.md) with the following events:
 
-### Server.onconnection Event
-`void onconnection(Socket sock)`
+### Event: 'close'
 
-`connection` event emitted when a client has connected to the server.
+Emitted when the server has closed. This will only happen after a server has
+called `close()` and all its connections have been closed. Calling `close()`
+does not close all opened connections; that must be done manually.
 
-`sock` parameter is the socket for this new connection.
+### Event: 'connection'
 
-### Server.onerror Event
-`void onerror(void)`
+* `Socket` `sock`
 
-`error` event emitted when the server has had an error.
+Emitted when when a client has connected to the server. `sock` is the Socket
+representing the new connection.
 
-### Server.onlistening Event
-`void onlistening(void)`
+### Event: 'error'
 
-`listening` event emitted when the server has been bound, after calling
-`server.listen()`.
+Emitted when the server has had an error.
+
+### Event: 'listening'
+
+Emitted when the server has been bound, after calling `server.listen()`.
 
 ### Server.address
 `AddressInfo address(void)`

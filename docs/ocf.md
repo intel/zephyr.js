@@ -1,5 +1,5 @@
 ZJS API for OCF
-==================
+===============
 
 * [Introduction](#introduction)
 * [Web IDL](#web-idl)
@@ -77,8 +77,7 @@ will have no effect.
 OCF Server
 ----------
 ```javascript
-// OCFServer is an EventEmitter
-interface Server {
+interface Server: EventEmitter {
     Promise<OCFResource> register(ResourceInit init);
 };
 
@@ -104,16 +103,25 @@ interface Request {
     object data;              // resource representation
     Promise<void> respond(object data);
 };
-
-// listener for onretrieve event
-callback RetrieveCallback = void (Request request, boolean observe);
-// listener for onupdate event
-callback UpdateCallback = void (Request request);
-
 ```
 
 Server API Documentation
------------------
+------------------------
+Server is an [EventEmitter](./events.md) with the following events:
+
+### Event: 'retrieve'
+
+* `Request` `request`
+* `boolean` `observe`
+
+Emitted when a remote client retrieves this server's resource(s).
+
+### Event: 'update'
+
+* `Request` `request`
+
+Emitted when a remote client updates this server's resource(s).
+
 ### Server.register
 `Promise<OCFResource> register(ResourceInit init);`
 
@@ -123,20 +131,10 @@ The `init` contains the resource initalization information.
 
 Returns a promise which resolves to an `OCFResource`.
 
-### Server.on('retrieve', RetrieveCallback listener)
-
-Register an `onretrieve` listener. This event will be emitted when a remote
-client retrieves this servers resource(s).
-
-### Server.on('update', UpdateCallback listener)
-
-Register an `onupdate` listener. This event will be emitted when a remote
-client updates this servers resource(s).
-
 ### Request.respond
 `Promise<void> respond(object data);`
 
-Respond to an OCF `onretrieve` or `onupdate` event.
+Respond to an OCF `retrieve` or `update` event.
 
 The `data` parameter should contain object property data for the resource. In
 the case of an `onretrieve` event, `data` will be sent back to the client as
@@ -146,15 +144,14 @@ Returns a promise which resolves successfully if there was no network error
 sending out the data.
 
 Server Samples
------------
+--------------
 * [OCF Server sample](../samples/OcfServer.js)
 * [OCF Sensor Server](../samples/OcfSensorServer.js)
 
 OCF Client
 ----------
 ```javascript
-// OCFClient is an EventEmitter
-interface Client {
+interface Client: EventEmitter {
     Promise<Resource> findResources(ClientOptions options, optional FoundListener listener);
     Promise<Resource> retrieve(string deviceId, object options);
     Promise<Resource> update(Resource resource);
@@ -178,6 +175,32 @@ callback FoundListener = void (ClientResource);
 
 Client API Documentation
 ------------------------
+Client is an [EventEmitter](./events.md) with the following events:
+
+### Event: 'devicefound'
+
+* `Device` `device`
+
+Emitted when a device is found during `getDeviceInfo()`.
+
+### Event: 'platformfound'
+
+* `Platform` `platform`
+
+Emitted when a platform is found during `getPlatformInfo()`.
+
+### Event: 'resourcefound'
+
+* `Resource` `resource`
+
+Emitted when a resource is found during `findResources()`.
+
+### Event: 'update'
+
+* `Resource` `update`
+
+Emitted when a resource is updated.
+
 ### Client.findResources
 `Promise<ClientResource> findResources(ClientOptions options, optional FoundListener listener);`
 
@@ -240,6 +263,6 @@ Returns a promise which resolves to a `Device` containing the device
 information for the resource.
 
 Client Samples
-------------------
+--------------
 * [OCF Client sample](../samples/OcfClient.js)
 * [OCF Sensor Client](../samples/OcfSensorClient.js)

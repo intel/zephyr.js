@@ -32,9 +32,8 @@ specific API functions.
 // var ble = require('ble');
 
 [NoInterfaceObject]
-interface BLE {
+interface BLE: EventEmitter {
     void disconnect(string address);
-    void on(string eventType, EventCallback callback);
     void startAdvertising(string name, string[] uuids, string url);
     void stopAdvertising();
     void setServices(PrimaryService services[]);
@@ -43,8 +42,6 @@ interface BLE {
     Characteristic Characteristic(CharacteristicInit init);
     Descriptor Descriptor(DescriptorInit init);
 };
-
-callback EventCallback = void (various);  // callback arg depends on event
 
 dictionary PrimaryServiceInit {
     string uuid;
@@ -92,6 +89,43 @@ interface Characteristic {
 
 API Documentation
 -----------------
+BLE is an [EventEmitter](./events.md) with the following events:
+
+### Event: 'accept'
+
+* `string` `clientAddress`
+
+Emitted when a BLE client has connected. `clientAddress` is a unique BLE address
+for the client in colon-separated format (e.g. 01:23:45:67:89:AB).
+
+### Event: 'advertisingStart'
+
+* `int` `status`
+
+Emitted when BLE services have begun to be advertised. The `status` will be 0
+for success, otherwise for an error.
+
+### Event: 'disconnect'
+
+* `string` `clientAddress`
+
+Emitted when a BLE client has disconnected. `clientAddress` will be the same as
+one previously sent with the 'accept' event.
+
+### Event: 'rssiUpdate'
+
+* `int` `rssiValue`
+
+Emitted periodically with most recent RSSI (received signal strength indication)
+value measured in dBm. *NOTE*: currently rssiValue is the dummy value -50.
+
+### Event: 'stateChange'
+
+* `string` `newState`
+
+Emitted with 'poweredOn' when the BLE stack is ready to be used. No other states
+are supported at this time.
+
 ### BLE.disconnect
 
 `void disconnect(string address);`
@@ -99,28 +133,6 @@ API Documentation
 Disconnect the remote client.
 
 The `address` is the address of the connected client.
-
-### BLE.on
-
-`void on(string eventType, EventCallback callback);`
-
-The `eventType` can be one of the following:
-* 'accept' - a BLE client has connected
-  * callback should expect an "client address"
-  * *NOTE: currently the address is dummy string "AB:CD:DF:AB:CD:EF"*
-* 'advertisingStart' - BLE services have begun to be advertised
-  * callback should expect an error integer (0 for success)
-  * *NOTE: this may change*
-* 'disconnect' - a BLE client has disconnected
-  * callback should expect an "client address"
-  * *NOTE: currently the address is dummy string "AB:CD:DF:AB:CD:EF"*
-* 'rssiUpdate' - most recent RSSI (Received signal strength indication) value
-  * callback should expect an integer value measured in dBm
-  * *NOTE: currently the value is dummy value of "-50"*
-* 'stateChange' - state of BLE stack has changed
-  * callback should expect a string state:
-    * 'poweredOn' - the BLE stack is now ready to be used
-    * no others supported at this time
 
 ### BLE.startAdvertising
 
