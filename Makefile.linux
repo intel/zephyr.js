@@ -45,7 +45,7 @@ JERRY_LIBS += 		-l jerry-core -lm
 
 JERRY_LIB_PATH += 	-L $(JERRY_BASE)/build/lib/
 
-LINUX_LIBS +=		$(JERRY_LIBS)
+LINUX_LIBS +=		$(JERRY_LIBS) -lrt
 
 ifeq ($(shell uname -s), Linux)
 LINUX_LIBS +=		-pthread

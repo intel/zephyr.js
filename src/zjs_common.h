@@ -16,6 +16,7 @@
 #include <misc/printk.h>
 #endif
 #include <zephyr/types.h>
+#include "zjs_zephyr_port.h"
 #endif
 
 #ifdef CONFIG_ARC

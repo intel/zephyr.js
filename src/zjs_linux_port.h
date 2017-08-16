@@ -6,6 +6,7 @@
 // C includes
 #include <stdint.h>
 #include <time.h>
+#include <signal.h>
 #include <unistd.h>
 
 // define Zephyr numeric types we use
@@ -18,20 +19,25 @@ typedef uint32_t u32_t;
 typedef int64_t s64_t;
 typedef uint64_t u64_t;
 
+struct zjs_port_timer;
+
+typedef void (*zjs_port_timer_cb)(struct zjs_port_timer *handle);
+
 typedef struct zjs_port_timer {
-    u32_t sec;
-    u32_t milli;
-    u32_t interval;
-    void *data;
+    void *user_data;
+    uint8_t repeat;
+    struct sigevent se;
+    struct itimerspec ti;
+    struct sigaction sa;
+    timer_t time;
+    zjs_port_timer_cb callback;
 } zjs_port_timer_t;
 
-#define zjs_port_timer_init(t) do {} while (0)
+void zjs_port_timer_init(zjs_port_timer_t *timer, zjs_port_timer_cb cb);
 
-void zjs_port_timer_start(zjs_port_timer_t *timer, u32_t interval);
+void zjs_port_timer_start(zjs_port_timer_t *timer, u32_t interval, u32_t repeat);
 
 void zjs_port_timer_stop(zjs_port_timer_t *timer);
-
-u8_t zjs_port_timer_test(zjs_port_timer_t *timer);
 
 u32_t zjs_port_timer_get_uptime(void);
 
@@ -63,5 +69,7 @@ int zjs_port_ring_buf_get(struct zjs_port_ring_buf *buf, u16_t *type,
 // INTERRUPT SAFE FUNCTION: No JerryScript VM, allocs, or release prints!
 int zjs_port_ring_buf_put(struct zjs_port_ring_buf *buf, u16_t type,
                           u8_t value, u32_t *data, u8_t size32);
+
+#define zjs_port_get_thread_id() 0
 
 #endif /* ZJS_LINUX_PORT_H_ */
