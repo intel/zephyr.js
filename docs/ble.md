@@ -37,7 +37,6 @@ interface BLE: EventEmitter {
     void startAdvertising(string name, string[] uuids, string url);
     void stopAdvertising();
     void setServices(PrimaryService services[]);
-    void updateRssi();
     PrimaryService PrimaryService(PrimaryServiceInit init);
     Characteristic Characteristic(CharacteristicInit init);
     Descriptor Descriptor(DescriptorInit init);
@@ -112,13 +111,6 @@ for success, otherwise for an error.
 Emitted when a BLE client has disconnected. `clientAddress` will be the same as
 one previously sent with the 'accept' event.
 
-### Event: 'rssiUpdate'
-
-* `int` `rssiValue`
-
-Emitted periodically with most recent RSSI (received signal strength indication)
-value measured in dBm. *NOTE*: currently rssiValue is the dummy value -50.
-
 ### Event: 'stateChange'
 
 * `string` `newState`
@@ -162,13 +154,6 @@ Currently does nothing.
 
 Pass an array of PrimaryService objects to set up the services that are
 implemented by your app.
-
-### BLE.updateRssi()
-
-`void updateRssi();`
-
-Query the RSSI (received signal strength indication) value, it will trigger
-a 'rssiUpdate' event that will contain the relative signal value.
 
 ### BLE.PrimaryService constructor
 
