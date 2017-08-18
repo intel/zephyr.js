@@ -52,7 +52,7 @@ jerry_value_t zjs_a101_init()
     zjs_pwm_convert_pin = zjs_a101_num_to_pwm;
 #endif
 
-    jerry_value_t obj = jerry_create_object();
+    jerry_value_t obj = zjs_create_object();
 
     // These are all the GPIOs that can be accessed as GPIOs by the X86 side.
     zjs_obj_add_number(obj, 18, "IO2");

@@ -296,7 +296,7 @@ static ZJS_DECL_FUNC(zjs_aio_open)
     jerry_release_value(result);
 
     // create the AIOPin object
-    jerry_value_t pinobj = jerry_create_object();
+    jerry_value_t pinobj = zjs_create_object();
     jerry_set_prototype(pinobj, zjs_aio_prototype);
     zjs_obj_add_number(pinobj, pin, "pin");
 
@@ -317,11 +317,11 @@ jerry_value_t zjs_aio_init()
         { zjs_aio_pin_on, "on" },
         { NULL, NULL }
     };
-    zjs_aio_prototype = jerry_create_object();
+    zjs_aio_prototype = zjs_create_object();
     zjs_obj_add_functions(zjs_aio_prototype, array);
 
     // create global AIO object
-    jerry_value_t aio_obj = jerry_create_object();
+    jerry_value_t aio_obj = zjs_create_object();
     zjs_obj_add_function(aio_obj, zjs_aio_open, "open");
     return aio_obj;
 }

@@ -52,7 +52,7 @@ static jerry_value_t ensure_pin(jerry_value_t port, unsigned int pin)
     sprintf(name, "pin%u", pin);
     jerry_value_t pin_obj = zjs_get_property(port, name);
     if (!jerry_value_is_object(pin_obj)) {
-        pin_obj = jerry_create_object();
+        pin_obj = zjs_create_object();
         zjs_set_property(port, name, pin_obj);
     }
     return pin_obj;
@@ -158,7 +158,7 @@ DEVICE mock_gpio_device_get_binding(const char *name)
     ZVAL obj = zjs_get_property(mock_root_obj, name);
     jerry_value_t rval = obj;
     if (!jerry_value_is_object(obj)) {
-        ZVAL new_obj = jerry_create_object();
+        ZVAL new_obj = zjs_create_object();
         zjs_set_property(mock_root_obj, name, new_obj);
         rval = new_obj;
     }
@@ -388,7 +388,7 @@ int mock_gpio_pin_enable_callback(DEVICE port, u32_t pin)
 
 void zjs_gpio_mock_pre_init()
 {
-    mock_root_obj = jerry_create_object();
+    mock_root_obj = zjs_create_object();
 }
 
 void zjs_gpio_mock_post_init(jerry_value_t gpio_obj)

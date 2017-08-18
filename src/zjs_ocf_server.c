@@ -81,7 +81,7 @@ static jerry_value_t make_ocf_error(const char *name, const char *msg,
                                     struct server_resource *res)
 {
     if (res) {
-        ZVAL ret = jerry_create_object();
+        ZVAL ret = zjs_create_object();
         if (name) {
             zjs_obj_add_string(ret, name, "name");
         } else {
@@ -111,7 +111,7 @@ static jerry_value_t make_ocf_error(const char *name, const char *msg,
 
 static jerry_value_t request_to_jerry_value(oc_request_t *request)
 {
-    jerry_value_t props = jerry_create_object();
+    jerry_value_t props = zjs_create_object();
     oc_rep_t *rep = request->request_payload;
     while (rep != NULL) {
         switch (rep->type) {
@@ -178,7 +178,7 @@ static struct ocf_response *create_response(struct server_resource *resource,
 static jerry_value_t create_resource(const char *path,
                                      jerry_value_t resource_init)
 {
-    jerry_value_t res = jerry_create_object();
+    jerry_value_t res = zjs_create_object();
 
     if (path) {
         zjs_obj_add_string(res, path, "resourcePath");
@@ -272,9 +272,9 @@ static jerry_value_t create_request(struct server_resource *resource,
 {
     handler->resp = create_response(resource, method);
 
-    jerry_value_t object = jerry_create_object();
-    ZVAL source = jerry_create_object();
-    ZVAL target = jerry_create_object();
+    jerry_value_t object = zjs_create_object();
+    ZVAL source = zjs_create_object();
+    ZVAL target = zjs_create_object();
 
     if (resource->res) {
         zjs_obj_add_string(source, oc_string(resource->res->uri),
@@ -334,7 +334,7 @@ static void ocf_put_handler(oc_request_t *request,
 
     ZVAL request_val = create_request(h->res, OC_PUT, h);
     ZVAL props_val = request_to_jerry_value(request);
-    ZVAL data_val = jerry_create_object();
+    ZVAL data_val = zjs_create_object();
 
     zjs_set_property(data_val, "properties", props_val);
     zjs_set_property(request_val, "data", data_val);
@@ -572,7 +572,7 @@ void zjs_ocf_register_resources(void)
 
 jerry_value_t zjs_ocf_server_init()
 {
-    jerry_value_t server = jerry_create_object();
+    jerry_value_t server = zjs_create_object();
 
     zjs_obj_add_function(server, ocf_register, "register");
     // FIXME: document this function if it's supposed to be here

@@ -468,7 +468,7 @@ static ZJS_DECL_FUNC(socket_resume)
 static ZJS_DECL_FUNC(socket_address)
 {
     GET_SOCK_HANDLE_JS(this, handle);
-    jerry_value_t ret = jerry_create_object();
+    jerry_value_t ret = zjs_create_object();
     ZVAL port = zjs_get_property(this, "localPort");
     ZVAL addr = zjs_get_property(this, "localAddress");
     sa_family_t family = net_context_get_family(handle->tcp_sock);
@@ -535,7 +535,7 @@ static jerry_value_t create_socket(u8_t client, sock_handle_t **handle_out)
         return zjs_error_context("out of memory", 0, 0);
     }
 
-    jerry_value_t socket = jerry_create_object();
+    jerry_value_t socket = zjs_create_object();
 
     if (client) {
         // only a new client socket has connect method
@@ -646,7 +646,7 @@ static ZJS_DECL_FUNC(server_address)
 {
     GET_NET_HANDLE_JS(this, handle);
 
-    jerry_value_t info = jerry_create_object();
+    jerry_value_t info = zjs_create_object();
     zjs_obj_add_number(info, handle->port, "port");
 
     sa_family_t family = net_context_get_family(handle->tcp_sock);
@@ -835,7 +835,7 @@ static ZJS_DECL_FUNC(net_create_server)
 {
     ZJS_VALIDATE_ARGS_OPTCOUNT(optcount, Z_OPTIONAL Z_FUNCTION);
 
-    jerry_value_t server = jerry_create_object();
+    jerry_value_t server = zjs_create_object();
 
     zjs_obj_add_boolean(server, false, "listening");
     zjs_obj_add_number(server, NET_DEFAULT_MAX_CONNECTIONS, "maxConnections");
@@ -1165,18 +1165,18 @@ jerry_value_t zjs_net_init()
             { NULL, NULL }
     };
     // Net object prototype
-    zjs_net_prototype = jerry_create_object();
+    zjs_net_prototype = zjs_create_object();
     zjs_obj_add_functions(zjs_net_prototype, net_array);
 
     // Socket object prototype
-    zjs_net_socket_prototype = jerry_create_object();
+    zjs_net_socket_prototype = zjs_create_object();
     zjs_obj_add_functions(zjs_net_socket_prototype, sock_array);
 
     // Server object prototype
-    zjs_net_server_prototype = jerry_create_object();
+    zjs_net_server_prototype = zjs_create_object();
     zjs_obj_add_functions(zjs_net_server_prototype, server_array);
 
-    net_obj = jerry_create_object();
+    net_obj = zjs_create_object();
     jerry_set_prototype(net_obj, zjs_net_prototype);
 
     return jerry_acquire_value(net_obj);

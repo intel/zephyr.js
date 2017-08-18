@@ -346,7 +346,7 @@ static void iface_event(struct net_mgmt_event_callback *cb,
 
 jerry_value_t zjs_net_config_init(void)
 {
-    config = jerry_create_object();
+    config = zjs_create_object();
 
     zjs_obj_add_function(config, set_ip, "setStaticIP");
 #ifdef CONFIG_NET_DHCPV4

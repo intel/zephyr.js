@@ -168,7 +168,7 @@ static ZJS_DECL_FUNC(zjs_glcd_init)
     }
 
     // create the Grove LCD device object
-    jerry_value_t dev_obj = jerry_create_object();
+    jerry_value_t dev_obj = zjs_create_object();
     jerry_set_prototype(dev_obj, zjs_glcd_prototype);
     return dev_obj;
 }
@@ -191,11 +191,11 @@ jerry_value_t zjs_grove_lcd_init()
         { zjs_glcd_get_display_state, "getDisplayState" },
         { NULL, NULL }
     };
-    zjs_glcd_prototype = jerry_create_object();
+    zjs_glcd_prototype = zjs_create_object();
     zjs_obj_add_functions(zjs_glcd_prototype, array);
 
     // create global grove_lcd object
-    jerry_value_t glcd_obj = jerry_create_object();
+    jerry_value_t glcd_obj = zjs_create_object();
     zjs_obj_add_function(glcd_obj, zjs_glcd_init, "init");
 
     // create object properties

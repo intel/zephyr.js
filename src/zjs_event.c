@@ -471,7 +471,7 @@ void *zjs_event_get_user_handle(jerry_value_t obj)
 
 static ZJS_DECL_FUNC(event_constructor)
 {
-    jerry_value_t new_emitter = jerry_create_object();
+    jerry_value_t new_emitter = zjs_create_object();
     zjs_make_emitter(new_emitter, ZJS_UNDEFINED, NULL, NULL);
     return new_emitter;
 }
@@ -491,7 +491,7 @@ jerry_value_t zjs_event_init()
         { set_max_listeners, "setMaxListeners" },
         { NULL, NULL }
     };
-    zjs_event_emitter_prototype = jerry_create_object();
+    zjs_event_emitter_prototype = zjs_create_object();
     zjs_obj_add_functions(zjs_event_emitter_prototype, array);
 
     // NOTE: dropped defaultMaxListeners as this didn't seem important for us
