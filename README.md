@@ -680,7 +680,7 @@ in a dedicated [document](./docs/6lowpan-ble.md).
 
 ### ENC28J60 Ethernet Board
 This SPI Ethernet board is now supported for use with the Arduino 101. To
-configure it, wire IO10-IO13 (the SPI pins) to CS, SI, SCK, SO on the board,
+configure it, wire IO10-IO13 (the SPI pins) to CS, SI, SO, SCK on the board,
 respectively. Then wire VCC to 3.3V power (somewhere online I saw a reference
 that some of these boards tolerate 5V and some do not) and GND to ground.
 Finally, wire INT on the board to pin IO4; this is a GPIO used to communicate
