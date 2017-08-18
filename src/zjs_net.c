@@ -593,33 +593,39 @@ static void add_socket_connection(jerry_value_t socket,
     }
 }
 
-static void tcp_accepted(struct net_context *context,
-                         struct sockaddr *addr,
-                         socklen_t addrlen,
-                         int error,
-                         void *user_data)
+typedef struct {
+    struct net_context *context;
+    net_handle_t *handle;
+    struct sockaddr addr;
+} accept_connection_t;
+
+// a zjs_deferred_work callback
+static void accept_connection(const void *buffer, u32_t length)
 {
-    net_handle_t *handle = (net_handle_t *)user_data;
+    if (length != sizeof(accept_connection_t)) {
+        // shouldn't happen so make it a debug print
+        DBG_PRINT("Error: Unexpected data!\n");
+        return;
+    }
+
+    accept_connection_t *accept = (accept_connection_t *)buffer;
+
     sock_handle_t *sock_handle = NULL;
-
-    DBG_PRINT("connection made, context %p error %d\n", context, error);
-
-    // FIXME: this shouldn't really be getting called here because it runs in
-    //   a networking thread but is doing malloc and JerryScript calls
     jerry_value_t sock = create_socket(false, &sock_handle);
     if (!sock_handle) {
         ERR_PRINT("could not allocate socket handle\n");
         return;
     }
 
-    add_socket_connection(sock, handle, context, addr);
+    add_socket_connection(sock, accept->handle, accept->context, &accept->addr);
 
     // add new socket to list
     sock_handle->next = opened_sockets;
     opened_sockets = sock_handle;
 
-    int ret = net_context_recv(context, tcp_received, 0, sock_handle);
+    int ret = net_context_recv(accept->context, tcp_received, 0, sock_handle);
 
+    // FIXME: the defer_emit_event calls below no longer need to be deferred
     if (ret < 0) {
         ERR_PRINT("Cannot receive TCP packet (family %d), ret=%d\n",
                 net_context_get_family(sock_handle->tcp_sock), ret);
@@ -631,8 +637,25 @@ static void tcp_accepted(struct net_context *context,
         return;
     }
 
-    zjs_defer_emit_event(handle->server, "connection", &sock, sizeof(sock),
-                         zjs_copy_arg, zjs_release_args);
+    zjs_defer_emit_event(accept->handle->server, "connection", &sock,
+                         sizeof(sock), zjs_copy_arg, zjs_release_args);
+}
+
+static void tcp_accepted(struct net_context *context,
+                         struct sockaddr *addr,
+                         socklen_t addrlen,
+                         int error,
+                         void *user_data)
+{
+    DBG_PRINT("connection made, context %p error %d\n", context, error);
+
+    accept_connection_t accept;
+    accept.context = context;
+    accept.handle = (net_handle_t *)user_data;
+    memset(&accept.addr, 0, sizeof(struct sockaddr));
+    memcpy(&accept.addr, addr, addrlen);
+
+    zjs_defer_work(accept_connection, &accept, sizeof(accept));
 }
 
 /**

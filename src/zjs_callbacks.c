@@ -91,6 +91,8 @@ static zjs_callback_id cb_limit = INITIAL_CALLBACK_SIZE;
 static zjs_callback_id cb_size = 0;
 static zjs_callback_t **cb_map = NULL;
 
+static zjs_callback_id defer_id = -1;
+
 static int zjs_ringbuf_error_count = 0;
 static int zjs_ringbuf_error_max = 0;
 static int zjs_ringbuf_last_error = 0;
@@ -140,6 +142,22 @@ static zjs_callback_id new_id(void)
     return id;
 }
 
+typedef struct deferred_work {
+    zjs_deferred_work callback;
+    u32_t length;  // length of user data
+    char data[0];  // user data
+} deferred_work_t;
+
+static void deferred_work_callback(void *handle, const void *args) {
+    const deferred_work_t *deferred = (const deferred_work_t *)args;
+
+    if (deferred->callback) {
+        deferred->callback(deferred->data, deferred->length);
+        return;
+    }
+    DBG_PRINT("deferred work callback was NULL\n");
+}
+
 void zjs_init_callbacks(void)
 {
     if (!cb_map) {
@@ -156,6 +174,8 @@ void zjs_init_callbacks(void)
                            (u32_t *)args_buffer);
 #endif
     ring_buf_initialized = 1;
+
+    defer_id = zjs_add_c_callback(NULL, deferred_work_callback);
     return;
 }
 
@@ -528,4 +548,19 @@ u8_t zjs_service_callbacks(void)
     }
     UNLOCK();
     return serviced;
+}
+
+void zjs_defer_work(zjs_deferred_work callback, const void *buffer, u32_t bytes)
+{
+    DBG_PRINT("deferring work: %d bytes\n", bytes);
+    int len = sizeof(callback) + bytes;
+    char buf[len];
+    deferred_work_t *defer = (deferred_work_t *)buf;
+    defer->callback = callback;
+    defer->length = bytes;
+    if (buffer && bytes) {
+        memcpy(defer->data, buffer, bytes);
+    }
+    // assert: if buffer is null, bytes should be 0, and vice versa
+    zjs_signal_callback(defer_id, buf, len);
 }
