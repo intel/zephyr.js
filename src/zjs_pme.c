@@ -197,7 +197,7 @@ static ZJS_DECL_FUNC(zjs_pme_read_neuron)
     send.data.pme.neuron_id = jerry_get_number_value(argv[0]);
 
     CALL_REMOTE_FUNCTION(send, reply);
-    jerry_value_t obj = jerry_create_object();
+    jerry_value_t obj = zjs_create_object();
     zjs_obj_add_number(obj, reply.data.pme.category, "category");
     zjs_obj_add_number(obj, reply.data.pme.n_context, "context");
     zjs_obj_add_number(obj, reply.data.pme.aif, "AIF");
@@ -338,7 +338,7 @@ static ZJS_DECL_FUNC(zjs_pme_save_neurons)
         CALL_REMOTE_FUNCTION(send, reply);
 
         // create json object
-        ZVAL obj = jerry_create_object();
+        ZVAL obj = zjs_create_object();
         zjs_obj_add_number(obj, reply.data.pme.category, "category");
         zjs_obj_add_number(obj, reply.data.pme.n_context, "context");
         zjs_obj_add_number(obj, reply.data.pme.aif, "AIF");
@@ -472,11 +472,11 @@ jerry_value_t zjs_pme_init()
         { zjs_pme_restore_neurons, "restoreNeurons" },
         { NULL, NULL }
     };
-    zjs_pme_prototype = jerry_create_object();
+    zjs_pme_prototype = zjs_create_object();
     zjs_obj_add_functions(zjs_pme_prototype, array);
 
     // create global PME object
-    jerry_value_t pme_obj = jerry_create_object();
+    jerry_value_t pme_obj = zjs_create_object();
     jerry_set_prototype(pme_obj, zjs_pme_prototype);
 
     // create object properties

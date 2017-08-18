@@ -153,7 +153,7 @@ static ZJS_DECL_FUNC(is_directory)
 static jerry_value_t create_stats_obj(struct fs_dirent *entry)
 {
 
-    jerry_value_t stats_obj = jerry_create_object();
+    jerry_value_t stats_obj = zjs_create_object();
 
     struct fs_dirent *new_entry = zjs_malloc(sizeof(struct fs_dirent));
     if (!new_entry) {
@@ -983,7 +983,7 @@ static ZJS_DECL_FUNC(zjs_fs_read_file_async)
 
 jerry_value_t zjs_fs_init()
 {
-    jerry_value_t fs = jerry_create_object();
+    jerry_value_t fs = zjs_create_object();
 
     zjs_obj_add_function(fs, zjs_fs_open_sync, "openSync");
     zjs_obj_add_function(fs, zjs_fs_close_sync, "closeSync");

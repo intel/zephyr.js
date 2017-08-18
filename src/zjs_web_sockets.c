@@ -579,12 +579,12 @@ static void create_ws_connection(void *h, jerry_value_t argv[], u32_t *argc,
     ws_connection_t *con = *(ws_connection_t **)buffer;
 
     // FIXME: this should be using a prototype
-    jerry_value_t conn = jerry_create_object();
+    jerry_value_t conn = zjs_create_object();
     zjs_obj_add_function(conn, ws_send, "send");
     zjs_obj_add_function(conn, ws_ping, "ping");
     zjs_obj_add_function(conn, ws_pong, "pong");
     zjs_obj_add_function(conn, ws_terminate, "terminate");
-    zjs_make_emitter(conn, jerry_create_object(), con, NULL);
+    zjs_make_emitter(conn, zjs_create_object(), con, NULL);
     if (con->server_handle->track) {
         ZVAL clients = zjs_get_property(con->server_handle->server, "clients");
         ZVAL new = push_array(clients, conn);
@@ -890,7 +890,7 @@ static ZJS_DECL_FUNC(ws_server)
     }
     memset(handle, 0, sizeof(server_handle_t));
 
-    jerry_value_t server = jerry_create_object();
+    jerry_value_t server = zjs_create_object();
 
     zjs_obj_get_double(argv[0], "port", &port);
     zjs_obj_get_boolean(argv[0], "backlog", &backlog);
@@ -939,7 +939,7 @@ static ZJS_DECL_FUNC(ws_server)
     CHECK(net_context_listen(handle->tcp_sock, (int)backlog));
     CHECK(net_context_accept(handle->tcp_sock, tcp_accepted, 0, handle));
 
-    zjs_make_emitter(server, jerry_create_object(), handle, free_server);
+    zjs_make_emitter(server, zjs_create_object(), handle, free_server);
 
     handle->server = server;
     handle->max_payload = (u16_t)max_payload;
@@ -956,7 +956,7 @@ jerry_value_t zjs_ws_init()
 {
     zjs_net_config_default();
 
-    jerry_value_t ws = jerry_create_object();
+    jerry_value_t ws = zjs_create_object();
     zjs_obj_add_function(ws, ws_server, "Server");
 
     return ws;

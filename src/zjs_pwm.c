@@ -175,7 +175,7 @@ static ZJS_DECL_FUNC(zjs_pwm_open)
     }
 
     // create the PWMPin object
-    jerry_value_t pin_obj = jerry_create_object();
+    jerry_value_t pin_obj = zjs_create_object();
     jerry_set_prototype(pin_obj, zjs_pwm_pin_prototype);
 
     zjs_obj_add_number(pin_obj, channel, "channel");
@@ -209,11 +209,11 @@ jerry_value_t zjs_pwm_init()
         { zjs_pwm_pin_set_cycles, "setCycles" },
         { NULL, NULL }
     };
-    zjs_pwm_pin_prototype = jerry_create_object();
+    zjs_pwm_pin_prototype = zjs_create_object();
     zjs_obj_add_functions(zjs_pwm_pin_prototype, array);
 
     // create PWM object
-    jerry_value_t pwm_obj = jerry_create_object();
+    jerry_value_t pwm_obj = zjs_create_object();
     zjs_obj_add_function(pwm_obj, zjs_pwm_open, "open");
     return pwm_obj;
 }

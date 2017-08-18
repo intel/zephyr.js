@@ -166,8 +166,8 @@ void zjs_modules_init()
 {
     // Add module.exports to global namespace
     ZVAL global_obj = jerry_get_global_object();
-    ZVAL modules_obj = jerry_create_object();
-    ZVAL exports_obj = jerry_create_object();
+    ZVAL modules_obj = zjs_create_object();
+    ZVAL exports_obj = zjs_create_object();
 
     zjs_set_property(modules_obj, "exports", exports_obj);
     zjs_set_property(global_obj, "module", modules_obj);
@@ -182,7 +182,7 @@ void zjs_modules_init()
     zjs_obj_add_function(global_obj, native_require_handler, "require");
 
 #ifdef ZJS_LINUX_BUILD
-    ZVAL process = jerry_create_object();
+    ZVAL process = zjs_create_object();
     zjs_obj_add_function(process, process_exit, "exit");
     zjs_set_property(global_obj, "process", process);
 #endif

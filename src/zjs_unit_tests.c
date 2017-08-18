@@ -185,7 +185,7 @@ static ZJS_DECL_FUNC(dummy_func)
 static void test_validate_args()
 {
     // create some dummy objects
-    ZVAL obj1 = jerry_create_object();
+    ZVAL obj1 = zjs_create_object();
     ZVAL str1 = jerry_create_string((jerry_char_t *)"arthur");
     ZVAL func1 = jerry_create_external_function(dummy_func);
     ZVAL array1 = jerry_create_array(3);

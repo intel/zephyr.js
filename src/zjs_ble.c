@@ -1306,7 +1306,7 @@ jerry_value_t zjs_ble_init()
     memset(handle, 0, sizeof(ble_handle_t));
 
     // create global BLE object
-    jerry_value_t ble_obj = jerry_create_object();
+    jerry_value_t ble_obj = zjs_create_object();
     zjs_obj_add_function(ble_obj, zjs_ble_disconnect, "disconnect");
     zjs_obj_add_function(ble_obj, zjs_ble_start_advertising,
                          "startAdvertising");

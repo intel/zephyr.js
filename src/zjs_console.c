@@ -214,7 +214,7 @@ static ZJS_DECL_FUNC(console_assert)
 
 void zjs_console_init(void)
 {
-    ZVAL console = jerry_create_object();
+    ZVAL console = zjs_create_object();
     zjs_obj_add_function(console, console_log, "log");
     zjs_obj_add_function(console, console_log, "info");
     zjs_obj_add_function(console, console_error, "error");
@@ -227,7 +227,7 @@ void zjs_console_init(void)
     zjs_set_property(global_obj, "console", console);
 
     // initialize the time object
-    gbl_time_obj = jerry_create_object();
+    gbl_time_obj = zjs_create_object();
 }
 
 void zjs_console_cleanup()

@@ -26,7 +26,7 @@ static ZJS_DECL_FUNC(zjs_performance_now)
 jerry_value_t zjs_performance_init()
 {
     // create global performance object
-    jerry_value_t performance_obj = jerry_create_object();
+    jerry_value_t performance_obj = zjs_create_object();
     zjs_obj_add_function(performance_obj, zjs_performance_now, "now");
     return performance_obj;
 }

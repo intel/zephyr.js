@@ -134,7 +134,7 @@ static void udp_received(struct net_context *context,
 
     zjs_buffer_t *buf;
     ZVAL_MUTABLE buf_js = zjs_buffer_create(recv_len, &buf);
-    ZVAL rinfo = jerry_create_object();
+    ZVAL rinfo = zjs_create_object();
     if (buf) {
         zjs_obj_add_number(rinfo, ntohs(NET_UDP_HDR(net_pkt)->src_port),
                            "port");
@@ -174,7 +174,7 @@ static ZJS_DECL_FUNC(zjs_dgram_createSocket)
     struct net_context *udp_sock;
     CHECK(net_context_get(family, SOCK_DGRAM, IPPROTO_UDP, &udp_sock));
 
-    jerry_value_t sockobj = jerry_create_object();
+    jerry_value_t sockobj = zjs_create_object();
     jerry_set_prototype(sockobj, zjs_dgram_socket_prototype);
 
     dgram_handle_t *handle = zjs_malloc(sizeof(dgram_handle_t));
@@ -332,11 +332,11 @@ jerry_value_t zjs_dgram_init()
         { zjs_dgram_sock_close, "close" },
         { NULL, NULL }
     };
-    zjs_dgram_socket_prototype = jerry_create_object();
+    zjs_dgram_socket_prototype = zjs_create_object();
     zjs_obj_add_functions(zjs_dgram_socket_prototype, array);
 
     // create module object
-    jerry_value_t dgram_obj = jerry_create_object();
+    jerry_value_t dgram_obj = zjs_create_object();
     zjs_obj_add_function(dgram_obj, zjs_dgram_createSocket, "createSocket");
     return dgram_obj;
 }

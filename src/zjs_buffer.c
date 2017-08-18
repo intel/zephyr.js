@@ -455,7 +455,7 @@ jerry_value_t zjs_buffer_create(u32_t size, zjs_buffer_t **ret_buf)
         return zjs_error_context("out of memory", 0, 0);
     }
 
-    jerry_value_t buf_obj = jerry_create_object();
+    jerry_value_t buf_obj = zjs_create_object();
     buf_item->buffer = buf;
     buf_item->bufsize = size;
 
@@ -555,7 +555,7 @@ void zjs_buffer_init()
         { zjs_buffer_fill, "fill" },
         { NULL, NULL }
     };
-    zjs_buffer_prototype = jerry_create_object();
+    zjs_buffer_prototype = zjs_create_object();
     zjs_obj_add_functions(zjs_buffer_prototype, array);
 }
 

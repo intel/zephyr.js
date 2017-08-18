@@ -132,7 +132,7 @@ static ZJS_DECL_FUNC_ARGS(add_timer_helper, bool repeat)
 
     u32_t interval = (u32_t)(jerry_get_number_value(argv[1]));
     jerry_value_t callback = argv[0];
-    jerry_value_t timer_obj = jerry_create_object();
+    jerry_value_t timer_obj = zjs_create_object();
 
 #ifdef ZJS_FIND_FUNC_NAME
     if (repeat) {

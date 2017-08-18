@@ -75,7 +75,7 @@ static jerry_value_t make_ocf_error(const char *name, const char *msg,
                                     struct client_resource *res)
 {
     if (res) {
-        ZVAL ret = jerry_create_object();
+        ZVAL ret = zjs_create_object();
         if (name) {
             zjs_obj_add_string(ret, name, "name");
         } else {
@@ -135,7 +135,7 @@ static char *create_url(const char *uuid, const char *path)
  */
 static jerry_value_t get_props_from_response(oc_client_response_t *data)
 {
-    jerry_value_t prop_object = jerry_create_object();
+    jerry_value_t prop_object = zjs_create_object();
     int i;
     oc_rep_t *rep = data->payload;
 
@@ -247,7 +247,7 @@ static struct client_resource *find_resource_by_id(const char *device_id)
  */
 static jerry_value_t create_resource(struct client_resource *client)
 {
-    jerry_value_t resource = jerry_create_object();
+    jerry_value_t resource = zjs_create_object();
 
     if (client->device_id) {
         zjs_obj_add_string(resource, client->device_id, "deviceId");
@@ -255,7 +255,7 @@ static jerry_value_t create_resource(struct client_resource *client)
     if (client->resource_path) {
         zjs_obj_add_string(resource, client->resource_path, "resourcePath");
     }
-    ZVAL props = jerry_create_object();
+    ZVAL props = zjs_create_object();
     zjs_set_property(resource, "properties", props);
 
     zjs_set_property(resource, "resourceTypes", client->types_array);
@@ -752,7 +752,7 @@ static void ocf_get_platform_info_handler(oc_client_response_t *data)
 {
     if (data && data->user_data) {
         struct ocf_handler *h = (struct ocf_handler *)data->user_data;
-        jerry_value_t platform_info = jerry_create_object();
+        jerry_value_t platform_info = zjs_create_object();
 
         /*
          * TODO: This while loop is repeated in several functions. It would be
@@ -873,7 +873,7 @@ static void ocf_get_device_info_handler(oc_client_response_t *data)
     if (data && data->user_data) {
         struct ocf_handler *h = (struct ocf_handler *)data->user_data;
         struct client_resource *resource = h->res;
-        jerry_value_t device_info = jerry_create_object();
+        jerry_value_t device_info = zjs_create_object();
 
         /*
          * TODO: This while loop is repeated in several functions. It would be
@@ -984,7 +984,7 @@ jerry_value_t zjs_ocf_client_init()
         return jerry_acquire_value(ocf_client);
     }
 
-    ocf_client = jerry_create_object();
+    ocf_client = zjs_create_object();
     zjs_obj_add_function(ocf_client, ocf_find_resources, "findResources");
     zjs_obj_add_function(ocf_client, ocf_retrieve, "retrieve");
     zjs_obj_add_function(ocf_client, ocf_update, "update");
