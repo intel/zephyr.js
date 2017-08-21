@@ -24,6 +24,7 @@
          "../deps/iotivity-constrained/api/oc_ri.c",
          "../deps/iotivity-constrained/api/oc_rep.c",
          "../deps/iotivity-constrained/api/oc_uuid.c",
+         "../deps/iotivity-constrained/api/oc_endpoint.c",
          "../deps/iotivity-constrained/api/oc_core_res.c",
          "../deps/iotivity-constrained/api/oc_network_events.c",
          "../deps/iotivity-constrained/port/zephyr/src/ipadapter.c",

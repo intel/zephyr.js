@@ -42,7 +42,7 @@ struct client_resource {
     char *resource_type;
     jerry_value_t types_array;
     jerry_value_t iface_array;
-    oc_server_handle_t server;
+    oc_endpoint_t *endpoint;
     resource_state state;
     u32_t flags;
     u32_t error_code;
@@ -441,7 +441,7 @@ static oc_discovery_flags_t discovery(const char *di,
                                       const char *uri,
                                       oc_string_array_t types,
                                       oc_interface_mask_t interfaces,
-                                      oc_server_handle_t *server,
+                                      oc_endpoint_t *endpoint,
                                       void *user_handle)
 {
     struct ocf_handler *h = (struct ocf_handler *)user_handle;
@@ -486,7 +486,7 @@ NotFound:
 Found:
             cur->state = RES_STATE_FOUND;
 
-            memcpy(&cur->server, server, sizeof(oc_server_handle_t));
+            cur->endpoint = endpoint;
 
             if (!cur->device_id) {
                 cur->device_id = zjs_malloc(strlen(di) + 1);
@@ -566,6 +566,7 @@ Found:
             return OC_STOP_DISCOVERY;
         }
     }
+    oc_free_server_endpoints(endpoint);
     return OC_CONTINUE_DISCOVERY;
 }
 
@@ -735,7 +736,7 @@ static ZJS_DECL_FUNC(ocf_retrieve)
     }
 
     if (resource->flags & FLAG_OBSERVE) {
-        oc_do_observe(resource->resource_path, &resource->server, NULL,
+        oc_do_observe(resource->resource_path, resource->endpoint, NULL,
                       &observe_callback, LOW_QOS, resource);
     }
 
@@ -747,7 +748,7 @@ static ZJS_DECL_FUNC(ocf_retrieve)
     h->res = resource;
     h->promise_obj = jerry_acquire_value(promise);
 
-    if (!oc_do_get(resource->resource_path, &resource->server, NULL,
+    if (!oc_do_get(resource->resource_path, resource->endpoint, NULL,
                    ocf_get_handler, LOW_QOS, h)) {
 
         ZVAL err = make_ocf_error("NetworkError", "GET call failed", resource);
@@ -807,7 +808,7 @@ static ZJS_DECL_FUNC(ocf_update)
     h->res = resource;
     h->promise_obj = jerry_acquire_value(promise);
 
-    if (oc_init_put(resource->resource_path, &resource->server, NULL,
+    if (oc_init_put(resource->resource_path, resource->endpoint, NULL,
                     put_finished, LOW_QOS, h)) {
         ZVAL props = zjs_get_property(argv[0], "properties");
         void *ret;
@@ -947,7 +948,7 @@ static ZJS_DECL_FUNC(ocf_get_platform_info)
 
     DBG_PRINT("sending GET to /oic/p\n");
 
-    if (!oc_do_get("/oic/p", &resource->server, NULL,
+    if (!oc_do_get("/oic/p", resource->endpoint, NULL,
                    ocf_get_platform_info_handler, LOW_QOS, h)) {
         jerry_value_t err = make_ocf_error("NetworkError", "GET call failed",
                                            resource);
@@ -1057,7 +1058,7 @@ static ZJS_DECL_FUNC(ocf_get_device_info)
 
     DBG_PRINT("sending GET to /oic/d\n");
 
-    if (!oc_do_get("/oic/d", &resource->server, NULL,
+    if (!oc_do_get("/oic/d", resource->endpoint, NULL,
                    &ocf_get_device_info_handler, LOW_QOS, h)) {
         ZVAL err = make_ocf_error("NetworkError", "GET call failed", resource);
         jerry_resolve_or_reject_promise(promise, err, false);
