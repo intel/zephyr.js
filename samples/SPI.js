@@ -13,7 +13,7 @@ try {
 
     console.log("BOARD NAME = " + board.name + " Device Number = " + deviceNum);
 
-    var spiBus = spi.open({speed:20000, bus:busNum, polarity:0, phase:0, bits:16});
+    var spiBus = spi.open({bus:busNum, polarity:0, phase:0, bits:16});
     var buffer = spiBus.transceive(deviceNum, "Hello World\0");
     console.log("From SPI device " + deviceNum + ": " + buffer.toString('hex'));
 
@@ -34,7 +34,7 @@ try {
     buffer = spiBus.transceive(deviceNum, [1, 2, 3, 4]);
 
     // Open again
-    spiBus = spi.open({speed:20000, bus:busNum, polarity:0, phase:0, bits:8});
+    spiBus = spi.open({bus:busNum, polarity:0, phase:0, bits:8});
     buffer = spiBus.transceive(deviceNum, [1, 2, 3, 4]);
     console.log("From SPI device " + deviceNum + ": " + buffer.toString('hex'));
 } catch (err) {
