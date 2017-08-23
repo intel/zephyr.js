@@ -136,6 +136,10 @@ static char *create_url(const char *uuid, const char *path)
 static jerry_value_t get_props_from_response(oc_client_response_t *data)
 {
     jerry_value_t prop_object = jerry_create_object();
+    int *i_array;
+    double *d_array;
+    bool *b_array;
+    u32_t size;
     int i;
     oc_rep_t *rep = data->payload;
 
@@ -155,18 +159,74 @@ static jerry_value_t get_props_from_response(oc_client_response_t *data)
                                oc_string(rep->name));
             DBG_PRINT("%d\n", rep->value.integer);
             break;
+        case DOUBLE:
+            zjs_obj_add_number(prop_object, (double)rep->value.double_p,
+                               oc_string(rep->name));
+            DBG_PRINT("%lf\n", rep->value.double_p);
+            break;
         case BYTE_STRING:
         case STRING:
             zjs_obj_add_string(prop_object, oc_string(rep->value.string),
                                oc_string(rep->name));
             DBG_PRINT("%s\n", oc_string(rep->value.string));
             break;
+        case INT_ARRAY:
+            DBG_PRINT("[ ");
+            i_array = oc_int_array(rep->value.array);
+            size = oc_int_array_size(rep->value.array);
+            if (size > 0) {
+                ZVAL array = jerry_create_array(size);
+                for (i = 0; i < size; i++) {
+                    ZVAL val = jerry_create_number((double)i_array[i]);
+                    jerry_set_property_by_index(array, i, val);
+                    DBG_PRINT("%d \n", i_array[i]);
+                }
+                zjs_obj_add_object(prop_object, array, oc_string(rep->name));
+            }
+            DBG_PRINT("]\n");
+            break;
+        case DOUBLE_ARRAY:
+            ZJS_PRINT("[\n");
+            d_array = oc_double_array(rep->value.array);
+            size = oc_double_array_size(rep->value.array);
+            if (size > 0) {
+                ZVAL array = jerry_create_array(size);
+                for (i = 0; i < size; i++) {
+                    ZVAL val = jerry_create_number(d_array[i]);
+                    jerry_set_property_by_index(array, i, val);
+                    DBG_PRINT("%lf \n", i, d_array[i]);
+                }
+                zjs_obj_add_object(prop_object, array, oc_string(rep->name));
+            }
+            DBG_PRINT("]\n");
+            break;
+        case BOOL_ARRAY:
+            DBG_PRINT("[\n");
+            b_array = oc_bool_array(rep->value.array);
+            size = oc_double_array_size(rep->value.array);
+            if (size > 0) {
+                ZVAL array = jerry_create_array(size);
+                for (i = 0; i < size; i++) {
+                    ZVAL val = jerry_create_boolean(b_array[i]);
+                    jerry_set_property_by_index(array, i, val);
+                    DBG_PRINT("%d \n", b_array[i]);
+                }
+                zjs_obj_add_object(prop_object, array, oc_string(rep->name));
+            }
+            DBG_PRINT("]\n");
         case STRING_ARRAY:
             DBG_PRINT("[ ");
-            for (i = 0;
-                 i < oc_string_array_get_allocated_size(rep->value.array);
-                 i++) {
-                DBG_PRINT("%s ", oc_string_array_get_item(rep->value.array, i));
+            u32_t size = oc_string_array_get_allocated_size(rep->value.array);
+            if (size > 0) {
+                ZVAL array = jerry_create_array(size);
+                for (i = 0; i < size; i++) {
+                    if (oc_string_array_get_item_size(rep->value.array, i) > 0) {
+                        ZVAL val = jerry_create_string(oc_string_array_get_item(rep->value.array, i));
+                        jerry_set_property_by_index(array, i, val);
+                        DBG_PRINT("%s \n", oc_string_array_get_item(rep->value.array, i));
+                    }
+                }
+                zjs_obj_add_object(prop_object, array, oc_string(rep->name));
             }
             DBG_PRINT("]\n");
             break;
@@ -197,12 +257,39 @@ static void print_props_data(oc_client_response_t *data)
         case INT:
             ZJS_PRINT("%d\n", rep->value.integer);
             break;
+        case DOUBLE:
+            ZJS_PRINT("%lf\n", rep->value.double_p);
+            break;
         case BYTE_STRING:
         case STRING:
             ZJS_PRINT("%s\n", oc_string(rep->value.string));
             break;
+        case INT_ARRAY:
+            ZJS_PRINT("[\n");
+            int *i_array = oc_int_array(rep->value.array);
+            for (i = 0; i < (int)oc_int_array_size(rep->value.array); i++) {
+                ZJS_PRINT("%d ", i_array[i]);
+            }
+            ZJS_PRINT("]\n");
+            break;
+        case DOUBLE_ARRAY:
+            ZJS_PRINT("[\n");
+            double *d_array = oc_double_array(rep->value.array);
+            for (i = 0; i < (int)oc_int_array_size(rep->value.array); i++) {
+                ZJS_PRINT("%lf ", d_array[i]);
+            }
+            ZJS_PRINT("]\n");
+            break;
+        case BOOL_ARRAY:
+            ZJS_PRINT("[\n");
+            bool *b_array = oc_bool_array(rep->value.array);
+            for (i = 0; i < (int)oc_int_array_size(rep->value.array); i++) {
+                ZJS_PRINT("%d ", b_array[i]);
+            }
+            ZJS_PRINT("]\n");
+            break;
         case STRING_ARRAY:
-            ZJS_PRINT("[ ");
+            ZJS_PRINT("[\n");
             for (i = 0;
                  i < oc_string_array_get_allocated_size(rep->value.array);
                  i++) {
@@ -772,6 +859,9 @@ static void ocf_get_platform_info_handler(oc_client_response_t *data)
             case INT:
                 DBG_PRINT("%d\n", rep->value.integer);
                 break;
+            case DOUBLE:
+                DBG_PRINT("%lf\n", rep->value.double_p);
+                break;
             case BYTE_STRING:
             case STRING:
                 if (strcmp(oc_string(rep->name), "mnmn") == 0) {
@@ -892,6 +982,9 @@ static void ocf_get_device_info_handler(oc_client_response_t *data)
                 break;
             case INT:
                 DBG_PRINT("%d\n", rep->value.integer);
+                break;
+            case DOUBLE:
+                DBG_PRINT("%lf\n", rep->value.double_p);
                 break;
             case BYTE_STRING:
             case STRING:

@@ -141,7 +141,7 @@ void *zjs_ocf_props_setup(jerry_value_t props_object, CborEncoder *encoder,
             DBG_PRINT("Encoding string: %s\n", str);
         } else if (jerry_value_is_object(prop) && !jerry_value_is_array(prop)) {
             CborEncoder child;
-            DBG_PRINT("Encoding object: %s   {\n", h->names_array[i]);
+            DBG_PRINT("Encoding object: %s {\n", h->names_array[i]);
             //jerry_value_t jobject = zjs_get_property(prop, h->names_array[i]);
             // Start child object
             zjs_rep_start_object(enc, &child);
@@ -158,11 +158,36 @@ void *zjs_ocf_props_setup(jerry_value_t props_object, CborEncoder *encoder,
              * TODO: need to start object?
              */
             CborEncoder child;
-            DBG_PRINT("Encoding array: %s   [\n", h->names_array[i]);
-            //jerry_value_t jarray = zjs_get_property(prop, h->names_array[i]);
+            DBG_PRINT("Encoding array: %s [\n", h->names_array[i]);
             zjs_rep_set_array(enc, &child, h->names_array[i]);
-            // Recursively add new properties to child object (array)
-            ret = zjs_ocf_props_setup(prop, &child, false);
+            for (int i = 0; i < (int)jerry_get_array_length(prop); i++) {
+                ZVAL element = jerry_get_property_by_index(prop, i);
+                if (jerry_value_is_number(element)) {
+                    // Number could be double, int, uint
+                    int type = zjs_ocf_is_int(element);
+                    if (type == TYPE_IS_NUMBER) {
+                        double num = jerry_get_number_value(element);
+                        zjs_rep_encode_double(&child, num);
+                        DBG_PRINT("Encoding number: %lf\n", num);
+                    } else if (type == TYPE_IS_UINT) {
+                        unsigned int num = (unsigned int)jerry_get_number_value(element);
+                        zjs_rep_encode_uint(&child, num);
+                        DBG_PRINT("Encoding unsigned int: %u\n", num);
+                    } else if (type == TYPE_IS_INT) {
+                        int num = (int)jerry_get_number_value(element);
+                        zjs_rep_encode_int(&child, num);
+                        DBG_PRINT("Encoding int: %d\n", num);
+                    }
+                } else if (jerry_value_is_boolean(element)) {
+                    bool boolean = jerry_get_boolean_value(element);
+                    zjs_rep_encode_int(&child, boolean);
+                    DBG_PRINT("Encoding boolean: %d\n", boolean);
+                } else if (jerry_value_is_string(element)) {
+                    ZJS_GET_STRING(element, str, OCF_MAX_PROP_NAME_LEN);
+                    zjs_rep_encode_string(&child, str);
+                    DBG_PRINT("Encoding string %s\n", str);
+                }
+            }
             // Close the array
             zjs_rep_close_array(enc, &child);
             DBG_PRINT("]\n");

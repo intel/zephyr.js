@@ -117,6 +117,51 @@ extern CborError g_err;
 /*
  * Encode a boolean value
  *
+ * @param parent        Parent object
+ * @param value         Value
+ */
+#define zjs_rep_encode_boolean(parent, value) \
+    g_err |= cbor_encode_boolean(parent, value);
+
+/*
+ * Encode a double value
+ *
+ * @param parent        Parent object
+ * @param value         Value
+ */
+#define zjs_rep_encode_double(parent, value) \
+    g_err |= cbor_encode_double(parent, value);
+
+/*
+ * Encode a integer value
+ *
+ * @param parent        Parent object
+ * @param value         Value
+ */
+#define zjs_rep_encode_int(parent, value) \
+    g_err |= cbor_encode_int(parent, value);
+
+/*
+ * Encode a unsigned integer value
+ *
+ * @param parent        Parent object
+ * @param value         Value
+ */
+#define zjs_rep_encode_uint(parent, value) \
+    g_err |= cbor_encode_uint(parent, value);
+
+/*
+ * Encode a string value in an array
+ *
+ * @param parent        Parent object
+ * @param value         Value
+ */
+#define zjs_rep_encode_string(parent, value) \
+    g_err |= cbor_encode_text_string(parent, value, strlen(value));
+
+/*
+ * Encode a boolean value
+ *
  * @param object        Parent object
  * @param key           Name of boolean property
  * @param value         Value
