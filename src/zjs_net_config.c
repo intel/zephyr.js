@@ -306,7 +306,9 @@ static ZJS_DECL_FUNC(set_ip)
         if(net_addr_pton(AF_INET,
                 str,
                 &tmp1.sin_addr) < 0) {
-#ifndef CONFIG_NET_IPv4
+            return TYPE_ERROR("String was not an IP address");
+        } else {
+#ifndef CONFIG_NET_IPV4
             return NOTSUPPORTED_ERROR("IPv4 not supported");
 #else
             if (!net_if_ipv4_addr_add(net_if_get_default(), &tmp1.sin_addr,
@@ -314,8 +316,6 @@ static ZJS_DECL_FUNC(set_ip)
                 return jerry_create_boolean(false);
             }
 #endif
-        } else {
-            return TYPE_ERROR("String was not an IP address");
         }
     } else {
 #ifndef CONFIG_NET_IPV6
