@@ -558,7 +558,7 @@ s32_t ashell_clear(char *buf)
 }
 
 #ifdef CONFIG_BOARD_ARDUINO_101
-s32_t ashell_erase_flash()
+s32_t ashell_erase_flash(char *buf)
 {
     struct device *flash_dev;
     flash_dev = device_get_binding(CONFIG_SPI_FLASH_W25QXXDV_DRV_NAME);
@@ -575,7 +575,8 @@ s32_t ashell_erase_flash()
     }
     flash_write_protection_set(flash_dev, true);
 
-    comms_print("Flash erase succeeded\n\r\n");
+    comms_print("Flash erase succeeded, rebooting...\n\r\n");
+    ashell_reboot(NULL);
     return RET_OK;
 }
 #endif
@@ -657,7 +658,8 @@ static const struct ashell_cmd commands[] = {
     {"mv",    "F1 F2",  "Move file F1 to destination F2", ashell_rename},
     {"clear", "",       "Clear the terminal screen", ashell_clear},
 #ifdef CONFIG_BOARD_ARDUINO_101
-    {"erase", "",       "Erase flash file system", ashell_erase_flash},
+    {"erase", "",       "Erase flash file system and reboot",
+                          ashell_erase_flash},
 #endif
     {"boot",  "FILE",   "Set the file that should run at boot",
                           ashell_set_bootcfg},
