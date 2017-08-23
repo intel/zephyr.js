@@ -10,10 +10,12 @@ try {
     var busNum = board.name === "arduino_101" ? 1 : 0;
     // The deviceNumber is the slave device we want to send data to
     var deviceNum = 1;
+    // The busSpeed is the clock speed in Hz
+    var busSpeed = 2000000;
 
     console.log("BOARD NAME = " + board.name + " Device Number = " + deviceNum);
 
-    var spiBus = spi.open({speed:20000, bus:busNum, polarity:0, phase:0, bits:16});
+    var spiBus = spi.open({speed:busSpeed, bus:busNum, polarity:0, phase:0, bits:16});
     var buffer = spiBus.transceive(deviceNum, "Hello World\0");
     console.log("From SPI device " + deviceNum + ": " + buffer.toString('hex'));
 
@@ -34,7 +36,7 @@ try {
     buffer = spiBus.transceive(deviceNum, [1, 2, 3, 4]);
 
     // Open again
-    spiBus = spi.open({speed:20000, bus:busNum, polarity:0, phase:0, bits:8});
+    spiBus = spi.open({speed:busSpeed, bus:busNum, polarity:0, phase:0, bits:8});
     buffer = spiBus.transceive(deviceNum, [1, 2, 3, 4]);
     console.log("From SPI device " + deviceNum + ": " + buffer.toString('hex'));
 } catch (err) {
