@@ -93,6 +93,13 @@ static ZJS_DECL_FUNC(zjs_spi_transceive)
         }
     }
 
+    // If a buffer is provided, check that it is a valid type
+    if (argc > 1 && (!jerry_value_is_array(argv[1]) &&
+                      !jerry_value_is_string(argv[1]) &&
+                      !zjs_value_is_buffer(argv[1]))) {
+        return SYNTAX_ERROR("SPI transceive buffer is an invalid type");
+    }
+
     jerry_size_t dir_len = 13;
     char dir_str[dir_len];
     // Set the direction default based on the topology.
@@ -144,8 +151,7 @@ static ZJS_DECL_FUNC(zjs_spi_transceive)
                     if (jerry_value_is_number(item)) {
                         tx_buf->buffer[i] = (u8_t)jerry_get_number_value(item);
                     } else {
-                        ERR_PRINT(
-                            "non-numeric value in array, treating as 0\n");
+                        ERR_PRINT("non-numeric value in array, treating as 0\n");
                         tx_buf->buffer[i] = 0;
                     }
                 }
@@ -171,15 +177,19 @@ static ZJS_DECL_FUNC(zjs_spi_transceive)
                                tx_buf->bufsize, rx_buf->buffer,
                                rx_buf->bufsize) != 0) {
                 jerry_release_value(rx_buf_obj);
+                jerry_release_value(tx_buf_obj);
                 return ZJS_STD_ERROR(SystemError, "SPI transceive failed");
             }
+            jerry_release_value(tx_buf_obj);
         }
         // This is a write only operation, return a NULL buffer
         else {
             if (spi_write(handle->spi_device, tx_buf->buffer,
                           tx_buf->bufsize) != 0) {
+                jerry_release_value(tx_buf_obj);
                 return ZJS_STD_ERROR(SystemError, "SPI transceive failed");
             }
+            jerry_release_value(tx_buf_obj);
             rx_buf_obj = jerry_create_null();
         }
     }  // This is a read only operation
@@ -216,7 +226,7 @@ static ZJS_DECL_FUNC(zjs_spi_open)
 
     // Default values
     u32_t bus = 0;
-    double speed = SPI_MAX_CLK_FREQ_250KHZ;  // default bus speed in Hz
+    u32_t speed = SPI_MAX_CLK_FREQ_250KHZ;  // default bus speed in Hz
     bool msbFirst = true;
     u32_t bits = 8;
     u32_t polarity = 0;
@@ -236,7 +246,7 @@ static ZJS_DECL_FUNC(zjs_spi_open)
             return ZJS_STD_ERROR(RangeError, "Invalid bus");
 
         // Bus speed in MHz
-        zjs_obj_get_double(argv[0], "speed", &speed);
+        zjs_obj_get_uint32(argv[0], "speed", &speed);
 
         // Most significant bit sent first
         zjs_obj_get_boolean(argv[0], "msbFirst", &msbFirst);
@@ -253,7 +263,7 @@ static ZJS_DECL_FUNC(zjs_spi_open)
 
         // Clock phase value, valid options are 0 or 1
         zjs_obj_get_uint32(argv[0], "phase", &phase);
-        if (phase != 0 && phase != 2)
+        if (phase != 0 && phase != 1)
             return ZJS_STD_ERROR(TypeError, "Invalid phase");
 
         // Connection type
@@ -298,7 +308,7 @@ static ZJS_DECL_FUNC(zjs_spi_open)
     if (polarity == 2)
         config.config |= SPI_MODE_CPOL;
 
-    if (phase == 2)
+    if (phase == 1)
         config.config |= SPI_MODE_CPHA;
 
     struct device *spi_device = device_get_binding(bus_str);
