@@ -494,6 +494,7 @@ void zjs_loop_init(void);
         type *cur = list;                \
         if (p == list) {                 \
             list = p->next;              \
+            removed = 1;                 \
         } else {                         \
             while (cur->next) {          \
                 if (cur->next == p) {    \

@@ -208,6 +208,7 @@ static void post_closed(void *handle)
             DBG_PRINT("Freeing socket %p: opened_sockets=%p\n", h, opened_sockets);
 
             net_context_put(h->tcp_sock);
+            zjs_destroy_emitter(h->socket);
             jerry_release_value(h->socket);
             zjs_free(h->rbuf);
             zjs_free(h);
@@ -543,7 +544,7 @@ static jerry_value_t create_socket(u8_t client, sock_handle_t **handle_out)
     }
 
     sock_handle->connect_listener = ZJS_UNDEFINED;
-    sock_handle->socket = socket;
+    sock_handle->socket = jerry_acquire_value(socket);
     sock_handle->rptr = sock_handle->wptr = sock_handle->rbuf;
 
     zjs_make_emitter(socket, zjs_net_socket_prototype, sock_handle, NULL);
