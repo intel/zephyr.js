@@ -285,9 +285,9 @@ platform. The good news is that there have been ZJS networking samples run
 on the nRF52 board with success therefore we mention it here so anyone can try
 it out and contribute fixes to anything that does not work, potentially getting
 it stable enough to adopt as a supported board in the future. The nRF52 board
-we have tested are nRF52 DK (nrf52_pca10040). Please see Zephyr's project page
+we have tested is nRF52 DK (nrf52_pca10040). Please see Zephyr's project page
 to see the supported nRF5x variant boards, since each board will have different
-instructions to flash, To flash to the nRF52 DK, you'll need to downloand and
+instructions to flash. To flash to the nRF52 DK, you'll need to downloand and
 install the [JLink Software and Documentation Pack](https://www.segger.com/jlink-software.html)
 and the [nRF5x command-line tools](http://www.nordicsemi.com/eng/Products/Bluetooth-Smart-Bluetooth-low-energy/nRF52-DK).
 
