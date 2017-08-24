@@ -20,7 +20,8 @@ var dir = 0;
 
 // Appropriate sleep amount to ensure GPIO line is energized long enough
 // for the stepper motor to step - found experimentally
-var sleepDelay = 10;
+// Work well and obviously: 50 ~ 150
+var sleepDelay = 50;
 
 // Super hacky sleep emulation - we leave a multiply operation in to take more time
 function sleep(delay) {
