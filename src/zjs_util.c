@@ -29,6 +29,9 @@ void *zjs_malloc_with_retry(size_t size)
 #ifdef ZJS_TRACE_MALLOC
 void zjs_print_mem_stats()
 {
+    // run garbage collection to get the cleanest output
+    jerry_gc();
+
     for (int i = 0; i < MAX_LIST_SIZE; i++) {
         if (mem_array[i].ptr != NULL) {
             ZJS_PRINT("index %i %s - %s:%d: %p\n", i, mem_array[i].file,
