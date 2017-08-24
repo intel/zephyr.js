@@ -161,9 +161,9 @@ static void ble_set_address(char *ble_addr)
         return;
     }
 
-    // set the top two bits since Zephyr always sets them anyway, for exaxmple,
-    //   if you try to set 00:F9:50:21:43:4A, Zephyr is only set it to
-    //   F1:F9:50:21:43:4A, so we will print the actual value the user will see
+    // set the top two bits since Zephyr always sets them anyway, so we will
+    //   print the actual value the user will see. For example,
+    //   11:22:33:44:55:66 will change to D1:22:33:44:55:66.
     // TODO: find out why this happens and whether it must; if so, warn the
     //   user at compile-time instead of just here
     char hex[3];
