@@ -117,175 +117,91 @@ static char *create_url(const char *uuid, const char *path)
     return url;
 }
 
-/*
- * Get properties in 'data' and convert them to a jerry_value_t
- */
-static jerry_value_t get_props_from_response(oc_client_response_t *data)
+#ifdef DEBUG_BUILD
+#define do_print \
+    do_prefix(p); \
+    ZJS_PRINT \
+
+static void do_prefix(int p)
 {
-    jerry_value_t prop_object = zjs_create_object();
-    int *i_array;
-    double *d_array;
-    bool *b_array;
-    u32_t size;
     int i;
-    oc_rep_t *rep = data->payload;
-
-    DBG_PRINT("properties:\n");
-
-    while (rep != NULL) {
-        DBG_PRINT("Type: %u, Key: %s, Value: ", rep->type,
-                  oc_string(rep->name));
-        switch (rep->type) {
-        case BOOL:
-            zjs_obj_add_boolean(prop_object, oc_string(rep->name),
-                                rep->value.boolean);
-            DBG_PRINT("%d\n", rep->value.boolean);
-            break;
-        case INT:
-            zjs_obj_add_number(prop_object, oc_string(rep->name),
-                               (double)rep->value.integer);
-            DBG_PRINT("%d\n", rep->value.integer);
-            break;
-        case DOUBLE:
-            zjs_obj_add_number(prop_object, oc_string(rep->name),
-                               (double)rep->value.double_p);
-            DBG_PRINT("%lf\n", rep->value.double_p);
-            break;
-        case BYTE_STRING:
-        case STRING:
-            zjs_obj_add_string(prop_object, oc_string(rep->name),
-                               oc_string(rep->value.string));
-            DBG_PRINT("%s\n", oc_string(rep->value.string));
-            break;
-        case INT_ARRAY:
-            DBG_PRINT("[ ");
-            i_array = oc_int_array(rep->value.array);
-            size = oc_int_array_size(rep->value.array);
-            if (size > 0) {
-                ZVAL array = jerry_create_array(size);
-                for (i = 0; i < size; i++) {
-                    ZVAL val = jerry_create_number((double)i_array[i]);
-                    jerry_set_property_by_index(array, i, val);
-                    DBG_PRINT("%d \n", i_array[i]);
-                }
-                zjs_obj_add_object(prop_object, oc_string(rep->name), array);
-            }
-            DBG_PRINT("]\n");
-            break;
-        case DOUBLE_ARRAY:
-            ZJS_PRINT("[\n");
-            d_array = oc_double_array(rep->value.array);
-            size = oc_double_array_size(rep->value.array);
-            if (size > 0) {
-                ZVAL array = jerry_create_array(size);
-                for (i = 0; i < size; i++) {
-                    ZVAL val = jerry_create_number(d_array[i]);
-                    jerry_set_property_by_index(array, i, val);
-                    DBG_PRINT("%lf \n", i, d_array[i]);
-                }
-                zjs_obj_add_object(prop_object, oc_string(rep->name), array);
-            }
-            DBG_PRINT("]\n");
-            break;
-        case BOOL_ARRAY:
-            DBG_PRINT("[\n");
-            b_array = oc_bool_array(rep->value.array);
-            size = oc_double_array_size(rep->value.array);
-            if (size > 0) {
-                ZVAL array = jerry_create_array(size);
-                for (i = 0; i < size; i++) {
-                    ZVAL val = jerry_create_boolean(b_array[i]);
-                    jerry_set_property_by_index(array, i, val);
-                    DBG_PRINT("%d \n", b_array[i]);
-                }
-                zjs_obj_add_object(prop_object, oc_string(rep->name), array);
-            }
-            DBG_PRINT("]\n");
-        case STRING_ARRAY:
-            DBG_PRINT("[ ");
-            u32_t size = oc_string_array_get_allocated_size(rep->value.array);
-            if (size > 0) {
-                ZVAL array = jerry_create_array(size);
-                for (i = 0; i < size; i++) {
-                    if (oc_string_array_get_item_size(rep->value.array, i) > 0) {
-                        ZVAL val = jerry_create_string(oc_string_array_get_item(rep->value.array, i));
-                        jerry_set_property_by_index(array, i, val);
-                        DBG_PRINT("%s \n", oc_string_array_get_item(rep->value.array, i));
-                    }
-                }
-                zjs_obj_add_object(prop_object, oc_string(rep->name), array);
-            }
-            DBG_PRINT("]\n");
-            break;
-        case OBJECT:
-            DBG_PRINT("{ Object }\n");
-            break;
-        default:
-            break;
-        }
-        rep = rep->next;
+    for (i = 0; i < p; i++) {
+        ZJS_PRINT("\t");
     }
-
-    return prop_object;
 }
 
-#ifdef DEBUG_BUILD
-static void print_props_data(oc_client_response_t *data)
+static void print_props_data(int prefix, oc_rep_t *data)
 {
+    int p = prefix;
     int i;
-    oc_rep_t *rep = data->payload;
+    oc_rep_t *rep = data;
     while (rep != NULL) {
-        ZJS_PRINT("Type: %u, Key: %s, Value: ", rep->type,
-                  oc_string(rep->name));
         switch (rep->type) {
         case BOOL:
-            ZJS_PRINT("%d\n", rep->value.boolean);
+            do_print("%s: %d\n", oc_string(rep->name), rep->value.boolean);
             break;
         case INT:
-            ZJS_PRINT("%d\n", rep->value.integer);
-            break;
-        case DOUBLE:
-            ZJS_PRINT("%lf\n", rep->value.double_p);
+            do_print("%s: %d\n", oc_string(rep->name), rep->value.integer);
             break;
         case BYTE_STRING:
         case STRING:
-            ZJS_PRINT("%s\n", oc_string(rep->value.string));
+            do_print("%s: %s\n", oc_string(rep->name),
+                    oc_string(rep->value.string));
+            break;
+        case OBJECT:
+            do_print("%s: {\n", oc_string(rep->name));
+            print_props_data(p + 1, rep->value.object);
+            do_print("}\n");
+            break;
+        case STRING_ARRAY:
+            do_print("%s: [", oc_string(rep->name));
+            int sz =  oc_string_array_get_allocated_size(rep->value.array);
+            for (i = 0; i < sz; i++) {
+                ZJS_PRINT("\"%s\",",
+                        oc_string_array_get_item(rep->value.array, i));
+            }
+            ZJS_PRINT("]\n");
             break;
         case INT_ARRAY:
-            ZJS_PRINT("[\n");
+            do_print("%s: [", oc_string(rep->name));
             int *i_array = oc_int_array(rep->value.array);
-            for (i = 0; i < (int)oc_int_array_size(rep->value.array); i++) {
-                ZJS_PRINT("%d ", i_array[i]);
+            for (i = 0; i < oc_int_array_size(rep->value.array); i++) {
+                ZJS_PRINT("%u,", i_array[i]);
             }
             ZJS_PRINT("]\n");
             break;
         case DOUBLE_ARRAY:
-            ZJS_PRINT("[\n");
+            do_print("%s: [", oc_string(rep->name));
             double *d_array = oc_double_array(rep->value.array);
-            for (i = 0; i < (int)oc_int_array_size(rep->value.array); i++) {
-                ZJS_PRINT("%lf ", d_array[i]);
+            for (i = 0; i < oc_double_array_size(rep->value.array); i++) {
+                ZJS_PRINT("%lf,", d_array[i]);
             }
             ZJS_PRINT("]\n");
             break;
         case BOOL_ARRAY:
-            ZJS_PRINT("[\n");
+            do_print("%s: [", oc_string(rep->name));
             bool *b_array = oc_bool_array(rep->value.array);
-            for (i = 0; i < (int)oc_int_array_size(rep->value.array); i++) {
-                ZJS_PRINT("%d ", b_array[i]);
+            for (i = 0; i < oc_bool_array_size(rep->value.array); i++) {
+                ZJS_PRINT("%d,", b_array[i]);
             }
             ZJS_PRINT("]\n");
             break;
-        case STRING_ARRAY:
-            ZJS_PRINT("[\n");
-            for (i = 0;
-                 i < oc_string_array_get_allocated_size(rep->value.array);
-                 i++) {
-                ZJS_PRINT("%s ", oc_string_array_get_item(rep->value.array, i));
+        case OBJECT_ARRAY:
+            {
+                oc_rep_t *iter = rep->value.object_array;
+                do_print("%s: [", oc_string(rep->name));
+                p++;
+                while (iter) {
+                    ZJS_PRINT("{\n");
+                    print_props_data(p + 1, iter->value.object);
+                    iter = iter->next;
+                    do_print("}");
+                    ZJS_PRINT(",");
+                }
+                ZJS_PRINT("\n");
+                p--;
+                do_print("]\n");
             }
-            ZJS_PRINT("]\n");
-            break;
-        case OBJECT:
-            ZJS_PRINT("{ Object }\n");
             break;
         default:
             break;
@@ -294,7 +210,7 @@ static void print_props_data(oc_client_response_t *data)
     }
 }
 #else
-#define print_props_data(d) do {} while(0)
+#define print_props_data(p, d) do {} while(0)
 #endif
 
 /*
@@ -401,7 +317,7 @@ static void observe_callback(oc_client_response_t *data)
         struct client_resource *resource =
             (struct client_resource *)data->user_data;
         jerry_value_t resource_val = create_resource(resource);
-        ZVAL properties_val = get_props_from_response(data);
+        ZVAL properties_val = zjs_ocf_decode_value(data->payload);
         zjs_set_property(resource_val, "properties", properties_val);
 
         zjs_defer_emit_event(ocf_client, "update", &resource_val,
@@ -409,7 +325,7 @@ static void observe_callback(oc_client_response_t *data)
                              zjs_release_args);
 
 #ifdef DEBUG_BUILD
-        print_props_data(data);
+        print_props_data(0, data->payload);
 #endif
     }
 }
@@ -620,8 +536,10 @@ static void ocf_get_handler(oc_client_response_t *data)
         if (h && h->res) {
             struct client_resource *resource = h->res;
             if (data->code == OC_STATUS_OK) {
+                print_props_data(0, data->payload);
+
                 ZVAL resource_val = create_resource(resource);
-                ZVAL properties_val = get_props_from_response(data);
+                ZVAL properties_val = zjs_ocf_decode_value(data->payload);
 
                 zjs_set_property(resource_val, "properties", properties_val);
                 jerry_resolve_or_reject_promise(h->promise_obj, resource_val,
@@ -788,14 +706,9 @@ static ZJS_DECL_FUNC(ocf_update)
     if (oc_init_put(resource->resource_path, resource->endpoint, NULL,
                     put_finished, LOW_QOS, h)) {
         ZVAL props = zjs_get_property(argv[0], "properties");
-        void *ret;
-        // Start the root encoding object
-        zjs_rep_start_root_object();
-        // Encode all properties from resource (argv[0])
-        ret = zjs_ocf_props_setup(props, &g_encoder, true);
-        zjs_rep_end_root_object();
-        // Free property return handle
-        zjs_ocf_free_props(ret);
+
+        zjs_ocf_encode_value(props);
+
         if (!oc_do_put()) {
             ERR_PRINT("error sending PUT request\n");
             ZVAL err = make_ocf_error("NetworkError", "PUT call failed",
@@ -836,9 +749,6 @@ static void ocf_get_platform_info_handler(oc_client_response_t *data)
                 break;
             case INT:
                 DBG_PRINT("%d\n", rep->value.integer);
-                break;
-            case DOUBLE:
-                DBG_PRINT("%lf\n", rep->value.double_p);
                 break;
             case BYTE_STRING:
             case STRING:
@@ -960,9 +870,6 @@ static void ocf_get_device_info_handler(oc_client_response_t *data)
                 break;
             case INT:
                 DBG_PRINT("%d\n", rep->value.integer);
-                break;
-            case DOUBLE:
-                DBG_PRINT("%lf\n", rep->value.double_p);
                 break;
             case BYTE_STRING:
             case STRING:

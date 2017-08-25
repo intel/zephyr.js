@@ -48,8 +48,9 @@ extern CborError g_err;
  * @param key           Child object (CborEncoder *)
  * @param name          Name of object (char *)
  */
-#define zjs_rep_set_object(object, key, name)                     \
-    g_err |= cbor_encode_text_string(object, name, strlen(name)); \
+#define zjs_rep_set_object(object, key, name)                           \
+    if (name)                                                           \
+        g_err |= cbor_encode_text_string(object, name, strlen(name));   \
     zjs_rep_start_object(object, key)
 
 /*
@@ -117,59 +118,15 @@ extern CborError g_err;
 /*
  * Encode a boolean value
  *
- * @param parent        Parent object
- * @param value         Value
- */
-#define zjs_rep_encode_boolean(parent, value) \
-    g_err |= cbor_encode_boolean(parent, value);
-
-/*
- * Encode a double value
- *
- * @param parent        Parent object
- * @param value         Value
- */
-#define zjs_rep_encode_double(parent, value) \
-    g_err |= cbor_encode_double(parent, value);
-
-/*
- * Encode a integer value
- *
- * @param parent        Parent object
- * @param value         Value
- */
-#define zjs_rep_encode_int(parent, value) \
-    g_err |= cbor_encode_int(parent, value);
-
-/*
- * Encode a unsigned integer value
- *
- * @param parent        Parent object
- * @param value         Value
- */
-#define zjs_rep_encode_uint(parent, value) \
-    g_err |= cbor_encode_uint(parent, value);
-
-/*
- * Encode a string value in an array
- *
- * @param parent        Parent object
- * @param value         Value
- */
-#define zjs_rep_encode_string(parent, value) \
-    g_err |= cbor_encode_text_string(parent, value, strlen(value));
-
-/*
- * Encode a boolean value
- *
  * @param object        Parent object
  * @param key           Name of boolean property
  * @param value         Value
  */
-#define zjs_rep_set_boolean(object, key, value)                     \
-    do {                                                            \
-        g_err |= cbor_encode_text_string(object, key, strlen(key)); \
-        g_err |= cbor_encode_boolean(object, value);                \
+#define zjs_rep_set_boolean(object, key, value)                         \
+    do {                                                                \
+        if (key)                                                        \
+            g_err |= cbor_encode_text_string(object, key, strlen(key)); \
+        g_err |= cbor_encode_boolean(object, value);                    \
     } while (0)
 
 /*
@@ -179,10 +136,11 @@ extern CborError g_err;
  * @param key           Name of boolean property
  * @param value         Value
  */
-#define zjs_rep_set_double(object, key, value)                      \
-    do {                                                            \
-        g_err |= cbor_encode_text_string(object, key, strlen(key)); \
-        g_err |= cbor_encode_double(object, value);                 \
+#define zjs_rep_set_double(object, key, value)                          \
+    do {                                                                \
+        if (key)                                                        \
+            g_err |= cbor_encode_text_string(object, key, strlen(key)); \
+        g_err |= cbor_encode_double(object, value);                     \
     } while (0)
 
 /*
@@ -192,10 +150,11 @@ extern CborError g_err;
  * @param key           Name of boolean property
  * @param value         Value
  */
-#define zjs_rep_set_int(object, key, value)                         \
-    do {                                                            \
-        g_err |= cbor_encode_text_string(object, key, strlen(key)); \
-        g_err |= cbor_encode_int(object, value);                    \
+#define zjs_rep_set_int(object, key, value)                             \
+    do {                                                                \
+        if (key)                                                        \
+            g_err |= cbor_encode_text_string(object, key, strlen(key)); \
+        g_err |= cbor_encode_int(object, value);                        \
     } while (0)
 
 /*
@@ -205,10 +164,11 @@ extern CborError g_err;
  * @param key           Name of boolean property
  * @param value         Value
  */
-#define zjs_rep_set_uint(object, key, value)                        \
-    do {                                                            \
-        g_err |= cbor_encode_text_string(object, key, strlen(key)); \
-        g_err |= cbor_encode_uint(object, value);                   \
+#define zjs_rep_set_uint(object, key, value)                            \
+    do {                                                                \
+        if (key)                                                        \
+            g_err |= cbor_encode_text_string(object, key, strlen(key)); \
+        g_err |= cbor_encode_uint(object, value);                       \
     } while (0)
 
 /*
@@ -218,10 +178,11 @@ extern CborError g_err;
  * @param key           Name of boolean property
  * @param value         Value
  */
-#define zjs_rep_set_text_string(object, key, value)                     \
-    do {                                                                \
-        g_err |= cbor_encode_text_string(object, key, strlen(key));     \
-        g_err |= cbor_encode_text_string(object, value, strlen(value)); \
+#define zjs_rep_set_text_string(object, key, value)                         \
+    do {                                                                    \
+        if (key)                                                            \
+            g_err |= cbor_encode_text_string(object, key, strlen(key));     \
+        g_err |= cbor_encode_text_string(object, value, strlen(value));     \
     } while (0)
 
 /*
@@ -231,10 +192,11 @@ extern CborError g_err;
  * @param key           Name of boolean property
  * @param value         Value
  */
-#define zjs_rep_set_byte_string(object, key, value)                     \
-    do {                                                                \
-        g_err |= cbor_encode_text_string(object, key, strlen(key));     \
-        g_err |= cbor_encode_byte_string(object, value, strlen(value)); \
+#define zjs_rep_set_byte_string(object, key, value)                         \
+    do {                                                                    \
+        if (key)                                                            \
+            g_err |= cbor_encode_text_string(object, key, strlen(key));     \
+        g_err |= cbor_encode_byte_string(object, value, strlen(value));     \
     } while (0)
 
 #endif

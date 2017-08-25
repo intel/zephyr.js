@@ -16,16 +16,6 @@
 //#include "port/oc_signal_main_loop.h"
 #include "port/oc_clock.h"
 
-struct props_handle {
-    jerry_value_t props_array;
-    u32_t size;
-    char **names_array;
-};
-
-#define TYPE_IS_NUMBER 0
-#define TYPE_IS_INT    1
-#define TYPE_IS_UINT   2
-
 #define OCF_MAX_DEVICE_ID_LEN 42
 #define OCF_MAX_RES_TYPE_LEN  32
 #define OCF_MAX_RES_PATH_LEN  64
@@ -45,34 +35,20 @@ struct props_handle {
     return promise;
 
 /*
- * Test if value at index is a double or integer
+ * Encode all properties in 'object' into the global CborEncoder
  *
- * @param val           JerryScript value to test
- *
- * @return              0=number, 1=int, 2=uint
+ * @param object        JerryScript object containing properties to encode
  */
-int zjs_ocf_is_int(jerry_value_t val);
+void zjs_ocf_encode_value(jerry_value_t object);
 
 /*
- * Encode all properties in props_object into a CborEncoder for an
- * iotivity-constrained callback.
+ * Decode properties from an OCF response into a jerry_value_t
  *
- * @param props_object  JerryScript object containing properties to encode
- * @param encoder       CborEncoder to encode the properties into
- * @param root          Flag if this is the root object or a sub-object
+ * @param data          Data from OCF response
  *
- * @return              Handle to free the properties later
+ * @return              Jerry object matching 'data'
  */
-void *zjs_ocf_props_setup(jerry_value_t props_object,
-                          CborEncoder *encoder,
-                          bool root);
-
-/*
- * Free properties after a call to zjs_ocf_props_setup()
- *
- * @param h             Handler returned from zjs_ocf_props_setup()
- */
-void zjs_ocf_free_props(void *h);
+jerry_value_t zjs_ocf_decode_value(oc_rep_t *data);
 
 /**
  * Routine to call into iotivity-constrained

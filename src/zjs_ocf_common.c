@@ -24,7 +24,21 @@
 #include "oc_api.h"
 #include "port/oc_clock.h"
 
-int zjs_ocf_is_int(jerry_value_t val)
+#ifdef DEBUG_BUILD
+#define PROPS_PRINT(n, ...) \
+    if (n) {                \
+        printf("%s: ", n);  \
+    }                       \
+    printf(__VA_ARGS__)
+#else
+#define PROPS_PRINT(n, ...) do {} while (0)
+#endif
+
+#define TYPE_IS_NUMBER 0
+#define TYPE_IS_INT    1
+#define TYPE_IS_UINT   2
+
+static int is_int(jerry_value_t val)
 {
     int ret = 0;
     double n = jerry_get_number_value(val);
@@ -41,178 +55,205 @@ int zjs_ocf_is_int(jerry_value_t val)
     }
 }
 
-static bool ocf_foreach_prop(const jerry_value_t prop_name,
-                             const jerry_value_t prop_value,
-                             void *data)
+static void zjs_ocf_encode_value_helper(jerry_value_t object, const char *name,
+                                        CborEncoder *encoder);
+
+static bool foreach_prop(const jerry_value_t prop_name,
+                         const jerry_value_t prop_value,
+                         void *data)
 {
-    struct props_handle *handle = (struct props_handle *)data;
+    CborEncoder *encoder = (CborEncoder *)data;
+    ZJS_GET_STRING(prop_name, name, OCF_MAX_PROP_NAME_LEN);
 
-    jerry_size_t maxlen = OCF_MAX_PROP_NAME_LEN;
-    char *name = zjs_alloc_from_jstring(prop_name, &maxlen);
-
-    // Skip id/resourcePath/resourceType because that is not a resource property
-    // that is sent out
-    char *props[] = { "deviceId", "resourcePath", "resourceType", NULL };
-    if (zjs_str_matches(name, props)) {
-        zjs_free(name);
-    }
-    else {
-        handle->names_array[handle->size] = name;
-        ZVAL ret = jerry_set_property_by_index(handle->props_array,
-                                               handle->size++, prop_value);
-        if (jerry_value_has_error_flag(ret)) {
-            ERR_PRINT("set property failed\n");
-            return false;
-        }
-    }
+    zjs_ocf_encode_value_helper(prop_value, name, encoder);
 
     return true;
 }
 
-/*
- * Turn a Jerry object into an array of its properties. The returned handle
- * will contain an array of strings with all the property names.
- */
-static struct props_handle *ocf_get_all_properties(jerry_value_t resource)
+static void zjs_ocf_encode_value_helper(jerry_value_t object, const char *name,
+                                        CborEncoder *encoder)
 {
-    struct props_handle *handle = zjs_malloc(sizeof(struct props_handle));
-
-    ZVAL keys_array = jerry_get_object_keys(resource);
-    u32_t arr_length = jerry_get_array_length(keys_array);
-
-    handle->props_array = jerry_create_array(arr_length - 1);
-    handle->size = 0;
-    handle->names_array = zjs_malloc(sizeof(char *) * arr_length);
-
-    jerry_foreach_object_property(resource, ocf_foreach_prop, handle);
-
-    return handle;
-}
-
-/*
- * Takes an 'encoder' object and encodes properties found in 'props_object'. The
- * 'root' parameter should be true if this is being called on a root object,
- * otherwise it should be false and the encoder object should be provided.
- */
-void *zjs_ocf_props_setup(jerry_value_t props_object, CborEncoder *encoder,
-                          bool root)
-{
-    void *ret = NULL;
-    int i;
-    struct props_handle *h = ocf_get_all_properties(props_object);
-    ret = h;
-    fflush(stdout);
-    CborEncoder *enc;
-    if (root) {
-        enc = &root_map;
-    } else {
-        enc = encoder;
-    }
-
-    for (i = 0; i < h->size; ++i) {
-        ZVAL prop = jerry_get_property_by_index(h->props_array, i);
-
-        if (jerry_value_is_number(prop)) {
-            // Number could be double, int, uint
-            int type = zjs_ocf_is_int(prop);
-            if (type == TYPE_IS_NUMBER) {
-                double num = jerry_get_number_value(prop);
-                zjs_rep_set_double(enc, h->names_array[i], num);
-                DBG_PRINT("Encoding number: %lf\n", num);
-            } else if (type == TYPE_IS_UINT) {
-                unsigned int num = (unsigned int)jerry_get_number_value(prop);
-                zjs_rep_set_uint(enc, h->names_array[i], num);
-                DBG_PRINT("Encoding unsinged int: %u\n", num);
-            } else if (type == TYPE_IS_INT) {
-                int num = (int)jerry_get_number_value(prop);
-                zjs_rep_set_int(enc, h->names_array[i], num);
-                DBG_PRINT("Encoding int: %d\n", num);
-            }
-        } else if (jerry_value_is_boolean(prop)) {
-            bool boolean = jerry_get_boolean_value(prop);
-            zjs_rep_set_boolean(enc, h->names_array[i], boolean);
-            DBG_PRINT("Encoding boolean: %d\n", boolean);
-        } else if (jerry_value_is_string(prop)) {
-            ZJS_GET_STRING(prop, str, OCF_MAX_PROP_NAME_LEN);
-            zjs_rep_set_text_string(enc, h->names_array[i], str);
-            DBG_PRINT("Encoding string: %s\n", str);
-        } else if (jerry_value_is_object(prop) && !jerry_value_is_array(prop)) {
-            CborEncoder child;
-            DBG_PRINT("Encoding object: %s {\n", h->names_array[i]);
-            //jerry_value_t jobject = zjs_get_property(prop, h->names_array[i]);
-            // Start child object
-            zjs_rep_start_object(enc, &child);
-            // Set child object property name
-            zjs_rep_set_object(enc, &child, h->names_array[i]);
-            // Recursively add new properties to child object
-            ret = zjs_ocf_props_setup(prop, &child, false);
-            // Close/End object
-            zjs_rep_close_object(enc, &child);
-            zjs_rep_end_object(enc, &child);
-            DBG_PRINT("}\n");
-        } else if (jerry_value_is_array(prop)) {
-            /*
-             * TODO: optimization can we recursively call zjs_ocf_props_setup()?
-             */
-            CborEncoder child;
-            DBG_PRINT("Encoding array: %s [\n", h->names_array[i]);
-            zjs_rep_set_array(enc, &child, h->names_array[i]);
-            for (int i = 0; i < (int)jerry_get_array_length(prop); i++) {
-                ZVAL element = jerry_get_property_by_index(prop, i);
-                if (jerry_value_is_number(element)) {
-                    // Number could be double, int, uint
-                    int type = zjs_ocf_is_int(element);
-                    if (type == TYPE_IS_NUMBER) {
-                        double num = jerry_get_number_value(element);
-                        zjs_rep_encode_double(&child, num);
-                        DBG_PRINT("Encoding number: %lf\n", num);
-                    } else if (type == TYPE_IS_UINT) {
-                        unsigned int num = (unsigned int)jerry_get_number_value(element);
-                        zjs_rep_encode_uint(&child, num);
-                        DBG_PRINT("Encoding unsigned int: %u\n", num);
-                    } else if (type == TYPE_IS_INT) {
-                        int num = (int)jerry_get_number_value(element);
-                        zjs_rep_encode_int(&child, num);
-                        DBG_PRINT("Encoding int: %d\n", num);
-                    }
-                } else if (jerry_value_is_boolean(element)) {
-                    bool boolean = jerry_get_boolean_value(element);
-                    zjs_rep_encode_int(&child, boolean);
-                    DBG_PRINT("Encoding boolean: %d\n", boolean);
-                } else if (jerry_value_is_string(element)) {
-                    ZJS_GET_STRING(element, str, OCF_MAX_PROP_NAME_LEN);
-                    zjs_rep_encode_string(&child, str);
-                    DBG_PRINT("Encoding string %s\n", str);
-                }
-            }
-            // Close the array
-            zjs_rep_close_array(enc, &child);
-            DBG_PRINT("]\n");
-        }
-    }
-
-    return ret;
-}
-
-/*
- * Free the handle returned from get_all_ocf_properties()
- */
-void zjs_ocf_free_props(void *h)
-{
-    struct props_handle *handle = (struct props_handle *)h;
-    if (handle) {
-        if (handle->names_array) {
+    if (jerry_value_is_object(object)) {
+        CborEncoder child;
+        if (jerry_value_is_array(object)) {
             int i;
-            for (i = 0; i < handle->size; ++i) {
-                if (handle->names_array[i]) {
-                    zjs_free(handle->names_array[i]);
-                }
+            zjs_rep_start_array(encoder, &child);
+            zjs_rep_set_array(encoder, &child, name);
+
+            PROPS_PRINT(name, "[");
+            u32_t len = jerry_get_array_length(object);
+            for (i = 0; i < len; i++) {
+                ZVAL element = jerry_get_property_by_index(object, i);
+                zjs_ocf_encode_value_helper(element, NULL, &child);
             }
-            zjs_free(handle->names_array);
+            PROPS_PRINT(NULL, "],");
+
+            zjs_rep_close_array(encoder, &child);
+            zjs_rep_end_array(encoder, &child);
+        } else {
+            zjs_rep_start_object(encoder, &child);
+            zjs_rep_set_object(encoder, &child, name);
+
+            PROPS_PRINT(name, "{");
+            jerry_foreach_object_property(object, foreach_prop, &child);
+            PROPS_PRINT(NULL, "},");
+
+            zjs_rep_close_object(encoder, &child);
+            zjs_rep_end_object(encoder, &child);
         }
-        jerry_release_value(handle->props_array);
-        zjs_free(handle);
+    } else if (jerry_value_is_number(object)) {
+        // Number could be double, int, uint
+        int type = is_int(object);
+        if (type == TYPE_IS_NUMBER) {
+            double num = jerry_get_number_value(object);
+            zjs_rep_set_double(encoder, name, num);
+            PROPS_PRINT(name, "%lf,", num);
+        } else if (type == TYPE_IS_UINT) {
+            unsigned int num = (unsigned int)jerry_get_number_value(object);
+            zjs_rep_set_uint(encoder, name, num);
+            PROPS_PRINT(name, "%u,", num);
+        } else if (type == TYPE_IS_INT) {
+            int num = (int)jerry_get_number_value(object);
+            zjs_rep_set_int(encoder, name, num);
+            PROPS_PRINT(name, "%d,", num);
+        }
+    } else if (jerry_value_is_boolean(object)) {
+        bool boolean = jerry_get_boolean_value(object);
+        zjs_rep_set_boolean(encoder, name, boolean);
+        PROPS_PRINT(name, "%s,", boolean ? "true" : "false");
+    } else if (jerry_value_is_string(object)) {
+        ZJS_GET_STRING(object, str, OCF_MAX_PROP_NAME_LEN);
+        zjs_rep_set_text_string(encoder, name, str);
+        PROPS_PRINT(name, "\"%s\",", str);
     }
+
+}
+
+void zjs_ocf_encode_value(jerry_value_t object)
+{
+    PROPS_PRINT(NULL, "Starting object encode: {\n");
+
+    zjs_rep_start_root_object();
+
+    jerry_foreach_object_property(object, foreach_prop, &root_map);
+
+    zjs_rep_end_root_object();
+
+    PROPS_PRINT(NULL, "\n} Ending object encode\n");
+}
+
+static jerry_value_t decode_value_helper(jerry_value_t object, oc_rep_t *data)
+{
+    u32_t sz;
+    int i;
+    oc_rep_t *rep = data;
+
+    while (rep != NULL) {
+        switch (rep->type) {
+        case BOOL:
+            zjs_obj_add_boolean(object, oc_string(rep->name),
+                    rep->value.boolean);
+            break;
+        case INT:
+            zjs_obj_add_number(object, oc_string(rep->name),
+                    (double)rep->value.integer);
+            break;
+        case BYTE_STRING:
+        case STRING:
+            zjs_obj_add_string(object, oc_string(rep->name),
+                    oc_string(rep->value.string));
+            break;
+        case DOUBLE:
+            zjs_obj_add_number(object, oc_string(rep->name),
+                    rep->value.double_p);
+            break;
+        case STRING_ARRAY:
+            {
+                sz = oc_string_array_get_allocated_size(rep->value.array);
+                ZVAL array = jerry_create_array(sz);
+                for (i = 0; i < sz; i++) {
+                    ZVAL str = jerry_create_string(
+                            oc_string_array_get_item(rep->value.array, i));
+                    jerry_set_property_by_index(array, i, str);
+                }
+                zjs_set_property(object, oc_string(rep->name), array);
+            }
+            break;
+        case DOUBLE_ARRAY:
+            {
+                sz = oc_double_array_size(rep->value.array);
+                double *d_array = oc_double_array(rep->value.array);
+                ZVAL array = jerry_create_array(sz);
+                for (i = 0; i < sz; i++) {
+                    ZVAL d = jerry_create_number(d_array[i]);
+                    jerry_set_property_by_index(array, i, d);
+                }
+                zjs_set_property(object, oc_string(rep->name), array);
+            }
+            break;
+        case INT_ARRAY:
+            {
+                sz = oc_int_array_size(rep->value.array);
+                int *i_array = oc_int_array(rep->value.array);
+                ZVAL array = jerry_create_array(sz);
+                for (i = 0; i < sz; i++) {
+                    ZVAL integer = jerry_create_number(i_array[i]);
+                    jerry_set_property_by_index(array, i, integer);
+                }
+                zjs_set_property(object, oc_string(rep->name), array);
+            }
+            break;
+        case BOOL_ARRAY:
+            {
+                sz = oc_bool_array_size(rep->value.array);
+                bool *b_array = oc_bool_array(rep->value.array);
+                ZVAL array = jerry_create_array(sz);
+                for (i = 0; i < sz; i++) {
+                    ZVAL b = jerry_create_number(b_array[i]);
+                    jerry_set_property_by_index(array, i, b);
+                }
+                zjs_set_property(object, oc_string(rep->name), array);
+            }
+            break;
+        case OBJECT:
+            {
+                jerry_value_t new_object = zjs_create_object();
+                decode_value_helper(new_object, rep->value.object);
+                if (!oc_string(rep->name)) {
+                    return new_object;
+                }
+                zjs_set_property(object, oc_string(rep->name), new_object);
+                jerry_release_value(new_object);
+            }
+            break;
+        case OBJECT_ARRAY:
+            {
+                oc_rep_t *iter = rep->value.object_array;
+                jerry_value_t array = jerry_create_array(0);
+                while (iter) {
+                    ZVAL element = decode_value_helper(ZJS_UNDEFINED, iter);
+                    array = zjs_push_array(array, element);
+                    iter = iter->next;
+                }
+                zjs_set_property(object, oc_string(rep->name), array);
+                jerry_release_value(array);
+            }
+            break;
+        default:
+            break;
+        }
+        rep = rep->next;
+    }
+
+    return ZJS_UNDEFINED;
+}
+
+jerry_value_t zjs_ocf_decode_value(oc_rep_t *data)
+{
+    jerry_value_t object = zjs_create_object();
+    decode_value_helper(object, data);
+
+    return object;
 }
 
 jerry_value_t ocf_object;
