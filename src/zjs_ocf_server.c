@@ -237,14 +237,7 @@ static ZJS_DECL_FUNC(ocf_respond)
 
     ZJS_GET_HANDLE(this, struct ocf_handler, h, ocf_type_info);
 
-    void *ret;
-    // Start the root encoding object
-    zjs_rep_start_root_object();
-    // Encode all properties from resource (argv[0])
-    ret = zjs_ocf_props_setup(data, &g_encoder, true);
-    zjs_rep_end_root_object();
-    // Free property return handle
-    zjs_ocf_free_props(ret);
+    zjs_ocf_encode_value(data);
 
     /*
      * TODO: Better error handling here. We need to implement a respond
