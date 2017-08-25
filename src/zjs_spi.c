@@ -78,7 +78,7 @@ static ZJS_DECL_FUNC(zjs_spi_transceive)
     jerry_value_t buffer;
     zjs_buffer_t *tx_buf = NULL;
     zjs_buffer_t *rx_buf = NULL;
-    ZVAL_MUTABLE rx_buf_obj = jerry_create_null();
+    ZVAL_MUTABLE rx_buf_obj = 0;
     ZVAL_MUTABLE tx_buf_obj = 0;
     u32_t slave_num = (u32_t)jerry_get_number_value(argv[0]);
     // Valid numbers are 0 thru 127
@@ -178,6 +178,7 @@ static ZJS_DECL_FUNC(zjs_spi_transceive)
                           tx_buf->bufsize) != 0) {
                 return ZJS_STD_ERROR(SystemError, "SPI transceive failed");
             }
+            rx_buf_obj = jerry_create_null();
         }
     }  // This is a read only operation
     else {
@@ -188,7 +189,7 @@ static ZJS_DECL_FUNC(zjs_spi_transceive)
             return ZJS_STD_ERROR(SystemError, "SPI transceive failed");
         }
     }
-    return rx_buf_obj;
+    return jerry_acquire_value(rx_buf_obj);
 }
 
 static ZJS_DECL_FUNC(zjs_spi_close)
