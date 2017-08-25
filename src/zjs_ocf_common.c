@@ -155,7 +155,7 @@ void *zjs_ocf_props_setup(jerry_value_t props_object, CborEncoder *encoder,
             DBG_PRINT("}\n");
         } else if (jerry_value_is_array(prop)) {
             /*
-             * TODO: need to start object?
+             * TODO: optimization can we recursively call zjs_ocf_props_setup()?
              */
             CborEncoder child;
             DBG_PRINT("Encoding array: %s [\n", h->names_array[i]);
