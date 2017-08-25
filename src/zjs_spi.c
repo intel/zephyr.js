@@ -78,8 +78,8 @@ static ZJS_DECL_FUNC(zjs_spi_transceive)
     jerry_value_t buffer;
     zjs_buffer_t *tx_buf = NULL;
     zjs_buffer_t *rx_buf = NULL;
-    jerry_value_t rx_buf_obj = jerry_create_null();
-    jerry_value_t tx_buf_obj;
+    ZVAL_MUTABLE rx_buf_obj = jerry_create_null();
+    ZVAL_MUTABLE tx_buf_obj = 0;
     u32_t slave_num = (u32_t)jerry_get_number_value(argv[0]);
     // Valid numbers are 0 thru 127
     if (slave_num > 127 || spi_slave_select(handle->spi_device, slave_num)) {
@@ -91,13 +91,6 @@ static ZJS_DECL_FUNC(zjs_spi_transceive)
         if (handle->topology != ZJS_TOPOLOGY_READ) {
             return ZJS_STD_ERROR(RangeError, "Missing transmit buffer");
         }
-    }
-
-    // If a buffer is provided, check that it is a valid type
-    if (argc > 1 && (!jerry_value_is_array(argv[1]) &&
-                      !jerry_value_is_string(argv[1]) &&
-                      !zjs_value_is_buffer(argv[1]))) {
-        return SYNTAX_ERROR("SPI transceive buffer is an invalid type");
     }
 
     jerry_size_t dir_len = 13;
@@ -176,21 +169,15 @@ static ZJS_DECL_FUNC(zjs_spi_transceive)
             if (spi_transceive(handle->spi_device, tx_buf->buffer,
                                tx_buf->bufsize, rx_buf->buffer,
                                rx_buf->bufsize) != 0) {
-                jerry_release_value(rx_buf_obj);
-                jerry_release_value(tx_buf_obj);
                 return ZJS_STD_ERROR(SystemError, "SPI transceive failed");
             }
-            jerry_release_value(tx_buf_obj);
         }
         // This is a write only operation, return a NULL buffer
         else {
             if (spi_write(handle->spi_device, tx_buf->buffer,
                           tx_buf->bufsize) != 0) {
-                jerry_release_value(tx_buf_obj);
                 return ZJS_STD_ERROR(SystemError, "SPI transceive failed");
             }
-            jerry_release_value(tx_buf_obj);
-            rx_buf_obj = jerry_create_null();
         }
     }  // This is a read only operation
     else {
@@ -198,7 +185,6 @@ static ZJS_DECL_FUNC(zjs_spi_transceive)
         // Read the data from the device
         if (spi_read(handle->spi_device,
                      rx_buf->buffer, rx_buf->bufsize) != 0) {
-            jerry_release_value(rx_buf_obj);
             return ZJS_STD_ERROR(SystemError, "SPI transceive failed");
         }
     }
