@@ -72,6 +72,18 @@ void zjs_pop_mem_stat(void *ptr);
 #endif  // ZJS_TRACE_MALLOC
 #endif  // ZJS_LINUX_BUILD
 
+#ifdef DEBUG_BUILD
+#define zjs_create_object()                                   \
+    ({                                                        \
+        jerry_value_t jval = jerry_create_object();           \
+        DBG_PRINT("trace: T:%p: create object: %p\n",         \
+                  k_current_get(), (void *)(uintptr_t)jval);  \
+        jval;                                                 \
+    })
+#else
+#define zjs_create_object() jerry_create_object()
+#endif
+
 void zjs_set_property(const jerry_value_t obj, const char *name,
                       const jerry_value_t prop);
 void zjs_set_readonly_property(const jerry_value_t obj, const char *name,
@@ -482,6 +494,7 @@ void zjs_loop_init(void);
         type *cur = list;                \
         if (p == list) {                 \
             list = p->next;              \
+            removed = 1;                 \
         } else {                         \
             while (cur->next) {          \
                 if (cur->next == p) {    \

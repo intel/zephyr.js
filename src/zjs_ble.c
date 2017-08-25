@@ -92,7 +92,6 @@ static struct bt_uuid *gatt_cud_uuid = BT_UUID_DECLARE_16(BT_UUID_GATT_CUD_VAL);
 static struct bt_uuid *gatt_ccc_uuid = BT_UUID_DECLARE_16(BT_UUID_GATT_CCC_VAL);
 
 static struct k_sem ble_sem;
-static bool bt_enabled = false;
 
 static ble_handle_t *ble_handle = NULL;
 
@@ -580,22 +579,11 @@ static struct bt_conn_auth_cb zjs_ble_auth_cb_display = {
     .cancel = zjs_ble_auth_cancel,
 };
 
-// INTERRUPT SAFE FUNCTION: No JerryScript VM, allocs, or release prints!
-static void zjs_ble_bt_ready(int err)
+void zjs_ble_emit_powered_event()
 {
-    DBG_PRINT("bt_ready() is called [err %d]\n", err);
     const char state[] = "poweredOn";
     zjs_defer_emit_event(ble_handle->ble_obj, "stateChange", state,
                          sizeof(state), string_arg, zjs_release_args);
-}
-
-void zjs_ble_enable()
-{
-    DBG_PRINT("Enabling the bluetooth, wait for bt_ready()...\n");
-    bt_enable(zjs_ble_bt_ready);
-    // setup connection callbacks
-    bt_conn_cb_register(&zjs_ble_conn_callbacks);
-    bt_conn_auth_cb_register(&zjs_ble_auth_cb_display);
 }
 
 static ZJS_DECL_FUNC(zjs_ble_disconnect)
@@ -1306,7 +1294,7 @@ jerry_value_t zjs_ble_init()
     memset(handle, 0, sizeof(ble_handle_t));
 
     // create global BLE object
-    jerry_value_t ble_obj = jerry_create_object();
+    jerry_value_t ble_obj = zjs_create_object();
     zjs_obj_add_function(ble_obj, zjs_ble_disconnect, "disconnect");
     zjs_obj_add_function(ble_obj, zjs_ble_start_advertising,
                          "startAdvertising");
@@ -1324,10 +1312,9 @@ jerry_value_t zjs_ble_init()
 
     handle->ble_obj = jerry_acquire_value(ble_obj);
 
-    if (!bt_enabled) {
-        zjs_ble_enable();
-        bt_enabled = true;
-    }
+    // setup connection callbacks
+    bt_conn_cb_register(&zjs_ble_conn_callbacks);
+    bt_conn_auth_cb_register(&zjs_ble_auth_cb_display);
 
     ble_handle = handle;
     return ble_obj;

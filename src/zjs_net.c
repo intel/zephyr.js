@@ -208,6 +208,7 @@ static void post_closed(void *handle)
             DBG_PRINT("Freeing socket %p: opened_sockets=%p\n", h, opened_sockets);
 
             net_context_put(h->tcp_sock);
+            zjs_destroy_emitter(h->socket);
             jerry_release_value(h->socket);
             zjs_free(h->rbuf);
             zjs_free(h);
@@ -468,7 +469,7 @@ static ZJS_DECL_FUNC(socket_resume)
 static ZJS_DECL_FUNC(socket_address)
 {
     GET_SOCK_HANDLE_JS(this, handle);
-    jerry_value_t ret = jerry_create_object();
+    jerry_value_t ret = zjs_create_object();
     ZVAL port = zjs_get_property(this, "localPort");
     ZVAL addr = zjs_get_property(this, "localAddress");
     sa_family_t family = net_context_get_family(handle->tcp_sock);
@@ -535,7 +536,7 @@ static jerry_value_t create_socket(u8_t client, sock_handle_t **handle_out)
         return zjs_error_context("out of memory", 0, 0);
     }
 
-    jerry_value_t socket = jerry_create_object();
+    jerry_value_t socket = zjs_create_object();
 
     if (client) {
         // only a new client socket has connect method
@@ -543,7 +544,7 @@ static jerry_value_t create_socket(u8_t client, sock_handle_t **handle_out)
     }
 
     sock_handle->connect_listener = ZJS_UNDEFINED;
-    sock_handle->socket = socket;
+    sock_handle->socket = jerry_acquire_value(socket);
     sock_handle->rptr = sock_handle->wptr = sock_handle->rbuf;
 
     zjs_make_emitter(socket, zjs_net_socket_prototype, sock_handle, NULL);
@@ -593,33 +594,39 @@ static void add_socket_connection(jerry_value_t socket,
     }
 }
 
-static void tcp_accepted(struct net_context *context,
-                         struct sockaddr *addr,
-                         socklen_t addrlen,
-                         int error,
-                         void *user_data)
+typedef struct {
+    struct net_context *context;
+    net_handle_t *handle;
+    struct sockaddr addr;
+} accept_connection_t;
+
+// a zjs_deferred_work callback
+static void accept_connection(const void *buffer, u32_t length)
 {
-    net_handle_t *handle = (net_handle_t *)user_data;
+    if (length != sizeof(accept_connection_t)) {
+        // shouldn't happen so make it a debug print
+        DBG_PRINT("Error: Unexpected data!\n");
+        return;
+    }
+
+    accept_connection_t *accept = (accept_connection_t *)buffer;
+
     sock_handle_t *sock_handle = NULL;
-
-    DBG_PRINT("connection made, context %p error %d\n", context, error);
-
-    // FIXME: this shouldn't really be getting called here because it runs in
-    //   a networking thread but is doing malloc and JerryScript calls
     jerry_value_t sock = create_socket(false, &sock_handle);
     if (!sock_handle) {
         ERR_PRINT("could not allocate socket handle\n");
         return;
     }
 
-    add_socket_connection(sock, handle, context, addr);
+    add_socket_connection(sock, accept->handle, accept->context, &accept->addr);
 
     // add new socket to list
     sock_handle->next = opened_sockets;
     opened_sockets = sock_handle;
 
-    int ret = net_context_recv(context, tcp_received, 0, sock_handle);
+    int ret = net_context_recv(accept->context, tcp_received, 0, sock_handle);
 
+    // FIXME: the defer_emit_event calls below no longer need to be deferred
     if (ret < 0) {
         ERR_PRINT("Cannot receive TCP packet (family %d), ret=%d\n",
                 net_context_get_family(sock_handle->tcp_sock), ret);
@@ -631,8 +638,25 @@ static void tcp_accepted(struct net_context *context,
         return;
     }
 
-    zjs_defer_emit_event(handle->server, "connection", &sock, sizeof(sock),
-                         zjs_copy_arg, zjs_release_args);
+    zjs_defer_emit_event(accept->handle->server, "connection", &sock,
+                         sizeof(sock), zjs_copy_arg, zjs_release_args);
+}
+
+static void tcp_accepted(struct net_context *context,
+                         struct sockaddr *addr,
+                         socklen_t addrlen,
+                         int error,
+                         void *user_data)
+{
+    DBG_PRINT("connection made, context %p error %d\n", context, error);
+
+    accept_connection_t accept;
+    accept.context = context;
+    accept.handle = (net_handle_t *)user_data;
+    memset(&accept.addr, 0, sizeof(struct sockaddr));
+    memcpy(&accept.addr, addr, addrlen);
+
+    zjs_defer_work(accept_connection, &accept, sizeof(accept));
 }
 
 /**
@@ -646,7 +670,7 @@ static ZJS_DECL_FUNC(server_address)
 {
     GET_NET_HANDLE_JS(this, handle);
 
-    jerry_value_t info = jerry_create_object();
+    jerry_value_t info = zjs_create_object();
     zjs_obj_add_number(info, handle->port, "port");
 
     sa_family_t family = net_context_get_family(handle->tcp_sock);
@@ -835,7 +859,7 @@ static ZJS_DECL_FUNC(net_create_server)
 {
     ZJS_VALIDATE_ARGS_OPTCOUNT(optcount, Z_OPTIONAL Z_FUNCTION);
 
-    jerry_value_t server = jerry_create_object();
+    jerry_value_t server = zjs_create_object();
 
     zjs_obj_add_boolean(server, false, "listening");
     zjs_obj_add_number(server, NET_DEFAULT_MAX_CONNECTIONS, "maxConnections");
@@ -1165,18 +1189,18 @@ jerry_value_t zjs_net_init()
             { NULL, NULL }
     };
     // Net object prototype
-    zjs_net_prototype = jerry_create_object();
+    zjs_net_prototype = zjs_create_object();
     zjs_obj_add_functions(zjs_net_prototype, net_array);
 
     // Socket object prototype
-    zjs_net_socket_prototype = jerry_create_object();
+    zjs_net_socket_prototype = zjs_create_object();
     zjs_obj_add_functions(zjs_net_socket_prototype, sock_array);
 
     // Server object prototype
-    zjs_net_server_prototype = jerry_create_object();
+    zjs_net_server_prototype = zjs_create_object();
     zjs_obj_add_functions(zjs_net_server_prototype, server_array);
 
-    net_obj = jerry_create_object();
+    net_obj = zjs_create_object();
     jerry_set_prototype(net_obj, zjs_net_prototype);
 
     return jerry_acquire_value(net_obj);

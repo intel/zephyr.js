@@ -175,4 +175,26 @@ void zjs_call_callback(zjs_callback_id id, const void *data, u32_t sz);
  */
 u8_t zjs_service_callbacks(void);
 
+typedef void (*zjs_deferred_work)(const void *buffer, u32_t length);
+
+/**
+ * Defers work to a callback run on the main thread
+ *
+ * This can be called from interrupt context or another thread, so to avoid any
+ * JerryScript calls, it takes data in a simple buffer format. This could be a
+ * struct that the caller understands. When we switch over to the main thread
+ * the callback will be called with a copy of the supplied buffer and the same
+ * length provided.
+ *
+ * NOTE: A buffer a little bigger than 'bytes' will be allocated on the stack
+ * in this function, so bytes should be reasonably small to not cause a stack
+ * overflow.
+ *
+ * @param callback      Function to be called from main thread to process work
+ * @param buffer        Data needed to call function
+ * @param bytes         Size of buffer
+ */
+void zjs_defer_work(zjs_deferred_work callback, const void *buffer,
+                    u32_t bytes);
+
 #endif /* SRC_ZJS_CALLBACKS_H_ */

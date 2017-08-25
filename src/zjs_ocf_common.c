@@ -468,7 +468,7 @@ static ZJS_DECL_FUNC(ocf_start)
 
 jerry_value_t zjs_ocf_init()
 {
-    ocf_object = jerry_create_object();
+    ocf_object = zjs_create_object();
 
     ZVAL device = ZJS_UNDEFINED;
     zjs_set_property(ocf_object, "device", device);

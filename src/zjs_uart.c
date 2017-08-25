@@ -66,7 +66,7 @@ static volatile bool rx = false;
 static jerry_value_t make_uart_error(const char *name, const char *msg)
 {
 
-    ZVAL ret = jerry_create_object();
+    ZVAL ret = zjs_create_object();
     if (name) {
         zjs_obj_add_string(ret, name, "name");
     } else {
@@ -295,7 +295,7 @@ static ZJS_DECL_FUNC(uart_init)
     // JerryScript object initialization
     handle = new_uart_handle();
 
-    handle->uart_obj = jerry_create_object();
+    handle->uart_obj = zjs_create_object();
 
     zjs_make_emitter(handle->uart_obj, zjs_uart_prototype, NULL, NULL);
 
@@ -311,10 +311,10 @@ jerry_value_t zjs_uart_init()
         { uart_set_read_range, "setReadRange" },
         { NULL, NULL }
     };
-    zjs_uart_prototype = jerry_create_object();
+    zjs_uart_prototype = zjs_create_object();
     zjs_obj_add_functions(zjs_uart_prototype, array);
 
-    jerry_value_t uart_obj = jerry_create_object();
+    jerry_value_t uart_obj = zjs_create_object();
     zjs_obj_add_function(uart_obj, uart_init, "init");
     return uart_obj;
 }

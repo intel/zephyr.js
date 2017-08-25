@@ -89,7 +89,7 @@ static void zjs_gpio_c_callback(void *h, const void *args)
 
     // If pin.onChange exists, call it
     if (jerry_value_is_function(onchange_func)) {
-        ZVAL event = jerry_create_object();
+        ZVAL event = zjs_create_object();
         u32_t *the_args = (u32_t *)args;
         // Put the numeric GPIO trigger value in the object
         zjs_obj_add_number(event, the_args[0], "value");
@@ -298,7 +298,7 @@ static ZJS_DECL_FUNC(zjs_gpio_open)
     }
 
     // create the GPIOPin object
-    ZVAL pin_obj = jerry_create_object();
+    ZVAL pin_obj = zjs_create_object();
     jerry_set_prototype(pin_obj, gpio_pin_prototype);
 
     gpio_handle_t *handle = zjs_malloc(sizeof(gpio_handle_t));
@@ -342,11 +342,11 @@ jerry_value_t zjs_gpio_init()
         { zjs_gpio_pin_close, "close" },
         { NULL, NULL }
     };
-    gpio_pin_prototype = jerry_create_object();
+    gpio_pin_prototype = zjs_create_object();
     zjs_obj_add_functions(gpio_pin_prototype, array);
 
     // create GPIO object
-    gpio_api = jerry_create_object();
+    gpio_api = zjs_create_object();
     zjs_obj_add_function(gpio_api, zjs_gpio_open, "open");
 
     zjs_gpio_mock_post_init(gpio_api);

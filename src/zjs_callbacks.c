@@ -42,25 +42,18 @@
 #define CALLBACK_TYPE_JS    0
 // flag bit value for C callback
 #define CALLBACK_TYPE_C     1
-// flag bit value for single JS callback
-#define JS_TYPE_SINGLE      0
-// flag bit value for list JS callback
-#define JS_TYPE_LIST        1
 
 // Bits in flags for once, type (C or JS), and JS type (single or list)
 #define ONCE_BIT       0
 #define TYPE_BIT       1
-#define JS_TYPE_BIT    2
-#define CB_REMOVED_BIT 3
+#define CB_REMOVED_BIT 2
 // Macros to set the bits in flags
 #define SET_ONCE(f, b)     f |= (b << ONCE_BIT)
 #define SET_TYPE(f, b)     f |= (b << TYPE_BIT)
-#define SET_JS_TYPE(f, b)  f |= (b << JS_TYPE_BIT)
 #define SET_CB_REMOVED(f)  f |= (1 << CB_REMOVED_BIT)
 // Macros to get the bits in flags
 #define GET_ONCE(f)        (f & (1 << ONCE_BIT)) >> ONCE_BIT
 #define GET_TYPE(f)        (f & (1 << TYPE_BIT)) >> TYPE_BIT
-#define GET_JS_TYPE(f)     (f & (1 << JS_TYPE_BIT)) >> JS_TYPE_BIT
 #define GET_CB_REMOVED(f)  (f & (1 << CB_REMOVED_BIT)) >> CB_REMOVED_BIT
 
 // ring buffer values for flushing pending callbacks
@@ -68,14 +61,12 @@
 #define CB_FLUSH_ALL 0xff
 
 #define MAX_CALLER_CREATOR_LEN 128
-// FIXME: func_list is really an array :)
 typedef struct zjs_callback {
     void *handle;
     zjs_post_callback_func post;
     jerry_value_t this;
     union {
         jerry_value_t js_func;         // Single JS function callback
-        jerry_value_t *func_list;      // JS callback list
         zjs_c_callback_func function;  // C callback
     };
     zjs_callback_id id;
@@ -99,6 +90,8 @@ static u8_t ring_buf_initialized = 1;
 static zjs_callback_id cb_limit = INITIAL_CALLBACK_SIZE;
 static zjs_callback_id cb_size = 0;
 static zjs_callback_t **cb_map = NULL;
+
+static zjs_callback_id defer_id = -1;
 
 static int zjs_ringbuf_error_count = 0;
 static int zjs_ringbuf_error_max = 0;
@@ -149,6 +142,22 @@ static zjs_callback_id new_id(void)
     return id;
 }
 
+typedef struct deferred_work {
+    zjs_deferred_work callback;
+    u32_t length;  // length of user data
+    char data[0];  // user data
+} deferred_work_t;
+
+static void deferred_work_callback(void *handle, const void *args) {
+    const deferred_work_t *deferred = (const deferred_work_t *)args;
+
+    if (deferred->callback) {
+        deferred->callback(deferred->data, deferred->length);
+        return;
+    }
+    DBG_PRINT("deferred work callback was NULL\n");
+}
+
 void zjs_init_callbacks(void)
 {
     if (!cb_map) {
@@ -165,6 +174,8 @@ void zjs_init_callbacks(void)
                            (u32_t *)args_buffer);
 #endif
     ring_buf_initialized = 1;
+
+    defer_id = zjs_add_c_callback(NULL, deferred_work_callback);
     return;
 }
 
@@ -204,7 +215,6 @@ zjs_callback_id add_callback_priv(jerry_value_t js_func,
 
     SET_ONCE(new_cb->flags, (once) ? 1 : 0);
     SET_TYPE(new_cb->flags, CALLBACK_TYPE_JS);
-    SET_JS_TYPE(new_cb->flags, JS_TYPE_SINGLE);
     new_cb->id = new_id();
     new_cb->js_func = jerry_acquire_value(js_func);
     new_cb->this = jerry_acquire_value(this);
@@ -245,16 +255,7 @@ static void zjs_remove_callback_priv(zjs_callback_id id, bool skip_flush)
     if (id >= 0 && cb_map[id]) {
         LOCK();
         if (GET_TYPE(cb_map[id]->flags) == CALLBACK_TYPE_JS) {
-            if (GET_JS_TYPE(cb_map[id]->flags) == JS_TYPE_SINGLE) {
-                jerry_release_value(cb_map[id]->js_func);
-            } else if (GET_JS_TYPE(cb_map[id]->flags) == JS_TYPE_LIST &&
-                       cb_map[id]->func_list) {
-                int i;
-                for (i = 0; i < cb_map[id]->num_funcs; ++i) {
-                    jerry_release_value(cb_map[id]->func_list[i]);
-                }
-                zjs_free(cb_map[id]->func_list);
-            }
+            jerry_release_value(cb_map[id]->js_func);
             jerry_release_value(cb_map[id]->this);
         }
         SET_CB_REMOVED(cb_map[id]->flags);
@@ -388,15 +389,12 @@ void print_callbacks(void)
         if (cb_map[i]) {
             if (GET_TYPE(cb_map[i]->flags) == CALLBACK_TYPE_JS) {
                 ZJS_PRINT("[%u] JS Callback:\n\tType: ", i);
-                if (cb_map[i]->func_list == NULL &&
-                    jerry_value_is_function(cb_map[i]->js_func)) {
+                if (jerry_value_is_function(cb_map[i]->js_func)) {
                     ZJS_PRINT("Single Function\n");
                     ZJS_PRINT("\tjs_func: %u\n", cb_map[i]->js_func);
                     ZJS_PRINT("\tonce: %u\n", GET_ONCE(cb_map[i]->flags));
                 } else {
-                    ZJS_PRINT("List\n");
-                    ZJS_PRINT("\tmax_funcs: %u\n", cb_map[i]->max_funcs);
-                    ZJS_PRINT("\tmax_funcs: %u\n", cb_map[i]->num_funcs);
+                    ZJS_PRINT("js_func is not a function\n");
                 }
             }
         } else {
@@ -417,37 +415,21 @@ void zjs_call_callback(zjs_callback_id id, const void *data, u32_t sz)
         DBG_PRINT("callback %d has already been removed\n", id);
     } else {
         if (GET_TYPE(cb_map[id]->flags) == CALLBACK_TYPE_JS) {
-            // Function list callback
-            int i;
             jerry_value_t *values = (jerry_value_t *)data;
             ZVAL_MUTABLE rval;
-            if (GET_JS_TYPE(cb_map[id]->flags) == JS_TYPE_SINGLE) {
-                if (!jerry_value_is_undefined(cb_map[id]->js_func)) {
-                    rval = jerry_call_function(cb_map[id]->js_func,
-                                               cb_map[id]->this, values, sz);
-                    if (jerry_value_has_error_flag(rval)) {
+            if (!jerry_value_is_undefined(cb_map[id]->js_func)) {
+                rval = jerry_call_function(cb_map[id]->js_func,
+                                           cb_map[id]->this, values, sz);
+                if (jerry_value_has_error_flag(rval)) {
 #ifdef DEBUG_BUILD
-                        DBG_PRINT("callback %d had error; creator: %s, "
-                                  "caller: %s\n",
-                                  id, cb_map[id]->creator, cb_map[id]->caller);
+                    DBG_PRINT("callback %d had error; creator: %s, "
+                              "caller: %s\n",
+                              id, cb_map[id]->creator, cb_map[id]->caller);
 #endif
-                        zjs_print_error_message(rval, cb_map[id]->js_func);
-                    }
-                }
-            } else if (GET_JS_TYPE(cb_map[id]->flags) == JS_TYPE_LIST) {
-                for (i = 0; i < cb_map[id]->num_funcs; ++i) {
-                    rval = jerry_call_function(cb_map[id]->func_list[i],
-                                               cb_map[id]->this, values, sz);
-                    if (jerry_value_has_error_flag(rval)) {
-#ifdef DEBUG_BUILD
-                        DBG_PRINT("callback %d had error; creator: %s, "
-                                  "caller: %s\n",
-                                  id, cb_map[id]->creator, cb_map[id]->caller);
-#endif
-                        zjs_print_error_message(rval, cb_map[id]->func_list[i]);
-                    }
+                    zjs_print_error_message(rval, cb_map[id]->js_func);
                 }
             }
+
             // ensure the callback wasn't deleted by the previous calls
             if (cb_map[id]) {
                 if (cb_map[id]->post) {
@@ -566,4 +548,19 @@ u8_t zjs_service_callbacks(void)
     }
     UNLOCK();
     return serviced;
+}
+
+void zjs_defer_work(zjs_deferred_work callback, const void *buffer, u32_t bytes)
+{
+    DBG_PRINT("deferring work: %d bytes\n", bytes);
+    int len = sizeof(callback) + bytes;
+    char buf[len];
+    deferred_work_t *defer = (deferred_work_t *)buf;
+    defer->callback = callback;
+    defer->length = bytes;
+    if (buffer && bytes) {
+        memcpy(defer->data, buffer, bytes);
+    }
+    // assert: if buffer is null, bytes should be 0, and vice versa
+    zjs_signal_callback(defer_id, buf, len);
 }

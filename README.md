@@ -284,10 +284,15 @@ no expectation that any given sample/test/application will work at all on this
 platform. The good news is that there have been ZJS networking samples run
 on the nRF52 board with success therefore we mention it here so anyone can try
 it out and contribute fixes to anything that does not work, potentially getting
-it stable enough to adopt as a supported board in the future.
+it stable enough to adopt as a supported board in the future. The nRF52 board
+we have tested is nRF52 DK (nrf52_pca10040). Please see Zephyr's project page
+to see the supported nRF5x variant boards, since each board will have different
+instructions to flash. To flash to the nRF52 DK, you'll need to downloand and
+install the [JLink Software and Documentation Pack](https://www.segger.com/jlink-software.html)
+and the [nRF5x command-line tools](http://www.nordicsemi.com/eng/Products/Bluetooth-Smart-Bluetooth-low-energy/nRF52-DK).
 
 See the
-[Zephyr Project page](https://www.zephyrproject.org/doc/boards/arm/nrf52840_pca10056/doc/nrf52840_pca10056.html)
+[Zephyr Project page](https://www.zephyrproject.org/doc/boards/arm/nrf52_pca10040/doc/nrf52_pca10040.html)
 for general information about running Zephyr OS on the nRF52.
 
 Connecting to serial output is quite similar to the Arduino 101, except the
@@ -297,19 +302,32 @@ by doing:
 minicom -D /dev/ttyACM0
 ```
 
-Building is the same as any other ZJS platform, just use `nrf52840_pca10056` as
+Building is the same as any other ZJS platform, just use `nrf52_pca10040` as
 the BOARD name:
 ```bash
-make JS=samples/OcfServer.js BOARD=nrf52840_pca10056
+make JS=samples/HellowWorld.js BOARD=nrf52_pca10040
 ```
 
-You should now have a Zephyr binary in `outdir/nrf52840_pca10056/`. You can
-copy it to the nRF52 board with a simple `cp` command:
+You should now have a Zephyr binary in `outdir/nrf52_pca10040/`. You can flash
+it to the nRF52 DK board with the nRF5x command line tools:
+
+1. Connect the micro-USB cable to the nRF52 DK and to your computer and turn
+on the power switch.
+
+2. Erase the flash memory in the nRF52832:
 ```bash
-cp outdir/nrf52840_pca10056/zephyr.bin /media/<user>/JLINK/
+$ nrfjprog --eraseall -f nrf52
 ```
+
+3. Flash the application using the nrfjprog tool:
+```bash
+$ nrfjprog --program outdir/nrf52_pca10040/zephyr.hex -f nrf52
+```
+
 You should see the lights flashing on the nRF52 board. When it stops you can
-reset the board and you should see your application output on /dev/ttyACM0
+reset the board and you should see your application output on /dev/ttyACM0.  If
+you don't see any output, try pressing the BOOT/RESET button next to the power
+switch to boot it again.
 
 From here the device can be connected with BLE to a Linux machine as you do with
 an Arduino 101.

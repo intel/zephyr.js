@@ -186,7 +186,7 @@ void zjs_sensor_trigger_change(jerry_value_t obj)
 
     ZVAL func = zjs_get_property(obj, "onchange");
     if (jerry_value_is_function(func)) {
-        ZVAL event = jerry_create_object();
+        ZVAL event = zjs_create_object();
         // if onchange exists, call it
         ZVAL rval = jerry_call_function(func, obj, NULL, 0);
         if (jerry_value_has_error_flag(rval)) {
@@ -203,8 +203,8 @@ void zjs_sensor_trigger_error(jerry_value_t obj,
     ZVAL func = zjs_get_property(obj, "onerror");
     if (jerry_value_is_function(func)) {
         // if onerror exists, call it
-        ZVAL event = jerry_create_object();
-        ZVAL error_obj = jerry_create_object();
+        ZVAL event = zjs_create_object();
+        ZVAL error_obj = zjs_create_object();
         ZVAL name_val = jerry_create_string(error_name);
         ZVAL message_val = jerry_create_string(error_message);
         zjs_set_property(error_obj, "name", name_val);
@@ -331,7 +331,7 @@ ZJS_DECL_FUNC_ARGS(zjs_sensor_create,
     }
 
     // initialize object and default values
-    jerry_value_t sensor_obj = jerry_create_object();
+    jerry_value_t sensor_obj = zjs_create_object();
     ZVAL null_val = jerry_create_null();
 
     zjs_set_readonly_property(sensor_obj, "timestamp", null_val);
@@ -365,7 +365,7 @@ void zjs_sensor_init()
     };
 
     zjs_sensor_board_init();
-    zjs_sensor_prototype = jerry_create_object();
+    zjs_sensor_prototype = zjs_create_object();
     zjs_obj_add_functions(zjs_sensor_prototype, array);
 }
 

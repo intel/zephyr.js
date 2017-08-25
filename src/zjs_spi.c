@@ -312,7 +312,7 @@ static ZJS_DECL_FUNC(zjs_spi_open)
     }
 
     // Create the SPI object
-    jerry_value_t spi_obj = jerry_create_object();
+    jerry_value_t spi_obj = zjs_create_object();
     jerry_set_prototype(spi_obj, zjs_spi_prototype);
 
     spi_handle_t *handle = zjs_malloc(sizeof(spi_handle_t));
@@ -336,11 +336,11 @@ jerry_value_t zjs_spi_init()
         { zjs_spi_close, "close" },
         { NULL, NULL }
     };
-    zjs_spi_prototype = jerry_create_object();
+    zjs_spi_prototype = zjs_create_object();
     zjs_obj_add_functions(zjs_spi_prototype, array);
 
     // Create SPI object
-    jerry_value_t spi_obj = jerry_create_object();
+    jerry_value_t spi_obj = zjs_create_object();
     zjs_obj_add_function(spi_obj, zjs_spi_open, "open");
 
     return spi_obj;

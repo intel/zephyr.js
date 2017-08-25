@@ -29,7 +29,7 @@ jerry_value_t zjs_k64f_init()
     zjs_pwm_convert_pin = zjs_k64f_num_to_pwm;
 #endif
 
-    jerry_value_t obj = jerry_create_object();
+    jerry_value_t obj = zjs_create_object();
 
     const int PTA = 0x00;
     const int PTB = 0x20;
