@@ -93,16 +93,16 @@ static jerry_value_t zjs_net_prototype;
 static jerry_value_t zjs_net_socket_prototype;
 static jerry_value_t zjs_net_server_prototype;
 
-typedef struct net_handle {
+typedef struct server_handle {
     struct net_context *server_ctx;
     jerry_value_t server;
     struct sockaddr local;
     u16_t port;
     u8_t listening;
-} net_handle_t;
+} server_handle_t;
 
 typedef struct sock_handle {
-    net_handle_t *handle;
+    server_handle_t *handle;
     struct net_context *tcp_sock;
     struct sockaddr remote;
     jerry_value_t socket;
@@ -130,8 +130,8 @@ static sock_handle_t *opened_sockets = NULL;
     if (!var) { return zjs_error("no socket handle"); }
 
 // get the net handle or return a JS error
-#define GET_NET_HANDLE_JS(obj, var)                                      \
-    net_handle_t *var = (net_handle_t *)zjs_event_get_user_handle(obj);  \
+#define GET_SERVER_HANDLE_JS(obj, var)                                        \
+    server_handle_t *var = (server_handle_t *)zjs_event_get_user_handle(obj); \
     if (!var) { return zjs_error("no socket handle"); }
 
 #define CHECK(x)                                 \
@@ -203,7 +203,7 @@ static void post_closed(void *handle)
 {
     sock_handle_t *h = (sock_handle_t *)handle;
     if (h) {
-        net_handle_t *net = h->handle;
+        server_handle_t *net = h->handle;
         if (ZJS_LIST_REMOVE(sock_handle_t, opened_sockets, h)) {
             DBG_PRINT("Freeing socket %p: opened_sockets=%p\n", h, opened_sockets);
 
@@ -559,7 +559,7 @@ static jerry_value_t create_socket(u8_t client, sock_handle_t **handle_out)
  * once a new connection is accepted to the server.
  */
 static void add_socket_connection(jerry_value_t socket,
-                                  net_handle_t *net,
+                                  server_handle_t *net,
                                   struct net_context *new,
                                   struct sockaddr *remote)
 {
@@ -596,7 +596,7 @@ static void add_socket_connection(jerry_value_t socket,
 
 typedef struct {
     struct net_context *context;
-    net_handle_t *handle;
+    server_handle_t *handle;
     struct sockaddr addr;
 } accept_connection_t;
 
@@ -652,7 +652,7 @@ static void tcp_accepted(struct net_context *context,
 
     accept_connection_t accept;
     accept.context = context;
-    accept.handle = (net_handle_t *)user_data;
+    accept.handle = (server_handle_t *)user_data;
     memset(&accept.addr, 0, sizeof(struct sockaddr));
     memcpy(&accept.addr, addr, addrlen);
 
@@ -668,7 +668,7 @@ static void tcp_accepted(struct net_context *context,
  */
 static ZJS_DECL_FUNC(server_address)
 {
-    GET_NET_HANDLE_JS(this, handle);
+    GET_SERVER_HANDLE_JS(this, handle);
 
     jerry_value_t info = zjs_create_object();
     zjs_obj_add_number(info, handle->port, "port");
@@ -705,7 +705,7 @@ static ZJS_DECL_FUNC(server_close)
 {
     ZJS_VALIDATE_ARGS_OPTCOUNT(optcount, Z_OPTIONAL Z_FUNCTION);
 
-    GET_NET_HANDLE_JS(this, handle);
+    GET_SERVER_HANDLE_JS(this, handle);
 
     handle->listening = 0;
     zjs_obj_add_boolean(this, false, "listening");
@@ -735,7 +735,7 @@ static ZJS_DECL_FUNC(server_get_connections)
 {
     ZJS_VALIDATE_ARGS(Z_FUNCTION);
 
-    GET_NET_HANDLE_JS(this, handle);
+    GET_SERVER_HANDLE_JS(this, handle);
 
     int count = 0;
     sock_handle_t *cur = opened_sockets;
@@ -770,7 +770,7 @@ static ZJS_DECL_FUNC(server_listen)
     // options object, optional function
     ZJS_VALIDATE_ARGS_OPTCOUNT(optcount, Z_OBJECT, Z_OPTIONAL Z_FUNCTION);
 
-    GET_NET_HANDLE_JS(this, handle);
+    GET_SERVER_HANDLE_JS(this, handle);
 
     int ret;
     double port = 0;
@@ -864,7 +864,7 @@ static ZJS_DECL_FUNC(net_create_server)
     zjs_obj_add_boolean(server, false, "listening");
     zjs_obj_add_number(server, NET_DEFAULT_MAX_CONNECTIONS, "maxConnections");
 
-    net_handle_t *handle = zjs_malloc(sizeof(net_handle_t));
+    server_handle_t *handle = zjs_malloc(sizeof(server_handle_t));
     if (!handle) {
         jerry_release_value(server);
         return zjs_error("could not alloc server handle");
