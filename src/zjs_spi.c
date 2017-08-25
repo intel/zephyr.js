@@ -78,8 +78,8 @@ static ZJS_DECL_FUNC(zjs_spi_transceive)
     jerry_value_t buffer;
     zjs_buffer_t *tx_buf = NULL;
     zjs_buffer_t *rx_buf = NULL;
-    jerry_value_t rx_buf_obj = jerry_create_null();
-    jerry_value_t tx_buf_obj;
+    ZVAL_MUTABLE rx_buf_obj = jerry_create_null();
+    ZVAL_MUTABLE tx_buf_obj = 0;
     u32_t slave_num = (u32_t)jerry_get_number_value(argv[0]);
     // Valid numbers are 0 thru 127
     if (slave_num > 127 || spi_slave_select(handle->spi_device, slave_num)) {
@@ -144,8 +144,7 @@ static ZJS_DECL_FUNC(zjs_spi_transceive)
                     if (jerry_value_is_number(item)) {
                         tx_buf->buffer[i] = (u8_t)jerry_get_number_value(item);
                     } else {
-                        ERR_PRINT(
-                            "non-numeric value in array, treating as 0\n");
+                        ERR_PRINT("non-numeric value in array, treating as 0\n");
                         tx_buf->buffer[i] = 0;
                     }
                 }
@@ -170,7 +169,6 @@ static ZJS_DECL_FUNC(zjs_spi_transceive)
             if (spi_transceive(handle->spi_device, tx_buf->buffer,
                                tx_buf->bufsize, rx_buf->buffer,
                                rx_buf->bufsize) != 0) {
-                jerry_release_value(rx_buf_obj);
                 return ZJS_STD_ERROR(SystemError, "SPI transceive failed");
             }
         }
@@ -180,7 +178,6 @@ static ZJS_DECL_FUNC(zjs_spi_transceive)
                           tx_buf->bufsize) != 0) {
                 return ZJS_STD_ERROR(SystemError, "SPI transceive failed");
             }
-            rx_buf_obj = jerry_create_null();
         }
     }  // This is a read only operation
     else {
@@ -188,7 +185,6 @@ static ZJS_DECL_FUNC(zjs_spi_transceive)
         // Read the data from the device
         if (spi_read(handle->spi_device,
                      rx_buf->buffer, rx_buf->bufsize) != 0) {
-            jerry_release_value(rx_buf_obj);
             return ZJS_STD_ERROR(SystemError, "SPI transceive failed");
         }
     }
@@ -216,7 +212,7 @@ static ZJS_DECL_FUNC(zjs_spi_open)
 
     // Default values
     u32_t bus = 0;
-    double speed = SPI_MAX_CLK_FREQ_250KHZ;  // default bus speed in Hz
+    u32_t speed = SPI_MAX_CLK_FREQ_250KHZ;  // default bus speed in Hz
     bool msbFirst = true;
     u32_t bits = 8;
     u32_t polarity = 0;
@@ -236,7 +232,7 @@ static ZJS_DECL_FUNC(zjs_spi_open)
             return ZJS_STD_ERROR(RangeError, "Invalid bus");
 
         // Bus speed in MHz
-        zjs_obj_get_double(argv[0], "speed", &speed);
+        zjs_obj_get_uint32(argv[0], "speed", &speed);
 
         // Most significant bit sent first
         zjs_obj_get_boolean(argv[0], "msbFirst", &msbFirst);
@@ -253,7 +249,7 @@ static ZJS_DECL_FUNC(zjs_spi_open)
 
         // Clock phase value, valid options are 0 or 1
         zjs_obj_get_uint32(argv[0], "phase", &phase);
-        if (phase != 0 && phase != 2)
+        if (phase != 0 && phase != 1)
             return ZJS_STD_ERROR(TypeError, "Invalid phase");
 
         // Connection type
@@ -298,7 +294,7 @@ static ZJS_DECL_FUNC(zjs_spi_open)
     if (polarity == 2)
         config.config |= SPI_MODE_CPOL;
 
-    if (phase == 2)
+    if (phase == 1)
         config.config |= SPI_MODE_CPHA;
 
     struct device *spi_device = device_get_binding(bus_str);
