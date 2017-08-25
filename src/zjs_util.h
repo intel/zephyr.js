@@ -532,6 +532,23 @@ void zjs_loop_init(void);
         ret;                        \
     })
 
+/**
+ * Gets the native handle for 'obj' or returns from the caller with a JS error
+ *
+ * @param obj     A valid JS object.
+ * @param type    The name of the type for the native handle.
+ * @param var     The name of the variable to declare.
+ * @param info    The name of the jerry_object_native_info_t struct defined
+ *                  for this native handle type.
+ *
+ * This is intended to be used in JS API functions. It declares a variable
+ * 'var' as a pointer to type `type` and sets it to the retrieved pointer if
+ * it matches the given 'info'.
+ *
+ * Example:
+ *   ZJS_GET_HANDLE(myobj, mytype_t, handle, mtype_info);
+ *   ZJS_PRINT("found handle with property %d\n", handle->myprop);
+ */
 #define ZJS_GET_HANDLE(obj, type, var, info)                        \
     type *var;                                                      \
     {                                                               \
@@ -574,6 +591,7 @@ void zjs_loop_init(void);
         var = (type *)native;                                            \
     }
 
+#ifdef DEBUG_BUILD
 // nasty hack to get reference count from a JerryScript object
 #define CHECK_REF_COUNT(str, obj)                              \
     {                                                          \
@@ -581,5 +599,8 @@ void zjs_loop_init(void);
         ZJS_PRINT("%s: %p %x\n", str, (void *)(uintptr_t)obj,  \
                   (uint32_t)(*ptr) >> 6);                      \
     }
+#else
+#define CHECK_REF_COUNT(str, obj)
+#endif
 
 #endif  // __zjs_util_h__
