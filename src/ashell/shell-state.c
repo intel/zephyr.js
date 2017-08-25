@@ -18,6 +18,9 @@
 #include <misc/printk.h>
 #include <misc/reboot.h>
 #include <zephyr/types.h>
+#ifdef CONFIG_BOARD_ARDUINO_101
+#include <flash.h>
+#endif
 
 // ZJS includes
 #include "comms-shell.h"
@@ -554,6 +557,30 @@ s32_t ashell_clear(char *buf)
     return RET_OK;
 }
 
+#ifdef CONFIG_BOARD_ARDUINO_101
+s32_t ashell_erase_flash(char *buf)
+{
+    struct device *flash_dev;
+    flash_dev = device_get_binding(CONFIG_SPI_FLASH_W25QXXDV_DRV_NAME);
+
+    if (!flash_dev) {
+        comms_print("SPI flash driver was not found!\n\r\n");
+        return RET_ERROR;
+    }
+
+    flash_write_protection_set(flash_dev, false);
+    if (flash_erase(flash_dev, 0, CONFIG_SPI_FLASH_W25QXXDV_FLASH_SIZE) != 0) {
+        comms_print("Flash erase failed\n\r\n");
+        return RET_ERROR;
+    }
+    flash_write_protection_set(flash_dev, true);
+
+    comms_print("Flash erase succeeded, rebooting...\n\r\n");
+    ashell_reboot(NULL);
+    return RET_OK;
+}
+#endif
+
 s32_t ashell_stop_javascript(char *buf)
 {
     javascript_stop();
@@ -630,6 +657,10 @@ static const struct ashell_cmd commands[] = {
     {"rm",    "FILE",   "Remove file or directory", ashell_remove_file},
     {"mv",    "F1 F2",  "Move file F1 to destination F2", ashell_rename},
     {"clear", "",       "Clear the terminal screen", ashell_clear},
+#ifdef CONFIG_BOARD_ARDUINO_101
+    {"erase", "",       "Erase flash file system and reboot",
+                          ashell_erase_flash},
+#endif
     {"boot",  "FILE",   "Set the file that should run at boot",
                           ashell_set_bootcfg},
     {"reboot", "",      "Reboot the device", ashell_reboot},

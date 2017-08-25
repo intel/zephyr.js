@@ -86,6 +86,7 @@ Command list:
     rm     FILE    Remove file or directory
     mv     F1 F2   Move a file F1 to destination F2
     clear          Clear the terminal screen
+    erase          Erase flash file system and reboot
     boot   FILE    Set the file that should run at boot
     reboot         Reboot the device
 ```
@@ -182,6 +183,15 @@ Renames filename1 to filename2.
 `clear`
 
 Clears the terminal screen.
+
+### erase
+
+`erase`
+
+Erase flash file system.
+
+Note: this only works on the Arduino 101 and it will automatically rebooting the
+board after erase is finished.
 
 ### boot
 
