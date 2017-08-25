@@ -102,7 +102,7 @@ typedef struct server_handle {
 } server_handle_t;
 
 typedef struct sock_handle {
-    server_handle_t *handle;
+    server_handle_t *server_h;
     struct net_context *tcp_sock;
     struct sockaddr remote;
     jerry_value_t socket;
@@ -192,10 +192,10 @@ static void start_socket_timeout(sock_handle_t *handle)
 static void close_server(void *handle, jerry_value_t argv[], u32_t argc)
 {
     sock_handle_t *h = (sock_handle_t *)handle;
-    if (h->handle) {
+    if (h->server_h) {
         DBG_PRINT("closing server\n");
-        net_context_put(h->handle->server_ctx);
-        zjs_free(h->handle);
+        net_context_put(h->server_h->server_ctx);
+        zjs_free(h->server_h);
     }
 }
 
@@ -203,7 +203,7 @@ static void post_closed(void *handle)
 {
     sock_handle_t *h = (sock_handle_t *)handle;
     if (h) {
-        server_handle_t *net = h->handle;
+        server_handle_t *server_h = h->server_h;
         if (ZJS_LIST_REMOVE(sock_handle_t, opened_sockets, h)) {
             DBG_PRINT("Freeing socket %p: opened_sockets=%p\n", h, opened_sockets);
 
@@ -214,13 +214,11 @@ static void post_closed(void *handle)
             zjs_free(h);
         }
 
-        if (net) {
-            if (net->listening == 0 && opened_sockets == NULL) {
-                // no more sockets open and not listening, close server
-                zjs_defer_emit_event(net->server, "close", NULL, 0, NULL,
-                                     close_server);
-                DBG_PRINT("server signaled to close\n");
-            }
+        if (server_h->listening == 0 && opened_sockets == NULL) {
+            // no more sockets open and not listening, close server
+            zjs_defer_emit_event(server_h->server, "close", NULL, 0, NULL,
+                                 close_server);
+            DBG_PRINT("server signaled to close\n");
         }
     }
 }
@@ -559,7 +557,7 @@ static jerry_value_t create_socket(u8_t client, sock_handle_t **handle_out)
  * once a new connection is accepted to the server.
  */
 static void add_socket_connection(jerry_value_t socket,
-                                  server_handle_t *net,
+                                  server_handle_t *server_h,
                                   struct net_context *new,
                                   struct sockaddr *remote)
 {
@@ -570,7 +568,7 @@ static void add_socket_connection(jerry_value_t socket,
     }
 
     handle->remote = *remote;
-    handle->handle = net;
+    handle->server_h = server_h;
     handle->tcp_sock = new;
 
     sa_family_t family = net_context_get_family(new);
@@ -578,13 +576,13 @@ static void add_socket_connection(jerry_value_t socket,
     net_addr_ntop(family, (const void *)remote, remote_ip, 64);
 
     zjs_obj_add_string(socket, remote_ip, "remoteAddress");
-    zjs_obj_add_number(socket, net->port, "remotePort");
+    zjs_obj_add_number(socket, server_h->port, "remotePort");
 
     char local_ip[64];
-    net_addr_ntop(family, (const void *)&net->local, local_ip, 64);
+    net_addr_ntop(family, (const void *)&server_h->local, local_ip, 64);
 
     zjs_obj_add_string(socket, local_ip, "localAddress");
-    zjs_obj_add_number(socket, net->port, "localPort");
+    zjs_obj_add_number(socket, server_h->port, "localPort");
     if (family == AF_INET6) {
         zjs_obj_add_string(socket, "IPv6", "family");
         zjs_obj_add_string(socket, "IPv6", "remoteFamily");
@@ -596,7 +594,7 @@ static void add_socket_connection(jerry_value_t socket,
 
 typedef struct {
     struct net_context *context;
-    server_handle_t *handle;
+    server_handle_t *server_h;
     struct sockaddr addr;
 } accept_connection_t;
 
@@ -618,7 +616,7 @@ static void accept_connection(const void *buffer, u32_t length)
         return;
     }
 
-    add_socket_connection(sock, accept->handle, accept->context, &accept->addr);
+    add_socket_connection(sock, accept->server_h, accept->context, &accept->addr);
 
     // add new socket to list
     sock_handle->next = opened_sockets;
@@ -632,13 +630,13 @@ static void accept_connection(const void *buffer, u32_t length)
                 net_context_get_family(sock_handle->tcp_sock), ret);
         // this seems to mean the remote exists but the connection was not made
         error_desc_t desc = create_error_desc(ERROR_ACCEPT_SERVER, 0, 0);
-        zjs_defer_emit_event(sock_handle->handle->server, "error", &desc,
+        zjs_defer_emit_event(sock_handle->server_h->server, "error", &desc,
                              sizeof(desc), handle_error_arg, zjs_release_args);
         jerry_release_value(sock);
         return;
     }
 
-    zjs_defer_emit_event(accept->handle->server, "connection", &sock,
+    zjs_defer_emit_event(accept->server_h->server, "connection", &sock,
                          sizeof(sock), zjs_copy_arg, zjs_release_args);
 }
 
@@ -652,7 +650,7 @@ static void tcp_accepted(struct net_context *context,
 
     accept_connection_t accept;
     accept.context = context;
-    accept.handle = (server_handle_t *)user_data;
+    accept.server_h = (server_handle_t *)user_data;
     memset(&accept.addr, 0, sizeof(struct sockaddr));
     memcpy(&accept.addr, addr, addrlen);
 
@@ -668,23 +666,23 @@ static void tcp_accepted(struct net_context *context,
  */
 static ZJS_DECL_FUNC(server_address)
 {
-    GET_SERVER_HANDLE_JS(this, handle);
+    GET_SERVER_HANDLE_JS(this, server_h);
 
     jerry_value_t info = zjs_create_object();
-    zjs_obj_add_number(info, handle->port, "port");
+    zjs_obj_add_number(info, server_h->port, "port");
 
-    sa_family_t family = net_context_get_family(handle->server_ctx);
+    sa_family_t family = net_context_get_family(server_h->server_ctx);
     char ipstr[INET6_ADDRSTRLEN];
 
     if (family == AF_INET6) {
         zjs_obj_add_string(info, "IPv6", "family");
-        struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)&handle->local;
+        struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)&server_h->local;
         net_addr_ntop(family, &addr6->sin6_addr, ipstr, INET6_ADDRSTRLEN);
         zjs_obj_add_string(info, ipstr, "address");
 
     } else {
         zjs_obj_add_string(info, "IPv4", "family");
-        struct sockaddr_in *addr = (struct sockaddr_in *)&handle->local;
+        struct sockaddr_in *addr = (struct sockaddr_in *)&server_h->local;
         net_addr_ntop(family, &addr->sin_addr, ipstr, INET6_ADDRSTRLEN);
         zjs_obj_add_string(info, ipstr, "address");
     }
@@ -705,18 +703,18 @@ static ZJS_DECL_FUNC(server_close)
 {
     ZJS_VALIDATE_ARGS_OPTCOUNT(optcount, Z_OPTIONAL Z_FUNCTION);
 
-    GET_SERVER_HANDLE_JS(this, handle);
+    GET_SERVER_HANDLE_JS(this, server_h);
 
-    handle->listening = 0;
+    server_h->listening = 0;
     zjs_obj_add_boolean(this, false, "listening");
 
     if (optcount) {
-        zjs_add_event_listener(handle->server, "close", argv[0]);
+        zjs_add_event_listener(server_h->server, "close", argv[0]);
     }
     // If there are no connections the server can be closed
     if (opened_sockets == NULL) {
         // NOTE: could emit immediately but safer for call stack to defer
-        zjs_defer_emit_event(handle->server, "close", NULL, 0, NULL,
+        zjs_defer_emit_event(server_h->server, "close", NULL, 0, NULL,
                              close_server);
         DBG_PRINT("server signaled to close\n");
     }
@@ -735,12 +733,12 @@ static ZJS_DECL_FUNC(server_get_connections)
 {
     ZJS_VALIDATE_ARGS(Z_FUNCTION);
 
-    GET_SERVER_HANDLE_JS(this, handle);
+    GET_SERVER_HANDLE_JS(this, server_h);
 
     int count = 0;
     sock_handle_t *cur = opened_sockets;
     while (cur) {
-        if (cur->handle == handle) {
+        if (cur->server_h == server_h) {
             count++;
         }
         cur = cur->next;
@@ -770,7 +768,7 @@ static ZJS_DECL_FUNC(server_listen)
     // options object, optional function
     ZJS_VALIDATE_ARGS_OPTCOUNT(optcount, Z_OBJECT, Z_OPTIONAL Z_FUNCTION);
 
-    GET_SERVER_HANDLE_JS(this, handle);
+    GET_SERVER_HANDLE_JS(this, server_h);
 
     int ret;
     double port = 0;
@@ -795,7 +793,7 @@ static ZJS_DECL_FUNC(server_listen)
     if (family == 0 || family == 4) {
         family = 4;
         CHECK(net_context_get(AF_INET, SOCK_STREAM, IPPROTO_TCP,
-                              &handle->server_ctx))
+                              &server_h->server_ctx))
 
         struct sockaddr_in *addr4 = (struct sockaddr_in *)&addr;
 
@@ -805,7 +803,7 @@ static ZJS_DECL_FUNC(server_listen)
         net_addr_pton(AF_INET, hostname, &addr4->sin_addr);
     } else {
         CHECK(net_context_get(AF_INET6, SOCK_STREAM, IPPROTO_TCP,
-                              &handle->server_ctx))
+                              &server_h->server_ctx))
 
         struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)&addr;
 
@@ -815,15 +813,15 @@ static ZJS_DECL_FUNC(server_listen)
         net_addr_pton(AF_INET6, hostname, &addr6->sin6_addr);
     }
 
-    CHECK(net_context_bind(handle->server_ctx, &addr, sizeof(struct sockaddr)));
-    CHECK(net_context_listen(handle->server_ctx, (int)backlog));
+    CHECK(net_context_bind(server_h->server_ctx, &addr, sizeof(struct sockaddr)));
+    CHECK(net_context_listen(server_h->server_ctx, (int)backlog));
 
-    handle->listening = 1;
-    handle->port = (u16_t)port;
+    server_h->listening = 1;
+    server_h->port = (u16_t)port;
 
-    memcpy(&handle->local, zjs_net_config_get_ip(handle->server_ctx),
+    memcpy(&server_h->local, zjs_net_config_get_ip(server_h->server_ctx),
            sizeof(struct sockaddr));
-    handle->local = *zjs_net_config_get_ip(handle->server_ctx);
+    server_h->local = *zjs_net_config_get_ip(server_h->server_ctx);
     zjs_obj_add_boolean(this, true, "listening");
 
     // Here we defer just to keep the call stack short; this is unless we
@@ -834,7 +832,7 @@ static ZJS_DECL_FUNC(server_listen)
     //   we're sure to be back in the main thread during the pre_emit callback
     zjs_defer_emit_event(this, "listening", NULL, 0, NULL, NULL);
 
-    CHECK(net_context_accept(handle->server_ctx, tcp_accepted, 0, handle));
+    CHECK(net_context_accept(server_h->server_ctx, tcp_accepted, 0, server_h));
 
     DBG_PRINT("listening for connection to %s:%u\n", hostname, (u32_t)port);
 
@@ -864,22 +862,22 @@ static ZJS_DECL_FUNC(net_create_server)
     zjs_obj_add_boolean(server, false, "listening");
     zjs_obj_add_number(server, NET_DEFAULT_MAX_CONNECTIONS, "maxConnections");
 
-    server_handle_t *handle = zjs_malloc(sizeof(server_handle_t));
-    if (!handle) {
+    server_handle_t *server_h = zjs_malloc(sizeof(server_handle_t));
+    if (!server_h) {
         jerry_release_value(server);
         return zjs_error("could not alloc server handle");
     }
 
-    handle->server = server;
-    handle->listening = 0;
+    memset(server_h, 0, sizeof(server_handle_t));
+    server_h->server = server;
 
-    zjs_make_emitter(server, zjs_net_server_prototype, handle, NULL);
+    zjs_make_emitter(server, zjs_net_server_prototype, server_h, NULL);
 
     if (optcount) {
         zjs_add_event_listener(server, "connection", argv[0]);
     }
 
-    DBG_PRINT("creating server: context=%p\n", handle->server_ctx);
+    DBG_PRINT("creating server: context=%p\n", server_h->server_ctx);
 
     return server;
 }
