@@ -15,6 +15,6 @@ jerry_value_t zjs_ble_init();
 /** Release resources held by the ble module */
 void zjs_ble_cleanup();
 
-void zjs_ble_enable();
+void zjs_ble_emit_powered_event();
 
 #endif  // __zjs_ble_h__

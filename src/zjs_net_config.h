@@ -4,6 +4,10 @@
 
 #ifndef ZJS_LINUX_BUILD
 #include <net/net_context.h>
+
+#ifdef CONFIG_NET_L2_BLUETOOTH
+extern u8_t net_ble_enabled;
+#endif
 #endif
 /*
  * Returns the net-config object from require.

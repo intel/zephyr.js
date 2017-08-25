@@ -6,7 +6,7 @@
 #include <net/net_context.h>
 #endif
 
-#if defined(CONFIG_NET_L2_BLUETOOTH)
+#ifdef CONFIG_NET_L2_BLUETOOTH
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/storage.h>
 #include <gatt/ipss.h>
@@ -20,8 +20,8 @@
 #ifndef BUILD_MODULE_NET_CONFIG
 static u8_t net_enabled = 0;
 #endif
-#if defined(CONFIG_NET_L2_BLUETOOTH)
-static u8_t ble_enabled = 0;
+#ifdef CONFIG_NET_L2_BLUETOOTH
+u8_t net_ble_enabled = 0;
 #endif
 
 void zjs_net_config_default(void)
@@ -30,16 +30,12 @@ void zjs_net_config_default(void)
      * if net-config was not included, just do the default configuration
      */
 #ifndef BUILD_MODULE_NET_CONFIG
-#if defined(CONFIG_NET_L2_BLUETOOTH)
-    if (!ble_enabled) {
+#ifdef CONFIG_NET_L2_BLUETOOTH
+    if (!net_ble_enabled) {
         zjs_init_ble_address();
-        if (bt_enable(NULL)) {
-            ERR_PRINT("Bluetooth init failed\n");
-            return;
-        }
         ipss_init();
         ipss_advertise();
-        ble_enabled = 1;
+        net_ble_enabled = 1;
     }
 #endif
     if (!net_enabled) {
@@ -152,7 +148,7 @@ static int str2bt_addr_le(const char *str, const char *type, bt_addr_le_t *addr)
     return 0;
 }
 
-void zjs_init_ble_address()
+static void ble_set_address(char *ble_addr)
 {
     static const struct bt_storage storage = {
         .read = zjs_ble_storage_read,
@@ -160,17 +156,18 @@ void zjs_init_ble_address()
         .clear = NULL,
     };
 
-    if (str2bt_addr_le(default_ble, "random", &id_addr) < 0) {
+    if (str2bt_addr_le(ble_addr, "random", &id_addr) < 0) {
         ERR_PRINT("bad BLE address string\n");
         return;
     }
 
     // set the top two bits since Zephyr always sets them anyway, so we will
-    //   print the actual value the user will see
+    //   print the actual value the user will see. For example,
+    //   11:22:33:44:55:66 will change to D1:22:33:44:55:66.
     // TODO: find out why this happens and whether it must; if so, warn the
     //   user at compile-time instead of just here
     char hex[3];
-    hex[0] = default_ble[0];
+    hex[0] = ble_addr[0];
     hex[1] = '0';
     hex[2] = '\0';
     u8_t byte;
@@ -178,13 +175,18 @@ void zjs_init_ble_address()
     u8_t newbyte = byte | 0xC0;
     if (byte != newbyte) {
         ZJS_PRINT("Warning: Requested BLE address %s had to be modified!\n",
-                  default_ble);
+                  ble_addr);
     }
     default_ble[0] = 'C' + (newbyte >> 4) - 12;
 
-    DBG_PRINT("BLE addr is set to: %s\n", default_ble);
+    DBG_PRINT("set BLE address to: %s\n", default_ble);
     BT_ADDR_SET_STATIC(&id_addr.a);
     bt_storage_register(&storage);
+}
+
+void zjs_init_ble_address()
+{
+    ble_set_address(default_ble);
 }
 #endif
 
@@ -267,19 +269,7 @@ static ZJS_DECL_FUNC(set_ble_address)
     jerry_size_t size = 18;
     char addr[size];
     zjs_copy_jstring(argv[0], addr, &size);
-
-    static const struct bt_storage storage = {
-        .read = zjs_ble_storage_read,
-        .write = NULL,
-        .clear = NULL,
-    };
-
-    if (str2bt_addr_le(addr, "random", &id_addr) < 0) {
-        return zjs_error("bad BLE address string");
-    }
-    DBG_PRINT("BLE addr is set to: %s\n", addr);
-    BT_ADDR_SET_STATIC(&id_addr.a);
-    bt_storage_register(&storage);
+    ble_set_address(addr);
 #endif
     return ZJS_UNDEFINED;
 }
@@ -367,15 +357,9 @@ jerry_value_t zjs_net_config_init(void)
             NET_EVENT_IF_UP | NET_EVENT_IF_DOWN);
     net_mgmt_add_event_callback(&cb);
 
-#if defined(CONFIG_NET_L2_BLUETOOTH)
-    if (!ble_enabled) {
+#ifdef CONFIG_NET_L2_BLUETOOTH
+    if (!net_ble_enabled) {
         zjs_init_ble_address();
-        if (bt_enable(NULL)) {
-            return zjs_error_context("could not initialize BLE", 0, 0);
-        }
-        ipss_init();
-        ipss_advertise();
-        ble_enabled = 1;
     }
 #endif
 
