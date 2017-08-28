@@ -96,9 +96,12 @@ static jerry_value_t zjs_net_server_prototype;
 typedef struct server_handle {
     struct net_context *server_ctx;
     jerry_value_t server;
+    struct sock_handle *connections;
+    struct server_handle *next;
     struct sockaddr local;
     u16_t port;
     u8_t listening;
+    u8_t closed;
 } server_handle_t;
 
 typedef struct sock_handle {
@@ -118,7 +121,7 @@ typedef struct sock_handle {
     u8_t timer_started;
 } sock_handle_t;
 
-static sock_handle_t *opened_sockets = NULL;
+static server_handle_t *servers = NULL;
 
 // get the socket handle from the object or NULL
 #define GET_SOCK_HANDLE(obj, var)  \
@@ -147,19 +150,25 @@ static sock_handle_t *opened_sockets = NULL;
 
 static void socket_timeout_callback(struct k_timer *timer)
 {
-    sock_handle_t *cur = opened_sockets;
-    while (cur) {
-        if (&cur->timer == timer) {
-            break;
+    server_handle_t *server = servers;
+    sock_handle_t *sock = NULL;
+    while (server) {
+        sock = server->connections;
+        while (sock) {
+            if (&sock->timer == timer) {
+                break;
+            }
         }
+        server = server->next;
     }
-    if (cur) {
-        zjs_defer_emit_event(cur->socket, "timeout", NULL, 0, NULL, NULL);
-        k_timer_stop(&cur->timer);
+
+    if (sock) {
+        zjs_defer_emit_event(sock->socket, "timeout", NULL, 0, NULL, NULL);
+        k_timer_stop(timer);
         // TODO: This may not be correct, but if we don't set it, then more
         //       timeouts will get added, potentially after the socket has been
         //       closed
-        cur->timeout = 0;
+        sock->timeout = 0;
         DBG_PRINT("socket timed out\n");
     }
 }
@@ -189,14 +198,21 @@ static void start_socket_timeout(sock_handle_t *handle)
 }
 
 // a zjs_post_emit callback
-static void close_server(void *handle, jerry_value_t argv[], u32_t argc)
+static void close_server(server_handle_t *server_h)
 {
-    sock_handle_t *h = (sock_handle_t *)handle;
-    if (h->server_h) {
-        DBG_PRINT("closing server\n");
-        net_context_put(h->server_h->server_ctx);
-        zjs_free(h->server_h);
-    }
+    DBG_PRINT("closing server: %p\n", server_h);
+    zjs_emit_event(server_h->server, "close", NULL, 0);
+    zjs_destroy_emitter(server_h->server);
+    jerry_release_value(server_h->server);
+    ZJS_LIST_REMOVE(server_handle_t, servers, server_h);
+}
+
+// a zjs_event_free callback
+static void server_free_cb(void *native)
+{
+    server_handle_t *server_h = (server_handle_t *)native;
+    net_context_put(server_h->server_ctx);
+    zjs_free(server_h);
 }
 
 static void post_closed(void *handle)
@@ -204,8 +220,9 @@ static void post_closed(void *handle)
     sock_handle_t *h = (sock_handle_t *)handle;
     if (h) {
         server_handle_t *server_h = h->server_h;
-        if (ZJS_LIST_REMOVE(sock_handle_t, opened_sockets, h)) {
-            DBG_PRINT("Freeing socket %p: opened_sockets=%p\n", h, opened_sockets);
+        if (ZJS_LIST_REMOVE(sock_handle_t, server_h->connections, h)) {
+            DBG_PRINT("Freeing socket %p: connections=%p\n", h,
+                      server_h->connections);
 
             net_context_put(h->tcp_sock);
             zjs_destroy_emitter(h->socket);
@@ -214,11 +231,9 @@ static void post_closed(void *handle)
             zjs_free(h);
         }
 
-        if (server_h->listening == 0 && opened_sockets == NULL) {
+        if (server_h->closed && !server_h->connections) {
             // no more sockets open and not listening, close server
-            zjs_defer_emit_event(server_h->server, "close", NULL, 0, NULL,
-                                 close_server);
-            DBG_PRINT("server signaled to close\n");
+            close_server(server_h);
         }
     }
 }
@@ -317,9 +332,9 @@ static void tcp_received(struct net_context *context,
     sock_handle_t *handle = (sock_handle_t *)user_data;
 
     if (status == 0 && buf == NULL) {
-        // socket close
+        // this means the socket closed properly
         DBG_PRINT("closing socket, context=%p, socket=%u\n", context,
-                handle->socket);
+                  handle->socket);
         error_desc_t desc = create_error_desc(ERROR_READ_SOCKET_CLOSED, 0, 0);
         zjs_defer_emit_event(handle->socket, "error", &desc, sizeof(desc),
                              handle_error_arg, zjs_release_args);
@@ -616,13 +631,15 @@ static void accept_connection(const void *buffer, u32_t length)
         return;
     }
 
-    add_socket_connection(sock, accept->server_h, accept->context, &accept->addr);
+    add_socket_connection(sock, accept->server_h, accept->context,
+                          &accept->addr);
 
     // add new socket to list
-    sock_handle->next = opened_sockets;
-    opened_sockets = sock_handle;
+    ZJS_LIST_PREPEND(sock_handle_t, accept->server_h->connections,
+                     sock_handle);
 
-    int ret = net_context_recv(accept->context, tcp_received, 0, sock_handle);
+    int ret = net_context_recv(accept->context, tcp_received, K_NO_WAIT,
+                               sock_handle);
 
     // FIXME: the defer_emit_event calls below no longer need to be deferred
     if (ret < 0) {
@@ -646,7 +663,14 @@ static void tcp_accepted(struct net_context *context,
                          int error,
                          void *user_data)
 {
+    // FIXME: handle error < 0
     DBG_PRINT("connection made, context %p error %d\n", context, error);
+
+    server_handle_t *server_h = (server_handle_t *)user_data;
+    if (!server_h->listening || server_h->closed) {
+        DBG_PRINT("Warning: received connection on closed socket\n");
+        return;
+    }
 
     accept_connection_t accept;
     accept.context = context;
@@ -705,18 +729,18 @@ static ZJS_DECL_FUNC(server_close)
 
     GET_SERVER_HANDLE_JS(this, server_h);
 
+    // make sure we accept no more connections
     server_h->listening = 0;
+    server_h->closed = 1;
     zjs_obj_add_boolean(this, false, "listening");
 
     if (optcount) {
         zjs_add_event_listener(server_h->server, "close", argv[0]);
     }
-    // If there are no connections the server can be closed
-    if (opened_sockets == NULL) {
-        // NOTE: could emit immediately but safer for call stack to defer
-        zjs_defer_emit_event(server_h->server, "close", NULL, 0, NULL,
-                             close_server);
-        DBG_PRINT("server signaled to close\n");
+
+    // if there are no connections, the server can be closed now
+    if (!server_h->connections) {
+        close_server(server_h);
     }
     return ZJS_UNDEFINED;
 }
@@ -735,14 +759,7 @@ static ZJS_DECL_FUNC(server_get_connections)
 
     GET_SERVER_HANDLE_JS(this, server_h);
 
-    int count = 0;
-    sock_handle_t *cur = opened_sockets;
-    while (cur) {
-        if (cur->server_h == server_h) {
-            count++;
-        }
-        cur = cur->next;
-    }
+    int count = ZJS_LIST_LENGTH(sock_handle_t, server_h->connections);
 
     ZVAL err = jerry_create_number(0);
     ZVAL num = jerry_create_number(count);
@@ -769,6 +786,10 @@ static ZJS_DECL_FUNC(server_listen)
     ZJS_VALIDATE_ARGS_OPTCOUNT(optcount, Z_OBJECT, Z_OPTIONAL Z_FUNCTION);
 
     GET_SERVER_HANDLE_JS(this, server_h);
+
+    if (server_h->listening || server_h->closed) {
+        return zjs_error("server not listening or closed");
+    }
 
     int ret;
     double port = 0;
@@ -813,7 +834,8 @@ static ZJS_DECL_FUNC(server_listen)
         net_addr_pton(AF_INET6, hostname, &addr6->sin6_addr);
     }
 
-    CHECK(net_context_bind(server_h->server_ctx, &addr, sizeof(struct sockaddr)));
+    CHECK(net_context_bind(server_h->server_ctx, &addr,
+                           sizeof(struct sockaddr)));
     CHECK(net_context_listen(server_h->server_ctx, (int)backlog));
 
     server_h->listening = 1;
@@ -869,15 +891,22 @@ static ZJS_DECL_FUNC(net_create_server)
     }
 
     memset(server_h, 0, sizeof(server_handle_t));
-    server_h->server = server;
 
-    zjs_make_emitter(server, zjs_net_server_prototype, server_h, NULL);
+    // hold a reference to the server object; we will have to release it
+    //   before it can ever be freed, which we can only do when it has been
+    //   explicitly closed and all its connections have closed
+    server_h->server = jerry_acquire_value(server);
+
+    zjs_make_emitter(server, zjs_net_server_prototype, server_h,
+                     server_free_cb);
 
     if (optcount) {
         zjs_add_event_listener(server, "connection", argv[0]);
     }
 
     DBG_PRINT("creating server: context=%p\n", server_h->server_ctx);
+
+    ZJS_LIST_PREPEND(server_handle_t, servers, server_h);
 
     return server;
 }
@@ -900,7 +929,8 @@ static void tcp_connected(struct net_context *context, int status,
 
         if (sock_handle) {
             int ret;
-            ret = net_context_recv(context, tcp_received, 0, sock_handle);
+            ret = net_context_recv(context, tcp_received, K_NO_WAIT,
+                                   sock_handle);
             if (ret < 0) {
                 ERR_PRINT("Cannot receive TCP packets (%d)\n", ret);
             }
