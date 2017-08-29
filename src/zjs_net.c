@@ -803,6 +803,8 @@ static ZJS_DECL_FUNC(server_listen)
     zjs_obj_get_string(argv[0], "host", hostname, size);
     zjs_obj_get_double(argv[0], "family", &family);
 
+    // FIXME: validate or fix input, e.g. family
+
     if (optcount) {
         zjs_add_event_listener(this, "listening", argv[1]);
     }
@@ -965,25 +967,6 @@ static ZJS_DECL_FUNC(socket_connect)
 
     GET_SOCK_HANDLE_JS(this, handle);
 
-    int ret;
-    if (!handle->tcp_sock) {
-        CHECK(net_context_get(AF_INET6, SOCK_STREAM, IPPROTO_TCP,
-                              &handle->tcp_sock));
-    }
-    if (!handle->tcp_sock) {
-        DBG_PRINT("connect failed\n");
-        error_desc_t desc = create_error_desc(ERROR_CONNECT_SOCKET, this,
-                                              function_obj);
-        zjs_defer_emit_event(this, "error", &desc, sizeof(desc),
-                             handle_error_arg, zjs_release_args);
-        return ZJS_UNDEFINED;
-    }
-
-    if (argc > 1) {
-        jerry_release_value(handle->connect_listener);
-        handle->connect_listener = jerry_acquire_value(argv[1]);
-    }
-
     double port = 0;
     double localPort = 0;
     double fam = 0;
@@ -1002,6 +985,26 @@ static ZJS_DECL_FUNC(socket_connect)
 
     DBG_PRINT("port=%u, host=%s, localPort=%u, localAddress=%s, socket=%u\n",
               (u32_t)port, host, (u32_t)localPort, localAddress, this);
+
+    int ret;
+    if (!handle->tcp_sock) {
+        sa_family_t inet = (fam == 6) ? AF_INET6 : AF_INET;
+        CHECK(net_context_get(inet, SOCK_STREAM, IPPROTO_TCP,
+                              &handle->tcp_sock))
+    }
+    if (!handle->tcp_sock) {
+        DBG_PRINT("connect failed\n");
+        error_desc_t desc = create_error_desc(ERROR_CONNECT_SOCKET, this,
+                                              function_obj);
+        zjs_defer_emit_event(this, "error", &desc, sizeof(desc),
+                             handle_error_arg, zjs_release_args);
+        return ZJS_UNDEFINED;
+    }
+
+    if (argc > 1) {
+        jerry_release_value(handle->connect_listener);
+        handle->connect_listener = jerry_acquire_value(argv[1]);
+    }
 
     if (fam == 6) {
         if (!handle->bound) {
