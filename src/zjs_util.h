@@ -420,16 +420,20 @@ void zjs_loop_init(void);
 // } list_item_t;
 // list_item_t *my_list = NULL;
 
-// Looks for and returns a node found in a list.
-// @param type          Struct type of list
-// @param list          Pointer to list head
-// @param cmp_element   Name of element in node struct to compare
-// @param cmp_to        Value to compare node element to
-
-// Example:
-//    list_item_t *item = ZJS_LIST_FIND(list_item_t, my_list, value, 42);
-
-// The above will return a list item whose `value` parameter == 42
+/**
+ *
+ * Looks for and returns a node found in a list.
+ * @param type          Struct type of list
+ * @param list          Pointer to list head
+ * @param cmp_element   Name of element in node struct to compare
+ * @param cmp_to        Value to compare node element to
+ *
+ * @return The matching list item, or NULL
+ *
+ * Example:
+ *    list_item_t *item = ZJS_LIST_FIND(list_item_t, my_list, value, 42);
+ *    // item will now be a list item whose `value` element == 42, or NULL
+ */
 #define ZJS_LIST_FIND(type, list, cmp_element, cmp_to) \
     ({                                                 \
         type *found = NULL;                            \
@@ -444,7 +448,24 @@ void zjs_loop_init(void);
         found;                                         \
     })
 
-// Version that takes a function used to compare with a value
+/**
+ * Runs cmp_func on each list item until it finds a match with cmp_to
+ *
+ * @param type       Struct type of list
+ * @param list       Pointer to list head
+ * @param cmp_func   int (type *item, valtype v) returns 0 if v matches in item
+ * @param cmp_to     Value of valtype to be passed to cmp_func
+ *
+ * @return The matching list item, or NULL
+ *
+ * Example:
+ *     int match_client(list_item_t *item, const char *client) {
+ *         return strcmp(item->client, client);
+ *     }
+ *     list_item_t *item = ZJS_LIST_FIND_COMP(list_item_t, my_list,
+ *                                            match_client, "Frodo");
+ *     // item will now be a list item with client "Frodo", or NULL
+ */
 #define ZJS_LIST_FIND_CMP(type, list, cmp_func, cmp_to) \
     ({                                                  \
         type *found = NULL;                             \
