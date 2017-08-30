@@ -595,41 +595,24 @@ static void create_ws_connection(void *h, jerry_value_t argv[], u32_t *argc,
     *argc = 1;
 }
 
-static void tcp_received(struct net_context *context,
-                         struct net_pkt *pkt,
-                         int status,
-                         void *user_data)
+typedef struct {
+    ws_connection_t *con;
+    struct net_pkt *pkt;
+} receive_packet_t;
+
+// a zjs_deferred_work callback
+static void receive_packet(const void *buffer, u32_t length)
 {
-    ws_connection_t *con = (ws_connection_t *)user_data;
-
-    if (status == 0 && pkt == NULL) {
-        DBG_PRINT("socket closed\n");
-        net_pkt_unref(pkt);
-        if (con) {
-            // close the socket
-            char buf[sizeof(int) + 13 + 1];
-            memcpy(buf, &status, sizeof(int));
-            memcpy(buf + sizeof(int), "socket closed", 13);
-            buf[sizeof(int) + 13] = '\0';
-            zjs_defer_emit_event(con->conn, "close", buf, sizeof(int) + 14,
-                                 pre_close_connection, close_connection);
-            return;
-        } else {
-            DBG_PRINT("socket closed before connection was opened\n");
-            // nothing we can do here
-            return;
-        }
+    if (length != sizeof(receive_packet_t)) {
+        // shouldn't happen so make it a debug print
+        DBG_PRINT("Error: Unexpected data!\n");
+        return;
     }
 
-    /*
-     * If data has been received, after the accept packet, it's safe to assume
-     * the client connection was successful.
-     */
-    if (con->state == AWAITING_ACCEPT) {
-        con->state = CONNECTED;
-    }
+    receive_packet_t *receive = (receive_packet_t *)buffer;
+    ws_connection_t *con = receive->con;
+    struct net_pkt *pkt = receive->pkt;
 
-    // FIXME: this should be deferred, too big to fix right now
     if (con && pkt) {
         u32_t len = net_pkt_appdatalen(pkt);
 
@@ -770,6 +753,47 @@ static void tcp_received(struct net_context *context,
     net_pkt_unref(pkt);
 }
 
+static void tcp_received(struct net_context *context,
+                         struct net_pkt *pkt,
+                         int status,
+                         void *user_data)
+{
+    ws_connection_t *con = (ws_connection_t *)user_data;
+
+    if (status == 0 && pkt == NULL) {
+        DBG_PRINT("socket closed\n");
+        net_pkt_unref(pkt);
+        if (con) {
+            // close the socket
+            char buf[sizeof(int) + 13 + 1];
+            memcpy(buf, &status, sizeof(int));
+            memcpy(buf + sizeof(int), "socket closed", 13);
+            buf[sizeof(int) + 13] = '\0';
+            zjs_defer_emit_event(con->conn, "close", buf, sizeof(int) + 14,
+                                 pre_close_connection, close_connection);
+            return;
+        } else {
+            DBG_PRINT("socket closed before connection was opened\n");
+            // nothing we can do here
+            return;
+        }
+    }
+
+    /*
+     * If data has been received, after the accept packet, it's safe to assume
+     * the client connection was successful.
+     */
+    if (con->state == AWAITING_ACCEPT) {
+        con->state = CONNECTED;
+    }
+
+    receive_packet_t receive;
+    receive.con = con;
+    receive.pkt = pkt;
+
+    zjs_defer_work(receive_packet, &receive, sizeof(receive));
+}
+
 static void post_accept_handler(void *handle, jerry_value_t ret_val)
 {
     ws_connection_t *con = (ws_connection_t *)handle;
@@ -818,61 +842,80 @@ static void post_accept_handler(void *handle, jerry_value_t ret_val)
                          create_ws_connection, zjs_release_args);
 }
 
+typedef struct {
+    struct net_context *context;
+    server_handle_t *server_h;
+} accept_connection_t;
+
+// a zjs_deferred_work callback
+static void accept_connection(const void *buffer, u32_t length)
+{
+    if (length != sizeof(accept_connection_t)) {
+        // shouldn't happen so make it a debug print
+        DBG_PRINT("Error: Unexpected data!\n");
+        return;
+    }
+
+    accept_connection_t *accept = (accept_connection_t *)buffer;
+    server_handle_t *server_h = accept->server_h;
+
+    ws_connection_t *con = zjs_malloc(sizeof(ws_connection_t));
+    if (!con) {
+        ERR_PRINT("could not allocate connection handle\n");
+        error_desc_t desc = create_error_desc(ERROR_OOM, 0, 0);
+        zjs_defer_emit_event(server_h->server, "error", &desc, sizeof(desc),
+                             handle_error_arg, zjs_release_args);
+        return;
+    }
+    memset(con, 0, sizeof(ws_connection_t));
+    con->tcp_sock = accept->context;
+    con->rbuf = zjs_malloc(DEFAULT_WS_BUFFER_SIZE);
+    if (!con->rbuf) {
+        ERR_PRINT("could not allocate read buffer\n");
+        error_desc_t desc = create_error_desc(ERROR_OOM, 0, 0);
+        zjs_defer_emit_event(server_h->server, "error", &desc, sizeof(desc),
+                             handle_error_arg, zjs_release_args);
+        zjs_free(con);
+        return;
+    }
+    memset(con->rbuf, 0, sizeof(DEFAULT_WS_BUFFER_SIZE));
+    con->rptr = con->wptr = con->rbuf;
+    con->server = server_h->server;
+    con->server_h = server_h;
+    if (jerry_value_is_function(server_h->accept_handler)) {
+        con->accept_handler_id = zjs_add_callback(server_h->accept_handler,
+                                                  server_h->server,
+                                                  con, post_accept_handler);
+    } else {
+        con->accept_handler_id = -1;
+    }
+
+    ZJS_LIST_PREPEND(ws_connection_t, server_h->connections, con);
+
+    if (net_context_recv(accept->context, tcp_received, 0, con) < 0) {
+        ERR_PRINT("Cannot receive TCP packet (family %d)\n",
+                  net_context_get_family(accept->context));
+        // this seems to mean the remote exists but the connection was not made
+        error_desc_t desc = create_error_desc(ERROR_CONN_FAIL, 0, 0);
+        zjs_defer_emit_event(server_h->server, "error", &desc, sizeof(desc),
+                             handle_error_arg, zjs_release_args);
+        return;
+    }
+}
+
 static void tcp_accepted(struct net_context *context,
                          struct sockaddr *addr,
                          socklen_t addrlen,
                          int error,
                          void *user_data)
 {
-    int ret;
-    server_handle_t *handle = (server_handle_t *)user_data;
     DBG_PRINT("connection made, context %p error %d\n", context, error);
 
-    // FIXME: we should not really be doing mallocs here, but too much to
-    //   address that in this patch
-    ws_connection_t *new = zjs_malloc(sizeof(ws_connection_t));
-    if (!new) {
-        ERR_PRINT("could not allocate connection handle\n");
-        error_desc_t desc = create_error_desc(ERROR_OOM, 0, 0);
-        zjs_defer_emit_event(handle->server, "error", &desc, sizeof(desc),
-                             handle_error_arg, zjs_release_args);
-        return;
-    }
-    memset(new, 0, sizeof(ws_connection_t));
-    new->tcp_sock = context;
-    new->rbuf = zjs_malloc(DEFAULT_WS_BUFFER_SIZE);
-    if (!new->rbuf) {
-        ERR_PRINT("could not allocate read buffer\n");
-        error_desc_t desc = create_error_desc(ERROR_OOM, 0, 0);
-        zjs_defer_emit_event(handle->server, "error", &desc, sizeof(desc),
-                             handle_error_arg, zjs_release_args);
-        zjs_free(new);
-        return;
-    }
-    memset(new->rbuf, 0, sizeof(DEFAULT_WS_BUFFER_SIZE));
-    new->rptr = new->wptr = new->rbuf;
-    new->server = handle->server;
-    new->server_h = handle;
-    if (jerry_value_is_function(handle->accept_handler)) {
-        new->accept_handler_id = zjs_add_callback(handle->accept_handler,
-                                                  handle->server,
-                                                  new, post_accept_handler);
-    } else {
-        new->accept_handler_id = -1;
-    }
+    accept_connection_t accept;
+    accept.context = context;
+    accept.server_h = (server_handle_t *)user_data;
 
-    ZJS_LIST_PREPEND(ws_connection_t, handle->connections, new);
-
-    ret = net_context_recv(context, tcp_received, 0, new);
-    if (ret < 0) {
-        ERR_PRINT("Cannot receive TCP packet (family %d)\n",
-                  net_context_get_family(context));
-        // this seems to mean the remote exists but the connection was not made
-        error_desc_t desc = create_error_desc(ERROR_CONN_FAIL, 0, 0);
-        zjs_defer_emit_event(handle->server, "error", &desc, sizeof(desc),
-                             handle_error_arg, zjs_release_args);
-        return;
-    }
+    zjs_defer_work(accept_connection, &accept, sizeof(accept));
 }
 
 static ZJS_DECL_FUNC(ws_server)
