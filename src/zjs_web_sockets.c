@@ -62,7 +62,7 @@ typedef enum {
 
 // server handle
 typedef struct server_handle {
-    struct net_context *tcp_sock;
+    struct net_context *server_ctx;
     jerry_value_t accept_handler;
     jerry_value_t server;
     u16_t max_payload;
@@ -72,7 +72,7 @@ typedef struct server_handle {
 // WS connection handle, unique per server connection
 typedef struct ws_connection {
     struct net_context *tcp_sock;
-    server_handle_t *server_handle;
+    server_handle_t *server_h;
     u8_t *rbuf;
     u8_t *wptr;
     u8_t *rptr;
@@ -175,7 +175,7 @@ static void free_server(void *native)
     server_handle_t *handle = (server_handle_t *)native;
     if (handle) {
         jerry_release_value(handle->accept_handler);
-        net_context_put(handle->tcp_sock);
+        net_context_put(handle->server_ctx);
         zjs_free(handle);
     }
 }
@@ -433,8 +433,9 @@ static void trigger_data(void *h, jerry_value_t argv[], u32_t *argc,
     }
 }
 
-static void pre_close_connection(void *handle, jerry_value_t argv[], u32_t *argc,
-                                 const char *buffer, u32_t length)
+// a zjs_pre_emit callback
+static void pre_close_connection(void *handle, jerry_value_t argv[],
+                                 u32_t *argc, const char *buffer, u32_t length)
 {
     jerry_value_t code = jerry_create_number(*((int*)buffer));
     jerry_value_t reason = jerry_create_string(buffer + sizeof(int));
@@ -534,8 +535,8 @@ static ZJS_DECL_FUNC_ARGS(ws_send_data, ws_packet_type type)
     if (optcount) {
         mask = jerry_get_boolean_value(argv[1]);
     }
-    if (con->server_handle->max_payload &&
-        (buf->bufsize > con->server_handle->max_payload)) {
+    if (con->server_h->max_payload &&
+        (buf->bufsize > con->server_h->max_payload)) {
         return zjs_error("payload too large");
     }
     u8_t out[buf->bufsize + 10];
@@ -585,10 +586,10 @@ static void create_ws_connection(void *h, jerry_value_t argv[], u32_t *argc,
     zjs_obj_add_function(conn, ws_pong, "pong");
     zjs_obj_add_function(conn, ws_terminate, "terminate");
     zjs_make_emitter(conn, zjs_create_object(), con, NULL);
-    if (con->server_handle->track) {
-        ZVAL clients = zjs_get_property(con->server_handle->server, "clients");
+    if (con->server_h->track) {
+        ZVAL clients = zjs_get_property(con->server_h->server, "clients");
         ZVAL new = push_array(clients, conn);
-        zjs_set_property(con->server_handle->server, "clients", new);
+        zjs_set_property(con->server_h->server, "clients", new);
     }
     con->conn = jerry_acquire_value(conn);
     argv[0] = conn;
@@ -659,8 +660,8 @@ static void tcp_received(struct net_context *context,
 #ifdef DEBUG_BUILD
         dump_bytes("DATA", data, len);
 #endif
-        if (con->server_handle->max_payload &&
-            (len > con->server_handle->max_payload)) {
+        if (con->server_h->max_payload &&
+            (len > con->server_h->max_payload)) {
             error_desc_t desc = create_error_desc(ERROR_PAYLOAD, 0, 0);
             zjs_defer_emit_event(con->server, "error", &desc, sizeof(desc),
                                  handle_error_arg, zjs_release_args);
@@ -854,7 +855,7 @@ static void tcp_accepted(struct net_context *context,
     new->server = handle->server;
     if (jerry_value_is_function(handle->accept_handler)) {
         new->accept_handler_id = zjs_add_callback(handle->accept_handler,
-                                                  new->server_handle->server,
+                                                  new->server_h->server,
                                                   new, post_accept_handler);
     } else {
         new->accept_handler_id = -1;
@@ -914,7 +915,7 @@ static ZJS_DECL_FUNC(ws_server)
 
     if (zjs_is_ip(host) == 4) {
         CHECK(net_context_get(AF_INET, SOCK_STREAM, IPPROTO_TCP,
-                &handle->tcp_sock));
+                &handle->server_ctx));
 
         struct sockaddr_in *my_addr = (struct sockaddr_in *)&addr;
 
@@ -924,7 +925,7 @@ static ZJS_DECL_FUNC(ws_server)
         my_addr->sin_port = htons((int)port);
     } else {
         CHECK(net_context_get(AF_INET6, SOCK_STREAM, IPPROTO_TCP,
-                &handle->tcp_sock));
+                &handle->server_ctx));
 
         struct sockaddr_in6 *my_addr6 = (struct sockaddr_in6 *)&addr;
 
@@ -934,10 +935,10 @@ static ZJS_DECL_FUNC(ws_server)
         my_addr6->sin6_port = htons((int)port);
     }
 
-    CHECK(net_context_bind(handle->tcp_sock, (struct sockaddr *)&addr,
+    CHECK(net_context_bind(handle->server_ctx, (struct sockaddr *)&addr,
                            sizeof(struct sockaddr)));
-    CHECK(net_context_listen(handle->tcp_sock, (int)backlog));
-    CHECK(net_context_accept(handle->tcp_sock, tcp_accepted, 0, handle));
+    CHECK(net_context_listen(handle->server_ctx, (int)backlog));
+    CHECK(net_context_accept(handle->server_ctx, tcp_accepted, 0, handle));
 
     zjs_make_emitter(server, zjs_create_object(), handle, free_server);
 
