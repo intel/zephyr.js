@@ -60,7 +60,7 @@ net_cfg.on('netup', function() {
 			console.log("Socket has closed");
 		});
 		client.on("error", function(err) {
-			if (err.name == "NotFoundError") {
+			if (err.name == "Error") {
 				console.log("Server not found, retrying in 2 seconds");
 				setTimeout(function() {
 					if (!is_connected) {
