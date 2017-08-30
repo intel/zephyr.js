@@ -534,14 +534,14 @@ static jerry_value_t create_socket(u8_t client, sock_handle_t **handle_out)
 {
     sock_handle_t *sock_handle = zjs_malloc(sizeof(sock_handle_t));
     if (!sock_handle) {
-        return zjs_error_context("could not alloc socket handle", 0, 0);
+        return ZJS_UNDEFINED;
     }
     memset(sock_handle, 0, sizeof(sock_handle_t));
 
     sock_handle->rbuf = zjs_malloc(SOCK_READ_BUF_SIZE);
     if (!sock_handle->rbuf) {
         zjs_free(sock_handle);
-        return zjs_error_context("out of memory", 0, 0);
+        return ZJS_UNDEFINED;
     }
 
     jerry_value_t socket = zjs_create_object();
@@ -978,14 +978,14 @@ static ZJS_DECL_FUNC(socket_connect)
     }
     // TODO: get: .hints, .lookup
 
-    DBG_PRINT("port=%u, host=%s, localPort=%u, localAddress=%s, socket=%u\n",
-              (u32_t)port, host, (u32_t)localPort, localAddress, this);
+    DBG_PRINT("port=%u, host=%s, localPort=%u, localAddress=%s, socket=%p\n",
+              (u32_t)port, host, (u32_t)localPort, localAddress, (void *)this);
 
     int ret;
     if (!handle->tcp_sock) {
         sa_family_t inet = (fam == 6) ? AF_INET6 : AF_INET;
         CHECK(net_context_get(inet, SOCK_STREAM, IPPROTO_TCP,
-                              &handle->tcp_sock))
+                              &handle->tcp_sock));
     }
     if (!handle->tcp_sock) {
         DBG_PRINT("connect failed\n");
