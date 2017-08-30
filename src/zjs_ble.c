@@ -581,9 +581,12 @@ static struct bt_conn_auth_cb zjs_ble_auth_cb_display = {
 
 void zjs_ble_emit_powered_event()
 {
-    const char state[] = "poweredOn";
-    zjs_defer_emit_event(ble_handle->ble_obj, "stateChange", state,
-                         sizeof(state), string_arg, zjs_release_args);
+    // Don't emit if bluetooth hasn't had init called yet
+    if (ble_handle) {
+        const char state[] = "poweredOn";
+        zjs_defer_emit_event(ble_handle->ble_obj, "stateChange", state,
+                             sizeof(state), string_arg, zjs_release_args);
+    }
 }
 
 static ZJS_DECL_FUNC(zjs_ble_disconnect)
