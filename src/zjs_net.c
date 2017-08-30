@@ -93,6 +93,7 @@ static jerry_value_t zjs_net_prototype;
 static jerry_value_t zjs_net_socket_prototype;
 static jerry_value_t zjs_net_server_prototype;
 
+// represents a server socket (e.g. listening on a port)
 typedef struct server_handle {
     struct net_context *server_ctx;
     jerry_value_t server;
@@ -104,15 +105,20 @@ typedef struct server_handle {
     u8_t closed;
 } server_handle_t;
 
+// represents a server connection socket or client socket
 typedef struct sock_handle {
+    // only used for server connection sockets
     server_handle_t *server_h;
+
+    // only used for client sockets
+    jerry_value_t connect_listener;
+
+    struct sock_handle *next;
     struct net_context *tcp_sock;
     struct sockaddr remote;
     jerry_value_t socket;
-    jerry_value_t connect_listener;
     void *rptr;
     void *wptr;
-    struct sock_handle *next;
     struct k_timer timer;
     u32_t timeout;
     u8_t bound;
@@ -122,6 +128,7 @@ typedef struct sock_handle {
 } sock_handle_t;
 
 static server_handle_t *servers = NULL;
+static sock_handle_t *client_connections = NULL;
 
 // get the socket handle from the object or NULL
 #define GET_SOCK_HANDLE(obj, var)  \
@@ -148,18 +155,25 @@ static server_handle_t *servers = NULL;
 #define NET_HOSTNAME_MAX            32
 #define SOCK_READ_BUF_SIZE          128
 
+static int match_timer(sock_handle_t *sock, struct k_timer *timer)
+{
+    return (&sock->timer == timer) ? 0 : 1;
+}
+
 static void socket_timeout_callback(struct k_timer *timer)
 {
-    server_handle_t *server = servers;
     sock_handle_t *sock = NULL;
-    while (server) {
-        sock = server->connections;
-        while (sock) {
-            if (&sock->timer == timer) {
-                break;
-            }
-        }
+    server_handle_t *server = servers;
+    while (server && !sock) {
+        // search in server connections
+        sock = ZJS_LIST_FIND_CMP(sock_handle_t, server->connections,
+                                 match_timer, timer);
         server = server->next;
+    }
+    if (!sock) {
+        // search in client connections
+        sock = ZJS_LIST_FIND_CMP(sock_handle_t, client_connections,
+                                 match_timer, timer);
     }
 
     if (sock) {
@@ -215,10 +229,17 @@ static void server_free_cb(void *native)
     zjs_free(server_h);
 }
 
-static void post_closed(void *handle)
+// a zjs_post_emit callback
+static void release_close(void *handle, jerry_value_t argv[], u32_t argc)
 {
     sock_handle_t *h = (sock_handle_t *)handle;
-    if (h) {
+    if (!h) {
+        DBG_PRINT("warning: null pointer for socket handle\n");
+        return;
+    }
+
+    // check if this is a server connection socket
+    if (h->server_h) {
         server_handle_t *server_h = h->server_h;
         if (ZJS_LIST_REMOVE(sock_handle_t, server_h->connections, h)) {
             DBG_PRINT("Freeing socket %p: connections=%p\n", h,
@@ -236,12 +257,7 @@ static void post_closed(void *handle)
             close_server(server_h);
         }
     }
-}
 
-// a zjs_post_emit callback
-static void release_close(void *h, jerry_value_t argv[], u32_t argc)
-{
-    post_closed(h);
     if (argc) {
         zjs_release_args(h, argv, argc);
     }
@@ -1108,6 +1124,9 @@ static ZJS_DECL_FUNC(net_socket)
     if (!sock_handle) {
         return zjs_error("could not alloc socket handle");
     }
+
+    // add new socket to client list
+    ZJS_LIST_PREPEND(sock_handle_t, client_connections, sock_handle);
 
     DBG_PRINT("socket created, context=%p, sock=%u\n", sock_handle->tcp_sock,
               socket);
