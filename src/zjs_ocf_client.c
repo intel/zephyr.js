@@ -319,7 +319,7 @@ static struct client_resource *find_resource_by_id(const char *device_id)
         struct client_resource *cur = resource_list;
         while (cur) {
             if (cur->state != RES_STATE_SEARCHING) {
-                if (strcmp(cur->device_id, device_id) == 0) {
+                if (strequal(cur->device_id, device_id)) {
                     return cur;
                 }
             }
@@ -456,21 +456,21 @@ static oc_discovery_flags_t discovery(const char *di,
             if (cur->state == RES_STATE_SEARCHING) {
                 // check if resource has any filter constraints
                 if (cur->device_id) {
-                    if (strcmp(cur->device_id, di) == 0) {
+                    if (strequal(cur->device_id, di)) {
                         goto Found;
                     } else {
                         goto NotFound;
                     }
                 }
                 if (cur->resource_type) {
-                    if (strcmp(cur->resource_type, t) == 0) {
+                    if (strequal(cur->resource_type, t)) {
                         goto Found;
                     } else {
                         goto NotFound;
                     }
                 }
                 if (cur->resource_path) {
-                    if (strcmp(cur->resource_path, uri) == 0) {
+                    if (strequal(cur->resource_path, uri)) {
                         goto Found;
                     } else {
                         goto NotFound;
@@ -864,39 +864,39 @@ static void ocf_get_platform_info_handler(oc_client_response_t *data)
                 break;
             case BYTE_STRING:
             case STRING:
-                if (strcmp(oc_string(rep->name), "mnmn") == 0) {
+                if (strequal(oc_string(rep->name), "mnmn")) {
                     zjs_obj_add_readonly_string(platform_info,
                                                 oc_string(rep->value.string),
                                                 "manufacturerName");
-                } else if (strcmp(oc_string(rep->name), "pi") == 0) {
+                } else if (strequal(oc_string(rep->name), "pi")) {
                     zjs_obj_add_readonly_string(platform_info,
                                                 oc_string(rep->value.string),
                                                 "id");
-                } else if (strcmp(oc_string(rep->name), "mnmo") == 0) {
+                } else if (strequal(oc_string(rep->name), "mnmo")) {
                     zjs_obj_add_readonly_string(platform_info,
                                                 oc_string(rep->value.string),
                                                 "model");
-                } else if (strcmp(oc_string(rep->name), "mndt") == 0) {
+                } else if (strequal(oc_string(rep->name), "mndt")) {
                     zjs_obj_add_readonly_string(platform_info,
                                                 oc_string(rep->value.string),
                                                 "manufacturerDate");
-                } else if (strcmp(oc_string(rep->name), "mnpv") == 0) {
+                } else if (strequal(oc_string(rep->name), "mnpv")) {
                     zjs_obj_add_readonly_string(platform_info,
                                                 oc_string(rep->value.string),
                                                 "platformVersion");
-                } else if (strcmp(oc_string(rep->name), "mnos") == 0) {
+                } else if (strequal(oc_string(rep->name), "mnos")) {
                     zjs_obj_add_readonly_string(platform_info,
                                                 oc_string(rep->value.string),
                                                 "osVersion");
-                } else if (strcmp(oc_string(rep->name), "mnfv") == 0) {
+                } else if (strequal(oc_string(rep->name), "mnfv")) {
                     zjs_obj_add_readonly_string(platform_info,
                                                 oc_string(rep->value.string),
                                                 "firmwareVersion");
-                } else if (strcmp(oc_string(rep->name), "mnml") == 0) {
+                } else if (strequal(oc_string(rep->name), "mnml")) {
                     zjs_obj_add_readonly_string(platform_info,
                                                 oc_string(rep->value.string),
                                                 "manufacturerURL");
-                } else if (strcmp(oc_string(rep->name), "mnsl") == 0) {
+                } else if (strequal(oc_string(rep->name), "mnsl")) {
                     zjs_obj_add_readonly_string(platform_info,
                                                 oc_string(rep->value.string),
                                                 "supportURL");
@@ -988,7 +988,7 @@ static void ocf_get_device_info_handler(oc_client_response_t *data)
                 break;
             case BYTE_STRING:
             case STRING:
-                if (strcmp(oc_string(rep->name), "di") == 0) {
+                if (strequal(oc_string(rep->name), "di")) {
                     zjs_obj_add_string(device_info,
                                        oc_string(rep->value.string), "uuid");
                     /*
@@ -1001,14 +1001,14 @@ static void ocf_get_device_info_handler(oc_client_response_t *data)
                                        create_url(oc_string(rep->value.string),
                                                   resource->resource_path),
                                        "url");
-                } else if (strcmp(oc_string(rep->name), "n") == 0) {
+                } else if (strequal(oc_string(rep->name), "n")) {
                     zjs_obj_add_string(device_info,
                                        oc_string(rep->value.string), "name");
-                } else if (strcmp(oc_string(rep->name), "icv") == 0) {
+                } else if (strequal(oc_string(rep->name), "icv")) {
                     zjs_obj_add_string(device_info,
                                        oc_string(rep->value.string),
                                        "coreSpecVersion");
-                } else if (strcmp(oc_string(rep->name), "dmv") == 0) {
+                } else if (strequal(oc_string(rep->name), "dmv")) {
                     zjs_obj_add_string(device_info,
                                        oc_string(rep->value.string),
                                        "dataModels");

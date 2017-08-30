@@ -43,11 +43,10 @@ static bool list_contains(requires_list_t **list, const char *file_name)
 {
     requires_list_t *cur = *list;
     while (cur) {
-        if (strcmp(file_name, cur->file_name) != 0) {
-            cur = cur->next;
-        } else {
+        if (strequal(file_name, cur->file_name)) {
             return true;
         }
+        cur = cur->next;
     }
     return false;
 }
@@ -297,7 +296,7 @@ static bool add_requires(requires_list_t **list, char *filebuf)
         // Also check that the file hasn't already been loaded
 
         // FIXME: this always expects JS file to have .js lowercase extension
-        if (filelen >= 3 && !strcmp(&filestr[filelen - 3], ".js") &&
+        if (filelen >= 3 && strequal(&filestr[filelen - 3], ".js") &&
             !list_contains(list, filestr)) {
             if (fs_valid_filename(filestr)) {
                 add_to_list(list, filestr);

@@ -95,9 +95,9 @@ static const zjs_pin_t *zjs_find_pin(const char *name)
     int len = sizeof(pin_data) / sizeof(zjs_pin_t);
     for (int i = 0; i < len; ++i) {
         const zjs_pin_t *pin = &pin_data[i];
-        if (!strcmp(name, pin->name) ||
-            (pin->altname && !strcmp(name, pin->altname)) ||
-            (pin->altname2 && !strcmp(name, pin->altname2)))
+        if (strequal(name, pin->name) ||
+            (pin->altname && strequal(name, pin->altname)) ||
+            (pin->altname2 && strequal(name, pin->altname2)))
             return pin;
     }
     return NULL;

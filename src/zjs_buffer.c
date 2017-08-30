@@ -221,7 +221,7 @@ static ZJS_DECL_FUNC(zjs_buffer_to_string)
         return zjs_error("encoding argument too long");
     }
 
-    if (!strcmp(encoding, "ascii")) {
+    if (strequal(encoding, "ascii")) {
         char *str = zjs_malloc(buf->bufsize);
         if (!str) {
             return zjs_error("out of memory");
@@ -241,7 +241,7 @@ static ZJS_DECL_FUNC(zjs_buffer_to_string)
                 strnlen((char *)buf->buffer, buf->bufsize));
         zjs_free(str);
         return jstr;
-    } else if (!strcmp(encoding, "hex")) {
+    } else if (strequal(encoding, "hex")) {
         if (buf && buf->bufsize > 0) {
             char hexbuf[buf->bufsize * 2 + 1];
             for (int i = 0; i < buf->bufsize; i++) {

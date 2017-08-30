@@ -164,9 +164,9 @@ static ZJS_DECL_FUNC(zjs_dgram_createSocket)
     GET_STR(argv[0], type_str);
 
     sa_family_t family;
-    if (strcmp(type_str, "udp4") == 0)
+    if (strequal(type_str, "udp4"))
         family = AF_INET;
-    else if (strcmp(type_str, "udp6") == 0)
+    else if (strequal(type_str, "udp6"))
         family = AF_INET6;
     else
         return zjs_error("invalid argument");
@@ -204,9 +204,9 @@ static ZJS_DECL_FUNC(zjs_dgram_sock_on)
     zjs_copy_jstring(argv[0], event, &str_sz);
 
     zjs_callback_id *cb_slot;
-    if (!strcmp(event, "message"))
+    if (strequal(event, "message"))
         cb_slot = &handle->message_cb_id;
-    else if (!strcmp(event, "error"))
+    else if (strequal(event, "error"))
         cb_slot = &handle->error_cb_id;
     else
         return zjs_error("unsupported event type");

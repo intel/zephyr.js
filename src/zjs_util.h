@@ -32,6 +32,9 @@ typedef struct mem_stats {
 #define ZJS_HIDDEN_PROP(n) "\377" n
 #endif
 
+// define more readable string equality "function"
+#define strequal(a, b) !strcmp(a, b)
+
 /**
  * Call malloc but if it fails, run JerryScript garbage collection and retry
  *

@@ -524,22 +524,22 @@ void zjs_ocf_register_resources(void)
                                            resource->resource_types[i]);
         }
         for (i = 0; i < resource->num_ifaces; ++i) {
-            if (strcmp(resource->resource_ifaces[i], "/oic/if/rw") == 0) {
+            if (strequal(resource->resource_ifaces[i], "/oic/if/rw")) {
                 oc_resource_bind_resource_interface(resource->res, OC_IF_RW);
                 oc_resource_set_default_interface(resource->res, OC_IF_RW);
-            } else if (strcmp(resource->resource_ifaces[0], "/oic/if/r") == 0) {
+            } else if (strequal(resource->resource_ifaces[0], "/oic/if/r")) {
                 oc_resource_bind_resource_interface(resource->res, OC_IF_R);
                 oc_resource_set_default_interface(resource->res, OC_IF_R);
-            } else if (strcmp(resource->resource_ifaces[0], "/oic/if/a") == 0) {
+            } else if (strequal(resource->resource_ifaces[0], "/oic/if/a")) {
                 oc_resource_bind_resource_interface(resource->res, OC_IF_A);
                 oc_resource_set_default_interface(resource->res, OC_IF_A);
-            } else if (strcmp(resource->resource_ifaces[0], "/oic/if/s") == 0) {
+            } else if (strequal(resource->resource_ifaces[0], "/oic/if/s")) {
                 oc_resource_bind_resource_interface(resource->res, OC_IF_S);
                 oc_resource_set_default_interface(resource->res, OC_IF_S);
-            } else if (strcmp(resource->resource_ifaces[0], "/oic/if/b") == 0) {
+            } else if (strequal(resource->resource_ifaces[0], "/oic/if/b")) {
                 oc_resource_bind_resource_interface(resource->res, OC_IF_B);
                 oc_resource_set_default_interface(resource->res, OC_IF_B);
-            } else if (strcmp(resource->resource_ifaces[0], "/oic/if/ll") == 0) {
+            } else if (strequal(resource->resource_ifaces[0], "/oic/if/ll")) {
                 oc_resource_bind_resource_interface(resource->res, OC_IF_LL);
                 oc_resource_set_default_interface(resource->res, OC_IF_LL);
             }

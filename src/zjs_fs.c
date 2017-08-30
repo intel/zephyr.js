@@ -114,17 +114,17 @@ static int file_exists(const char *path)
 static u16_t get_mode(char *str)
 {
     u16_t mode = 0;
-    if (strcmp(str, "r") == 0) {
+    if (strequal(str, "r")) {
         mode = MODE_R;
-    } else if (strcmp(str, "r+") == 0) {
+    } else if (strequal(str, "r+")) {
         mode = MODE_R_PLUS;
-    } else if (strcmp(str, "w") == 0) {
+    } else if (strequal(str, "w")) {
         mode = MODE_W;
-    } else if (strcmp(str, "w+") == 0) {
+    } else if (strequal(str, "w+")) {
         mode = MODE_W_PLUS;
-    } else if (strcmp(str, "a") == 0) {
+    } else if (strequal(str, "a")) {
         mode = MODE_A;
-    } else if (strcmp(str, "a+") == 0) {
+    } else if (strequal(str, "a+")) {
         mode = MODE_A_PLUS;
     }
     return mode;

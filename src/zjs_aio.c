@@ -210,7 +210,7 @@ static ZJS_DECL_FUNC(zjs_aio_pin_on)
     jerry_size_t size = MAX_TYPE_LEN;
     char event[size];
     zjs_copy_jstring(argv[0], event, &size);
-    if (strcmp(event, "change"))
+    if (!strequal(event, "change"))
         return zjs_error("unsupported event type");
 
     aio_handle_t *handle;
