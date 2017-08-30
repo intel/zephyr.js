@@ -1032,6 +1032,8 @@ static ZJS_DECL_FUNC(socket_connect)
                                                   function_obj);
             zjs_defer_emit_event(this, "error", &desc, sizeof(desc),
                                  handle_error_arg, zjs_release_args);
+            net_context_put(handle->tcp_sock);
+            handle->tcp_sock = NULL;
             return ZJS_UNDEFINED;
         }
     } else {
@@ -1064,6 +1066,8 @@ static ZJS_DECL_FUNC(socket_connect)
                                                   function_obj);
             zjs_defer_emit_event(this, "error", &desc, sizeof(desc),
                                  handle_error_arg, zjs_release_args);
+            net_context_put(handle->tcp_sock);
+            handle->tcp_sock = NULL;
             return ZJS_UNDEFINED;
         }
     }
