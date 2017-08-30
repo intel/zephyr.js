@@ -26,8 +26,8 @@
 #include "comms-shell.h"
 #include "comms-uart.h"
 #include "shell-state.h"
-
 #include "ihex-handler.h"
+#include "../zjs_util.h"
 
 // JerryScript includes
 #include "jerry-code.h"
