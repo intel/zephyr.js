@@ -65,6 +65,7 @@ typedef struct server_handle {
     struct net_context *server_ctx;
     jerry_value_t accept_handler;
     jerry_value_t server;
+    struct ws_connection *connections;
     u16_t max_payload;
     bool track;
 } server_handle_t;
@@ -106,9 +107,6 @@ static char accept_header[] = "HTTP/1.1 101 Switching Protocols\r\n"
 
 // magic string for computing accept key
 static char magic[] = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
-
-// list of opened connections
-static ws_connection_t *connections = NULL;
 
 // get the socket handle or return a JS error
 #define GET_WS_HANDLE_JS(obj, var)                                            \
@@ -450,7 +448,7 @@ static void close_connection(void *h, jerry_value_t argv[], u32_t argc)
 {
     ws_connection_t *con = (ws_connection_t *)h;
 
-    ZJS_LIST_REMOVE(ws_connection_t, connections, con);
+    ZJS_LIST_REMOVE(ws_connection_t, con->server_h->connections, con);
 
     net_context_put(con->tcp_sock);
     zjs_free(con->rbuf);
@@ -459,7 +457,8 @@ static void close_connection(void *h, jerry_value_t argv[], u32_t argc)
     zjs_destroy_emitter(con->conn);
     jerry_release_value(con->conn);
     zjs_free(con);
-    DBG_PRINT("Freed socket: opened_sockets=%p\n", connections);
+    DBG_PRINT("Freed socket: server %p, connections %p\n", con->server_h,
+              con->server_h->connections);
 }
 
 // process a TCP WS packet
@@ -585,7 +584,7 @@ static void create_ws_connection(void *h, jerry_value_t argv[], u32_t *argc,
     zjs_obj_add_function(conn, ws_ping, "ping");
     zjs_obj_add_function(conn, ws_pong, "pong");
     zjs_obj_add_function(conn, ws_terminate, "terminate");
-    zjs_make_emitter(conn, zjs_create_object(), con, NULL);
+    zjs_make_emitter(conn, ZJS_UNDEFINED, con, NULL);
     if (con->server_h->track) {
         ZVAL clients = zjs_get_property(con->server_h->server, "clients");
         ZVAL new = push_array(clients, conn);
@@ -853,15 +852,16 @@ static void tcp_accepted(struct net_context *context,
     memset(new->rbuf, 0, sizeof(DEFAULT_WS_BUFFER_SIZE));
     new->rptr = new->wptr = new->rbuf;
     new->server = handle->server;
+    new->server_h = handle;
     if (jerry_value_is_function(handle->accept_handler)) {
         new->accept_handler_id = zjs_add_callback(handle->accept_handler,
-                                                  new->server_h->server,
+                                                  handle->server,
                                                   new, post_accept_handler);
     } else {
         new->accept_handler_id = -1;
     }
-    new->next = connections;
-    connections = new;
+
+    ZJS_LIST_PREPEND(ws_connection_t, handle->connections, new);
 
     ret = net_context_recv(context, tcp_received, 0, new);
     if (ret < 0) {
@@ -940,9 +940,11 @@ static ZJS_DECL_FUNC(ws_server)
     CHECK(net_context_listen(handle->server_ctx, (int)backlog));
     CHECK(net_context_accept(handle->server_ctx, tcp_accepted, 0, handle));
 
-    zjs_make_emitter(server, zjs_create_object(), handle, free_server);
+    zjs_make_emitter(server, ZJS_UNDEFINED, handle, free_server);
 
-    handle->server = server;
+    // FIXME: add a close method to this server; for now, we're just going
+    //   keep the object around forever
+    handle->server = jerry_acquire_value(server);
     handle->max_payload = (u16_t)max_payload;
 
     if (optcount) {
