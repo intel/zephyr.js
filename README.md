@@ -634,24 +634,24 @@ reason we have the following possibilities for support:
 
 | Module    | Linux | Arduino 101 | K64F  | nRF52 | Arduino DUE | ST F411RE |
 | :---:     | :---: |    :---:    | :---: | :---: |    :---:    |   :---:   |
-|HelloWorld |   X   |      X      |   X   |    X  |      X      |     X     |
-|  ADC      |       |      X      |       |   NT  |      NT     |     NT    |
-|  PWM      |       |      X      |       |   NT  |      NT     |     NT    |
-|  GPIO     |       |      X      |   X   |   E   |      NT     |     NT    |
-|  I2C      |       |      X      |   X   |   NT  |      NT     |     NT    |
-|  BLE      |       |      X      |       |   NT  |             |           |
-|  UART     |       |      X      |   X   |   NT  |      NT     |     NT    |
+|HelloWorld |   X   |      X      |   X   |   X   |      X      |     X     |
+|  ADC      |       |      X      |       |       |             |           |
+|  PWM      |       |      X      |       |       |             |           |
+|  GPIO     |       |      X      |   X   |       |             |           |
+|  I2C      |       |      X      |   X   |       |             |           |
+|  BLE      |       |      X      |       |       |             |           |
+|  UART     |       |      X      |       |   NT  |             |           |
 | Sensor    |       |      X      |       |       |             |           |
-| Buffer    |   X   |      X      |   X   |   E   |      E      |     X     |
-| Console   |   X   |      X      |   X   |   E   |      E      |     X     |
-| Event     |   X   |      X      |   X   |   E   |      E      |     X     |
-|File System|       |      X      |   X   |       |             |     X     |
-| OCF       |   X   |      X      |   X   |   E   |             |           |
-|Performance|   X   |      X      |   X   |   E   |      E      |     X     |
-| Timers    |   X   |      X      |   X   |   E   |      E      |     X     |
-| Dgram     |       |      X      |   X   |   NT  |             |           |
-| Net       |       |      X      |   X   |   NT  |             |           |
-| WebSocket |       |      X      |   NT  |   NT  |             |           |
+| Buffer    |   X   |      X      |   X   |   X   |      X      |     X     |
+| Console   |   X   |      X      |   X   |   X   |      X      |     X     |
+| Event     |   X   |      X      |   X   |   X   |      X      |     X     |
+|File System|       |      X      |   X   |       |             |           |
+| OCF       |   X   |      X      |   X   |       |             |           |
+|Performance|   X   |      X      |   X   |   X   |      X      |     X     |
+| Timers    |   X   |      X      |   X   |   X   |      X      |     X     |
+| Dgram     |       |      X      |   X   |       |             |           |
+| Net       |       |      X      |   X   |       |             |           |
+| WebSocket |       |      X      |   X   |       |             |           |
 
 ## Networking with QEMU
 QEMU has support for networking features that can be tested on your Linux
