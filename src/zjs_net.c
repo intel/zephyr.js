@@ -272,14 +272,12 @@ static void handle_wbuf_arg(void *h, jerry_value_t argv[], u32_t *argc,
 }
 
 enum {
-    ERROR_READ_SOCKET_CLOSED,
     ERROR_WRITE_SOCKET,
     ERROR_ACCEPT_SERVER,
     ERROR_CONNECT_SOCKET,
 };
 
 static const char *error_messages[] = {
-    "socket has been closed",
     "error writing to socket",
     "error listening to accepted connection",
     "failed to make connection",
@@ -335,9 +333,6 @@ static void tcp_received(struct net_context *context,
         // this means the socket closed properly
         DBG_PRINT("closing socket, context=%p, socket=%u\n", context,
                   handle->socket);
-        error_desc_t desc = create_error_desc(ERROR_READ_SOCKET_CLOSED, 0, 0);
-        zjs_defer_emit_event(handle->socket, "error", &desc, sizeof(desc),
-                             handle_error_arg, zjs_release_args);
 
         // note: we're not really releasing anything but release_close will
         //   just ignore the 0 args and this way we don't need a new function
