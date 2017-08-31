@@ -113,6 +113,13 @@ static char magic[] = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
     ws_connection_t *var = (ws_connection_t *)zjs_event_get_user_handle(obj); \
     if (!var) { return zjs_error("no websocket handle"); }
 
+static inline ws_connection_t *find_connection(server_handle_t *server_h,
+                                               struct net_context *context)
+{
+    return ZJS_LIST_FIND(ws_connection_t, server_h->connections, tcp_sock,
+                         context);
+}
+
 enum {
     ERROR_OOM,
     ERROR_PAYLOAD,
@@ -589,12 +596,8 @@ static ZJS_DECL_FUNC(ws_terminate)
     return ZJS_UNDEFINED;
 }
 
-// a zjs_pre_emit callback
-static void create_ws_connection(void *h, jerry_value_t argv[], u32_t *argc,
-                                 const char *buffer, u32_t bytes)
+static jerry_value_t create_ws_connection(ws_connection_t *con)
 {
-    ws_connection_t *con = *(ws_connection_t **)buffer;
-
     // FIXME: this should be using a prototype
     jerry_value_t conn = zjs_create_object();
     zjs_obj_add_function(conn, ws_send, "send");
@@ -608,11 +611,12 @@ static void create_ws_connection(void *h, jerry_value_t argv[], u32_t *argc,
         zjs_set_property(con->server_h->server, "clients", new);
     }
     con->conn = jerry_acquire_value(conn);
-    argv[0] = conn;
-    *argc = 1;
+    return conn;
 }
 
 typedef struct {
+    struct net_context *context;
+    server_handle_t *server_h;
     ws_connection_t *con;
     struct net_pkt *pkt;
 } receive_packet_t;
@@ -629,6 +633,18 @@ static void receive_packet(const void *buffer, u32_t length)
     receive_packet_t *receive = (receive_packet_t *)buffer;
     ws_connection_t *con = receive->con;
     struct net_pkt *pkt = receive->pkt;
+
+    if (!con) {
+        con = find_connection(receive->server_h, receive->context);
+    }
+
+    /*
+     * If data has been received, after the accept packet, it's safe to assume
+     * the client connection was successful.
+     */
+    if (con && con->state == AWAITING_ACCEPT) {
+        con->state = CONNECTED;
+    }
 
     if (con && pkt) {
         u32_t len = net_pkt_appdatalen(pkt);
@@ -731,6 +747,7 @@ static void receive_packet(const void *buffer, u32_t length)
                 }
                 i++;
             }
+
             // no handler registered, automatically accept connection
             if (con->accept_handler_id == -1) {
                 // create the accept response
@@ -755,8 +772,9 @@ static void receive_packet(const void *buffer, u32_t length)
                 zjs_free(send_data);
                 zjs_free(con->accept_key);
                 con->accept_key = NULL;
-                zjs_defer_emit_event(con->server, "connection", &con, sizeof(con),
-                                     create_ws_connection, zjs_release_args);
+
+                jerry_value_t conn = create_ws_connection(con);
+                zjs_emit_event(con->server, "connection", &conn, 1);
             } else {
                 // handler registered, accepted based on return of handler
                 zjs_signal_callback(con->accept_handler_id, &protocol_list,
@@ -775,7 +793,8 @@ static void tcp_received(struct net_context *context,
                          int status,
                          void *user_data)
 {
-    ws_connection_t *con = (ws_connection_t *)user_data;
+    server_handle_t *server_h = (server_handle_t *)user_data;
+    ws_connection_t *con = find_connection(server_h, context);
 
     if (status == 0 && pkt == NULL) {
         DBG_PRINT("socket closed\n");
@@ -796,15 +815,9 @@ static void tcp_received(struct net_context *context,
         }
     }
 
-    /*
-     * If data has been received, after the accept packet, it's safe to assume
-     * the client connection was successful.
-     */
-    if (con->state == AWAITING_ACCEPT) {
-        con->state = CONNECTED;
-    }
-
     receive_packet_t receive;
+    receive.context = context;
+    receive.server_h = server_h;
     receive.con = con;
     receive.pkt = pkt;
 
@@ -855,8 +868,8 @@ static void post_accept_handler(void *handle, jerry_value_t ret_val)
     zjs_free(con->accept_key);
     con->accept_key = NULL;
 
-    zjs_defer_emit_event(con->server, "connection", &con, sizeof(con),
-                         create_ws_connection, zjs_release_args);
+    jerry_value_t conn = create_ws_connection(con);
+    zjs_emit_event(con->server, "connection", &conn, 1);
 }
 
 typedef struct {
@@ -867,6 +880,7 @@ typedef struct {
 // a zjs_deferred_work callback
 static void accept_connection(const void *buffer, u32_t length)
 {
+    // FIXME: replace deferred calls below; no longer needed
     if (length != sizeof(accept_connection_t)) {
         // shouldn't happen so make it a debug print
         DBG_PRINT("Error: Unexpected data!\n");
@@ -908,16 +922,6 @@ static void accept_connection(const void *buffer, u32_t length)
     }
 
     ZJS_LIST_PREPEND(ws_connection_t, server_h->connections, con);
-
-    if (net_context_recv(accept->context, tcp_received, 0, con) < 0) {
-        ERR_PRINT("Cannot receive TCP packet (family %d)\n",
-                  net_context_get_family(accept->context));
-        // this seems to mean the remote exists but the connection was not made
-        error_desc_t desc = create_error_desc(ERROR_CONN_FAIL, 0, 0);
-        zjs_defer_emit_event(server_h->server, "error", &desc, sizeof(desc),
-                             handle_error_arg, zjs_release_args);
-        return;
-    }
 }
 
 static void tcp_accepted(struct net_context *context,
@@ -935,9 +939,22 @@ static void tcp_accepted(struct net_context *context,
 #endif
     DBG_PRINT("connection made, context %p error %d\n", context, error);
 
+    server_handle_t *server_h = (server_handle_t *)user_data;
+
     accept_connection_t accept;
     accept.context = context;
-    accept.server_h = (server_handle_t *)user_data;
+    accept.server_h = server_h;
+
+    // start listening for packets immediately so we don't miss any
+    if (net_context_recv(context, tcp_received, K_NO_WAIT, server_h) < 0) {
+        ERR_PRINT("Cannot receive TCP packet (family %d)\n",
+                  net_context_get_family(context));
+        // this seems to mean the remote exists but the connection was not made
+        error_desc_t desc = create_error_desc(ERROR_CONN_FAIL, 0, 0);
+        zjs_defer_emit_event(server_h->server, "error", &desc, sizeof(desc),
+                             handle_error_arg, zjs_release_args);
+        return;
+    }
 
     zjs_defer_work(accept_connection, &accept, sizeof(accept));
 }
