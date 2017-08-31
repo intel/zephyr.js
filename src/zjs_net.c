@@ -343,6 +343,13 @@ static void tcp_received(struct net_context *context,
                          int status,
                          void *user_data)
 {
+#ifdef DEBUG_BUILD
+    static int first = 1;
+    if (first) {
+        DBG_PRINT("RX Thread ID: %p\n", (void *)k_current_get());
+        first = 0;
+    }
+#endif
     sock_handle_t *handle = (sock_handle_t *)user_data;
 
     if (status == 0 && buf == NULL) {
@@ -387,6 +394,13 @@ static void tcp_received(struct net_context *context,
 static inline void pkt_sent(struct net_context *context, int status,
                             void *token, void *user_data)
 {
+#ifdef DEBUG_BUILD
+    static int first = 1;
+    if (first) {
+        DBG_PRINT("TX Thread ID: %p\n", (void *)k_current_get());
+        first = 0;
+    }
+#endif
     if (!status) {
         int sent = POINTER_TO_UINT(token);
         DBG_PRINT("Sent %d bytes\n", sent);
@@ -674,6 +688,13 @@ static void tcp_accepted(struct net_context *context,
                          int error,
                          void *user_data)
 {
+#ifdef DEBUG_BUILD
+    static int first = 1;
+    if (first) {
+        DBG_PRINT("RX Thread ID: %p\n", (void *)k_current_get());
+        first = 0;
+    }
+#endif
     // FIXME: handle error < 0
     DBG_PRINT("connection made, context %p error %d\n", context, error);
 

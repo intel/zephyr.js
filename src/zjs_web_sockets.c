@@ -199,6 +199,18 @@ static jerry_value_t push_array(jerry_value_t array, jerry_value_t val)
     }
 }
 
+#ifdef DEBUG_BUILD
+static inline void pkt_sent(struct net_context *context, int status,
+                            void *token, void *user_data)
+{
+    static int first = 1;
+    if (first) {
+        DBG_PRINT("TX Thread ID: %p\n", (void *)k_current_get());
+        first = 0;
+    }
+}
+#endif
+
 static void tcp_send(struct net_context *context, void *data, u32_t len)
 {
     struct net_pkt *send_pkt;
@@ -215,7 +227,12 @@ static void tcp_send(struct net_context *context, void *data, u32_t len)
         return;
     }
 
-    int ret = net_context_send(send_pkt, NULL, K_NO_WAIT,
+    void *func = NULL;
+#ifdef DEBUG_BUILD
+    // pass receipt function just to make a note of the TX thread ID
+    func = pkt_sent;
+#endif
+    int ret = net_context_send(send_pkt, func, K_NO_WAIT,
                                UINT_TO_POINTER(net_pkt_get_len(send_pkt)),
                                NULL);
     if (ret < 0) {
@@ -909,6 +926,13 @@ static void tcp_accepted(struct net_context *context,
                          int error,
                          void *user_data)
 {
+#ifdef DEBUG_BUILD
+    static int first = 1;
+    if (first) {
+        DBG_PRINT("RX Thread ID: %p\n", (void *)k_current_get());
+        first = 0;
+    }
+#endif
     DBG_PRINT("connection made, context %p error %d\n", context, error);
 
     accept_connection_t accept;
