@@ -122,6 +122,7 @@ int main(int argc, char *argv[])
     u32_t len;
 #endif
 #ifndef ZJS_LINUX_BUILD
+    DBG_PRINT("Main Thread ID: %p\n", (void *)k_current_get());
     zjs_loop_init();
 #endif
     jerry_value_t result;
