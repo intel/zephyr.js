@@ -563,7 +563,7 @@ u8_t zjs_service_callbacks(void)
 void zjs_defer_work(zjs_deferred_work callback, const void *buffer, u32_t bytes)
 {
     DBG_PRINT("deferring work: %d bytes\n", bytes);
-    int len = sizeof(callback) + bytes;
+    int len = sizeof(deferred_work_t) + bytes;
     char buf[len];
     deferred_work_t *defer = (deferred_work_t *)buf;
     defer->callback = callback;
