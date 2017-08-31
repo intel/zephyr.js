@@ -151,6 +151,16 @@ typedef struct deferred_work {
 static void deferred_work_callback(void *handle, const void *args) {
     const deferred_work_t *deferred = (const deferred_work_t *)args;
 
+#if DEBUG_CALLBACKS
+    int len = sizeof(deferred_work_t) + deferred->length;
+    DBG_PRINT("process deferred work: %d bytes\ncontents: ", len);
+    int count32 = (len + 3) / 4;
+    for (int i = 0; i < count32; ++i) {
+        ZJS_PRINT("0x%x ", ((u32_t *)args)[i]);
+    }
+    ZJS_PRINT("\n");
+#endif
+
     if (deferred->callback) {
         deferred->callback(deferred->data, deferred->length);
         return;
@@ -561,6 +571,19 @@ void zjs_defer_work(zjs_deferred_work callback, const void *buffer, u32_t bytes)
     if (buffer && bytes) {
         memcpy(defer->data, buffer, bytes);
     }
+#if DEBUG_CALLBACKS
+    DBG_PRINT("deferring work: %d bytes\ncontents: ", len);
+    int count32 = (len + 3) / 4;
+    for (int i = 0; i < count32; ++i) {
+        ZJS_PRINT("0x%x ", ((u32_t *)buf)[i]);
+    }
+    ZJS_PRINT("\nbuffer: ");
+    count32 = (bytes + 3) / 4;
+    for (int i = 0; i < count32; ++i) {
+        ZJS_PRINT("0x%08x ", ((u32_t *)buffer)[i]);
+    }
+    ZJS_PRINT("\n");
+#endif
     // assert: if buffer is null, bytes should be 0, and vice versa
     zjs_signal_callback(defer_id, buf, len);
 }
