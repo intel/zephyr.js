@@ -236,8 +236,8 @@ zjs_callback_id add_callback_priv(jerry_value_t js_func,
     // Add callback to list
     cb_map[new_cb->id] = new_cb;
 
-    DBG_PRINT("adding new callback id %d, js_func=%u, once=%u\n", new_cb->id,
-              new_cb->js_func, once);
+    DBG_PRINT("adding new callback id %d, js_func=%p, once=%u\n", new_cb->id,
+              (void *)new_cb->js_func, once);
 
 #ifdef DEBUG_BUILD
     set_info_string(cb_map[new_cb->id]->creator, file, func);
@@ -401,7 +401,7 @@ void print_callbacks(void)
                 ZJS_PRINT("[%u] JS Callback:\n\tType: ", i);
                 if (jerry_value_is_function(cb_map[i]->js_func)) {
                     ZJS_PRINT("Single Function\n");
-                    ZJS_PRINT("\tjs_func: %u\n", cb_map[i]->js_func);
+                    ZJS_PRINT("\tjs_func: %p\n", (void *)cb_map[i]->js_func);
                     ZJS_PRINT("\tonce: %u\n", GET_ONCE(cb_map[i]->flags));
                 } else {
                     ZJS_PRINT("js_func is not a function\n");
