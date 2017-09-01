@@ -6,6 +6,9 @@
 // ZJS includes
 #include "zjs_util.h"
 
+// enable to trace all callers of zjs_emit_event / zjs_defer_emit_event
+#define DEBUG_TRACE_EMIT 0
+
 // This needs to be big enough to fit all the args that any zjs_pre_emit
 // function wants to use, so may need to be increased in the future. An error
 // message in emit_event_callback should let you know that you've exceeded the
@@ -107,7 +110,7 @@ jerry_value_t zjs_add_event_listener(jerry_value_t obj, const char *event_name,
                                      jerry_value_t func);
 
 /**
- * Emit an event from a callback on the main thread
+ * zjs_defer_emit_event: Emit an event from a callback on the main thread
  *
  * This can be called from interrupt context or another thread, so to avoid any
  * JerryScript calls, it takes data in a simple buffer format. This could be a
@@ -116,31 +119,55 @@ jerry_value_t zjs_add_event_listener(jerry_value_t obj, const char *event_name,
  * will turn that data into a JerryScript argument list. The 'post' function
  * gives a chance to release references to them.
  *
- * @param obj           Object that contains the event to be triggered
- * @param event         Name of event
- * @param buffer        Data needed to call event listeners
- * @param bytes         Size of buffer
- * @param pre           Arg setup function called before event emitted
- * @param post          Arg teardown function called after event emitted
+ * @param obj     Object that contains the event to be triggered
+ * @param name    Name of event
+ * @param buffer  Data needed to call event listeners
+ * @param bytes   Size of buffer
+ * @param pre     Arg setup function called before event emitted
+ * @param post    Arg teardown function called after event emitted
  *
- * @return              True if there were listeners
+ * @return        True if there were listeners
  */
-void zjs_defer_emit_event(jerry_value_t obj, const char *event,
-                          const void *buffer, int bytes,
-                          zjs_pre_emit pre, zjs_post_emit post);
+#if DEBUG_TRACE_EMIT
+#define zjs_defer_emit_event(obj, name, buffer, bytes, pre, post)        \
+    {                                                                    \
+        ZJS_PRINT("[EVENT] %s:%d Deferring '%s'\n", __FILE__,            \
+                  __LINE__, name);                                       \
+        zjs_defer_emit_event_priv(obj, name, buffer, bytes, pre, post);  \
+    }
+#else
+#define zjs_defer_emit_event zjs_defer_emit_event_priv
+#endif
+
+// NOTE: don't call the priv version directly
+void zjs_defer_emit_event_priv(jerry_value_t obj, const char *name,
+                               const void *buffer, int bytes,
+                               zjs_pre_emit pre, zjs_post_emit post);
 
 /**
- * Call any registered event listeners immediately
+ * zjs_emit_event: Call any registered event listeners immediately
  *
- * @param obj           Object that contains the event to be triggered
- * @param event         Name of event
- * @param argv          Arguments to give to the event listeners as parameters
- * @param argc          Number of arguments
+ * @param obj   Object that contains the event to be triggered
+ * @param name  Name of event
+ * @param argv  Arguments to give to the event listeners as parameters
+ * @param argc  Number of arguments
  *
- * @return              True if there were listeners called
+ * @return      True if there were listeners called
  */
-bool zjs_emit_event(jerry_value_t obj, const char *event_name,
-                    const jerry_value_t argv[], u32_t argc);
+#if DEBUG_TRACE_EMIT
+#define zjs_emit_event(obj, name, argv, argc)                 \
+    ({                                                        \
+        ZJS_PRINT("[EVENT] %s:%d Emitting '%s'\n", __FILE__,  \
+                  __LINE__, name);                            \
+        zjs_emit_event_priv(obj, name, argv, argc);           \
+    })
+#else
+#define zjs_emit_event zjs_emit_event_priv
+#endif
+
+// NOTE: don't call the priv version directly
+bool zjs_emit_event_priv(jerry_value_t obj, const char *name,
+                         const jerry_value_t argv[], u32_t argc);
 
 // emit helpers
 
