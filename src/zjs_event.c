@@ -415,9 +415,9 @@ bool zjs_emit_event(jerry_value_t obj, const char *event_name,
     listener_t *listener = event->listeners;
     while (listener) {
         ZVAL rval = jerry_call_function(listener->func, obj, argv, argc);
-	if (jerry_value_has_error_flag(rval)) {
+        if (jerry_value_has_error_flag(rval)) {
             ERR_PRINT("error calling listener\n");
-	}
+        }
         listener = listener->next;
     }
 
