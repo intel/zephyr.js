@@ -92,6 +92,10 @@ if (board.name === "arduino_101") {
         });
 
         SocketBody(WSServer);
+
+        WSServer.on('error', function (error) {
+            console.log('Server socket: ' + error.name + ': ' + error.message);
+        });
     });
 
     netConfig.on("netdown", function() {
@@ -122,5 +126,9 @@ if (board.name === "arduino_101") {
         });
 
         SocketBody(WSServer);
+
+        WSServer.on('error', function (error) {
+            console.log('Server socket: ' + error.name + ': ' + error.message);
+        });
     });
 }

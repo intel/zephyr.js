@@ -3,7 +3,7 @@
 // Run this test case and run ws client on linux with
 //   tests/tools/test-ws4-client-dhcp.js
 
-console.log("Test web socket server APIs on IPv4 with DHCP mode...");
+console.log("Test websocket server APIs on IPv4 with DHCP mode...");
 
 var WebSocket = require("ws");
 var assert = require("Assert.js");
@@ -32,13 +32,13 @@ netConfig.dhcp(function(address, subnet, gateway) {
     });
 
     assert(typeof WSServer === "object" && WSServer !== null,
-           "WSServerObject: be defined");
+           "WSServer object is defined");
 
     WSServer.on("connection", function(websocket) {
         assert(true, "WSServerObject: accept client connected");
         assert(true, "WSServerEvent: be called as 'connection' event");
 
-        console.log("Creat web socket connection successful");
+        console.log("Create websocket connection successful");
 
         var messageFlag = true;
         var sendNoMaskFlag = false;
@@ -202,5 +202,9 @@ netConfig.dhcp(function(address, subnet, gateway) {
                 clearInterval(Timer);
             }
         }, 3000);
+    });
+
+    WSServer.on('error', function (error) {
+        console.log('Server socket: ' + error.name + ': ' + error.message);
     });
 });
