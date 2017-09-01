@@ -87,6 +87,17 @@ SYS_RING_BUF_DECLARE_POW2(ring_buffer, 5);
 #endif
 static u8_t ring_buf_initialized = 1;
 
+#ifdef ZJS_LINUX_BUILD
+#define LOCK() do {} while (0)
+#define UNLOCK() do {} while (0)
+#else
+// mutex to ensure only one thread can access ring buffer at a time
+static struct k_mutex ring_mutex;
+
+#define LOCK() k_mutex_lock(&ring_mutex, K_FOREVER)
+#define UNLOCK() k_mutex_unlock(&ring_mutex)
+#endif
+
 static zjs_callback_id cb_limit = INITIAL_CALLBACK_SIZE;
 static zjs_callback_id cb_size = 0;
 static zjs_callback_t **cb_map = NULL;
@@ -170,6 +181,10 @@ static void deferred_work_callback(void *handle, const void *args) {
 
 void zjs_init_callbacks(void)
 {
+#ifndef ZJS_LINUX_BUILD
+    k_mutex_init(&ring_mutex);
+#endif
+
     if (!cb_map) {
         size_t size = sizeof(zjs_callback_t *) * INITIAL_CALLBACK_SIZE;
         cb_map = (zjs_callback_t **)zjs_malloc(size);
