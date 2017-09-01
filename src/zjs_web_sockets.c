@@ -121,16 +121,10 @@ static inline ws_connection_t *find_connection(server_handle_t *server_h,
 }
 
 enum {
-    ERROR_OOM,
-    ERROR_PAYLOAD,
-    ERROR_PACKET_DECODE,
     ERROR_CONN_FAIL
 };
 
 static const char *error_messages[] = {
-    "out of memory",
-    "payload too large",
-    "error decoding packet",
     "connection failed",
 };
 
@@ -139,6 +133,9 @@ typedef struct error_desc {
     jerry_value_t this;
     jerry_value_t function_obj;
 } error_desc_t;
+
+// FIXME: create_error_desc is only used once now so all this could probably be
+//   removed
 
 static error_desc_t create_error_desc(u32_t error_id, jerry_value_t this,
                                       jerry_value_t function_obj)
@@ -171,6 +168,21 @@ static void handle_error_arg(void *unused, jerry_value_t argv[], u32_t *argc,
     jerry_value_clear_error_flag(&error);
     argv[0] = error;
     *argc = 1;
+}
+
+static void emit_error(jerry_value_t obj, const char *format, ...)
+{
+    // effects: emits an error event on obj w/ formatted string message
+    const int LEN = 128;
+    char buf[LEN];
+    va_list args;
+    va_start(args, format);
+    vsnprintf(buf, LEN, format, args);
+    va_end(args);
+
+    jerry_value_t error = zjs_error_context(buf, 0, 0);
+    jerry_value_clear_error_flag(&error);
+    zjs_emit_event(obj, "error", &error, 1);
 }
 
 // a zjs_event_free callback
@@ -490,12 +502,11 @@ static void close_connection(void *h, jerry_value_t argv[], u32_t argc)
 // process a TCP WS packet
 static void process_packet(ws_connection_t *con, u8_t *data, u32_t len)
 {
+    // requires: expects to be called from main thread; emits events directly
     ws_packet_t *packet = zjs_malloc(sizeof(ws_packet_t));
     if (!packet) {
         ERR_PRINT("allocation failed\n");
-        error_desc_t desc = create_error_desc(ERROR_OOM, 0, 0);
-        zjs_defer_emit_event(con->conn, "error", &desc, sizeof(desc),
-                             handle_error_arg, zjs_release_args);
+        emit_error(con->conn, "out of memory");
         return;
     }
     memset(packet, 0, sizeof(ws_packet_t));
@@ -503,9 +514,7 @@ static void process_packet(ws_connection_t *con, u8_t *data, u32_t len)
         ERR_PRINT("error decoding packet\n");
         zjs_free(packet->payload);
         zjs_free(packet);
-        error_desc_t desc = create_error_desc(ERROR_PACKET_DECODE, 0, 0);
-        zjs_defer_emit_event(con->conn, "error", &desc, sizeof(desc),
-                             handle_error_arg, zjs_release_args);
+        emit_error(con->conn, "decoding packet");
         return;
     }
 
@@ -513,6 +522,8 @@ static void process_packet(ws_connection_t *con, u8_t *data, u32_t len)
     con->wptr += packet->payload_len;
 
     u16_t plen = packet->payload_len;
+
+    // FIXME: deferred emit calls below can be changed to direct
 
     switch (packet->opcode) {
     case WS_PACKET_CONTINUATION:
@@ -562,9 +573,10 @@ static ZJS_DECL_FUNC_ARGS(ws_send_data, ws_packet_type type)
     }
     if (con->server_h->max_payload &&
         (buf->bufsize > con->server_h->max_payload)) {
-        DBG_PRINT("payload too large: %d > %d\n", buf->bufsize,
-                  con->server_h->max_payload);
-        return zjs_error("payload too large");
+        char msg[60];
+        sprintf(msg, "payload too large: %d > %d", buf->bufsize,
+                con->server_h->max_payload);
+        return zjs_error(msg);
     }
     u8_t out[buf->bufsize + 10];
     u32_t out_len = encode_packet(type, mask, buf->buffer, buf->bufsize, out);
@@ -661,9 +673,7 @@ static void receive_packet(const void *buffer, u32_t length)
         u8_t *data = zjs_malloc(len);
         if (!data) {
             DBG_PRINT("not enough memory to allocate data\n");
-            error_desc_t desc = create_error_desc(ERROR_OOM, 0, 0);
-            zjs_defer_emit_event(con->server, "error", &desc, sizeof(desc),
-                                 handle_error_arg, zjs_release_args);
+            emit_error(con->server, "out of memory");
             net_pkt_unref(pkt);
             return;
         }
@@ -679,11 +689,8 @@ static void receive_packet(const void *buffer, u32_t length)
 #endif
         if (con->server_h->max_payload &&
             (len > con->server_h->max_payload)) {
-            DBG_PRINT("payload too large: %d > %d\n", len,
+            emit_error(con->server, "payload too large: %d > %d", len,
                       con->server_h->max_payload);
-            error_desc_t desc = create_error_desc(ERROR_PAYLOAD, 0, 0);
-            zjs_defer_emit_event(con->server, "error", &desc, sizeof(desc),
-                                 handle_error_arg, zjs_release_args);
             net_pkt_unref(pkt);
             zjs_free(data);
             return;
@@ -693,9 +700,7 @@ static void receive_packet(const void *buffer, u32_t length)
             con->accept_key = zjs_malloc(64);
             if (!con->accept_key) {
                 DBG_PRINT("could not allocate accept key\n");
-                error_desc_t desc = create_error_desc(ERROR_OOM, 0, 0);
-                zjs_defer_emit_event(con->server, "error", &desc, sizeof(desc),
-                                     handle_error_arg, zjs_release_args);
+                emit_error(con->server, "out of memory");
                 net_pkt_unref(pkt);
                 zjs_free(data);
                 return;
@@ -759,10 +764,7 @@ static void receive_packet(const void *buffer, u32_t length)
                                              strlen(con->accept_key) + 6);
                 if (!send_data) {
                     DBG_PRINT("could not allocate accept message\n");
-                    error_desc_t desc = create_error_desc(ERROR_OOM, 0, 0);
-                    zjs_defer_emit_event(con->server, "error", &desc,
-                                         sizeof(desc), handle_error_arg,
-                                         zjs_release_args);
+                    emit_error(con->server, "out of memory");
                     net_pkt_unref(pkt);
                     zjs_free(data);
                     return;
@@ -832,6 +834,7 @@ static void tcp_received(struct net_context *context,
 
 static void post_accept_handler(void *handle, jerry_value_t ret_val)
 {
+    // requires: expects to be called from main thread; emits events directly
     ws_connection_t *con = (ws_connection_t *)handle;
     if (!jerry_value_is_string(ret_val)) {
         DBG_PRINT("no protocol returned\n");
@@ -854,9 +857,7 @@ static void post_accept_handler(void *handle, jerry_value_t ret_val)
     char *send_data = zjs_malloc(sdata_size);
     if (!send_data) {
         ERR_PRINT("could not allocate accept message\n");
-        error_desc_t desc = create_error_desc(ERROR_OOM, 0, 0);
-        zjs_defer_emit_event(con->server, "error", &desc, sizeof(desc),
-                             handle_error_arg, zjs_release_args);
+        emit_error(con->server, "out of memory");
         return;
     }
     memset(send_data, 0, sdata_size);
@@ -899,9 +900,7 @@ static void accept_connection(const void *buffer, u32_t length)
     ws_connection_t *con = zjs_malloc(sizeof(ws_connection_t));
     if (!con) {
         ERR_PRINT("could not allocate connection handle\n");
-        error_desc_t desc = create_error_desc(ERROR_OOM, 0, 0);
-        zjs_defer_emit_event(server_h->server, "error", &desc, sizeof(desc),
-                             handle_error_arg, zjs_release_args);
+        emit_error(server_h->server, "out of memory");
         return;
     }
     memset(con, 0, sizeof(ws_connection_t));
@@ -909,9 +908,7 @@ static void accept_connection(const void *buffer, u32_t length)
     con->rbuf = zjs_malloc(DEFAULT_WS_BUFFER_SIZE);
     if (!con->rbuf) {
         ERR_PRINT("could not allocate read buffer\n");
-        error_desc_t desc = create_error_desc(ERROR_OOM, 0, 0);
-        zjs_defer_emit_event(server_h->server, "error", &desc, sizeof(desc),
-                             handle_error_arg, zjs_release_args);
+        emit_error(server_h->server, "out of memory");
         zjs_free(con);
         return;
     }
