@@ -385,9 +385,6 @@ int zjs_require_string_if_prop_map(jerry_value_t obj, const char *prop,
 void free_handle_nop(void *h);
 
 #ifndef ZJS_LINUX_BUILD
-#define LOCK   k_sched_lock
-#define UNLOCK k_sched_unlock
-
 #ifndef ZJS_ASHELL
 /*
  * Unblock the main loop
@@ -408,9 +405,6 @@ void zjs_loop_init(void);
 #define zjs_loop_block(time) do {} while(0)
 #define zjs_loop_init() do {} while(0)
 #endif
-#else
-#define LOCK() do {} while (0)
-#define UNLOCK() do {} while (0)
 #endif
 
 // Type definition to be used with macros below
