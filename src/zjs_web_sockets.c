@@ -478,8 +478,10 @@ static void close_connection(void *h, jerry_value_t argv[], u32_t argc)
     zjs_free(con->rbuf);
     zjs_free(con->accept_key);
     zjs_remove_callback(con->accept_handler_id);
-    zjs_destroy_emitter(con->conn);
-    jerry_release_value(con->conn);
+    if (con->conn) {
+        zjs_destroy_emitter(con->conn);
+        jerry_release_value(con->conn);
+    }
     zjs_free(con);
     DBG_PRINT("Freed socket: server %p, connections %p\n", con->server_h,
               con->server_h->connections);
@@ -560,6 +562,8 @@ static ZJS_DECL_FUNC_ARGS(ws_send_data, ws_packet_type type)
     }
     if (con->server_h->max_payload &&
         (buf->bufsize > con->server_h->max_payload)) {
+        DBG_PRINT("payload too large: %d > %d\n", buf->bufsize,
+                  con->server_h->max_payload);
         return zjs_error("payload too large");
     }
     u8_t out[buf->bufsize + 10];
@@ -638,10 +642,8 @@ static void receive_packet(const void *buffer, u32_t length)
         con = find_connection(receive->server_h, receive->context);
     }
 
-    /*
-     * If data has been received, after the accept packet, it's safe to assume
-     * the client connection was successful.
-     */
+    // if data has been received, after the accept packet, it's safe to assume
+    //   the client connection was successful
     if (con && con->state == AWAITING_ACCEPT) {
         con->state = CONNECTED;
     }
@@ -677,6 +679,8 @@ static void receive_packet(const void *buffer, u32_t length)
 #endif
         if (con->server_h->max_payload &&
             (len > con->server_h->max_payload)) {
+            DBG_PRINT("payload too large: %d > %d\n", len,
+                      con->server_h->max_payload);
             error_desc_t desc = create_error_desc(ERROR_PAYLOAD, 0, 0);
             zjs_defer_emit_event(con->server, "error", &desc, sizeof(desc),
                                  handle_error_arg, zjs_release_args);
@@ -799,7 +803,7 @@ static void tcp_received(struct net_context *context,
     if (status == 0 && pkt == NULL) {
         DBG_PRINT("socket closed\n");
         net_pkt_unref(pkt);
-        if (con) {
+        if (con && con->state == CONNECTED) {
             // close the socket
             char buf[sizeof(int) + 13 + 1];
             memcpy(buf, &status, sizeof(int));
@@ -810,7 +814,9 @@ static void tcp_received(struct net_context *context,
             return;
         } else {
             DBG_PRINT("socket closed before connection was opened\n");
-            // nothing we can do here
+            if (con) {
+                close_connection(con, NULL, 0);
+            }
             return;
         }
     }
