@@ -361,9 +361,9 @@ void zjs_release_args(void *unused, jerry_value_t argv[], u32_t argc)
     }
 }
 
-void zjs_defer_emit_event(jerry_value_t obj, const char *event,
-                          const void *buffer, int bytes,
-                          zjs_pre_emit pre, zjs_post_emit post)
+void zjs_defer_emit_event_priv(jerry_value_t obj, const char *event,
+                               const void *buffer, int bytes,
+                               zjs_pre_emit pre, zjs_post_emit post)
 {
     // requires: don't exceed MAX_EVENT_ARGS in pre function
     //  effects: threadsafe way to schedule an event to be triggered from the
@@ -386,8 +386,8 @@ void zjs_defer_emit_event(jerry_value_t obj, const char *event,
     zjs_signal_callback(emit_id, buf, len);
 }
 
-bool zjs_emit_event(jerry_value_t obj, const char *event_name,
-                    const jerry_value_t argv[], u32_t argc)
+bool zjs_emit_event_priv(jerry_value_t obj, const char *event_name,
+                         const jerry_value_t argv[], u32_t argc)
 {
     // effects: emits event now, should only be called from main thread
     DBG_PRINT("emitting event '%s'\n", event_name);
