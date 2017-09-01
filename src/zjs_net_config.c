@@ -33,9 +33,6 @@ void zjs_net_config_default(void)
 #ifdef CONFIG_NET_L2_BLUETOOTH
     if (!net_ble_enabled) {
         zjs_init_ble_address();
-        ipss_init();
-        ipss_advertise();
-        net_ble_enabled = 1;
     }
 #endif
     if (!net_enabled) {
