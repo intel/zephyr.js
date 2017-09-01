@@ -1,8 +1,9 @@
 // Copyright (c) 2017, Intel Corporation.
 
-// Run this test case and run ws client on linux by /tools/test-ws4-client-dhcp.js
+// Run this test case and run ws client on linux with
+//   tests/tools/test-ws4-client-dhcp.js
 
-console.log("Test web socket server APIs about IPv4 with DHCP mode");
+console.log("Test web socket server APIs on IPv4 with DHCP mode...");
 
 var WebSocket = require("ws");
 var assert = require("Assert.js");
