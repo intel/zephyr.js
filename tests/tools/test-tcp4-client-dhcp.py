@@ -35,6 +35,9 @@ def main():
             else:
                 mySocket.sendall(Data)
                 print "Send data: ", Data
+        except KeyboardInterrupt :
+            print "exit client"
+            break
         except :
             print "time out"
             continue
