@@ -11,6 +11,8 @@
 //
 // echo "hello" | nc -6 2001:db8::1 4242
 
+console.log("Starting TCPEchoServ6.js sample...");
+
 var net = require('net');
 
 var socket = null;
