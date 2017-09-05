@@ -19,6 +19,8 @@
 
 // echo "hello" | nc <DHCP ip> 4242
 
+console.log("Starting TCPEchoServ4_DHCP.js sample...");
+
 var net = require('net');
 var net_cfg = require('net-config');
 

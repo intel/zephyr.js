@@ -11,6 +11,8 @@
 //
 // echo "hello" | nc 192.0.2.1 4242
 
+console.log("Starting TCPEchoServ4.js sample...");
+
 var net = require('net');
 
 var server = net.createServer(function(sock) {
