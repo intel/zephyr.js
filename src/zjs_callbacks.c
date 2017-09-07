@@ -73,7 +73,7 @@ typedef struct zjs_callback {
     u8_t flags;  // holds once and type bits
     u8_t max_funcs;
     u8_t num_funcs;
-#ifdef DEBUG_BUILD
+#ifdef INSTRUMENT_CALLBACKS
     char creator[MAX_CALLER_CREATOR_LEN];  // file that created this callback
     char caller[MAX_CALLER_CREATOR_LEN];   // file that signalled this callback
 #endif
@@ -108,7 +108,7 @@ static int zjs_ringbuf_error_count = 0;
 static int zjs_ringbuf_error_max = 0;
 static int zjs_ringbuf_last_error = 0;
 
-#ifdef DEBUG_BUILD
+#ifdef INSTRUMENT_CALLBACKS
 static void set_info_string(char *str, const char *file, const char *func)
 {
     const char *i = file + strlen(file);
@@ -222,7 +222,7 @@ zjs_callback_id add_callback_priv(jerry_value_t js_func,
                                   void *handle,
                                   zjs_post_callback_func post,
                                   u8_t once
-#ifdef DEBUG_BUILD
+#ifdef INSTRUMENT_CALLBACKS
                                   ,
                                   const char *file,
                                   const char *func)
@@ -254,7 +254,7 @@ zjs_callback_id add_callback_priv(jerry_value_t js_func,
     DBG_PRINT("adding new callback id %d, js_func=%p, once=%u\n", new_cb->id,
               (void *)new_cb->js_func, once);
 
-#ifdef DEBUG_BUILD
+#ifdef INSTRUMENT_CALLBACKS
     set_info_string(cb_map[new_cb->id]->creator, file, func);
 #endif
     UNLOCK();
@@ -321,7 +321,7 @@ void zjs_remove_all_callbacks()
 void signal_callback_priv(zjs_callback_id id,
                           const void *args,
                           u32_t size
-#ifdef DEBUG_BUILD
+#ifdef INSTRUMENT_CALLBACKS
                           ,
                           const char *file,
                           const char *func)
@@ -350,7 +350,7 @@ void signal_callback_priv(zjs_callback_id id,
             jerry_acquire_value(values[i]);
         }
     }
-#ifdef DEBUG_BUILD
+#ifdef INSTRUMENT_CALLBACKS
     set_info_string(cb_map[id]->caller, file, func);
 #endif
     int ret = zjs_port_ring_buf_put(&ring_buffer,
@@ -446,7 +446,7 @@ void zjs_call_callback(zjs_callback_id id, const void *data, u32_t sz)
                 rval = jerry_call_function(cb_map[id]->js_func,
                                            cb_map[id]->this, values, sz);
                 if (jerry_value_has_error_flag(rval)) {
-#ifdef DEBUG_BUILD
+#ifdef INSTRUMENT_CALLBACKS
                     DBG_PRINT("callback %d had error; creator: %s, "
                               "caller: %s\n",
                               id, cb_map[id]->creator, cb_map[id]->caller);

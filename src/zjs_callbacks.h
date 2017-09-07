@@ -8,6 +8,10 @@
 // ZJS includes
 #include "zjs_common.h"
 
+#ifdef DEBUG_BUILD
+//#define INSTRUMENT_CALLBACKS
+#endif
+
 typedef s16_t zjs_callback_id;
 
 /*
@@ -60,7 +64,7 @@ void zjs_remove_all_callbacks(void);
 void signal_callback_priv(zjs_callback_id id,
                           const void *args,
                           u32_t size
-#ifdef DEBUG_BUILD
+#ifdef INSTRUMENT_CALLBACKS
                           ,
                           const char *file,
                           const char *func);
@@ -68,7 +72,7 @@ void signal_callback_priv(zjs_callback_id id,
                           );
 #endif
 
-#ifndef DEBUG_BUILD
+#ifndef INSTRUMENT_CALLBACKS
 /*
  * Signal the system to make a callback. The callback will not be called
  * immediately, but rather once the system has time to service the callback
@@ -101,7 +105,7 @@ zjs_callback_id add_callback_priv(jerry_value_t js_func,
                                   void *handle,
                                   zjs_post_callback_func post,
                                   u8_t once
-#ifdef DEBUG_BUILD
+#ifdef INSTRUMENT_CALLBACKS
                                   ,
                                   const char *file,
                                   const char *func);
@@ -109,7 +113,7 @@ zjs_callback_id add_callback_priv(jerry_value_t js_func,
                                   );
 #endif
 
-#ifndef DEBUG_BUILD
+#ifndef INSTRUMENT_CALLBACKS
 /*
 * Add/register a callback function
 *
