@@ -449,12 +449,7 @@ void zjs_destroy_emitter(jerry_value_t obj)
     if (handle) {
         event_t *event = handle->events;
         while (event) {
-            listener_t *listener = event->listeners;
-            while (listener) {
-                jerry_release_value(listener->func);
-                listener->func = 0;
-                listener = listener->next;
-            }
+            ZJS_LIST_FREE(listener_t, event->listeners, free_listener);
             event = event->next;
         }
     }
