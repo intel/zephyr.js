@@ -225,6 +225,7 @@ static void close_server(server_handle_t *server_h)
 static void server_free_cb(void *native)
 {
     server_handle_t *server_h = (server_handle_t *)native;
+    ZJS_ASSERT(server_h != &no_server, "attempt to free stub server");
     net_context_put(server_h->server_ctx);
     zjs_free(server_h);
 }
@@ -240,6 +241,7 @@ static void release_close(void *handle, jerry_value_t argv[], u32_t argc)
 
     server_handle_t *server_h = h->server_h;
     u8_t removed = ZJS_LIST_REMOVE(sock_handle_t, server_h->connections, h);
+    ZJS_ASSERT(removed, "connection not found in list");
 
     // check if this is a server connection socket
     if (server_h != &no_server) {
@@ -318,6 +320,8 @@ static void handle_error_arg(void *unused, jerry_value_t argv[], u32_t *argc,
     //  effects: creates an error object with the corresponding text, clears
     //             the error flag, and sets this as the first arg; the error
     //             value must be released later (e.g. zjs_release_args)
+    ZJS_ASSERT(bytes == sizeof(error_desc_t), "invalid data received");
+
     error_desc_t *desc = (error_desc_t *)buffer;
     const char *message = error_messages[desc->error_id];
 
@@ -340,6 +344,8 @@ static void receive_packet(const void *buffer, u32_t length)
 {
     // effects: handle an incoming packet on the main thread that we first
     //            received on the RX thread
+    ZJS_ASSERT(length == sizeof(receive_packet_t), "invalid data received");
+
     receive_packet_t *receive = (receive_packet_t *)buffer;
     sock_handle_t *handle = receive->handle;
     struct net_pkt *pkt = receive->pkt;
@@ -348,6 +354,8 @@ static void receive_packet(const void *buffer, u32_t length)
     if (!handle) {
         handle = find_connection(receive->server_h, receive->context);
     }
+    ZJS_ASSERT(handle, "no handle found");
+    ZJS_ASSERT(handle, "no packet found");
 
     if (handle && pkt) {
         start_socket_timeout(handle);
@@ -401,12 +409,19 @@ static void clear_closed(const void *buffer, u32_t length)
     //             clean up and will no longer refer to the associated context
     //           this is particularly because the same context ID might get used
     //             again right away and we don't want to be confused thinking
+    ZJS_ASSERT(length == sizeof(clear_closed_t), "invalid data received");
+
     clear_closed_t *clear = (clear_closed_t *)buffer;
+    ZJS_ASSERT(clear->server_h != &no_server, "called with client socket");
+    ZJS_ASSERT(clear->server_h->early_closed == clear->context,
+               "unexpected early closed socket");
+
     DBG_PRINT("cleared early closed for server %p\n", clear->server_h);
     clear->server_h->early_closed = NULL;
 
     sock_handle_t *handle = find_connection(clear->server_h,
                                             clear->context);
+    ZJS_ASSERT(handle, "handle not found");
     if (handle) {
         // clear context reference out of the handle so it no longer shows
         //   up as a match with find_connection
@@ -453,6 +468,8 @@ static void tcp_received(struct net_context *context,
                                  release_close);
         }
         else {
+            ZJS_ASSERT(server_h != &no_server,
+                       "client connections shouldn't get here");
             if (server_h->early_closed) {
                 // this is bad because we only allocated space in the server
                 //   handle to remember one early-closed socket; could be
@@ -748,6 +765,8 @@ typedef struct {
 // a zjs_deferred_work callback
 static void accept_connection(const void *buffer, u32_t length)
 {
+    ZJS_ASSERT(length == sizeof(accept_connection_t), "invalid data received");
+
     accept_connection_t *accept = (accept_connection_t *)buffer;
 
     sock_handle_t *sock_handle = NULL;
