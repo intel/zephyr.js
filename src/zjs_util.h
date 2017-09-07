@@ -39,9 +39,13 @@ typedef struct mem_stats {
  */
 void *zjs_malloc_with_retry(size_t size);
 
+#ifdef ZJS_TRACE_MALLOC
 void zjs_print_mem_stats();
 void zjs_push_mem_stat(void *ptr, char *file, const char *func, int line);
 void zjs_pop_mem_stat(void *ptr);
+#else
+#define zjs_print_mem_stats() do {} while (0);
+#endif
 
 #ifdef ZJS_LINUX_BUILD
 #define zjs_malloc(sz) malloc(sz)
