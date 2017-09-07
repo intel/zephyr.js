@@ -88,7 +88,7 @@ socket.on("error", function(err) {
 
     console.log("socket connection error: " + err.name);
 
-    if (err.name === "NotFoundError") {
+    if (err.name === "Error") {
         setTimeout(function() {
             socket.connect(addressOptions, function() {
                 assert(true, "SocketObject: connect server successful");
