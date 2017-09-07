@@ -248,6 +248,7 @@ static void release_close(void *handle, jerry_value_t argv[], u32_t argc)
             net_context_put(h->tcp_sock);
             zjs_destroy_emitter(h->socket);
             jerry_release_value(h->socket);
+            // FIXME: this part should maybe move into an emitter free cb
             zjs_free(h->rbuf);
             zjs_free(h);
         }
@@ -430,18 +431,18 @@ static ZJS_DECL_FUNC(socket_write)
     start_socket_timeout(handle);
 
     zjs_buffer_t *buf = zjs_buffer_find(argv[0]);
-    struct net_pkt *send_buf;
-    send_buf = net_pkt_get_tx(handle->tcp_sock, K_NO_WAIT);
-    if (!send_buf) {
-        ERR_PRINT("cannot acquire send_buf\n");
+    struct net_pkt *send_pkt;
+    send_pkt = net_pkt_get_tx(handle->tcp_sock, K_NO_WAIT);
+    if (!send_pkt) {
+        ERR_PRINT("cannot acquire send_pkt\n");
         return jerry_create_boolean(false);
     }
 
-    bool status = net_pkt_append(send_buf, buf->bufsize, buf->buffer,
+    bool status = net_pkt_append(send_pkt, buf->bufsize, buf->buffer,
                                  K_NO_WAIT);
     if (!status) {
-        net_pkt_unref(send_buf);
-        ERR_PRINT("cannot populate send_buf\n");
+        net_pkt_unref(send_pkt);
+        ERR_PRINT("cannot populate send_pkt\n");
         return jerry_create_boolean(false);
     }
 
@@ -449,16 +450,17 @@ static ZJS_DECL_FUNC(socket_write)
     if (optcount) {
         id = zjs_add_callback_once(argv[1], this, NULL, NULL);
     }
-    int ret = net_context_send(send_buf, pkt_sent, K_NO_WAIT,
-                               UINT_TO_POINTER(net_pkt_get_len(send_buf)),
+
+    int ret = net_context_send(send_pkt, pkt_sent, K_NO_WAIT,
+                               UINT_TO_POINTER(net_pkt_get_len(send_pkt)),
                                INT_TO_POINTER((s32_t)id));
     if (ret < 0) {
         ERR_PRINT("Cannot send data to peer (%d)\n", ret);
-        net_pkt_unref(send_buf);
+        net_pkt_unref(send_pkt);
         zjs_remove_callback(id);
         // TODO: may need to check the specific error to determine action
-        DBG_PRINT("write failed, context=%p, socket=%u\n", handle->tcp_sock,
-                  handle->socket);
+        DBG_PRINT("write failed, context=%p, socket=%p\n", handle->tcp_sock,
+                  (void *)handle->socket);
         error_desc_t desc = create_error_desc(ERROR_WRITE_SOCKET, this,
                                               function_obj);
         zjs_defer_emit_event(handle->socket, "error", &desc, sizeof(desc),
@@ -848,7 +850,7 @@ static ZJS_DECL_FUNC(server_listen)
     if (family == 0 || family == 4) {
         family = 4;
         CHECK(net_context_get(AF_INET, SOCK_STREAM, IPPROTO_TCP,
-                              &server_h->server_ctx))
+                              &server_h->server_ctx));
 
         struct sockaddr_in *addr4 = (struct sockaddr_in *)&addr;
 
@@ -858,7 +860,7 @@ static ZJS_DECL_FUNC(server_listen)
         net_addr_pton(AF_INET, hostname, &addr4->sin_addr);
     } else {
         CHECK(net_context_get(AF_INET6, SOCK_STREAM, IPPROTO_TCP,
-                              &server_h->server_ctx))
+                              &server_h->server_ctx));
 
         struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)&addr;
 
@@ -976,8 +978,8 @@ static void tcp_connected(struct net_context *context, int status,
             zjs_defer_emit_event(sock_handle->socket, "connect", NULL, 0,
                                  connect_callback, NULL);
 
-            DBG_PRINT("connection success, context=%p, socket=%u\n", context,
-                      sock_handle->socket);
+            DBG_PRINT("connection success, context=%p, socket=%p\n", context,
+                      (void *)sock_handle->socket);
         }
     } else {
         DBG_PRINT("connect failed, status=%d\n", status);
@@ -1149,8 +1151,8 @@ static ZJS_DECL_FUNC(net_socket)
     // add new socket to client list
     ZJS_LIST_PREPEND(sock_handle_t, client_connections, sock_handle);
 
-    DBG_PRINT("socket created, context=%p, sock=%u\n", sock_handle->tcp_sock,
-              socket);
+    DBG_PRINT("socket created, context=%p, sock=%p\n", sock_handle->tcp_sock,
+              (void *)socket);
 
     return socket;
 }
