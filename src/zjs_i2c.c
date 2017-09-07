@@ -52,21 +52,17 @@ static ZJS_DECL_FUNC_ARGS(zjs_i2c_read_base, bool burst)
     zjs_buffer_t *buf;
     jerry_value_t buf_obj = zjs_buffer_create(size, &buf);
     if (buf) {
-        if (!burst) {
-            if (register_addr != 0) {
-                // i2c_read checks the first byte for the register address
-                // i2c_burst_read doesn't
-                buf->buffer[0] = (u8_t)register_addr;
-            }
-            int error_msg = zjs_i2c_handle_read((u8_t)bus, buf->buffer,
-                                                buf->bufsize, (u16_t)address);
+        // If this is a burst read or a register address is given
+        if (burst || register_addr != 0) {
+            int error_msg =
+                zjs_i2c_handle_burst_read((u8_t)bus, buf->buffer, buf->bufsize,
+                                          (u16_t)address, (u16_t)register_addr);
             if (error_msg != 0) {
                 ERR_PRINT("i2c_read failed with error %i\n", error_msg);
             }
         } else {
-            int error_msg =
-                zjs_i2c_handle_burst_read((u8_t)bus, buf->buffer, buf->bufsize,
-                                          (u16_t)address, (u16_t)register_addr);
+            int error_msg = zjs_i2c_handle_read((u8_t)bus, buf->buffer,
+                                                buf->bufsize, (u16_t)address);
             if (error_msg != 0) {
                 ERR_PRINT("i2c_read failed with error %i\n", error_msg);
             }
