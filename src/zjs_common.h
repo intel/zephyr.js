@@ -48,15 +48,24 @@ int zjs_get_ms(void);
               zjs_shorten_filepath(__FILE__), __LINE__, __func__);             \
     ZJS_PRINT
 
-#else
-#define DBG_PRINT(fmat...) \
-    do {                   \
-    } while (0);
+#define ZJS_ASSERT(condition, str)                 \
+    if (!(condition)) {                            \
+        ERR_PRINT("ASSERTION FAILURE: %s\n", str); \
+        do {} while (1);                           \
+    }
+
+#else  // !DEBUG_BUILD
+
+#define DBG_PRINT(fmt...) do {} while (0);
+
 #define ERR_PRINT                                                        \
     ZJS_PRINT("\n%s:%d %s():\n(ERROR) ", zjs_shorten_filepath(__FILE__), \
               __LINE__, __func__);                                       \
     ZJS_PRINT
-#endif
+
+#define ZJS_ASSERT(condition, str) do {} while (0);
+
+#endif  // DEBUG_BUILD
 
 // TODO: We should instead have a macro that changes in debug vs. release build,
 // to save string space and instead print error codes or something for release.
@@ -104,4 +113,5 @@ int zjs_get_ms(void);
 #ifndef TEMP_DEVICE_NAME
 #define TEMP_DEVICE_NAME ""
 #endif
+
 #endif  // __zjs_common_h__
