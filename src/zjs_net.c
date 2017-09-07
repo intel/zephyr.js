@@ -100,6 +100,7 @@ typedef struct server_handle {
     struct sock_handle *connections;
     struct server_handle *next;
     struct sockaddr local;
+    struct net_context *early_closed;
     u16_t port;
     u8_t listening;
     u8_t closed;
@@ -107,7 +108,7 @@ typedef struct server_handle {
 
 // represents a server connection socket or client socket
 typedef struct sock_handle {
-    // only used for server connection sockets
+    // set to &no_server for client connection sockets
     server_handle_t *server_h;
 
     // only used for client sockets
@@ -125,10 +126,14 @@ typedef struct sock_handle {
     u8_t paused;
     u8_t *rbuf;
     u8_t timer_started;
+    u8_t closed;
 } sock_handle_t;
 
-static server_handle_t *servers = NULL;
-static sock_handle_t *client_connections = NULL;
+// a stub server handle representing client connections with no server
+static server_handle_t no_server;
+
+// the server list will always contain "no_server"
+static server_handle_t *servers = &no_server;
 
 // get the socket handle from the object or NULL
 #define GET_SOCK_HANDLE(obj, var)  \
@@ -165,15 +170,10 @@ static void socket_timeout_callback(struct k_timer *timer)
     sock_handle_t *sock = NULL;
     server_handle_t *server = servers;
     while (server && !sock) {
-        // search in server connections
+        // search in server and "no_server" connections
         sock = ZJS_LIST_FIND_CMP(sock_handle_t, server->connections,
                                  match_timer, timer);
         server = server->next;
-    }
-    if (!sock) {
-        // search in client connections
-        sock = ZJS_LIST_FIND_CMP(sock_handle_t, client_connections,
-                                 match_timer, timer);
     }
 
     if (sock) {
@@ -238,14 +238,19 @@ static void release_close(void *handle, jerry_value_t argv[], u32_t argc)
         return;
     }
 
+    server_handle_t *server_h = h->server_h;
+    u8_t removed = ZJS_LIST_REMOVE(sock_handle_t, server_h->connections, h);
+
     // check if this is a server connection socket
-    if (h->server_h) {
-        server_handle_t *server_h = h->server_h;
-        if (ZJS_LIST_REMOVE(sock_handle_t, server_h->connections, h)) {
+    if (server_h != &no_server) {
+        if (removed) {
             DBG_PRINT("Freeing socket %p: connections=%p\n", h,
                       server_h->connections);
-
-            net_context_put(h->tcp_sock);
+            if (!h->closed) {
+                // if the context hasn't been dropped yet, do so now
+                net_context_unref(h->tcp_sock);
+                h->closed = 1;
+            }
             zjs_destroy_emitter(h->socket);
             jerry_release_value(h->socket);
             // FIXME: this part should maybe move into an emitter free cb
@@ -258,34 +263,23 @@ static void release_close(void *handle, jerry_value_t argv[], u32_t argc)
             close_server(server_h);
         }
     }
+    else {
+        // for client sockets, we did get and need to do put
+        net_context_put(h->tcp_sock);
+    }
 
     if (argc) {
         zjs_release_args(h, argv, argc);
     }
 }
 
-// a zjs_pre_emit_callback
-static void handle_wbuf_arg(void *h, jerry_value_t argv[], u32_t *argc,
-                            const char *buffer, u32_t bytes)
+static inline sock_handle_t *find_connection(server_handle_t *server_h,
+                                             struct net_context *context)
 {
-    sock_handle_t *handle = (sock_handle_t *)h;
-
-    // find length of unconsumed data in read buffer
-    u32_t len = handle->wptr - handle->rptr;
-    zjs_buffer_t *zbuf;
-    jerry_value_t data_buf = zjs_buffer_create(len, &zbuf);
-    if (!zbuf) {
-        // out of memory
-        DBG_PRINT("out of memory in handle_wbuf_arg\n");
-        return;
-    }
-
-    // copy data from read buffer
-    memcpy(zbuf->buffer, handle->rptr, len);
-    handle->rptr = handle->wptr = handle->rbuf;
-
-    argv[0] = data_buf;
-    *argc = 1;
+    // effects: looks through server_h's connections list to find one with a
+    //            matching context
+    return ZJS_LIST_FIND(sock_handle_t, server_h->connections, tcp_sock,
+                         context);
 }
 
 enum {
@@ -324,11 +318,6 @@ static void handle_error_arg(void *unused, jerry_value_t argv[], u32_t *argc,
     //  effects: creates an error object with the corresponding text, clears
     //             the error flag, and sets this as the first arg; the error
     //             value must be released later (e.g. zjs_release_args)
-    if (bytes != sizeof(error_desc_t)) {
-        DBG_PRINT("invalid data in handle_error_arg");
-        return;
-    }
-
     error_desc_t *desc = (error_desc_t *)buffer;
     const char *message = error_messages[desc->error_id];
 
@@ -339,11 +328,102 @@ static void handle_error_arg(void *unused, jerry_value_t argv[], u32_t *argc,
     *argc = 1;
 }
 
+typedef struct {
+    struct net_context *context;
+    server_handle_t *server_h;
+    sock_handle_t *handle;
+    struct net_pkt *pkt;
+} receive_packet_t;
+
+// a zjs_deferred_work callback
+static void receive_packet(const void *buffer, u32_t length)
+{
+    // effects: handle an incoming packet on the main thread that we first
+    //            received on the RX thread
+    receive_packet_t *receive = (receive_packet_t *)buffer;
+    sock_handle_t *handle = receive->handle;
+    struct net_pkt *pkt = receive->pkt;
+    net_pkt_unref(pkt);
+
+    if (!handle) {
+        handle = find_connection(receive->server_h, receive->context);
+    }
+
+    if (handle && pkt) {
+        start_socket_timeout(handle);
+
+        u32_t len = net_pkt_appdatalen(pkt);
+        u8_t *data = net_pkt_appdata(pkt);
+
+        if (len && data) {
+            DBG_PRINT("received data, context=%p, data=%p, len=%u\n",
+                      receive->context, data, len);
+
+            memcpy(handle->wptr, data, len);
+            handle->wptr += len;
+
+            // if not paused, call the callback to get JS the data
+            if (!handle->paused) {
+                // find length of unconsumed data in read buffer
+                u32_t len = handle->wptr - handle->rptr;
+                zjs_buffer_t *zbuf;
+                ZVAL data_buf = zjs_buffer_create(len, &zbuf);
+                if (!zbuf) {
+                    // out of memory
+                    DBG_PRINT("out of memory\n");
+                    net_pkt_unref(pkt);
+                    return;
+                }
+
+                // copy data from read buffer
+                memcpy(zbuf->buffer, handle->rptr, len);
+                handle->rptr = handle->wptr = handle->rbuf;
+
+                zjs_emit_event(handle->socket, "data", &data_buf, 1);
+            }
+        }
+    }
+    net_pkt_unref(pkt);
+}
+
+typedef struct {
+    server_handle_t *server_h;
+    struct net_context *context;
+} clear_closed_t;
+
+// a zjs_deferred_work callback
+static void clear_closed(const void *buffer, u32_t length)
+{
+    // requires: only called for server connection sockets
+    //  effects: this callback should be stuffed in the queue as soon as the
+    //             socket is closed, so the idea is incoming packets before this
+    //             will still be passed on to the socket, but at this point we
+    //             clean up and will no longer refer to the associated context
+    //           this is particularly because the same context ID might get used
+    //             again right away and we don't want to be confused thinking
+    clear_closed_t *clear = (clear_closed_t *)buffer;
+    DBG_PRINT("cleared early closed for server %p\n", clear->server_h);
+    clear->server_h->early_closed = NULL;
+
+    sock_handle_t *handle = find_connection(clear->server_h,
+                                            clear->context);
+    if (handle) {
+        // clear context reference out of the handle so it no longer shows
+        //   up as a match with find_connection
+        net_context_unref(handle->tcp_sock);
+        handle->closed = 1;
+        zjs_emit_event(handle->socket, "close", NULL, 0);
+        release_close(handle, NULL, 0);
+    }
+}
+
 static void tcp_received(struct net_context *context,
-                         struct net_pkt *buf,
+                         struct net_pkt *pkt,
                          int status,
                          void *user_data)
 {
+    // requires: user_data is the server handle the packet is associated with
+    //             (or &no_server in the case of client connection sockets)
 #ifdef DEBUG_BUILD
     static int first = 1;
     if (first) {
@@ -351,45 +431,56 @@ static void tcp_received(struct net_context *context,
         first = 0;
     }
 #endif
-    sock_handle_t *handle = (sock_handle_t *)user_data;
+    server_handle_t *server_h = (server_handle_t *)user_data;
+    sock_handle_t *handle = find_connection(server_h, context);
+    if (context == server_h->early_closed) {
+        // we got a close event on this same context earlier, and haven't
+        //   finished dealing with it, so this must be a new socket w/ the
+        //   same context
+        handle = NULL;
+    }
 
-    if (status == 0 && buf == NULL) {
+    if (status == 0 && pkt == NULL) {
         // this means the socket closed properly
-        DBG_PRINT("closing socket, context=%p, socket=%u\n", context,
-                  handle->socket);
+        DBG_PRINT("closing socket, context=%p, handle=%p\n", context, handle);
+        net_pkt_unref(pkt);
 
-        // note: we're not really releasing anything but release_close will
-        //   just ignore the 0 args and this way we don't need a new function
-        zjs_defer_emit_event(handle->socket, "close", NULL, 0, NULL,
-                             release_close);
-        net_pkt_unref(buf);
+        if (handle) {
+            DBG_PRINT("socket=%p\n", (void *)handle->socket);
+            // NOTE: we're not really releasing anything but release_close will
+            //   just ignore the 0 args, so we can reuse the function
+            zjs_defer_emit_event(handle->socket, "close", NULL, 0, NULL,
+                                 release_close);
+        }
+        else {
+            if (server_h->early_closed) {
+                // this is bad because we only allocated space in the server
+                //   handle to remember one early-closed socket; could be
+                //   increased to an array of them if need be
+                ERR_PRINT("Socket closed early with another in process\n");
+            }
+            else {
+                DBG_PRINT("socket closed before data received\n");
+                DBG_PRINT("marking server %p with early closed %p\n",
+                          server_h, context);
+                server_h->early_closed = context;
+
+                clear_closed_t clear;
+                clear.server_h = server_h;
+                clear.context = context;
+                zjs_defer_work(clear_closed, &clear, sizeof(clear));
+            }
+        }
         return;
     }
 
-    if (handle && buf) {
-        start_socket_timeout(handle);
+    receive_packet_t receive;
+    receive.context = context;
+    receive.server_h = server_h;
+    receive.handle = handle;
+    receive.pkt = pkt;
 
-        u32_t len = net_pkt_appdatalen(buf);
-        u8_t *data = net_pkt_appdata(buf);
-
-        if (len && data) {
-            DBG_PRINT("received data, context=%p, data=%p, len=%u\n", context,
-                      data, len);
-
-            memcpy(handle->wptr, data, len);
-            handle->wptr += len;
-
-            // if not paused, call the callback to get JS the data
-            if (!handle->paused) {
-                zjs_defer_emit_event(handle->socket, "data", NULL, 0,
-                                     handle_wbuf_arg, zjs_release_args);
-
-                DBG_PRINT("data received on context %p: data=%p, len=%u\n",
-                          context, data, len);
-            }
-        }
-    }
-    net_pkt_unref(buf);
+    zjs_defer_work(receive_packet, &receive, sizeof(receive));
 }
 
 static inline void pkt_sent(struct net_context *context, int status,
@@ -427,6 +518,12 @@ static ZJS_DECL_FUNC(socket_write)
     ZJS_VALIDATE_ARGS_OPTCOUNT(optcount, Z_OBJECT, Z_OPTIONAL Z_FUNCTION);
 
     GET_SOCK_HANDLE_JS(this, handle);
+
+    // FIXME: these other error cases should maybe call "error" event too
+    if (handle->closed) {
+        ERR_PRINT("socket already closed\n");
+        return jerry_create_boolean(false);
+    }
 
     start_socket_timeout(handle);
 
@@ -579,6 +676,8 @@ static jerry_value_t create_socket(u8_t client, sock_handle_t **handle_out)
     jerry_value_t socket = zjs_create_object();
 
     if (client) {
+        sock_handle->server_h = &no_server;
+
         // only a new client socket has connect method
         zjs_obj_add_function(socket, socket_connect, "connect");
     }
@@ -613,6 +712,11 @@ static void add_socket_connection(jerry_value_t socket,
     handle->server_h = server_h;
     handle->tcp_sock = new;
 
+    if (server_h->early_closed == new) {
+        net_context_unref(handle->tcp_sock);
+        handle->closed = 1;
+    }
+
     sa_family_t family = net_context_get_family(new);
     char remote_ip[64];
     net_addr_ntop(family, (const void *)remote, remote_ip, 64);
@@ -643,18 +747,13 @@ typedef struct {
 // a zjs_deferred_work callback
 static void accept_connection(const void *buffer, u32_t length)
 {
-    if (length != sizeof(accept_connection_t)) {
-        // shouldn't happen so make it a debug print
-        DBG_PRINT("Error: Unexpected data!\n");
-        return;
-    }
-
     accept_connection_t *accept = (accept_connection_t *)buffer;
 
     sock_handle_t *sock_handle = NULL;
     jerry_value_t sock = create_socket(false, &sock_handle);
     if (!sock_handle) {
         ERR_PRINT("could not allocate socket handle\n");
+        net_context_unref(accept->context);
         return;
     }
 
@@ -665,21 +764,7 @@ static void accept_connection(const void *buffer, u32_t length)
     ZJS_LIST_PREPEND(sock_handle_t, accept->server_h->connections,
                      sock_handle);
 
-    int ret = net_context_recv(accept->context, tcp_received, K_NO_WAIT,
-                               sock_handle);
-
-    // FIXME: the defer_emit_event calls below no longer need to be deferred
-    if (ret < 0) {
-        ERR_PRINT("Cannot receive TCP packet (family %d), ret=%d\n",
-                net_context_get_family(sock_handle->tcp_sock), ret);
-        // this seems to mean the remote exists but the connection was not made
-        error_desc_t desc = create_error_desc(ERROR_ACCEPT_SERVER, 0, 0);
-        zjs_defer_emit_event(sock_handle->server_h->server, "error", &desc,
-                             sizeof(desc), handle_error_arg, zjs_release_args);
-        jerry_release_value(sock);
-        return;
-    }
-
+    // FIXME: the defer_emit_event call no longer needs to be deferred
     zjs_defer_emit_event(accept->server_h->server, "connection", &sock,
                          sizeof(sock), zjs_copy_arg, zjs_release_args);
 }
@@ -706,9 +791,24 @@ static void tcp_accepted(struct net_context *context,
         return;
     }
 
+    int rval = net_context_recv(context, tcp_received, K_NO_WAIT, server_h);
+    if (rval < 0) {
+        ERR_PRINT("Cannot receive TCP packet (family %d) rval=%d\n",
+                  net_context_get_family(context), rval);
+        // this seems to mean the remote exists but the connection was not made
+        error_desc_t desc = create_error_desc(ERROR_ACCEPT_SERVER, 0, 0);
+        zjs_defer_emit_event(server_h->server, "error", &desc, sizeof(desc),
+                             handle_error_arg, zjs_release_args);
+        return;
+    }
+
+    // under some conditions, we see Zephyr do an extra unref on the context
+    //   so at one point we had a second ref here to work around it (ZEP-2598)
+    net_context_ref(context);
+
     accept_connection_t accept;
     accept.context = context;
-    accept.server_h = (server_handle_t *)user_data;
+    accept.server_h = server_h;
     memset(&accept.addr, 0, sizeof(struct sockaddr));
     memcpy(&accept.addr, addr, addrlen);
 
@@ -964,9 +1064,8 @@ static void tcp_connected(struct net_context *context, int status,
         sock_handle_t *sock_handle = (sock_handle_t *)user_data;
 
         if (sock_handle) {
-            int ret;
-            ret = net_context_recv(context, tcp_received, K_NO_WAIT,
-                                   sock_handle);
+            int ret = net_context_recv(context, tcp_received, K_NO_WAIT,
+                                       &no_server);
             if (ret < 0) {
                 ERR_PRINT("Cannot receive TCP packets (%d)\n", ret);
             }
@@ -1149,7 +1248,7 @@ static ZJS_DECL_FUNC(net_socket)
     }
 
     // add new socket to client list
-    ZJS_LIST_PREPEND(sock_handle_t, client_connections, sock_handle);
+    ZJS_LIST_PREPEND(sock_handle_t, no_server.connections, sock_handle);
 
     DBG_PRINT("socket created, context=%p, sock=%p\n", sock_handle->tcp_sock,
               (void *)socket);
