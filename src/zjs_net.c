@@ -765,9 +765,7 @@ static void accept_connection(const void *buffer, u32_t length)
     ZJS_LIST_PREPEND(sock_handle_t, accept->server_h->connections,
                      sock_handle);
 
-    // FIXME: the defer_emit_event call no longer needs to be deferred
-    zjs_defer_emit_event(accept->server_h->server, "connection", &sock,
-                         sizeof(sock), zjs_copy_arg, zjs_release_args);
+    zjs_emit_event(accept->server_h->server, "connection", &sock, 1);
 }
 
 static void tcp_accepted(struct net_context *context,
