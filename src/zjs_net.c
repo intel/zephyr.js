@@ -661,6 +661,7 @@ static ZJS_DECL_FUNC(socket_connect);
  */
 static jerry_value_t create_socket(u8_t client, sock_handle_t **handle_out)
 {
+    // returns: a socket object that the caller owns
     sock_handle_t *sock_handle = zjs_malloc(sizeof(sock_handle_t));
     if (!sock_handle) {
         return ZJS_UNDEFINED;
@@ -750,7 +751,7 @@ static void accept_connection(const void *buffer, u32_t length)
     accept_connection_t *accept = (accept_connection_t *)buffer;
 
     sock_handle_t *sock_handle = NULL;
-    jerry_value_t sock = create_socket(false, &sock_handle);
+    ZVAL sock = create_socket(false, &sock_handle);
     if (!sock_handle) {
         ERR_PRINT("could not allocate socket handle\n");
         net_context_unref(accept->context);
