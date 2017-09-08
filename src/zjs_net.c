@@ -7,6 +7,11 @@
 static char FTRACE_PREFIX[] = "net";
 #endif
 
+// enable for verbose lock detail
+#if 0
+#define DEBUG_LOCKS
+#endif
+
 // C includes
 #include <errno.h>
 
@@ -145,8 +150,14 @@ static server_handle_t *servers = &no_server;
 // mutex to ensure only one thread uses handle lists at time
 static struct k_mutex socket_mutex;
 
-#define S_LOCK() k_mutex_lock(&socket_mutex, K_FOREVER)
-#define S_UNLOCK() k_mutex_unlock(&socket_mutex)
+#define S_LOCK()                             \
+    LPRINT("Sockets lock...");               \
+    k_mutex_lock(&socket_mutex, K_FOREVER);  \
+    LPRINT("Sockets locked.")
+#define S_UNLOCK()                  \
+    LPRINT("Sockets unlock...");    \
+    k_mutex_unlock(&socket_mutex);  \
+    LPRINT("Sockets unlocked.")
 
 // get the socket handle from the object or NULL
 #define GET_SOCK_HANDLE(obj, var)  \
