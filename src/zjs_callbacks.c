@@ -1,5 +1,15 @@
 // Copyright (c) 2016-2017, Intel Corporation.
 
+// enable for verbose callback detail
+#if 0
+#define DEBUG_CALLBACKS
+#endif
+
+// enable for verbose lock detail
+#if 0
+#define DEBUG_LOCKS
+#endif
+
 // C includes
 #include <string.h>
 
@@ -19,9 +29,6 @@
 
 // JerryScript includes
 #include "jerryscript.h"
-
-// enable for verbose callback detail
-#define DEBUG_CALLBACKS 0
 
 // this could be defined with config options in the future
 #ifndef ZJS_CALLBACK_BUF_SIZE
@@ -88,15 +95,35 @@ SYS_RING_BUF_DECLARE_POW2(ring_buffer, 5);
 static u8_t ring_buf_initialized = 1;
 
 #ifdef ZJS_LINUX_BUILD
-#define LOCK() do {} while (0)
-#define UNLOCK() do {} while (0)
-#else
+#define RB_LOCK() do {} while (0)
+#define RB_UNLOCK() do {} while (0)
+#define CB_LOCK() do {} while (0)
+#define CB_UNLOCK() do {} while (0)
+#else  // !ZJS_LINUX_BUILD
 // mutex to ensure only one thread can access ring buffer at a time
 static struct k_mutex ring_mutex;
 
-#define LOCK() k_mutex_lock(&ring_mutex, K_FOREVER)
-#define UNLOCK() k_mutex_unlock(&ring_mutex)
-#endif
+#define RB_LOCK()                             \
+    LPRINT("Ringbuf lock...");             \
+    k_mutex_lock(&ring_mutex, K_FOREVER);  \
+    LPRINT("Ringbuf locked.")
+#define RB_UNLOCK()                  \
+    LPRINT("Ringbuf unlock...");  \
+    k_mutex_unlock(&ring_mutex);  \
+    LPRINT("Ringbuf unlocked.")
+
+// mutex to ensure only one thread can access cb_map at a time
+static struct k_mutex cb_mutex;
+
+#define CB_LOCK()                        \
+    LPRINT("Callbacks lock...");         \
+    k_mutex_lock(&cb_mutex, K_FOREVER);  \
+    LPRINT("Callbacks locked.")
+#define CB_UNLOCK()                 \
+    LPRINT("Callbacks unlock...");  \
+    k_mutex_unlock(&cb_mutex);      \
+    LPRINT("Callbacks unlocked.")
+#endif  // ZJS_LINUX_BUILD
 
 static zjs_callback_id cb_limit = INITIAL_CALLBACK_SIZE;
 static zjs_callback_id cb_size = 0;
@@ -129,6 +156,7 @@ static zjs_callback_id new_id(void)
     // NOTE: We could wait until after we check for a NULL callback slot in
     //   the map before we increase allocation; or else store a count that
     //   can be less than cb_size when callbacks are removed.
+    CB_LOCK();
     if (cb_size >= cb_limit) {
         cb_limit += CB_CHUNK_SIZE;
         size_t size = sizeof(zjs_callback_t *) * cb_limit;
@@ -150,6 +178,7 @@ static zjs_callback_id new_id(void)
     if (id >= cb_size) {
         cb_size = id + 1;
     }
+    CB_UNLOCK();
     return id;
 }
 
@@ -162,7 +191,7 @@ typedef struct deferred_work {
 static void deferred_work_callback(void *handle, const void *args) {
     const deferred_work_t *deferred = (const deferred_work_t *)args;
 
-#if DEBUG_CALLBACKS
+#ifdef DEBUG_CALLBACKS
     int len = sizeof(deferred_work_t) + deferred->length;
     DBG_PRINT("process deferred work: %d bytes\ncontents: ", len);
     int count32 = (len + 3) / 4;
@@ -183,6 +212,7 @@ void zjs_init_callbacks(void)
 {
 #ifndef ZJS_LINUX_BUILD
     k_mutex_init(&ring_mutex);
+    k_mutex_init(&cb_mutex);
 #endif
 
     if (!cb_map) {
@@ -206,15 +236,16 @@ void zjs_init_callbacks(void)
 
 bool zjs_edit_js_func(zjs_callback_id id, jerry_value_t func)
 {
+    // requires: only run from main thread
+    CB_LOCK();
+    bool rval = false;
     if (id >= 0 && cb_map[id]) {
-        LOCK();
         jerry_release_value(cb_map[id]->js_func);
         cb_map[id]->js_func = jerry_acquire_value(func);
-        UNLOCK();
-        return true;
-    } else {
-        return false;
+        rval = true;
     }
+    CB_UNLOCK();
+    return rval;
 }
 
 zjs_callback_id add_callback_priv(jerry_value_t js_func,
@@ -230,7 +261,6 @@ zjs_callback_id add_callback_priv(jerry_value_t js_func,
                                   )
 #endif
 {
-    LOCK();
     zjs_callback_t *new_cb = zjs_malloc(sizeof(zjs_callback_t));
     if (!new_cb) {
         DBG_PRINT("error allocating space for new callback\n");
@@ -248,6 +278,7 @@ zjs_callback_id add_callback_priv(jerry_value_t js_func,
     new_cb->max_funcs = 1;
     new_cb->num_funcs = 1;
 
+    CB_LOCK();
     // Add callback to list
     cb_map[new_cb->id] = new_cb;
 
@@ -257,19 +288,19 @@ zjs_callback_id add_callback_priv(jerry_value_t js_func,
 #ifdef INSTRUMENT_CALLBACKS
     set_info_string(cb_map[new_cb->id]->creator, file, func);
 #endif
-    UNLOCK();
+    CB_UNLOCK();
     return new_cb->id;
 }
 
 static void zjs_free_callback(zjs_callback_id id)
 {
     // effects: frees callback associated with id if it's marked as removed
+    CB_LOCK();
     if (id >= 0 && cb_map[id] && GET_CB_REMOVED(cb_map[id]->flags)) {
-        LOCK();
         zjs_free(cb_map[id]);
         cb_map[id] = NULL;
-        UNLOCK();
     }
+    CB_UNLOCK();
 }
 
 static void zjs_remove_callback_priv(zjs_callback_id id, bool skip_flush)
@@ -277,16 +308,19 @@ static void zjs_remove_callback_priv(zjs_callback_id id, bool skip_flush)
     // effects: removes the callback associated with id; if skip_flush is true,
     //            assumes the callback will be "flushed" elsewhere, that is
     //            freed and the id reclaimed; otherwise, tries to do it here
+    CB_LOCK();
     if (id >= 0 && cb_map[id]) {
-        LOCK();
         if (GET_TYPE(cb_map[id]->flags) == CALLBACK_TYPE_JS) {
             jerry_release_value(cb_map[id]->js_func);
             jerry_release_value(cb_map[id]->this);
         }
         SET_CB_REMOVED(cb_map[id]->flags);
+        CB_UNLOCK();
         if (!skip_flush) {
+            RB_LOCK();
             int ret = zjs_port_ring_buf_put(&ring_buffer, (u16_t)id,
                                             CB_FLUSH_ONE, NULL, 0);
+            RB_UNLOCK();
             if (ret) {
                 // couldn't add flush command, so just free now
                 DBG_PRINT("no room for flush callback %d command\n", id);
@@ -295,7 +329,9 @@ static void zjs_remove_callback_priv(zjs_callback_id id, bool skip_flush)
         }
         DBG_PRINT("removing callback id %d\n", id);
     }
-    UNLOCK();
+    else {
+        CB_UNLOCK();
+    }
 }
 
 void zjs_remove_callback(zjs_callback_id id)
@@ -306,15 +342,17 @@ void zjs_remove_callback(zjs_callback_id id)
 void zjs_remove_all_callbacks()
 {
     // try posting a command to flush all removed callbacks
-    LOCK();
+    RB_LOCK();
     int ret = zjs_port_ring_buf_put(&ring_buffer, 0, CB_FLUSH_ALL, NULL, 0);
+    RB_UNLOCK();
     bool skip_flush = ret ? false : true;
     for (int i = 0; i < cb_size; i++) {
+        CB_LOCK();
         if (cb_map[i]) {
             zjs_remove_callback_priv(i, skip_flush);
         }
+        CB_UNLOCK();
     }
-    UNLOCK();
 }
 
 // INTERRUPT SAFE FUNCTION: No JerryScript VM, allocs, or release prints!
@@ -329,17 +367,19 @@ void signal_callback_priv(zjs_callback_id id,
                           )
 #endif
 {
-    LOCK();
-#if DEBUG_CALLBACKS
+#ifdef DEBUG_CALLBACKS
     DBG_PRINT("pushing item to ring buffer. id=%d, args=%p, size=%u\n", id,
               args, size);
 #endif
+    CB_LOCK();
     if (id < 0 || id >= cb_size || !cb_map[id]) {
         DBG_PRINT("callback ID %u does not exist\n", id);
+        CB_UNLOCK();
         return;
     }
     if (GET_CB_REMOVED(cb_map[id]->flags)) {
         DBG_PRINT("callback already removed\n");
+        CB_UNLOCK();
         return;
     }
     if (GET_TYPE(cb_map[id]->flags) == CALLBACK_TYPE_JS) {
@@ -353,6 +393,7 @@ void signal_callback_priv(zjs_callback_id id,
 #ifdef INSTRUMENT_CALLBACKS
     set_info_string(cb_map[id]->caller, file, func);
 #endif
+    RB_LOCK();
     int ret = zjs_port_ring_buf_put(&ring_buffer,
                                     (u16_t)id,
                                     0,  // we use value for CB_FLUSH_ONE/ALL
@@ -363,7 +404,7 @@ void signal_callback_priv(zjs_callback_id id,
     // rather than locking everything, as we are only trying to prevent a
     // callback
     // from being edited and called at the same time.
-    UNLOCK();
+    RB_UNLOCK();
 #ifndef ZJS_LINUX_BUILD
     zjs_loop_unblock();
 #endif
@@ -380,11 +421,11 @@ void signal_callback_priv(zjs_callback_id id,
         zjs_ringbuf_error_count++;
         zjs_ringbuf_last_error = ret;
     }
+    CB_UNLOCK();
 }
 
 zjs_callback_id zjs_add_c_callback(void *handle, zjs_c_callback_func callback)
 {
-    LOCK();
     zjs_callback_t *new_cb = zjs_malloc(sizeof(zjs_callback_t));
     if (!new_cb) {
         DBG_PRINT("error allocating space for new callback\n");
@@ -394,6 +435,7 @@ zjs_callback_id zjs_add_c_callback(void *handle, zjs_c_callback_func callback)
 
     SET_ONCE(new_cb->flags, 0);
     SET_TYPE(new_cb->flags, CALLBACK_TYPE_C);
+    CB_LOCK();
     new_cb->id = new_id();
     new_cb->function = callback;
     new_cb->handle = handle;
@@ -402,7 +444,7 @@ zjs_callback_id zjs_add_c_callback(void *handle, zjs_c_callback_func callback)
     cb_map[new_cb->id] = new_cb;
 
     DBG_PRINT("adding new C callback id %d\n", new_cb->id);
-    UNLOCK();
+    CB_UNLOCK();
     return new_cb->id;
 }
 
@@ -433,7 +475,7 @@ void print_callbacks(void)
 
 void zjs_call_callback(zjs_callback_id id, const void *data, u32_t sz)
 {
-    LOCK();
+    CB_LOCK();
     if (id == -1 || id >= cb_size || !cb_map[id]) {
         ERR_PRINT("callback %d does not exist\n", id);
     } else if (GET_CB_REMOVED(cb_map[id]->flags)) {
@@ -469,12 +511,11 @@ void zjs_call_callback(zjs_callback_id id, const void *data, u32_t sz)
             cb_map[id]->function(cb_map[id]->handle, data);
         }
     }
-    UNLOCK();
+    CB_UNLOCK();
 }
 
 u8_t zjs_service_callbacks(void)
 {
-    LOCK();
     if (zjs_ringbuf_error_count > zjs_ringbuf_error_max) {
         ERR_PRINT("%d ringbuf put errors (last rval=%d)\n",
                   zjs_ringbuf_error_count, zjs_ringbuf_last_error);
@@ -495,7 +536,9 @@ u8_t zjs_service_callbacks(void)
             u8_t value;
             u8_t size = 0;
             // set size = 0 to check if there is an item in the ring buffer
+            RB_LOCK();
             ret = zjs_port_ring_buf_get(&ring_buffer, &id, &value, NULL, &size);
+            RB_UNLOCK();
             if (ret == -EMSGSIZE || ret == 0) {
                 serviced = 1;
                 // item in ring buffer with size > 0, has args
@@ -503,13 +546,15 @@ u8_t zjs_service_callbacks(void)
                 u8_t sz = size;
                 u32_t data[sz];
                 if (ret == -EMSGSIZE) {
+                    RB_LOCK();
                     ret = zjs_port_ring_buf_get(&ring_buffer, &id, &value, data,
                                                 &sz);
+                    RB_UNLOCK();
                     if (ret != 0) {
                         ERR_PRINT("pulling from ring buffer: ret = %u\n", ret);
                         break;
                     }
-#if DEBUG_CALLBACKS
+#ifdef DEBUG_CALLBACKS
                     DBG_PRINT("calling callback with args. id=%u, args=%p, "
                               "sz=%u, ret=%i\n", id, data, sz, ret);
 #endif
@@ -536,7 +581,7 @@ u8_t zjs_service_callbacks(void)
 
                     default:
                         // item in ring buffer with size == 0, no args
-#if DEBUG_CALLBACKS
+#ifdef DEBUG_CALLBACKS
                         DBG_PRINT("calling callback with no args, "
                                   "original vals id=%u, size=%u, ret=%i\n",
                                   id, size, ret);
@@ -571,7 +616,6 @@ u8_t zjs_service_callbacks(void)
         }
 #endif
     }
-    UNLOCK();
     return serviced;
 }
 
@@ -586,7 +630,7 @@ void zjs_defer_work(zjs_deferred_work callback, const void *buffer, u32_t bytes)
     if (buffer && bytes) {
         memcpy(defer->data, buffer, bytes);
     }
-#if DEBUG_CALLBACKS
+#ifdef DEBUG_CALLBACKS
     DBG_PRINT("deferring work: %d bytes\ncontents: ", len);
     int count32 = (len + 3) / 4;
     for (int i = 0; i < count32; ++i) {

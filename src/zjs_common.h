@@ -94,6 +94,17 @@ int zjs_get_ms(void);
 #define FTRACE_JSAPI do {} while (0)
 #endif
 
+/**
+ * print function that works only if DEBUG_LOCKS is defined
+ */
+#ifdef DEBUG_LOCKS
+#define LPRINT(str)                                             \
+    ZJS_PRINT("[%x] %s: %s\n", (u32_t)k_current_get() & 0xffff, \
+              __func__, str)
+#else
+#define LPRINT(str) do {} while (0)
+#endif
+
 // TODO: We should instead have a macro that changes in debug vs. release build,
 // to save string space and instead print error codes or something for release.
 
