@@ -150,6 +150,12 @@ static server_handle_t no_server;
 // the server list will always contain "no_server"
 static server_handle_t *servers = &no_server;
 
+// mutex to ensure only one thread uses handle lists at time
+static struct k_mutex socket_mutex;
+
+#define S_LOCK() k_mutex_lock(&socket_mutex, K_FOREVER)
+#define S_UNLOCK() k_mutex_unlock(&socket_mutex)
+
 // get the socket handle from the object or NULL
 #define GET_SOCK_HANDLE(obj, var)  \
     sock_handle_t *var = (sock_handle_t *)zjs_event_get_user_handle(obj);
@@ -186,12 +192,15 @@ static void socket_timeout_callback(struct k_timer *timer)
     FTRACE("timer = %p\n", timer);
     sock_handle_t *sock = NULL;
     server_handle_t *server = servers;
+
+    S_LOCK();
     while (server && !sock) {
         // search in server and "no_server" connections
         sock = ZJS_LIST_FIND_CMP(sock_handle_t, server->connections,
                                  match_timer, timer);
         server = server->next;
     }
+    S_UNLOCK();
 
     if (sock) {
         zjs_defer_emit_event(sock->socket, "timeout", NULL, 0, NULL, NULL);
@@ -237,7 +246,10 @@ static void close_server(server_handle_t *server_h)
     zjs_emit_event(server_h->server, "close", NULL, 0);
     zjs_destroy_emitter(server_h->server);
     jerry_release_value(server_h->server);
+
+    S_LOCK();
     ZJS_LIST_REMOVE(server_handle_t, servers, server_h);
+    S_UNLOCK();
 }
 
 // a zjs_event_free callback
@@ -261,7 +273,9 @@ static void release_close(void *handle, jerry_value_t argv[], u32_t argc)
     }
 
     server_handle_t *server_h = h->server_h;
+    S_LOCK();
     u8_t removed = ZJS_LIST_REMOVE(sock_handle_t, server_h->connections, h);
+    S_UNLOCK();
     ZJS_ASSERT(removed, "connection not found in list");
 
     // check if this is a server connection socket
@@ -302,8 +316,11 @@ static inline sock_handle_t *find_connection(server_handle_t *server_h,
     // effects: looks through server_h's connections list to find one with a
     //            matching context
     FTRACE("server_h = %p, context = %p\n", server_h, context);
-    return ZJS_LIST_FIND(sock_handle_t, server_h->connections, tcp_sock,
-                         context);
+    S_LOCK();
+    sock_handle_t *sock = ZJS_LIST_FIND(sock_handle_t, server_h->connections,
+                                        tcp_sock, context);
+    S_UNLOCK();
+    return sock;
 }
 
 enum {
@@ -821,8 +838,10 @@ static void accept_connection(const void *buffer, u32_t length)
                           &accept->addr);
 
     // add new socket to list
+    S_LOCK();
     ZJS_LIST_PREPEND(sock_handle_t, accept->server_h->connections,
                      sock_handle);
+    S_UNLOCK();
 
     zjs_emit_event(accept->server_h->server, "connection", &sock, 1);
 }
@@ -935,9 +954,12 @@ static ZJS_DECL_FUNC(server_close)
     }
 
     // if there are no connections, the server can be closed now
+    S_LOCK();
     if (!server_h->connections) {
         close_server(server_h);
     }
+    S_UNLOCK();
+
     return ZJS_UNDEFINED;
 }
 
@@ -956,7 +978,9 @@ static ZJS_DECL_FUNC(server_get_connections)
 
     GET_SERVER_HANDLE_JS(this, server_h);
 
+    S_LOCK();
     int count = ZJS_LIST_LENGTH(sock_handle_t, server_h->connections);
+    S_UNLOCK();
 
     ZVAL err = jerry_create_number(0);
     ZVAL num = jerry_create_number(count);
@@ -1108,7 +1132,9 @@ static ZJS_DECL_FUNC(net_create_server)
 
     DBG_PRINT("creating server: context=%p\n", server_h->server_ctx);
 
+    S_LOCK();
     ZJS_LIST_PREPEND(server_handle_t, servers, server_h);
+    S_UNLOCK();
 
     return server;
 }
@@ -1319,7 +1345,9 @@ static ZJS_DECL_FUNC(net_socket)
     }
 
     // add new socket to client list
+    S_LOCK();
     ZJS_LIST_PREPEND(sock_handle_t, no_server.connections, sock_handle);
+    S_UNLOCK();
 
     DBG_PRINT("socket created, context=%p, sock=%p\n", sock_handle->tcp_sock,
               (void *)socket);
@@ -1410,6 +1438,8 @@ jerry_value_t zjs_net_init()
 {
     FTRACE("\n");
     zjs_net_config_default();
+
+    k_mutex_init(&socket_mutex);
 
     zjs_native_func_t net_array[] = {
             { net_create_server, "createServer" },
