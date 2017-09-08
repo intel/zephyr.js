@@ -68,6 +68,32 @@ int zjs_get_ms(void);
 #define ZJS_ASSERT(condition, str) do {} while (0)
 #endif
 
+/**
+ * file-specific function tracing for debug purposes
+ *
+ * Displays short thread id, a file-specific prefix, and the function name,
+ *   followed by a formatted string intended to display arguments
+ *
+ * Use by defining USE_FTRACE and ftrace_prefix string in a file (see zjs_net.c)
+ *
+ * FTRACE takes format string and arguments like printf
+ * FTRACE_JSAPI takes not arguments and expects to run in a ZJS_DECL_FUNC API
+ */
+#ifdef USE_FTRACE
+#define FTRACE                                                   \
+    ZJS_PRINT("[%x] %s: %s: ", (u32_t)k_current_get() & 0xffff,  \
+              FTRACE_PREFIX, __func__);                          \
+    ZJS_PRINT
+#define FTRACE_JSAPI                                             \
+    ZJS_PRINT("[%x] %s: %s: func = %p, this = %p, argc = %d\n",  \
+              (u32_t)k_current_get() & 0xffff, FTRACE_PREFIX,    \
+              __func__, (void *)function_obj, (void *)this,      \
+              (u32_t)argc)
+#else
+#define FTRACE(fmt...) do {} while (0)
+#define FTRACE_JSAPI do {} while (0)
+#endif
+
 // TODO: We should instead have a macro that changes in debug vs. release build,
 // to save string space and instead print error codes or something for release.
 
