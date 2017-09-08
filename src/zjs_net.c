@@ -141,6 +141,7 @@ typedef struct sock_handle {
     u8_t paused;
     u8_t *rbuf;
     u8_t timer_started;
+    u8_t closing;
     u8_t closed;
 } sock_handle_t;
 
@@ -510,6 +511,7 @@ static void tcp_received(struct net_context *context,
             DBG_PRINT("socket=%p\n", (void *)handle->socket);
             // NOTE: we're not really releasing anything but release_close will
             //   just ignore the 0 args, so we can reuse the function
+            handle->closing = 1;
             zjs_defer_emit_event(handle->socket, "close", NULL, 0, NULL,
                                  release_close);
         }
@@ -586,7 +588,7 @@ static ZJS_DECL_FUNC(socket_write)
     GET_SOCK_HANDLE_JS(this, handle);
 
     // FIXME: these other error cases should maybe call "error" event too
-    if (handle->closed) {
+    if (handle->closing || handle->closed) {
         ERR_PRINT("socket already closed\n");
         return jerry_create_boolean(false);
     }
@@ -627,7 +629,7 @@ static ZJS_DECL_FUNC(socket_write)
         error_desc_t desc = create_error_desc(ERROR_WRITE_SOCKET, this,
                                               function_obj);
         zjs_defer_emit_event(handle->socket, "error", &desc, sizeof(desc),
-                             handle_error_arg, release_close);
+                             handle_error_arg, zjs_release_args);
         return jerry_create_boolean(false);
     }
 
