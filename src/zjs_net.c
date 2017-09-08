@@ -21,6 +21,21 @@
 #include "zjs_net_config.h"
 #include "zjs_util.h"
 
+// file-specific function tracing for debug purposes
+#if 0
+#define FTRACE                                                   \
+    ZJS_PRINT("[%x] net: %s: ", (u32_t)k_current_get() & 0xffff, \
+              __func__);                                         \
+    ZJS_PRINT
+#define FTRACE_JSAPI                                             \
+    ZJS_PRINT("[%x] net: %s: func = %p, this = %p, argc = %d\n", \
+              (u32_t)k_current_get() & 0xffff, __func__,         \
+              (void *)function_obj, (void *)this, (u32_t)argc)
+#else
+#define FTRACE(fmt...) do {} while (0)
+#define FTRACE_JSAPI do {} while (0)
+#endif
+
 /**
  * Net module
  * @module net
@@ -162,11 +177,13 @@ static server_handle_t *servers = &no_server;
 
 static int match_timer(sock_handle_t *sock, struct k_timer *timer)
 {
+    FTRACE("sock = %p, timer = %p\n", sock, timer);
     return (&sock->timer == timer) ? 0 : 1;
 }
 
 static void socket_timeout_callback(struct k_timer *timer)
 {
+    FTRACE("timer = %p\n", timer);
     sock_handle_t *sock = NULL;
     server_handle_t *server = servers;
     while (server && !sock) {
@@ -197,6 +214,7 @@ static void socket_timeout_callback(struct k_timer *timer)
  */
 static void start_socket_timeout(sock_handle_t *handle)
 {
+    FTRACE("handle = %p\n", handle);
     if (handle->timeout) {
         if (!handle->timer_started) {
             // time has not been started
@@ -214,6 +232,7 @@ static void start_socket_timeout(sock_handle_t *handle)
 // a zjs_post_emit callback
 static void close_server(server_handle_t *server_h)
 {
+    FTRACE("server_h = %p\n", server_h);
     DBG_PRINT("closing server: %p\n", server_h);
     zjs_emit_event(server_h->server, "close", NULL, 0);
     zjs_destroy_emitter(server_h->server);
@@ -224,6 +243,7 @@ static void close_server(server_handle_t *server_h)
 // a zjs_event_free callback
 static void server_free_cb(void *native)
 {
+    FTRACE("native = %p\n", native);
     server_handle_t *server_h = (server_handle_t *)native;
     ZJS_ASSERT(server_h != &no_server, "attempt to free stub server");
     net_context_put(server_h->server_ctx);
@@ -233,6 +253,7 @@ static void server_free_cb(void *native)
 // a zjs_post_emit callback
 static void release_close(void *handle, jerry_value_t argv[], u32_t argc)
 {
+    FTRACE("handle = %p, argc = %d\n", handle, argc);
     sock_handle_t *h = (sock_handle_t *)handle;
     if (!h) {
         DBG_PRINT("warning: null pointer for socket handle\n");
@@ -280,6 +301,7 @@ static inline sock_handle_t *find_connection(server_handle_t *server_h,
 {
     // effects: looks through server_h's connections list to find one with a
     //            matching context
+    FTRACE("server_h = %p, context = %p\n", server_h, context);
     return ZJS_LIST_FIND(sock_handle_t, server_h->connections, tcp_sock,
                          context);
 }
@@ -305,6 +327,8 @@ typedef struct error_desc {
 static error_desc_t create_error_desc(u32_t error_id, jerry_value_t this,
                                       jerry_value_t function_obj)
 {
+    FTRACE("error_id = %d, this = %p, func = %p\n", error_id, (void *)this,
+           (void *)function_obj);
     error_desc_t desc;
     desc.error_id = error_id;
     desc.this = this;
@@ -320,6 +344,7 @@ static void handle_error_arg(void *unused, jerry_value_t argv[], u32_t *argc,
     //  effects: creates an error object with the corresponding text, clears
     //             the error flag, and sets this as the first arg; the error
     //             value must be released later (e.g. zjs_release_args)
+    FTRACE("buffer = %p, bytes = %d\n", buffer, bytes);
     ZJS_ASSERT(bytes == sizeof(error_desc_t), "invalid data received");
 
     error_desc_t *desc = (error_desc_t *)buffer;
@@ -344,6 +369,7 @@ static void receive_packet(const void *buffer, u32_t length)
 {
     // effects: handle an incoming packet on the main thread that we first
     //            received on the RX thread
+    FTRACE("buffer = %p, length = %d\n", buffer, length);
     ZJS_ASSERT(length == sizeof(receive_packet_t), "invalid data received");
 
     receive_packet_t *receive = (receive_packet_t *)buffer;
@@ -409,6 +435,7 @@ static void clear_closed(const void *buffer, u32_t length)
     //             clean up and will no longer refer to the associated context
     //           this is particularly because the same context ID might get used
     //             again right away and we don't want to be confused thinking
+    FTRACE("buffer = %p, length = %d\n", buffer, length);
     ZJS_ASSERT(length == sizeof(clear_closed_t), "invalid data received");
 
     clear_closed_t *clear = (clear_closed_t *)buffer;
@@ -439,6 +466,8 @@ static void tcp_received(struct net_context *context,
 {
     // requires: user_data is the server handle the packet is associated with
     //             (or &no_server in the case of client connection sockets)
+    FTRACE("context = %p, pkt = %p, status = %d, user_data = %p\n", context,
+           pkt, status, user_data);
 #ifdef DEBUG_BUILD
     static int first = 1;
     if (first) {
@@ -503,6 +532,8 @@ static void tcp_received(struct net_context *context,
 static inline void pkt_sent(struct net_context *context, int status,
                             void *token, void *user_data)
 {
+    FTRACE("context = %p, status = %d, token = %p, user_data = %p\n", context,
+           status, token, user_data);
 #ifdef DEBUG_BUILD
     static int first = 1;
     if (first) {
@@ -532,6 +563,7 @@ static inline void pkt_sent(struct net_context *context, int status,
  */
 static ZJS_DECL_FUNC(socket_write)
 {
+    FTRACE_JSAPI;
     ZJS_VALIDATE_ARGS_OPTCOUNT(optcount, Z_OBJECT, Z_OPTIONAL Z_FUNCTION);
 
     GET_SOCK_HANDLE_JS(this, handle);
@@ -594,6 +626,7 @@ static ZJS_DECL_FUNC(socket_write)
  */
 static ZJS_DECL_FUNC(socket_pause)
 {
+    FTRACE_JSAPI;
     GET_SOCK_HANDLE_JS(this, handle);
     handle->paused = 1;
     return ZJS_UNDEFINED;
@@ -608,6 +641,7 @@ static ZJS_DECL_FUNC(socket_pause)
  */
 static ZJS_DECL_FUNC(socket_resume)
 {
+    FTRACE_JSAPI;
     GET_SOCK_HANDLE_JS(this, handle);
     handle->paused = 0;
     return ZJS_UNDEFINED;
@@ -622,6 +656,7 @@ static ZJS_DECL_FUNC(socket_resume)
  */
 static ZJS_DECL_FUNC(socket_address)
 {
+    FTRACE_JSAPI;
     GET_SOCK_HANDLE_JS(this, handle);
     jerry_value_t ret = zjs_create_object();
     ZVAL port = zjs_get_property(this, "localPort");
@@ -653,6 +688,7 @@ static ZJS_DECL_FUNC(socket_address)
  */
 static ZJS_DECL_FUNC(socket_set_timeout)
 {
+    FTRACE_JSAPI;
     ZJS_VALIDATE_ARGS_OPTCOUNT(optcount, Z_NUMBER, Z_OPTIONAL Z_FUNCTION);
 
     GET_SOCK_HANDLE_JS(this, handle);
@@ -679,6 +715,7 @@ static ZJS_DECL_FUNC(socket_connect);
 static jerry_value_t create_socket(u8_t client, sock_handle_t **handle_out)
 {
     // returns: a socket object that the caller owns
+    FTRACE("client = %d\n", (u32_t)client);
     sock_handle_t *sock_handle = zjs_malloc(sizeof(sock_handle_t));
     if (!sock_handle) {
         return ZJS_UNDEFINED;
@@ -720,6 +757,8 @@ static void add_socket_connection(jerry_value_t socket,
                                   struct net_context *new,
                                   struct sockaddr *remote)
 {
+    FTRACE("socket = %p, server_h = %p, new = %p, remote = %p\n",
+           (void *)socket, server_h, new, remote);
     GET_SOCK_HANDLE(socket, handle);
     if (!handle) {
         ERR_PRINT("could not get socket handle\n");
@@ -765,6 +804,7 @@ typedef struct {
 // a zjs_deferred_work callback
 static void accept_connection(const void *buffer, u32_t length)
 {
+    FTRACE("buffer = %p, length = %d\n", buffer, length);
     ZJS_ASSERT(length == sizeof(accept_connection_t), "invalid data received");
 
     accept_connection_t *accept = (accept_connection_t *)buffer;
@@ -793,6 +833,8 @@ static void tcp_accepted(struct net_context *context,
                          int error,
                          void *user_data)
 {
+    FTRACE("context = %p, addr = %p, addrlen = %d, error = %d, userdata = %p\n",
+           context, addr, addrlen, error, user_data);
 #ifdef DEBUG_BUILD
     static int first = 1;
     if (first) {
@@ -842,6 +884,7 @@ static void tcp_accepted(struct net_context *context,
  */
 static ZJS_DECL_FUNC(server_address)
 {
+    FTRACE_JSAPI;
     GET_SERVER_HANDLE_JS(this, server_h);
 
     jerry_value_t info = zjs_create_object();
@@ -877,6 +920,7 @@ static ZJS_DECL_FUNC(server_address)
  */
 static ZJS_DECL_FUNC(server_close)
 {
+    FTRACE_JSAPI;
     ZJS_VALIDATE_ARGS_OPTCOUNT(optcount, Z_OPTIONAL Z_FUNCTION);
 
     GET_SERVER_HANDLE_JS(this, server_h);
@@ -907,6 +951,7 @@ static ZJS_DECL_FUNC(server_close)
  */
 static ZJS_DECL_FUNC(server_get_connections)
 {
+    FTRACE_JSAPI;
     ZJS_VALIDATE_ARGS(Z_FUNCTION);
 
     GET_SERVER_HANDLE_JS(this, server_h);
@@ -934,6 +979,8 @@ static ZJS_DECL_FUNC(server_get_connections)
  */
 static ZJS_DECL_FUNC(server_listen)
 {
+    FTRACE_JSAPI;
+
     // options object, optional function
     ZJS_VALIDATE_ARGS_OPTCOUNT(optcount, Z_OBJECT, Z_OPTIONAL Z_FUNCTION);
 
@@ -1031,6 +1078,7 @@ static ZJS_DECL_FUNC(server_listen)
  */
 static ZJS_DECL_FUNC(net_create_server)
 {
+    FTRACE_JSAPI;
     ZJS_VALIDATE_ARGS_OPTCOUNT(optcount, Z_OPTIONAL Z_FUNCTION);
 
     jerry_value_t server = zjs_create_object();
@@ -1069,6 +1117,7 @@ static ZJS_DECL_FUNC(net_create_server)
 static void connect_callback(void *h, jerry_value_t argv[], u32_t *argc,
                              const char *buffer, u32_t bytes)
 {
+    FTRACE("h = %p, buffer = %p, bytes = %d\n", h, buffer, bytes);
     sock_handle_t *handle = (sock_handle_t *)h;
     zjs_obj_add_boolean(handle->socket, false, "connecting");
     zjs_add_event_listener(handle->socket, "connect",
@@ -1078,6 +1127,8 @@ static void connect_callback(void *h, jerry_value_t argv[], u32_t *argc,
 static void tcp_connected(struct net_context *context, int status,
                           void *user_data)
 {
+    FTRACE("context = %p, status = %d, user_data = %p\n", context, status,
+           user_data);
     if (status == 0) {
         sock_handle_t *sock_handle = (sock_handle_t *)user_data;
 
@@ -1114,6 +1165,7 @@ static void tcp_connected(struct net_context *context, int status,
  */
 static ZJS_DECL_FUNC(socket_connect)
 {
+    FTRACE_JSAPI;
     ZJS_VALIDATE_ARGS(Z_OBJECT, Z_OPTIONAL Z_FUNCTION);
 
     GET_SOCK_HANDLE_JS(this, handle);
@@ -1259,6 +1311,7 @@ static ZJS_DECL_FUNC(socket_connect)
  */
 static ZJS_DECL_FUNC(net_socket)
 {
+    FTRACE_JSAPI;
     sock_handle_t *sock_handle = NULL;
     jerry_value_t socket = create_socket(true, &sock_handle);
     if (!sock_handle) {
@@ -1285,6 +1338,7 @@ static ZJS_DECL_FUNC(net_socket)
  */
 static ZJS_DECL_FUNC(net_is_ip)
 {
+    FTRACE_JSAPI;
     if (!jerry_value_is_string(argv[0]) || argc < 1) {
         return jerry_create_number(0);
     }
@@ -1321,6 +1375,7 @@ static ZJS_DECL_FUNC(net_is_ip)
  */
 static ZJS_DECL_FUNC(net_is_ip4)
 {
+    FTRACE_JSAPI;
     ZVAL ret = net_is_ip(function_obj, this, argv, argc);
     double v = jerry_get_number_value(ret);
     if (v == 4) {
@@ -1340,6 +1395,7 @@ static ZJS_DECL_FUNC(net_is_ip4)
  */
 static ZJS_DECL_FUNC(net_is_ip6)
 {
+    FTRACE_JSAPI;
     ZVAL ret = net_is_ip(function_obj, this, argv, argc);
     double v = jerry_get_number_value(ret);
     if (v == 6) {
@@ -1352,6 +1408,7 @@ static jerry_value_t net_obj;
 
 jerry_value_t zjs_net_init()
 {
+    FTRACE("\n");
     zjs_net_config_default();
 
     zjs_native_func_t net_array[] = {
@@ -1397,6 +1454,7 @@ jerry_value_t zjs_net_init()
 
 void zjs_net_cleanup()
 {
+    FTRACE("\n");
     jerry_release_value(zjs_net_prototype);
     jerry_release_value(zjs_net_socket_prototype);
     jerry_release_value(zjs_net_server_prototype);
