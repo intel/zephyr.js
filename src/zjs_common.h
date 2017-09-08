@@ -56,14 +56,14 @@ int zjs_get_ms(void);
 
 #else  // !DEBUG_BUILD
 
-#define DBG_PRINT(fmt...) do {} while (0);
+#define DBG_PRINT(fmt...) do {} while (0)
 
 #define ERR_PRINT                                                        \
     ZJS_PRINT("\n%s:%d %s():\n(ERROR) ", zjs_shorten_filepath(__FILE__), \
               __LINE__, __func__);                                       \
     ZJS_PRINT
 
-#define ZJS_ASSERT(condition, str) do {} while (0);
+#define ZJS_ASSERT(condition, str) do {} while (0)
 
 #endif  // DEBUG_BUILD
 
