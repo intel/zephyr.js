@@ -1,6 +1,12 @@
 // Copyright (c) 2017, Intel Corporation.
 #ifdef BUILD_MODULE_NET
 
+// enable to use function tracing for debug purposes
+#if 0
+#define USE_FTRACE
+static char FTRACE_PREFIX[] = "net";
+#endif
+
 // C includes
 #include <errno.h>
 
@@ -20,21 +26,6 @@
 #include "zjs_modules.h"
 #include "zjs_net_config.h"
 #include "zjs_util.h"
-
-// file-specific function tracing for debug purposes
-#if 0
-#define FTRACE                                                   \
-    ZJS_PRINT("[%x] net: %s: ", (u32_t)k_current_get() & 0xffff, \
-              __func__);                                         \
-    ZJS_PRINT
-#define FTRACE_JSAPI                                             \
-    ZJS_PRINT("[%x] net: %s: func = %p, this = %p, argc = %d\n", \
-              (u32_t)k_current_get() & 0xffff, __func__,         \
-              (void *)function_obj, (void *)this, (u32_t)argc)
-#else
-#define FTRACE(fmt...) do {} while (0)
-#define FTRACE_JSAPI do {} while (0)
-#endif
 
 /**
  * Net module
