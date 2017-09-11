@@ -160,7 +160,7 @@ static ZJS_DECL_FUNC(zjs_spi_transceive)
         } else {
             // If we were passed a buffer just use it as is
             tx_buf = zjs_buffer_find(argv[1]);
-            tx_buf_obj = buffer;
+            tx_buf_obj = jerry_acquire_value(buffer);   // We don't own the buffer
         }
         // If this is a read / write
         if (dir_arg == ZJS_TOPOLOGY_FULL_DUPLEX) {
