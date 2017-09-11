@@ -1,5 +1,11 @@
 // Copyright (c) 2017, Intel Corporation.
 
+// enable to use function tracing for debug purposes
+#if 0
+#define USE_FTRACE
+static char FTRACE_PREFIX[] = "net";
+#endif
+
 // C includes
 #include <errno.h>
 #include <random.h>
@@ -116,6 +122,7 @@ static char magic[] = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 static inline ws_connection_t *find_connection(server_handle_t *server_h,
                                                struct net_context *context)
 {
+    FTRACE("server_h = %p, context = %p\n", server_h, context);
     return ZJS_LIST_FIND(ws_connection_t, server_h->connections, tcp_sock,
                          context);
 }
@@ -140,6 +147,8 @@ typedef struct error_desc {
 static error_desc_t create_error_desc(u32_t error_id, jerry_value_t this,
                                       jerry_value_t function_obj)
 {
+    FTRACE("error_id = %d, this = %p, func = %p\n\n", error_id, (void *)this,
+           (void *)function_obj);
     error_desc_t desc;
     desc.error_id = error_id;
     desc.this = this;
@@ -155,6 +164,7 @@ static void handle_error_arg(void *unused, jerry_value_t argv[], u32_t *argc,
     //  effects: creates an error object with the corresponding text, clears
     //             the error flag, and sets this as the first arg; the error
     //             value must be released later (e.g. zjs_release_args)
+    FTRACE("buffer = %p, bytes = %d\n", buffer, bytes);
     if (bytes != sizeof(error_desc_t)) {
         DBG_PRINT("invalid data in handle_error_arg");
         return;
@@ -173,6 +183,7 @@ static void handle_error_arg(void *unused, jerry_value_t argv[], u32_t *argc,
 static void emit_error(jerry_value_t obj, const char *format, ...)
 {
     // effects: emits an error event on obj w/ formatted string message
+    FTRACE("obj = %p\n", (void *)obj);
     const int LEN = 128;
     char buf[LEN];
     va_list args;
@@ -188,6 +199,7 @@ static void emit_error(jerry_value_t obj, const char *format, ...)
 // a zjs_event_free callback
 static void free_server(void *native)
 {
+    FTRACE("native = %p\n", native);
     // effects: free up the server handle when it goes out of scope in JS
     server_handle_t *handle = (server_handle_t *)native;
     if (handle) {
@@ -202,6 +214,7 @@ static void free_server(void *native)
  */
 static jerry_value_t push_array(jerry_value_t array, jerry_value_t val)
 {
+    FTRACE("array = %p, val = %p\n", (void *)array, (void *)val);
     if (!jerry_value_is_array(array)) {
         jerry_value_t new = jerry_create_array(1);
         jerry_set_property_by_index(new, 0, val);
@@ -222,6 +235,8 @@ static jerry_value_t push_array(jerry_value_t array, jerry_value_t val)
 static inline void pkt_sent(struct net_context *context, int status,
                             void *token, void *user_data)
 {
+    FTRACE("context = %p, status = %d, token = %p, user_data = %p\n",
+           context, status, token, user_data);
     static int first = 1;
     if (first) {
         DBG_PRINT("TX Thread ID: %p\n", (void *)k_current_get());
@@ -232,6 +247,7 @@ static inline void pkt_sent(struct net_context *context, int status,
 
 static void tcp_send(struct net_context *context, void *data, u32_t len)
 {
+    FTRACE("context = %p, data = %p, len = %d\n", context, data, len);
     struct net_pkt *send_pkt;
     send_pkt = net_pkt_get_tx(context, K_NO_WAIT);
     if (!send_pkt) {
@@ -264,6 +280,7 @@ static void tcp_send(struct net_context *context, void *data, u32_t len)
 // generate an accept key given an input key
 static void generate_key(char *key, u32_t len, char *output, u32_t olen)
 {
+    FTRACE("key = '%s', len = %d, olen = %d\n", key, len, olen);
     u32_t concat_size = strlen(key) + strlen(magic) + 1;
     char *concat = zjs_malloc(concat_size);
     if (!concat) {
@@ -285,6 +302,7 @@ static void generate_key(char *key, u32_t len, char *output, u32_t olen)
 // dump/print a WS packets binary information
 static void dump_packet(ws_packet_t *packet)
 {
+    FTRACE("packet = %p\n", packet);
     ZJS_PRINT("FIN=         0x%02x\n", packet->fin);
     ZJS_PRINT("RSV1=        0x%02x\n", packet->rsv1);
     ZJS_PRINT("RSV2=        0x%02x\n", packet->rsv2);
@@ -303,6 +321,7 @@ static void dump_packet(ws_packet_t *packet)
 // dump an array of bytes, formatted (hex on left, ascii on right)
 static void dump_bytes(const char *tag, u8_t *data, u32_t len)
 {
+    FTRACE("tag = '%s', data = %p, len = %d\n", tag, data, len);
     if (tag) {
         ZJS_PRINT("%s:\n", tag);
     } else {
@@ -338,6 +357,8 @@ static void dump_bytes(const char *tag, u8_t *data, u32_t len)
 static int encode_packet(ws_packet_type type, u8_t mask, void *payload,
                          u16_t len, u8_t *out)
 {
+    FTRACE("type = %d, mask = %d, payload = %p, len = %d\n", (u32_t)type,
+           (u32_t)mask, payload, (u32_t)len);
     u8_t mask_offset = 2;
     u8_t byte1 = 0;
     // FIN bit
@@ -387,6 +408,7 @@ static int encode_packet(ws_packet_type type, u8_t mask, void *payload,
 // Note: packet->payload must be freed after use
 static int decode_packet(ws_packet_t *packet, u8_t *data, u32_t len)
 {
+    FTRACE("packet = %p, data = %p, len = %d\n", packet, data, len);
     u32_t mask_offset = 2;
     u8_t byte1 = data[0];
     u8_t byte2 = data[1];
@@ -442,6 +464,7 @@ static int decode_packet(ws_packet_t *packet, u8_t *data, u32_t len)
 static void consume_data(ws_connection_t *con, u16_t len)
 {
     // effects: mark len bytes of data as read in the connection
+    FTRACE("con = %p, len = %d\n", con, (u32_t)len);
     con->rptr += len;
     if (con->rptr == con->wptr) {
         DBG_PRINT("all data consumed, reseting read buffer\n");
@@ -454,6 +477,7 @@ static void trigger_data(void *h, jerry_value_t argv[], u32_t *argc,
                          const char *buffer, u32_t bytes)
 {
     // requires: buffer contains 2-byte length
+    FTRACE("h = %p, buffer = %p, bytes = %d\n", h, buffer, bytes);
     ws_connection_t *con = (ws_connection_t *)h;
 
     u16_t len = *(u16_t *)buffer;
@@ -471,6 +495,7 @@ static void trigger_data(void *h, jerry_value_t argv[], u32_t *argc,
 static void pre_close_connection(void *handle, jerry_value_t argv[],
                                  u32_t *argc, const char *buffer, u32_t length)
 {
+    FTRACE("handle = %p, buffer = %p, length = %d\n", handle, buffer, length);
     jerry_value_t code = jerry_create_number(*((int*)buffer));
     jerry_value_t reason = jerry_create_string(buffer + sizeof(int));
 
@@ -482,6 +507,7 @@ static void pre_close_connection(void *handle, jerry_value_t argv[],
 // a zjs_post_emit callback
 static void close_connection(void *h, jerry_value_t argv[], u32_t argc)
 {
+    FTRACE("h = %p, argc = %d\n", h, argc);
     ws_connection_t *con = (ws_connection_t *)h;
 
     ZJS_LIST_REMOVE(ws_connection_t, con->server_h->connections, con);
@@ -503,6 +529,7 @@ static void close_connection(void *h, jerry_value_t argv[], u32_t argc)
 static void process_packet(ws_connection_t *con, u8_t *data, u32_t len)
 {
     // requires: expects to be called from main thread; emits events directly
+    FTRACE("con = %p, data = %p, len = %d\n", con, data, len);
     ws_packet_t *packet = zjs_malloc(sizeof(ws_packet_t));
     if (!packet) {
         ERR_PRINT("allocation failed\n");
@@ -600,21 +627,25 @@ static ZJS_DECL_FUNC_ARGS(ws_send_data, ws_packet_type type)
 
 static ZJS_DECL_FUNC(ws_ping)
 {
+    FTRACE_JSAPI;
     return ws_send_data(function_obj, this, argv, argc, WS_PACKET_PING);
 }
 
 static ZJS_DECL_FUNC(ws_pong)
 {
+    FTRACE_JSAPI;
     return ws_send_data(function_obj, this, argv, argc, WS_PACKET_PONG);
 }
 
 static ZJS_DECL_FUNC(ws_send)
 {
+    FTRACE_JSAPI;
     return ws_send_data(function_obj, this, argv, argc, WS_PACKET_TEXT_DATA);
 }
 
 static ZJS_DECL_FUNC(ws_terminate)
 {
+    FTRACE_JSAPI;
     GET_WS_HANDLE_JS(this, con);
     DBG_PRINT("closing connection\n");
     close_connection(con, NULL, 0);
@@ -623,6 +654,7 @@ static ZJS_DECL_FUNC(ws_terminate)
 
 static jerry_value_t create_ws_connection(ws_connection_t *con)
 {
+    FTRACE("con = %p\n", con);
     // FIXME: this should be using a prototype
     jerry_value_t conn = zjs_create_object();
     zjs_obj_add_function(conn, ws_send, "send");
@@ -649,6 +681,7 @@ typedef struct {
 // a zjs_deferred_work callback
 static void receive_packet(const void *buffer, u32_t length)
 {
+    FTRACE("buffer = %p, length = %d\n", buffer, length);
     if (length != sizeof(receive_packet_t)) {
         // shouldn't happen so make it a debug print
         DBG_PRINT("Error: Unexpected data!\n");
@@ -800,6 +833,9 @@ static void tcp_received(struct net_context *context,
                          int status,
                          void *user_data)
 {
+    // requires: called from RX thread, use caution
+    FTRACE("context = %p, pkt = %p, status = %d, user_data = %p\n", context,
+           pkt, status, user_data);
     server_handle_t *server_h = (server_handle_t *)user_data;
     ws_connection_t *con = find_connection(server_h, context);
 
@@ -836,6 +872,7 @@ static void tcp_received(struct net_context *context,
 static void post_accept_handler(void *handle, jerry_value_t ret_val)
 {
     // requires: expects to be called from main thread; emits events directly
+    FTRACE("handle = %p, ret_val = %p\n", handle, (void *)ret_val);
     ws_connection_t *con = (ws_connection_t *)handle;
     if (!jerry_value_is_string(ret_val)) {
         DBG_PRINT("no protocol returned\n");
@@ -888,6 +925,7 @@ typedef struct {
 // a zjs_deferred_work callback
 static void accept_connection(const void *buffer, u32_t length)
 {
+    FTRACE("buffer = %p, length = %d\n", buffer, length);
     // FIXME: replace deferred calls below; no longer needed
     if (length != sizeof(accept_connection_t)) {
         // shouldn't happen so make it a debug print
@@ -934,6 +972,9 @@ static void tcp_accepted(struct net_context *context,
                          int error,
                          void *user_data)
 {
+    // requires: called from RX thread, use caution
+    FTRACE("context = %p, addr = %p, addrlen = %d, error = %d, userdata = %p\n",
+           context, addr, addrlen, error, user_data);
 #ifdef DEBUG_BUILD
     static int first = 1;
     if (first) {
@@ -1045,6 +1086,7 @@ static ZJS_DECL_FUNC(ws_server)
 
 jerry_value_t zjs_ws_init()
 {
+    FTRACE("\n");
     zjs_net_config_default();
 
     jerry_value_t ws = zjs_create_object();
@@ -1055,4 +1097,5 @@ jerry_value_t zjs_ws_init()
 
 void zjs_ws_cleanup()
 {
+    FTRACE("\n");
 }
