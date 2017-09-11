@@ -611,11 +611,19 @@ void zjs_loop_init(void);
     }
 
 #ifdef DEBUG_BUILD
-// nasty hack to get reference count from a JerryScript object
+/**
+ * nasty hack to display reference count from a JerryScript object
+ *
+ * NOTE: this depends on JerryScript internals that could change, do not use in
+ *       production code
+ *
+ * @param str  A label string that will be displayed to identify this call
+ * @param obj  The JerryScript object in question
+ */
 #define CHECK_REF_COUNT(str, obj)                              \
     {                                                          \
         uint16_t *ptr = (uint16_t *)(uintptr_t)(obj - 3);      \
-        ZJS_PRINT("%s: %p %x\n", str, (void *)(uintptr_t)obj,  \
+        ZJS_PRINT("%s: %p %d\n", str, (void *)(uintptr_t)obj,  \
                   (uint32_t)(*ptr) >> 6);                      \
     }
 #else
