@@ -518,6 +518,15 @@ static void process_packet(ws_connection_t *con, u8_t *data, u32_t len)
         return;
     }
 
+    if (con->server_h->max_payload &&
+            (packet->payload_len > con->server_h->max_payload)) {
+        emit_error(con->server, "payload too large: %d > %d",
+                packet->payload_len, con->server_h->max_payload);
+        zjs_free(packet->payload);
+        zjs_free(packet);
+        return;
+    }
+
     memcpy(con->wptr, packet->payload, packet->payload_len);
     con->wptr += packet->payload_len;
 
@@ -687,14 +696,6 @@ static void receive_packet(const void *buffer, u32_t length)
 #ifdef DEBUG_BUILD
         dump_bytes("DATA", data, len);
 #endif
-        if (con->server_h->max_payload &&
-            (len > con->server_h->max_payload)) {
-            emit_error(con->server, "payload too large: %d > %d", len,
-                      con->server_h->max_payload);
-            net_pkt_unref(pkt);
-            zjs_free(data);
-            return;
-        }
         if (con->state == UNCONNECTED) {
             ZVAL_MUTABLE protocol_list;
             con->accept_key = zjs_malloc(64);
