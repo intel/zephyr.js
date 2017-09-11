@@ -1,5 +1,11 @@
 // Copyright (c) 2016-2017, Intel Corporation.
 
+// enable to use function tracing for debug purposes
+#if 0
+#define USE_FTRACE
+static char FTRACE_PREFIX[] = "net";
+#endif
+
 #include <net/net_if.h>
 #ifdef BUILD_MODULE_NET_CONFIG
 #include <net/net_mgmt.h>
@@ -29,6 +35,7 @@ void zjs_net_config_default(void)
     /*
      * if net-config was not included, just do the default configuration
      */
+    FTRACE("\n");
 #ifndef BUILD_MODULE_NET_CONFIG
 #ifdef CONFIG_NET_L2_BLUETOOTH
     if (!net_ble_enabled) {
@@ -56,6 +63,7 @@ void zjs_net_config_default(void)
 
 struct sockaddr *zjs_net_config_get_ip(struct net_context *context)
 {
+    FTRACE("context = %p\n", context);
     struct net_if *iface = net_context_get_iface(context);
     if (net_context_get_family(context) == AF_INET) {
 #ifndef CONFIG_NET_IPV4
@@ -74,6 +82,7 @@ struct sockaddr *zjs_net_config_get_ip(struct net_context *context)
 
 int zjs_is_ip(char *addr)
 {
+    FTRACE("addr = '%s'\n", addr);
     struct sockaddr_in6 tmp = { 0 };
 
     // check if v6
@@ -101,6 +110,8 @@ static char default_ble[18] = "FF:EE:DD:CC:BB:AA";
 static ssize_t zjs_ble_storage_read(const bt_addr_le_t *addr, u16_t key,
                                     void *data, size_t length)
 {
+    FTRACE("addr = %p, key = %d, data = %p, length = %d\n", addr, (u32_t)key,
+           data, (u32_t)length);
     if (addr) {
         return -ENOENT;
     }
@@ -120,6 +131,7 @@ static ssize_t zjs_ble_storage_read(const bt_addr_le_t *addr, u16_t key,
  */
 static int str2bt_addr_le(const char *str, const char *type, bt_addr_le_t *addr)
 {
+    FTRACE("str = '%s', type = '%s', addr = %p\n", str, type, addr);
     int i;
     u8_t tmp;
 
@@ -147,6 +159,7 @@ static int str2bt_addr_le(const char *str, const char *type, bt_addr_le_t *addr)
 
 static void ble_set_address(char *ble_addr)
 {
+    FTRACE("ble_addr = %s\n", ble_addr);
     static const struct bt_storage storage = {
         .read = zjs_ble_storage_read,
         .write = NULL,
@@ -183,6 +196,7 @@ static void ble_set_address(char *ble_addr)
 
 void zjs_init_ble_address()
 {
+    FTRACE("\n");
     ble_set_address(default_ble);
 }
 #endif
@@ -196,6 +210,7 @@ static void dhcp_callback(struct net_mgmt_event_callback *cb,
                           u32_t mgmt_event,
                           struct net_if *iface)
 {
+    FTRACE("cb = %p, mgmt_event = %x, iface = %p\n", cb, mgmt_event, iface);
     int i = 0;
 
     if (mgmt_event != NET_EVENT_IPV4_ADDR_ADD) {
@@ -324,6 +339,7 @@ static struct net_mgmt_event_callback cb;
 static void iface_event(struct net_mgmt_event_callback *cb,
         u32_t mgmt_event, struct net_if *iface)
 {
+    FTRACE("cb = %p, mgmt_event = %x, iface = %p\n", cb, mgmt_event, iface);
     if (mgmt_event == NET_EVENT_IF_UP) {
         zjs_defer_emit_event(config, "netup", NULL, 0, NULL, NULL);
     } else if (mgmt_event == NET_EVENT_IF_DOWN) {
@@ -333,6 +349,7 @@ static void iface_event(struct net_mgmt_event_callback *cb,
 
 jerry_value_t zjs_net_config_init(void)
 {
+    FTRACE("\n");
     config = zjs_create_object();
 
     zjs_obj_add_function(config, set_ip, "setStaticIP");
