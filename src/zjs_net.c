@@ -584,7 +584,6 @@ static inline void pkt_sent(struct net_context *context, int status,
  */
 static ZJS_DECL_FUNC(socket_write)
 {
-    FTRACE_JSAPI;
     ZJS_VALIDATE_ARGS_OPTCOUNT(optcount, Z_OBJECT, Z_OPTIONAL Z_FUNCTION);
 
     GET_SOCK_HANDLE_JS(this, handle);
@@ -709,7 +708,6 @@ static ZJS_DECL_FUNC(socket_address)
  */
 static ZJS_DECL_FUNC(socket_set_timeout)
 {
-    FTRACE_JSAPI;
     ZJS_VALIDATE_ARGS_OPTCOUNT(optcount, Z_NUMBER, Z_OPTIONAL Z_FUNCTION);
 
     GET_SOCK_HANDLE_JS(this, handle);
@@ -943,7 +941,6 @@ static ZJS_DECL_FUNC(server_address)
  */
 static ZJS_DECL_FUNC(server_close)
 {
-    FTRACE_JSAPI;
     ZJS_VALIDATE_ARGS_OPTCOUNT(optcount, Z_OPTIONAL Z_FUNCTION);
 
     GET_SERVER_HANDLE_JS(this, server_h);
@@ -977,7 +974,6 @@ static ZJS_DECL_FUNC(server_close)
  */
 static ZJS_DECL_FUNC(server_get_connections)
 {
-    FTRACE_JSAPI;
     ZJS_VALIDATE_ARGS(Z_FUNCTION);
 
     GET_SERVER_HANDLE_JS(this, server_h);
@@ -1007,8 +1003,6 @@ static ZJS_DECL_FUNC(server_get_connections)
  */
 static ZJS_DECL_FUNC(server_listen)
 {
-    FTRACE_JSAPI;
-
     // options object, optional function
     ZJS_VALIDATE_ARGS_OPTCOUNT(optcount, Z_OBJECT, Z_OPTIONAL Z_FUNCTION);
 
@@ -1106,7 +1100,6 @@ static ZJS_DECL_FUNC(server_listen)
  */
 static ZJS_DECL_FUNC(net_create_server)
 {
-    FTRACE_JSAPI;
     ZJS_VALIDATE_ARGS_OPTCOUNT(optcount, Z_OPTIONAL Z_FUNCTION);
 
     jerry_value_t server = zjs_create_object();
@@ -1195,7 +1188,6 @@ static void tcp_connected(struct net_context *context, int status,
  */
 static ZJS_DECL_FUNC(socket_connect)
 {
-    FTRACE_JSAPI;
     ZJS_VALIDATE_ARGS(Z_OBJECT, Z_OPTIONAL Z_FUNCTION);
 
     GET_SOCK_HANDLE_JS(this, handle);

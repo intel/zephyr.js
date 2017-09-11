@@ -299,6 +299,7 @@ int zjs_validate_args(const char *expectations[], const jerry_length_t argc,
  *   beyond what are specified are allowed and ignored.
  */
 #define ZJS_VALIDATE_ARGS_FULL(optcount, offset, ...)                       \
+    FTRACE_JSAPI;                                                           \
     int optcount = zjs_validate_args((const char *[]){ __VA_ARGS__, NULL }, \
                                      argc - offset, argv + offset);         \
     if (optcount <= ZJS_INVALID_ARG) {                                      \
