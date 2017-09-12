@@ -1218,7 +1218,7 @@ static ZJS_DECL_FUNC(socket_connect)
                               &handle->tcp_sock));
     }
     if (!handle->tcp_sock) {
-        DBG_PRINT("connect failed\n");
+        DBG_PRINT("failed to get context\n");
         error_desc_t desc = create_error_desc(ERROR_CONNECT_SOCKET, this,
                                               function_obj);
         zjs_defer_emit_event(this, "error", &desc, sizeof(desc),
@@ -1253,10 +1253,12 @@ static ZJS_DECL_FUNC(socket_connect)
         // set socket.connecting property == true
         zjs_obj_add_boolean(this, true, "connecting");
         // connect to remote
-        if (net_context_connect(
-                handle->tcp_sock, (struct sockaddr *)&peer_addr6,
-                sizeof(peer_addr6), tcp_connected, 1, handle) < 0) {
-            DBG_PRINT("connect failed\n");
+        int rval = net_context_connect(handle->tcp_sock,
+                                       (struct sockaddr *)&peer_addr6,
+                                       sizeof(peer_addr6), tcp_connected,
+                                       1, handle);
+        if (rval < 0) {
+            DBG_PRINT("IPv6 connect failed: %d\n", rval);
             zjs_obj_add_boolean(this, false, "connecting");
             error_desc_t desc = create_error_desc(ERROR_CONNECT_SOCKET, this,
                                                   function_obj);
@@ -1287,11 +1289,12 @@ static ZJS_DECL_FUNC(socket_connect)
         // set socket.connecting property == true
         zjs_obj_add_boolean(this, true, "connecting");
         // connect to remote
-        if (net_context_connect(handle->tcp_sock,
-                                (struct sockaddr *)&peer_addr4,
-                                sizeof(peer_addr4), tcp_connected,
-                                1, handle) < 0) {
-            DBG_PRINT("connect failed\n");
+        int rval  = net_context_connect(handle->tcp_sock,
+                                        (struct sockaddr *)&peer_addr4,
+                                        sizeof(peer_addr4), tcp_connected,
+                                        1, handle);
+        if (rval < 0) {
+            DBG_PRINT("IPv4 connect failed: %d\n", rval);
             error_desc_t desc = create_error_desc(ERROR_CONNECT_SOCKET, this,
                                                   function_obj);
             zjs_defer_emit_event(this, "error", &desc, sizeof(desc),
