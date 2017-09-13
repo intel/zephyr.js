@@ -137,7 +137,7 @@ static ZJS_DECL_FUNC(zjs_spi_transceive)
         // Figure out if the buffer is an array or string, handle accordingly
         if (jerry_value_is_array(argv[1])) {
             len = jerry_get_array_length(buffer);
-            tx_buf_obj = zjs_buffer_create(len, &tx_buf);
+            ZVAL tx_buf_obj = zjs_buffer_create(len, &tx_buf);
             if (tx_buf) {
                 for (int i = 0; i < len; i++) {
                     ZVAL item = jerry_get_property_by_index(buffer, i);
@@ -150,7 +150,7 @@ static ZJS_DECL_FUNC(zjs_spi_transceive)
                 }
             }
         } else if (jerry_value_is_string(argv[1])) {
-            tx_buf_obj = zjs_buffer_create(jerry_get_string_size(buffer),
+            ZVAL tx_buf_obj = zjs_buffer_create(jerry_get_string_size(buffer),
                                            &tx_buf);
             // zjs_copy_jstring adds a null terminator, which we don't want
             // so make a new string instead and remove it.
@@ -159,8 +159,7 @@ static ZJS_DECL_FUNC(zjs_spi_transceive)
             zjs_free(tmpBuf);
         } else {
             // If we were passed a buffer just use it as is
-            tx_buf = zjs_buffer_find(argv[1]);
-            tx_buf_obj = jerry_acquire_value(buffer);   // We don't own the buffer
+            tx_buf = zjs_buffer_find(argv[1]);            
         }
         // If this is a read / write
         if (dir_arg == ZJS_TOPOLOGY_FULL_DUPLEX) {
