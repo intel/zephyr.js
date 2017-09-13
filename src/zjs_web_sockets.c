@@ -498,7 +498,7 @@ static void pre_close_connection(void *handle, jerry_value_t argv[],
 {
     FTRACE("handle = %p, buffer = %p, length = %d\n", handle, buffer, length);
 
-    jerry_value_t code = jerry_create_number(*((uint16_t*)buffer));
+    jerry_value_t code = jerry_create_number(*((uint16_t *)buffer));
     jerry_value_t reason = jerry_create_string("socket closed");
 
     argv[0] = code;
