@@ -62,6 +62,7 @@ typedef enum {
     WS_PACKET_CONTINUATION = 0x00,
     WS_PACKET_TEXT_DATA = 0x01,
     WS_PACKET_BINARY_DATA = 0x02,
+    WS_PACKET_CLOSE = 0x08,
     WS_PACKET_PING = 0x09,
     WS_PACKET_PONG = 0x0a
 } ws_packet_type;
@@ -496,8 +497,9 @@ static void pre_close_connection(void *handle, jerry_value_t argv[],
                                  u32_t *argc, const char *buffer, u32_t length)
 {
     FTRACE("handle = %p, buffer = %p, length = %d\n", handle, buffer, length);
-    jerry_value_t code = jerry_create_number(*((int*)buffer));
-    jerry_value_t reason = jerry_create_string(buffer + sizeof(int));
+
+    jerry_value_t code = jerry_create_number(*((uint16_t *)buffer));
+    jerry_value_t reason = jerry_create_string("socket closed");
 
     argv[0] = code;
     argv[1] = reason;
@@ -581,6 +583,11 @@ static void process_packet(ws_connection_t *con, u8_t *data, u32_t len)
     case WS_PACKET_PONG:
         zjs_defer_emit_event(con->conn, "pong", &plen, sizeof(plen),
                              trigger_data, zjs_release_args);
+        break;
+    case WS_PACKET_CLOSE:
+        zjs_defer_emit_event(con->conn, "close", packet->payload,
+                             sizeof(uint16_t), pre_close_connection,
+                             close_connection);
         break;
     default:
         DBG_PRINT("opcode 0x%02x not recognized\n", packet->opcode);
@@ -844,11 +851,8 @@ static void tcp_received(struct net_context *context,
         net_pkt_unref(pkt);
         if (con && con->state == CONNECTED) {
             // close the socket
-            char buf[sizeof(int) + 13 + 1];
-            memcpy(buf, &status, sizeof(int));
-            memcpy(buf + sizeof(int), "socket closed", 13);
-            buf[sizeof(int) + 13] = '\0';
-            zjs_defer_emit_event(con->conn, "close", buf, sizeof(int) + 14,
+            uint16_t stat = (uint16_t)status;
+            zjs_defer_emit_event(con->conn, "close", &stat, sizeof(uint16_t),
                                  pre_close_connection, close_connection);
             return;
         } else {
