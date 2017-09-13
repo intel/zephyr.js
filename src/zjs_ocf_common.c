@@ -54,9 +54,9 @@ static bool ocf_foreach_prop(const jerry_value_t prop_name,
      */
     // Skip id/resourcePath/resourceType because that is not a resource property
     // that is sent out
-    if ((strcmp(name, "deviceId") != 0) &&
-        (strcmp(name, "resourcePath") != 0) &&
-        (strcmp(name, "resourceType") != 0)) {
+    if ((!strequal(name, "deviceId")) &&
+        (!strequal(name, "resourcePath")) &&
+        (!strequal(name, "resourceType"))) {
         handle->names_array[handle->size] =
             zjs_malloc(jerry_get_string_size(prop_name) + 1);
         memcpy(handle->names_array[handle->size], name, strlen(name));

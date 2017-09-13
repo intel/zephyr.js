@@ -146,9 +146,9 @@ static int str2bt_addr_le(const char *str, const char *type, bt_addr_le_t *addr)
         addr->a.val[i] = tmp;
     }
 
-    if (!strcmp(type, "public") || !strcmp(type, "(public)")) {
+    if (strequal(type, "public") || strequal(type, "(public)")) {
         addr->type = BT_ADDR_LE_PUBLIC;
-    } else if (!strcmp(type, "random") || !strcmp(type, "(random)")) {
+    } else if (strequal(type, "random") || strequal(type, "(random)")) {
         addr->type = BT_ADDR_LE_RANDOM;
     } else {
         return -EINVAL;

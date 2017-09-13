@@ -424,7 +424,7 @@ u32_t ashell_process_data(const char *buf, u32_t len)
     }
 
     /* Don't send back the 'echo off' command */
-    if (!strcmp(CMD_ECHO_OFF, buf)) {
+    if (strequal(CMD_ECHO_OFF, buf)) {
         echo_mode = false;
     }
 

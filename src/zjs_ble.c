@@ -836,11 +836,11 @@ static bool zjs_ble_parse_characteristic(ble_characteristic_t *chrc)
         char name[MAX_NAME_LENGTH];
         zjs_copy_jstring(v_property, name, &size);
 
-        if (!strcmp(name, "read")) {
+        if (strequal(name, "read")) {
             chrc->flags |= BT_GATT_CHRC_READ;
-        } else if (!strcmp(name, "write")) {
+        } else if (strequal(name, "write")) {
             chrc->flags |= BT_GATT_CHRC_WRITE;
-        } else if (!strcmp(name, "notify")) {
+        } else if (strequal(name, "notify")) {
             chrc->flags |= BT_GATT_CHRC_NOTIFY;
         }
     }

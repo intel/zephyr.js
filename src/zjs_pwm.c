@@ -170,7 +170,7 @@ static ZJS_DECL_FUNC(zjs_pwm_open)
     char buffer[BUFLEN];
     const char *polarity = ZJS_POLARITY_NORMAL;
     if (zjs_obj_get_string(data, "polarity", buffer, BUFLEN)) {
-        if (!strcmp(buffer, ZJS_POLARITY_REVERSE))
+        if (strequal(buffer, ZJS_POLARITY_REVERSE))
             polarity = ZJS_POLARITY_REVERSE;
     }
 

@@ -47,7 +47,7 @@ static ZJS_DECL_FUNC(native_require_handler)
     int modcount = sizeof(zjs_modules_array) / sizeof(module_t);
     for (int i = 0; i < modcount; i++) {
         module_t *mod = &zjs_modules_array[i];
-        if (!strcmp(mod->name, module)) {
+        if (strequal(mod->name, module)) {
             // We only want one instance of each module at a time
             if (mod->instance == 0) {
                 mod->instance = mod->init();
@@ -197,7 +197,7 @@ void zjs_modules_init()
         module_t *mod = &zjs_modules_array[i];
 
         // DEV: if you add another module name here, remove the break below
-        if (!strcmp(mod->name, "events")) {
+        if (strequal(mod->name, "events")) {
             mod->instance = jerry_acquire_value(mod->init());
             break;
         }

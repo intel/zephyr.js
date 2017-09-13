@@ -43,7 +43,7 @@ static u8_t string_correct = 0;
 static void c_callback2(void *handle, const void *args)
 {
     char *s = (char *)handle;
-    if (strcmp(s, "pass string as handle") == 0) {
+    if (strequal(s, "pass string as handle")) {
         string_correct = 1;
     }
 }
@@ -53,8 +53,8 @@ static void c_callback3(void *handle, const void *args)
 {
     char *h = (char *)handle;
     char *a = (char *)args;
-    if (strcmp(h, "this is my handle") == 0) {
-        if (strcmp(a, "this is my args") == 0) {
+    if (strequal(h, "this is my handle")) {
+        if (strequal(a, "this is my args")) {
             handle_and_args = 1;
         }
     }

@@ -734,7 +734,7 @@ int zjs_require_string_if_prop_map(jerry_value_t obj, const char *prop,
     jerry_size_t size = maxlen;
     zjs_copy_jstring(value, str, &size);
     for (int i = 0; map[i].first != NULL; ++i) {
-        if (!strcmp(str, map[i].first)) {
+        if (strequal(str, map[i].first)) {
             *result = map[i].second;
             return 0;
         }

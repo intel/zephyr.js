@@ -26,8 +26,8 @@
 #include "comms-shell.h"
 #include "comms-uart.h"
 #include "shell-state.h"
-
 #include "ihex-handler.h"
+#include "../zjs_util.h"
 
 // JerryScript includes
 #include "jerry-code.h"
@@ -436,10 +436,10 @@ s32_t ashell_raw_capture(const char *buf, u32_t len)
 
 s32_t ashell_set_echo_mode(char *buf)
 {
-    if (!strcmp("on", buf)) {
+    if (strequal(buf, "on")) {
         comms_print("echo_on");
         comms_set_echo_mode(true);
-    } else if (!strcmp("off", buf)) {
+    } else if (strequal(buf, "off")) {
         comms_print("echo_off");
         comms_set_echo_mode(false);
     }
@@ -492,14 +492,14 @@ s32_t ashell_set_transfer_state(char *buf)
     next = ashell_get_token_arg(buf);
     comms_print(buf);
 
-    if (!strcmp("raw", buf)) {
+    if (strequal(buf, "raw")) {
         comms_set_prompt(NULL);
         shell.state_flags |= kShellTransferRaw;
         shell.state_flags &= ~kShellTransferIhex;
         return RET_OK;
     }
 
-    if (!strcmp("ihex", buf)) {
+    if (strequal(buf, "ihex")) {
         comms_set_prompt(hex_prompt);
         shell.state_flags |= kShellTransferIhex;
         shell.state_flags &= ~kShellTransferRaw;
@@ -516,7 +516,7 @@ s32_t ashell_set_state(char *buf)
     }
 
     char *next = ashell_get_token_arg(buf);
-    if (!strcmp(CMD_TRANSFER, buf)) {
+    if (strequal(buf, CMD_TRANSFER)) {
         return ashell_set_transfer_state(next);
     }
 
@@ -531,7 +531,7 @@ s32_t ashell_get_state(char *buf)
     }
 
     ashell_get_token_arg(buf);
-    if (!strcmp(CMD_TRANSFER, buf)) {
+    if (strequal(buf, CMD_TRANSFER)) {
         DBG("Flags %lu\n", shell.state_flags);
 
         if (shell.state_flags & kShellTransferRaw)
@@ -764,7 +764,7 @@ s32_t ashell_main_state(char *buf, u32_t len)
     }
 
     for (u8_t t = 0; t < ASHELL_COMMANDS_COUNT; t++) {
-        if (!strcmp(commands[t].cmd_name, buf)) {
+        if (strequal(commands[t].cmd_name, buf)) {
             s32_t res = commands[t].cb(next);
             /* End command */
             if (shell.state_flags & kShellTransferIhex) {

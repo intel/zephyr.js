@@ -760,13 +760,13 @@ static void receive_packet(const void *buffer, u32_t length)
                 memcpy(value, tmp2 + 2, i - tmp2 - 2);
                 value[i - tmp2 - 3] = '\0';
 
-                if (strcmp(field, "Sec-WebSocket-Key") == 0) {
+                if (strequal(field, "Sec-WebSocket-Key")) {
                     // compute and return accept key
                     DBG_PRINT("new connection key: %s\n", value);
                     memset(con->accept_key, 0, 64);
                     generate_key(value, strlen(value), con->accept_key, 64);
                     DBG_PRINT("accept key: %s\n", con->accept_key);
-                } else if (strcmp(field, "Sec-WebSocket-Protocol") == 0) {
+                } else if (strequal(field, "Sec-WebSocket-Protocol")) {
                     int protocols = 1;
                     char *i = value;
                     while (*i != '\0') {

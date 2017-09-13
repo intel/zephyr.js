@@ -98,15 +98,15 @@ sensor_state_t zjs_sensor_get_state(jerry_value_t obj)
     const int BUFLEN = 20;
     char buffer[BUFLEN];
     if (zjs_obj_get_string(obj, "state", buffer, BUFLEN)) {
-        if (!strcmp(buffer, "unconnected"))
+        if (strequal(buffer, "unconnected"))
             return SENSOR_STATE_UNCONNECTED;
-        if (!strcmp(buffer, "idle"))
+        if (strequal(buffer, "idle"))
             return SENSOR_STATE_IDLE;
-        if (!strcmp(buffer, "activating"))
+        if (strequal(buffer, "activating"))
             return SENSOR_STATE_ACTIVATING;
-        if (!strcmp(buffer, "activated"))
+        if (strequal(buffer, "activated"))
             return SENSOR_STATE_ACTIVATED;
-        if (!strcmp(buffer, "errored"))
+        if (strequal(buffer, "errored"))
             return SENSOR_STATE_ERRORED;
         else
             ERR_PRINT("invalid state set %s\n", buffer);
