@@ -586,7 +586,8 @@ static void process_packet(ws_connection_t *con, u8_t *data, u32_t len)
         break;
     case WS_PACKET_CLOSE:
         zjs_defer_emit_event(con->conn, "close", packet->payload,
-                sizeof(uint16_t), pre_close_connection, close_connection);
+                             sizeof(uint16_t), pre_close_connection,
+                             close_connection);
         break;
     default:
         DBG_PRINT("opcode 0x%02x not recognized\n", packet->opcode);
