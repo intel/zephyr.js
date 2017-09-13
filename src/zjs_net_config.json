@@ -7,9 +7,7 @@
         "all": [
             "CONFIG_NETWORKING=y",
             "CONFIG_NET_MGMT=y",
-            "CONFIG_NET_MGMT_EVENT=y"
-        ],
-        "frdm_k64f": [
+            "CONFIG_NET_MGMT_EVENT=y",
             "CONFIG_NET_DHCPV4=y"
         ]
     },

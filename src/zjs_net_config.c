@@ -243,8 +243,8 @@ static void dhcp_callback(struct net_mgmt_event_callback *cb,
                       sizeof(buf));
         ZVAL gateway = jerry_create_string(buf);
 
-        jerry_value_t args[] = { addr, subnet, gateway };
-        zjs_signal_callback(dhcp_id, args, sizeof(jerry_value_t) * 3);
+        jerry_value_t args[] = {addr, subnet, gateway};
+        zjs_signal_callback(dhcp_id, args, sizeof(args));
         dhcp_id = -1;
 
         return;
