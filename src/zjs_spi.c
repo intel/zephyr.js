@@ -151,7 +151,7 @@ static ZJS_DECL_FUNC(zjs_spi_transceive)
             }
         } else if (jerry_value_is_string(argv[1])) {
             ZVAL tx_buf_obj = zjs_buffer_create(jerry_get_string_size(buffer),
-                                           &tx_buf);
+                                                &tx_buf);
             // zjs_copy_jstring adds a null terminator, which we don't want
             // so make a new string instead and remove it.
             char *tmpBuf = zjs_alloc_from_jstring(argv[1], NULL);
