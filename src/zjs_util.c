@@ -129,7 +129,7 @@ void zjs_obj_add_functions(jerry_value_t obj, zjs_native_func_t *funcs)
     //             struct with a NULL function field
     //  effects: adds all of the described functions to obj with given names
     for (zjs_native_func_t *map = funcs; map->function; map++) {
-        zjs_obj_add_function(obj, map->function, map->name);
+        zjs_obj_add_function(obj, map->name, map->function);
     }
 }
 

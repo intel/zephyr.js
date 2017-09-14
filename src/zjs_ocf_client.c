@@ -77,24 +77,24 @@ static jerry_value_t make_ocf_error(const char *name, const char *msg,
     if (res) {
         ZVAL ret = zjs_create_object();
         if (name) {
-            zjs_obj_add_string(ret, name, "name");
+            zjs_obj_add_string(ret, "name", name);
         } else {
             ERR_PRINT("error must have a name\n");
             return ZJS_UNDEFINED;
         }
         if (msg) {
-            zjs_obj_add_string(ret, msg, "message");
+            zjs_obj_add_string(ret, "message", msg);
         } else {
             ERR_PRINT("error must have a message\n");
             return ZJS_UNDEFINED;
         }
         if (res->device_id) {
-            zjs_obj_add_string(ret, res->device_id, "deviceId");
+            zjs_obj_add_string(ret, "deviceId", res->device_id);
         }
         if (res->resource_path) {
-            zjs_obj_add_string(ret, res->resource_path, "resourcePath");
+            zjs_obj_add_string(ret, "resourcePath", res->resource_path);
         }
-        zjs_obj_add_number(ret, (double)res->error_code, "errorCode");
+        zjs_obj_add_number(ret, "errorCode", (double)res->error_code);
 
         return jerry_acquire_value(ret);
     } else {
@@ -150,24 +150,24 @@ static jerry_value_t get_props_from_response(oc_client_response_t *data)
                   oc_string(rep->name));
         switch (rep->type) {
         case BOOL:
-            zjs_obj_add_boolean(prop_object, rep->value.boolean,
-                                oc_string(rep->name));
+            zjs_obj_add_boolean(prop_object, oc_string(rep->name),
+                                rep->value.boolean);
             DBG_PRINT("%d\n", rep->value.boolean);
             break;
         case INT:
-            zjs_obj_add_number(prop_object, (double)rep->value.integer,
-                               oc_string(rep->name));
+            zjs_obj_add_number(prop_object, oc_string(rep->name),
+                               (double)rep->value.integer);
             DBG_PRINT("%d\n", rep->value.integer);
             break;
         case DOUBLE:
-            zjs_obj_add_number(prop_object, (double)rep->value.double_p,
-                               oc_string(rep->name));
+            zjs_obj_add_number(prop_object, oc_string(rep->name),
+                               (double)rep->value.double_p);
             DBG_PRINT("%lf\n", rep->value.double_p);
             break;
         case BYTE_STRING:
         case STRING:
-            zjs_obj_add_string(prop_object, oc_string(rep->value.string),
-                               oc_string(rep->name));
+            zjs_obj_add_string(prop_object, oc_string(rep->name),
+                               oc_string(rep->value.string));
             DBG_PRINT("%s\n", oc_string(rep->value.string));
             break;
         case INT_ARRAY:
@@ -181,7 +181,7 @@ static jerry_value_t get_props_from_response(oc_client_response_t *data)
                     jerry_set_property_by_index(array, i, val);
                     DBG_PRINT("%d \n", i_array[i]);
                 }
-                zjs_obj_add_object(prop_object, array, oc_string(rep->name));
+                zjs_obj_add_object(prop_object, oc_string(rep->name), array);
             }
             DBG_PRINT("]\n");
             break;
@@ -196,7 +196,7 @@ static jerry_value_t get_props_from_response(oc_client_response_t *data)
                     jerry_set_property_by_index(array, i, val);
                     DBG_PRINT("%lf \n", i, d_array[i]);
                 }
-                zjs_obj_add_object(prop_object, array, oc_string(rep->name));
+                zjs_obj_add_object(prop_object, oc_string(rep->name), array);
             }
             DBG_PRINT("]\n");
             break;
@@ -211,7 +211,7 @@ static jerry_value_t get_props_from_response(oc_client_response_t *data)
                     jerry_set_property_by_index(array, i, val);
                     DBG_PRINT("%d \n", b_array[i]);
                 }
-                zjs_obj_add_object(prop_object, array, oc_string(rep->name));
+                zjs_obj_add_object(prop_object, oc_string(rep->name), array);
             }
             DBG_PRINT("]\n");
         case STRING_ARRAY:
@@ -226,7 +226,7 @@ static jerry_value_t get_props_from_response(oc_client_response_t *data)
                         DBG_PRINT("%s \n", oc_string_array_get_item(rep->value.array, i));
                     }
                 }
-                zjs_obj_add_object(prop_object, array, oc_string(rep->name));
+                zjs_obj_add_object(prop_object, oc_string(rep->name), array);
             }
             DBG_PRINT("]\n");
             break;
@@ -337,10 +337,10 @@ static jerry_value_t create_resource(struct client_resource *client)
     jerry_value_t resource = zjs_create_object();
 
     if (client->device_id) {
-        zjs_obj_add_string(resource, client->device_id, "deviceId");
+        zjs_obj_add_string(resource, "deviceId", client->device_id);
     }
     if (client->resource_path) {
-        zjs_obj_add_string(resource, client->resource_path, "resourcePath");
+        zjs_obj_add_string(resource, "resourcePath", client->resource_path);
     }
     ZVAL props = zjs_create_object();
     zjs_set_property(resource, "properties", props);
@@ -866,40 +866,40 @@ static void ocf_get_platform_info_handler(oc_client_response_t *data)
             case STRING:
                 if (strequal(oc_string(rep->name), "mnmn")) {
                     zjs_obj_add_readonly_string(platform_info,
-                                                oc_string(rep->value.string),
-                                                "manufacturerName");
+                                                "manufacturerName",
+                                                oc_string(rep->value.string));
                 } else if (strequal(oc_string(rep->name), "pi")) {
                     zjs_obj_add_readonly_string(platform_info,
-                                                oc_string(rep->value.string),
-                                                "id");
+                                                "id",
+                                                oc_string(rep->value.string));
                 } else if (strequal(oc_string(rep->name), "mnmo")) {
                     zjs_obj_add_readonly_string(platform_info,
-                                                oc_string(rep->value.string),
-                                                "model");
+                                                "model",
+                                                oc_string(rep->value.string));
                 } else if (strequal(oc_string(rep->name), "mndt")) {
                     zjs_obj_add_readonly_string(platform_info,
-                                                oc_string(rep->value.string),
-                                                "manufacturerDate");
+                                                "manufacturerDate",
+                                                oc_string(rep->value.string));
                 } else if (strequal(oc_string(rep->name), "mnpv")) {
                     zjs_obj_add_readonly_string(platform_info,
-                                                oc_string(rep->value.string),
-                                                "platformVersion");
+                                                "platformVersion",
+                                                oc_string(rep->value.string));
                 } else if (strequal(oc_string(rep->name), "mnos")) {
                     zjs_obj_add_readonly_string(platform_info,
-                                                oc_string(rep->value.string),
-                                                "osVersion");
+                                                "osVersion",
+                                                oc_string(rep->value.string));
                 } else if (strequal(oc_string(rep->name), "mnfv")) {
                     zjs_obj_add_readonly_string(platform_info,
-                                                oc_string(rep->value.string),
-                                                "firmwareVersion");
+                                                "firmwareVersion",
+                                                oc_string(rep->value.string));
                 } else if (strequal(oc_string(rep->name), "mnml")) {
                     zjs_obj_add_readonly_string(platform_info,
-                                                oc_string(rep->value.string),
-                                                "manufacturerURL");
+                                                "manufacturerURL",
+                                                oc_string(rep->value.string));
                 } else if (strequal(oc_string(rep->name), "mnsl")) {
                     zjs_obj_add_readonly_string(platform_info,
-                                                oc_string(rep->value.string),
-                                                "supportURL");
+                                                "supportURL",
+                                                oc_string(rep->value.string));
                 }
                 DBG_PRINT("%s\n", oc_string(rep->value.string));
                 break;
@@ -989,29 +989,26 @@ static void ocf_get_device_info_handler(oc_client_response_t *data)
             case BYTE_STRING:
             case STRING:
                 if (strequal(oc_string(rep->name), "di")) {
-                    zjs_obj_add_string(device_info,
-                                       oc_string(rep->value.string), "uuid");
+                    zjs_obj_add_string(device_info, "uuid",
+                                       oc_string(rep->value.string));
                     /*
                      * TODO: Where do we get the devices path to construct the
                      * URL. For now, the existing resources path will be used,
                      * but this is incorrect, because there could be devices
                      * found that are not already in our list of resources.
                      */
-                    zjs_obj_add_string(device_info,
+                    zjs_obj_add_string(device_info, "url",
                                        create_url(oc_string(rep->value.string),
-                                                  resource->resource_path),
-                                       "url");
+                                                  resource->resource_path));
                 } else if (strequal(oc_string(rep->name), "n")) {
-                    zjs_obj_add_string(device_info,
-                                       oc_string(rep->value.string), "name");
+                    zjs_obj_add_string(device_info, "name",
+                                       oc_string(rep->value.string));
                 } else if (strequal(oc_string(rep->name), "icv")) {
-                    zjs_obj_add_string(device_info,
-                                       oc_string(rep->value.string),
-                                       "coreSpecVersion");
+                    zjs_obj_add_string(device_info, "coreSpecVersion",
+                                       oc_string(rep->value.string));
                 } else if (strequal(oc_string(rep->name), "dmv")) {
-                    zjs_obj_add_string(device_info,
-                                       oc_string(rep->value.string),
-                                       "dataModels");
+                    zjs_obj_add_string(device_info, "dataModels",
+                                       oc_string(rep->value.string));
                 }
                 DBG_PRINT("%s\n", oc_string(rep->value.string));
                 break;
@@ -1078,11 +1075,11 @@ jerry_value_t zjs_ocf_client_init()
     }
 
     ocf_client = zjs_create_object();
-    zjs_obj_add_function(ocf_client, ocf_find_resources, "findResources");
-    zjs_obj_add_function(ocf_client, ocf_retrieve, "retrieve");
-    zjs_obj_add_function(ocf_client, ocf_update, "update");
-    zjs_obj_add_function(ocf_client, ocf_get_platform_info, "getPlatformInfo");
-    zjs_obj_add_function(ocf_client, ocf_get_device_info, "getDeviceInfo");
+    zjs_obj_add_function(ocf_client, "findResources", ocf_find_resources);
+    zjs_obj_add_function(ocf_client, "retrieve", ocf_retrieve);
+    zjs_obj_add_function(ocf_client, "update", ocf_update);
+    zjs_obj_add_function(ocf_client, "getPlatformInfo", ocf_get_platform_info);
+    zjs_obj_add_function(ocf_client, "getDeviceInfo", ocf_get_device_info);
 
     zjs_make_emitter(ocf_client, ZJS_UNDEFINED, NULL, client_free_cb);
 

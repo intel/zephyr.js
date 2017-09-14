@@ -136,11 +136,11 @@ static ZJS_DECL_FUNC_ARGS(add_timer_helper, bool repeat)
 
 #ifdef ZJS_FIND_FUNC_NAME
     if (repeat) {
-        zjs_obj_add_string(callback, "setInterval",
-                           ZJS_HIDDEN_PROP("function_name"));
+        zjs_obj_add_string(callback, ZJS_HIDDEN_PROP("function_name"),
+                           "setInterval");
     } else {
-        zjs_obj_add_string(callback, "setTimeout",
-                           ZJS_HIDDEN_PROP("function_name"));
+        zjs_obj_add_string(callback, ZJS_HIDDEN_PROP("function_name"),
+                           "setTimeout");
     }
 #endif
     zjs_timer_t *handle = add_timer(interval, callback, this, repeat,
@@ -232,16 +232,16 @@ void zjs_timers_init()
     ZVAL global_obj = jerry_get_global_object();
 
     // create the C handler for setInterval JS call
-    zjs_obj_add_function(global_obj, native_set_interval_handler,
-                         "setInterval");
+    zjs_obj_add_function(global_obj, "setInterval",
+                         native_set_interval_handler);
     // create the C handler for clearInterval JS call
-    zjs_obj_add_function(global_obj, native_clear_interval_handler,
-                         "clearInterval");
+    zjs_obj_add_function(global_obj, "clearInterval",
+                         native_clear_interval_handler);
     // create the C handler for setTimeout JS call
-    zjs_obj_add_function(global_obj, native_set_timeout_handler, "setTimeout");
+    zjs_obj_add_function(global_obj, "setTimeout", native_set_timeout_handler);
     // create the C handler for clearTimeout JS call (same as clearInterval)
-    zjs_obj_add_function(global_obj, native_clear_interval_handler,
-                         "clearTimeout");
+    zjs_obj_add_function(global_obj, "clearTimeout",
+                         native_clear_interval_handler);
 }
 
 static void free_timer(zjs_timer_t *tm)

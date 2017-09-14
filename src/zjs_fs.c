@@ -163,9 +163,9 @@ static jerry_value_t create_stats_obj(struct fs_dirent *entry)
 
     jerry_set_object_native_pointer(stats_obj, new_entry, &stats_type_info);
 
-    zjs_obj_add_function(stats_obj, is_file, "isFile");
-    zjs_obj_add_function(stats_obj, is_directory, "isDirectory");
-    zjs_obj_add_number(stats_obj, (double)entry->size, "size");
+    zjs_obj_add_function(stats_obj, "isFile", is_file);
+    zjs_obj_add_function(stats_obj, "isDirectory", is_directory);
+    zjs_obj_add_number(stats_obj, "size", (double)entry->size);
 
     return stats_obj;
 }
@@ -985,32 +985,32 @@ jerry_value_t zjs_fs_init()
 {
     jerry_value_t fs = zjs_create_object();
 
-    zjs_obj_add_function(fs, zjs_fs_open_sync, "openSync");
-    zjs_obj_add_function(fs, zjs_fs_close_sync, "closeSync");
-    zjs_obj_add_function(fs, zjs_fs_unlink_sync, "unlinkSync");
-    zjs_obj_add_function(fs, zjs_fs_unlink_sync, "rmdirSync");
-    zjs_obj_add_function(fs, zjs_fs_read_sync, "readSync");
-    zjs_obj_add_function(fs, zjs_fs_write_sync, "writeSync");
-    zjs_obj_add_function(fs, zjs_fs_truncate_sync, "truncateSync");
-    zjs_obj_add_function(fs, zjs_fs_mkdir_sync, "mkdirSync");
-    zjs_obj_add_function(fs, zjs_fs_readdir_sync, "readdirSync");
-    zjs_obj_add_function(fs, zjs_fs_stat_sync, "statSync");
-    zjs_obj_add_function(fs, zjs_fs_write_file_sync, "writeFileSync");
-    zjs_obj_add_function(fs, zjs_fs_read_file_sync, "readFileSync");
+    zjs_obj_add_function(fs, "openSync", zjs_fs_open_sync);
+    zjs_obj_add_function(fs, "closeSync", zjs_fs_close_sync);
+    zjs_obj_add_function(fs, "unlinkSync", zjs_fs_unlink_sync);
+    zjs_obj_add_function(fs, "rmdirSync", zjs_fs_unlink_sync);
+    zjs_obj_add_function(fs, "readSync", zjs_fs_read_sync);
+    zjs_obj_add_function(fs, "writeSync", zjs_fs_write_sync);
+    zjs_obj_add_function(fs, "truncateSync", zjs_fs_truncate_sync);
+    zjs_obj_add_function(fs, "mkdirSync", zjs_fs_mkdir_sync);
+    zjs_obj_add_function(fs, "readdirSync", zjs_fs_readdir_sync);
+    zjs_obj_add_function(fs, "statSync", zjs_fs_stat_sync);
+    zjs_obj_add_function(fs, "writeFileSync", zjs_fs_write_file_sync);
+    zjs_obj_add_function(fs, "readFileSync", zjs_fs_read_file_sync);
 
 #ifdef ZJS_FS_ASYNC_APIS
-    zjs_obj_add_function(fs, zjs_fs_open_async, "open");
-    zjs_obj_add_function(fs, zjs_fs_close_async, "close");
-    zjs_obj_add_function(fs, zjs_fs_unlink_async, "unlink");
-    zjs_obj_add_function(fs, zjs_fs_unlink_async, "rmdir");
-    zjs_obj_add_function(fs, zjs_fs_read_async, "read");
-    zjs_obj_add_function(fs, zjs_fs_write_async, "write");
-    zjs_obj_add_function(fs, zjs_fs_truncate_async, "truncate");
-    zjs_obj_add_function(fs, zjs_fs_mkdir_async, "mkdir");
-    zjs_obj_add_function(fs, zjs_fs_readdir_async, "readdir");
-    zjs_obj_add_function(fs, zjs_fs_stat_async, "stat");
-    zjs_obj_add_function(fs, zjs_fs_write_file_async, "writeFile");
-    zjs_obj_add_function(fs, zjs_fs_read_file_async, "readFile");
+    zjs_obj_add_function(fs, "open", zjs_fs_open_async);
+    zjs_obj_add_function(fs, "close", zjs_fs_close_async);
+    zjs_obj_add_function(fs, "unlink", zjs_fs_unlink_async);
+    zjs_obj_add_function(fs, "rmdir", zjs_fs_unlink_async);
+    zjs_obj_add_function(fs, "read", zjs_fs_read_async);
+    zjs_obj_add_function(fs, "write", zjs_fs_write_async);
+    zjs_obj_add_function(fs, "truncate", zjs_fs_truncate_async);
+    zjs_obj_add_function(fs, "mkdir", zjs_fs_mkdir_async);
+    zjs_obj_add_function(fs, "readdir", zjs_fs_readdir_async);
+    zjs_obj_add_function(fs, "stat", zjs_fs_stat_async);
+    zjs_obj_add_function(fs, "writeFile", zjs_fs_write_file_async);
+    zjs_obj_add_function(fs, "readFile", zjs_fs_read_file_async);
 #endif
 
     return fs;

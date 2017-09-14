@@ -183,8 +183,8 @@ jerry_value_t zjs_board_init()
 {
     // create board object
     jerry_value_t board_obj = zjs_create_object();
-    zjs_obj_add_readonly_string(board_obj, BOARD_NAME, "name");
-    zjs_obj_add_readonly_string(board_obj, "0.1", "version");
+    zjs_obj_add_readonly_string(board_obj, "name", BOARD_NAME);
+    zjs_obj_add_readonly_string(board_obj, "version", "0.1");
 
     return board_obj;
 }

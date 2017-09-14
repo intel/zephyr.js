@@ -180,8 +180,8 @@ static ZJS_DECL_FUNC(zjs_i2c_open)
     jerry_value_t i2c_obj = zjs_create_object();
     jerry_set_prototype(i2c_obj, zjs_i2c_prototype);
 
-    zjs_obj_add_readonly_number(i2c_obj, bus, "bus");
-    zjs_obj_add_readonly_number(i2c_obj, speed, "speed");
+    zjs_obj_add_readonly_number(i2c_obj, "bus", bus);
+    zjs_obj_add_readonly_number(i2c_obj, "speed", speed);
 
     return i2c_obj;
 }
@@ -205,7 +205,7 @@ jerry_value_t zjs_i2c_init()
 
     // create global I2C object
     jerry_value_t i2c_obj = zjs_create_object();
-    zjs_obj_add_function(i2c_obj, zjs_i2c_open, "open");
+    zjs_obj_add_function(i2c_obj, "open", zjs_i2c_open);
     return i2c_obj;
 }
 

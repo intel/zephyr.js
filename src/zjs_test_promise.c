@@ -44,9 +44,9 @@ static ZJS_DECL_FUNC(test_reject)
 jerry_value_t zjs_test_promise_init(void)
 {
     jerry_value_t test = zjs_create_object();
-    zjs_obj_add_function(test, create_promise, "create_promise");
-    zjs_obj_add_function(test, test_fulfill, "fulfill");
-    zjs_obj_add_function(test, test_reject, "reject");
+    zjs_obj_add_function(test, "create_promise", create_promise);
+    zjs_obj_add_function(test, "fulfill", test_fulfill);
+    zjs_obj_add_function(test, "reject", test_reject);
 
     return test;
 }

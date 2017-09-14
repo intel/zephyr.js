@@ -38,57 +38,57 @@ jerry_value_t zjs_k64f_init()
     const int PTE = 0x80;
 
     // These are all the Arduino GPIOs
-    zjs_obj_add_number(obj, PTC + 16, "D0");  // verified I/O
-    zjs_obj_add_number(obj, PTC + 17, "D1");  // verified I/O
-    zjs_obj_add_number(obj, PTB +  9, "D2");  // verified I/O
-    zjs_obj_add_number(obj, PTA +  1, "D3");  // verified I/O
-    zjs_obj_add_number(obj, PTB + 23, "D4");  // verified I/O
-    zjs_obj_add_number(obj, PTA +  2, "D5");  // verified I/O
-    zjs_obj_add_number(obj, PTC +  2, "D6");  // verified I/O
-    zjs_obj_add_number(obj, PTC +  3, "D7");  // verified I/O
+    zjs_obj_add_number(obj, "D0", PTC + 16);  // verified I/O
+    zjs_obj_add_number(obj, "D1", PTC + 17);  // verified I/O
+    zjs_obj_add_number(obj, "D2", PTB +  9);  // verified I/O
+    zjs_obj_add_number(obj, "D3", PTA +  1);  // verified I/O
+    zjs_obj_add_number(obj, "D4", PTB + 23);  // verified I/O
+    zjs_obj_add_number(obj, "D5", PTA +  2);  // verified I/O
+    zjs_obj_add_number(obj, "D6", PTC +  2);  // verified I/O
+    zjs_obj_add_number(obj, "D7", PTC +  3);  // verified I/O
 
     // currently not working on rev E3; used to work as input/output
-    zjs_obj_add_number(obj, PTC + 12, "D8");  // PTA0 for Rev <= D
+    zjs_obj_add_number(obj, "D8", PTC + 12);  // PTA0 for Rev <= D
 
-    zjs_obj_add_number(obj, PTC +  4, "D9");  // verified I/O
-    zjs_obj_add_number(obj, PTD +  0, "D10");  // verified I/O
-    zjs_obj_add_number(obj, PTD +  2, "D11");  // verified I/O
-    zjs_obj_add_number(obj, PTD +  3, "D12");  // verified I/O
-    zjs_obj_add_number(obj, PTD +  1, "D13");  // verified I/O
-    zjs_obj_add_number(obj, PTE + 25, "D14");  // verified I/O
-    zjs_obj_add_number(obj, PTE + 24, "D15");  // verified I/O
+    zjs_obj_add_number(obj, "D9",  PTC +  4);  // verified I/O
+    zjs_obj_add_number(obj, "D10", PTD +  0);  // verified I/O
+    zjs_obj_add_number(obj, "D11", PTD +  2);  // verified I/O
+    zjs_obj_add_number(obj, "D12", PTD +  3);  // verified I/O
+    zjs_obj_add_number(obj, "D13", PTD +  1);  // verified I/O
+    zjs_obj_add_number(obj, "D14", PTE + 25);  // verified I/O
+    zjs_obj_add_number(obj, "D15", PTE + 24);  // verified I/O
 
     // These are for onboard RGB LED
-    zjs_obj_add_number(obj, PTB + 22, "LEDR");  // verified
-    zjs_obj_add_number(obj, PTE + 26, "LEDG");  // verified
-    zjs_obj_add_number(obj, PTB + 21, "LEDB");  // verified
+    zjs_obj_add_number(obj, "LEDR", PTB + 22);  // verified
+    zjs_obj_add_number(obj, "LEDG", PTE + 26);  // verified
+    zjs_obj_add_number(obj, "LEDB", PTB + 21);  // verified
 
     // These are onboard switches SW2 and SW3 (SW1 is Reset)
-    zjs_obj_add_number(obj, PTC +  6, "SW2");  // verified (press: falling edge)
-    zjs_obj_add_number(obj, PTA +  4, "SW3");
+    zjs_obj_add_number(obj, "SW2", PTC +  6);  // verified (press: falling edge)
+    zjs_obj_add_number(obj, "SW3", PTA +  4);
 
     // TODO: More pins at https://developer.mbed.org/platforms/FRDM-K64F/
 
     // PWM pins
-    zjs_obj_add_number(obj, PTA +  1, "PWM0");
-    zjs_obj_add_number(obj, PTA +  2, "PWM1");
-    zjs_obj_add_number(obj, PTC +  2, "PWM2");
-    zjs_obj_add_number(obj, PTC +  3, "PWM3");
-    zjs_obj_add_number(obj, PTC + 12, "PWM4");
-    zjs_obj_add_number(obj, PTC +  4, "PWM5");
-    zjs_obj_add_number(obj, PTD +  0, "PWM6");
-    zjs_obj_add_number(obj, PTD +  2, "PWM7");
-    zjs_obj_add_number(obj, PTD +  3, "PWM8");
-    zjs_obj_add_number(obj, PTD +  1, "PWM9");
+    zjs_obj_add_number(obj, "PWM0", PTA +  1);
+    zjs_obj_add_number(obj, "PWM1", PTA +  2);
+    zjs_obj_add_number(obj, "PWM2", PTC +  2);
+    zjs_obj_add_number(obj, "PWM3", PTC +  3);
+    zjs_obj_add_number(obj, "PWM4", PTC + 12);
+    zjs_obj_add_number(obj, "PWM5", PTC +  4);
+    zjs_obj_add_number(obj, "PWM6", PTD +  0);
+    zjs_obj_add_number(obj, "PWM7", PTD +  2);
+    zjs_obj_add_number(obj, "PWM8", PTD +  3);
+    zjs_obj_add_number(obj, "PWM9", PTD +  1);
 
     // TODO: It appears that some other GPIO pins can be used as analog inputs
     //   too, from the X86 side. We haven't tried that.
-    zjs_obj_add_number(obj, PTB +  2, "A0");
-    zjs_obj_add_number(obj, PTB +  3, "A1");
-    zjs_obj_add_number(obj, PTB + 10, "A2");
-    zjs_obj_add_number(obj, PTB + 11, "A3");
-    zjs_obj_add_number(obj, PTC + 11, "A4");
-    zjs_obj_add_number(obj, PTC + 10, "A5");
+    zjs_obj_add_number(obj, "A0", PTB +  2);
+    zjs_obj_add_number(obj, "A1", PTB +  3);
+    zjs_obj_add_number(obj, "A2", PTB + 10);
+    zjs_obj_add_number(obj, "A3", PTB + 11);
+    zjs_obj_add_number(obj, "A4", PTC + 11);
+    zjs_obj_add_number(obj, "A5", PTC + 10);
 
     return obj;
 }

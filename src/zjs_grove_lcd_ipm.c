@@ -268,7 +268,7 @@ jerry_value_t zjs_grove_lcd_init()
 
     // create global grove_lcd object
     jerry_value_t glcd_obj = zjs_create_object();
-    zjs_obj_add_function(glcd_obj, zjs_glcd_init, "init");
+    zjs_obj_add_function(glcd_obj, "init", zjs_glcd_init);
 
     // create object properties
     jerry_value_t val;

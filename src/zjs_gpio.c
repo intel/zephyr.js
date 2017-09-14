@@ -92,7 +92,7 @@ static void zjs_gpio_c_callback(void *h, const void *args)
         ZVAL event = zjs_create_object();
         u32_t *the_args = (u32_t *)args;
         // Put the numeric GPIO trigger value in the object
-        zjs_obj_add_number(event, the_args[0], "value");
+        zjs_obj_add_number(event, "value", the_args[0]);
 
         // Call the JS callback
         jerry_call_function(onchange_func, ZJS_UNDEFINED, &event, 1);
@@ -347,7 +347,7 @@ jerry_value_t zjs_gpio_init()
 
     // create GPIO object
     gpio_api = zjs_create_object();
-    zjs_obj_add_function(gpio_api, zjs_gpio_open, "open");
+    zjs_obj_add_function(gpio_api, "open", zjs_gpio_open);
 
     zjs_gpio_mock_post_init(gpio_api);
 

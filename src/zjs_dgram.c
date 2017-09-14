@@ -140,7 +140,7 @@ static void udp_received(struct net_context *context,
                            "port");
         zjs_obj_add_string(rinfo, family == AF_INET ? "IPv4" : "IPv6",
                            "family");
-        zjs_obj_add_string(rinfo, addr_str, "address");
+        zjs_obj_add_string(rinfo, "address", addr_str);
 
         net_pkt_gather(net_pkt, buf->buffer);
         net_pkt_unref(net_pkt);
@@ -337,7 +337,7 @@ jerry_value_t zjs_dgram_init()
 
     // create module object
     jerry_value_t dgram_obj = zjs_create_object();
-    zjs_obj_add_function(dgram_obj, zjs_dgram_createSocket, "createSocket");
+    zjs_obj_add_function(dgram_obj, "createSocket", zjs_dgram_createSocket);
     return dgram_obj;
 }
 
