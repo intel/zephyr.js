@@ -348,13 +348,13 @@ fi
 #
 
 function check_jstring_util() {
-    CALLCOUNT=$(grep jerry_string_to_char_buffer src/zjs_util.c | wc -l)
+    CALLCOUNT=$(grep "jerry_string_to\(_utf8\)\?_char_buffer" src/zjs_util.c | wc -l)
 
     # make sure there are exactly two calls to the function
     # note: the return value of running wc -l on Mac will have some blank space
     # in front of it, thus no double quoting $CALLCOUNT as the comparison will fail
     if [ $CALLCOUNT != "2" ]; then
-        echo "Error: Expected two calls to jerry_string_to_char_buffer in zjs_util.c!"
+        echo "Error: Expected two calls to jerry_string_to[_utf8]_char_buffer in zjs_util.c!"
         echo "Use zjs_copy_jstring and zjs_alloc_from_jstring instead."
         return 1;
     fi
@@ -364,9 +364,9 @@ function check_jstring_others() {
     SRCFILES=$(find src -name "*.[ch]" | grep -v zjs_util.c)
 
     # make sure there are no other calls to the function
-    if grep jerry_string_to_char_buffer $SRCFILES; then
+    if grep "jerry_string_to\(_utf8\)\?_char_buffer" $SRCFILES; then
         echo
-        echo "Error: Found calls to jerry_string_to_char_buffer outside zjs_util.c!"
+        echo "Error: Found calls to jerry_string_to[_utf8]_char_buffer outside zjs_util.c!"
         echo "Use zjs_copy_jstring and zjs_alloc_from_jstring instead."
         return 1;
     fi
@@ -426,10 +426,10 @@ if [ "$RUN" == "all" -o "$RUN" == "3" ]; then
     # git check
     try_command "git check" git --no-pager diff --check $(git rev-list HEAD | tail -1)
 
-    # ensure only two uses of jerry_string_to_char_buffer in zjs_util.c
+    # ensure only two uses of jerry_string_to[_utf8]_char_buffer in zjs_util.c
     try_command "jstring1" check_jstring_util
 
-    # ensure no other source file uses jerry-string_to_char_buffer
+    # ensure no other source file uses jerry_string_to[_utf8]_char_buffer
     try_command "jstring2" check_jstring_others
 
     # check that updated files have updated copyrights
