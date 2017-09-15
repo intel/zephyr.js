@@ -1,7 +1,7 @@
 {
     "module": "ashell",
     "depends": ["aio", "arduino101_pins", "ble", "common", "console", "fs",
-                "gpio", "grove_lcd", "i2c", "performance", "pwm", "sensor_accel",
+                "gpio", "grove_lcd", "i2c", "pwm", "sensor_accel",
                 "sensor_gyro", "sensor_light", "sensor_temp", "spi"],
     "targets": ["arduino_101"],
     "src": ["ashell/"],
