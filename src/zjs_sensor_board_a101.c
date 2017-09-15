@@ -132,12 +132,15 @@ static void ipm_msg_receive_callback(void *context, u32_t id,
         return;
 
     zjs_ipm_message_t *msg = (zjs_ipm_message_t *)(*(uintptr_t *)data);
+
     if ((msg->flags & MSG_SYNC_FLAG) == MSG_SYNC_FLAG) {
         zjs_ipm_message_t *result = (zjs_ipm_message_t *)msg->user_data;
-        // synchrounus ipm, copy the results
+
+        // synchronous ipm, copy the results
         if (result) {
-            memcpy(result, msg, sizeof(zjs_ipm_message_t));
+            *result = *msg;
         }
+
         // un-block sync api
         k_sem_give(&sensor_sem);
     } else if (msg->type == TYPE_SENSOR_EVENT_READING_CHANGE) {

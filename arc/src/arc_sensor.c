@@ -81,7 +81,7 @@ static void send_sensor_data(enum sensor_channel channel,
     msg.user_data = NULL;
     msg.error_code = ERROR_IPM_NONE;
     msg.data.sensor.channel = channel;
-    memcpy(&msg.data.sensor.reading, &reading, sizeof(union sensor_reading));
+    msg.data.sensor.reading = reading;
     ipm_send_msg(&msg);
 }
 

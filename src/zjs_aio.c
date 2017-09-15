@@ -127,9 +127,11 @@ static void ipm_msg_receive_callback(void *context, u32_t id,
 
     if (msg->flags & MSG_SYNC_FLAG) {
         zjs_ipm_message_t *result = (zjs_ipm_message_t *)msg->user_data;
+
         // synchronous ipm, copy the results
-        if (result)
-            memcpy(result, msg, sizeof(zjs_ipm_message_t));
+        if (result) {
+            *result = *msg;
+        }
 
         // un-block sync api
         k_sem_give(&aio_sem);

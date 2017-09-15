@@ -532,5 +532,5 @@ void zjs_ashell_init()
 
 void comms_uart_set_config(struct comms_cfg_data *config)
 {
-    memcpy(&comms_config, config, sizeof(struct comms_cfg_data));
+    comms_config = *config;
 }
