@@ -460,10 +460,10 @@ if [ "$RUN" == "all" -o "$RUN" == "4" ]; then
     TESTNUM=0
 
     # ashell tests
-    try_command "ashell" make $VERBOSE ashell ROM=257
+    try_command "ashell" make $VERBOSE ashell ROM=256
 
     # build ide version
-    try_command "ide" make $VERBOSE ide ROM=257
+    try_command "ide" make $VERBOSE ide ROM=256
 
     # test key sample code
     try_command "btgrove" make $VERBOSE JS=samples/WebBluetoothGroveLcdDemo.js ROM=256
