@@ -747,6 +747,17 @@ void free_handle_nop(void *h)
 {
 }
 
+bool zjs_str_matches(char *str, char *array[])
+{
+    // requires: the final element of array must be NULL
+    for (int i=0; array[i]; ++i) {
+        if (strequal(str, array[i])) {
+            return true;
+        }
+    }
+    return false;
+}
+
 #ifndef ZJS_LINUX_BUILD
 #ifndef ZJS_ASHELL
 static zjs_port_sem block;

@@ -36,6 +36,20 @@ typedef struct mem_stats {
 #define strequal(a, b) !strcmp(a, b)
 
 /**
+ * Check whether str matches any in array of strings
+ *
+ * @param str    A null-terminated string
+ * @param array  An array of null-terminated strings, ending with NULL
+ *
+ * Example:
+ *   char *match_array[] = { "dolphin", "whale", "shark", NULL };
+ *   if (zjs_str_matches(animal, match_array) {
+ *      // found match
+ *   }
+ */
+bool zjs_str_matches(char *str, char *array[]);
+
+/**
  * Call malloc but if it fails, run JerryScript garbage collection and retry
  *
  * @param size  Number of bytes to allocate

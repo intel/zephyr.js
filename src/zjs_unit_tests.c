@@ -368,7 +368,7 @@ static u8_t l1_freed = 0;
 static u8_t l2_freed = 0;
 static u8_t l3_freed = 0;
 
-void test_free_list(test_list_t *element)
+static void test_free_list(test_list_t *element)
 {
     if (element->value == 1) {
         l1_freed = 1;
@@ -379,7 +379,7 @@ void test_free_list(test_list_t *element)
     }
 }
 
-void test_list_macros()
+static void test_list_macros()
 {
     test_list_t *head = NULL;
     test_list_t l1e;
@@ -457,6 +457,15 @@ void test_list_macros()
     zjs_assert(head == NULL, "list head was NULL");
 }
 
+// Test zjs_str_matches function
+
+static void test_str_matches()
+{
+    char *array[] = { "cow", "horse", "pig", NULL };
+    zjs_assert(zjs_str_matches("cow", array), "string present");
+    zjs_assert(!zjs_str_matches("dog", array), "string not present");
+}
+
 void zjs_run_unit_tests()
 {
     test_hex_to_byte();
@@ -465,6 +474,7 @@ void zjs_run_unit_tests()
     test_validate_args();
     test_c_callbacks();
     test_list_macros();
+    test_str_matches();
 
     printf("TOTAL - %d of %d passed\n", passed, total);
     exit(!(passed == total));
