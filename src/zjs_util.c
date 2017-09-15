@@ -328,6 +328,20 @@ char *zjs_alloc_from_jstring(jerry_value_t jstr, jerry_size_t *maxlen)
     return buffer;
 }
 
+char *zjs_alloc_from_string(const char *str, size_t *maxlen)
+{
+    // if no max or string small enough, copy the whole string
+    if (!maxlen || !*maxlen || strnlen(str, *maxlen) < *maxlen) {
+        return strdup(str);
+    }
+
+    // otherwise, limit the size of the string
+    char *buffer = zjs_malloc(*maxlen);
+    memcpy(buffer, str, *maxlen - 1);
+    buffer[*maxlen - 1] = '\0';
+    return buffer;
+}
+
 bool zjs_hex_to_byte(const char *buf, u8_t *byte)
 {
     // requires: buf is a string with at least two hex chars

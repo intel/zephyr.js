@@ -176,6 +176,19 @@ void zjs_copy_jstring(jerry_value_t jstr, char *buffer, jerry_size_t *maxlen);
  */
 char *zjs_alloc_from_jstring(jerry_value_t jstr, jerry_size_t *maxlen);
 
+/**
+ * Allocate a duplicate copy of a null-terminated string
+ *
+ * @param str  The source null-terminated string.
+ * @param maxlen  Pointer to a maximum size for the returned string. If NULL or
+ *                  pointing to 0, there is no limit to the string size
+ *                  returned. If not NULL, the actual length of the string will
+ *                  be written to *maxlen. If the call succeeds, the buffer
+ *                  returned will be truncated to the given maxlen with a null
+ *                  terminator.
+ */
+char *zjs_alloc_from_string(const char *str, size_t *maxlen);
+
 bool zjs_hex_to_byte(const char *buf, u8_t *byte);
 
 void zjs_default_convert_pin(u32_t orig, int *dev, int *pin);
