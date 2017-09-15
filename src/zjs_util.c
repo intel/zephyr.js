@@ -133,7 +133,7 @@ void zjs_obj_add_functions(jerry_value_t obj, zjs_native_func_t *funcs)
     }
 }
 
-void zjs_obj_add_boolean(jerry_value_t obj, bool flag, const char *name)
+void zjs_obj_add_boolean(jerry_value_t obj, const char *name, bool flag)
 {
     // requires: obj is an existing JS object
     //  effects: creates a new field in parent named name, set to value
@@ -142,15 +142,15 @@ void zjs_obj_add_boolean(jerry_value_t obj, bool flag, const char *name)
     jerry_set_property(obj, jname, jbool);
 }
 
-void zjs_obj_add_readonly_boolean(jerry_value_t obj, bool flag,
-                                  const char *name)
+void zjs_obj_add_readonly_boolean(jerry_value_t obj, const char *name,
+                                  bool flag)
 {
     // requires: obj is an existing JS object
     //  effects: creates a new readonly field in parent named name, set to value
     zjs_set_readonly_property(obj, name, jerry_create_boolean(flag));
 }
 
-void zjs_obj_add_function(jerry_value_t obj, void *func, const char *name)
+void zjs_obj_add_function(jerry_value_t obj, const char *name, void *func)
 {
     // requires: obj is an existing JS object, function is a native C function
     //  effects: creates a new field in object named name, that will be a JS
@@ -166,8 +166,8 @@ void zjs_obj_add_function(jerry_value_t obj, void *func, const char *name)
     }
 }
 
-void zjs_obj_add_object(jerry_value_t parent, jerry_value_t child,
-                        const char *name)
+void zjs_obj_add_object(jerry_value_t parent, const char *name,
+                        jerry_value_t child)
 {
     // requires: parent and child are existing JS objects
     //  effects: creates a new field in parent named name, that refers to child
@@ -175,7 +175,7 @@ void zjs_obj_add_object(jerry_value_t parent, jerry_value_t child,
     jerry_set_property(parent, jname, child);
 }
 
-void zjs_obj_add_string(jerry_value_t obj, const char *str, const char *name)
+void zjs_obj_add_string(jerry_value_t obj, const char *name, const char *str)
 {
     // requires: obj is an existing JS object
     //  effects: creates a new field in parent named name, set to str
@@ -184,8 +184,8 @@ void zjs_obj_add_string(jerry_value_t obj, const char *str, const char *name)
     jerry_set_property(obj, jname, jstr);
 }
 
-void zjs_obj_add_readonly_string(jerry_value_t obj, const char *str,
-                                 const char *name)
+void zjs_obj_add_readonly_string(jerry_value_t obj, const char *name,
+                                 const char *str)
 {
     // requires: obj is an existing JS object
     //  effects: creates a new readonly field in parent named name, set to str
@@ -193,7 +193,7 @@ void zjs_obj_add_readonly_string(jerry_value_t obj, const char *str,
                               jerry_create_string((const jerry_char_t *)str));
 }
 
-void zjs_obj_add_number(jerry_value_t obj, double num, const char *name)
+void zjs_obj_add_number(jerry_value_t obj, const char *name, double num)
 {
     // requires: obj is an existing JS object
     //  effects: creates a new field in parent named name, set to nval
@@ -202,8 +202,8 @@ void zjs_obj_add_number(jerry_value_t obj, double num, const char *name)
     jerry_set_property(obj, jname, jnum);
 }
 
-void zjs_obj_add_readonly_number(jerry_value_t obj, double num,
-                                 const char *name)
+void zjs_obj_add_readonly_number(jerry_value_t obj, const char *name,
+                                 double num)
 {
     // requires: obj is an existing JS object
     //  effects: creates a new readonly field in parent named name, set to num
