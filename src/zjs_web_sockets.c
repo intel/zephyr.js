@@ -354,7 +354,7 @@ static void dump_bytes(const char *tag, u8_t *data, u32_t len)
 }
 #endif
 
-// encode data into a WS packet.
+// encode data into a WS packet
 static int encode_packet(ws_packet_type type, u8_t mask, void *payload,
                          u16_t len, u8_t *out)
 {
@@ -902,13 +902,8 @@ static void post_accept_handler(void *handle, jerry_value_t ret_val)
         emit_error(con->server, "out of memory");
         return;
     }
-    memset(send_data, 0, sdata_size);
-    memcpy(send_data, accept_header, strlen(accept_header));
-    strcat(send_data, con->accept_key);
-    strcat(send_data, "\r\n");
-    strcat(send_data, "Sec-WebSocket-Protocol: ");
-    strcat(send_data, proto);
-    strcat(send_data, "\r\n\r\n\0");
+    snprintf(send_data, sdata_size, "%s%s\r\nSec-WebSocket-Protcol: %s\r\n\r\n",
+             accept_header, con->accept_key, proto);
 
     DBG_PRINT("Sending accept packet\n");
     tcp_send(con->tcp_sock, send_data, strlen(send_data));
@@ -1033,9 +1028,9 @@ static ZJS_DECL_FUNC(ws_server)
     if (!zjs_obj_get_string(argv[0], "host", host, 64)) {
         // no host given, default to 0.0.0.0 or ::
 #ifdef CONFIG_NET_IPV6
-        memcpy(host, "::", strlen("::") + 1);
+        strcpy(host, "::");
 #else
-        memcpy(host, "0.0.0.0", strlen("0.0.0.0") + 1);
+        strcpy(host, "0.0.0.0");
 #endif
     }
     jerry_value_t accept_handler = zjs_get_property(argv[0], "acceptHandler");

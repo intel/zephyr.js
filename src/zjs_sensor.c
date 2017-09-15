@@ -318,9 +318,12 @@ ZJS_DECL_FUNC_ARGS(zjs_sensor_create,
         }
     }
 
+    // FIXME: Why not allocate controller earlier and write to it initially
+    //   above? Furthermore, why not put it directly in handle instead of
+    //   allocating a separate block of memory?
     sensor_handle_t *handle = zjs_sensor_alloc_handle(&(instance->handles));
     handle->controller = zjs_malloc(sizeof(sensor_controller_t));
-    memcpy(handle->controller, &controller, sizeof(sensor_controller_t));
+    *handle->controller = controller;
     handle->channel = channel;
     handle->frequency = frequency;
 

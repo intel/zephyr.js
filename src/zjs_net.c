@@ -184,6 +184,29 @@ static struct k_mutex socket_mutex;
 #define NET_HOSTNAME_MAX            32
 #define SOCK_READ_BUF_SIZE          128
 
+// TODO: this could perhaps be reused in dgram/ws etc
+static void zjs_copy_sockaddr(struct sockaddr *dst, struct sockaddr *src,
+                              socklen_t len)
+{
+    // requires: dst contains at least sizeof(sockaddr) bytes, src points to
+    //             a valid sockaddr struct (sockaddr_in or sockaddr_in6),
+    //             len is the address length if known, or 0
+    //  effects: copies src to dest, but only the number of bytes required by
+    //             the underlying address family; if len is given, asserts
+    //             that it matches the expected size
+    if (src->family == AF_INET) {
+        ZJS_ASSERT(!len || len == sizeof(sockaddr_in), "expected IPv4 length");
+        *(struct sockaddr_in *)dst = *(struct sockaddr_in *)src;
+    }
+    else if (src->family == AF_INET6) {
+        ZJS_ASSERT(!len || len == sizeof(sockaddr_in6), "expected IPv6 length");
+        *(struct sockaddr_in6 *)dst = *(struct sockaddr_in6 *)src;
+    }
+    else {
+        ZJS_ASSERT(false, "invalid sockaddr struct");
+    }
+}
+
 static int match_timer(sock_handle_t *sock, struct k_timer *timer)
 {
     FTRACE("sock = %p, timer = %p\n", sock, timer);
@@ -891,7 +914,7 @@ static void tcp_accepted(struct net_context *context,
     accept.context = context;
     accept.server_h = server_h;
     memset(&accept.addr, 0, sizeof(struct sockaddr));
-    memcpy(&accept.addr, addr, addrlen);
+    zjs_copy_sockaddr(&accept.addr, addr, addrlen);
 
     zjs_defer_work(accept_connection, &accept, sizeof(accept));
 }
@@ -1017,12 +1040,12 @@ static ZJS_DECL_FUNC(server_listen)
     double backlog = 0;
     u32_t size = NET_HOSTNAME_MAX;
     char hostname[size];
-    double family = 0;
+    u32_t family = 0;
 
     zjs_obj_get_double(argv[0], "port", &port);
     zjs_obj_get_double(argv[0], "backlog", &backlog);
     zjs_obj_get_string(argv[0], "host", hostname, size);
-    zjs_obj_get_double(argv[0], "family", &family);
+    zjs_obj_get_uint32(argv[0], "family", &family);
 
     // FIXME: validate or fix input, e.g. family
 
@@ -1032,41 +1055,32 @@ static ZJS_DECL_FUNC(server_listen)
 
     struct sockaddr addr;
     memset(&addr, 0, sizeof(struct sockaddr));
+    addr.family = (family == 6) ? AF_INET6 : AF_INET;  // default to IPv4
 
-    // default to IPv4
-    if (family == 0 || family == 4) {
-        family = 4;
-        CHECK(net_context_get(AF_INET, SOCK_STREAM, IPPROTO_TCP,
-                              &server_h->server_ctx));
+    CHECK(net_context_get(addr.family, SOCK_STREAM, IPPROTO_TCP,
+                          &server_h->server_ctx));
 
+    u32_t addrlen;
+    if (addr.family == AF_INET) {
         struct sockaddr_in *addr4 = (struct sockaddr_in *)&addr;
-
-        addr4->sin_family = AF_INET;
         addr4->sin_port = htons((int)port);
-
         net_addr_pton(AF_INET, hostname, &addr4->sin_addr);
+        addrlen = sizeof(struct sockaddr_in);
     } else {
-        CHECK(net_context_get(AF_INET6, SOCK_STREAM, IPPROTO_TCP,
-                              &server_h->server_ctx));
-
         struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)&addr;
-
-        addr6->sin6_family = AF_INET6;
         addr6->sin6_port = htons((int)port);
-
         net_addr_pton(AF_INET6, hostname, &addr6->sin6_addr);
+        addrlen = sizeof(struct sockaddr_in6);
     }
 
-    CHECK(net_context_bind(server_h->server_ctx, &addr,
-                           sizeof(struct sockaddr)));
+    CHECK(net_context_bind(server_h->server_ctx, &addr, addrlen));
     CHECK(net_context_listen(server_h->server_ctx, (int)backlog));
 
     server_h->listening = 1;
     server_h->port = (u16_t)port;
 
-    memcpy(&server_h->local, zjs_net_config_get_ip(server_h->server_ctx),
-           sizeof(struct sockaddr));
-    server_h->local = *zjs_net_config_get_ip(server_h->server_ctx);
+    zjs_copy_sockaddr(&server_h->local,
+                      zjs_net_config_get_ip(server_h->server_ctx), 0);
     zjs_obj_add_boolean(this, "listening", true);
 
     // Here we defer just to keep the call stack short; this is unless we

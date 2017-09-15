@@ -159,7 +159,7 @@ static jerry_value_t create_stats_obj(struct fs_dirent *entry)
     if (!new_entry) {
         return zjs_error_context("malloc failed", 0, 0);
     }
-    memcpy(new_entry, entry, sizeof(struct fs_dirent));
+    *new_entry = *entry;
 
     jerry_set_object_native_pointer(stats_obj, new_entry, &stats_type_info);
 

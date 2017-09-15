@@ -56,8 +56,6 @@ struct ocf_handler {
 
 static struct client_resource *resource_list = NULL;
 
-#define MAX_URI_LENGTH (30)
-
 static struct ocf_handler *new_ocf_handler(struct client_resource *res)
 {
     struct ocf_handler *h = zjs_malloc(sizeof(struct ocf_handler));
@@ -108,25 +106,14 @@ static jerry_value_t make_ocf_error(const char *name, const char *msg,
  */
 static char *create_url(const char *uuid, const char *path)
 {
-    //    oic://<uuid>/<path>
-    char *url = zjs_malloc(strlen(uuid) + strlen(path) + 8);
-    int count = 0;
-    url[0] = 'o';
-    url[1] = 'i';
-    url[2] = 'c';
-    url[3] = ':';
-    url[4] = '/';
-    url[5] = '/';
-    count = 6;
-    memcpy(url + count, uuid, strlen(uuid));
-    count += strlen(uuid);
-    if (path[0] != '/') {
-        url[count] = '/';
-        count++;
+    // create URL of form oic://<uuid>/<path>
+    if (path[0] == '/') {
+        path++;
     }
-    memcpy(url + count, path, strlen(path));
-    count += strlen(path);
-    url[count] = '\0';
+
+    int url_len = strlen(uuid) + strlen(path) + 8;
+    char *url = zjs_malloc(url_len);
+    snprintf(url, url_len, "oic://%s/%s", uuid, path);
     return url;
 }
 
@@ -388,20 +375,13 @@ static void add_resource(char *id, char *type, char *path,
     new->state = RES_STATE_SEARCHING;
 
     if (id) {
-        // FIXME: use strcpy instead of calling strlen 3x
-        new->device_id = zjs_malloc(strlen(id) + 1);
-        memcpy(new->device_id, id, strlen(id));
-        new->device_id[strlen(id)] = '\0';
+        new->device_id = zjs_alloc_from_string(id, NULL);
     }
     if (type) {
-        new->resource_type = zjs_malloc(strlen(type) + 1);
-        memcpy(new->resource_type, type, strlen(type));
-        new->resource_type[strlen(type)] = '\0';
+        new->resource_type = zjs_alloc_from_string(type, NULL);
     }
     if (path) {
-        new->resource_path = zjs_malloc(strlen(path) + 1);
-        memcpy(new->resource_path, path, strlen(path));
-        new->resource_path[strlen(path)] = '\0';
+        new->resource_path = zjs_alloc_from_string(path, NULL);
     }
 
     if (jerry_value_is_function(listener)) {
@@ -446,8 +426,6 @@ static oc_discovery_flags_t discovery(const char *di,
 {
     struct ocf_handler *h = (struct ocf_handler *)user_handle;
     int i;
-    int uri_len = strlen(uri);
-    uri_len = (uri_len >= MAX_URI_LENGTH) ? MAX_URI_LENGTH - 1 : uri_len;
 
     for (i = 0; i < oc_string_array_get_allocated_size(types); i++) {
         char *t = oc_string_array_get_item(types, i);
@@ -489,14 +467,13 @@ Found:
             cur->endpoint = endpoint;
 
             if (!cur->device_id) {
-                cur->device_id = zjs_malloc(strlen(di) + 1);
-                memcpy(cur->device_id, di, strlen(di));
-                cur->device_id[strlen(di)] = '\0';
+                cur->device_id = zjs_alloc_from_string(di, NULL);
             }
             if (!cur->resource_path) {
-                cur->resource_path = zjs_malloc(strlen(uri) + 1);
-                memcpy(cur->resource_path, uri, uri_len);
-                cur->resource_path[uri_len] = '\0';
+                // TODO: before this code was pretending to limit things to a
+                //   MAX_URI_LENGTH of 30, but it wasn't working right anyway;
+                //   not sure if there was a point to that
+                cur->resource_path = zjs_alloc_from_string(uri, NULL);
             }
             /*
              * Add the array of resource types to newly discovered resource
