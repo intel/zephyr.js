@@ -279,7 +279,7 @@ static void issue_requests(void)
 #ifdef ZJS_LINUX_BUILD
 #define CONFIG_DEVICE_NAME "ZJS Device"
 #else
-#define CONFIG_DEVICE_NAME CONFIG_BLUETOOTH_DEVICE_NAME
+#define CONFIG_DEVICE_NAME CONFIG_BT_DEVICE_NAME
 #endif
 
 void zjs_set_uuid(char *uuid)

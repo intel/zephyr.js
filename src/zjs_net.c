@@ -16,7 +16,6 @@ static char FTRACE_PREFIX[] = "net";
 #include <errno.h>
 
 // Zephyr includes
-#include <sections.h>
 #include <zephyr.h>
 
 #include <net/net_context.h>

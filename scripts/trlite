@@ -291,7 +291,7 @@ if [ "$RUN" == "all" -o "$RUN" == "1" ]; then
 
     # also, try printing a float w/o PRINT_FLOAT
     echo "console.log(3.14159);" >> $TMPFILE
-    try_command "modules" make $VERBOSE JS=$TMPFILE ROM=256
+    try_command "modules" make $VERBOSE JS=$TMPFILE ROM=255
 
     MODULES=(net pme ws)
     write_modules_test $TMPFILE $MODULES
@@ -460,10 +460,10 @@ if [ "$RUN" == "all" -o "$RUN" == "4" ]; then
     TESTNUM=0
 
     # ashell tests
-    try_command "ashell" make $VERBOSE ashell ROM=256
+    try_command "ashell" make $VERBOSE ashell ROM=255
 
     # build ide version
-    try_command "ide" make $VERBOSE ide ROM=256
+    try_command "ide" make $VERBOSE ide ROM=255
 
     # test key sample code
     try_command "btgrove" make $VERBOSE JS=samples/WebBluetoothGroveLcdDemo.js ROM=256

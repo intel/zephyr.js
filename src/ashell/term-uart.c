@@ -28,7 +28,6 @@
 
 #include <atomic.h>
 #include <board.h>
-#include <sections.h>
 #include <toolchain.h>
 #include <uart.h>
 

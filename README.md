@@ -67,6 +67,13 @@ change in Zephyr, so it could be left out currently if you don't use k64f.
 Before that, for a while python-yaml was needed when the script was using
 Python 2.
 
+You may also need to install pip3 to get pyelftools:
+
+```bash
+$ sudo apt-get install python-pip3
+$ sudo pip3 install pyelftools
+```
+
 #### Clone the ZJS repo
 Next, clone this git repo:
 ```bash

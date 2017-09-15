@@ -11,7 +11,6 @@ static char FTRACE_PREFIX[] = "net";
 #include <random.h>
 
 // Zephyr includes
-#include <sections.h>
 #include <zephyr.h>
 
 #include "mbedtls/base64.h"
