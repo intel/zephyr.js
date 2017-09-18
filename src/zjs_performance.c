@@ -27,7 +27,7 @@ jerry_value_t zjs_performance_init()
 {
     // create global performance object
     jerry_value_t performance_obj = zjs_create_object();
-    zjs_obj_add_function(performance_obj, zjs_performance_now, "now");
+    zjs_obj_add_function(performance_obj, "now", zjs_performance_now);
     return performance_obj;
 }
 

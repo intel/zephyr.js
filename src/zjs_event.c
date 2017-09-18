@@ -105,7 +105,7 @@ jerry_value_t zjs_add_event_listener(jerry_value_t obj, const char *event_name,
 #ifdef ZJS_FIND_FUNC_NAME
     char name[strlen(event_name) + sizeof("event: ")];
     sprintf(name, "event: %s", event_name);
-    zjs_obj_add_string(func, name, ZJS_HIDDEN_PROP("function_name"));
+    zjs_obj_add_string(func, ZJS_HIDDEN_PROP("function_name"), name);
 #endif
 
     return 0;

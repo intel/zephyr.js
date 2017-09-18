@@ -244,7 +244,7 @@ int mock_gpio_pin_write(DEVICE port, u32_t pin, u32_t value)
     bool level = false;
     bool found = zjs_obj_get_boolean(pin_obj, "state", &level);
     bool new_level = value ? true : false;
-    zjs_obj_add_boolean(pin_obj, new_level, "state");
+    zjs_obj_add_boolean(pin_obj, "state", new_level);
 
     if (found && level != new_level) {
         // check for pins this is wired to
@@ -394,8 +394,8 @@ void zjs_gpio_mock_pre_init()
 void zjs_gpio_mock_post_init(jerry_value_t gpio_obj)
 {
     // use the mock property to check for mock APIs
-    zjs_obj_add_boolean(gpio_obj, true, "mock");
-    zjs_obj_add_function(gpio_obj, zjs_gpio_mock_wire, "wire");
+    zjs_obj_add_boolean(gpio_obj, "mock", true);
+    zjs_obj_add_function(gpio_obj, "wire", zjs_gpio_mock_wire);
 }
 
 void zjs_gpio_mock_cleanup()

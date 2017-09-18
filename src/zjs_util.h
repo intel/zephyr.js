@@ -111,18 +111,18 @@ typedef struct zjs_native_func {
  */
 void zjs_obj_add_functions(jerry_value_t obj, zjs_native_func_t *funcs);
 
-void zjs_obj_add_boolean(jerry_value_t obj, bool flag, const char *name);
-void zjs_obj_add_readonly_boolean(jerry_value_t obj, bool flag,
-                                  const char *name);
-void zjs_obj_add_function(jerry_value_t obj, void *function, const char *name);
-void zjs_obj_add_object(jerry_value_t parent, jerry_value_t child,
-                        const char *name);
-void zjs_obj_add_string(jerry_value_t obj, const char *str, const char *name);
-void zjs_obj_add_readonly_string(jerry_value_t obj, const char *str,
-                                 const char *name);
-void zjs_obj_add_number(jerry_value_t obj, double num, const char *name);
-void zjs_obj_add_readonly_number(jerry_value_t obj, double num,
-                                 const char *name);
+void zjs_obj_add_boolean(jerry_value_t obj, const char *name, bool flag);
+void zjs_obj_add_readonly_boolean(jerry_value_t obj, const char *name,
+                                  bool flag);
+void zjs_obj_add_function(jerry_value_t obj, const char *name, void *function);
+void zjs_obj_add_object(jerry_value_t parent, const char *name,
+                        jerry_value_t child);
+void zjs_obj_add_string(jerry_value_t obj, const char *name, const char *str);
+void zjs_obj_add_readonly_string(jerry_value_t obj, const char *name,
+                                 const char *str);
+void zjs_obj_add_number(jerry_value_t obj, const char *name, double num);
+void zjs_obj_add_readonly_number(jerry_value_t obj, const char *name,
+                                 double num);
 
 bool zjs_obj_get_boolean(jerry_value_t obj, const char *name, bool *flag);
 bool zjs_obj_get_string(jerry_value_t obj, const char *name, char *buffer,

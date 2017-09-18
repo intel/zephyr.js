@@ -248,7 +248,7 @@ void zjs_set_uuid(char *uuid)
 {
     ZVAL device = zjs_get_property(ocf_object, "device");
     if (!jerry_value_is_undefined(device)) {
-        zjs_obj_add_string(device, uuid, "uuid");
+        zjs_obj_add_string(device, "uuid", uuid);
     }
 }
 
@@ -476,7 +476,7 @@ jerry_value_t zjs_ocf_init()
     ZVAL platform = ZJS_UNDEFINED;
     zjs_set_property(ocf_object, "platform", platform);
 
-    zjs_obj_add_function(ocf_object, ocf_start, "start");
+    zjs_obj_add_function(ocf_object, "start", ocf_start);
 #ifdef OC_CLIENT
     ZVAL client = zjs_ocf_client_init();
     zjs_set_property(ocf_object, "client", client);

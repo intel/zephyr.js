@@ -664,10 +664,10 @@ static jerry_value_t create_ws_connection(ws_connection_t *con)
     FTRACE("con = %p\n", con);
     // FIXME: this should be using a prototype
     jerry_value_t conn = zjs_create_object();
-    zjs_obj_add_function(conn, ws_send, "send");
-    zjs_obj_add_function(conn, ws_ping, "ping");
-    zjs_obj_add_function(conn, ws_pong, "pong");
-    zjs_obj_add_function(conn, ws_terminate, "terminate");
+    zjs_obj_add_function(conn, "send", ws_send);
+    zjs_obj_add_function(conn, "ping", ws_ping);
+    zjs_obj_add_function(conn, "pong", ws_pong);
+    zjs_obj_add_function(conn, "terminate", ws_terminate);
     zjs_make_emitter(conn, ZJS_UNDEFINED, con, NULL);
     if (con->server_h->track) {
         ZVAL clients = zjs_get_property(con->server_h->server, "clients");
@@ -1094,7 +1094,7 @@ jerry_value_t zjs_ws_init()
     zjs_net_config_default();
 
     jerry_value_t ws = zjs_create_object();
-    zjs_obj_add_function(ws, ws_server, "Server");
+    zjs_obj_add_function(ws, "Server", ws_server);
 
     return ws;
 }

@@ -68,13 +68,13 @@ static jerry_value_t make_uart_error(const char *name, const char *msg)
 
     ZVAL ret = zjs_create_object();
     if (name) {
-        zjs_obj_add_string(ret, name, "name");
+        zjs_obj_add_string(ret, "name", name);
     } else {
         DBG_PRINT("error must have a name\n");
         return ZJS_UNDEFINED;
     }
     if (msg) {
-        zjs_obj_add_string(ret, msg, "message");
+        zjs_obj_add_string(ret, "message", msg);
     } else {
         DBG_PRINT("error must have a message\n");
         return ZJS_UNDEFINED;
@@ -315,7 +315,7 @@ jerry_value_t zjs_uart_init()
     zjs_obj_add_functions(zjs_uart_prototype, array);
 
     jerry_value_t uart_obj = zjs_create_object();
-    zjs_obj_add_function(uart_obj, uart_init, "init");
+    zjs_obj_add_function(uart_obj, "init", uart_init);
     return uart_obj;
 }
 

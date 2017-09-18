@@ -1295,17 +1295,17 @@ jerry_value_t zjs_ble_init()
 
     // create global BLE object
     jerry_value_t ble_obj = zjs_create_object();
-    zjs_obj_add_function(ble_obj, zjs_ble_disconnect, "disconnect");
-    zjs_obj_add_function(ble_obj, zjs_ble_start_advertising,
-                         "startAdvertising");
-    zjs_obj_add_function(ble_obj, zjs_ble_stop_advertising, "stopAdvertising");
-    zjs_obj_add_function(ble_obj, zjs_ble_set_services, "setServices");
-    zjs_obj_add_function(ble_obj, zjs_ble_update_rssi, "updateRssi");
+    zjs_obj_add_function(ble_obj, "disconnect", zjs_ble_disconnect);
+    zjs_obj_add_function(ble_obj, "startAdvertising",
+                         zjs_ble_start_advertising);
+    zjs_obj_add_function(ble_obj, "stopAdvertising", zjs_ble_stop_advertising);
+    zjs_obj_add_function(ble_obj, "setServices", zjs_ble_set_services);
+    zjs_obj_add_function(ble_obj, "updateRssi", zjs_ble_update_rssi);
 
     // register constructors
-    zjs_obj_add_function(ble_obj, zjs_ble_primary_service, "PrimaryService");
-    zjs_obj_add_function(ble_obj, zjs_ble_characteristic, "Characteristic");
-    zjs_obj_add_function(ble_obj, zjs_ble_descriptor, "Descriptor");
+    zjs_obj_add_function(ble_obj, "PrimaryService", zjs_ble_primary_service);
+    zjs_obj_add_function(ble_obj, "Characteristic", zjs_ble_characteristic);
+    zjs_obj_add_function(ble_obj, "Descriptor", zjs_ble_descriptor);
 
     // make it an emitter object
     zjs_make_emitter(ble_obj, ZJS_UNDEFINED, NULL, NULL);

@@ -174,16 +174,16 @@ void zjs_modules_init()
 
     // Todo: find a better solution to disable eval() in JerryScript.
     // For now, just inject our eval() function in the global space
-    zjs_obj_add_function(global_obj, native_eval_handler, "eval");
-    zjs_obj_add_function(global_obj, native_print_handler, "print");
-    zjs_obj_add_function(global_obj, stop_js_handler, "stopJS");
+    zjs_obj_add_function(global_obj, "eval", native_eval_handler);
+    zjs_obj_add_function(global_obj, "print", native_print_handler);
+    zjs_obj_add_function(global_obj, "stopJS", stop_js_handler);
 
     // create the C handler for require JS call
-    zjs_obj_add_function(global_obj, native_require_handler, "require");
+    zjs_obj_add_function(global_obj, "require", native_require_handler);
 
 #ifdef ZJS_LINUX_BUILD
     ZVAL process = zjs_create_object();
-    zjs_obj_add_function(process, process_exit, "exit");
+    zjs_obj_add_function(process, "exit", process_exit);
     zjs_set_property(global_obj, "process", process);
 #endif
 

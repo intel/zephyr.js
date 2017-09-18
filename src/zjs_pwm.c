@@ -100,8 +100,8 @@ static ZJS_DECL_FUNC(zjs_pwm_pin_set_cycles)
     // update the JS object
     double period = periodHW / sys_clock_hw_cycles_per_sec * 1000;
     double pulseWidth = pulseWidthHW / sys_clock_hw_cycles_per_sec * 1000;
-    zjs_obj_add_number(this, period, "period");
-    zjs_obj_add_number(this, pulseWidth, "pulseWidth");
+    zjs_obj_add_number(this, "period", period);
+    zjs_obj_add_number(this, "pulseWidth", pulseWidth);
 
     zjs_pwm_set_cycles(this, periodHW, pulseWidthHW);
     return ZJS_UNDEFINED;
@@ -127,8 +127,8 @@ static ZJS_DECL_FUNC(zjs_pwm_pin_set_ms)
     }
 
     // store the values in the pwm object
-    zjs_obj_add_number(this, period, "period");
-    zjs_obj_add_number(this, period, "pulseWidth");
+    zjs_obj_add_number(this, "period", period);
+    zjs_obj_add_number(this, "pulseWidth", period);
 
     DBG_PRINT("period: %lu, pulse: %lu\n", (u32_t)period, (u32_t)pulseWidth);
 
@@ -178,10 +178,10 @@ static ZJS_DECL_FUNC(zjs_pwm_open)
     jerry_value_t pin_obj = zjs_create_object();
     jerry_set_prototype(pin_obj, zjs_pwm_pin_prototype);
 
-    zjs_obj_add_number(pin_obj, channel, "channel");
-    zjs_obj_add_number(pin_obj, period, "period");
-    zjs_obj_add_number(pin_obj, pulseWidth, "pulseWidth");
-    zjs_obj_add_string(pin_obj, polarity, "polarity");
+    zjs_obj_add_number(pin_obj, "channel", channel);
+    zjs_obj_add_number(pin_obj, "period", period);
+    zjs_obj_add_number(pin_obj, "pulseWidth", pulseWidth);
+    zjs_obj_add_string(pin_obj, "polarity", polarity);
 
     zjs_pwm_set_ms(pin_obj, period, pulseWidth);
 
@@ -214,7 +214,7 @@ jerry_value_t zjs_pwm_init()
 
     // create PWM object
     jerry_value_t pwm_obj = zjs_create_object();
-    zjs_obj_add_function(pwm_obj, zjs_pwm_open, "open");
+    zjs_obj_add_function(pwm_obj, "open", zjs_pwm_open);
     return pwm_obj;
 }
 
