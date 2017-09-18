@@ -26,9 +26,14 @@ var aio = require("aio");
 var ble = require("ble");
 var grove_lcd = require("grove_lcd");
 var pins = require("arduino101_pins");
-var perf = require("performance");
 
-console.log("Boot timestamp:", perf.now(), "\n");
+try {
+    var perf = require("performance");
+    console.log("Boot timestamp:", perf.now(), "\n");
+}
+catch (e) {
+    // ignore errors, perf is just included for QA performance tracking
+}
 
 var DEVICE_NAME = 'Arduino101';
 
