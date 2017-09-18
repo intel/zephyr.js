@@ -961,7 +961,7 @@ Finished:
         jerry_value_t args[] = { err, buffer };
 
         zjs_callback_id id = zjs_add_callback_once(argv[1], this, NULL, NULL);
-        zjs_signal_callback(id, args, sizeof(jerry_value_t) * 2);
+        zjs_signal_callback(id, args, sizeof(args));
     }
     return ZJS_UNDEFINED;
 #endif
