@@ -42,7 +42,9 @@ char *zjs_shorten_filepath(char *filepath);
 int zjs_get_sec(void);
 int zjs_get_ms(void);
 
-#define DBG_PRINT                                                       \
+#if defined(ZJS_VERBOSE) && ZJS_VERBOSE >= 3
+// Verbosity level 3 shows timestamp and function/line
+#define DBG_PRINT                                                             \
     ZJS_PRINT("\n%u.%3.3u %s:%d %s():\n(INFO) ", zjs_get_sec(), zjs_get_ms(), \
               zjs_shorten_filepath(__FILE__), __LINE__, __func__);            \
     ZJS_PRINT
@@ -50,6 +52,23 @@ int zjs_get_ms(void);
     ZJS_PRINT("\n%u.%3.3u %s:%d %s():\n(ERROR) ", zjs_get_sec(), zjs_get_ms(), \
               zjs_shorten_filepath(__FILE__), __LINE__, __func__);             \
     ZJS_PRINT
+#elif defined(ZJS_VERBOSE) && ZJS_VERBOSE >= 2
+// Verbosity level 2 just shows function/line
+#define DBG_PRINT                                                       \
+    ZJS_PRINT("\n%s:%d %s():\n(INFO) ", zjs_shorten_filepath(__FILE__),  \
+              __LINE__, __func__);                                       \
+    ZJS_PRINT
+
+#define ERR_PRINT                                                         \
+    ZJS_PRINT("\n%s:%d %s():\n(ERROR) ", zjs_shorten_filepath(__FILE__),  \
+              __LINE__, __func__);                                        \
+    ZJS_PRINT
+#else
+// Verbosity level 1 just shows text
+#define DBG_PRINT ZJS_PRINT
+#define ERR_PRINT ZJS_PRINT
+#endif
+
 #else  // !DEBUG_BUILD
 #define DBG_PRINT(fmt...) do {} while (0)
 #define ERR_PRINT                                                        \
