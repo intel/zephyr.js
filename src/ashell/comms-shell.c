@@ -53,7 +53,6 @@ const char *comms_get_prompt()
 #define MAX_ARGUMENT_SIZE 32
 #define CMD_ECHO_OFF "echo off\n"
 
-static ashell_line_parser_t app_line_cb = NULL;
 static char *shell_line = NULL;
 static u8_t tail = 0;
 static bool ashell_is_done = false;
@@ -499,8 +498,7 @@ u32_t ashell_process_data(const char *buf, u32_t len)
 
             u32_t length = strnlen(shell_line, MAX_LINE);
             s32_t ret = 0;
-            if (app_line_cb != NULL)
-                ret = app_line_cb(shell_line, length);
+            ashell_main_state(shell_line, length);
 
             if (ret <= 0)
                 ashell_process_line(shell_line, length);
@@ -568,11 +566,6 @@ void ashell_print_status()
     }
 }
 
-void ashell_register_app_line_handler(ashell_line_parser_t cb)
-{
-    app_line_cb = cb;
-}
-
 void ashell_process_close()
 {
     ashell_is_done = true;
@@ -590,8 +583,6 @@ void ashell_process_start()
     cfg.interface.process_cb = ashell_process_data;
 
     comms_uart_set_config(&cfg);
-
-    ashell_register_app_line_handler(ashell_main_state);
 }
 
 #ifdef CONFIG_SHELL_UNIT_TESTS
