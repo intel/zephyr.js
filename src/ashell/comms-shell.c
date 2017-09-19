@@ -397,17 +397,6 @@ u32_t ashell_process_init()
     return 0;
 }
 
-void ashell_process_line(const char *buf, u32_t len)
-{
-#ifdef CONFIG_SHELL_UPLOADER_DEBUG
-    printk("%s", buf);
-#else
-    printk("\n%s", system_get_prompt());
-#endif
-    comms_print("\r\n");
-    comms_print(comms_get_prompt());
-}
-
 u32_t ashell_process_data(const char *buf, u32_t len)
 {
     u32_t processed = 0;
@@ -497,11 +486,12 @@ u32_t ashell_process_data(const char *buf, u32_t len)
             }
 
             u32_t length = strnlen(shell_line, MAX_LINE);
-            s32_t ret = 0;
+
             ashell_main_state(shell_line, length);
 
-            if (ret <= 0)
-                ashell_process_line(shell_line, length);
+            printk("\n%s", system_get_prompt());
+            comms_print("\r\n");
+            comms_print(comms_get_prompt());
 
             cur = end = printed = 0;
             flush_line = false;
