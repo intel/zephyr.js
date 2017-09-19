@@ -54,6 +54,12 @@ ifeq ($(filter $(MAKECMDGOALS),linux), linux)
 $(error 'linux' make target is deprecated, use "make BOARD=linux")
 endif
 
+ifneq (,$(filter $(MAKECMDGOALS),ide ashell))
+ifneq (,$(JS))
+$(error ide and ashell do not allow for setting JS)
+endif
+endif
+
 ifeq ($(filter $(MAKECMDGOALS),ide), ide)
 ASHELL_TYPE=ide
 endif
