@@ -19,4 +19,6 @@ u32_t ashell_get_argc(const char *str, u32_t nsize);
 const char *ashell_get_next_arg_s(const char *str, u32_t nsize, char *str_arg,
                                   u32_t max_arg_size, u32_t *length);
 
+extern struct comms_cfg *comms_config;
+
 #endif  // __comms_shell_h__

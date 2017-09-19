@@ -174,19 +174,17 @@ u32_t ihex_process_finish()
     return 0;
 }
 
+static struct comms_cfg ihex_cfg = {
+    .init = ihex_process_init,
+    .error = ihex_process_error,
+    .done = ihex_process_is_done,
+    .close = ihex_process_finish,
+    .process = ihex_process_data
+};
+
 void ihex_process_start()
 {
-    struct comms_cfg_data cfg;
-
-    cfg.interface.init_cb = ihex_process_init;
-    cfg.interface.error_cb = ihex_process_error;
-    cfg.interface.is_done = ihex_process_is_done;
-    cfg.interface.close_cb = ihex_process_finish;
-    cfg.interface.process_cb = ihex_process_data;
-
-    comms_uart_set_config(&cfg);
-    if (cfg.interface.init_cb != NULL) {
-        DBG("[Init]\n");
-        cfg.interface.init_cb();
-    }
+    comms_config = &ihex_cfg;
+    DBG("[Init]\n");
+    ihex_process_init();
 }

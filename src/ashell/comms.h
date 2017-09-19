@@ -14,7 +14,7 @@ typedef struct {
     void (*process)(void);
     void (*send)(const char *buf, size_t len);
     void (*close)();
-    void (*status)();
+    bool (*done)();
 
     // console functions
     int  (*printch)(int byte);

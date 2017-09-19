@@ -397,6 +397,10 @@ u32_t ashell_process_init()
     return 0;
 }
 
+void ashell_process_error(u32_t error)
+{
+}
+
 u32_t ashell_process_data(const char *buf, u32_t len)
 {
     u32_t processed = 0;
@@ -529,7 +533,7 @@ bool ashell_process_is_done()
 void comms_set_echo_mode(bool mode)
 {
     echo_mode = mode;
-}
+}ashell_process_close
 
 bool comms_get_echo_mode()
 {
@@ -558,21 +562,21 @@ void ashell_print_status()
 
 void ashell_process_close()
 {
-    ashell_is_done = true;
+    ashell_is_done = true;do
 }
+
+static struct comms_cfg uart_cfg = {
+    .init = ashell_process_init,
+    .error = ashell_process_error,
+    .done = ashell_process_is_done,
+    .close = ashell_process_finish,
+    .process = ashell_process_data
+};
 
 void ashell_process_start()
 {
-    struct comms_cfg_data cfg;
-
     ashell_is_done = false;
-    cfg.interface.init_cb = ashell_process_init;
-    cfg.interface.error_cb = NULL;
-    cfg.interface.is_done = ashell_process_is_done;
-    cfg.interface.close_cb = ashell_process_finish;
-    cfg.interface.process_cb = ashell_process_data;
-
-    comms_uart_set_config(&cfg);
+    comms_config = &uart_cfg;
 }
 
 #ifdef CONFIG_SHELL_UNIT_TESTS

@@ -62,34 +62,6 @@
 const char *system_get_prompt();
 
 /**
- * Callback function initialize the process
- */
-typedef u32_t (*process_init_callback_t)();
-
-/**
- * Callback function to pass an error from the transmision
- */
-typedef void (*process_error_callback_t)(u32_t error);
-
-/**
- * Callback function to pass an error from the transmision
- */
-typedef u32_t (*process_data_callback_t)(const char *buf, u32_t len);
-
-/**
- * Callback to tell when the data transfered is finished or process completed
- */
-typedef bool (*process_is_done)();
-
-/**
- * Callback function to pass an error from the transmision
- */
-typedef u32_t (*process_close_callback_t)();
-
-/* Callback to print debug data or state to the user */
-typedef void (*process_print_state_t)();
-
-/**
  * Process Status Codes
  */
 enum process_status_code {
@@ -101,30 +73,19 @@ enum process_status_code {
 
 /*
  * @brief Interfaces for the different uploaders and process handlers
- */
-struct comms_interface_cfg_data {
-    process_init_callback_t init_cb;
-    process_close_callback_t close_cb;
-    process_data_callback_t process_cb;
-    process_error_callback_t error_cb;
-    process_is_done is_done;
-};
-
-/*
- * @brief UART process data configuration
  *
  * The Application instantiates this with given parameters added
  * using the "comms_uart_set_config" function.
- *
- * This function can be called to swap between different states of the
- * data transactions.
  */
 
-struct comms_cfg_data {
-    struct comms_interface_cfg_data interface;
+struct comms_cfg {
+    u32_t (*init)();
+    u32_t (*close)();
+    u32_t (*process)(const char *buf, u32_t len);
+    void  (*error)(u32_t error);
+    bool  (*done)();
 };
 
-void comms_uart_set_config(struct comms_cfg_data *config);
 void comms_print_status();
 void comms_write_buf(const char *buf, int len);
 void comms_print(const char *buf);

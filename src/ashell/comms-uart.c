@@ -76,16 +76,7 @@ const char *system_get_prompt()
 #define FIFO_CACHE 2
 
 /* Configuration of the callbacks to be called */
-static struct comms_cfg_data comms_config = {
-    /* Callback to be notified on connection status change */
-    .interface = {
-        .init_cb = NULL,
-        .close_cb = NULL,
-        .process_cb = NULL,
-        .error_cb = NULL,
-        .is_done = NULL
-    },
-};
+struct comms_cfg *comms_config = NULL;
 
 struct comms_input {
     int _unused;
@@ -372,7 +363,7 @@ void zjs_ashell_process()
     u32_t len = 0;
     atomic_set(&uart_state, UART_INIT);
 
-    while (!comms_config.interface.is_done()) {
+    while (!comms_config->done()) {
         atomic_set(&uart_state, UART_WAITING);
         data = k_fifo_get(&data_queue, K_NO_WAIT);
         if (data) {
@@ -380,7 +371,7 @@ void zjs_ashell_process()
             buf = data->line;
             len = strnlen(buf, MAX_LINE_LEN);
 
-            comms_config.interface.process_cb(buf, len);
+            comms_config->process(buf, len);
             uart_process_done = true;
             DBG("[Recycle]\n");
             fifo_recycle_buffer(data);
@@ -412,8 +403,7 @@ void zjs_ashell_process()
         }
     }
     atomic_set(&uart_state, UART_CLOSE);
-    if (comms_config.interface.close_cb != NULL)
-        comms_config.interface.close_cb();
+    comms_config->close();
 }
 
 /**
@@ -487,15 +477,6 @@ void zjs_ashell_init()
 
     atomic_set(&uart_state, UART_INIT);
 
-    if (comms_config.interface.init_cb != NULL) {
-        DBG("[Init]\n");
-        comms_config.interface.init_cb();
-    }
-}
-
-/**************************** DEVICE **********************************/
-
-void comms_uart_set_config(struct comms_cfg_data *config)
-{
-    memcpy(&comms_config, config, sizeof(struct comms_cfg_data));
+    DBG("[Init]\n");
+    comms_config->init();
 }
