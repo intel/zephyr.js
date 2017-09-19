@@ -86,7 +86,6 @@ static struct comms_cfg_data comms_config = {
         .error_cb = NULL,
         .is_done = NULL
     },
-    .print_state = NULL
 };
 
 struct comms_input {
@@ -363,34 +362,6 @@ u32_t comms_get_baudrate(void)
     return baudrate;
 }
 #endif
-
-void comms_print_status()
-{
-    if (atomic_get(&uart_state) == UART_INIT)
-        printk(ANSI_FG_RED
-               "JavaScript terminal not connected\n" ANSI_FG_RESTORE);
-
-    if (comms_config.print_state != NULL)
-        comms_config.print_state();
-
-#ifdef CONFIG_UART_LINE_CTRL
-    comms_get_baudrate();
-#endif
-
-    if (!data_transmitted)
-        printk("[Data TX]\n");
-
-    printk("[State] %d\n", (int)uart_state);
-    printk("[Process State] %d\n", (int)process_state);
-
-    printk("[Mem] Fifo %d Max Fifo %d Alloc %d Free %d \n", (int)fifo_size,
-           (int)max_fifo_size, (int)alloc_count, (int)free_count);
-    printk("[Usage] Max fifo usage %d bytes\n",
-           (int)(max_fifo_size * sizeof(struct comms_input)));
-    printk("[Queue size] %d\n", (int)data_queue_count);
-    printk("[Data] Received %d Processed %d \n", (int)bytes_received,
-           (int)bytes_processed);
-}
 
 void comms_runner_init()
 {

@@ -589,7 +589,6 @@ void ashell_process_start()
     cfg.interface.is_done = ashell_process_is_done;
     cfg.interface.close_cb = ashell_process_finish;
     cfg.interface.process_cb = ashell_process_data;
-    cfg.print_state = ashell_print_status;
 
     comms_uart_set_config(&cfg);
 

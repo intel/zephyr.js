@@ -174,10 +174,6 @@ u32_t ihex_process_finish()
     return 0;
 }
 
-void ihex_print_status()
-{
-}
-
 void ihex_process_start()
 {
     struct comms_cfg_data cfg;
@@ -188,7 +184,6 @@ void ihex_process_start()
     cfg.interface.is_done = ihex_process_is_done;
     cfg.interface.close_cb = ihex_process_finish;
     cfg.interface.process_cb = ihex_process_data;
-    cfg.print_state = ihex_print_status;
 
     comms_uart_set_config(&cfg);
     if (cfg.interface.init_cb != NULL) {

@@ -130,9 +130,6 @@ struct comms_cfg_data {
     /* Callback to be notified on connection status change */
     process_status_callback_t cb_status;
     struct comms_interface_cfg_data interface;
-
-    /* Callback to print debug data or state to the user */
-    process_print_state_t print_state;
 };
 
 void comms_uart_set_config(struct comms_cfg_data *config);
