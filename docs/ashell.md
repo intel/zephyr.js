@@ -36,7 +36,7 @@ WebUSB support was added to the ashell to allow the user to upload JS code
 directly from the browser IDE to Zephyr.js device for execution. Follow the
 below instructions to connect to the device from the browser IDE directly.
 
-* Start Google Chrome 58 or later on the host PC.
+* Start Google Chrome 59 or later on the host PC.
 
 * **On Ubuntu and Fedora:**
 1. Create udev rules to allow Chrome to open the WebUSB enabled device and
