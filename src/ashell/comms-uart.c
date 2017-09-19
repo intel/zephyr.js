@@ -363,26 +363,6 @@ u32_t comms_get_baudrate(void)
 }
 #endif
 
-void comms_runner_init()
-{
-    DBG("[Listening]\n");
-    __stdout_hook_install(comms_out);
-
-    // Disable buffering on stdout since some parts write directly to uart fifo
-    setbuf(stdout, NULL);
-
-    ashell_help("");
-    comms_print(comms_get_prompt());
-    process_state = 0;
-
-    atomic_set(&uart_state, UART_INIT);
-
-    if (comms_config.interface.init_cb != NULL) {
-        DBG("[Init]\n");
-        comms_config.interface.init_cb();
-    }
-}
-
 /*
  * Process user input
  */
@@ -495,8 +475,23 @@ void zjs_ashell_init()
 
     /* Enable rx interrupts */
     uart_irq_rx_enable(dev_upload);
+    DBG("[Listening]\n");
 
-    comms_runner_init();
+    __stdout_hook_install(comms_out);
+
+    // Disable buffering on stdout since some parts write directly to uart fifo
+    setbuf(stdout, NULL);
+
+    ashell_help("");
+    comms_print(comms_get_prompt());
+    process_state = 0;
+
+    atomic_set(&uart_state, UART_INIT);
+
+    if (comms_config.interface.init_cb != NULL) {
+        DBG("[Init]\n");
+        comms_config.interface.init_cb();
+    }
 }
 
 /**************************** DEVICE **********************************/
