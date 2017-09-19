@@ -178,7 +178,6 @@ void ihex_process_start()
 {
     struct comms_cfg_data cfg;
 
-    cfg.cb_status = NULL;
     cfg.interface.init_cb = ihex_process_init;
     cfg.interface.error_cb = ihex_process_error;
     cfg.interface.is_done = ihex_process_is_done;

@@ -99,12 +99,6 @@ enum process_status_code {
     PROCESS_UNKNOWN    /* Initial status */
 };
 
-/**
- * Callback function with different status
- * When a new usb device is detected or when we are ready to receive data
- */
-typedef void (*process_status_callback_t)(enum process_status_code status_code);
-
 /*
  * @brief Interfaces for the different uploaders and process handlers
  */
@@ -127,8 +121,6 @@ struct comms_interface_cfg_data {
  */
 
 struct comms_cfg_data {
-    /* Callback to be notified on connection status change */
-    process_status_callback_t cb_status;
     struct comms_interface_cfg_data interface;
 };
 

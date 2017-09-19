@@ -78,7 +78,6 @@ const char *system_get_prompt()
 /* Configuration of the callbacks to be called */
 static struct comms_cfg_data comms_config = {
     /* Callback to be notified on connection status change */
-    .cb_status = NULL,
     .interface = {
         .init_cb = NULL,
         .close_cb = NULL,

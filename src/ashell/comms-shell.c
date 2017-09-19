@@ -583,7 +583,6 @@ void ashell_process_start()
     struct comms_cfg_data cfg;
 
     ashell_is_done = false;
-    cfg.cb_status = NULL;
     cfg.interface.init_cb = ashell_process_init;
     cfg.interface.error_cb = NULL;
     cfg.interface.is_done = ashell_process_is_done;
