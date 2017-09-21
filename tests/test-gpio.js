@@ -15,6 +15,44 @@ else {
 
 var pinA, pinB, aValue, bValue;
 
+// test GPIO open
+pinA = gpio.open(7);
+pinB = gpio.open({pin: 10, mode: "in", edge: "none"});
+
+assert(pinA != null && typeof pinA == "object",
+      "open: defined pin and default as 'out' direction");
+
+assert(pinB != null && typeof pinB == "object",
+      "open: defined pin with direction 'in'");
+
+assert.throws(function () {
+    gpio.open(1024);
+}, "open: invalid pin");
+
+// test GPIOPin read and write
+pinA.write(1);
+bValue = pinB.read();
+assert(bValue, "gpiopin: write and read");
+
+// reading an output pin may not be valid; this is probably a bad test
+aValue = pinA.read();
+assert(aValue, "gpiopin: read output pin");
+
+pinB.write(0);
+bValue = pinB.read();
+assert(bValue, "gpiopin: write input pin");
+
+assert.throws(function () {
+    // booleans allowed temporarily as deprecation path, so try another value
+    pinA.write("1");
+}, "gpiopin: write invalid argument");
+
+// test activeLow
+pinB = gpio.open({pin: 10, mode: "in", activeLow: true});
+pinA.write(0);
+bValue = pinB.read();
+assert(bValue, "activeLow: true");
+
 // test GPIOPin onchange
 var changes = [
     ["falling", 1, 1],
@@ -54,41 +92,3 @@ var edgeInterval = setInterval(function () {
         }
     }, 100);
 }, 200);
-
-// test GPIO open
-pinA = gpio.open(7);
-pinB = gpio.open({pin: 10, mode: "in", edge: "none"});
-
-assert(pinA != null && typeof pinA == "object",
-      "open: defined pin and default as 'out' direction");
-
-assert(pinB != null && typeof pinB == "object",
-      "open: defined pin with direction 'in'");
-
-assert.throws(function () {
-    gpio.open(1024);
-}, "open: invalid pin");
-
-// test GPIOPin read and write
-pinA.write(1);
-bValue = pinB.read();
-assert(bValue, "gpiopin: write and read");
-
-// reading an output pin may not be valid; this is probably a bad test
-aValue = pinA.read();
-assert(aValue, "gpiopin: read output pin");
-
-pinB.write(0);
-bValue = pinB.read();
-assert(bValue, "gpiopin: write input pin");
-
-assert.throws(function () {
-    // booleans allowed temporarily as deprecation path, so try another value
-    pinA.write("1");
-}, "gpiopin: write invalid argument");
-
-// test activeLow
-pinB = gpio.open({pin: 10, mode: "in", activeLow: true});
-pinA.write(0);
-bValue = pinB.read();
-assert(bValue, "activeLow: true");
