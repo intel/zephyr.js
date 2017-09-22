@@ -448,27 +448,23 @@ s32_t ashell_set_echo_mode(char *buf)
 
 s32_t ashell_read_data(char *buf)
 {
-    if (shell.state_flags & kShellTransferIhex) {
-        ashell_process_close();
-    } else {
-        if (!fs_valid_filename(buf)) {
+    if (!fs_valid_filename(buf)) {
+        return RET_ERROR;
+    }
+    char filename[MAX_FILENAME_SIZE];
+    if (shell.state_flags & kShellTransferRaw) {
+        if (ashell_get_filename_buffer(buf, filename) <= 0) {
             return RET_ERROR;
         }
-        char filename[MAX_FILENAME_SIZE];
-        if (shell.state_flags & kShellTransferRaw) {
-            if (ashell_get_filename_buffer(buf, filename) <= 0) {
-                return RET_ERROR;
-            }
 
-            if (comms_get_echo_mode()) {
-                comms_print(ANSI_CLEAR);
-                comms_printf("Saving to '%s'\r\n", filename);
-                comms_print(READY_FOR_RAW_DATA);
-                comms_set_prompt(raw_prompt);
-            }
-            shell.state_flags |= kShellCaptureRaw;
-            ashell_start_raw_capture(filename);
+        if (comms_get_echo_mode()) {
+            comms_print(ANSI_CLEAR);
+            comms_printf("Saving to '%s'\r\n", filename);
+            comms_print(READY_FOR_RAW_DATA);
+            comms_set_prompt(raw_prompt);
         }
+        shell.state_flags |= kShellCaptureRaw;
+        ashell_start_raw_capture(filename);
     }
     return RET_OK;
 }

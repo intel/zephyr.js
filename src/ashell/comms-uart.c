@@ -72,15 +72,14 @@ const char *system_get_prompt()
     return system_prompt;
 }
 
-#define MAX_LINE_LEN 90
 #define FIFO_CACHE 2
 
 /* Configuration of the callbacks to be called */
-struct comms_cfg *comms_config = NULL;
+struct terminal_config *term_config = NULL;
 
 struct uart_input {
     int _unused;
-    char line[MAX_LINE_LEN + 1];
+    char line[MAX_LINE + 1];
 };
 
 static struct k_fifo avail_queue;
@@ -202,7 +201,7 @@ static void uart_interrupt_handler(struct device *dev)
             * before i was using a ring buffer but was making things really
             * complicated for process side.
             */
-            len = MAX_LINE_LEN - tail;
+            len = MAX_LINE - tail;
             bytes_read = uart_fifo_read(dev_upload, buf, len);
             bytes_received += bytes_read;
             tail += bytes_read;
@@ -224,7 +223,7 @@ static void uart_interrupt_handler(struct device *dev)
             */
             bool flush = false;
 
-            if (fifo_size == 1 || tail == MAX_LINE_LEN || uart_process_done) {
+            if (fifo_size == 1 || tail == MAX_LINE || uart_process_done) {
                 flush = true;
                 uart_process_done = false;
             } else {
@@ -266,25 +265,6 @@ static void uart_interrupt_handler(struct device *dev)
 }
 
 /*************************** ACM OUTPUT *******************************/
-/**
-* @brief Output one character to UART ACM
-*
-* @param c Character to output
-* @return success
-*/
-
-static int comms_out(int c)
-{
-    static char buf[80];
-    static int size = 0;
-    char ch = (char)c;
-    buf[size++] = ch;
-    if (ch == '\n' || size == 80) {
-        comms_write_buf(buf, size);
-        size = 0;
-    }
-    return 1;
-}
 
 /*
 * @brief Writes data into the uart and flushes it.
@@ -322,24 +302,28 @@ void comms_write_buf(const char *buf, int len)
     uart_irq_tx_disable(dev_upload);
 }
 
-void comms_print(const char *buf)
-{
-    comms_write_buf(buf, strnlen(buf, MAX_LINE_LEN));
-}
-
 /**
-* Provide console message implementation for the engine.
+* @brief Output one character to UART ACM
+*
+* @param c Character to output
+* @return success
 */
-void comms_printf(const char *format, ...)
+
+static int uart_out(int c)
 {
-    va_list args;
-    va_start(args, format);
-    vfprintf(stdout, format, args);
-    va_end(args);
+    static char buf[80];
+    static int size = 0;
+    char ch = (char)c;
+    buf[size++] = ch;
+    if (ch == '\n' || size == 80) {
+        comms_write_buf(buf, size);
+        size = 0;
+    }
+    return 1;
 }
 
 #ifdef CONFIG_UART_LINE_CTRL
-u32_t comms_get_baudrate(void)
+u32_t uart_get_baudrate(void)
 {
     u32_t baudrate;
 
@@ -356,22 +340,22 @@ u32_t comms_get_baudrate(void)
 /*
  * Process user input
  */
-void zjs_ashell_process()
+void uart_process()
 {
     static struct uart_input *data = NULL;
     char *buf = NULL;
     u32_t len = 0;
     atomic_set(&uart_state, UART_INIT);
 
-    while (!comms_config->done()) {
+    while (!term_config->done()) {
         atomic_set(&uart_state, UART_WAITING);
         data = k_fifo_get(&data_queue, K_NO_WAIT);
         if (data) {
             atomic_dec(&data_queue_count);
             buf = data->line;
-            len = strnlen(buf, MAX_LINE_LEN);
+            len = strnlen(buf, MAX_LINE);
 
-            comms_config->process(buf, len);
+            term_config->process(buf, len);
             uart_process_done = true;
             DBG("[Recycle]\n");
             fifo_recycle_buffer(data);
@@ -403,7 +387,7 @@ void zjs_ashell_process()
         }
     }
     atomic_set(&uart_state, UART_CLOSE);
-    comms_config->close();
+    term_config->close();
 }
 
 /**
@@ -411,9 +395,9 @@ void zjs_ashell_process()
  * Init UART/ACM to start getting input from user
  */
 
-void zjs_ashell_init()
+void uart_init()
 {
-    ashell_process_start();
+    term_process_start();
 
     printk(banner);
     printk("Warning: The JavaScript terminal is in a different interface.\
@@ -466,7 +450,7 @@ void zjs_ashell_init()
     uart_irq_rx_enable(dev_upload);
     DBG("[Listening]\n");
 
-    __stdout_hook_install(comms_out);
+    __stdout_hook_install(uart_out);
 
     // Disable buffering on stdout since some parts write directly to uart fifo
     setbuf(stdout, NULL);
@@ -478,5 +462,15 @@ void zjs_ashell_init()
     atomic_set(&uart_state, UART_INIT);
 
     DBG("[Init]\n");
-    comms_config->init();
+    term_config->init();
+}
+
+void zjs_ashell_init()
+{
+    uart_init();
+}
+
+void zjs_ashell_process()
+{
+    uart_process();
 }

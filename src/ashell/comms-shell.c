@@ -49,13 +49,31 @@ const char *comms_get_prompt()
 #define DBG printk
 #endif /* CONFIG_SHELL_UPLOADER_DEBUG */
 
-#define MAX_LINE 90
-#define MAX_ARGUMENT_SIZE 32
 #define CMD_ECHO_OFF "echo off\n"
+
+/* ========================================================================= */
+
+void comms_print(const char *buf)
+{
+    comms_write_buf(buf, strnlen(buf, MAX_LINE));
+}
+
+/**
+* Provide console message implementation for the engine.
+*/
+void comms_printf(const char *format, ...)
+{
+    va_list args;
+    va_start(args, format);
+    vfprintf(stdout, format, args);
+    va_end(args);
+}
+
+/* ========================================================================= */
 
 static char *shell_line = NULL;
 static u8_t tail = 0;
-static bool ashell_is_done = false;
+static bool terminal_done = false;
 static bool echo_mode = true;
 
 static inline void cursor_forward(unsigned int count)
@@ -300,43 +318,6 @@ const char *ashell_get_next_arg_s(const char *str, u32_t nsize, char *str_arg,
     return ashell_get_next_arg(str, nsize, str_arg, length);
 }
 
-/** @brief Check a buffer for a parameter
- * Parameters are single characters in a '-xyz' sequence
- *
- * @param str          Null terminated string
- * @param parameter    Token we are looking for
- * @return bool Returns if the parameter is on the string
- */
-
-bool ashell_check_parameter(const char *buf, const char parameter)
-{
-    size_t t = 0;
-    bool space = true;
-    bool token = false;
-
-    if (buf == NULL)
-        return false;
-
-    while (buf[t] != 0) {
-        char byte = buf[t];
-        if (space && byte == '-')
-            token = true;
-
-        if (byte == ' ') {
-            space = true;
-            token = false;
-        } else {
-            space = false;
-        }
-
-        if (token && byte == parameter) {
-            return true;
-        }
-        t++;
-    }
-    return false;
-}
-
 /**
  * @brief Skips all the spaces until it finds the first character
  *
@@ -391,17 +372,17 @@ char *ashell_get_token_arg(char *str)
     return ashell_skip_spaces(str);
 }
 
-u32_t ashell_process_init()
+u32_t terminal_init()
 {
     DBG("[SHELL] Init\n");
     return 0;
 }
 
-void ashell_process_error(u32_t error)
+void terminal_error(u32_t error)
 {
 }
 
-u32_t ashell_process_data(const char *buf, u32_t len)
+u32_t terminal_process(const char *buf, u32_t len)
 {
     u32_t processed = 0;
     // printed Is used to make sure we don't re-print characters
@@ -499,7 +480,7 @@ u32_t ashell_process_data(const char *buf, u32_t len)
 
             cur = end = printed = 0;
             flush_line = false;
-            if (ashell_is_done) {
+            if (terminal_done) {
                 break;
             }
         } else if (isprint(byte)) {
@@ -525,9 +506,9 @@ u32_t ashell_process_data(const char *buf, u32_t len)
     return processed;
 }
 
-bool ashell_process_is_done()
+bool terminal_process_done()
 {
-    return ashell_is_done;
+    return terminal_done;
 }
 
 void comms_set_echo_mode(bool mode)
@@ -540,31 +521,30 @@ bool comms_get_echo_mode()
     return echo_mode;
 }
 
-u32_t ashell_process_finish()
+u32_t terminal_close()
 {
     DBG("[SHELL CLOSE]\n");
     ihex_process_start();
     return 0;
 }
 
-void ashell_process_close()
-{
-    ashell_is_done = true;
-}
-
-static struct comms_cfg uart_cfg = {
-    .init = ashell_process_init,
-    .error = ashell_process_error,
-    .done = ashell_process_is_done,
-    .close = ashell_process_finish,
-    .process = ashell_process_data
+static struct terminal_config terminal_cfg = {
+    .init = terminal_init,
+    .error = terminal_error,
+    .done = terminal_process_done,
+    .close = terminal_close,
+    .process = terminal_process,
 };
 
-void ashell_process_start()
+void term_process_start()
 {
-    ashell_is_done = false;
-    comms_config = &uart_cfg;
+    terminal_done = false;
+    term_config = &terminal_cfg;
 }
+
+/**
+ * Shell tests. Perhaps could be removed.
+ */
 
 #ifdef CONFIG_SHELL_UNIT_TESTS
 struct shell_tests {
@@ -616,6 +596,43 @@ struct shell_tests param_test[] = {
     TEST_PARAMS(" test  abc  -x a ", 'x', 1),
     TEST_PARAMS("", ' ', 0)
 };
+
+/** @brief Check a buffer for a parameter
+ * Parameters are single characters in a '-xyz' sequence
+ *
+ * @param str          Null terminated string
+ * @param parameter    Token we are looking for
+ * @return bool Returns if the parameter is on the string
+ */
+
+bool ashell_check_parameter(const char *buf, const char parameter)
+{
+    size_t t = 0;
+    bool space = true;
+    bool token = false;
+
+    if (buf == NULL)
+        return false;
+
+    while (buf[t] != 0) {
+        char byte = buf[t];
+        if (space && byte == '-')
+            token = true;
+
+        if (byte == ' ') {
+            space = true;
+            token = false;
+        } else {
+            space = false;
+        }
+
+        if (token && byte == parameter) {
+            return true;
+        }
+        t++;
+    }
+    return false;
+}
 
 void shell_unit_test()
 {

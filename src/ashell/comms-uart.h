@@ -56,6 +56,8 @@
 #define ANSI_FG_LIGHT_BLUE "\x1b[34;1m"
 #define ANSI_CLEAR         "\x1b[2J\x1b[H"
 
+#define MAX_LINE 90
+
 /**
  * Returns the command prompt of this system
  */
@@ -68,7 +70,7 @@ const char *system_get_prompt();
  * using the "comms_uart_set_config" function.
  */
 
-struct comms_cfg {
+struct terminal_config {
     u32_t (*init)();
     u32_t (*close)();
     u32_t (*process)(const char *buf, u32_t len);
@@ -79,7 +81,5 @@ struct comms_cfg {
 void comms_write_buf(const char *buf, int len);
 void comms_print(const char *buf);
 void comms_printf(const char *format, ...);
-void zjs_ashell_process();
-void zjs_ashell_init();
 
 #endif  // __comms_uart_h__
