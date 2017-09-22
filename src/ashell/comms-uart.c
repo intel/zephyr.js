@@ -78,7 +78,7 @@ const char *system_get_prompt()
 /* Configuration of the callbacks to be called */
 struct comms_cfg *comms_config = NULL;
 
-struct comms_input {
+struct uart_input {
     int _unused;
     char line[MAX_LINE_LEN + 1];
 };
@@ -94,22 +94,22 @@ atomic_t data_queue_count = 0;
 u32_t alloc_count = 0;
 u32_t free_count = 0;
 
-static struct comms_input *isr_data = NULL;
+static struct uart_input *isr_data = NULL;
 static u32_t tail = 0;
 static char *buf;
 
-struct comms_input *fifo_get_isr_buffer()
+struct uart_input *fifo_get_isr_buffer()
 {
     void *data = k_fifo_get(&avail_queue, K_NO_WAIT);
     if (!data) {
-        data = (void *)zjs_malloc(sizeof(struct comms_input));
-        memset(data, '*', sizeof(struct comms_input));
+        data = (void *)zjs_malloc(sizeof(struct uart_input));
+        memset(data, '*', sizeof(struct uart_input));
         alloc_count++;
         fifo_size++;
         if (fifo_size > max_fifo_size)
             max_fifo_size = fifo_size;
     }
-    return (struct comms_input *)data;
+    return (struct uart_input *)data;
 }
 
 void fifo_cache_clear()
@@ -128,7 +128,7 @@ void fifo_cache_clear()
     isr_data = NULL;
 }
 
-void fifo_recycle_buffer(struct comms_input *data)
+void fifo_recycle_buffer(struct uart_input *data)
 {
     if (fifo_size > 1) {
         zjs_free(data);
@@ -176,7 +176,7 @@ enum {
 
 int process_state = 0;
 
-static void comms_interrupt_handler(struct device *dev)
+static void uart_interrupt_handler(struct device *dev)
 {
     char byte;
 
@@ -358,7 +358,7 @@ u32_t comms_get_baudrate(void)
  */
 void zjs_ashell_process()
 {
-    static struct comms_input *data = NULL;
+    static struct uart_input *data = NULL;
     char *buf = NULL;
     u32_t len = 0;
     atomic_set(&uart_state, UART_INIT);
@@ -459,7 +459,7 @@ void zjs_ashell_init()
     uart_irq_rx_disable(dev_upload);
     uart_irq_tx_disable(dev_upload);
 
-    uart_irq_callback_set(dev_upload, comms_interrupt_handler);
+    uart_irq_callback_set(dev_upload, uart_interrupt_handler);
     comms_write_buf(banner, sizeof(banner));
 
     /* Enable rx interrupts */

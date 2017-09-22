@@ -547,19 +547,6 @@ u32_t ashell_process_finish()
     return 0;
 }
 
-void ashell_print_status()
-{
-    DBG("Shell Status\n");
-
-    malloc_stats();
-
-    if (shell_line != NULL) {
-        printk("Line [%s]\n", shell_line);
-    } else {
-        printk("No data on serial\n");
-    }
-}
-
 void ashell_process_close()
 {
     ashell_is_done = true;
