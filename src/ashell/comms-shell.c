@@ -533,7 +533,7 @@ bool ashell_process_is_done()
 void comms_set_echo_mode(bool mode)
 {
     echo_mode = mode;
-}ashell_process_close
+}
 
 bool comms_get_echo_mode()
 {
@@ -562,7 +562,7 @@ void ashell_print_status()
 
 void ashell_process_close()
 {
-    ashell_is_done = true;do
+    ashell_is_done = true;
 }
 
 static struct comms_cfg uart_cfg = {

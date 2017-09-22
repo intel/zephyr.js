@@ -61,16 +61,6 @@
  */
 const char *system_get_prompt();
 
-/**
- * Process Status Codes
- */
-enum process_status_code {
-    PROCESS_ERROR,     /* Error during upload */
-    PROCESS_RESET,     /* Data reset */
-    PROCESS_CONNECTED, /* Client connected */
-    PROCESS_UNKNOWN    /* Initial status */
-};
-
 /*
  * @brief Interfaces for the different uploaders and process handlers
  *
@@ -86,7 +76,6 @@ struct comms_cfg {
     bool  (*done)();
 };
 
-void comms_print_status();
 void comms_write_buf(const char *buf, int len);
 void comms_print(const char *buf);
 void comms_printf(const char *format, ...);
