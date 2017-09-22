@@ -51,7 +51,7 @@ static s8_t upload_state = 0;
 
 void ihex_send(const char *buf, int len)
 {
-    comms_write_buf(buf, len);
+    uart_write_buf(buf, len);
 }
 
 /* Data received from the buffer */
@@ -160,7 +160,7 @@ u32_t ihex_process_finish()
         printf("[Error] Callback handle error \n");
         fs_close_alloc(zfile);
 
-        term_process_start();
+        terminal_start();
         return 1;
     }
 
@@ -175,7 +175,7 @@ u32_t ihex_process_finish()
     printf("Saved file '%s'\n", TEMPORAL_FILENAME);
 #endif
 
-    term_process_start();
+    terminal_start();
     return 0;
 }
 
@@ -185,11 +185,12 @@ static struct terminal_config ihex_cfg = {
     .done = ihex_process_is_done,
     .close = ihex_process_finish,
     .process = ihex_process_data,
+    .send = ihex_send
 };
 
 void ihex_process_start()
 {
-    term_config = &ihex_cfg;
+    terminal = &ihex_cfg;
     DBG("[Init]\n");
     ihex_process_init();
 }

@@ -76,9 +76,13 @@ struct terminal_config {
     u32_t (*process)(const char *buf, u32_t len);
     void  (*error)(u32_t error);
     bool  (*done)();
+    void  (*send)(const char *buf, int len);
 };
 
-void comms_write_buf(const char *buf, int len);
+extern struct terminal_config *terminal;
+
+void uart_write_buf(const char *buf, int len);
+
 void comms_print(const char *buf);
 void comms_printf(const char *format, ...);
 

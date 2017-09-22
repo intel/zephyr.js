@@ -75,7 +75,7 @@ const char *system_get_prompt()
 #define FIFO_CACHE 2
 
 /* Configuration of the callbacks to be called */
-struct terminal_config *term_config = NULL;
+struct terminal_config *terminal = NULL;
 
 struct uart_input {
     int _unused;
@@ -276,7 +276,7 @@ static void uart_interrupt_handler(struct device *dev)
 * will probably rewrite it later with a line queue
 */
 
-void comms_write_buf(const char *buf, int len)
+void uart_write_buf(const char *buf, int len)
 {
     if (len <= 0)
         return;
@@ -316,7 +316,7 @@ static int uart_out(int c)
     char ch = (char)c;
     buf[size++] = ch;
     if (ch == '\n' || size == 80) {
-        comms_write_buf(buf, size);
+        terminal->send(buf, size);
         size = 0;
     }
     return 1;
@@ -347,7 +347,7 @@ void uart_process()
     u32_t len = 0;
     atomic_set(&uart_state, UART_INIT);
 
-    while (!term_config->done()) {
+    while (!terminal->done()) {
         atomic_set(&uart_state, UART_WAITING);
         data = k_fifo_get(&data_queue, K_NO_WAIT);
         if (data) {
@@ -355,7 +355,7 @@ void uart_process()
             buf = data->line;
             len = strnlen(buf, MAX_LINE);
 
-            term_config->process(buf, len);
+            terminal->process(buf, len);
             uart_process_done = true;
             DBG("[Recycle]\n");
             fifo_recycle_buffer(data);
@@ -387,7 +387,7 @@ void uart_process()
         }
     }
     atomic_set(&uart_state, UART_CLOSE);
-    term_config->close();
+    terminal->close();
 }
 
 /**
@@ -397,7 +397,7 @@ void uart_process()
 
 void uart_init()
 {
-    term_process_start();
+    terminal_start();
 
     printk(banner);
     printk("Warning: The JavaScript terminal is in a different interface.\
@@ -444,7 +444,7 @@ void uart_init()
     uart_irq_tx_disable(dev_upload);
 
     uart_irq_callback_set(dev_upload, uart_interrupt_handler);
-    comms_write_buf(banner, sizeof(banner));
+    terminal->send(banner, sizeof(banner));
 
     /* Enable rx interrupts */
     uart_irq_rx_enable(dev_upload);
@@ -462,7 +462,7 @@ void uart_init()
     atomic_set(&uart_state, UART_INIT);
 
     DBG("[Init]\n");
-    term_config->init();
+    terminal->init();
 }
 
 void zjs_ashell_init()

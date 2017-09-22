@@ -55,7 +55,7 @@ const char *comms_get_prompt()
 
 void comms_print(const char *buf)
 {
-    comms_write_buf(buf, strnlen(buf, MAX_LINE));
+    terminal->send(buf, strnlen(buf, MAX_LINE));
 }
 
 /**
@@ -71,8 +71,6 @@ void comms_printf(const char *format, ...)
 
 /* ========================================================================= */
 
-static char *shell_line = NULL;
-static u8_t tail = 0;
 static bool terminal_done = false;
 static bool echo_mode = true;
 
@@ -113,7 +111,7 @@ static void insert_char(char *pos, char c, u8_t end)
     cursor_save();
 
     while (end-- > 0) {
-        comms_write_buf(&tmp, 1);
+        terminal->send(&tmp, 1);
         c = *pos;
         *(pos++) = tmp;
         tmp = c;
@@ -125,11 +123,11 @@ static void insert_char(char *pos, char c, u8_t end)
 
 static void del_char(char *pos, u8_t end)
 {
-    comms_write_buf("\b", 1);
+    terminal->send("\b", 1);
 
     if (end == 0) {
-        comms_write_buf(" ", 1);
-        comms_write_buf("\b", 1);
+        terminal->send(" ", 1);
+        terminal->send("\b", 1);
         return;
     }
 
@@ -137,10 +135,10 @@ static void del_char(char *pos, u8_t end)
 
     while (end-- > 0) {
         *pos = *(pos + 1);
-        comms_write_buf((pos++), 1);
+        terminal->send((pos++), 1);
     }
 
-    comms_write_buf(" ", 1);
+    terminal->send(" ", 1);
 
     /* Move cursor back to right place */
     cursor_restore();
@@ -384,6 +382,8 @@ void terminal_error(u32_t error)
 
 u32_t terminal_process(const char *buf, u32_t len)
 {
+    static char *shell_line = NULL;
+    static u8_t tail = 0;
     u32_t processed = 0;
     // printed Is used to make sure we don't re-print characters
     u8_t printed = cur;
@@ -446,7 +446,7 @@ u32_t terminal_process(const char *buf, u32_t len)
                 flush_line = true;
                 break;
             case ASCII_TAB:
-                comms_write_buf("\t", 1);
+                terminal->send("\t", 1);
                 break;
             case ASCII_IF:
                 flush_line = true;
@@ -466,8 +466,8 @@ u32_t terminal_process(const char *buf, u32_t len)
             DBG("Line %u %u \n", cur, end);
             shell_line[cur + end] = '\0';
             if (comms_get_echo_mode()) {
-                comms_write_buf(shell_line + printed, cur - printed);
-                comms_write_buf("\r\n", 2);
+                terminal->send(shell_line + printed, cur - printed);
+                terminal->send("\r\n", 2);
             }
 
             u32_t length = strnlen(shell_line, MAX_LINE);
@@ -494,7 +494,7 @@ u32_t terminal_process(const char *buf, u32_t len)
     }
     // Once the data has been parsed, print it
     if (comms_get_echo_mode()) {
-        comms_write_buf(shell_line + printed, cur - printed);
+        terminal->send(shell_line + printed, cur - printed);
     }
 
     /* Done processing line */
@@ -534,10 +534,11 @@ static struct terminal_config terminal_cfg = {
     .done = terminal_process_done,
     .close = terminal_close,
     .process = terminal_process,
+    .send = uart_write_buf
 };
 
-void term_process_start()
+void terminal_start()
 {
     terminal_done = false;
-    term_config = &terminal_cfg;
+    terminal = &terminal_cfg;
 }

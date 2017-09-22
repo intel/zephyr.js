@@ -254,10 +254,10 @@ s32_t ashell_list_dir(char *buf)
 
             int filesizeStrLen = snprintf(filesizeStr, 16, "%d",
                                           (int)entry.size);
-            comms_write_buf(filesizeStr, filesizeStrLen);
-            comms_write_buf("\t", 1);
+            terminal->send(filesizeStr, filesizeStrLen);
+            terminal->send("\t", 1);
             comms_print(entry.name);
-            comms_write_buf("\r\n", 2);
+            terminal->send("\r\n", 2);
         }
     }
 
@@ -299,21 +299,21 @@ s32_t ashell_print_file(char *buf)
         for (int t = 0; t < count; t++) {
             if (data[t] == '\n' || data[t] == '\r') {
                 int strLen = t - lineStart;
-                comms_write_buf(&data[lineStart], strLen);
-                comms_write_buf("\r\n", 2);
+                terminal->send(&data[lineStart], strLen);
+                terminal->send("\r\n", 2);
                 lineStart = t + 1;
             }
         }
         // If we have data left that doesn't end in a newline, print it.
         if (lineStart < count) {
             int strLen = count - lineStart;
-            comms_write_buf(&data[lineStart], strLen);
+            terminal->send(&data[lineStart], strLen);
         }
         // Reset the line start
         lineStart = 0;
     } while (count > 0);
 
-    comms_write_buf("\r\n", 2);
+    terminal->send("\r\n", 2);
     fs_close_alloc(file);
     return RET_OK;
 }
@@ -418,7 +418,7 @@ s32_t ashell_raw_capture(const char *buf, u32_t len)
                 comms_print("\r\n");
                 break;
             default:
-                comms_write_buf(buf, 1);
+                terminal->send(buf, 1);
             }
         } else {
             size_t written = fs_write(file_code, &byte, 1);
@@ -682,7 +682,7 @@ s32_t ashell_help(char *buf)
         snprintf(buf, 40, " %s\t%s\t", commands[t].cmd_name, commands[t].args);
         comms_print(buf);
         comms_print(commands[t].syntax);
-        comms_write_buf("\r\n", 2);
+        terminal->send("\r\n", 2);
     }
     return RET_OK;
 }
