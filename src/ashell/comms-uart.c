@@ -39,7 +39,6 @@
 #include "jerry-code.h"
 
 // ZJS includes
-#include "comms-shell.h"
 #include "comms-uart.h"
 #include "shell-state.h"
 
@@ -54,6 +53,9 @@
 #define FIVE_SECONDS    (5 * sys_clock_ticks_per_sec)
 #define TEN_SECONDS     (10 * sys_clock_ticks_per_sec)
 
+#define CTRL_START 0x00
+#define CTRL_END   0x1F
+
 #ifndef CONFIG_IHEX_DEBUG
 #define DBG(...) { ; }
 #else
@@ -63,14 +65,6 @@
 extern void __stdout_hook_install(int (*fn)(int));
 
 static const char banner[] = "Zephyr.js DEV MODE " __DATE__ " " __TIME__ "\r\n";
-
-// Jerryscript in green color
-
-const char system_prompt[] = ANSI_FG_GREEN "shell> " ANSI_FG_RESTORE;
-const char *system_get_prompt()
-{
-    return system_prompt;
-}
 
 #define FIFO_CACHE 2
 

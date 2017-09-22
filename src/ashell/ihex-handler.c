@@ -18,7 +18,7 @@
 #include "jerry-code.h"
 
 // ZJS includes
-#include "comms-shell.h"
+#include "shell-state.h"
 #include "comms-uart.h"
 #include "ihex/kk_ihex_read.h"
 

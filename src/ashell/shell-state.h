@@ -63,4 +63,15 @@ s32_t ashell_main_state(char *buf, u32_t len);
 void ashell_run_boot_cfg();
 
 s32_t ashell_help(char *buf);
+
+void comms_set_prompt(const char *prompt);
+
+const char *comms_get_prompt();
+
+void comms_set_echo_mode(bool echo_mode);
+bool comms_get_echo_mode();
+
+void terminal_start();
+
+
 #endif

@@ -22,7 +22,6 @@ obj-y += jerry-code.o
 obj-y += ihex-handler.o
 
 obj-y += comms-uart.o
-obj-y += comms-shell.o
 obj-y += shell-state.o
 
 obj-y += ../../deps/ihex/kk_ihex_read.o

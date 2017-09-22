@@ -3,65 +3,7 @@
 #ifndef __comms_uart_h__
 #define __comms_uart_h__
 
-/* Control characters */
-/* http://www.physics.udel.edu/~watson/scen103/ascii.html */
-
-#define CTRL_START 0x00
-#define CTRL_END   0x1F
-
-/* Escape */
-#define ASCII_ESC                0x1b
-#define ASCII_DEL                0x7f
-#define ASCII_BKSP               0x08
-
-/* CTLR-X */
-#define ASCII_CANCEL             0x18
-
-/* CTRL-B Start of text */
-#define ASCII_START_OF_TEXT      0x02
-
-/* CTRL-C End of text */
-#define ASCII_END_OF_TEXT        0x03
-
-/* CTLR-Z */
-#define ASCII_SUBSTITUTE         0x1A
-
-/* CTLR-D End of transmission */
-#define ASCII_END_OF_TRANS       0x04
-
-#define ASCII_CR                 '\r'
-#define ASCII_IF                 '\n'
-#define ASCII_TAB                '\t'
-
-/* ANSI escape sequences */
-#define ANSI_ESC                 '['
-#define ANSI_UP                  'A'
-#define ANSI_DOWN                'B'
-#define ANSI_FORWARD             'C'
-#define ANSI_BACKWARD            'D'
-
-/**
- * Ansi helpers
- * https://telepathy.freedesktop.org/doc/telepathy-glib/telepathy-glib-debug-ansi.html
- */
-
-#define ANSI_FG_RED        "\x1b[31m"
-#define ANSI_FG_GREEN      "\x1b[32m"
-#define ANSI_FG_YELLOW     "\x1b[33m"
-#define ANSI_FG_BLUE       "\x1b[34m"
-#define ANSI_FG_MAGENTA    "\x1b[35m"
-#define ANSI_FG_CYAN       "\x1b[36m"
-#define ANSI_FG_WHITE      "\x1b[37m"
-#define ANSI_FG_RESTORE    "\x1b[39;0m"
-#define ANSI_FG_LIGHT_BLUE "\x1b[34;1m"
-#define ANSI_CLEAR         "\x1b[2J\x1b[H"
-
 #define MAX_LINE 90
-
-/**
- * Returns the command prompt of this system
- */
-const char *system_get_prompt();
 
 /*
  * @brief Interfaces for the different uploaders and process handlers
