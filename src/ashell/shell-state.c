@@ -86,6 +86,156 @@ const char *BUILD_TIMESTAMP = __DATE__ " " __TIME__ "\n";
 #define DBG printk
 #endif /* CONFIG_IHEX_UPLOADER_DEBUG */
 
+/**
+ * @brief Skips all the spaces until it finds the first character
+ *
+ * @param str   Null terminated string
+ * @return 0    Returns NULL at the end of the string
+ */
+
+char *ashell_skip_spaces(char *str)
+{
+    if (str == NULL || *str == '\0') {
+        return NULL;
+    }
+
+    /* Skip initial spaces if any */
+    while (*str == ' ') {
+        str++;
+        if (*str == '\0') {
+            return NULL;
+        }
+    }
+    return str;
+}
+
+/**
+ * @brief Returns the next token in the string
+ *        It modifies the string, so it is destructive.
+ *
+ * @param str   Null terminated string
+ * @return 0    Returns NULL at the end of the string
+ */
+
+char *ashell_get_token_arg(char *str)
+{
+    str = ashell_skip_spaces(str);
+    if (str == NULL)
+        return NULL;
+
+    /* Skip until we find a space of end of line */
+    while (*str != 0 && *str != ' ') {
+        str++;
+    }
+
+    /* Reached end of string, no more tokens */
+    if (*str == '\0') {
+        return NULL;
+    }
+
+    /* Terminate current token */
+    *str++ = '\0';
+
+    /* Skip spaces to search for new token if any */
+    return ashell_skip_spaces(str);
+}
+
+/** @brief Get the number of arguments in a string
+ *
+ * @param str   Null terminated string
+ * @param nsize Check for size boundaries
+ * @return Returns the number of arguments on the string
+ */
+
+u32_t ashell_get_argc(const char *str, u32_t nsize)
+{
+    if (str == NULL || nsize == 0 || *str == '\0')
+        return 0;
+
+    u32_t size = 1;
+    bool div = false;
+
+    /* Skip the first spaces */
+    while (nsize-- > 0 && *str != 0 && *str == ' ') {
+        str++;
+        if (size) {
+            size = 0;
+            div = true;
+        }
+    }
+
+    while (nsize-- > 0 && *str++ != 0) {
+        if (*str == ' ')
+            div = true;
+
+        if (div && *str != ' ' && *str != '\0') {
+            div = false;
+            size++;
+        }
+    }
+
+    return size;
+}
+
+/** @brief Copy the next argument into the string
+ *
+ * @param str     Null terminated string
+ * @param nsize   Checks line size boundaries.
+ * @param str_arg Initialized destination for the argument. It always null
+ *                  terminates the string
+ * @param length  Returns length of the argument found.
+ * @return 0      Pointer to where this argument finishes
+ */
+
+const char *
+ashell_get_next_arg(const char *str, u32_t nsize, char *str_arg, u32_t *length)
+{
+    *length = 0;
+    if (nsize == 0 || str == NULL || *str == '\0') {
+        str_arg[0] = '\0';
+        return 0;
+    }
+
+    /* Skip spaces */
+    while (nsize > 0 && *str != 0 && *str == ' ') {
+        str++;
+        nsize--;
+    }
+
+    while (nsize-- > 0 && *str != ' ') {
+        *str_arg++ = *str++;
+        (*length)++;
+        if (*str == 0)
+            break;
+    }
+
+    *str_arg = '\0';
+    return str;
+}
+
+/** @brief Safe function to copy the next argument into a destination argument
+*     string
+*
+* @param str          Null terminated string
+* @param nsize        Checks line size boundaries.
+* @param str_arg      Initialized destination for the argument
+* @param max_arg_size Limits the size of the variable to return
+* @param length    Returns length of the argument found.
+* @return 0 Pointer to where this argument finishes
+*/
+
+const char *ashell_get_next_arg_s(const char *str, u32_t nsize, char *str_arg,
+                                  const u32_t max_arg_size, u32_t *length)
+{
+    /* Check size and allocate for string termination */
+    if (nsize >= max_arg_size) {
+        nsize = max_arg_size - 1;
+        DBG(" MAX \n");
+    }
+
+    return ashell_get_next_arg(str, nsize, str_arg, length);
+}
+
 s32_t ashell_get_filename_buffer(const char *buf, char *destination)
 {
     u32_t arg_len = 0;
