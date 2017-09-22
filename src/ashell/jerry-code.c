@@ -28,7 +28,7 @@
 #include "../zjs_timers.h"
 #include "../zjs_util.h"
 
-#include "comms-uart.h"
+#include "term-uart.h"
 
 static jerry_value_t parsed_code = 0;
 

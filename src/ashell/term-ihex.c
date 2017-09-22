@@ -18,8 +18,8 @@
 #include "jerry-code.h"
 
 // ZJS includes
-#include "shell-state.h"
-#include "comms-uart.h"
+#include "term-cmd.h"
+#include "term-uart.h"
 #include "ihex/kk_ihex_read.h"
 
 #include "file-utils.h"

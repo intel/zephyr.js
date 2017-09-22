@@ -1,7 +1,7 @@
 // Copyright (c) 2016-2017, Intel Corporation.
 
-#ifndef __SHELL__STATE__H__
-#define __SHELL__STATE__H__
+#ifndef __TERM_CMD_H__
+#define __TERM_CMD_H__
 
 // We are not expecting to return the command line
 #define RET_OK_NO_RET 1
@@ -73,5 +73,4 @@ bool comms_get_echo_mode();
 
 void terminal_start();
 
-
-#endif
+#endif  // __TERM_CMD_H__

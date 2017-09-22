@@ -39,11 +39,11 @@
 #include "jerry-code.h"
 
 // ZJS includes
-#include "comms-uart.h"
-#include "shell-state.h"
+#include "term-uart.h"
+#include "term-cmd.h"
 
 #ifndef CONFIG_USB_CDC_ACM
-#include "webusb-handler.h"
+#include "term-webusb.h"
 #endif
 
 #include "ihex/kk_ihex_read.h"

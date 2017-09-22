@@ -24,9 +24,9 @@
 #endif
 
 // ZJS includes
-#include "comms-uart.h"
-#include "shell-state.h"
-#include "ihex-handler.h"
+#include "term-uart.h"
+#include "term-cmd.h"
+#include "term-ihex.h"
 #include "../zjs_util.h"
 
 // JerryScript includes
