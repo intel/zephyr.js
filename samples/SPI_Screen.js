@@ -8,30 +8,34 @@
 // SDA - Pin 11
 
 // Color definitions
-var BLACK =  [0x00,0x00];
-var BLUE  =  [0x00,0x1F];
-var RED   =  [0xF8,0x00];
-var GREEN =  [0x07,0xE0];
-var CYAN  =  [0x07,0xFF];
-var MAGENTA = [0xF8,0x1F];
-var YELLOW =  [0xFF,0xE0];
-var WHITE =  [0xFF,0xFF];
+var BLACK =  [0x00, 0x00];
+var BLUE  =  [0x00, 0x1F];
+var RED   =  [0xF8, 0x00];
+var GREEN =  [0x07, 0xE0];
+var CYAN  =  [0x07, 0xFF];
+var MAGENTA = [0xF8, 0x1F];
+var YELLOW =  [0xFF, 0xE0];
+var WHITE =  [0xFF, 0xFF];
 
 var LCD = require("ST7735.js");
 var gpio = require('gpio');
-
+var gfxLib = require("gfx");
 console.log("SPI screen test starting..");
 
 try {
-    LCD.initScreen();
-    LCD.fillRect(0, 0, LCD.width, LCD.height, BLACK);
-    LCD.drawLine(30, 70, 40, 100, YELLOW);
-    LCD.drawLine(70, 30, 100, 50, CYAN);
-    LCD.fillRect(50, 50, 100, 100, RED);
-    LCD.drawPixel(64, 80, GREEN);
-    LCD.drawPixel(42, 53, CYAN);
-    LCD.drawPixel(32, 40, MAGENTA);
-    stopJS();
+    var GFX = gfxLib.init(LCD.width, LCD.height, LCD.initScreen, LCD.drawCB, LCD);
+    GFX.fillRect(0, 0, LCD.width, LCD.height, BLACK);
+    GFX.drawVLine(123, 0, 160, RED, 5);
+    GFX.drawVLine(118, 0, 160, YELLOW, 3);
+    GFX.drawVLine(113, 0, 160, WHITE);
+    GFX.drawLine(0, 20, 100, 160, WHITE, 15);
+    GFX.drawLine(0, 10, 115, 160, BLUE, 10);
+    GFX.drawLine(0, 0, 128, 160, RED);
+    GFX.drawString(0, 30, "Hello", RED, 2);
+    GFX.drawString(0, 55, "WORLD", [0x06, 0x1F], 4);
+    GFX.drawChar(20, 100,'Z', YELLOW, 3);
+    GFX.drawChar(40, 110,'J', YELLOW, 3);
+    GFX.drawChar(60, 120,'S', YELLOW, 3);
 } catch (err) {
   console.log("SPI error: " + err.message);
 }

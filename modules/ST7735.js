@@ -13,12 +13,13 @@ function ST7735() {
     var st7735API = {};
     st7735API.width = 128;
     st7735API.height = 160;
-    st7735API.maxPixels = st7735API.width * st7735API.height;
+    st7735API.maxPixels = this.width * this.height;
 
     var gpio = require('gpio');
     var spi = require("spi");
     var board = require('board');
     var busSpeed = board.name === "arduino_101" ? 16000000 : 32000000;
+
     // You can reset these pins from your JS if you want
     st7735API.dcPin = gpio.open(8);   // Command / Data select pin
     st7735API.csPin = gpio.open(4);   // SPI slave pin
@@ -51,8 +52,20 @@ function ST7735() {
         this.csPin.write(1);    // Set CS pin high to end transmission
     }
 
+
     // Send data over SPI
     st7735API.writeData = function(data) {
+        this.dcPin.write(1);    // Set DC pin low to indicate data
+        this.csPin.write(0);
+        this.spiBus.transceive(1, data, "write");
+        this.csPin.write(1);
+        //delete (data);
+    }
+
+     // Send data over SPI
+    st7735API.drawCB = function(x, y, w, h, data) {
+        //console.log("x = " + x + "y = " + y + "w = " + w + "h = " + h);
+        this.setAddrWindow(x, y, x + w - 1, y + h - 1);
         this.dcPin.write(1);    // Set DC pin low to indicate data
         this.csPin.write(0);
         this.spiBus.transceive(1, data, "write");
@@ -61,96 +74,11 @@ function ST7735() {
 
     // Sets which pixels we are going to send data for
     st7735API.setAddrWindow = function(x0, y0, x1, y1) {
-      this.writeCommand(this.cmdAddrs.CASET); // Set column addrs
-      this.writeData([0, x0, 0, x1]);
-      this.writeCommand(this.cmdAddrs.RASET); // Set row addrs
-      this.writeData([0, y0, 0, y1]);
-      this.writeCommand(this.cmdAddrs.RAMWR); // Save values to RAM
-    }
-
-    st7735API.fillRect = function(x0, y0, x1, y1, color) {
-        // Check for invalid pixel location
-        if((x0 < 0 || x0 > x1) || (x0 >= this.width) ||
-           (y0 < 0 || y0 > y1) || (y0 >= this.height)) {
-            console.log("Invalid pixel location " + x0 + ", " + y0 + ", " + x1 + ", " + y1);
-            return;
-        }
-
-        this.setAddrWindow(x0, y0, x1, y1);
-        var w = x1 - x0 + 1;
-        var h = y1 - y0 + 1;
-        var pixels = w * h * 2; // Each pixel has two bytes of data
-        var passes = 1;         // Number of times the data buffer needs to be sent
-
-        if (pixels > this.maxPixels) {
-            var tmpPass = pixels / this.maxPixels;
-            var whole = parseInt(tmpPass);
-            var dec = tmpPass - whole;
-            if (dec > 0.0) {
-                passes += 1;
-            }
-            pixels = this.maxPixels; // Set pixels to the maximum size
-        }
-
-        var buf = Buffer(pixels);
-        var bufColor = Buffer([color[0], color[1], color[0], color[1]]);
-        buf.fill(bufColor);
-
-        for ( var i = 0; i < passes ; i++)
-            this.writeData(buf);
-    }
-
-    st7735API.drawPixel = function(x, y, color) {
-        // Check for invalid pixel location
-        if((x < 0) || (x >= this.width) || (y < 0) || (y >= this.height)) {
-            console.log("Invalid pixel location " + x + ", " + y);
-            return;
-        }
-
-        this.setAddrWindow(x, y, x + 1, y + 1);
-        this.writeData(color);
-    }
-
-    st7735API.drawLine = function(x0, y0, x1, y1, color) {
-      // Check for invalid pixel location
-        if((x0 < 0 || x1 < 0) || (x0 >= this.width || x1 >= this.width) ||
-           (y0 < 0 || y1 < 0) || (y0 >= this.height || y1 >= this.height)) {
-            console.log("Invalid pixel location " + x0 + ", " + y0 + ", " + x1 + ", " + y1);
-            return;
-        }
-
-        var xLen = x1 > x0 ? x1 - x0 : x0 - x1;
-        var yLen = y1 > y0 ? y1 - y0 : y0 - y1;
-        xLen = xLen === 0 ? 1 : xLen; // Line width has to be at least a pixel
-        yLen = yLen === 0 ? 1 : yLen;
-
-        if (xLen > yLen) {
-            if (x0 > x1) {  // Swap if x0 is greater
-                var tmp = x0; x0 = x1; x1 = tmp;
-                tmp = y0; y0 = y1; y1 = tmp;
-            }
-            var pos = y0;
-            var step = yLen / xLen;
-
-            for (var x = x0; x <= x1; x++) {
-                this.drawPixel(x, parseInt(pos), color);
-                pos += step;
-            }
-        }
-        else {
-            if (y0 > y1) {
-                var tmp = x0; x0 = x1; x1 = tmp;
-                tmp = y0; y0 = y1; y1 = tmp;
-            }
-
-            var pos = x0;
-            var step = xLen / yLen;
-
-            for (var y = y0; y <= y1; y++) {
-                this.drawPixel(parseInt(pos), y, color);
-                pos += step;
-            }
-        }
+        this.writeCommand(this.cmdAddrs.CASET); // Set column addrs
+        this.writeData([0, x0, 0, x1]);
+        this.writeCommand(this.cmdAddrs.RASET); // Set row addrs
+        this.writeData([0, y0, 0, y1]);
+        this.writeCommand(this.cmdAddrs.RAMWR); // Save values to RAM
     }
 
     st7735API.initScreen = function() {
