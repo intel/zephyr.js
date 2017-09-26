@@ -8,30 +8,42 @@
 // ZJS includes
 #include "zjs_common.h"
 
-struct device;
-
-typedef struct zjs_pin {
-    u8_t device;
-    u8_t gpio;
-#if defined(CONFIG_BOARD_ARDUINO_101) || defined(ZJS_LINUX_BUILD)
-    u8_t gpio_ss;
-#endif
-} zjs_pin_t;
-
-// return codes from zjs_board_find_pin
-#define FIND_PIN_FAILURE -1
-#define FIND_PIN_INVALID -2
+// return codes from zjs_find_* functions
+#define FIND_PIN_INVALID    -1
+#define FIND_PIN_FAILURE    -2
+#define FIND_DEVICE_FAILURE -3
 
 /**
- * Given a pin specifier from JS, find the appropriate pin info
+ * Finds the Zephyr pin corresponding to a JavaScript GPIO pin name or number
  *
- * @param pin      A string or number from JS defining a pin
- * @param devname  Receives the port device name used to access this pin
- * @param pin_num  Receives the pin number to access the given pin
+ * @param jspin        JrS number or string pin name
+ * @param device_name  Pointer to a buffer to receive driver name
+ * @param len          Length of device_name buffer
  *
- * @return 0 on success, FIND_PIN_FAILURE for a general failure, or
- *         FIND_PIN_INVALID if it was the wrong JS type
+ * @return ZJS pin number, or negative FIND_* error number above if not found
  */
-int zjs_board_find_pin(jerry_value_t pin, char devname[20], int *pin_num);
+int zjs_board_find_gpio(jerry_value_t jspin, char *device_name, int len);
+
+/**
+ * Finds the Zephyr pin corresponding to a JavaScript AIO pin name or number
+ *
+ * @param jspin        JrS number or string pin name
+ * @param device_name  Pointer to a buffer to receive driver name
+ * @param len          Length of device_name buffer
+ *
+ * @return ZJS pin number, or negative FIND_* error number above if not found
+ */
+int zjs_board_find_aio(jerry_value_t jspin, char *device_name, int len);
+
+/**
+ * Finds the Zephyr pin corresponding to a JavaScript PWM pin name or number
+ *
+ * @param jspin        JrS number or string pin name
+ * @param device_name  Pointer to a buffer to receive driver name
+ * @param len          Length of device_name buffer
+ *
+ * @return ZJS pin number, or negative FIND_* error number above if not found
+ */
+int zjs_board_find_pwm(jerry_value_t jspin, char *device_name, int len);
 
 #endif  // __zjs_board_h__

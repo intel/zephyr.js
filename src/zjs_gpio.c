@@ -221,16 +221,17 @@ static ZJS_DECL_FUNC(zjs_gpio_open)
     }
 
     char devname[20];
-    int pin;
-    int rval = zjs_board_find_pin(pin_val, devname, &pin);
-    if (rval == FIND_PIN_INVALID) {
+    int pin = zjs_board_find_gpio(pin_val, devname, 20);
+    if (pin == FIND_PIN_INVALID) {
         return TYPE_ERROR("bad pin argument");
     }
-    DEVICE gpiodev = device_get_binding(devname);
-    if (!gpiodev || rval == FIND_PIN_FAILURE) {
-        return zjs_custom_error("InvalidAccessError", "pin failure", this,
-                                function_obj);
+    else if (pin == FIND_DEVICE_FAILURE) {
+        return zjs_error("device not found");
     }
+    else if (pin < 0) {
+        return zjs_error("pin not found");
+    }
+    DEVICE gpiodev = device_get_binding(devname);
 
     // ignore mapping for now as we can do it automatically
 
@@ -289,7 +290,7 @@ static ZJS_DECL_FUNC(zjs_gpio_open)
         flags |= (pull == ZJS_PULL_UP) ? GPIO_PUD_PULL_UP : GPIO_PUD_PULL_DOWN;
     }
 
-    rval = gpio_pin_configure(gpiodev, pin, flags);
+    int rval = gpio_pin_configure(gpiodev, pin, flags);
     if (rval) {
         ERR_PRINT("GPIO: #%d (RVAL: %d)\n", (int)pin, rval);
         return zjs_error("pin configure failed");
