@@ -58,32 +58,39 @@ static const pin_map_t pin_data[] = {
     {0,  10,   3},  // IO11
     {0,   9,   1},  // IO12
     {0,   8,   2},  // IO13
+    {0,  26, 255},  // LED0
+    {0,  12, 255},  // LED1
+    {0,   8,   2},  // LED2 (aka IO13)
     {0, 255,  10},  // AD0
     {0, 255,  11},  // AD1
     {0, 255,  12},  // AD2
     {0, 255,  13},  // AD3
     {0, 255,  14},  // AD4
     {0, 255,   9},  // AD5
-    {0,  26, 255},  // LED0
-    {0,  12, 255},  // LED1
-    {0,   8,   2},  // LED2 (aka IO13)
     {0,   0, 255},  // PWM0 (aka IO3)
     {0,   1, 255},  // PWM1 (aka IO5)
     {0,   2, 255},  // PWM2 (aka IO6)
     {0,   3, 255}   // PWM3 (aka IO9)
 };
 
+#ifdef BUILD_MODULE_GPIO
 static const pin_range_t digital_pins = {0, 13};
-static const pin_range_t analog_pins = {14, 19};
-static const pin_range_t led_pins = {20, 22};
-static const pin_range_t pwm_pins = {23, 26};
+static const pin_range_t led_pins = {14, 16};
+#endif
+#ifdef BUILD_MODULE_AIO
+static const pin_range_t analog_pins = {17, 22};
+#endif
 static const extra_pin_t extra_pins[] = {};
+
+#ifdef BUILD_MODULE_PWM
+static const pin_range_t pwm_pins = {23, 26};
 static const pin_remap_t pwm_map[] = {  // maps normal pins to PWM pins
     {3, 23},
     {5, 24},
     {6, 25},
     {9, 26}
 };
+#endif
 
 #elif CONFIG_BOARD_FRDM_K64F
 enum gpio_ports {
@@ -108,17 +115,17 @@ static const pin_map_t pin_data[] = {
     {PTD,  1},  // D13
     {PTE, 25},  // D14
     {PTE, 24},  // D15
+    {PTB, 22},  // LEDR
+    {PTE, 26},  // LEDG
+    {PTB, 21},  // LEDB
+    {PTC,  6},  // SW2
+    {PTA,  4},  // SW3
     {PTB,  2},  // A0
     {PTB,  3},  // A1
     {PTB, 10},  // A2
     {PTB, 11},  // A3
     {PTC, 11},  // A4
     {PTC, 10},  // A5
-    {PTB, 22},  // LEDR
-    {PTE, 26},  // LEDG
-    {PTB, 21},  // LEDB
-    {PTC,  6},  // SW2
-    {PTA,  4},  // SW3
     {PTA,  1},  // PWM0
     {PTA,  2},  // PWM1
     {PTC,  2},  // PWM2
@@ -132,17 +139,25 @@ static const pin_map_t pin_data[] = {
     // TODO: More pins at https://developer.mbed.org/platforms/FRDM-K64F/
 };
 
+#ifdef BUILD_MODULE_GPIO
 static const pin_range_t digital_pins = {0, 15};
-static const pin_range_t analog_pins = {16, 21};
-static const pin_range_t led_pins = {22, 24};
-static const pin_range_t pwm_pins = {27, 36};
+static const pin_range_t led_pins = {16, 18};
+#endif
+#ifdef BUILD_MODULE_AIO
+static const pin_range_t analog_pins = {21, 26};
+#endif
 static const extra_pin_t extra_pins[] = {
+#ifdef BUILD_MODULE_GPIO
     {"LEDR", 22},
     {"LEDG", 23},
     {"LEDB", 24},
     { "SW2", 25},
     { "SW3", 26}
+#endif
 };
+
+#ifdef BUILD_MODULE_PWM
+static const pin_range_t pwm_pins = {27, 36};
 static const pin_remap_t pwm_map[] = {
     { 3, 27},
     { 5, 28},
@@ -155,6 +170,7 @@ static const pin_remap_t pwm_map[] = {
     {12, 35},
     {13, 36}
 };
+#endif
 
 #else
 // for boards without pin name support, use pass-through method
@@ -167,12 +183,18 @@ typedef struct {
 } prefix_t;
 
 static const prefix_t prefix_map[] = {
+#ifdef BUILD_MODULE_GPIO
     { "IO", &digital_pins},
     {  "D", &digital_pins},
+    {"LED", &led_pins},
+#endif
+#ifdef BUILD_MODULE_AIO
     { "AD", &analog_pins},
     {  "A", &analog_pins},
-    {"LED", &led_pins},
+#endif
+#ifdef BUILD_MODULE_PWM
     {"PWM", &pwm_pins}
+#endif
 };
 
 static int find_named_pin(const char *name, const pin_range_t *default_range,
@@ -341,22 +363,28 @@ static int find_pin(jerry_value_t jspin, const pin_range_t *default_range,
                           remap, remap_len, device_name, name_len);
 }
 
+#ifdef BUILD_MODULE_GPIO
 int zjs_board_find_gpio(jerry_value_t jspin, char *device_name, int len)
 {
     return find_pin(jspin, &digital_pins, "GPIO", NULL, 0, device_name, len);
 }
+#endif
 
+#ifdef BUILD_MODULE_AIO
 int zjs_board_find_aio(jerry_value_t jspin, char *device_name, int len)
 {
     return find_pin(jspin, &analog_pins, "AIO", NULL, 0, device_name, len);
 }
+#endif
 
+#ifdef BUILD_MODULE_PWM
 int zjs_find_pwm(jerry_value_t jspin, char *device_name, int name_len)
 {
     int remap_len = sizeof(pwm_map) / sizeof(pin_remap_t);
     return find_pin(jspin, &pwm_pins, "PWM", pwm_map, remap_len, device_name,
                     name_len);
 }
+#endif
 
 #ifdef CONFIG_BOARD_ARDUINO_101
 #define BOARD_NAME "arduino_101"

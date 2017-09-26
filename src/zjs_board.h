@@ -13,6 +13,7 @@
 #define FIND_PIN_FAILURE    -2
 #define FIND_DEVICE_FAILURE -3
 
+#ifdef BUILD_MODULE_GPIO
 /**
  * Finds the Zephyr pin corresponding to a JavaScript GPIO pin name or number
  *
@@ -23,7 +24,9 @@
  * @return ZJS pin number, or negative FIND_* error number above if not found
  */
 int zjs_board_find_gpio(jerry_value_t jspin, char *device_name, int len);
+#endif
 
+#ifdef BUILD_MODULE_AIO
 /**
  * Finds the Zephyr pin corresponding to a JavaScript AIO pin name or number
  *
@@ -34,7 +37,9 @@ int zjs_board_find_gpio(jerry_value_t jspin, char *device_name, int len);
  * @return ZJS pin number, or negative FIND_* error number above if not found
  */
 int zjs_board_find_aio(jerry_value_t jspin, char *device_name, int len);
+#endif
 
+#ifdef BUILD_MODULE_PWM
 /**
  * Finds the Zephyr pin corresponding to a JavaScript PWM pin name or number
  *
@@ -45,5 +50,6 @@ int zjs_board_find_aio(jerry_value_t jspin, char *device_name, int len);
  * @return ZJS pin number, or negative FIND_* error number above if not found
  */
 int zjs_board_find_pwm(jerry_value_t jspin, char *device_name, int len);
+#endif
 
 #endif  // __zjs_board_h__
