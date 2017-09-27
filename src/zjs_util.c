@@ -292,6 +292,25 @@ bool zjs_obj_get_int32(jerry_value_t obj, const char *name, s32_t *num)
     return rval;
 }
 
+jerry_value_t zjs_push_array(jerry_value_t array, jerry_value_t val)
+{
+    if (!jerry_value_is_array(array)) {
+        jerry_value_t new = jerry_create_array(1);
+        jerry_set_property_by_index(new, 0, val);
+        return new;
+    } else {
+        u32_t size = jerry_get_array_length(array);
+        jerry_value_t new = jerry_create_array(size + 1);
+        for (int i = 0; i < size; i++) {
+            ZVAL v = jerry_get_property_by_index(array, i);
+            jerry_set_property_by_index(new, i, v);
+        }
+        jerry_set_property_by_index(new, size, val);
+        return new;
+    }
+}
+
+
 void zjs_copy_jstring(jerry_value_t jstr, char *buffer, jerry_size_t *maxlen)
 {
     jerry_size_t size = jerry_get_string_size(jstr);

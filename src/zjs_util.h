@@ -145,6 +145,17 @@ bool zjs_obj_get_double(jerry_value_t obj, const char *name, double *num);
 bool zjs_obj_get_uint32(jerry_value_t obj, const char *name, u32_t *num);
 bool zjs_obj_get_int32(jerry_value_t obj, const char *name, s32_t *num);
 
+/*
+ * Push a new element into a JS array.
+ *
+ * @param array     Array to push into (can also be ZJS_UNDEFINED)
+ * @param val       Value to put into the array.
+ *
+ * @return          A NEW JS array containing the new element.
+ *
+ */
+jerry_value_t zjs_push_array(jerry_value_t array, jerry_value_t val);
+
 /**
  * Copy a JerryScript string into a supplied char * buffer.
  *
