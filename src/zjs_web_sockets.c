@@ -210,28 +210,6 @@ static void free_server(void *native)
     }
 }
 
-/*
- * TODO: could probably move this to zjs_util
- */
-static jerry_value_t push_array(jerry_value_t array, jerry_value_t val)
-{
-    FTRACE("array = %p, val = %p\n", (void *)array, (void *)val);
-    if (!jerry_value_is_array(array)) {
-        jerry_value_t new = jerry_create_array(1);
-        jerry_set_property_by_index(new, 0, val);
-        return new;
-    } else {
-        u32_t size = jerry_get_array_length(array);
-        jerry_value_t new = jerry_create_array(size + 1);
-        for (int i = 0; i < size; i++) {
-            ZVAL v = jerry_get_property_by_index(array, i);
-            jerry_set_property_by_index(new, i, v);
-        }
-        jerry_set_property_by_index(new, size, val);
-        return new;
-    }
-}
-
 #ifdef DEBUG_BUILD
 static inline void pkt_sent(struct net_context *context, int status,
                             void *token, void *user_data)
@@ -671,7 +649,7 @@ static jerry_value_t create_ws_connection(ws_connection_t *con)
     zjs_make_emitter(conn, ZJS_UNDEFINED, con, NULL);
     if (con->server_h->track) {
         ZVAL clients = zjs_get_property(con->server_h->server, "clients");
-        ZVAL new = push_array(clients, conn);
+        ZVAL new = zjs_push_array(clients, conn);
         zjs_set_property(con->server_h->server, "clients", new);
     }
     con->conn = jerry_acquire_value(conn);
