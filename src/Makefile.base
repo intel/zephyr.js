@@ -10,8 +10,10 @@ ccflags-y += -Wall -Werror $(ZJS_FLAGS)
 #       into warnings
 ccflags-y += -Wno-error=format
 
+ifneq ($(BOARD), linux)
 # Select extended ANSI C/POSIX function set in recent Newlib versions
 ccflags-y += -D_XOPEN_SOURCE=700
+endif
 
 ccflags-y += -I$(JERRY_BASE)/jerry-core/include
 ccflags-y += -I$(JERRY_BASE)/jerry-core/jrt

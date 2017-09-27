@@ -95,6 +95,10 @@ ifeq ($(V), 1)
 VERBOSE=-v
 endif
 
+ifeq ($(DEBUGGER), on)
+LINUX_DEFINES += -DZJS_DEBUGGER
+endif
+
 BUILD_OBJ = $(CORE_OBJ:%.o=$(BUILD_DIR)/%.o)
 
 # define the modules that will be pulled into the linux build
@@ -157,8 +161,9 @@ linux: setup $(BUILD_OBJ)
 		--mem-heap 16 \
 		--profile=es2015-subset \
 		--jerry-port-default=OFF \
-		--jerry-cmdline OFF \
-		--jerry-libc OFF;
+		--jerry-cmdline=OFF \
+		--jerry-libc=OFF \
+		--jerry-debugger=$(DEBUGGER)
 
 	@echo [LD] $(BUILD_DIR)/jslinux
 	@gcc $(LINUX_INCLUDES) $(JERRY_LIB_PATH) -o $(BUILD_DIR)/jslinux $(BUILD_OBJ) $(LINUX_FLAGS) $(CFLAGS) $(LINUX_DEFINES) $(LINUX_LIBS)
