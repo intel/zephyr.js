@@ -87,25 +87,6 @@ static jerry_value_t find_property_with_value(jerry_value_t obj,
     return match.name;
 }
 
-// donated by jprestwo from his pending websockets patch, should move to util
-static jerry_value_t push_array(jerry_value_t array, jerry_value_t val)
-{
-    jerry_value_t new;
-    if (!jerry_value_is_array(array)) {
-        new = jerry_create_array(1);
-        jerry_set_property_by_index(new, 0, val);
-    } else {
-        u32_t size = jerry_get_array_length(array);
-        new = jerry_create_array(size + 1);
-        for (int i = 0; i < size; i++) {
-            ZVAL v = jerry_get_property_by_index(array, i);
-            jerry_set_property_by_index(new, i, v);
-        }
-        jerry_set_property_by_index(new, size, val);
-    }
-    return new;
-}
-
 // mock control functions
 
 /**
@@ -142,11 +123,11 @@ static ZJS_DECL_FUNC(zjs_gpio_mock_wire)
     }
 
     ZVAL pin1_wired = zjs_get_property(pin1_obj, "wired");
-    ZVAL new1_wired = push_array(pin1_wired, pin2_obj);
+    ZVAL new1_wired = zjs_push_array(pin1_wired, pin2_obj);
     zjs_set_property(pin1_obj, "wired", new1_wired);
 
     ZVAL pin2_wired = zjs_get_property(pin2_obj, "wired");
-    ZVAL new2_wired = push_array(pin2_wired, pin1_obj);
+    ZVAL new2_wired = zjs_push_array(pin2_wired, pin1_obj);
     zjs_set_property(pin2_obj, "wired", new2_wired);
 
     return ZJS_UNDEFINED;
