@@ -29,12 +29,14 @@ I/O
 
 [UART](./uart.md)
 
+[WebUSB}(./webusb.md)
+
 Generic Sensors
 ---------------
 [Sensors](./sensors.md)
 
-Communications
---------------
+Networking
+----------
 [BLE](./ble.md)
 
 [Network Configuration](./net-config.md)
