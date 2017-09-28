@@ -3,6 +3,9 @@
 # a place to add temporary defines to ZJS builds such as -DZJS_GPIO_MOCK
 ZJS_FLAGS :=
 
+# control verbosity of debug prints: 1 = text, 2 = func/line, 3 = timestamp
+VERBOSITY ?= 1
+
 OS := $(shell uname)
 
 BOARD ?= arduino_101
@@ -49,6 +52,12 @@ endif  # BOARD = arduino_101
 
 ifeq ($(filter $(MAKECMDGOALS),linux), linux)
 $(error 'linux' make target is deprecated, use "make BOARD=linux")
+endif
+
+ifneq (,$(filter $(MAKECMDGOALS),ide ashell))
+ifneq (,$(JS))
+$(error ide and ashell do not allow for setting JS)
+endif
 endif
 
 ifeq ($(filter $(MAKECMDGOALS),ide), ide)
@@ -205,6 +214,7 @@ zephyr: analyze generate $(JERRYLIB) $(ARC)
 	@make -f Makefile.zephyr -j4 \
 					BOARD=$(BOARD) \
 					VARIANT=$(VARIANT) \
+					VERBOSITY=$(VERBOSITY) \
 					CB_STATS=$(CB_STATS) \
 					PRINT_FLOAT=$(PRINT_FLOAT) \
 					SNAPSHOT=$(SNAPSHOT) \

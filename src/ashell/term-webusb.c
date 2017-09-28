@@ -90,46 +90,17 @@ static const u8_t ms_os_20_descriptor_set[] = {
     '6', 0x00, '}', 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
-/* WebUSB Device Requests */
-static const u8_t webusb_allowed_origins[] = {
-    /* Allowed Origins Header:
-     * https://wicg.github.io/webusb/#get-allowed-origins
-     */
-    0x05, 0x00, 0x0E, 0x00, 0x01,
-
-    /* Configuration Subset Header:
-     * https://wicg.github.io/webusb/#configuration-subset-header
-     */
-    0x04, 0x01, 0x01, 0x01,
-
-    /* Function Subset Header:
-     * https://wicg.github.io/webusb/#function-subset-header
-     */
-    0x05, 0x02, 0x02, 0x01, 0x02
-};
-
-/* Number of allowed origins */
-#define NUMBER_OF_ALLOWED_ORIGINS 2
-
 /* Microsoft OS 2.0 descriptor request */
 #define MS_OS_20_REQUEST_DESCRIPTOR 0x07
 
 /* URL Descriptor: https://wicg.github.io/webusb/#url-descriptor */
-static const u8_t webusb_origin_url_1[] = {
+static const u8_t webusb_origin_url[] = {
     0x1F,  // Length
     0x03,  // URL descriptor
     0x01,  // Scheme https://
     '0', '1', 'o', 'r', 'g', '.', 'g', 'i', 't', 'h', 'u', 'b', '.',
     'i', 'o', '/', 'z', 'e', 'p', 'h', 'y', 'r', 'j', 's', '-', 'i',
     'd', 'e'
-};
-
-/* URL Descriptor: https://wicg.github.io/webusb/#url-descriptor */
-const u8_t webusb_origin_url_2[] = {
-    0x11,  // Length
-    0x03,  // URL descriptor
-    0x00,  // Scheme http://
-    'l', 'o', 'c', 'a', 'l', 'h', 'o', 's', 't', ':', '8', '0', '0', '0'
 };
 
 /**
@@ -168,33 +139,23 @@ int webusb_custom_handler(struct usb_setup_packet *pSetup, s32_t *len,
 int webusb_vendor_handler(struct usb_setup_packet *pSetup, s32_t *len,
                           u8_t **data)
 {
-    /* Get Allowed origins request */
-    if (pSetup->bRequest == 0x01 && pSetup->wIndex == 0x01) {
-        *data = (u8_t *)(&webusb_allowed_origins);
-        *len = sizeof(webusb_allowed_origins);
-
-        return 0;
-    } else if (pSetup->bRequest == 0x01 && pSetup->wIndex == 0x02) {
-        /* Get URL request */
+    /* Get URL request */
+    if (pSetup->bRequest == 0x01 && pSetup->wIndex == 0x02) {
         u8_t index = GET_DESC_INDEX(pSetup->wValue);
 
-        if (index == 0 || index > NUMBER_OF_ALLOWED_ORIGINS)
+        if (index != 1)
             return -ENOTSUP;
 
-        if (index == 1) {
-            *data = (u8_t *)(&webusb_origin_url_1);
-            *len = sizeof(webusb_origin_url_1);
-            return 0;
-        } else if (index == 2) {
-            *data = (u8_t *)(&webusb_origin_url_2);
-            *len = sizeof(webusb_origin_url_2);
-            return 0;
-        }
+        *data = (u8_t *)(&webusb_origin_url);
+        *len = sizeof(webusb_origin_url);
+
+        return 0;
     } else if (pSetup->bRequest == 0x02 &&
                pSetup->wIndex == MS_OS_20_REQUEST_DESCRIPTOR) {
 
         *data = (u8_t *)(ms_os_20_descriptor_set);
         *len = sizeof(ms_os_20_descriptor_set);
+
         return 0;
     }
 

@@ -22,9 +22,9 @@ static void onchange(void *h, const void *argv)
     x = ((double *)argv)[0];
     y = ((double *)argv)[1];
     z = ((double *)argv)[2];
-    zjs_obj_add_readonly_number(obj, x, "x");
-    zjs_obj_add_readonly_number(obj, y, "y");
-    zjs_obj_add_readonly_number(obj, z, "z");
+    zjs_obj_add_readonly_number(obj, "x", x);
+    zjs_obj_add_readonly_number(obj, "y", y);
+    zjs_obj_add_readonly_number(obj, "z", z);
     zjs_sensor_trigger_change(obj);
 }
 

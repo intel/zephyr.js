@@ -184,6 +184,29 @@ static struct k_mutex socket_mutex;
 #define NET_HOSTNAME_MAX            32
 #define SOCK_READ_BUF_SIZE          128
 
+// TODO: this could perhaps be reused in dgram/ws etc
+static void zjs_copy_sockaddr(struct sockaddr *dst, struct sockaddr *src,
+                              socklen_t len)
+{
+    // requires: dst contains at least sizeof(sockaddr) bytes, src points to
+    //             a valid sockaddr struct (sockaddr_in or sockaddr_in6),
+    //             len is the address length if known, or 0
+    //  effects: copies src to dest, but only the number of bytes required by
+    //             the underlying address family; if len is given, asserts
+    //             that it matches the expected size
+    if (src->family == AF_INET) {
+        ZJS_ASSERT(!len || len == sizeof(sockaddr_in), "expected IPv4 length");
+        *(struct sockaddr_in *)dst = *(struct sockaddr_in *)src;
+    }
+    else if (src->family == AF_INET6) {
+        ZJS_ASSERT(!len || len == sizeof(sockaddr_in6), "expected IPv6 length");
+        *(struct sockaddr_in6 *)dst = *(struct sockaddr_in6 *)src;
+    }
+    else {
+        ZJS_ASSERT(false, "invalid sockaddr struct");
+    }
+}
+
 static int match_timer(sock_handle_t *sock, struct k_timer *timer)
 {
     FTRACE("sock = %p, timer = %p\n", sock, timer);
@@ -686,9 +709,9 @@ static ZJS_DECL_FUNC(socket_address)
     zjs_set_property(ret, "port", port);
     zjs_set_property(ret, "address", addr);
     if (family == AF_INET6) {
-        zjs_obj_add_string(ret, "IPv6", "family");
+        zjs_obj_add_string(ret, "family", "IPv6");
     } else {
-        zjs_obj_add_string(ret, "IPv4", "family");
+        zjs_obj_add_string(ret, "family", "IPv4");
     }
 
     return ret;
@@ -753,7 +776,7 @@ static jerry_value_t create_socket(u8_t client, sock_handle_t **handle_out)
         sock_handle->server_h = &no_server;
 
         // only a new client socket has connect method
-        zjs_obj_add_function(socket, socket_connect, "connect");
+        zjs_obj_add_function(socket, "connect", socket_connect);
     }
 
     sock_handle->connect_listener = ZJS_UNDEFINED;
@@ -797,20 +820,20 @@ static void add_socket_connection(jerry_value_t socket,
     char remote_ip[64];
     net_addr_ntop(family, (const void *)remote, remote_ip, 64);
 
-    zjs_obj_add_string(socket, remote_ip, "remoteAddress");
-    zjs_obj_add_number(socket, server_h->port, "remotePort");
+    zjs_obj_add_string(socket, "remoteAddress", remote_ip);
+    zjs_obj_add_number(socket, "remotePort", server_h->port);
 
     char local_ip[64];
     net_addr_ntop(family, (const void *)&server_h->local, local_ip, 64);
 
-    zjs_obj_add_string(socket, local_ip, "localAddress");
-    zjs_obj_add_number(socket, server_h->port, "localPort");
+    zjs_obj_add_string(socket, "localAddress", local_ip);
+    zjs_obj_add_number(socket, "localPort", server_h->port);
     if (family == AF_INET6) {
-        zjs_obj_add_string(socket, "IPv6", "family");
-        zjs_obj_add_string(socket, "IPv6", "remoteFamily");
+        zjs_obj_add_string(socket, "family", "IPv6");
+        zjs_obj_add_string(socket, "remoteFamily", "IPv6");
     } else {
-        zjs_obj_add_string(socket, "IPv4", "family");
-        zjs_obj_add_string(socket, "IPv4", "remoteFamily");
+        zjs_obj_add_string(socket, "family", "IPv4");
+        zjs_obj_add_string(socket, "remoteFamily", "IPv4");
     }
 }
 
@@ -891,7 +914,7 @@ static void tcp_accepted(struct net_context *context,
     accept.context = context;
     accept.server_h = server_h;
     memset(&accept.addr, 0, sizeof(struct sockaddr));
-    memcpy(&accept.addr, addr, addrlen);
+    zjs_copy_sockaddr(&accept.addr, addr, addrlen);
 
     zjs_defer_work(accept_connection, &accept, sizeof(accept));
 }
@@ -909,22 +932,22 @@ static ZJS_DECL_FUNC(server_address)
     GET_SERVER_HANDLE_JS(this, server_h);
 
     jerry_value_t info = zjs_create_object();
-    zjs_obj_add_number(info, server_h->port, "port");
+    zjs_obj_add_number(info, "port", server_h->port);
 
     sa_family_t family = net_context_get_family(server_h->server_ctx);
     char ipstr[INET6_ADDRSTRLEN];
 
     if (family == AF_INET6) {
-        zjs_obj_add_string(info, "IPv6", "family");
+        zjs_obj_add_string(info, "family", "IPv6");
         struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)&server_h->local;
         net_addr_ntop(family, &addr6->sin6_addr, ipstr, INET6_ADDRSTRLEN);
-        zjs_obj_add_string(info, ipstr, "address");
+        zjs_obj_add_string(info, "address", ipstr);
 
     } else {
-        zjs_obj_add_string(info, "IPv4", "family");
+        zjs_obj_add_string(info, "family", "IPv4");
         struct sockaddr_in *addr = (struct sockaddr_in *)&server_h->local;
         net_addr_ntop(family, &addr->sin_addr, ipstr, INET6_ADDRSTRLEN);
-        zjs_obj_add_string(info, ipstr, "address");
+        zjs_obj_add_string(info, "address", ipstr);
     }
 
 
@@ -948,7 +971,7 @@ static ZJS_DECL_FUNC(server_close)
     // make sure we accept no more connections
     server_h->listening = 0;
     server_h->closed = 1;
-    zjs_obj_add_boolean(this, false, "listening");
+    zjs_obj_add_boolean(this, "listening", false);
 
     if (optcount) {
         zjs_add_event_listener(server_h->server, "close", argv[0]);
@@ -1017,12 +1040,12 @@ static ZJS_DECL_FUNC(server_listen)
     double backlog = 0;
     u32_t size = NET_HOSTNAME_MAX;
     char hostname[size];
-    double family = 0;
+    u32_t family = 0;
 
     zjs_obj_get_double(argv[0], "port", &port);
     zjs_obj_get_double(argv[0], "backlog", &backlog);
     zjs_obj_get_string(argv[0], "host", hostname, size);
-    zjs_obj_get_double(argv[0], "family", &family);
+    zjs_obj_get_uint32(argv[0], "family", &family);
 
     // FIXME: validate or fix input, e.g. family
 
@@ -1032,42 +1055,33 @@ static ZJS_DECL_FUNC(server_listen)
 
     struct sockaddr addr;
     memset(&addr, 0, sizeof(struct sockaddr));
+    addr.family = (family == 6) ? AF_INET6 : AF_INET;  // default to IPv4
 
-    // default to IPv4
-    if (family == 0 || family == 4) {
-        family = 4;
-        CHECK(net_context_get(AF_INET, SOCK_STREAM, IPPROTO_TCP,
-                              &server_h->server_ctx));
+    CHECK(net_context_get(addr.family, SOCK_STREAM, IPPROTO_TCP,
+                          &server_h->server_ctx));
 
+    u32_t addrlen;
+    if (addr.family == AF_INET) {
         struct sockaddr_in *addr4 = (struct sockaddr_in *)&addr;
-
-        addr4->sin_family = AF_INET;
         addr4->sin_port = htons((int)port);
-
         net_addr_pton(AF_INET, hostname, &addr4->sin_addr);
+        addrlen = sizeof(struct sockaddr_in);
     } else {
-        CHECK(net_context_get(AF_INET6, SOCK_STREAM, IPPROTO_TCP,
-                              &server_h->server_ctx));
-
         struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)&addr;
-
-        addr6->sin6_family = AF_INET6;
         addr6->sin6_port = htons((int)port);
-
         net_addr_pton(AF_INET6, hostname, &addr6->sin6_addr);
+        addrlen = sizeof(struct sockaddr_in6);
     }
 
-    CHECK(net_context_bind(server_h->server_ctx, &addr,
-                           sizeof(struct sockaddr)));
+    CHECK(net_context_bind(server_h->server_ctx, &addr, addrlen));
     CHECK(net_context_listen(server_h->server_ctx, (int)backlog));
 
     server_h->listening = 1;
     server_h->port = (u16_t)port;
 
-    memcpy(&server_h->local, zjs_net_config_get_ip(server_h->server_ctx),
-           sizeof(struct sockaddr));
-    server_h->local = *zjs_net_config_get_ip(server_h->server_ctx);
-    zjs_obj_add_boolean(this, true, "listening");
+    zjs_copy_sockaddr(&server_h->local,
+                      zjs_net_config_get_ip(server_h->server_ctx), 0);
+    zjs_obj_add_boolean(this, "listening", true);
 
     // Here we defer just to keep the call stack short; this is unless we
     //   determine that the listeners should be called before this function
@@ -1104,8 +1118,8 @@ static ZJS_DECL_FUNC(net_create_server)
 
     jerry_value_t server = zjs_create_object();
 
-    zjs_obj_add_boolean(server, false, "listening");
-    zjs_obj_add_number(server, NET_DEFAULT_MAX_CONNECTIONS, "maxConnections");
+    zjs_obj_add_boolean(server, "listening", false);
+    zjs_obj_add_number(server, "maxConnections", NET_DEFAULT_MAX_CONNECTIONS);
 
     server_handle_t *server_h = zjs_malloc(sizeof(server_handle_t));
     if (!server_h) {
@@ -1142,7 +1156,7 @@ static void connect_callback(void *h, jerry_value_t argv[], u32_t *argc,
 {
     FTRACE("h = %p, buffer = %p, bytes = %d\n", h, buffer, bytes);
     sock_handle_t *handle = (sock_handle_t *)h;
-    zjs_obj_add_boolean(handle->socket, false, "connecting");
+    zjs_obj_add_boolean(handle->socket, "connecting", false);
     zjs_add_event_listener(handle->socket, "connect",
                            handle->connect_listener);
 }
@@ -1251,7 +1265,7 @@ static ZJS_DECL_FUNC(socket_connect)
 
         CHECK(net_addr_pton(AF_INET6, host, &peer_addr6.sin6_addr));
         // set socket.connecting property == true
-        zjs_obj_add_boolean(this, true, "connecting");
+        zjs_obj_add_boolean(this, "connecting", true);
         // connect to remote
         int rval = net_context_connect(handle->tcp_sock,
                                        (struct sockaddr *)&peer_addr6,
@@ -1259,7 +1273,7 @@ static ZJS_DECL_FUNC(socket_connect)
                                        1, handle);
         if (rval < 0) {
             DBG_PRINT("IPv6 connect failed: %d\n", rval);
-            zjs_obj_add_boolean(this, false, "connecting");
+            zjs_obj_add_boolean(this, "connecting", false);
             error_desc_t desc = create_error_desc(ERROR_CONNECT_SOCKET, this,
                                                   function_obj);
             zjs_defer_emit_event(this, "error", &desc, sizeof(desc),
@@ -1287,7 +1301,7 @@ static ZJS_DECL_FUNC(socket_connect)
 
         CHECK(net_addr_pton(AF_INET, host, &peer_addr4.sin_addr));
         // set socket.connecting property == true
-        zjs_obj_add_boolean(this, true, "connecting");
+        zjs_obj_add_boolean(this, "connecting", true);
         // connect to remote
         int rval  = net_context_connect(handle->tcp_sock,
                                         (struct sockaddr *)&peer_addr4,
@@ -1306,17 +1320,17 @@ static ZJS_DECL_FUNC(socket_connect)
     }
 
     // add all the socket address information
-    zjs_obj_add_string(this, host, "remoteAddress");
-    zjs_obj_add_string(this, "IPv6", "remoteFamily");
-    zjs_obj_add_number(this, port, "remotePort");
+    zjs_obj_add_string(this, "remoteAddress", host);
+    zjs_obj_add_string(this, "remoteFamily", "IPv6");
+    zjs_obj_add_number(this, "remotePort", port);
 
-    zjs_obj_add_string(this, localAddress, "localAddress");
-    zjs_obj_add_number(this, localPort, "localPort");
+    zjs_obj_add_string(this, "localAddress", localAddress);
+    zjs_obj_add_number(this, "localPort", localPort);
     sa_family_t family = net_context_get_family(handle->tcp_sock);
     if (family == AF_INET6) {
-        zjs_obj_add_string(this, "IPv6", "family");
+        zjs_obj_add_string(this, "family", "IPv6");
     } else {
-        zjs_obj_add_string(this, "IPv4", "family");
+        zjs_obj_add_string(this, "family", "IPv4");
     }
 
     return ZJS_UNDEFINED;

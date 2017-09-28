@@ -31,7 +31,7 @@ static ZJS_DECL_FUNC(error_handler)
     bool found = false;
     for (int i = 0; i < count; i++) {
         if (function_obj == error_types[i].ctor) {
-            zjs_obj_add_string(this, error_types[i].name, "name");
+            zjs_obj_add_string(this, "name", error_types[i].name);
             found = true;
             break;
         }
@@ -66,7 +66,7 @@ void zjs_error_init()
         error_types[i].ctor = ctor;
         zjs_set_property(ctor, "prototype", error_obj);
 
-        zjs_obj_add_object(global, ctor, error_types[i].name);
+        zjs_obj_add_object(global, error_types[i].name, ctor);
     }
 }
 
@@ -153,9 +153,9 @@ static void add_context(jerry_value_t error, jerry_value_t this,
 {
     // FIXME: move this to a native pointer after the new jerryscript goes in
     if (jerry_value_is_object(func)) {
-        zjs_obj_add_object(error, func, "function");
+        zjs_obj_add_object(error, "function", func);
         if (jerry_value_is_object(this)) {
-            zjs_obj_add_object(error, this, "this");
+            zjs_obj_add_object(error, "this", this);
         }
     }
 }
@@ -165,7 +165,7 @@ jerry_value_t zjs_custom_error(const char *name, const char *message,
 {
     jerry_value_t error = jerry_create_error(JERRY_ERROR_TYPE,
                                              (jerry_char_t *)message);
-    zjs_obj_add_string(error, name, "name");
+    zjs_obj_add_string(error, "name", name);
     add_context(error, this, func);
     return error;
 }

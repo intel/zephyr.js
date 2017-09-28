@@ -92,15 +92,17 @@ static void ipm_msg_receive_callback(void *context, u32_t id,
 
     if ((msg->flags & MSG_SYNC_FLAG) == MSG_SYNC_FLAG) {
         zjs_ipm_message_t *result = (zjs_ipm_message_t *)msg->user_data;
-        // synchrounus ipm, copy the results
-        if (result)
-            memcpy(result, msg, sizeof(zjs_ipm_message_t));
+
+        // synchronous ipm, copy the results
+        if (result) {
+            *result = *msg;
+        }
 
         // un-block sync api
         k_sem_give(&glcd_sem);
     } else {
         // asynchronous ipm, should not get here
-        ERR_PRINT("async message received\n");
+        ZJS_ASSERT(false, "async message received");
     }
 }
 
@@ -268,7 +270,7 @@ jerry_value_t zjs_grove_lcd_init()
 
     // create global grove_lcd object
     jerry_value_t glcd_obj = zjs_create_object();
-    zjs_obj_add_function(glcd_obj, zjs_glcd_init, "init");
+    zjs_obj_add_function(glcd_obj, "init", zjs_glcd_init);
 
     // create object properties
     jerry_value_t val;

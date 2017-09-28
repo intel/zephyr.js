@@ -460,7 +460,7 @@ jerry_value_t zjs_buffer_create(u32_t size, zjs_buffer_t **ret_buf)
     buf_item->bufsize = size;
 
     jerry_set_prototype(buf_obj, zjs_buffer_prototype);
-    zjs_obj_add_readonly_number(buf_obj, size, "length");
+    zjs_obj_add_readonly_number(buf_obj, "length", size);
 
     // watch for the object getting garbage collected, and clean up
     jerry_set_object_native_pointer(buf_obj, buf_item, &buffer_type_info);
@@ -537,7 +537,7 @@ static ZJS_DECL_FUNC(zjs_buffer)
 void zjs_buffer_init()
 {
     ZVAL global_obj = jerry_get_global_object();
-    zjs_obj_add_function(global_obj, zjs_buffer, "Buffer");
+    zjs_obj_add_function(global_obj, "Buffer", zjs_buffer);
 
     zjs_native_func_t array[] = {
         { zjs_buffer_read_uint8, "readUInt8" },

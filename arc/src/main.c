@@ -70,7 +70,7 @@ static void queue_message(struct zjs_ipm_message *incoming_msg)
 
     if (msg != end_of_queue_ptr) {
         // copy the message into our queue to be process in the mainloop
-        memcpy(msg, incoming_msg, sizeof(struct zjs_ipm_message));
+        *msg = *incoming_msg;
     } else {
         // running out of space, disregard message
         ERR_PRINT("skipping incoming message\n");

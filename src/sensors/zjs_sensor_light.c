@@ -20,7 +20,7 @@ static void onchange(void *h, const void *argv)
 
     // reading is a ptr to double
     d = *((double *)argv);
-    zjs_obj_add_readonly_number(obj, d, "illuminance");
+    zjs_obj_add_readonly_number(obj, "illuminance", d);
     zjs_sensor_trigger_change(obj);
 }
 

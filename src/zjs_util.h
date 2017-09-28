@@ -36,6 +36,20 @@ typedef struct mem_stats {
 #define strequal(a, b) !strcmp(a, b)
 
 /**
+ * Check whether str matches any in array of strings
+ *
+ * @param str    A null-terminated string
+ * @param array  An array of null-terminated strings, ending with NULL
+ *
+ * Example:
+ *   char *match_array[] = { "dolphin", "whale", "shark", NULL };
+ *   if (zjs_str_matches(animal, match_array) {
+ *      // found match
+ *   }
+ */
+bool zjs_str_matches(char *str, char *array[]);
+
+/**
  * Call malloc but if it fails, run JerryScript garbage collection and retry
  *
  * @param size  Number of bytes to allocate
@@ -111,18 +125,18 @@ typedef struct zjs_native_func {
  */
 void zjs_obj_add_functions(jerry_value_t obj, zjs_native_func_t *funcs);
 
-void zjs_obj_add_boolean(jerry_value_t obj, bool flag, const char *name);
-void zjs_obj_add_readonly_boolean(jerry_value_t obj, bool flag,
-                                  const char *name);
-void zjs_obj_add_function(jerry_value_t obj, void *function, const char *name);
-void zjs_obj_add_object(jerry_value_t parent, jerry_value_t child,
-                        const char *name);
-void zjs_obj_add_string(jerry_value_t obj, const char *str, const char *name);
-void zjs_obj_add_readonly_string(jerry_value_t obj, const char *str,
-                                 const char *name);
-void zjs_obj_add_number(jerry_value_t obj, double num, const char *name);
-void zjs_obj_add_readonly_number(jerry_value_t obj, double num,
-                                 const char *name);
+void zjs_obj_add_boolean(jerry_value_t obj, const char *name, bool flag);
+void zjs_obj_add_readonly_boolean(jerry_value_t obj, const char *name,
+                                  bool flag);
+void zjs_obj_add_function(jerry_value_t obj, const char *name, void *function);
+void zjs_obj_add_object(jerry_value_t parent, const char *name,
+                        jerry_value_t child);
+void zjs_obj_add_string(jerry_value_t obj, const char *name, const char *str);
+void zjs_obj_add_readonly_string(jerry_value_t obj, const char *name,
+                                 const char *str);
+void zjs_obj_add_number(jerry_value_t obj, const char *name, double num);
+void zjs_obj_add_readonly_number(jerry_value_t obj, const char *name,
+                                 double num);
 
 bool zjs_obj_get_boolean(jerry_value_t obj, const char *name, bool *flag);
 bool zjs_obj_get_string(jerry_value_t obj, const char *name, char *buffer,
@@ -161,6 +175,19 @@ void zjs_copy_jstring(jerry_value_t jstr, char *buffer, jerry_size_t *maxlen);
  *          NULL on failure.
  */
 char *zjs_alloc_from_jstring(jerry_value_t jstr, jerry_size_t *maxlen);
+
+/**
+ * Allocate a duplicate copy of a null-terminated string
+ *
+ * @param str  The source null-terminated string.
+ * @param maxlen  Pointer to a maximum size for the returned string. If NULL or
+ *                  pointing to 0, there is no limit to the string size
+ *                  returned. If not NULL, the actual length of the string will
+ *                  be written to *maxlen. If the call succeeds, the buffer
+ *                  returned will be truncated to the given maxlen with a null
+ *                  terminator.
+ */
+char *zjs_alloc_from_string(const char *str, size_t *maxlen);
 
 bool zjs_hex_to_byte(const char *buf, u8_t *byte);
 

@@ -243,7 +243,7 @@ static void dhcp_callback(struct net_mgmt_event_callback *cb,
                       sizeof(buf));
         ZVAL gateway = jerry_create_string(buf);
 
-        jerry_value_t args[] = {addr, subnet, gateway};
+        jerry_value_t args[] = { addr, subnet, gateway };
         zjs_signal_callback(dhcp_id, args, sizeof(args));
         dhcp_id = -1;
 
@@ -352,12 +352,12 @@ jerry_value_t zjs_net_config_init(void)
     FTRACE("\n");
     config = zjs_create_object();
 
-    zjs_obj_add_function(config, set_ip, "setStaticIP");
+    zjs_obj_add_function(config, "setStaticIP", set_ip);
 #ifdef CONFIG_NET_DHCPV4
-    zjs_obj_add_function(config, dhcp, "dhcp");
+    zjs_obj_add_function(config, "dhcp", dhcp);
 #endif
 #ifdef CONFIG_NET_L2_BLUETOOTH
-    zjs_obj_add_function(config, set_ble_address, "setBleAddress");
+    zjs_obj_add_function(config, "setBleAddress", set_ble_address);
 #endif
     zjs_make_emitter(config, ZJS_UNDEFINED, NULL, NULL);
 

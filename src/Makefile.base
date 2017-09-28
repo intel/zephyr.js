@@ -23,6 +23,8 @@ ccflags-y += -DDEBUG_BUILD
 ccflags-y += -g
 endif
 
+ccflags-y += -DZJS_VERBOSE=$(VERBOSITY)
+
 ifeq ($(BOARD), qemu_x86)
 ccflags-y += -DQEMU_BUILD
 endif

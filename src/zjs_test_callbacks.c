@@ -37,9 +37,9 @@ jerry_value_t zjs_test_callbacks_init(void)
 {
     jerry_value_t cb_obj = zjs_create_object();
 
-    zjs_obj_add_function(cb_obj, add_callback, "addCallback");
-    zjs_obj_add_function(cb_obj, signal_callback, "signalCallback");
-    zjs_obj_add_function(cb_obj, remove_callback, "removeCallback");
+    zjs_obj_add_function(cb_obj, "addCallback", add_callback);
+    zjs_obj_add_function(cb_obj, "signalCallback", signal_callback);
+    zjs_obj_add_function(cb_obj, "removeCallback", remove_callback);
 
     return cb_obj;
 }

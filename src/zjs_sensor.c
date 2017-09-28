@@ -74,7 +74,7 @@ static void zjs_sensor_free_handles(sensor_handle_t *handles)
 sensor_instance_t *zjs_sensor_create_instance(const char *name, void *func)
 {
     ZVAL global_obj = jerry_get_global_object();
-    zjs_obj_add_function(global_obj, func, name);
+    zjs_obj_add_function(global_obj, name, func);
     sensor_instance_t *instance = zjs_malloc(sizeof(sensor_instance_t));
     if (!instance) {
         ERR_PRINT("failed to allocate sensor_instance_t\n");
@@ -114,7 +114,7 @@ sensor_state_t zjs_sensor_get_state(jerry_value_t obj)
         ERR_PRINT("state is undefined\n");
     }
 
-    zjs_obj_add_readonly_string(obj, "errored", "state");
+    zjs_obj_add_readonly_string(obj, "state", "errored");
     return SENSOR_STATE_ERRORED;
 }
 
@@ -149,7 +149,7 @@ void zjs_sensor_set_state(jerry_value_t obj, sensor_state_t state)
         ERR_PRINT("invalid state\n");
         return;
     }
-    zjs_obj_add_readonly_string(obj, state_str, "state");
+    zjs_obj_add_readonly_string(obj, "state", state_str);
 
     if (old_state == SENSOR_STATE_ACTIVATING &&
         state == SENSOR_STATE_ACTIVATED) {
@@ -157,8 +157,8 @@ void zjs_sensor_set_state(jerry_value_t obj, sensor_state_t state)
         if (jerry_value_is_function(activate_func)) {
             // if onactivate exists, call it
 #ifdef ZJS_FIND_FUNC_NAME
-            zjs_obj_add_string(activate_func, "sensor: onactivate",
-                               ZJS_HIDDEN_PROP("function_name"));
+            zjs_obj_add_string(activate_func, ZJS_HIDDEN_PROP("function_name"),
+                               "sensor: onactivate");
 #endif
             zjs_callback_id id = zjs_add_callback_once(activate_func, obj,
                                                        NULL, NULL);
@@ -182,7 +182,7 @@ void zjs_sensor_set_state(jerry_value_t obj, sensor_state_t state)
 void zjs_sensor_trigger_change(jerry_value_t obj)
 {
     u64_t timestamp = k_uptime_get();
-    zjs_obj_add_readonly_number(obj, ((double)timestamp), "timestamp");
+    zjs_obj_add_readonly_number(obj, "timestamp", ((double)timestamp));
 
     ZVAL func = zjs_get_property(obj, "onchange");
     if (jerry_value_is_function(func)) {
@@ -211,8 +211,8 @@ void zjs_sensor_trigger_error(jerry_value_t obj,
         zjs_set_property(error_obj, "message", message_val);
         zjs_set_property(event, "error", error_obj);
 #ifdef ZJS_FIND_FUNC_NAME
-        zjs_obj_add_string(func, "sensor: onerror",
-                           ZJS_HIDDEN_PROP("function_name"));
+        zjs_obj_add_string(func, ZJS_HIDDEN_PROP("function_name"),
+                           "sensor: onerror");
 #endif
         zjs_callback_id id = zjs_add_callback_once(func, obj, NULL, NULL);
         zjs_signal_callback(id, &event, sizeof(event));
@@ -318,9 +318,12 @@ ZJS_DECL_FUNC_ARGS(zjs_sensor_create,
         }
     }
 
+    // FIXME: Why not allocate controller earlier and write to it initially
+    //   above? Furthermore, why not put it directly in handle instead of
+    //   allocating a separate block of memory?
     sensor_handle_t *handle = zjs_sensor_alloc_handle(&(instance->handles));
     handle->controller = zjs_malloc(sizeof(sensor_controller_t));
-    memcpy(handle->controller, &controller, sizeof(sensor_controller_t));
+    *handle->controller = controller;
     handle->channel = channel;
     handle->frequency = frequency;
 
@@ -335,8 +338,8 @@ ZJS_DECL_FUNC_ARGS(zjs_sensor_create,
     ZVAL null_val = jerry_create_null();
 
     zjs_set_readonly_property(sensor_obj, "timestamp", null_val);
-    zjs_obj_add_number(sensor_obj, frequency, "frequency");
-    zjs_obj_add_readonly_string(sensor_obj, "unconnected", "state");
+    zjs_obj_add_number(sensor_obj, "frequency", frequency);
+    zjs_obj_add_readonly_string(sensor_obj, "state", "unconnected");
     jerry_set_prototype(sensor_obj, zjs_sensor_prototype);
 
     handle->sensor_obj = jerry_acquire_value(sensor_obj);

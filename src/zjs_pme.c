@@ -79,16 +79,17 @@ static void ipm_msg_receive_callback(void *context, u32_t id,
 
     if ((msg->flags & MSG_SYNC_FLAG) == MSG_SYNC_FLAG) {
         zjs_ipm_message_t *result = (zjs_ipm_message_t *)msg->user_data;
+
         // synchronous ipm, copy the results
         if (result) {
-            memcpy(result, msg, sizeof(zjs_ipm_message_t));
+            *result = *msg;
         }
 
         // un-block sync api
         k_sem_give(&pme_sem);
     } else {
         // asynchronous ipm, should not get here
-        ERR_PRINT("async message received\n");
+        ZJS_ASSERT(false, "async message received");
     }
 }
 
@@ -198,10 +199,10 @@ static ZJS_DECL_FUNC(zjs_pme_read_neuron)
 
     CALL_REMOTE_FUNCTION(send, reply);
     jerry_value_t obj = zjs_create_object();
-    zjs_obj_add_number(obj, reply.data.pme.category, "category");
-    zjs_obj_add_number(obj, reply.data.pme.n_context, "context");
-    zjs_obj_add_number(obj, reply.data.pme.aif, "AIF");
-    zjs_obj_add_number(obj, reply.data.pme.min_if, "minIF");
+    zjs_obj_add_number(obj, "category", reply.data.pme.category);
+    zjs_obj_add_number(obj, "context", reply.data.pme.n_context);
+    zjs_obj_add_number(obj, "AIF", reply.data.pme.aif);
+    zjs_obj_add_number(obj, "minIF", reply.data.pme.min_if);
 
     ZVAL array = jerry_create_array(MAX_VECTOR_SIZE);
     for (int i = 0; i < MAX_VECTOR_SIZE; i++) {
@@ -339,10 +340,10 @@ static ZJS_DECL_FUNC(zjs_pme_save_neurons)
 
         // create json object
         ZVAL obj = zjs_create_object();
-        zjs_obj_add_number(obj, reply.data.pme.category, "category");
-        zjs_obj_add_number(obj, reply.data.pme.n_context, "context");
-        zjs_obj_add_number(obj, reply.data.pme.aif, "AIF");
-        zjs_obj_add_number(obj, reply.data.pme.min_if, "minIF");
+        zjs_obj_add_number(obj, "category", reply.data.pme.category);
+        zjs_obj_add_number(obj, "context", reply.data.pme.n_context);
+        zjs_obj_add_number(obj, "AIF", reply.data.pme.aif);
+        zjs_obj_add_number(obj, "minIF", reply.data.pme.min_if);
 
         int v_size = 0;
 

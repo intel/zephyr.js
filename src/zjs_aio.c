@@ -127,9 +127,11 @@ static void ipm_msg_receive_callback(void *context, u32_t id,
 
     if (msg->flags & MSG_SYNC_FLAG) {
         zjs_ipm_message_t *result = (zjs_ipm_message_t *)msg->user_data;
+
         // synchronous ipm, copy the results
-        if (result)
-            memcpy(result, msg, sizeof(zjs_ipm_message_t));
+        if (result) {
+            *result = *msg;
+        }
 
         // un-block sync api
         k_sem_give(&aio_sem);
@@ -236,8 +238,8 @@ static ZJS_DECL_FUNC(zjs_aio_pin_on)
         jerry_set_object_native_pointer(this, handle, &aio_type_info);
 #ifdef ZJS_FIND_FUNC_NAME
         if (jerry_value_is_function(argv[1])) {
-            zjs_obj_add_string(argv[1], "aio: onchange",
-                               ZJS_HIDDEN_PROP("function_name"));
+            zjs_obj_add_string(argv[1], ZJS_HIDDEN_PROP("function_name"),
+                               "aio: onchange");
         }
 #endif
         handle->callback_id = zjs_add_callback(argv[1], this, handle, NULL);
@@ -261,7 +263,7 @@ static ZJS_DECL_FUNC(zjs_aio_pin_read_async)
         return zjs_error("could not allocate handle");
 
 #ifdef ZJS_FIND_FUNC_NAME
-    zjs_obj_add_string(argv[0], "readAsync", ZJS_HIDDEN_PROP("function_name"));
+    zjs_obj_add_string(argv[0], ZJS_HIDDEN_PROP("function_name"), "readAsync");
 #endif
 
     handle->callback_id = zjs_add_callback(argv[0], this, handle,
@@ -298,7 +300,7 @@ static ZJS_DECL_FUNC(zjs_aio_open)
     // create the AIOPin object
     jerry_value_t pinobj = zjs_create_object();
     jerry_set_prototype(pinobj, zjs_aio_prototype);
-    zjs_obj_add_number(pinobj, pin, "pin");
+    zjs_obj_add_number(pinobj, "pin", pin);
 
     return pinobj;
 }
@@ -322,7 +324,7 @@ jerry_value_t zjs_aio_init()
 
     // create global AIO object
     jerry_value_t aio_obj = zjs_create_object();
-    zjs_obj_add_function(aio_obj, zjs_aio_open, "open");
+    zjs_obj_add_function(aio_obj, "open", zjs_aio_open);
     return aio_obj;
 }
 

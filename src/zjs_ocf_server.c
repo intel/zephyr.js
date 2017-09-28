@@ -83,24 +83,24 @@ static jerry_value_t make_ocf_error(const char *name, const char *msg,
     if (res) {
         ZVAL ret = zjs_create_object();
         if (name) {
-            zjs_obj_add_string(ret, name, "name");
+            zjs_obj_add_string(ret, "name", name);
         } else {
             ERR_PRINT("error must have a name\n");
             return ZJS_UNDEFINED;
         }
         if (msg) {
-            zjs_obj_add_string(ret, msg, "message");
+            zjs_obj_add_string(ret, "message", msg);
         } else {
             ERR_PRINT("error must have a message\n");
             return ZJS_UNDEFINED;
         }
         if (res->device_id) {
-            zjs_obj_add_string(ret, res->device_id, "deviceId");
+            zjs_obj_add_string(ret, "deviceId", res->device_id);
         }
         if (res->resource_path) {
-            zjs_obj_add_string(ret, res->resource_path, "resourcePath");
+            zjs_obj_add_string(ret, "resourcePath", res->resource_path);
         }
-        zjs_obj_add_number(ret, (double)res->error_code, "errorCode");
+        zjs_obj_add_number(ret, "errorCode", (double)res->error_code);
 
         return jerry_acquire_value(ret);
     } else {
@@ -116,16 +116,16 @@ static jerry_value_t request_to_jerry_value(oc_request_t *request)
     while (rep != NULL) {
         switch (rep->type) {
         case BOOL:
-            zjs_obj_add_boolean(props, rep->value.boolean,
-                                oc_string(rep->name));
+            zjs_obj_add_boolean(props, oc_string(rep->name),
+                                rep->value.boolean);
             break;
         case INT:
-            zjs_obj_add_number(props, rep->value.integer, oc_string(rep->name));
+            zjs_obj_add_number(props, oc_string(rep->name), rep->value.integer);
             break;
         case BYTE_STRING:
         case STRING:
-            zjs_obj_add_string(props, oc_string(rep->value.string),
-                               oc_string(rep->name));
+            zjs_obj_add_string(props, oc_string(rep->name),
+                               oc_string(rep->value.string));
             break;
             /*
              * TODO: Implement encoding for complex types
@@ -181,7 +181,7 @@ static jerry_value_t create_resource(const char *path,
     jerry_value_t res = zjs_create_object();
 
     if (path) {
-        zjs_obj_add_string(res, path, "resourcePath");
+        zjs_obj_add_string(res, "resourcePath", path);
     }
 
     ZVAL properties = zjs_get_property(resource_init, "properties");
@@ -277,10 +277,10 @@ static jerry_value_t create_request(struct server_resource *resource,
     ZVAL target = zjs_create_object();
 
     if (resource->res) {
-        zjs_obj_add_string(source, oc_string(resource->res->uri),
-                           "resourcePath");
-        zjs_obj_add_string(target, oc_string(resource->res->uri),
-                           "resourcePath");
+        zjs_obj_add_string(source, "resourcePath",
+                           oc_string(resource->res->uri));
+        zjs_obj_add_string(target, "resourcePath",
+                           oc_string(resource->res->uri));
     }
 
     // source is the resource requesting the operation
@@ -289,7 +289,7 @@ static jerry_value_t create_request(struct server_resource *resource,
     // target is the resource being retrieved
     zjs_set_property(object, "target", target);
 
-    zjs_obj_add_function(object, ocf_respond, "respond");
+    zjs_obj_add_function(object, "respond", ocf_respond);
 
     jerry_set_object_native_pointer(object, handler, &ocf_type_info);
 
@@ -513,7 +513,7 @@ void zjs_ocf_register_resources(void)
         int i;
         struct server_resource *resource = cur->resource;
 
-        resource->res = oc_new_resource(resource->resource_path,
+        resource->res = oc_new_resource(NULL, resource->resource_path,
                                         resource->num_types, 0);
         if (!resource->res) {
             ERR_PRINT("failed to create new resource\n");
@@ -574,9 +574,9 @@ jerry_value_t zjs_ocf_server_init()
 {
     jerry_value_t server = zjs_create_object();
 
-    zjs_obj_add_function(server, ocf_register, "register");
+    zjs_obj_add_function(server, "register", ocf_register);
     // FIXME: document this function if it's supposed to be here
-    zjs_obj_add_function(server, ocf_notify, "notify");
+    zjs_obj_add_function(server, "notify", ocf_notify);
 
     zjs_make_emitter(server, ZJS_UNDEFINED, NULL, NULL);
 

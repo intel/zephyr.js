@@ -337,7 +337,7 @@ jerry_value_t zjs_spi_init()
 
     // Create SPI object
     jerry_value_t spi_obj = zjs_create_object();
-    zjs_obj_add_function(spi_obj, zjs_spi_open, "open");
+    zjs_obj_add_function(spi_obj, "open", zjs_spi_open);
 
     return spi_obj;
 }

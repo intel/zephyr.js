@@ -42,7 +42,7 @@ struct client_resource {
     char *resource_type;
     jerry_value_t types_array;
     jerry_value_t iface_array;
-    oc_server_handle_t server;
+    oc_endpoint_t *endpoint;
     resource_state state;
     u32_t flags;
     u32_t error_code;
@@ -55,8 +55,6 @@ struct ocf_handler {
 };
 
 static struct client_resource *resource_list = NULL;
-
-#define MAX_URI_LENGTH (30)
 
 static struct ocf_handler *new_ocf_handler(struct client_resource *res)
 {
@@ -77,24 +75,24 @@ static jerry_value_t make_ocf_error(const char *name, const char *msg,
     if (res) {
         ZVAL ret = zjs_create_object();
         if (name) {
-            zjs_obj_add_string(ret, name, "name");
+            zjs_obj_add_string(ret, "name", name);
         } else {
             ERR_PRINT("error must have a name\n");
             return ZJS_UNDEFINED;
         }
         if (msg) {
-            zjs_obj_add_string(ret, msg, "message");
+            zjs_obj_add_string(ret, "message", msg);
         } else {
             ERR_PRINT("error must have a message\n");
             return ZJS_UNDEFINED;
         }
         if (res->device_id) {
-            zjs_obj_add_string(ret, res->device_id, "deviceId");
+            zjs_obj_add_string(ret, "deviceId", res->device_id);
         }
         if (res->resource_path) {
-            zjs_obj_add_string(ret, res->resource_path, "resourcePath");
+            zjs_obj_add_string(ret, "resourcePath", res->resource_path);
         }
-        zjs_obj_add_number(ret, (double)res->error_code, "errorCode");
+        zjs_obj_add_number(ret, "errorCode", (double)res->error_code);
 
         return jerry_acquire_value(ret);
     } else {
@@ -108,25 +106,14 @@ static jerry_value_t make_ocf_error(const char *name, const char *msg,
  */
 static char *create_url(const char *uuid, const char *path)
 {
-    //    oic://<uuid>/<path>
-    char *url = zjs_malloc(strlen(uuid) + strlen(path) + 8);
-    int count = 0;
-    url[0] = 'o';
-    url[1] = 'i';
-    url[2] = 'c';
-    url[3] = ':';
-    url[4] = '/';
-    url[5] = '/';
-    count = 6;
-    memcpy(url + count, uuid, strlen(uuid));
-    count += strlen(uuid);
-    if (path[0] != '/') {
-        url[count] = '/';
-        count++;
+    // create URL of form oic://<uuid>/<path>
+    if (path[0] == '/') {
+        path++;
     }
-    memcpy(url + count, path, strlen(path));
-    count += strlen(path);
-    url[count] = '\0';
+
+    int url_len = strlen(uuid) + strlen(path) + 8;
+    char *url = zjs_malloc(url_len);
+    snprintf(url, url_len, "oic://%s/%s", uuid, path);
     return url;
 }
 
@@ -150,24 +137,24 @@ static jerry_value_t get_props_from_response(oc_client_response_t *data)
                   oc_string(rep->name));
         switch (rep->type) {
         case BOOL:
-            zjs_obj_add_boolean(prop_object, rep->value.boolean,
-                                oc_string(rep->name));
+            zjs_obj_add_boolean(prop_object, oc_string(rep->name),
+                                rep->value.boolean);
             DBG_PRINT("%d\n", rep->value.boolean);
             break;
         case INT:
-            zjs_obj_add_number(prop_object, (double)rep->value.integer,
-                               oc_string(rep->name));
+            zjs_obj_add_number(prop_object, oc_string(rep->name),
+                               (double)rep->value.integer);
             DBG_PRINT("%d\n", rep->value.integer);
             break;
         case DOUBLE:
-            zjs_obj_add_number(prop_object, (double)rep->value.double_p,
-                               oc_string(rep->name));
+            zjs_obj_add_number(prop_object, oc_string(rep->name),
+                               (double)rep->value.double_p);
             DBG_PRINT("%lf\n", rep->value.double_p);
             break;
         case BYTE_STRING:
         case STRING:
-            zjs_obj_add_string(prop_object, oc_string(rep->value.string),
-                               oc_string(rep->name));
+            zjs_obj_add_string(prop_object, oc_string(rep->name),
+                               oc_string(rep->value.string));
             DBG_PRINT("%s\n", oc_string(rep->value.string));
             break;
         case INT_ARRAY:
@@ -181,7 +168,7 @@ static jerry_value_t get_props_from_response(oc_client_response_t *data)
                     jerry_set_property_by_index(array, i, val);
                     DBG_PRINT("%d \n", i_array[i]);
                 }
-                zjs_obj_add_object(prop_object, array, oc_string(rep->name));
+                zjs_obj_add_object(prop_object, oc_string(rep->name), array);
             }
             DBG_PRINT("]\n");
             break;
@@ -196,7 +183,7 @@ static jerry_value_t get_props_from_response(oc_client_response_t *data)
                     jerry_set_property_by_index(array, i, val);
                     DBG_PRINT("%lf \n", i, d_array[i]);
                 }
-                zjs_obj_add_object(prop_object, array, oc_string(rep->name));
+                zjs_obj_add_object(prop_object, oc_string(rep->name), array);
             }
             DBG_PRINT("]\n");
             break;
@@ -211,7 +198,7 @@ static jerry_value_t get_props_from_response(oc_client_response_t *data)
                     jerry_set_property_by_index(array, i, val);
                     DBG_PRINT("%d \n", b_array[i]);
                 }
-                zjs_obj_add_object(prop_object, array, oc_string(rep->name));
+                zjs_obj_add_object(prop_object, oc_string(rep->name), array);
             }
             DBG_PRINT("]\n");
         case STRING_ARRAY:
@@ -226,7 +213,7 @@ static jerry_value_t get_props_from_response(oc_client_response_t *data)
                         DBG_PRINT("%s \n", oc_string_array_get_item(rep->value.array, i));
                     }
                 }
-                zjs_obj_add_object(prop_object, array, oc_string(rep->name));
+                zjs_obj_add_object(prop_object, oc_string(rep->name), array);
             }
             DBG_PRINT("]\n");
             break;
@@ -337,10 +324,10 @@ static jerry_value_t create_resource(struct client_resource *client)
     jerry_value_t resource = zjs_create_object();
 
     if (client->device_id) {
-        zjs_obj_add_string(resource, client->device_id, "deviceId");
+        zjs_obj_add_string(resource, "deviceId", client->device_id);
     }
     if (client->resource_path) {
-        zjs_obj_add_string(resource, client->resource_path, "resourcePath");
+        zjs_obj_add_string(resource, "resourcePath", client->resource_path);
     }
     ZVAL props = zjs_create_object();
     zjs_set_property(resource, "properties", props);
@@ -388,20 +375,13 @@ static void add_resource(char *id, char *type, char *path,
     new->state = RES_STATE_SEARCHING;
 
     if (id) {
-        // FIXME: use strcpy instead of calling strlen 3x
-        new->device_id = zjs_malloc(strlen(id) + 1);
-        memcpy(new->device_id, id, strlen(id));
-        new->device_id[strlen(id)] = '\0';
+        new->device_id = zjs_alloc_from_string(id, NULL);
     }
     if (type) {
-        new->resource_type = zjs_malloc(strlen(type) + 1);
-        memcpy(new->resource_type, type, strlen(type));
-        new->resource_type[strlen(type)] = '\0';
+        new->resource_type = zjs_alloc_from_string(type, NULL);
     }
     if (path) {
-        new->resource_path = zjs_malloc(strlen(path) + 1);
-        memcpy(new->resource_path, path, strlen(path));
-        new->resource_path[strlen(path)] = '\0';
+        new->resource_path = zjs_alloc_from_string(path, NULL);
     }
 
     if (jerry_value_is_function(listener)) {
@@ -441,13 +421,11 @@ static oc_discovery_flags_t discovery(const char *di,
                                       const char *uri,
                                       oc_string_array_t types,
                                       oc_interface_mask_t interfaces,
-                                      oc_server_handle_t *server,
+                                      oc_endpoint_t *endpoint,
                                       void *user_handle)
 {
     struct ocf_handler *h = (struct ocf_handler *)user_handle;
     int i;
-    int uri_len = strlen(uri);
-    uri_len = (uri_len >= MAX_URI_LENGTH) ? MAX_URI_LENGTH - 1 : uri_len;
 
     for (i = 0; i < oc_string_array_get_allocated_size(types); i++) {
         char *t = oc_string_array_get_item(types, i);
@@ -486,17 +464,16 @@ NotFound:
 Found:
             cur->state = RES_STATE_FOUND;
 
-            memcpy(&cur->server, server, sizeof(oc_server_handle_t));
+            cur->endpoint = endpoint;
 
             if (!cur->device_id) {
-                cur->device_id = zjs_malloc(strlen(di) + 1);
-                memcpy(cur->device_id, di, strlen(di));
-                cur->device_id[strlen(di)] = '\0';
+                cur->device_id = zjs_alloc_from_string(di, NULL);
             }
             if (!cur->resource_path) {
-                cur->resource_path = zjs_malloc(strlen(uri) + 1);
-                memcpy(cur->resource_path, uri, uri_len);
-                cur->resource_path[uri_len] = '\0';
+                // TODO: before this code was pretending to limit things to a
+                //   MAX_URI_LENGTH of 30, but it wasn't working right anyway;
+                //   not sure if there was a point to that
+                cur->resource_path = zjs_alloc_from_string(uri, NULL);
             }
             /*
              * Add the array of resource types to newly discovered resource
@@ -566,6 +543,7 @@ Found:
             return OC_STOP_DISCOVERY;
         }
     }
+    oc_free_server_endpoints(endpoint);
     return OC_CONTINUE_DISCOVERY;
 }
 
@@ -735,7 +713,7 @@ static ZJS_DECL_FUNC(ocf_retrieve)
     }
 
     if (resource->flags & FLAG_OBSERVE) {
-        oc_do_observe(resource->resource_path, &resource->server, NULL,
+        oc_do_observe(resource->resource_path, resource->endpoint, NULL,
                       &observe_callback, LOW_QOS, resource);
     }
 
@@ -747,7 +725,7 @@ static ZJS_DECL_FUNC(ocf_retrieve)
     h->res = resource;
     h->promise_obj = jerry_acquire_value(promise);
 
-    if (!oc_do_get(resource->resource_path, &resource->server, NULL,
+    if (!oc_do_get(resource->resource_path, resource->endpoint, NULL,
                    ocf_get_handler, LOW_QOS, h)) {
 
         ZVAL err = make_ocf_error("NetworkError", "GET call failed", resource);
@@ -807,7 +785,7 @@ static ZJS_DECL_FUNC(ocf_update)
     h->res = resource;
     h->promise_obj = jerry_acquire_value(promise);
 
-    if (oc_init_put(resource->resource_path, &resource->server, NULL,
+    if (oc_init_put(resource->resource_path, resource->endpoint, NULL,
                     put_finished, LOW_QOS, h)) {
         ZVAL props = zjs_get_property(argv[0], "properties");
         void *ret;
@@ -866,40 +844,40 @@ static void ocf_get_platform_info_handler(oc_client_response_t *data)
             case STRING:
                 if (strequal(oc_string(rep->name), "mnmn")) {
                     zjs_obj_add_readonly_string(platform_info,
-                                                oc_string(rep->value.string),
-                                                "manufacturerName");
+                                                "manufacturerName",
+                                                oc_string(rep->value.string));
                 } else if (strequal(oc_string(rep->name), "pi")) {
                     zjs_obj_add_readonly_string(platform_info,
-                                                oc_string(rep->value.string),
-                                                "id");
+                                                "id",
+                                                oc_string(rep->value.string));
                 } else if (strequal(oc_string(rep->name), "mnmo")) {
                     zjs_obj_add_readonly_string(platform_info,
-                                                oc_string(rep->value.string),
-                                                "model");
+                                                "model",
+                                                oc_string(rep->value.string));
                 } else if (strequal(oc_string(rep->name), "mndt")) {
                     zjs_obj_add_readonly_string(platform_info,
-                                                oc_string(rep->value.string),
-                                                "manufacturerDate");
+                                                "manufacturerDate",
+                                                oc_string(rep->value.string));
                 } else if (strequal(oc_string(rep->name), "mnpv")) {
                     zjs_obj_add_readonly_string(platform_info,
-                                                oc_string(rep->value.string),
-                                                "platformVersion");
+                                                "platformVersion",
+                                                oc_string(rep->value.string));
                 } else if (strequal(oc_string(rep->name), "mnos")) {
                     zjs_obj_add_readonly_string(platform_info,
-                                                oc_string(rep->value.string),
-                                                "osVersion");
+                                                "osVersion",
+                                                oc_string(rep->value.string));
                 } else if (strequal(oc_string(rep->name), "mnfv")) {
                     zjs_obj_add_readonly_string(platform_info,
-                                                oc_string(rep->value.string),
-                                                "firmwareVersion");
+                                                "firmwareVersion",
+                                                oc_string(rep->value.string));
                 } else if (strequal(oc_string(rep->name), "mnml")) {
                     zjs_obj_add_readonly_string(platform_info,
-                                                oc_string(rep->value.string),
-                                                "manufacturerURL");
+                                                "manufacturerURL",
+                                                oc_string(rep->value.string));
                 } else if (strequal(oc_string(rep->name), "mnsl")) {
                     zjs_obj_add_readonly_string(platform_info,
-                                                oc_string(rep->value.string),
-                                                "supportURL");
+                                                "supportURL",
+                                                oc_string(rep->value.string));
                 }
                 DBG_PRINT("%s\n", oc_string(rep->value.string));
                 break;
@@ -947,7 +925,7 @@ static ZJS_DECL_FUNC(ocf_get_platform_info)
 
     DBG_PRINT("sending GET to /oic/p\n");
 
-    if (!oc_do_get("/oic/p", &resource->server, NULL,
+    if (!oc_do_get("/oic/p", resource->endpoint, NULL,
                    ocf_get_platform_info_handler, LOW_QOS, h)) {
         jerry_value_t err = make_ocf_error("NetworkError", "GET call failed",
                                            resource);
@@ -989,29 +967,26 @@ static void ocf_get_device_info_handler(oc_client_response_t *data)
             case BYTE_STRING:
             case STRING:
                 if (strequal(oc_string(rep->name), "di")) {
-                    zjs_obj_add_string(device_info,
-                                       oc_string(rep->value.string), "uuid");
+                    zjs_obj_add_string(device_info, "uuid",
+                                       oc_string(rep->value.string));
                     /*
                      * TODO: Where do we get the devices path to construct the
                      * URL. For now, the existing resources path will be used,
                      * but this is incorrect, because there could be devices
                      * found that are not already in our list of resources.
                      */
-                    zjs_obj_add_string(device_info,
+                    zjs_obj_add_string(device_info, "url",
                                        create_url(oc_string(rep->value.string),
-                                                  resource->resource_path),
-                                       "url");
+                                                  resource->resource_path));
                 } else if (strequal(oc_string(rep->name), "n")) {
-                    zjs_obj_add_string(device_info,
-                                       oc_string(rep->value.string), "name");
+                    zjs_obj_add_string(device_info, "name",
+                                       oc_string(rep->value.string));
                 } else if (strequal(oc_string(rep->name), "icv")) {
-                    zjs_obj_add_string(device_info,
-                                       oc_string(rep->value.string),
-                                       "coreSpecVersion");
+                    zjs_obj_add_string(device_info, "coreSpecVersion",
+                                       oc_string(rep->value.string));
                 } else if (strequal(oc_string(rep->name), "dmv")) {
-                    zjs_obj_add_string(device_info,
-                                       oc_string(rep->value.string),
-                                       "dataModels");
+                    zjs_obj_add_string(device_info, "dataModels",
+                                       oc_string(rep->value.string));
                 }
                 DBG_PRINT("%s\n", oc_string(rep->value.string));
                 break;
@@ -1060,7 +1035,7 @@ static ZJS_DECL_FUNC(ocf_get_device_info)
 
     DBG_PRINT("sending GET to /oic/d\n");
 
-    if (!oc_do_get("/oic/d", &resource->server, NULL,
+    if (!oc_do_get("/oic/d", resource->endpoint, NULL,
                    &ocf_get_device_info_handler, LOW_QOS, h)) {
         ZVAL err = make_ocf_error("NetworkError", "GET call failed", resource);
         jerry_resolve_or_reject_promise(promise, err, false);
@@ -1078,11 +1053,11 @@ jerry_value_t zjs_ocf_client_init()
     }
 
     ocf_client = zjs_create_object();
-    zjs_obj_add_function(ocf_client, ocf_find_resources, "findResources");
-    zjs_obj_add_function(ocf_client, ocf_retrieve, "retrieve");
-    zjs_obj_add_function(ocf_client, ocf_update, "update");
-    zjs_obj_add_function(ocf_client, ocf_get_platform_info, "getPlatformInfo");
-    zjs_obj_add_function(ocf_client, ocf_get_device_info, "getDeviceInfo");
+    zjs_obj_add_function(ocf_client, "findResources", ocf_find_resources);
+    zjs_obj_add_function(ocf_client, "retrieve", ocf_retrieve);
+    zjs_obj_add_function(ocf_client, "update", ocf_update);
+    zjs_obj_add_function(ocf_client, "getPlatformInfo", ocf_get_platform_info);
+    zjs_obj_add_function(ocf_client, "getDeviceInfo", ocf_get_device_info);
 
     zjs_make_emitter(ocf_client, ZJS_UNDEFINED, NULL, client_free_cb);
 

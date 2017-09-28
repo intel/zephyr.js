@@ -129,11 +129,11 @@ void zjs_obj_add_functions(jerry_value_t obj, zjs_native_func_t *funcs)
     //             struct with a NULL function field
     //  effects: adds all of the described functions to obj with given names
     for (zjs_native_func_t *map = funcs; map->function; map++) {
-        zjs_obj_add_function(obj, map->function, map->name);
+        zjs_obj_add_function(obj, map->name, map->function);
     }
 }
 
-void zjs_obj_add_boolean(jerry_value_t obj, bool flag, const char *name)
+void zjs_obj_add_boolean(jerry_value_t obj, const char *name, bool flag)
 {
     // requires: obj is an existing JS object
     //  effects: creates a new field in parent named name, set to value
@@ -142,15 +142,15 @@ void zjs_obj_add_boolean(jerry_value_t obj, bool flag, const char *name)
     jerry_set_property(obj, jname, jbool);
 }
 
-void zjs_obj_add_readonly_boolean(jerry_value_t obj, bool flag,
-                                  const char *name)
+void zjs_obj_add_readonly_boolean(jerry_value_t obj, const char *name,
+                                  bool flag)
 {
     // requires: obj is an existing JS object
     //  effects: creates a new readonly field in parent named name, set to value
     zjs_set_readonly_property(obj, name, jerry_create_boolean(flag));
 }
 
-void zjs_obj_add_function(jerry_value_t obj, void *func, const char *name)
+void zjs_obj_add_function(jerry_value_t obj, const char *name, void *func)
 {
     // requires: obj is an existing JS object, function is a native C function
     //  effects: creates a new field in object named name, that will be a JS
@@ -166,8 +166,8 @@ void zjs_obj_add_function(jerry_value_t obj, void *func, const char *name)
     }
 }
 
-void zjs_obj_add_object(jerry_value_t parent, jerry_value_t child,
-                        const char *name)
+void zjs_obj_add_object(jerry_value_t parent, const char *name,
+                        jerry_value_t child)
 {
     // requires: parent and child are existing JS objects
     //  effects: creates a new field in parent named name, that refers to child
@@ -175,7 +175,7 @@ void zjs_obj_add_object(jerry_value_t parent, jerry_value_t child,
     jerry_set_property(parent, jname, child);
 }
 
-void zjs_obj_add_string(jerry_value_t obj, const char *str, const char *name)
+void zjs_obj_add_string(jerry_value_t obj, const char *name, const char *str)
 {
     // requires: obj is an existing JS object
     //  effects: creates a new field in parent named name, set to str
@@ -184,8 +184,8 @@ void zjs_obj_add_string(jerry_value_t obj, const char *str, const char *name)
     jerry_set_property(obj, jname, jstr);
 }
 
-void zjs_obj_add_readonly_string(jerry_value_t obj, const char *str,
-                                 const char *name)
+void zjs_obj_add_readonly_string(jerry_value_t obj, const char *name,
+                                 const char *str)
 {
     // requires: obj is an existing JS object
     //  effects: creates a new readonly field in parent named name, set to str
@@ -193,7 +193,7 @@ void zjs_obj_add_readonly_string(jerry_value_t obj, const char *str,
                               jerry_create_string((const jerry_char_t *)str));
 }
 
-void zjs_obj_add_number(jerry_value_t obj, double num, const char *name)
+void zjs_obj_add_number(jerry_value_t obj, const char *name, double num)
 {
     // requires: obj is an existing JS object
     //  effects: creates a new field in parent named name, set to nval
@@ -202,8 +202,8 @@ void zjs_obj_add_number(jerry_value_t obj, double num, const char *name)
     jerry_set_property(obj, jname, jnum);
 }
 
-void zjs_obj_add_readonly_number(jerry_value_t obj, double num,
-                                 const char *name)
+void zjs_obj_add_readonly_number(jerry_value_t obj, const char *name,
+                                 double num)
 {
     // requires: obj is an existing JS object
     //  effects: creates a new readonly field in parent named name, set to num
@@ -297,7 +297,8 @@ void zjs_copy_jstring(jerry_value_t jstr, char *buffer, jerry_size_t *maxlen)
     jerry_size_t size = jerry_get_string_size(jstr);
     jerry_size_t len = 0;
     if (*maxlen > size)
-        len = jerry_string_to_char_buffer(jstr, (jerry_char_t *)buffer, size);
+        len = jerry_string_to_utf8_char_buffer(jstr, (jerry_char_t *)buffer,
+                                               size);
     buffer[len] = '\0';
     *maxlen = len;
 }
@@ -312,7 +313,7 @@ char *zjs_alloc_from_jstring(jerry_value_t jstr, jerry_size_t *maxlen)
     }
 
     jerry_size_t len;
-    len = jerry_string_to_char_buffer(jstr, (jerry_char_t *)buffer, size);
+    len = jerry_string_to_utf8_char_buffer(jstr, (jerry_char_t *)buffer, size);
     buffer[len] = '\0';
 
     if (maxlen) {
@@ -324,6 +325,20 @@ char *zjs_alloc_from_jstring(jerry_value_t jstr, jerry_size_t *maxlen)
         }
     }
 
+    return buffer;
+}
+
+char *zjs_alloc_from_string(const char *str, size_t *maxlen)
+{
+    // if no max or string small enough, copy the whole string
+    if (!maxlen || !*maxlen || strnlen(str, *maxlen) < *maxlen) {
+        return strdup(str);
+    }
+
+    // otherwise, limit the size of the string
+    char *buffer = zjs_malloc(*maxlen);
+    memcpy(buffer, str, *maxlen - 1);
+    buffer[*maxlen - 1] = '\0';
     return buffer;
 }
 
@@ -744,6 +759,17 @@ int zjs_require_string_if_prop_map(jerry_value_t obj, const char *prop,
 
 void free_handle_nop(void *h)
 {
+}
+
+bool zjs_str_matches(char *str, char *array[])
+{
+    // requires: the final element of array must be NULL
+    for (int i=0; array[i]; ++i) {
+        if (strequal(str, array[i])) {
+            return true;
+        }
+    }
+    return false;
 }
 
 #ifndef ZJS_LINUX_BUILD

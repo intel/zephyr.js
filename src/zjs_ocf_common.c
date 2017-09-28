@@ -47,20 +47,17 @@ static bool ocf_foreach_prop(const jerry_value_t prop_name,
 {
     struct props_handle *handle = (struct props_handle *)data;
 
-    ZJS_GET_STRING(prop_name, name, OCF_MAX_PROP_NAME_LEN);
+    jerry_size_t maxlen = OCF_MAX_PROP_NAME_LEN;
+    char *name = zjs_alloc_from_jstring(prop_name, &maxlen);
 
-    /*
-     * Use zjs_alloc_from_jstring
-     */
     // Skip id/resourcePath/resourceType because that is not a resource property
     // that is sent out
-    if ((!strequal(name, "deviceId")) &&
-        (!strequal(name, "resourcePath")) &&
-        (!strequal(name, "resourceType"))) {
-        handle->names_array[handle->size] =
-            zjs_malloc(jerry_get_string_size(prop_name) + 1);
-        memcpy(handle->names_array[handle->size], name, strlen(name));
-        handle->names_array[handle->size][strlen(name)] = '\0';
+    char *props[] = { "deviceId", "resourcePath", "resourceType", NULL };
+    if (zjs_str_matches(name, props)) {
+        zjs_free(name);
+    }
+    else {
+        handle->names_array[handle->size] = name;
         ZVAL ret = jerry_set_property_by_index(handle->props_array,
                                                handle->size++, prop_value);
         if (jerry_value_has_error_flag(ret)) {
@@ -248,7 +245,7 @@ void zjs_set_uuid(char *uuid)
 {
     ZVAL device = zjs_get_property(ocf_object, "device");
     if (!jerry_value_is_undefined(device)) {
-        zjs_obj_add_string(device, uuid, "uuid");
+        zjs_obj_add_string(device, "uuid", uuid);
     }
 }
 
@@ -476,7 +473,7 @@ jerry_value_t zjs_ocf_init()
     ZVAL platform = ZJS_UNDEFINED;
     zjs_set_property(ocf_object, "platform", platform);
 
-    zjs_obj_add_function(ocf_object, ocf_start, "start");
+    zjs_obj_add_function(ocf_object, "start", ocf_start);
 #ifdef OC_CLIENT
     ZVAL client = zjs_ocf_client_init();
     zjs_set_property(ocf_object, "client", client);

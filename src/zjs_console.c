@@ -215,13 +215,13 @@ static ZJS_DECL_FUNC(console_assert)
 void zjs_console_init(void)
 {
     ZVAL console = zjs_create_object();
-    zjs_obj_add_function(console, console_log, "log");
-    zjs_obj_add_function(console, console_log, "info");
-    zjs_obj_add_function(console, console_error, "error");
-    zjs_obj_add_function(console, console_error, "warn");
-    zjs_obj_add_function(console, console_time, "time");
-    zjs_obj_add_function(console, console_time_end, "timeEnd");
-    zjs_obj_add_function(console, console_assert, "assert");
+    zjs_obj_add_function(console, "log", console_log);
+    zjs_obj_add_function(console, "info", console_log);
+    zjs_obj_add_function(console, "error", console_error);
+    zjs_obj_add_function(console, "warn", console_error);
+    zjs_obj_add_function(console, "time", console_time);
+    zjs_obj_add_function(console, "timeEnd", console_time_end);
+    zjs_obj_add_function(console, "assert", console_assert);
 
     ZVAL global_obj = jerry_get_global_object();
     zjs_set_property(global_obj, "console", console);
