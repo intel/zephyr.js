@@ -43,7 +43,7 @@
 #include "term-cmd.h"
 
 #ifndef CONFIG_USB_CDC_ACM
-#include "term-webusb.h"
+#include "webusb_serial.h"
 #endif
 
 #include "ihex/kk_ihex_read.h"
@@ -63,6 +63,7 @@
 #endif /* CONFIG_IHEX_DEBUG */
 
 extern void __stdout_hook_install(int (*fn)(int));
+extern void webusb_register_handlers();
 
 static const char banner[] = "Zephyr.js DEV MODE " __DATE__ " " __TIME__ "\r\n";
 
