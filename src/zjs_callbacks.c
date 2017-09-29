@@ -103,26 +103,42 @@ static u8_t ring_buf_initialized = 1;
 // mutex to ensure only one thread can access ring buffer at a time
 static struct k_mutex ring_mutex;
 
-#define RB_LOCK()                             \
-    LPRINT("Ringbuf lock...");             \
-    k_mutex_lock(&ring_mutex, K_FOREVER);  \
-    LPRINT("Ringbuf locked.")
-#define RB_UNLOCK()                  \
+#define RB_LOCK()                                \
+{                                                \
+    LPRINT("Ringbuf lock...");                   \
+    if (k_mutex_lock(&ring_mutex, K_FOREVER)) {  \
+        ERR_PRINT("Ringbuf lock error.\n");      \
+    } else {                                     \
+        LPRINT("Ringbuf locked.");               \
+    }                                            \
+}
+
+#define RB_UNLOCK()               \
+{                                 \
     LPRINT("Ringbuf unlock...");  \
     k_mutex_unlock(&ring_mutex);  \
-    LPRINT("Ringbuf unlocked.")
+    LPRINT("Ringbuf unlocked.");  \
+}
 
 // mutex to ensure only one thread can access cb_map at a time
 static struct k_mutex cb_mutex;
 
-#define CB_LOCK()                        \
-    LPRINT("Callbacks lock...");         \
-    k_mutex_lock(&cb_mutex, K_FOREVER);  \
-    LPRINT("Callbacks locked.")
+#define CB_LOCK()                              \
+{                                              \
+    LPRINT("Callbacks lock...");               \
+    if (k_mutex_lock(&cb_mutex, K_FOREVER)) {  \
+        ERR_PRINT("Callback lock error.\n");   \
+    } else {                                   \
+        LPRINT("Callbacks locked.");           \
+    }                                          \
+}
+
 #define CB_UNLOCK()                 \
+{                                   \
     LPRINT("Callbacks unlock...");  \
     k_mutex_unlock(&cb_mutex);      \
-    LPRINT("Callbacks unlocked.")
+    LPRINT("Callbacks unlocked.");  \
+}
 #endif  // ZJS_LINUX_BUILD
 
 static zjs_callback_id cb_limit = INITIAL_CALLBACK_SIZE;
@@ -371,15 +387,17 @@ void signal_callback_priv(zjs_callback_id id,
     DBG_PRINT("pushing item to ring buffer. id=%d, args=%p, size=%u\n", id,
               args, size);
 #endif
-    CB_LOCK();
+    int in_thread = k_is_preempt_thread();  // versus ISR or co-op thread
+    int key = 0;
+    if (in_thread) CB_LOCK();
     if (id < 0 || id >= cb_size || !cb_map[id]) {
         DBG_PRINT("callback ID %u does not exist\n", id);
-        CB_UNLOCK();
+        if (in_thread) CB_UNLOCK();
         return;
     }
     if (GET_CB_REMOVED(cb_map[id]->flags)) {
         DBG_PRINT("callback already removed\n");
-        CB_UNLOCK();
+        if (in_thread) CB_UNLOCK();
         return;
     }
     if (GET_TYPE(cb_map[id]->flags) == CALLBACK_TYPE_JS) {
@@ -393,7 +411,10 @@ void signal_callback_priv(zjs_callback_id id,
 #ifdef INSTRUMENT_CALLBACKS
     set_info_string(cb_map[id]->caller, file, func);
 #endif
-    RB_LOCK();
+    if (in_thread) {
+        RB_LOCK();
+        key = irq_lock();
+    }
     int ret = zjs_port_ring_buf_put(&ring_buffer,
                                     (u16_t)id,
                                     0,  // we use value for CB_FLUSH_ONE/ALL
@@ -404,7 +425,10 @@ void signal_callback_priv(zjs_callback_id id,
     // rather than locking everything, as we are only trying to prevent a
     // callback
     // from being edited and called at the same time.
-    RB_UNLOCK();
+    if (in_thread) {
+        irq_unlock(key);
+        RB_UNLOCK();
+    }
 #ifndef ZJS_LINUX_BUILD
     zjs_loop_unblock();
 #endif
@@ -421,7 +445,7 @@ void signal_callback_priv(zjs_callback_id id,
         zjs_ringbuf_error_count++;
         zjs_ringbuf_last_error = ret;
     }
-    CB_UNLOCK();
+    if (in_thread) CB_UNLOCK();
 }
 
 zjs_callback_id zjs_add_c_callback(void *handle, zjs_c_callback_func callback)
