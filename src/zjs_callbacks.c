@@ -95,6 +95,9 @@ SYS_RING_BUF_DECLARE_POW2(ring_buffer, 5);
 static u8_t ring_buf_initialized = 1;
 
 #ifdef ZJS_LINUX_BUILD
+#define k_is_preempt_thread() 0
+#define irq_lock() 0
+#define irq_unlock(key) do {} while (0);
 #define RB_LOCK() do {} while (0)
 #define RB_UNLOCK() do {} while (0)
 #define CB_LOCK() do {} while (0)
