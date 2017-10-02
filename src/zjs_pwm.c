@@ -1,7 +1,5 @@
 // Copyright (c) 2016-2017, Intel Corporation.
 
-#ifdef BUILD_MODULE_PWM
-
 // C includes
 #include <string.h>
 
@@ -9,6 +7,9 @@
 #include <misc/util.h>
 #include <pwm.h>
 #include <zephyr.h>
+
+// JerryScript includes
+#include "jerryscript-ext/module.h"
 
 // ZJS includes
 #include "zjs_pwm.h"
@@ -189,7 +190,17 @@ static ZJS_DECL_FUNC(zjs_pwm_open)
     return pin_obj;
 }
 
-jerry_value_t zjs_pwm_init()
+static void zjs_pwm_cleanup(void *data)
+{
+    jerry_release_value(*(jerry_value_t *)data);
+}
+
+static const jerry_object_native_info_t cleanup_info =
+{
+    .free_cb = zjs_pwm_cleanup
+};
+
+static jerry_value_t zjs_pwm_init()
 {
     // effects: finds the PWM driver and registers the PWM JS object
     char devname[10];
@@ -215,12 +226,11 @@ jerry_value_t zjs_pwm_init()
     // create PWM object
     jerry_value_t pwm_obj = zjs_create_object();
     zjs_obj_add_function(pwm_obj, "open", zjs_pwm_open);
+
+    jerry_set_object_native_pointer(pwm_obj, &zjs_pwm_pin_prototype,
+                                    &cleanup_info);
+
     return pwm_obj;
 }
 
-void zjs_pwm_cleanup()
-{
-    jerry_release_value(zjs_pwm_pin_prototype);
-}
-
-#endif  // BUILD_MODULE_PWM
+JERRYX_NATIVE_MODULE(pwm, zjs_pwm_init)

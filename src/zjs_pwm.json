@@ -5,9 +5,7 @@
     "zephyr_conf": {
         "all": ["CONFIG_PWM=y", "CONFIG_PWM_QMSI_NUM_PORTS=4"]
     },
-    "zjs_config": ["-DBUILD_MODULE_PWM"],
+    "zjs_config": ["-DENABLE_INIT_FINI"],
     "src": ["zjs_pwm.c"],
-    "header": ["zjs_pwm.h"],
-    "init": ["zjs_pwm_init"],
-    "cleanup": ["zjs_pwm_cleanup"]
+    "header": ["zjs_pwm.h"]
 }
