@@ -1,5 +1,4 @@
 // Copyright (c) 2017, Intel Corporation.
-#ifdef BUILD_MODULE_NET
 
 // enable to use function tracing for debug purposes
 #if 0
@@ -23,6 +22,9 @@ static char FTRACE_PREFIX[] = "net";
 #include <net/net_core.h>
 #include <net/net_if.h>
 #include <net/net_pkt.h>
+
+// JerryScript includes
+#include "jerryscript-ext/module.h"
 
 // ZJS includes
 #include "zjs_buffer.h"
@@ -1445,9 +1447,20 @@ static ZJS_DECL_FUNC(net_is_ip6)
     return jerry_create_boolean(false);
 }
 
-static jerry_value_t net_obj;
+static void zjs_net_cleanup(void *nothing)
+{
+    FTRACE("\n");
+    jerry_release_value(zjs_net_prototype);
+    jerry_release_value(zjs_net_socket_prototype);
+    jerry_release_value(zjs_net_server_prototype);
+}
 
-jerry_value_t zjs_net_init()
+static const jerry_object_native_info_t cleanup_info =
+{
+    .free_cb = zjs_net_cleanup
+};
+
+static jerry_value_t zjs_net_init()
 {
     FTRACE("\n");
     zjs_net_config_default();
@@ -1489,18 +1502,12 @@ jerry_value_t zjs_net_init()
     zjs_net_server_prototype = zjs_create_object();
     zjs_obj_add_functions(zjs_net_server_prototype, server_array);
 
-    net_obj = zjs_create_object();
+    jerry_value_t net_obj = zjs_create_object();
     jerry_set_prototype(net_obj, zjs_net_prototype);
 
-    return jerry_acquire_value(net_obj);
+    jerry_set_object_native_pointer(net_obj, &zjs_net_prototype, &cleanup_info);
+
+    return net_obj;
 }
 
-void zjs_net_cleanup()
-{
-    FTRACE("\n");
-    jerry_release_value(zjs_net_prototype);
-    jerry_release_value(zjs_net_socket_prototype);
-    jerry_release_value(zjs_net_server_prototype);
-}
-
-#endif  // BUILD_MODULE_NET
+JERRYX_NATIVE_MODULE(net, zjs_net_init)
