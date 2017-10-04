@@ -28,7 +28,7 @@ API Documentation
 
 The `url` string should begin with "https://" in order for Chrome to accept it
 and display a notification. Other URLs are valid in terms of the protocol but
-will have no user-visible effect currently in Chrome.
+will have no user-visible effect in Chrome.
 
 Sample Apps
 -----------

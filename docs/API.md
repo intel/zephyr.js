@@ -29,7 +29,7 @@ I/O
 
 [UART](./uart.md)
 
-[WebUSB}(./webusb.md)
+[WebUSB](./webusb.md)
 
 Generic Sensors
 ---------------
