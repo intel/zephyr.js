@@ -694,9 +694,15 @@ s32_t ashell_set_echo_mode(char *buf)
 
 s32_t ashell_read_data(char *buf)
 {
+    if (shell.state_flags & kShellTransferIhex) {
+        terminal_done = true;
+        return RET_OK;
+    }
+
     if (!fs_valid_filename(buf)) {
         return RET_ERROR;
     }
+
     char filename[MAX_FILENAME_SIZE];
     if (shell.state_flags & kShellTransferRaw) {
         if (ashell_get_filename_buffer(buf, filename) <= 0) {
