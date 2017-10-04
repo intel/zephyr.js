@@ -9,7 +9,7 @@ ZJS API for GFX
 Introduction
 ------------
 The GFX module provides a generic way to create pixel buffers, which can then
-be displayed on a display of some kind.  A Javascript method for initializing
+be displayed on a display of some kind.  A JavaScript method for initializing
 the screen, and drawing a data buffer are required to use it.
 See module/ST7735.js and samples/SPI_Screen.js for an example.
 
@@ -24,12 +24,12 @@ specific API functions.
 
 [NoInterfaceObject]
 interface GFX {
-    GFXObj init(screen width, screen height, init screen function,
+    GFXContext init(screen width, screen height, init screen function,
                 draw function, optional this);
 };
 
 [NoInterfaceObject]
-interface GFXObj {
+interface GFXContext {
     fillRect(number x coord, number y coord, number width, number height,
              char array color);
     drawPixel(number x coord, number y coord, char array color);
@@ -52,26 +52,26 @@ API Documentation
 -----------------
 ### GFX.init
 
-`GFXObj init(screen width, screen height, init screen function, draw function,
+`GFXContext init(screen width, screen height, init screen function, draw function,
              optional this);`
 
 Initializes the GFX module with the screen size, an init function, and a draw
 callback.  A 'this' object can also be provided if needed.
 
-### GFXObj.fillRect
+### GFXContext.fillRect
 
 `void drawPixel(number x coord, number y coord, char array color);`
 
 Draws a solid rectangle of the given color at the coordinates provided.
 
-### GFXObj.drawPixel
+### GFXContext.drawPixel
 
 `void drawPixel(number x coord, number y coord, number width, number height,
                 char array color);`
 
 Draws a pixel of the given color at the coordinates provided.
 
-### GFXObj.drawLine
+### GFXContext.drawLine
 
 `void drawLine(number x0 coord, number y0 coord, number x1 coord,
                number y1 coord, char array color, optional number size);`
@@ -79,7 +79,7 @@ Draws a pixel of the given color at the coordinates provided.
 Draws a line of the given color at the coordinates provided.  The optional
 size number controls how thick the line is.
 
-### GFXObj.drawVLine
+### GFXContext.drawVLine
 
 `void drawVLine(number x coord, number y coord, number height, char array color,
                 optional number size);`
@@ -87,7 +87,7 @@ size number controls how thick the line is.
 Draws a vertical line of the given color at the coordinates provided.  The
 optional size number controls how thick the line is.
 
-### GFXObj.drawHLine
+### GFXContext.drawHLine
 
 `void drawHLine(number x coord, number y coord, number width, char array color,
                 optional number size);`
@@ -95,7 +95,7 @@ optional size number controls how thick the line is.
 Draws a horizontal line of the given color at the coordinates provided.  The
 optional size number controls how thick the line is.
 
-### GFXObj.drawRect
+### GFXContext.drawRect
 
 `void drawRect(number x coord, number y coord, number width, number height,
                char array color, optional number size);`
@@ -103,7 +103,7 @@ optional size number controls how thick the line is.
 Draws a hollow rectangle of the given color at the coordinates provided.  The
 optional size number controls how thick the line is.
 
-### GFXObj.drawChar
+### GFXContext.drawChar
 
 `void drawChar(number x coord, number y coord, character char, char array color,
                optional number size);`
@@ -111,7 +111,7 @@ optional size number controls how thick the line is.
 Draw a character at the coordinates given. The optional size number sets how
 large the character is.
 
-### GFXObj.drawString
+### GFXContext.drawString
 
 `void drawString(number x coord, number y coord, string str, char array color,
                optional number size);`
