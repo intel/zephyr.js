@@ -9,7 +9,7 @@
 * the landing page and allowed origin descriptors.
 */
 
-#include "webusb-handler.h"
+#include "webusb_serial.h"
 
 /* WebUSB Platform Capability Descriptor */
 static const u8_t webusb_bos_descriptor[] = {

@@ -18,8 +18,8 @@
 #include "jerry-code.h"
 
 // ZJS includes
-#include "comms-shell.h"
-#include "comms-uart.h"
+#include "term-cmd.h"
+#include "term-uart.h"
 #include "ihex/kk_ihex_read.h"
 
 #include "file-utils.h"
@@ -49,6 +49,11 @@ static s8_t upload_state = 0;
 #define UPLOAD_FINISHED    2
 #define UPLOAD_ERROR      -1
 
+void ihex_send(const char *buf, int len)
+{
+    uart_write_buf(buf, len);
+}
+
 /* Data received from the buffer */
 ihex_bool_t ihex_data_read(struct ihex_state *ihex, ihex_record_type_t type,
                            ihex_bool_t checksum_error)
@@ -66,8 +71,8 @@ ihex_bool_t ihex_data_read(struct ihex_state *ihex, ihex_record_type_t type,
         ihex->data[ihex->length] = 0;
 
         DBG("%d::%d:: \n%s \n", (int)address, ihex->length, ihex->data);
-        comms_write_buf("[ACK]", 5);
-        comms_write_buf("\n", 1);
+        ihex_send("[ACK]", 5);
+        ihex_send("\n", 1);
 
         fs_seek(zfile, address, SEEK_SET);
         size_t written = fs_write(zfile, ihex->data, ihex->length);
@@ -119,7 +124,7 @@ u32_t ihex_process_data(const char *buf, u32_t len)
         processed++;
         char byte = *buf++;
 #ifdef CONFIG_IHEX_UPLOADER_DEBUG
-        comms_write_buf(&byte, 1);
+        ihex_send(&byte, 1);
 #endif
         if (marker) {
             ihex_read_byte(&ihex, byte);
@@ -155,7 +160,7 @@ u32_t ihex_process_finish()
         printf("[Error] Callback handle error \n");
         fs_close_alloc(zfile);
 
-        ashell_process_start();
+        terminal_start();
         return 1;
     }
 
@@ -170,29 +175,22 @@ u32_t ihex_process_finish()
     printf("Saved file '%s'\n", TEMPORAL_FILENAME);
 #endif
 
-    ashell_process_start();
+    terminal_start();
     return 0;
 }
 
-void ihex_print_status()
-{
-}
+static struct terminal_config ihex_cfg = {
+    .init = ihex_process_init,
+    .error = ihex_process_error,
+    .done = ihex_process_is_done,
+    .close = ihex_process_finish,
+    .process = ihex_process_data,
+    .send = ihex_send
+};
 
 void ihex_process_start()
 {
-    struct comms_cfg_data cfg;
-
-    cfg.cb_status = NULL;
-    cfg.interface.init_cb = ihex_process_init;
-    cfg.interface.error_cb = ihex_process_error;
-    cfg.interface.is_done = ihex_process_is_done;
-    cfg.interface.close_cb = ihex_process_finish;
-    cfg.interface.process_cb = ihex_process_data;
-    cfg.print_state = ihex_print_status;
-
-    comms_uart_set_config(&cfg);
-    if (cfg.interface.init_cb != NULL) {
-        DBG("[Init]\n");
-        cfg.interface.init_cb();
-    }
+    terminal = &ihex_cfg;
+    DBG("[Init]\n");
+    ihex_process_init();
 }

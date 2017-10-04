@@ -1,7 +1,7 @@
 // Copyright (c) 2016-2017, Intel Corporation.
 
-#ifndef __SHELL__STATE__H__
-#define __SHELL__STATE__H__
+#ifndef __TERM_CMD_H__
+#define __TERM_CMD_H__
 
 // We are not expecting to return the command line
 #define RET_OK_NO_RET 1
@@ -63,4 +63,14 @@ s32_t ashell_main_state(char *buf, u32_t len);
 void ashell_run_boot_cfg();
 
 s32_t ashell_help(char *buf);
-#endif
+
+void comms_set_prompt(const char *prompt);
+
+const char *comms_get_prompt();
+
+void comms_set_echo_mode(bool echo_mode);
+bool comms_get_echo_mode();
+
+void terminal_start();
+
+#endif  // __TERM_CMD_H__

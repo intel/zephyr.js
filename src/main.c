@@ -21,7 +21,7 @@
 #include "zjs_script.h"
 #include "zjs_util.h"
 #ifdef ZJS_ASHELL
-#include "ashell/comms-uart.h"
+#include "ashell/ashell.h"
 #endif
 
 // JerryScript includes
