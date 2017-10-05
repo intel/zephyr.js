@@ -369,6 +369,7 @@ void zjs_remove_all_callbacks()
         CB_LOCK();
         if (cb_map[i]) {
             zjs_remove_callback_priv(i, skip_flush);
+            zjs_free_callback(i);
         }
         CB_UNLOCK();
     }
