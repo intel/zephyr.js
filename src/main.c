@@ -250,12 +250,7 @@ int main(int argc, char *argv[])
             // FIXME: need to consider the chicken and egg problems here
             serviced = 1;
         }
-        u64_t wait = zjs_timers_process_events();
-        if (wait != ZJS_TICKS_FOREVER) {
-            serviced = 1;
-            wait_time = (wait < wait_time) ? wait : wait_time;
-        }
-        wait = zjs_service_routines();
+        u64_t wait = zjs_service_routines();
         if (wait != ZJS_TICKS_FOREVER) {
             serviced = 1;
             wait_time = (wait < wait_time) ? wait : wait_time;

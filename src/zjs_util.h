@@ -94,12 +94,13 @@ void zjs_pop_mem_stat(void *ptr);
 #endif  // ZJS_LINUX_BUILD
 
 #ifdef DEBUG_BUILD
-#define zjs_create_object()                                   \
-    ({                                                        \
-        jerry_value_t jval = jerry_create_object();           \
-        DBG_PRINT("trace: T:%p: create object: %p\n",         \
-                  k_current_get(), (void *)(uintptr_t)jval);  \
-        jval;                                                 \
+#define zjs_create_object()                                     \
+    ({                                                          \
+        jerry_value_t jval = jerry_create_object();             \
+        DBG_PRINT("trace: T:%p: create object: %p\n",           \
+                (void *)(uintptr_t)zjs_port_get_thread_id(),    \
+                (void *)(uintptr_t)jval);                       \
+        jval;                                                   \
     })
 #else
 #define zjs_create_object() jerry_create_object()
