@@ -250,6 +250,7 @@ static void free_timer(zjs_timer_t *tm)
         jerry_release_value(tm->argv[i]);
     }
     zjs_port_timer_stop(&tm->timer);
+    zjs_remove_callback(tm->callback_id);
     zjs_free(tm->argv);
     zjs_free(tm);
 }
