@@ -73,8 +73,7 @@ int zjs_get_ms(void);
 #else  // !DEBUG_BUILD
 #define DBG_PRINT(fmt...) do {} while (0)
 #define ERR_PRINT                                                        \
-    ZJS_PRINT("\n%s:%d %s():\n(ERROR) ", zjs_shorten_filepath(__FILE__), \
-              __LINE__, __func__);                                       \
+    ZJS_PRINT("\n%d:(ERROR) ", __LINE__);                                \
     ZJS_PRINT
 #endif  // DEBUG_BUILD
 
