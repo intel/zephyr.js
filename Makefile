@@ -17,6 +17,12 @@ JS_TMP = js.tmp
 # Dump memory information: on = print allocs, full = print allocs + dump pools
 TRACE ?= off
 
+# Enable jerry-debugger, currently only work on linux
+DEBUGGER ?= off
+
+# ALL-IN-ONE build, slightly shrink build size, may not work on all platforms
+ALL_IN_ONE ?= off
+
 ifneq (,$(DEV))
 $(error DEV= is no longer supported, please use make ide or make ashell)
 endif
@@ -25,7 +31,18 @@ ifndef ZJS_BASE
 $(error ZJS_BASE not defined. You need to source zjs-env.sh)
 endif
 
+ifeq ($(DEBUGGER), on)
+ifneq ($(BOARD), linux)
+$(error Debugger only runs on linux, set BOARD=linux)
+endif
+ifneq ($(SNAPSHOT), on)
+$(warning Debugger on, disabling snapshot)
+SNAPSHOT=off
+endif
+endif
+
 ifeq ($(BOARD), arduino_101)
+ALL_IN_ONE=on
 # RAM can't be less than the 55KB normally allocated for x86
 # NOTE: We could change this and allow it though, find a sane minimum
 ifeq ($(shell test $(RAM) -lt 55; echo $$?), 0)
@@ -75,7 +92,7 @@ BLE_ADDR ?= "none"
 FUNC_NAME ?= off
 # JerryScript options
 JERRY_BASE ?= $(ZJS_BASE)/deps/jerryscript
-EXT_JERRY_FLAGS ?=	-DENABLE_ALL_IN_ONE=ON \
+EXT_JERRY_FLAGS ?=	-DENABLE_ALL_IN_ONE=$(ALL_IN_ONE) \
 			-DFEATURE_PROFILE=$(ZJS_BASE)/outdir/$(BOARD)/jerry_feature.profile \
 			-DFEATURE_ERROR_MESSAGES=ON \
 			-DJERRY_LIBM=OFF \
@@ -472,7 +489,7 @@ arcgdb:
 .PHONY: linux
 # Linux command line target, script can be specified on the command line
 linux: generate
-	make -f Makefile.linux JS=$(JS) VARIANT=$(VARIANT) CB_STATS=$(CB_STATS) V=$(V) SNAPSHOT=$(SNAPSHOT)
+	make -f Makefile.linux JS=$(JS) VARIANT=$(VARIANT) CB_STATS=$(CB_STATS) V=$(V) SNAPSHOT=$(SNAPSHOT) DEBUGGER=$(DEBUGGER)
 
 .PHONY: help
 help:

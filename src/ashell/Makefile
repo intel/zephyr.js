@@ -26,7 +26,9 @@ obj-y += term-cmd.o
 
 obj-y += ../../deps/ihex/kk_ihex_read.o
 
+ifneq ($(BOARD), linux)
 # Select extended ANSI C/POSIX function set in recent Newlib versions
 ccflags-y += -D_XOPEN_SOURCE=700
+endif
 
 ccflags-y += -DZJS_ASHELL -Wall -Werror

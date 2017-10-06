@@ -231,9 +231,32 @@ Then Esc again to get back to the latest output (out of "Copy Mode").
 
 #### Debugging
 
+##### Debugging native C code
 You can use the commands `make debug` and `make gdb` in two separate terminals
 to connect to the device with a debugger. Then you can set breakpoints such as
 `b main` and `run` to start debugging as usual with gdb.
+
+##### Debugging JavaScript code
+JerryScript has a built-in remote debugger which allows debugging JavaScript programs.
+At the moment only a Websocket-based implementation is provided by JerryScript which
+transmits messages over TCP/IP networks. This implementation requires a socket API which
+currently only work when running on Linux.  The socket API is not yet supported
+with NewLib when building with Zephyr natively.
+
+To enable the remote debugger for a particular JS application:
+```bash
+make BOARD=linux DEBUGGER=on
+outdir/linux/release/jslinux app.js --debugger
+```
+
+It will then be run on debugger mode waiting for client connection, you can then
+in another terminal, you can connect to it by running the python client in JerryScript:
+```bash
+jerry-debugger/jerry-client-ws.py
+```
+
+In the client, type 'help' to get a list of debugger commands, such as
+adding breakpoints, stepping through JS sources, etc.
 
 #### Additional details
 

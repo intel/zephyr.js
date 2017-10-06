@@ -61,6 +61,11 @@ const char script_jscode[] = {
 };
 #endif
 
+#ifdef ZJS_DEBUGGER
+static bool start_debug_server = false;
+static uint16_t debug_port = 5001;
+#endif
+
 #ifdef ZJS_LINUX_BUILD
 // enabled if --noexit is passed to jslinux
 static u8_t no_exit = 0;
@@ -75,6 +80,14 @@ u8_t process_cmd_line(int argc, char *argv[])
         if (!strncmp(argv[i], "--unittest", 10)) {
             // run unit tests
             zjs_run_unit_tests();
+        } else if (!strncmp(argv[i], "--debugger", 10)) {
+#ifdef ZJS_DEBUGGER
+            // run in debugger
+            start_debug_server = true;
+#else
+            ERR_PRINT("Debugger disabled, rebuild with DEBUGGER=on");
+            return 0;
+#endif
         } else if (!strncmp(argv[i], "--noexit", 8)) {
             no_exit = 1;
         } else if (!strncmp(argv[i], "-t", 2)) {
@@ -113,13 +126,17 @@ int main(int argc, char *argv[])
 #endif
 {
 #ifndef ZJS_SNAPSHOT_BUILD
+    char *file_name = NULL;
+    size_t file_name_len = 0;
 #ifdef ZJS_LINUX_BUILD
     char *script = NULL;
+    file_name = argv[1];
+    file_name_len = strlen(argv[1]);
 #else
     const char *script = NULL;
 #endif
     jerry_value_t code_eval;
-    u32_t len;
+    u32_t script_len;
 #endif
 #ifndef ZJS_LINUX_BUILD
     DBG_PRINT("Main Thread ID: %p\n", (void *)k_current_get());
@@ -139,7 +156,6 @@ int main(int argc, char *argv[])
 #endif
 
     jerry_init(JERRY_INIT_EMPTY);
-
     // initialize modules
     zjs_modules_init();
 
@@ -154,7 +170,7 @@ int main(int argc, char *argv[])
             ERR_PRINT("command line options error\n");
             goto error;
         }
-        if (zjs_read_script(argv[1], &script, &len)) {
+        if (zjs_read_script(argv[1], &script, &script_len)) {
             ERR_PRINT("could not read script file %s\n", argv[1]);
             goto error;
         }
@@ -162,23 +178,34 @@ int main(int argc, char *argv[])
     // slightly tricky: reuse next section as else clause
 #endif
     {
-        len = strnlen(script_jscode, MAX_SCRIPT_SIZE);
+        script_len = strnlen(script_jscode, MAX_SCRIPT_SIZE);
 #ifdef ZJS_LINUX_BUILD
-        script = zjs_malloc(len + 1);
-        memcpy(script, script_jscode, len);
-        script[len] = '\0';
+        script = zjs_malloc(script_len + 1);
+        memcpy(script, script_jscode, script_len);
+        script[script_len] = '\0';
 #else
         script = script_jscode;
 #endif
-        if (len == MAX_SCRIPT_SIZE) {
+        if (script_len == MAX_SCRIPT_SIZE) {
             ERR_PRINT("Script size too large! Increase MAX_SCRIPT_SIZE.\n");
             goto error;
         }
     }
 #endif
 
+#ifdef ZJS_DEBUGGER
+if (start_debug_server) {
+    jerry_debugger_init(debug_port);
+}
+#endif
+
 #ifndef ZJS_SNAPSHOT_BUILD
-    code_eval = jerry_parse((jerry_char_t *)script, len, false);
+    code_eval = jerry_parse_named_resource((jerry_char_t *)file_name,
+                                           file_name_len,
+                                           (jerry_char_t *)script,
+                                           script_len,
+                                           false);
+
     if (jerry_value_has_error_flag(code_eval)) {
         DBG_PRINT("Error parsing JS\n");
         zjs_print_error_message(code_eval, ZJS_UNDEFINED);
@@ -193,6 +220,9 @@ int main(int argc, char *argv[])
 #ifdef ZJS_SNAPSHOT_BUILD
     result = jerry_exec_snapshot(snapshot_bytecode, snapshot_len, false);
 #else
+#ifdef ZJS_DEBUGGER
+    ZJS_PRINT("Debugger mode: connect using jerry-client-ws.py\n");
+#endif
     result = jerry_run(code_eval);
 #endif
 
