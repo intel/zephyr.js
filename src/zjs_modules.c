@@ -23,6 +23,7 @@
 #include "zjs_script.h"
 #include "zjs_timers.h"
 #include "zjs_util.h"
+#include "jerryscript-ext/module.h"
 
 struct routine_map {
     zjs_service_routine func;
@@ -32,28 +33,27 @@ struct routine_map {
 static u8_t num_routines = 0;
 struct routine_map svc_routine_map[NUM_SERVICE_ROUTINES];
 
+    static jerryx_module_resolver_t resolvers[1] =
+    {
+        jerryx_module_native_resolver
+    };
+
 static ZJS_DECL_FUNC(native_require_handler)
 {
     // args: module name
     ZJS_VALIDATE_ARGS(Z_STRING);
 
     jerry_size_t size = MAX_MODULE_STR_LEN;
-    char module[size];
+    jerry_char_t module[size];
     zjs_copy_jstring(argv[0], module, &size);
     if (!size) {
         return RANGE_ERROR("argument too long");
     }
 
-    int modcount = sizeof(zjs_modules_array) / sizeof(module_t);
-    for (int i = 0; i < modcount; i++) {
-        module_t *mod = &zjs_modules_array[i];
-        if (strequal(mod->name, module)) {
-            // We only want one instance of each module at a time
-            if (mod->instance == 0) {
-                mod->instance = mod->init();
-            }
-            return jerry_acquire_value(mod->instance);
-        }
+    jerry_value_t js_module = jerryx_module_resolve (module, resolvers, 1);
+    // If we found our module, return it.
+    if (!jerry_value_has_error_flag (js_module)) {
+        return js_module;
     }
     DBG_PRINT("Native module not found, searching for JavaScript module %s\n",
               module);
@@ -189,19 +189,7 @@ void zjs_modules_init()
 
     // initialize callbacks early in case any init functions use them
     zjs_init_callbacks();
-
-    // auto-load the events module without waiting for require(); needed so its
-    //   init function will run before it's used by UART, etc.
-    int modcount = sizeof(zjs_modules_array) / sizeof(module_t);
-    for (int i = 0; i < modcount; i++) {
-        module_t *mod = &zjs_modules_array[i];
-
-        // DEV: if you add another module name here, remove the break below
-        if (strequal(mod->name, "events")) {
-            mod->instance = jerry_acquire_value(mod->init());
-            break;
-        }
-    }
+    // Load global modules
     int gbl_modcount = sizeof(zjs_global_array) / sizeof(gbl_module_t);
     for (int i = 0; i < gbl_modcount; i++) {
         gbl_module_t *mod = &zjs_global_array[i];
@@ -217,17 +205,6 @@ void zjs_modules_cleanup()
     // stop timers first to prevent further calls
     zjs_timers_cleanup();
 
-    int modcount = sizeof(zjs_modules_array) / sizeof(module_t);
-    for (int i = 0; i < modcount; i++) {
-        module_t *mod = &zjs_modules_array[i];
-        if (mod->instance) {
-            if (mod->cleanup) {
-                mod->cleanup();
-            }
-            jerry_release_value(mod->instance);
-            mod->instance = 0;
-        }
-    }
     int gbl_modcount = sizeof(zjs_global_array) / sizeof(gbl_module_t);
     for (int i = 0; i < gbl_modcount; i++) {
         gbl_module_t *mod = &zjs_global_array[i];
