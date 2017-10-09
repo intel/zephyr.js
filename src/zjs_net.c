@@ -1503,4 +1503,5 @@ void zjs_net_cleanup()
     jerry_release_value(zjs_net_server_prototype);
 }
 
+JERRYX_NATIVE_MODULE (net, zjs_net_init)
 #endif  // BUILD_MODULE_NET

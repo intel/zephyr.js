@@ -333,5 +333,7 @@ void zjs_aio_cleanup()
     jerry_release_value(zjs_aio_prototype);
 }
 
+JERRYX_NATIVE_MODULE (aio, zjs_aio_init)
+
 #endif  // QEMU_BUILD
 #endif  // BUILD_MODULE_AIO

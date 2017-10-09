@@ -92,3 +92,5 @@ jerry_value_t zjs_k64f_init()
 
     return obj;
 }
+
+JERRYX_NATIVE_MODULE (k64f_pins, zjs_k64f_init)

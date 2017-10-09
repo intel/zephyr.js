@@ -1335,5 +1335,6 @@ void zjs_ble_cleanup()
     ble_handle = NULL;
 }
 
+JERRYX_NATIVE_MODULE (ble, zjs_ble_init)
 #endif  // QEMU_BUILD
 #endif  // BUILD_MODULE_BLE

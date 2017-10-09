@@ -533,3 +533,5 @@ void zjs_pme_cleanup()
 {
     jerry_release_value(zjs_pme_prototype);
 }
+
+JERRYX_NATIVE_MODULE (pme, zjs_pme_init)

@@ -362,3 +362,5 @@ void zjs_gpio_cleanup()
     gpio_pin_prototype = 0;
     gpio_api = 0;
 }
+
+JERRYX_NATIVE_MODULE (gpio, zjs_gpio_init)

@@ -223,4 +223,5 @@ void zjs_pwm_cleanup()
     jerry_release_value(zjs_pwm_pin_prototype);
 }
 
+JERRYX_NATIVE_MODULE (pwm, zjs_pwm_init)
 #endif  // BUILD_MODULE_PWM

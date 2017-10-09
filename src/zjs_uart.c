@@ -324,4 +324,5 @@ void zjs_uart_cleanup()
     jerry_release_value(zjs_uart_prototype);
 }
 
+JERRYX_NATIVE_MODULE (uart, zjs_uart_init)
 #endif  // BUILD_MODULE_UART

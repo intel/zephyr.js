@@ -1020,4 +1020,6 @@ void zjs_fs_cleanup()
 {
     ZJS_LIST_FREE(file_handle_t, opened_handles, free_file);
 }
+
+JERRYX_NATIVE_MODULE (fs, zjs_fs_init)
 #endif

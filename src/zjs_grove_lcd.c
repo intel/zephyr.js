@@ -272,5 +272,6 @@ void zjs_grove_lcd_cleanup()
     jerry_release_value(zjs_glcd_prototype);
 }
 
+JERRYX_NATIVE_MODULE (grove_lcd, zjs_grove_lcd_init)
 #endif  // QEMU_BUILD
 #endif  // BUILD_MODULE_GROVE_LCD

@@ -502,3 +502,5 @@ void zjs_event_cleanup()
 
     // TODO: Clean up emit_id I guess
 }
+
+JERRYX_NATIVE_MODULE (events, zjs_event_init)

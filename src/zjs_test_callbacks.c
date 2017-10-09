@@ -43,3 +43,5 @@ jerry_value_t zjs_test_callbacks_init(void)
 
     return cb_obj;
 }
+
+JERRYX_NATIVE_MODULE (test_callbacks, zjs_test_callbacks_init)

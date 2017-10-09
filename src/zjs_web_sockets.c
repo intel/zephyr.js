@@ -1076,3 +1076,5 @@ void zjs_ws_cleanup()
 {
     FTRACE("\n");
 }
+
+JERRYX_NATIVE_MODULE (ws, zjs_ws_init)

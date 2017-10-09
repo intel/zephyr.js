@@ -214,4 +214,5 @@ void zjs_i2c_cleanup()
     jerry_release_value(zjs_i2c_prototype);
 }
 
+JERRYX_NATIVE_MODULE (i2c, zjs_i2c_init)
 #endif  // QEMU_BUILD

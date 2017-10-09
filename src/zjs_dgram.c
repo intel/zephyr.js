@@ -346,4 +346,5 @@ void zjs_dgram_cleanup()
     jerry_release_value(zjs_dgram_socket_prototype);
 }
 
+JERRYX_NATIVE_MODULE (dgram, zjs_dgram_init)
 #endif  // BUILD_MODULE_DGRAM

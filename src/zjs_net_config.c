@@ -379,4 +379,6 @@ jerry_value_t zjs_net_config_init(void)
 
     return config;
 }
+
+JERRYX_NATIVE_MODULE (net-config, zjs_net_config_init)
 #endif

@@ -545,4 +545,5 @@ void zjs_ocf_cleanup()
     jerry_release_value(ocf_object);
 }
 
+JERRYX_NATIVE_MODULE (ocf, zjs_ocf_init)
 #endif  // BUILD_MODULE_OCF

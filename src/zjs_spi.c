@@ -346,3 +346,5 @@ void zjs_spi_cleanup()
 {
     jerry_release_value(zjs_spi_prototype);
 }
+
+JERRYX_NATIVE_MODULE (spi, zjs_spi_init)
