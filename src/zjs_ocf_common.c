@@ -547,7 +547,7 @@ jerry_value_t zjs_ocf_init()
 #endif
 #endif
     // Set up cleanup function for when the object gets freed
-    jerry_set_object_native_pointer(ocf_obj, NULL, &ocf_module_type_info);
+    jerry_set_object_native_pointer(ocf_object, NULL, &ocf_module_type_info);
     return ocf_object;
 }
 

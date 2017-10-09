@@ -1078,7 +1078,7 @@ jerry_value_t zjs_ws_init()
     jerry_value_t ws = zjs_create_object();
     zjs_obj_add_function(ws, "Server", ws_server);
     // Set up cleanup function for when the object gets freed
-    jerry_set_object_native_pointer(ws_obj, NULL, &ws_module_type_info);
+    jerry_set_object_native_pointer(ws, NULL, &ws_module_type_info);
     return ws;
 }
 

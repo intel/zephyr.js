@@ -14,7 +14,6 @@
 #include <misc/util.h>
 
 // ZJS includes
-#include "zjs_grove_lcd.h"
 #include "zjs_ipm.h"
 #include "zjs_util.h"
 

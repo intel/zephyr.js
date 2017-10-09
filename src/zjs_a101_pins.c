@@ -2,7 +2,6 @@
 
 // ZJS includes
 #include "zjs_common.h"
-#include "zjs_gpio.h"
 #include "zjs_pwm.h"
 #include "zjs_util.h"
 

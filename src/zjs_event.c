@@ -468,10 +468,23 @@ void *zjs_event_get_user_handle(jerry_value_t obj)
     return NULL;
 }
 
+void zjs_event_cleanup()
+{
+    jerry_release_value(zjs_event_emitter_prototype);
+    zjs_event_initialized = false;
+    // TODO: Clean up emit_id I guess
+}
+
+static const jerry_object_native_info_t event_module_type_info = {
+   .free_cb = zjs_event_cleanup
+};
+
 static ZJS_DECL_FUNC(event_constructor)
 {
     jerry_value_t new_emitter = zjs_create_object();
     zjs_make_emitter(new_emitter, ZJS_UNDEFINED, NULL, NULL);
+    // Set up cleanup function for when the object gets freed
+    jerry_set_object_native_pointer(new_emitter, NULL, &event_module_type_info);
     return new_emitter;
 }
 
@@ -496,24 +509,11 @@ void zjs_event_create_prototype() {
     }
 }
 
-void zjs_event_cleanup()
-{
-    jerry_release_value(zjs_event_emitter_prototype);
-    zjs_event_initialized = false;
-    // TODO: Clean up emit_id I guess
-}
-
-static const jerry_object_native_info_t event_module_type_info = {
-   .free_cb = zjs_event_cleanup
-};
-
 jerry_value_t zjs_event_init()
 {
     // NOTE: dropped defaultMaxListeners as this didn't seem important for us
     zjs_event_create_prototype();
     emit_id = zjs_add_c_callback(NULL, emit_event_callback);
-    // Set up cleanup function for when the object gets freed
-    jerry_set_object_native_pointer(event_obj, NULL, &event_module_type_info);
     return jerry_create_external_function(event_constructor);
 }
 

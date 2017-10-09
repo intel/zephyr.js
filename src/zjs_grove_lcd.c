@@ -15,7 +15,6 @@
 #include <misc/util.h>
 
 // ZJS includes
-#include "zjs_grove_lcd.h"
 #include "zjs_util.h"
 
 #define MAX_BUFFER_SIZE 256
@@ -274,7 +273,7 @@ jerry_value_t zjs_grove_lcd_init()
     jerry_release_value(val);
 
     // Set up cleanup function for when the object gets freed
-    jerry_set_object_native_pointer(grove_lcd_obj, NULL, &grove_lcd_module_type_info);
+    jerry_set_object_native_pointer(glcd_obj, NULL, &grove_lcd_module_type_info);
     return glcd_obj;
 }
 

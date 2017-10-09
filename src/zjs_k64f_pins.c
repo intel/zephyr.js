@@ -4,7 +4,6 @@
 #include <zephyr.h>
 
 // ZJS includes
-#include "zjs_gpio.h"
 #include "zjs_pwm.h"
 #include "zjs_util.h"
 
