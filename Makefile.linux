@@ -39,9 +39,10 @@ CORE_OBJ =	$(CORE_SRC:%.c=%.o)
 LINUX_INCLUDES += 	-Isrc/ \
 			-I$(ZJS_BASE)/outdir/include \
 			-I$(JERRY_BASE)/jerry-core/include \
+			-I$(JERRY_BASE)/jerry-ext/include \
 			-I$(JERRY_BASE)/jerry-core/jrt
 
-JERRY_LIBS += 		-l jerry-core -lm
+JERRY_LIBS += 		-l jerry-core -lm -l jerry-ext -lm
 
 JERRY_LIB_PATH += 	-L $(JERRY_BASE)/build/lib/
 

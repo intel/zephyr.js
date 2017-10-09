@@ -227,7 +227,7 @@ flash:  analyze generate $(JERRYLIB) $(ARC)
 
 # Build for zephyr, default target
 .PHONY: zephyr
-zephyr: analyze generate $(JERRYLIB) $(ARC)
+zephyr: analyze generate $(JERRYLIB) outdir/$(BOARD)/libjerry-ext.a $(ARC)
 	@make -f Makefile.zephyr -j4 \
 					BOARD=$(BOARD) \
 					VARIANT=$(VARIANT) \
@@ -267,6 +267,7 @@ $(JERRYLIB):
 	$(MAKE) -C $(JERRY_BASE) -f targets/zephyr/Makefile.zephyr BOARD=$(BOARD) EXT_JERRY_FLAGS="$(EXT_JERRY_FLAGS)" jerry
 	mkdir -p outdir/$(BOARD)/
 	cp $(JERRY_BASE)/build/$(BOARD)/obj-$(BOARD)/lib/libjerry-core.a $(JERRYLIB)
+	cp $(JERRY_BASE)/build/$(BOARD)/obj-$(BOARD)/lib/libjerry-ext.a outdir/$(BOARD)/
 
 # Give an error if we're asked to create the JS file
 $(JS):

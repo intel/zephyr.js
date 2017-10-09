@@ -10,10 +10,10 @@ BOARD ?= arduino_101
 CONF_FILE ?= prj.conf
 
 ifeq ($(SNAPSHOT), on)
-KBUILD_ZEPHYR_APP = libjerry-core-snapshot.a \
+KBUILD_ZEPHYR_APP = 	libjerry-core-snapshot.a \
 			libjerry-ext.a
 else
-KBUILD_ZEPHYR_APP = libjerry-core-parser.a \
+KBUILD_ZEPHYR_APP = 	libjerry-core-parser.a \
 			libjerry-ext.a
 endif
 
