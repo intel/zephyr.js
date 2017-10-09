@@ -12,6 +12,7 @@
 #define DEFAULT_MAX_LISTENERS   10
 
 static jerry_value_t zjs_event_emitter_prototype;
+static bool zjs_event_initialized = false;
 
 typedef struct listener {
     jerry_value_t func;
@@ -427,6 +428,9 @@ bool zjs_emit_event_priv(jerry_value_t obj, const char *event_name,
 void zjs_make_emitter(jerry_value_t obj, jerry_value_t prototype,
                       void *user_data, zjs_event_free free_cb)
 {
+    if (!zjs_event_initialized) {
+        zjs_event_create_prototype();
+    }
     jerry_value_t proto = zjs_event_emitter_prototype;
     if (jerry_value_is_object(prototype)) {
         jerry_set_prototype(prototype, proto);
@@ -471,36 +475,46 @@ static ZJS_DECL_FUNC(event_constructor)
     return new_emitter;
 }
 
-jerry_value_t zjs_event_init()
-{
-    zjs_native_func_t array[] = {
-        { add_listener, "on" },
-        { add_listener, "addListener" },
-        { emit_event, "emit" },
-        { remove_listener, "removeListener" },
-        { remove_all_listeners, "removeAllListeners" },
-        { get_event_names, "eventNames" },
-        { get_max_listeners, "getMaxListeners" },
-        { get_listener_count, "listenerCount" },
-        { get_listeners, "listeners" },
-        { set_max_listeners, "setMaxListeners" },
-        { NULL, NULL }
-    };
-    zjs_event_emitter_prototype = zjs_create_object();
-    zjs_obj_add_functions(zjs_event_emitter_prototype, array);
-
-    // NOTE: dropped defaultMaxListeners as this didn't seem important for us
-
-    emit_id = zjs_add_c_callback(NULL, emit_event_callback);
-
-    return jerry_create_external_function(event_constructor);
+void zjs_event_create_prototype() {
+    if (!zjs_event_initialized) {
+        zjs_native_func_t array[] = {
+            { add_listener, "on" },
+            { add_listener, "addListener" },
+            { emit_event, "emit" },
+            { remove_listener, "removeListener" },
+            { remove_all_listeners, "removeAllListeners" },
+            { get_event_names, "eventNames" },
+            { get_max_listeners, "getMaxListeners" },
+            { get_listener_count, "listenerCount" },
+            { get_listeners, "listeners" },
+            { set_max_listeners, "setMaxListeners" },
+            { NULL, NULL }
+        };
+        zjs_event_emitter_prototype = zjs_create_object();
+        zjs_obj_add_functions(zjs_event_emitter_prototype, array);
+        zjs_event_initialized = true;
+    }
 }
 
 void zjs_event_cleanup()
 {
     jerry_release_value(zjs_event_emitter_prototype);
-
+    zjs_event_initialized = false;
     // TODO: Clean up emit_id I guess
+}
+
+static const jerry_object_native_info_t event_module_type_info = {
+   .free_cb = zjs_event_cleanup
+};
+
+jerry_value_t zjs_event_init()
+{
+    // NOTE: dropped defaultMaxListeners as this didn't seem important for us
+    zjs_event_create_prototype();
+    emit_id = zjs_add_c_callback(NULL, emit_event_callback);
+    // Set up cleanup function for when the object gets freed
+    jerry_set_object_native_pointer(event_obj, NULL, &event_module_type_info);
+    return jerry_create_external_function(event_constructor);
 }
 
 JERRYX_NATIVE_MODULE (events, zjs_event_init)
