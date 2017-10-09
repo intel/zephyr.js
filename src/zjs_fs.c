@@ -981,6 +981,15 @@ static ZJS_DECL_FUNC(zjs_fs_read_file_async)
 }
 #endif
 
+void zjs_fs_cleanup()
+{
+    ZJS_LIST_FREE(file_handle_t, opened_handles, free_file);
+}
+
+static const jerry_object_native_info_t fs_module_type_info = {
+   .free_cb = zjs_fs_cleanup
+};
+
 jerry_value_t zjs_fs_init()
 {
     jerry_value_t fs = zjs_create_object();
@@ -1012,13 +1021,9 @@ jerry_value_t zjs_fs_init()
     zjs_obj_add_function(fs, "writeFile", zjs_fs_write_file_async);
     zjs_obj_add_function(fs, "readFile", zjs_fs_read_file_async);
 #endif
-
+    // Set up cleanup function for when the object gets freed
+    jerry_set_object_native_pointer(fs, NULL, &fs_module_type_info);
     return fs;
-}
-
-void zjs_fs_cleanup()
-{
-    ZJS_LIST_FREE(file_handle_t, opened_handles, free_file);
 }
 
 JERRYX_NATIVE_MODULE (fs, zjs_fs_init)

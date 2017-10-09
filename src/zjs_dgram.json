@@ -25,8 +25,5 @@
         ]
     },
     "zjs_config": ["-DBUILD_MODULE_DGRAM"],
-    "src": ["zjs_dgram.c"],
-    "header": ["zjs_dgram.h"],
-    "init": ["zjs_dgram_init"],
-    "cleanup": ["zjs_dgram_cleanup"]
+    "src": ["zjs_dgram.c"]
 }

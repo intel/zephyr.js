@@ -304,6 +304,15 @@ static ZJS_DECL_FUNC(uart_init)
     return handle->uart_obj;
 }
 
+void zjs_uart_cleanup()
+{
+    jerry_release_value(zjs_uart_prototype);
+}
+
+static const jerry_object_native_info_t uart_module_type_info = {
+   .free_cb = zjs_uart_cleanup
+};
+
 jerry_value_t zjs_uart_init()
 {
     zjs_native_func_t array[] = {
@@ -316,12 +325,9 @@ jerry_value_t zjs_uart_init()
 
     jerry_value_t uart_obj = zjs_create_object();
     zjs_obj_add_function(uart_obj, "init", uart_init);
+    // Set up cleanup function for when the object gets freed
+    jerry_set_object_native_pointer(uart_obj, NULL, &uart_module_type_info);
     return uart_obj;
-}
-
-void zjs_uart_cleanup()
-{
-    jerry_release_value(zjs_uart_prototype);
 }
 
 JERRYX_NATIVE_MODULE (uart, zjs_uart_init)

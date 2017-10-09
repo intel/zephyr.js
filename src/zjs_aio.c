@@ -302,10 +302,25 @@ static ZJS_DECL_FUNC(zjs_aio_open)
     jerry_set_prototype(pinobj, zjs_aio_prototype);
     zjs_obj_add_number(pinobj, "pin", pin);
 
+    aio_handle_t *handle = zjs_aio_alloc_handle();
+    if (!handle)
+        return zjs_error("could not allocate handle");
+
+      jerry_set_object_native_pointer(pinobj, handle, &aio_type_info);
+
     return pinobj;
 }
 
-jerry_value_t zjs_aio_init()
+void zjs_aio_cleanup()
+{
+    jerry_release_value(zjs_aio_prototype);
+}
+
+static const jerry_object_native_info_t aio_module_type_info = {
+   .free_cb = zjs_aio_cleanup
+};
+
+static jerry_value_t zjs_aio_init()
 {
     zjs_ipm_init();
     zjs_ipm_register_callback(MSG_ID_AIO, ipm_msg_receive_callback);
@@ -325,15 +340,11 @@ jerry_value_t zjs_aio_init()
     // create global AIO object
     jerry_value_t aio_obj = zjs_create_object();
     zjs_obj_add_function(aio_obj, "open", zjs_aio_open);
+    // Set up cleanup function for when the object gets freed
+    jerry_set_object_native_pointer(aio_obj, NULL, &aio_module_type_info);
     return aio_obj;
 }
 
-void zjs_aio_cleanup()
-{
-    jerry_release_value(zjs_aio_prototype);
-}
-
 JERRYX_NATIVE_MODULE (aio, zjs_aio_init)
-
 #endif  // QEMU_BUILD
 #endif  // BUILD_MODULE_AIO

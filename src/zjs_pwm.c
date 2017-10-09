@@ -11,7 +11,6 @@
 #include <zephyr.h>
 
 // ZJS includes
-#include "zjs_pwm.h"
 #include "zjs_util.h"
 
 static jerry_value_t zjs_pwm_pin_prototype;
@@ -189,6 +188,15 @@ static ZJS_DECL_FUNC(zjs_pwm_open)
     return pin_obj;
 }
 
+void zjs_pwm_cleanup()
+{
+    jerry_release_value(zjs_pwm_pin_prototype);
+}
+
+static const jerry_object_native_info_t pwm_module_type_info = {
+   .free_cb = zjs_pwm_cleanup
+};
+
 jerry_value_t zjs_pwm_init()
 {
     // effects: finds the PWM driver and registers the PWM JS object
@@ -215,12 +223,9 @@ jerry_value_t zjs_pwm_init()
     // create PWM object
     jerry_value_t pwm_obj = zjs_create_object();
     zjs_obj_add_function(pwm_obj, "open", zjs_pwm_open);
+    // Set up cleanup function for when the object gets freed
+    jerry_set_object_native_pointer(pwm_obj, NULL, &pwm_module_type_info);
     return pwm_obj;
-}
-
-void zjs_pwm_cleanup()
-{
-    jerry_release_value(zjs_pwm_pin_prototype);
 }
 
 JERRYX_NATIVE_MODULE (pwm, zjs_pwm_init)

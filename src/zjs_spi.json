@@ -11,8 +11,5 @@
         ]
     },
     "zjs_config": ["-DBUILD_MODULE_SPI"],
-    "src": ["zjs_spi.c"],
-    "header": ["zjs_spi.h"],
-    "init": ["zjs_spi_init"],
-    "cleanup": ["zjs_spi_cleanup"]
+    "src": ["zjs_spi.c"]
 }

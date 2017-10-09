@@ -15,7 +15,6 @@
 #include <zephyr.h>
 
 // ZJS includes
-#include "zjs_ble.h"
 #include "zjs_buffer.h"
 #include "zjs_callbacks.h"
 #include "zjs_event.h"
@@ -1283,6 +1282,25 @@ static ZJS_DECL_FUNC(zjs_ble_descriptor)
     return jerry_acquire_value(argv[0]);
 }
 
+void zjs_ble_cleanup()
+{
+    ble_connection_t *conn = ble_handle->connections;
+    while (conn) {
+        ble_connection_t *tmp = conn;
+        bt_conn_unref(tmp->bt_conn);
+        conn = conn->next;
+        zjs_free(tmp);
+    }
+    zjs_ble_free_services(ble_handle->services);
+    jerry_release_value(ble_handle->ble_obj);
+    zjs_free(ble_handle);
+    ble_handle = NULL;
+}
+
+static const jerry_object_native_info_t ble_module_type_info = {
+   .free_cb = zjs_ble_cleanup
+};
+
 jerry_value_t zjs_ble_init()
 {
     k_sem_init(&ble_sem, 0, 1);
@@ -1317,22 +1335,10 @@ jerry_value_t zjs_ble_init()
     bt_conn_auth_cb_register(&zjs_ble_auth_cb_display);
 
     ble_handle = handle;
-    return ble_obj;
-}
 
-void zjs_ble_cleanup()
-{
-    ble_connection_t *conn = ble_handle->connections;
-    while (conn) {
-        ble_connection_t *tmp = conn;
-        bt_conn_unref(tmp->bt_conn);
-        conn = conn->next;
-        zjs_free(tmp);
-    }
-    zjs_ble_free_services(ble_handle->services);
-    jerry_release_value(ble_handle->ble_obj);
-    zjs_free(ble_handle);
-    ble_handle = NULL;
+    jerry_set_object_native_pointer(ble_obj, ble_handle, &ble_module_type_info);
+
+    return ble_obj;
 }
 
 JERRYX_NATIVE_MODULE (ble, zjs_ble_init)

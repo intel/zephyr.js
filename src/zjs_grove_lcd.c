@@ -173,6 +173,15 @@ static ZJS_DECL_FUNC(zjs_glcd_init)
     return dev_obj;
 }
 
+void zjs_grove_lcd_cleanup()
+{
+    jerry_release_value(zjs_glcd_prototype);
+}
+
+static const jerry_object_native_info_t grove_lcd_module_type_info = {
+   .free_cb = zjs_grove_lcd_cleanup
+};
+
 // Note. setInputState is not supported in Zephyr driver yet
 // with right-to-left text flow (GLCD_IS_SHIFT_DECREMENT|GLCD_IS_ENTRY_RIGHT)
 // and defaults to left-to-right only, so we don't support
@@ -264,12 +273,9 @@ jerry_value_t zjs_grove_lcd_init()
     zjs_set_property(glcd_obj, "GROVE_RGB_BLUE", val);
     jerry_release_value(val);
 
+    // Set up cleanup function for when the object gets freed
+    jerry_set_object_native_pointer(grove_lcd_obj, NULL, &grove_lcd_module_type_info);
     return glcd_obj;
-}
-
-void zjs_grove_lcd_cleanup()
-{
-    jerry_release_value(zjs_glcd_prototype);
 }
 
 JERRYX_NATIVE_MODULE (grove_lcd, zjs_grove_lcd_init)

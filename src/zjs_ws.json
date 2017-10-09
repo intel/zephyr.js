@@ -30,8 +30,5 @@
         ]
     },
     "src": ["zjs_web_sockets.c"],
-    "zjs_config": ["-DBUILD_MODULE_WS"],
-    "header": ["zjs_web_sockets.h"],
-    "init": ["zjs_ws_init"],
-    "cleanup": ["zjs_ws_cleanup"]
+    "zjs_config": ["-DBUILD_MODULE_WS"]
 }

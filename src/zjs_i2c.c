@@ -9,7 +9,6 @@
 
 // ZJS includes
 #include "zjs_buffer.h"
-#include "zjs_i2c.h"
 #include "zjs_i2c_handler.h"
 #include "zjs_util.h"
 
@@ -186,6 +185,17 @@ static ZJS_DECL_FUNC(zjs_i2c_open)
     return i2c_obj;
 }
 
+void zjs_i2c_cleanup()
+{
+    zjs_print_mem_stats();
+    jerry_release_value(zjs_i2c_prototype);
+    zjs_print_mem_stats();
+}
+
+static const jerry_object_native_info_t i2c_module_type_info = {
+   .free_cb = zjs_i2c_cleanup
+};
+
 jerry_value_t zjs_i2c_init()
 {
 #ifdef CONFIG_BOARD_ARDUINO_101
@@ -206,12 +216,9 @@ jerry_value_t zjs_i2c_init()
     // create global I2C object
     jerry_value_t i2c_obj = zjs_create_object();
     zjs_obj_add_function(i2c_obj, "open", zjs_i2c_open);
+    // Set up cleanup function for when the object gets freed
+    jerry_set_object_native_pointer(i2c_obj, NULL, &i2c_module_type_info);
     return i2c_obj;
-}
-
-void zjs_i2c_cleanup()
-{
-    jerry_release_value(zjs_i2c_prototype);
 }
 
 JERRYX_NATIVE_MODULE (i2c, zjs_i2c_init)

@@ -21,8 +21,5 @@
         ]
     },
     "zjs_config": ["-DBUILD_MODULE_FS"],
-    "src":["zjs_fs.c"],
-    "header": ["zjs_fs.h"],
-    "init": ["zjs_fs_init"],
-    "cleanup": ["zjs_fs_cleanup"]
+    "src":["zjs_fs.c"]
 }

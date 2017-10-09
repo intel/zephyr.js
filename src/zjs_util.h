@@ -10,6 +10,7 @@
 
 // JerryScript includes
 #include "jerryscript.h"
+#include "jerryscript-ext/module.h"
 
 // ZJS includes
 #include "zjs_common.h"

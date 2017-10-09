@@ -9,7 +9,6 @@
 // ZJS includes
 #include "zjs_buffer.h"
 #include "zjs_ipm.h"
-#include "zjs_pme.h"
 #include "zjs_util.h"
 
 #define ZJS_PME_TIMEOUT_TICKS 5000
@@ -447,6 +446,15 @@ static ZJS_DECL_FUNC(zjs_pme_restore_neurons)
     return ZJS_UNDEFINED;
 }
 
+void zjs_pme_cleanup()
+{
+    jerry_release_value(zjs_pme_prototype);
+}
+
+static const jerry_object_native_info_t pme_module_type_info = {
+   .free_cb = zjs_pme_cleanup
+};
+
 jerry_value_t zjs_pme_init()
 {
     zjs_ipm_init();
@@ -525,13 +533,9 @@ jerry_value_t zjs_pme_init()
     val = jerry_create_number(MAX_NEURONS);
     zjs_set_property(pme_obj, "MAX_NEURONS", val);
     jerry_release_value(val);
-
+    // Set up cleanup function for when the object gets freed
+    jerry_set_object_native_pointer(pme_obj, NULL, &pme_module_type_info);
     return pme_obj;
-}
-
-void zjs_pme_cleanup()
-{
-    jerry_release_value(zjs_pme_prototype);
 }
 
 JERRYX_NATIVE_MODULE (pme, zjs_pme_init)
