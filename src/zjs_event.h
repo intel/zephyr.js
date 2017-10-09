@@ -192,7 +192,7 @@ void zjs_release_args(void *unused, jerry_value_t argv[], u32_t argc);
  * @return              Event constructor
  */
 jerry_value_t zjs_event_init();
-
+void zjs_event_create_prototype();
 /** Release resources held by the event module */
 void zjs_event_cleanup();
 
