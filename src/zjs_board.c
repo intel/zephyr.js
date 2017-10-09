@@ -6,7 +6,6 @@
 // ZJS includes
 #include "zjs_board.h"
 #include "zjs_common.h"
-#include "zjs_gpio.h"
 #include "zjs_util.h"
 
 #if defined(CONFIG_BOARD_ARDUINO_101) || defined(ZJS_LINUX_BUILD)
