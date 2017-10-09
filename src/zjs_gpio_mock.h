@@ -3,10 +3,6 @@
 #ifndef __zjs_gpio_mock_h__
 #define __zjs_gpio_mock_h__
 
-#if defined(ZJS_GPIO_MOCK) && !defined(__zjs_gpio_h__)
-#error zjs_gpio.h must be included before zjs_gpio_mock.h!
-#endif
-
 #include "jerryscript.h"
 
 #define DEVICE jerry_value_t
