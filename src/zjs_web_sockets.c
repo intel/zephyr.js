@@ -715,7 +715,7 @@ static void receive_packet(const void *buffer, u32_t length)
         dump_bytes("DATA", data, len);
 #endif
         if (con->state == UNCONNECTED) {
-            ZVAL_MUTABLE protocol_list;
+            ZVAL_MUTABLE protocol_list = ZJS_UNDEFINED;
             con->accept_key = zjs_malloc(64);
             if (!con->accept_key) {
                 DBG_PRINT("could not allocate accept key\n");
@@ -801,6 +801,10 @@ static void receive_packet(const void *buffer, u32_t length)
                 jerry_value_t conn = create_ws_connection(con);
                 zjs_emit_event(con->server, "connection", &conn, 1);
             } else {
+                if (jerry_value_is_undefined(protocol_list)) {
+                    // create empty array so handler can check length
+                    protocol_list = jerry_create_array(0);
+                }
                 // handler registered, accepted based on return of handler
                 zjs_signal_callback(con->accept_handler_id, &protocol_list,
                                     sizeof(jerry_value_t));
