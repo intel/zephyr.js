@@ -880,7 +880,7 @@ static void post_accept_handler(void *handle, jerry_value_t ret_val)
         emit_error(con->server, "out of memory");
         return;
     }
-    snprintf(send_data, sdata_size, "%s%s\r\nSec-WebSocket-Protcol: %s\r\n\r\n",
+    snprintf(send_data, sdata_size, "%s%s\r\nSec-WebSocket-Protocol: %s\r\n\r\n",
              accept_header, con->accept_key, proto);
 
     DBG_PRINT("Sending accept packet\n");
