@@ -33,10 +33,10 @@ struct routine_map {
 static u8_t num_routines = 0;
 struct routine_map svc_routine_map[NUM_SERVICE_ROUTINES];
 
-    static jerryx_module_resolver_t resolvers[1] =
-    {
-        jerryx_module_native_resolver
-    };
+static const jerryx_module_resolver_t *resolvers[] =
+{
+    &jerryx_module_native_resolver
+};
 
 static ZJS_DECL_FUNC(native_require_handler)
 {
@@ -50,11 +50,14 @@ static ZJS_DECL_FUNC(native_require_handler)
         return RANGE_ERROR("argument too long");
     }
 
-    jerry_value_t js_module = jerryx_module_resolve (module, resolvers, 1);
+    //const jerry_char_t *modulePtr = module;
+    jerry_value_t native_module = jerryx_module_resolve (argv[0], resolvers, 1);
     // If we found our module, return it.
-    if (!jerry_value_has_error_flag (js_module)) {
-        return js_module;
+    if (jerry_value_has_error_flag (native_module)) {
+        jerry_release_value(native_module);
     }
+    else
+        return native_module;
     DBG_PRINT("Native module not found, searching for JavaScript module %s\n",
               module);
 #ifdef ZJS_LINUX_BUILD

@@ -93,6 +93,7 @@ FUNC_NAME ?= off
 # JerryScript options
 JERRY_BASE ?= $(ZJS_BASE)/deps/jerryscript
 EXT_JERRY_FLAGS ?=	-DENABLE_ALL_IN_ONE=$(ALL_IN_ONE) \
+			-DFEATURE_INIT_FINI=ON \
 			-DFEATURE_PROFILE=$(ZJS_BASE)/outdir/$(BOARD)/jerry_feature.profile \
 			-DFEATURE_ERROR_MESSAGES=ON \
 			-DJERRY_LIBM=OFF \
@@ -314,9 +315,11 @@ analyze: $(JS)
 		if ! cmp outdir/$(BOARD)/jerry_feature.profile.bak outdir/$(BOARD)/jerry_feature.profile; \
 		then \
 			rm -f outdir/$(BOARD)/libjerry-core*.a; \
+			rm -f outdir/$(BOARD)/libjerry-ext*.a; \
 		fi \
 	else \
 		rm -f outdir/$(BOARD)/libjerry-core*.a; \
+		rm -f outdir/$(BOARD)/libjerry-ext*.a; \
 	fi
 
 # Update dependency repos
@@ -382,6 +385,7 @@ ifeq ($(BOARD), linux)
 else
 	@rm -rf $(JERRY_BASE)/build/$(BOARD)/;
 	@rm -f outdir/$(BOARD)/libjerry-core*.a;
+	@rm -f outdir/$(BOARD)/libjerry-ext*.a;
 	@make -f Makefile.zephyr clean BOARD=$(BOARD);
 	@cd arc/; make clean;
 endif
