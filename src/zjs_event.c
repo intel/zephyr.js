@@ -400,12 +400,6 @@ bool zjs_emit_event_priv(jerry_value_t obj, const char *event_name,
         return false;
     }
 
-    // find the event among our defined events
-    event_t *ev = handle->events;
-    while (ev) {
-        ev = ev->next;
-    }
-
     event_t *event = ZJS_LIST_FIND_CMP(event_t, handle->events, compare_name,
                                        event_name);
     if (!event || !event->listeners) {
