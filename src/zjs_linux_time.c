@@ -32,6 +32,13 @@ void zjs_port_timer_init(zjs_port_timer_t *timer, zjs_port_timer_cb cb)
 
 void zjs_port_timer_start(zjs_port_timer_t *timer, u32_t interval, u32_t repeat)
 {
+    /*
+     * Signals require > 0 timeout, so if a zero timeout is passed we have to
+     * just set it to 1.
+     */
+    if (repeat == 0)
+        repeat++;
+
     uint32_t rsec = repeat / 1000;
     uint32_t rms = repeat - (rsec * 1000);
 
