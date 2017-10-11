@@ -1,10 +1,8 @@
 {
     "module": "aio",
     "require": "aio",
-    "depends": ["ipm"],
+    "depends": ["aio_a101", "events"],
     "targets": ["arduino_101"],
-    "zjs_config": ["-DBUILD_MODULE_AIO"],
-    "src": ["zjs_aio.c"],
     "header": ["zjs_aio.h"],
     "init": ["zjs_aio_init"],
     "cleanup": ["zjs_aio_cleanup"]
