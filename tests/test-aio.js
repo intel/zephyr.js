@@ -24,20 +24,17 @@ var waveFlag = 0;
 var OldwaveFlag = 1;
 var readTimes = 0;
 var readCount = 0;
-var readValue = 0;
 
 var pinB = gpio.open({pin: "IO4", mode: 'out'});
 pinB.write(1);
 
 // test AIOPin on
-pinA.on("change", function () {
-    readValue = pinA.read();
-
-    if (readValue <= 100) {
+pinA.on("change", function (value) {
+    if (value <= 100) {
         waveFlag = 0;
     }
 
-    if (readValue >= 4000) {
+    if (value >= 4000) {
         waveFlag = 1;
     }
 
@@ -48,6 +45,10 @@ pinA.on("change", function () {
         readCount++;
     }
 });
+
+var valueChanged = function(value) {
+    readCount++;
+}
 
 // test AIOPin read
 var onInterval = setInterval(function () {
@@ -71,16 +72,14 @@ var onInterval = setInterval(function () {
         // test AIOPin callback as 'null'
         readCount = 0;
 
-        pinA.on("change", function () {
-            readCount++;
-        });
+        pinA.on("change", valueChanged);
 
-        pinA.on("change", null);
+        pinA.removeListener("change", valueChanged);
     }
 
     if (readTimes === 8) {
         assert(readCount === 0,
-               "aiopin: callback as 'null' and be discarded");
+               "aiopin: removed listener and be discarded");
     }
 
     // test AIOPin readAsync
