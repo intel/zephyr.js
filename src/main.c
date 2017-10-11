@@ -108,13 +108,8 @@ u8_t process_cmd_line(int argc, char *argv[])
 }
 #else
 #ifdef BUILD_MODULE_BLE
-#ifndef ZJS_ASHELL
-// INTERRUPT SAFE FUNCTION: No JerryScript VM, allocs, or release prints!
-static void ble_bt_ready(int err)
-{
-    DBG_PRINT("bt_ready() is called [err %d]\n", err);
-    zjs_ble_emit_powered_event();
-}
+#ifndef BUILD_MODULE_OCF  // OCF will call bt_enable() itself
+extern void ble_bt_ready(int err);
 #endif
 #endif
 #endif

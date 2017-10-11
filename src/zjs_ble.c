@@ -1288,14 +1288,12 @@ static ZJS_DECL_FUNC(zjs_ble_descriptor)
     return jerry_acquire_value(argv[0]);
 }
 
-#ifdef ZJS_ASHELL
 // INTERRUPT SAFE FUNCTION: No JerryScript VM, allocs, or release prints!
-static void ble_bt_ready(int err)
+void ble_bt_ready(int err)
 {
     DBG_PRINT("bt_ready() is called [err %d]\n", err);
     zjs_ble_emit_powered_event();
 }
-#endif
 
 jerry_value_t zjs_ble_init()
 {
