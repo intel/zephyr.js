@@ -11,4 +11,4 @@ var webusb = require('webusb');
 //   notification for other URLs.
 
 // suggest that the browser visit this URL to connect to the device
-webusb.setURL("https://github.com/01org/zephyrjs");
+webusb.setURL("https://github.com/01org/zephyr.js");
