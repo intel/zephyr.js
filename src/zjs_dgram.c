@@ -5,6 +5,7 @@
 // Zephyr includes
 #include <net/net_context.h>
 #include <net/net_pkt.h>
+#include <net/udp.h>
 #if defined(CONFIG_NET_L2_BLUETOOTH)
 #include <bluetooth/bluetooth.h>
 #endif
@@ -136,8 +137,9 @@ static void udp_received(struct net_context *context,
     ZVAL_MUTABLE buf_js = zjs_buffer_create(recv_len, &buf);
     ZVAL rinfo = zjs_create_object();
     if (buf) {
-        zjs_obj_add_number(rinfo, "port",
-                           ntohs(NET_UDP_HDR(net_pkt)->src_port));
+        struct net_udp_hdr placeholder;
+        struct net_udp_hdr *hdr = net_udp_get_hdr(net_pkt, &placeholder);
+        zjs_obj_add_number(rinfo, "port", ntohs(hdr->src_port));
         zjs_obj_add_string(rinfo, "family",
                            family == AF_INET ? "IPv4" : "IPv6");
         zjs_obj_add_string(rinfo, "address", addr_str);

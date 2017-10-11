@@ -16,7 +16,6 @@ static char FTRACE_PREFIX[] = "net";
 #include <errno.h>
 
 // Zephyr includes
-#include <sections.h>
 #include <zephyr.h>
 
 #include <net/net_context.h>
@@ -194,12 +193,14 @@ static void zjs_copy_sockaddr(struct sockaddr *dst, struct sockaddr *src,
     //  effects: copies src to dest, but only the number of bytes required by
     //             the underlying address family; if len is given, asserts
     //             that it matches the expected size
-    if (src->family == AF_INET) {
-        ZJS_ASSERT(!len || len == sizeof(sockaddr_in), "expected IPv4 length");
+    if (src->sa_family == AF_INET) {
+        ZJS_ASSERT(!len || len == sizeof(struct sockaddr_in),
+                   "expected IPv4 length");
         *(struct sockaddr_in *)dst = *(struct sockaddr_in *)src;
     }
-    else if (src->family == AF_INET6) {
-        ZJS_ASSERT(!len || len == sizeof(sockaddr_in6), "expected IPv6 length");
+    else if (src->sa_family == AF_INET6) {
+        ZJS_ASSERT(!len || len == sizeof(struct sockaddr_in6),
+                   "expected IPv6 length");
         *(struct sockaddr_in6 *)dst = *(struct sockaddr_in6 *)src;
     }
     else {
@@ -1055,13 +1056,13 @@ static ZJS_DECL_FUNC(server_listen)
 
     struct sockaddr addr;
     memset(&addr, 0, sizeof(struct sockaddr));
-    addr.family = (family == 6) ? AF_INET6 : AF_INET;  // default to IPv4
+    addr.sa_family = (family == 6) ? AF_INET6 : AF_INET;  // default to IPv4
 
-    CHECK(net_context_get(addr.family, SOCK_STREAM, IPPROTO_TCP,
+    CHECK(net_context_get(addr.sa_family, SOCK_STREAM, IPPROTO_TCP,
                           &server_h->server_ctx));
 
     u32_t addrlen;
-    if (addr.family == AF_INET) {
+    if (addr.sa_family == AF_INET) {
         struct sockaddr_in *addr4 = (struct sockaddr_in *)&addr;
         addr4->sin_port = htons((int)port);
         net_addr_pton(AF_INET, hostname, &addr4->sin_addr);

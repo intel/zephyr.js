@@ -314,11 +314,25 @@ def write_makefile(src, zconf, file):
                 f.write("\t" + i + " \\\n")
             f.write("\n")
 
+def expand_match(match):
+    """Expand regexp match as a shell variable, if possible"""
+    # requires: match should be VARNAME from $(VARNAME) string
+    #  effects: tries to expand $VARNAME as a shell variable; if it fails,
+    #             returns the original $(VARNAME) string
+    varname = match.groups()[0]
+    ref = '$' + varname
+    expanded = os.path.expandvars(ref)
+    if ref == expanded:
+        return '$(' + varname + ')'
+    return expanded
+
 def write_zconf(list, file):
     """Write Zephyr config options to a file"""
     with open(file, "w") as f:
         for i in list:
-            f.write(i + '\n')
+            # expand any shell variables of the form $(VARNAME)
+            expanded = re.sub(r"\$\((\w+)\)", expand_match, i)
+            f.write(expanded + '\n')
 
 def write_modules(list, tree):
     """Write zjs_modules_gen.h file"""
