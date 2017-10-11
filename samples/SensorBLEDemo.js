@@ -82,16 +82,10 @@ ble.on('advertisingStart', function(error) {
 
 ble.on('accept', function(clientAddress) {
     console.log("Client connected: " + clientAddress);
-    setTimeout(function() {
-        accel.start();
-        gyro.start();
-    }, 2000);
 });
 
 ble.on('disconnect', function(clientAddress) {
     console.log("Client disconnected: " + clientAddress);
-    accel.stop();
-    gyro.stop();
 });
 
 var accel = new Accelerometer({
@@ -101,6 +95,9 @@ var accel = new Accelerometer({
 var gyro = new Gyroscope({
     frequency: updateFrequency
 });
+
+accel.start();
+gyro.start();
 
 accel.onchange = function() {
     SensorCharacteristic.valueChange(1, accel.x, accel.y, accel.z);
