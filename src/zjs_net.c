@@ -194,11 +194,13 @@ static void zjs_copy_sockaddr(struct sockaddr *dst, struct sockaddr *src,
     //             the underlying address family; if len is given, asserts
     //             that it matches the expected size
     if (src->sa_family == AF_INET) {
-        ZJS_ASSERT(!len || len == sizeof(sockaddr_in), "expected IPv4 length");
+        ZJS_ASSERT(!len || len == sizeof(struct sockaddr_in),
+                   "expected IPv4 length");
         *(struct sockaddr_in *)dst = *(struct sockaddr_in *)src;
     }
     else if (src->sa_family == AF_INET6) {
-        ZJS_ASSERT(!len || len == sizeof(sockaddr_in6), "expected IPv6 length");
+        ZJS_ASSERT(!len || len == sizeof(struct sockaddr_in6),
+                   "expected IPv6 length");
         *(struct sockaddr_in6 *)dst = *(struct sockaddr_in6 *)src;
     }
     else {
