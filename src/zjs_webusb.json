@@ -1,0 +1,27 @@
+{
+    "module": "webusb",
+    "description": "Module to advertise as a WebUSB device (only A101 has a USB driver in Zephyr currently)",
+    "require": "webusb",
+    "targets": ["arduino_101"],
+    "zephyr_conf": {
+        "all": [
+            "CONFIG_UART_INTERRUPT_DRIVEN=y",
+            "CONFIG_UART_LINE_CTRL=y",
+            "CONFIG_USB=y",
+            "CONFIG_USB_DEVICE_STACK=y"
+        ],
+        "arduino_101": [
+            "CONFIG_USB_DW=y"
+        ]
+    },
+    "zjs_config": ["-DBUILD_MODULE_WEBUSB",
+                   "-I$(ZEPHYR_BASE)/samples/subsys/usb/webusb/src",
+                   "-I$(ZEPHYR_BASE)/include/usb",
+                   "-I${ZEPHYR_BASE}/include/drivers/usb",
+                   "-I${ZEPHYR_BASE}/subsys/usb/class"],
+    "src": ["zjs_webusb.c",
+            "../deps/zephyr/samples/subsys/usb/webusb/src/webusb_serial.c"],
+    "header": ["zjs_webusb.h"],
+    "init": ["zjs_webusb_init"],
+    "cleanup": ["zjs_webusb_cleanup"]
+}
