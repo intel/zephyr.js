@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 // Sample code for showing how to to read raw input value from the analog
 // pins on the Arduino 101, specifically A0 and A1, which is mapped
@@ -10,8 +10,8 @@ var aio = require("aio");
 var pins = require("arduino101_pins");
 
 // pins
-var pinA = aio.open({ device: 0, pin: pins.A0 });
-var pinB = aio.open({ device: 0, pin: pins.A1 });
+var pinA = aio.open({ pin: pins.A0 });
+var pinB = aio.open({ pin: pins.A1 });
 
 setInterval(function () {
     var rawValue = pinA.read();
