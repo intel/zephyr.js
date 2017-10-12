@@ -115,15 +115,20 @@ static ZJS_DECL_FUNC_ARGS(zjs_buffer_write_bytes, int bytes, bool big_endian)
     u32_t value = (u32_t)(dval < 0 ? (s32_t)dval : dval);
 
     u32_t offset = 0;
-    if (argc > 1)
+    if (argc > 1) {
         offset = (u32_t)jerry_get_number_value(argv[1]);
+    }
 
     zjs_buffer_t *buf = zjs_buffer_find(this);
-    if (!buf)
+    if (!buf) {
         return zjs_error("buffer not found on write");
+    }
 
-    if (offset + bytes > buf->bufsize)
+    if (offset + bytes > buf->bufsize) {
+        DBG_PRINT("bufsize %d, write attempted from %d to %d\n",
+                  offset, offset + bytes);
         return zjs_error("write attempted beyond buffer");
+    }
 
     int dir = big_endian ? -1 : 1;
     if (big_endian)
@@ -447,6 +452,7 @@ jerry_value_t zjs_buffer_create(u32_t size, zjs_buffer_t **ret_buf)
         maxLength = (1 << 30) - 1;
     }
     if (size > maxLength) {
+        DBG_PRINT("size: %d\n", size);
         return zjs_standard_error(RangeError, "size greater than max length", 0,
                                   0);
     }
