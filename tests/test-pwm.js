@@ -46,8 +46,7 @@ msTimer = setInterval(function () {
     } else {
         msFalse = msFalse + 1;
     }
-    // set 50 ms but 60 ms actually and time precision 20 ms for zephyr 1.6
-}, 50);
+}, 60);
 
 setTimeout(function () {
     // 16 = 0.33 < 0.3333 < 0.34 = 17
@@ -104,8 +103,7 @@ setTimeout(function () {
                clearInterval(cycleTimer);
            }
        }
-    // set 10 ms but 20 ms actually
-    }, 10);
+    }, 20);
 }, 3000);
 
 assert.throws(function () {
