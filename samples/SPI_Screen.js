@@ -31,11 +31,11 @@ try {
     GFX.drawLine(0, 20, 100, 160, WHITE, 15);
     GFX.drawLine(0, 10, 115, 160, BLUE, 10);
     GFX.drawLine(0, 0, 128, 160, RED);
-    GFX.drawString(0, 30, "Hello", RED, 2);
-    GFX.drawString(0, 55, "WORLD", [0x06, 0x1F], 4);
-    GFX.drawChar(20, 100,'Z', YELLOW, 3);
-    GFX.drawChar(40, 110,'J', YELLOW, 3);
-    GFX.drawChar(60, 120,'S', YELLOW, 3);
+    GFX.drawString(0, 20, "Hello", RED, 2);
+    GFX.drawString(0, 35, "WORLD", [0x06, 0x1F], 3);
+    GFX.drawChar(20, 60,'Z', YELLOW, 4);
+    GFX.drawChar(40, 70,'J', YELLOW, 4);
+    GFX.drawChar(60, 80,'S', YELLOW, 4);
 } catch (err) {
   console.log("SPI error: " + err.message);
 }
