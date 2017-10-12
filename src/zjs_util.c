@@ -810,3 +810,51 @@ void zjs_loop_init(void)
 }
 #endif
 #endif
+
+#ifdef DEBUG_BUILD
+void dump_buffer(const char *label, const void *buf, int len)
+{
+    ZJS_PRINT("%s: (%d bytes)\n", label, len);
+    int cols = 16;
+    int rows = (len + cols - 1) / cols;
+    char *spaces = "  ";
+    u8_t *u8buf = (u8_t *)buf;
+    for (int i = 0; i < rows; i++) {
+        ZJS_PRINT(" %x :", (uintptr_t)(buf + i * cols));
+        for (int j = 0; j < cols; j++) {
+            if (i * cols + j >= len) {
+                int left = (i + 1) * cols - len;
+                int skip = 3 * left;
+                if (left >= 8) {
+                    skip += 1;
+                }
+                for (int k = 0; k < skip; k++) {
+                    ZJS_PRINT(" ");
+                }
+                break;
+            }
+            char *prefix = spaces;
+            if (j != 8) {
+                prefix++;
+            }
+            ZJS_PRINT("%s%02x", prefix, u8buf[i * cols + j]);
+        }
+        ZJS_PRINT("  ");
+        for (int j = 0; j < cols; j++) {
+            if (i * cols + j >= len) {
+                break;
+            }
+            char *prefix = spaces + 1;
+            if (j != 8) {
+                prefix++;
+            }
+            char c = u8buf[i * cols + j];
+            if (c < 32 || c >= 128) {
+                c = '.';
+            }
+            ZJS_PRINT("%s%c", prefix, c);
+        }
+        ZJS_PRINT("\n");
+    }
+}
+#endif
