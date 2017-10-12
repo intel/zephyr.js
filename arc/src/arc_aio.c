@@ -11,9 +11,9 @@
 
 // AIO
 static struct device *adc_dev = NULL;
-static uint8_t pin_enabled[AIO_LEN] = {};
-static uint32_t pin_values[AIO_LEN] = {};
-static uint32_t pin_last_values[AIO_LEN] = {};
+static u8_t pin_enabled[AIO_LEN] = {};
+static u32_t pin_values[AIO_LEN] = {};
+static u32_t pin_last_values[AIO_LEN] = {};
 static u8_t seq_buffer[ADC_BUFFER_SIZE];
 static void *pin_user_data[AIO_LEN] = {};
 static u8_t pin_send_updates[AIO_LEN] = {};

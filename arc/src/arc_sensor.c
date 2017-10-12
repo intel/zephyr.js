@@ -595,7 +595,7 @@ void arc_fetch_light()
                 double resistance, base;
                 union sensor_reading reading;
                 // rescale sample from 12bit (Zephyr) to 10bit (Grove)
-                uint16_t analog_val = pin_values[i] >> 2;
+                u16_t analog_val = pin_values[i] >> 2;
                 if (analog_val > 1015) {
                     // any thing over 1015 will be considered maximum brightness
                     reading.dval = 10000.0;

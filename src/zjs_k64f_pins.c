@@ -81,14 +81,12 @@ jerry_value_t zjs_k64f_init()
     zjs_obj_add_number(obj, "PWM8", PTD +  3);
     zjs_obj_add_number(obj, "PWM9", PTD +  1);
 
-    // TODO: It appears that some other GPIO pins can be used as analog inputs
-    //   too, from the X86 side. We haven't tried that.
-    zjs_obj_add_number(obj, "A0", PTB +  2);
-    zjs_obj_add_number(obj, "A1", PTB +  3);
-    zjs_obj_add_number(obj, "A2", PTB + 10);
-    zjs_obj_add_number(obj, "A3", PTB + 11);
-    zjs_obj_add_number(obj, "A4", PTC + 11);
-    zjs_obj_add_number(obj, "A5", PTC + 10);
+    // TODO: It appears that currently Zephyr only enables
+    // PTB2, PTB3, PTB10, PTB11, which are A0-A3 only, A4-A5 are not supported.
+    zjs_obj_add_number(obj, "A0", 12);
+    zjs_obj_add_number(obj, "A1", 13);
+    zjs_obj_add_number(obj, "A2", 14);
+    zjs_obj_add_number(obj, "A3", 15);
 
     return obj;
 }

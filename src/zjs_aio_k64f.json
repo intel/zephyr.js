@@ -1,0 +1,13 @@
+{
+    "module": "aio_k64f",
+    "targets": ["frdm_k64f"],
+    "zephyr_conf": {
+        "frdm_k64f": [
+            "CONFIG_ADC=y",
+            "CONFIG_ADC_0=y",
+            "CONFIG_ADC_1=y"
+        ]
+    },
+    "zjs_config": ["-DBUILD_MODULE_AIO"],
+    "src": ["zjs_aio.c"]
+}
