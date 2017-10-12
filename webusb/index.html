@@ -1,0 +1,41 @@
+<!doctype html>
+<html>
+  <head>
+    <title>WebUSB Test Page</title>
+    <link rel="stylesheet" type="text/css" href="webusb.css">
+  </head>
+
+  <body>
+    <div id="background">
+      <h1>WebUSB Test Page</h1>
+
+      <div class="toolbar">
+        <button id="auto">Auto</button>
+        <button id="connect">Connect</button>
+        <button id="claim">Claim Interface</button>
+        <button id="ctrlTransfer">Control Transfer</button>
+        <button id="sendReceive">Send/Receive</button>
+        <button id="disconnect">Disconnect</button>
+      </div>
+
+      <div>
+        <div class="area">
+          <div class="title">Connected Devices:</div>
+          <div class="content" id="devices"></div>
+        </div>
+
+        <div class="area">
+          <div class="title">Status:</div>
+          <div class="content" id="status">Not Connected</div>
+        </div>
+
+        <div class="area">
+          <div class="title">History:</div>
+          <div class="content" id="history"></div>
+        </div>
+      </div>
+
+      <script type="text/javascript" src="webusb.js"></script>
+    </div>
+  </body>
+</html>
