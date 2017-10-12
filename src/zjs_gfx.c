@@ -334,7 +334,7 @@ static ZJS_DECL_FUNC(zjs_gfx_draw_char)
     return zjs_gfx_draw_char_priv(argData.coords[0], argData.coords[1], argData.text[0], argData.color, argData.size, handle);
 }
 
-static ZJS_DECL_FUNC(zjs_gfx_draw_string) //(x, y, c, color, bg, size) {
+static ZJS_DECL_FUNC(zjs_gfx_draw_string)
 {
     // requires: Requires 4 arguments
     //           arg[0] - x coord of the top left.
@@ -408,7 +408,6 @@ jerry_value_t zjs_gfx_init()
     zjs_obj_add_functions(zjs_gfx_prototype, proto);
 
     jerry_value_t gfx_obj = zjs_create_object();
-    //zjs_obj_add_function(gfx_obj, zjs_gfx_set_cb, "init");
     zjs_obj_add_function(gfx_obj, "init", zjs_gfx_set_cb);
     return gfx_obj;
 }

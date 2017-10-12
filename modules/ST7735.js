@@ -64,7 +64,6 @@ function ST7735() {
 
      // Send data over SPI
     st7735API.drawCB = function(x, y, w, h, data) {
-        //console.log("x = " + x + "y = " + y + "w = " + w + "h = " + h);
         this.setAddrWindow(x, y, x + w - 1, y + h - 1);
         this.dcPin.write(1);    // Set DC pin low to indicate data
         this.csPin.write(0);
