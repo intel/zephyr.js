@@ -70,7 +70,7 @@ Python 2.
 You may also need to install pip3 to get pyelftools:
 
 ```bash
-$ sudo apt-get install python-pip3
+$ sudo apt-get install python3-pip
 $ sudo pip3 install pyelftools
 ```
 
