@@ -26,9 +26,6 @@
             "CONFIG_NET_MGMT_EVENT=y"
         ]
     },
-    "zjs_config": ["-DBUILD_MODULE_NET"],
-    "src": ["zjs_net.c"],
-    "header": ["zjs_net.h"],
-    "init": ["zjs_net_init"],
-    "cleanup": ["zjs_net_cleanup"]
+    "zjs_config": ["-DENABLE_INIT_FINI"],
+    "src": ["zjs_net.c"]
 }

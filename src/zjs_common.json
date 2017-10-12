@@ -2,6 +2,7 @@
     "module": "common",
     "zephyr_conf": {
         "all": [
+            "CONFIG_CPLUSPLUS=y",
             "CONFIG_STDOUT_CONSOLE=y",
             "CONFIG_NEWLIB_LIBC=y",
             "CONFIG_FLOAT=y",

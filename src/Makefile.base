@@ -17,6 +17,7 @@ endif
 
 ccflags-y += -I$(JERRY_BASE)/jerry-core/include
 ccflags-y += -I$(JERRY_BASE)/jerry-core/jrt
+ccflags-y += -I$(JERRY_BASE)/jerry-ext/include
 ccflags-y += -I$(ZEPHYR_BASE)/drivers
 ccflags-y += -I$(ZJS_BASE)/outdir/include
 

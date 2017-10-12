@@ -9,6 +9,9 @@
 #include <zephyr.h>
 #endif
 
+// JerryScript includes
+#include "jerryscript-ext/module.h"
+
 #ifndef ZJS_LINUX_BUILD
 // ZJS includes
 #include "zjs_ipm.h"
@@ -54,6 +57,15 @@ static ZJS_DECL_FUNC(native_require_handler)
             }
             return jerry_acquire_value(mod->instance);
         }
+    }
+    const jerryx_module_resolver_t *resolvers[] = {
+        &jerryx_module_native_resolver
+    };
+    jerry_value_t native_module = jerryx_module_resolve(argv[0], resolvers, 1);
+    if (jerry_value_has_error_flag(native_module)) {
+        jerry_release_value(native_module);
+    } else {
+        return native_module;
     }
     DBG_PRINT("Native module not found, searching for JavaScript module %s\n",
               module);
