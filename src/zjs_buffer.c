@@ -267,6 +267,58 @@ static ZJS_DECL_FUNC(zjs_buffer_to_string)
     return zjs_error("buffer is empty");
 }
 
+static ZJS_DECL_FUNC(zjs_buffer_copy)
+{
+    // requires: this must be a JS buffer object and argv[0] a target buffer
+    //             object
+    //  effects: copies buffer contents w/ optional offsets considered to the
+    //             target buffer (following Node v6.11 API)
+
+    // args: target, [targetStart], [sourceStart], [sourceEnd]
+    ZJS_VALIDATE_ARGS_OPTCOUNT(optcount, Z_BUFFER,
+                               Z_OPTIONAL Z_NUMBER Z_UNDEFINED,
+                               Z_OPTIONAL Z_NUMBER Z_UNDEFINED,
+                               Z_OPTIONAL Z_NUMBER Z_UNDEFINED);
+
+    zjs_buffer_t *source = zjs_buffer_find(this);
+    zjs_buffer_t *target = zjs_buffer_find(argv[0]);
+    if (!source || !target) {
+        return zjs_error("buffer not found");
+    }
+
+    int targetStart = 0;
+    int sourceStart = 0;
+    int sourceEnd = -1;
+    if (optcount >= 1 && !jerry_value_is_undefined(argv[1])) {
+        targetStart = (int)jerry_get_number_value(argv[1]);
+    }
+    if (optcount >= 2 && !jerry_value_is_undefined(argv[2])) {
+        sourceStart = (int)jerry_get_number_value(argv[2]);
+    }
+    if (optcount >= 3 && !jerry_value_is_undefined(argv[3])) {
+        sourceEnd = (int)jerry_get_number_value(argv[3]);
+    }
+
+    if (sourceEnd == -1) {
+        sourceEnd = source->bufsize;
+    }
+
+    if (targetStart < 0 || targetStart >= target->bufsize ||
+        sourceStart < 0 || sourceStart >= source->bufsize ||
+        sourceEnd < 0 || sourceEnd <= sourceStart ||
+        sourceEnd > source->bufsize) {
+        return zjs_standard_error(RangeError, "invalid copy range", 0, 0);
+    }
+
+    if (sourceEnd - sourceStart > target->bufsize - targetStart) {
+        return zjs_error("target buffer insufficient");
+    }
+
+    int len = sourceEnd - sourceStart;
+    memcpy(target->buffer + targetStart, source->buffer + sourceStart, len);
+    return jerry_create_number(len);
+}
+
 static ZJS_DECL_FUNC(zjs_buffer_write_string)
 {
     // requires: string - what will be written to buf
@@ -559,6 +611,7 @@ void zjs_buffer_init()
         { zjs_buffer_read_uint32_le, "readUInt32LE" },
         { zjs_buffer_write_uint32_le, "writeUInt32LE" },
         { zjs_buffer_to_string, "toString" },
+        { zjs_buffer_copy, "copy" },
         { zjs_buffer_write_string, "write" },
         { zjs_buffer_fill, "fill" },
         { NULL, NULL }

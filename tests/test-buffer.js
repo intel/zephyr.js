@@ -127,30 +127,60 @@ assert(buff.toString('hex') === expected,
        "The value of toString('hex') expected:" + expected +
        " got:" + buff.toString('hex'));
 
-// Test fill funciton w/ string source
+// Test fill function w/ string source
 buff = new Buffer(10);
 buff.fill('abc');
-assert(buff.toString('hex') === '61626361626361626361');
+assert(buff.toString('hex') === '61626361626361626361', 'fill with string');
 
-// Test fill funciton w/ integer source
+// Test fill function w/ integer source
 buff.fill(257);
-assert(buff.toString('hex') === '00000101000001010000');
+assert(buff.toString('hex') === '00000101000001010000', 'fill with int');
 
-// Test fill funciton w/ buffer source
+// Test fill function w/ buffer source
 var srcbuf = new Buffer(3);
 srcbuf.writeUInt8(1, 0);
 srcbuf.writeUInt8(2, 1);
 srcbuf.writeUInt8(3, 2);
 buff.fill(srcbuf);
-assert(buff.toString('hex') === '01020301020301020301');
+assert(buff.toString('hex') === '01020301020301020301', 'fill with buf');
 
 // Test offset argument with some a chars at the end
 buff.fill('a', 8);
-assert(buff.toString('hex') === '01020301020301026161');
+assert(buff.toString('hex') === '01020301020301026161', 'fill offset end');
 
 // Test end argument with some b chars in the middle
 buff.fill('b', 5, 8);
-assert(buff.toString('hex') === '01020301026262626161');
+assert(buff.toString('hex') === '01020301026262626161', 'fill offset middle');
+
+// Test copy function
+buff.fill(0);
+srcbuf.writeUInt8(1, 0);
+srcbuf.writeUInt8(2, 1);
+srcbuf.writeUInt8(3, 2);
+
+srcbuf.copy(buff);
+assert(buff.toString('hex') === '01020300000000000000', 'copy full buf');
+
+srcbuf.copy(buff, 3);
+assert(buff.toString('hex') === '01020301020300000000', 'copy at offset');
+
+srcbuf.copy(buff, 8, 1);
+assert(buff.toString('hex') === '01020301020300000203', 'copy to end');
+
+srcbuf.copy(buff, 6, 1, 2);
+assert(buff.toString('hex') === '01020301020302000203', 'copy part');
+
+assert.throws(function () {
+    srcbuf.copy(buff, 2, 4);
+}, "Error thrown copying beyond source buffer");
+
+assert.throws(function () {
+    buff.copy(srcbuf, 4, 6);
+}, "Error thrown copying beyond target buffer");
+
+assert.throws(function () {
+    srcbuf.copy(buff, 9);
+}, "Error thrown when copying would finish beyond target buffer");
 
 assert.throws(function () {
     // unsupported encoding
