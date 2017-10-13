@@ -346,6 +346,8 @@ static jerry_value_t zjs_grove_lcd_init()
     zjs_set_property(glcd_obj, "GROVE_RGB_BLUE", val);
     jerry_release_value(val);
 
+    // Set up cleanup function for when the object gets freed
+    jerry_set_object_native_pointer(glcd_obj, NULL, &grove_lcd_module_type_info);
     return glcd_obj;
 }
 
