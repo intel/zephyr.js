@@ -488,7 +488,7 @@ static ZJS_DECL_FUNC(event_constructor)
     return new_emitter;
 }
 
-void zjs_event_create_prototype() {
+static void zjs_event_create_prototype() {
     if (!zjs_event_initialized) {
         zjs_native_func_t array[] = {
             { add_listener, "on" },
