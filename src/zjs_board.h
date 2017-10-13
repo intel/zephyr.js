@@ -10,13 +10,6 @@
 
 struct device;
 
-/**
- * Initialize the board module, or reinitialize after cleanup
- *
- * @return Board API object
- */
-jerry_value_t zjs_board_init();
-
 typedef struct zjs_pin {
     const char *name;      // string name
     const char *altname;   // alternate name, e.g. number as string

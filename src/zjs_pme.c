@@ -446,7 +446,7 @@ static ZJS_DECL_FUNC(zjs_pme_restore_neurons)
     return ZJS_UNDEFINED;
 }
 
-void zjs_pme_cleanup()
+static void zjs_pme_cleanup()
 {
     jerry_release_value(zjs_pme_prototype);
 }
@@ -455,7 +455,7 @@ static const jerry_object_native_info_t pme_module_type_info = {
    .free_cb = zjs_pme_cleanup
 };
 
-jerry_value_t zjs_pme_init()
+static jerry_value_t zjs_pme_init()
 {
     zjs_ipm_init();
     zjs_ipm_register_callback(MSG_ID_PME, ipm_msg_receive_callback);

@@ -44,7 +44,7 @@ static void zjs_a101_num_to_pwm(u32_t num, int *dev, int *pin)
 }
 #endif
 
-jerry_value_t zjs_a101_init()
+static jerry_value_t zjs_a101_init()
 {
     // effects: returns an object with Arduino 101 pin mappings
 #ifdef BUILD_MODULE_PWM

@@ -468,7 +468,7 @@ void *zjs_event_get_user_handle(jerry_value_t obj)
     return NULL;
 }
 
-void zjs_event_cleanup()
+static void zjs_event_cleanup()
 {
     jerry_release_value(zjs_event_emitter_prototype);
     zjs_event_initialized = false;
@@ -509,7 +509,7 @@ void zjs_event_create_prototype() {
     }
 }
 
-jerry_value_t zjs_event_init()
+static jerry_value_t zjs_event_init()
 {
     // NOTE: dropped defaultMaxListeners as this didn't seem important for us
     zjs_event_create_prototype();

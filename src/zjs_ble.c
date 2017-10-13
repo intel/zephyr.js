@@ -1282,7 +1282,7 @@ static ZJS_DECL_FUNC(zjs_ble_descriptor)
     return jerry_acquire_value(argv[0]);
 }
 
-void zjs_ble_cleanup()
+static void zjs_ble_cleanup()
 {
     ble_connection_t *conn = ble_handle->connections;
     while (conn) {
@@ -1301,7 +1301,7 @@ static const jerry_object_native_info_t ble_module_type_info = {
    .free_cb = zjs_ble_cleanup
 };
 
-jerry_value_t zjs_ble_init()
+static jerry_value_t zjs_ble_init()
 {
     k_sem_init(&ble_sem, 0, 1);
 

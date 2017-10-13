@@ -64,13 +64,3 @@ s32_t main_poll_routine(void *handle);
  * @param uuid          UUID obtained from iotivity-constrained system
  */
 void zjs_set_uuid(char *uuid);
-
-/*
- * Object returned from require('ocf')
- */
-jerry_value_t zjs_ocf_init();
-
-/*
- * Cleanup for OCF object
- */
-void zjs_ocf_cleanup();

@@ -304,7 +304,7 @@ static ZJS_DECL_FUNC(uart_init)
     return handle->uart_obj;
 }
 
-void zjs_uart_cleanup()
+static void zjs_uart_cleanup()
 {
     jerry_release_value(zjs_uart_prototype);
 }
@@ -313,7 +313,7 @@ static const jerry_object_native_info_t uart_module_type_info = {
    .free_cb = zjs_uart_cleanup
 };
 
-jerry_value_t zjs_uart_init()
+static jerry_value_t zjs_uart_init()
 {
     zjs_native_func_t array[] = {
         { uart_write, "write" },

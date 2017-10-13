@@ -178,7 +178,7 @@ int zjs_board_find_pin(jerry_value_t pin, char devname[20], int *pin_num)
 #define BOARD_NAME "unknown"
 #endif
 
-jerry_value_t zjs_board_init()
+static jerry_value_t zjs_board_init()
 {
     // create board object
     jerry_value_t board_obj = zjs_create_object();

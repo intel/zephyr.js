@@ -310,7 +310,7 @@ static ZJS_DECL_FUNC(zjs_aio_open)
     return pinobj;
 }
 
-void zjs_aio_cleanup()
+static void zjs_aio_cleanup()
 {
     jerry_release_value(zjs_aio_prototype);
 }

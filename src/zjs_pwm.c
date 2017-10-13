@@ -188,7 +188,7 @@ static ZJS_DECL_FUNC(zjs_pwm_open)
     return pin_obj;
 }
 
-void zjs_pwm_cleanup()
+static void zjs_pwm_cleanup()
 {
     jerry_release_value(zjs_pwm_pin_prototype);
 }
@@ -197,7 +197,7 @@ static const jerry_object_native_info_t pwm_module_type_info = {
    .free_cb = zjs_pwm_cleanup
 };
 
-jerry_value_t zjs_pwm_init()
+static jerry_value_t zjs_pwm_init()
 {
     // effects: finds the PWM driver and registers the PWM JS object
     char devname[10];

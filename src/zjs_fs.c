@@ -981,7 +981,7 @@ static ZJS_DECL_FUNC(zjs_fs_read_file_async)
 }
 #endif
 
-void zjs_fs_cleanup()
+static void zjs_fs_cleanup()
 {
     ZJS_LIST_FREE(file_handle_t, opened_handles, free_file);
 }
@@ -990,7 +990,7 @@ static const jerry_object_native_info_t fs_module_type_info = {
    .free_cb = zjs_fs_cleanup
 };
 
-jerry_value_t zjs_fs_init()
+static jerry_value_t zjs_fs_init()
 {
     jerry_value_t fs = zjs_create_object();
 

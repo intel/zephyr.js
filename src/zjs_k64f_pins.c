@@ -21,7 +21,7 @@ static void zjs_k64f_num_to_pwm(u32_t num, int *dev, int *pin)
 }
 #endif
 
-jerry_value_t zjs_k64f_init()
+static jerry_value_t zjs_k64f_init()
 {
     // effects: returns an object with FRDM-K64F pin mappings
 #ifdef BUILD_MODULE_PWM

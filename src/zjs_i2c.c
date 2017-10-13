@@ -185,7 +185,7 @@ static ZJS_DECL_FUNC(zjs_i2c_open)
     return i2c_obj;
 }
 
-void zjs_i2c_cleanup()
+static void zjs_i2c_cleanup()
 {
     zjs_print_mem_stats();
     jerry_release_value(zjs_i2c_prototype);
@@ -196,7 +196,7 @@ static const jerry_object_native_info_t i2c_module_type_info = {
    .free_cb = zjs_i2c_cleanup
 };
 
-jerry_value_t zjs_i2c_init()
+static jerry_value_t zjs_i2c_init()
 {
 #ifdef CONFIG_BOARD_ARDUINO_101
     zjs_i2c_ipm_init();

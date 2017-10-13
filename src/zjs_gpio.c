@@ -335,7 +335,7 @@ static const jerry_object_native_info_t gpio_module_type_info = {
     .free_cb = zjs_gpio_cleanup
 };
 
-jerry_value_t zjs_gpio_init()
+static jerry_value_t zjs_gpio_init()
 {
     zjs_gpio_mock_pre_init();
 

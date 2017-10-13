@@ -1061,7 +1061,7 @@ static ZJS_DECL_FUNC(ws_server)
     return server;
 }
 
-void zjs_ws_cleanup()
+static void zjs_ws_cleanup()
 {
     FTRACE("\n");
 }
@@ -1070,7 +1070,7 @@ static const jerry_object_native_info_t ws_module_type_info = {
    .free_cb = zjs_ws_cleanup
 };
 
-jerry_value_t zjs_ws_init()
+static jerry_value_t zjs_ws_init()
 {
     FTRACE("\n");
     zjs_net_config_default();

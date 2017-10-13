@@ -504,7 +504,7 @@ static ZJS_DECL_FUNC(ocf_start)
     return ZJS_UNDEFINED;
 }
 
-void zjs_ocf_cleanup()
+static void zjs_ocf_cleanup()
 {
 #ifdef OC_SERVER
     zjs_ocf_server_cleanup();
@@ -519,7 +519,7 @@ static const jerry_object_native_info_t ocf_module_type_info = {
    .free_cb = zjs_ocf_cleanup
 };
 
-jerry_value_t zjs_ocf_init()
+static jerry_value_t zjs_ocf_init()
 {
     ocf_object = zjs_create_object();
 

@@ -1447,7 +1447,7 @@ static ZJS_DECL_FUNC(net_is_ip6)
 
 static jerry_value_t net_obj;
 
-void zjs_net_cleanup()
+static void zjs_net_cleanup()
 {
     FTRACE("\n");
     jerry_release_value(zjs_net_prototype);
@@ -1459,7 +1459,7 @@ static const jerry_object_native_info_t net_module_type_info = {
    .free_cb = zjs_net_cleanup
 };
 
-jerry_value_t zjs_net_init()
+static jerry_value_t zjs_net_init()
 {
     FTRACE("\n");
     zjs_net_config_default();
