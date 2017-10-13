@@ -200,28 +200,36 @@ char zjs_int_to_hex(int value)
 static ZJS_DECL_FUNC(zjs_buffer_to_string)
 {
     // requires: this must be a JS buffer object, if an argument is present it
-    //             must be the string 'ascii' or 'hex', as those are the only
-    //             supported encodings for now
-    //  effects: if the buffer object is found, converts its contents to a hex
-    //             string and returns it
+    //             must be the string 'utf8' (default), 'ascii' or 'hex', as
+    //             those are the only supported encodings for now
+    //  effects: if the buffer object is found, converts its contents to the
+    //             given encoding
 
     // args: [encoding]
-    ZJS_VALIDATE_ARGS(Z_OPTIONAL Z_STRING);
+    ZJS_VALIDATE_ARGS_OPTCOUNT(optcount, Z_OPTIONAL Z_STRING);
 
     zjs_buffer_t *buf = zjs_buffer_find(this);
-    if (buf && argc == 0) {
-        return jerry_create_string((jerry_char_t *)"[Buffer Object]");
+    ZJS_ASSERT(buf, "buffer not found");
+    if (!buf) {
+        return zjs_error("not a buffer");
     }
 
     const int MAX_ENCODING_LEN = 16;
     jerry_size_t size = MAX_ENCODING_LEN;
-    char encoding[size];
-    zjs_copy_jstring(argv[0], encoding, &size);
-    if (!size) {
-        return zjs_error("encoding argument too long");
+    char enc[size];
+    const char *encoding = "utf8";
+    if (optcount) {
+        zjs_copy_jstring(argv[0], enc, &size);
+        if (!size) {
+            return zjs_error("encoding argument too long");
+        }
+        encoding = enc;
     }
 
-    if (strequal(encoding, "ascii")) {
+    if (strequal(encoding, "utf8")) {
+        return jerry_create_string_sz_from_utf8((jerry_char_t *)buf->buffer,
+                                                buf->bufsize);
+    } else if (strequal(encoding, "ascii")) {
         char *str = zjs_malloc(buf->bufsize);
         if (!str) {
             return zjs_error("out of memory");
