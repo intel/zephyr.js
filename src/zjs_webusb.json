@@ -2,6 +2,7 @@
     "module": "webusb",
     "description": "Module to advertise as a WebUSB device (only A101 has a USB driver in Zephyr currently)",
     "require": "webusb",
+    "depends": ["buffer", "events"],
     "targets": ["arduino_101"],
     "zephyr_conf": {
         "all": [
