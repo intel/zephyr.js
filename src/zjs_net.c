@@ -381,7 +381,7 @@ static error_desc_t create_error_desc(u32_t error_id, jerry_value_t this,
 }
 
 // a zjs_pre_emit callback
-static void handle_error_arg(void *unused, jerry_value_t argv[], u32_t *argc,
+static bool handle_error_arg(void *unused, jerry_value_t argv[], u32_t *argc,
                              const char *buffer, u32_t bytes)
 {
     // requires: buffer contains a u32_t with an error constant
@@ -399,6 +399,7 @@ static void handle_error_arg(void *unused, jerry_value_t argv[], u32_t *argc,
     jerry_value_clear_error_flag(&error);
     argv[0] = error;
     *argc = 1;
+    return true;
 }
 
 typedef struct {
@@ -1152,7 +1153,7 @@ static ZJS_DECL_FUNC(net_create_server)
 }
 
 // a zjs_pre_emit_callback
-static void connect_callback(void *h, jerry_value_t argv[], u32_t *argc,
+static bool connect_callback(void *h, jerry_value_t argv[], u32_t *argc,
                              const char *buffer, u32_t bytes)
 {
     FTRACE("h = %p, buffer = %p, bytes = %d\n", h, buffer, bytes);
@@ -1160,6 +1161,7 @@ static void connect_callback(void *h, jerry_value_t argv[], u32_t *argc,
     zjs_obj_add_boolean(handle->socket, "connecting", false);
     zjs_add_event_listener(handle->socket, "connect",
                            handle->connect_listener);
+    return true;
 }
 
 static void tcp_connected(struct net_context *context, int status,
