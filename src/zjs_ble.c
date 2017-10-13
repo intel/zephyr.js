@@ -509,12 +509,13 @@ static void zjs_ble_blvl_ccc_cfg_changed(const struct bt_gatt_attr *attr,
 }
 
 // a zjs_pre_emit callback
-static void string_arg(void *unused, jerry_value_t argv[], u32_t *argc,
+static bool string_arg(void *unused, jerry_value_t argv[], u32_t *argc,
                        const char *buffer, u32_t bytes)
 {
     // requires: buffer contains string with bytes chars including null term
     argv[0] = jerry_create_string((jerry_char_t *)buffer);
     *argc = 1;
+    return true;
 }
 
 // INTERRUPT SAFE FUNCTION: No JerryScript VM, allocs, or release prints!

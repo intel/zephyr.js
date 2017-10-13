@@ -319,7 +319,11 @@ static void emit_event_callback(void *handle, const void *args) {
     jerry_value_t *argp = argv;
     u32_t argc = 0;
     if (emit->pre) {
-        emit->pre(user_handle, argv, &argc, emit->data, emit->length);
+        if (!emit->pre(user_handle, argv, &argc, emit->data, emit->length)) {
+            // event cancelled
+            DBG_PRINT("event cancelled\n");
+            return;
+        }
         if (argc > MAX_EVENT_ARGS) {
             ERR_PRINT("Must increase MAX_EVENT_ARGS!");
         }
@@ -340,16 +344,14 @@ static void emit_event_callback(void *handle, const void *args) {
 }
 
 // a zjs_pre_emit callback
-void zjs_copy_arg(void *unused, jerry_value_t argv[], u32_t *argc,
+bool zjs_copy_arg(void *unused, jerry_value_t argv[], u32_t *argc,
                   const char *buffer, u32_t bytes)
 {
     // requires: buffer contains one jerry_value_t
-    if (bytes != sizeof(jerry_value_t)) {
-        // shouldn't get here if used correctly
-        DBG_PRINT("Warning: Expected one jerry value");
-    }
+    ZJS_ASSERT(bytes == sizeof(jerry_value_t), "invalid data received");
     argv[0] = *(jerry_value_t *)buffer;
     *argc = 1;
+    return true;
 }
 
 // a zjs_post_emit callback
