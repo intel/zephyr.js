@@ -117,7 +117,7 @@ static const pin_range_t pwm_pins = {27, 36};
 static const extra_pin_t extra_pins[] = {
     {"LEDR", 22},
     {"LEDG", 23},
-    {"LEGB", 24},
+    {"LEDB", 24},
     { "SW2", 25},
     { "SW3", 26}
 };
