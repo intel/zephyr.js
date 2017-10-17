@@ -65,6 +65,14 @@ endif
 ifeq ($(shell test $(ROM) -gt 296; echo $$?), 0)
 $(error ROM must be no higher than 296)
 endif
+
+# IDE_GPIO_PIN has to be between 0 to 20
+ifeq ($(shell test $(IDE_GPIO_PIN) -lt 0; echo $$?), 0)
+$(error IDE_GPIO_PIN must be no lower than 0)
+endif
+ifeq ($(shell test $(IDE_GPIO_PIN) -gt 20; echo $$?), 0)
+$(error IDE_GPIO_PIN must be no higher than 20)
+endif
 endif  # BOARD = arduino_101
 
 ifeq ($(filter $(MAKECMDGOALS),linux), linux)
@@ -119,7 +127,7 @@ endif
 endif
 
 ifeq ($(FUNC_NAME), on)
-ZJS_FLAGS := "$(ZJS_FLAGS) -DZJS_FIND_FUNC_NAME"
+ZJS_FLAGS := $(ZJS_FLAGS) -DZJS_FIND_FUNC_NAME
 endif
 
 ifeq ($(FORCE),)
@@ -133,7 +141,10 @@ ifneq (,$(filter $(MAKECMDGOALS),ide ashell))
 ASHELL=zjs_ashell_$(ASHELL_TYPE).json
 FORCED := $(ASHELL),$(FORCED)
 ASHELL_ARC=zjs_ashell_arc.json
-ZJS_FLAGS := "$(ZJS_FLAGS) -DZJS_FIND_FUNC_NAME"
+ZJS_FLAGS += -DZJS_FIND_FUNC_NAME
+ifneq ($(IDE_GPIO_PIN),)
+ZJS_FLAGS += -DIDE_GPIO_PIN=$(IDE_GPIO_PIN)
+endif
 endif
 
 ifeq ($(BOARD), arduino_101)
@@ -194,7 +205,7 @@ ram_report: zephyr
 					CB_STATS=$(CB_STATS) \
 					PRINT_FLOAT=$(PRINT_FLOAT) \
 					SNAPSHOT=$(SNAPSHOT) \
-					ZJS_FLAGS=$(ZJS_FLAGS) \
+					ZJS_FLAGS="$(ZJS_FLAGS)" \
 					ram_report
 
 .PHONY: rom_report
@@ -204,7 +215,7 @@ rom_report: zephyr
 					CB_STATS=$(CB_STATS) \
 					PRINT_FLOAT=$(PRINT_FLOAT) \
 					SNAPSHOT=$(SNAPSHOT) \
-					ZJS_FLAGS=$(ZJS_FLAGS) \
+					ZJS_FLAGS="$(ZJS_FLAGS)" \
 					rom_report
 
 # choose name of jerryscript library based on snapshot feature
@@ -238,7 +249,7 @@ zephyr: analyze generate $(JERRYLIB) $(ARC)
 					BLE_ADDR=$(BLE_ADDR) \
 					ASHELL=$(ASHELL) \
 					NETWORK_BUILD=$(NET_BUILD) \
-					ZJS_FLAGS=$(ZJS_FLAGS)
+					ZJS_FLAGS="$(ZJS_FLAGS)"
 ifeq ($(BOARD), arduino_101)
 	@echo
 	@echo -n Creating dfu images...
@@ -425,7 +436,7 @@ qemu: zephyr
 		CB_STATS=$(CB_STATS) \
 		SNAPSHOT=$(SNAPSHOT) \
 		NETWORK_BUILD=$(NET_BUILD) \
-		ZJS_FLAGS=$(ZJS_FLAGS)
+		ZJS_FLAGS="$(ZJS_FLAGS)"
 
 ARC_RESTRICT="zjs_ipm_arc.json,\
 		zjs_i2c_arc.json,\

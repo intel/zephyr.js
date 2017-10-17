@@ -21,7 +21,10 @@
 #include "zjs_script.h"
 #include "zjs_util.h"
 #ifdef ZJS_ASHELL
+#include <gpio.h>
+#include "zjs_board.h"
 #include "ashell/ashell.h"
+#include "ashell/file-utils.h"
 #endif
 
 // JerryScript includes
@@ -59,6 +62,11 @@ const size_t snapshot_len = sizeof(snapshot_bytecode);
 const char script_jscode[] = {
 #include "zjs_script_gen.h"
 };
+#endif
+
+#ifdef ZJS_ASHELL
+const char *BUILD_TIME_STAMP = __DATE__ " " __TIME__ "\n";
+static bool ashell_mode = false;
 #endif
 
 #ifdef ZJS_DEBUGGER
@@ -114,6 +122,51 @@ extern void ble_bt_ready(int err);
 #endif
 #endif
 
+#ifdef ZJS_ASHELL
+static bool config_mode_detected()
+{
+    // connect a button to GPIO pin IO8
+#ifdef IDE_GPIO_PIN
+    char devname[20];
+    int pin;
+
+    ZVAL pin_val = jerry_create_number(IDE_GPIO_PIN);
+    int rval = zjs_board_find_pin(pin_val, devname, &pin);
+    if (rval == FIND_PIN_INVALID) {
+        ERR_PRINT("bad pin argument");
+        return false;
+    }
+
+    struct device *gpiodev = device_get_binding(devname);
+    if (!gpiodev) {
+        ERR_PRINT("GPIO device not found\n");
+        return false;
+    }
+
+    int flags = 0;
+    flags |= GPIO_POL_INV | GPIO_DIR_IN;
+    rval = gpio_pin_configure(gpiodev, pin, flags);
+    if (rval) {
+        ERR_PRINT("invalid GPIO pin %d\n", pin);
+        return false;
+    }
+
+    u32_t value;
+    rval = gpio_pin_read(gpiodev, pin, &value);
+    if (rval) {
+        ERR_PRINT("gpio read failed\n");
+        return false;
+    }
+
+    return (value == 1);
+#else
+    // always enter IDE mode when IDE_GPIO_PIN is not specified
+    DBG_PRINT("IDE_GPIO_PIN not set\n");
+    return true;
+#endif
+}
+#endif
+
 #ifndef ZJS_LINUX_BUILD
 void main(void)
 #else
@@ -127,11 +180,13 @@ int main(int argc, char *argv[])
     char *script = NULL;
     file_name = argv[1];
     file_name_len = strlen(argv[1]);
+#elif defined ZJS_ASHELL
+    char *script = NULL;
 #else
     const char *script = NULL;
 #endif
     jerry_value_t code_eval;
-    u32_t script_len;
+    u32_t script_len = 0;
 #endif
 #ifndef ZJS_LINUX_BUILD
     DBG_PRINT("Main Thread ID: %p\n", (void *)k_current_get());
@@ -158,6 +213,59 @@ int main(int argc, char *argv[])
     zjs_register_service_routine(NULL, main_poll_routine);
 #endif
 
+#ifdef ZJS_ASHELL
+if (config_mode_detected()) {
+    // go into IDE mode if connected GPIO button is pressed
+    ashell_mode = true;
+} else {
+    // boot to cfg file if found
+    fs_file_t *file;
+    size_t count;
+    file = fs_open_alloc("boot.cfg", "r");
+
+    if (file) {
+        DBG_PRINT("JS boot config found, booting JS...\n\n\n");
+        size_t ts_len = strlen(BUILD_TIME_STAMP);
+        ssize_t size = fs_size(file);
+        // Check that there is something after the timestamp
+        if (size > ts_len) {
+            file_name_len = size - ts_len;
+            char ts[ts_len];
+            char filename[file_name_len + 1];
+            count = fs_read(file, ts, ts_len); // skip the timestamp
+            count = fs_read(file, filename, file_name_len);
+            if (count > 0) {
+                filename[file_name_len] = '\0';
+                DBG_PRINT("running JS %s\n", filename);
+                // read JS stored in filesystem
+                fs_file_t *js_file = fs_open_alloc(filename, "r");
+                if (!js_file) {
+                    ZJS_PRINT("\nFile %s not found on filesystem, exiting!\n",
+                              filename);
+                    fs_close_alloc(file);
+                    goto error;
+                }
+                script_len = fs_size(js_file);
+                script = zjs_malloc(script_len + 1);
+                count = fs_read(js_file, script, script_len);
+                if (script_len != count) {
+                    ZJS_PRINT("\nfailed to read JS file\n");
+                    zjs_free(script);
+                    fs_close_alloc(file);
+                    goto error;
+                }
+                script[script_len] = '\0';
+            }
+        }
+        fs_close_alloc(file);
+    } else {
+        // boot cfg file not found
+        ZJS_PRINT("\nNo JS found, please boot into IDE mode, exiting!\n");
+        goto error;
+    }
+}
+#endif
+
 #ifndef ZJS_SNAPSHOT_BUILD
 #ifdef ZJS_LINUX_BUILD
     if (argc > 1) {
@@ -173,13 +281,15 @@ int main(int argc, char *argv[])
     // slightly tricky: reuse next section as else clause
 #endif
     {
-        script_len = strnlen(script_jscode, MAX_SCRIPT_SIZE);
 #ifdef ZJS_LINUX_BUILD
         script = zjs_malloc(script_len + 1);
         memcpy(script, script_jscode, script_len);
         script[script_len] = '\0';
 #else
+#ifndef ZJS_ASHELL
+        script_len = strnlen(script_jscode, MAX_SCRIPT_SIZE);
         script = script_jscode;
+#endif
 #endif
         if (script_len == MAX_SCRIPT_SIZE) {
             ERR_PRINT("Script size too large! Increase MAX_SCRIPT_SIZE.\n");
@@ -261,11 +371,16 @@ if (start_debug_server) {
     u8_t last_serviced = 1;
 #endif
 #ifdef ZJS_ASHELL
-    zjs_ashell_init();
+    if (ashell_mode) {
+        DBG_PRINT("Config mode detected, booting into the IDE...\n\n\n");
+        zjs_ashell_init();
+    }
 #endif
     while (1) {
 #ifdef ZJS_ASHELL
-        zjs_ashell_process();
+        if (ashell_mode) {
+            zjs_ashell_process();
+        }
 #endif
         s32_t wait_time = ZJS_TICKS_FOREVER;
         u8_t serviced = 0;
