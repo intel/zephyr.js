@@ -1,0 +1,9 @@
+{
+    "module": "math",
+    "object": "Math",
+    "zjs_config": ["-DBUILD_MODULE_MATH"],
+    "src": ["zjs_math.c"],
+    "header": ["zjs_math.h"],
+    "global_init": ["zjs_math_init"],
+    "global_cleanup": ["zjs_math_cleanup"]
+}
