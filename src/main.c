@@ -277,7 +277,17 @@ if (start_debug_server) {
             // FIXME: need to consider the chicken and egg problems here
             serviced = 1;
         }
+#ifdef ZJS_LINUX_BUILD
+	// FIXME - reverted patch #1542 to old timer implementation
+        u64_t wait = zjs_timers_process_events();
+        if (wait != ZJS_TICKS_FOREVER) {
+            serviced = 1;
+            wait_time = (wait < wait_time) ? wait : wait_time;
+        }
+        wait = zjs_service_routines();
+#else
         u64_t wait = zjs_service_routines();
+#endif
         if (wait != ZJS_TICKS_FOREVER) {
             serviced = 1;
             wait_time = (wait < wait_time) ? wait : wait_time;

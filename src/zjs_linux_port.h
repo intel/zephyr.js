@@ -6,7 +6,6 @@
 // C includes
 #include <stdint.h>
 #include <time.h>
-#include <signal.h>
 #include <unistd.h>
 
 // define Zephyr numeric types we use
@@ -19,25 +18,21 @@ typedef uint32_t u32_t;
 typedef int64_t s64_t;
 typedef uint64_t u64_t;
 
-struct zjs_port_timer;
-
-typedef void (*zjs_port_timer_cb)(struct zjs_port_timer *handle);
-
+// FIXME - reverted patch #1542 to old timer implementation
 typedef struct zjs_port_timer {
-    void *user_data;
-    uint8_t repeat;
-    struct sigevent se;
-    struct itimerspec ti;
-    struct sigaction sa;
-    timer_t time;
-    zjs_port_timer_cb callback;
+    u32_t sec;
+    u32_t milli;
+    u32_t interval;
+    void *data;
 } zjs_port_timer_t;
 
-void zjs_port_timer_init(zjs_port_timer_t *timer, zjs_port_timer_cb cb);
+#define zjs_port_timer_init(t, cb) do {} while (0)
 
 void zjs_port_timer_start(zjs_port_timer_t *timer, u32_t interval, u32_t repeat);
 
 void zjs_port_timer_stop(zjs_port_timer_t *timer);
+
+u8_t zjs_port_timer_test(zjs_port_timer_t *timer);
 
 u32_t zjs_port_timer_get_uptime(void);
 
