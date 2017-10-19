@@ -12,7 +12,7 @@ bytesRead = 0;
 bytesWritten = 0;
 
 async function autoConnect(dev) {
-    if (dev.manufacturerName == 'Intel') {
+    if (dev.manufacturerName == 'Acme' || dev.manufacturerName == 'Intel') {
 	    devicesNode.innerHTML = dev.manufacturerName + ' ' +
 	        dev.productName;
         try {

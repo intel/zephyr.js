@@ -51,7 +51,7 @@ navigator.usb.addEventListener('disconnect', function (event) {
 });
 
 async function autoConnect(dev) {
-    if (dev.manufacturerName == 'Acme') {
+    if (dev.manufacturerName == 'Acme' || dev.manufacturerName == 'Intel') {
         try {
             statusNode.innerHTML = 'Device present. Connecting...';
 
