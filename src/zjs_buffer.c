@@ -240,18 +240,17 @@ static ZJS_DECL_FUNC(zjs_buffer_to_string)
             return zjs_error("out of memory");
         }
 
-        for (int i = 0; i < buf->bufsize; ++i) {
+        int len;
+        for (len = 0; len < buf->bufsize; ++len) {
             // strip off high bit if present
-            str[i] = buf->buffer[i] & 0x7f;
+            str[len] = buf->buffer[len] & 0x7f;
+            if (!str[len]) {
+                break;
+            }
         }
-        /*
-         * If there is a NULL terminator before the end of the buffer we only
-         * want to create a string of that length, not including the extra
-         * bytes. And if there is no NULL terminator, we want to limit the size
-         * to the stored buffer size.
-         */
-        jerry_value_t jstr = jerry_create_string_sz((jerry_char_t *)str,
-                strnlen((char *)buf->buffer, buf->bufsize));
+
+        jerry_value_t jstr;
+        jstr = jerry_create_string_sz_from_utf8((jerry_char_t *)str, len);
         zjs_free(str);
         return jstr;
     } else if (strequal(encoding, "hex")) {
