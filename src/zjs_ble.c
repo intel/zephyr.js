@@ -582,6 +582,7 @@ static struct bt_conn_auth_cb zjs_ble_auth_cb_display = {
 void zjs_ble_emit_powered_event()
 {
     const char state[] = "poweredOn";
+    ZJS_ASSERT(ble_handle, "ble_handle not set");
     zjs_defer_emit_event(ble_handle->ble_obj, "stateChange", state,
                          sizeof(state), string_arg, zjs_release_args);
 }
@@ -1287,6 +1288,13 @@ static ZJS_DECL_FUNC(zjs_ble_descriptor)
     return jerry_acquire_value(argv[0]);
 }
 
+// INTERRUPT SAFE FUNCTION: No JerryScript VM, allocs, or release prints!
+void ble_bt_ready(int err)
+{
+    DBG_PRINT("bt_ready() is called [err %d]\n", err);
+    zjs_ble_emit_powered_event();
+}
+
 jerry_value_t zjs_ble_init()
 {
     k_sem_init(&ble_sem, 0, 1);
@@ -1321,6 +1329,12 @@ jerry_value_t zjs_ble_init()
     bt_conn_auth_cb_register(&zjs_ble_auth_cb_display);
 
     ble_handle = handle;
+
+#ifdef ZJS_ASHELL
+    if (bt_enable(ble_bt_ready)) {
+        ERR_PRINT("Failed to enable Bluetooth and may not be enabled again, please reboot\n");
+    }
+#endif
     return ble_obj;
 }
 
