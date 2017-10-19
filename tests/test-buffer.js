@@ -154,8 +154,35 @@ assert(buff.toString('hex') === '01020301026262626161');
 
 assert.throws(function () {
     // unsupported encoding
-    buff.toString("utf8");
-}, "Error thrown when 'hex' is not given to toString()");
+    buff.toString('unicorn64');
+}, "Error thrown with unsupported encoding in toString()");
+
+var ubuf = new Buffer(20);
+ubuf.writeUInt8(0xc2, 0);   // ¡
+ubuf.writeUInt8(0xa1, 1);
+ubuf.writeUInt8(0xc6, 2);   // Ƶ
+ubuf.writeUInt8(0xb5, 3);
+ubuf.writeUInt8(0xc4, 4);   // Ĵ
+ubuf.writeUInt8(0xb4, 5);
+ubuf.writeUInt8(0xc6, 6);   // Ƨ
+ubuf.writeUInt8(0xa7, 7);
+ubuf.writeUInt8(0x20, 8);   // space
+ubuf.writeUInt8(0xc6, 9);   // Ʀ
+ubuf.writeUInt8(0xa6, 10);
+ubuf.writeUInt8(0xc7, 11);  // Ǿ
+ubuf.writeUInt8(0xbe, 12);
+ubuf.writeUInt8(0xc2, 13);  // ©
+ubuf.writeUInt8(0xa9, 14);
+ubuf.writeUInt8(0xc4, 15);  // Ķ
+ubuf.writeUInt8(0xb6, 16);
+ubuf.writeUInt8(0xc6, 17);  // Ƨ
+ubuf.writeUInt8(0xa7, 18);
+ubuf.writeUInt8(0x21, 19);  // !
+
+assert(ubuf.toString() === '¡ƵĴƧ ƦǾ©ĶƧ!', 'toString with utf8 default');
+assert(ubuf.toString('utf8') === '¡ƵĴƧ ƦǾ©ĶƧ!', 'toString with utf8 encoding');
+assert(ubuf.toString('ascii') == "B!F5D4F' F&G>B)D6F'!",
+       'toString with ascii encoding');
 
 /*
  * We don't support Math functions currently or noAssert option to buffer writes
