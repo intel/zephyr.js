@@ -610,7 +610,7 @@ u8_t zjs_service_callbacks(void)
                     case CB_FLUSH_ALL:
                         DBG_PRINT("flushed all callbacks, freeing\n");
                         for (int i = 0; i < cb_size; i++)
-                            zjs_free_callback(id);
+                            zjs_free_callback(i);
                         break;
 
                     default:
