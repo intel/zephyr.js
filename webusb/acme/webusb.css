@@ -1,0 +1,102 @@
+div#background {
+    max-width: 60ex;
+    margin: 0 auto;
+}
+
+h1 {
+    margin: 10px 0;
+    padding: 5px;
+    text-align: center;
+    background-color: #448;
+    border-radius: 5px;
+    color: white;
+    text-shadow: -2px -2px #228;
+    font-family: sans;
+}
+
+h2 {
+    margin: 5px 0;
+    color: #228;
+    font-family: sans;
+    text-shadow: -1px -1px #ccf;
+}
+
+h3 {
+    margin: 2px 0;
+    font-family: sans;
+    font-style: italic;
+}
+
+p {
+    margin: 0.8em 0;
+}
+
+.con {
+    display: none;
+}
+
+.con-inline {
+    display: none;
+}
+
+.discon {
+    display: block;
+}
+
+div.toolbar {
+    text-align: center;
+}
+
+div.area {
+    background-color: #ddf;
+    padding: 3px;
+    border-radius: 5px;
+    margin: 1em 0;
+    text-align: center;
+}
+
+div.section {
+    margin: 10px 0;
+    text-align: center;
+}
+
+div.blue {
+    color: #448;
+}
+
+div#sorry {
+    display: none;
+}
+
+span.title {
+    font-weight: bold;
+    color: #224;
+    margin-bottom: 3px;
+    text-align: center;
+}
+
+span.label {
+    margin: 0 10px;
+}
+
+button {
+    background-color: #44c;
+    color: white;
+    border: 1px solid black;
+    border-radius: 3px;
+    padding: 5px 15px;
+}
+
+button:hover {
+    background-color: #55f;
+}
+
+button:active {
+    background-color: #66f;
+}
+
+input {
+    border: 1px solid #448;
+    border-radius: 3px;
+    padding: 1px 3px;
+}

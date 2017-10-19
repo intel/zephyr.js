@@ -1,3 +1,5 @@
+// Copyright (c) 2017, Intel Corporation.
+
 var devicesNode = document.getElementById('devices');
 var statusNode = document.getElementById('status');
 var historyNode = document.getElementById('history');

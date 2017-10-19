@@ -1,0 +1,54 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Acme Drop-O-Matic 3000 Configuration</title>
+    <link rel="stylesheet" type="text/css" href="webusb.css">
+  </head>
+  
+  <body>
+    <div id="background">
+      <h1>Acme, Inc.</h1>
+      <h2>Drop-O-Matic 3000</h2>
+      <h3>Configuration</h3>
+
+      <div>
+        <p>Thank you for purchasing the Drop-O-Matic 3000 from Acme, Inc!
+          It features the finest in IoT technology.</p>
+      </div>
+
+      <div class="discon">
+        <p>Your device should be connected to your PC with a USB cable. To
+          configure the device, press the Connect button below and give this
+          page permission to communicate with it.</p>
+      </div>
+
+      <div class="con blue">
+        <p>Your device is connected. You can now change the configuration
+          settings and click Update to send them to the device.</p>
+      </div>
+
+      <div class="con section">
+        <span class="label">Delay:
+          <input id="delay" type="number"/>
+        </span>
+      </div>
+
+      <div class="toolbar">
+        <button id="connect">Connect</button>
+        <button id="update" class="con-inline">Update</button>
+      </div>
+
+      <div id="sorry" class="updated">
+        <p>*We're sorry to hear that your anvil fell on the wrong target. We're
+          sure these new configuration settings will do the trick!</p>
+      </div>
+
+      <div class="area">
+        <span class="title">Status:</span>
+        <span class="content" id="status">Not Connected</span>
+      </div>
+
+      <script type="text/javascript" src="webusb.js"></script>
+    </div>
+  </body>
+</html>
