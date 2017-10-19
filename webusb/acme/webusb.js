@@ -15,7 +15,6 @@ var bytesWritten = 0;
 var connected = false;
 
 function setClassDisplay(name, state) {
-    console.log('setting', name, state);
     var elements = document.getElementsByClassName(name);
     var len = elements.length;
     for (var i = 0; i < len; ++i) {
@@ -23,9 +22,39 @@ function setClassDisplay(name, state) {
     }
 }
 
+function setConnectionStatus(connect) {
+    if (connect) {
+        statusNode.innerHTML = "Connected";
+        connectBtn.innerHTML = "Disconnect";
+        setClassDisplay('con', 'block');
+        setClassDisplay('con-inline', 'inline-block');
+        setClassDisplay('discon', 'none');
+        connected = true;
+    }
+    else {
+        statusNode.innerHTML = 'Disconnected';
+        connectBtn.innerHTML = "Connect";
+        setClassDisplay('con', 'none');
+        setClassDisplay('con-inline', 'none');
+        setClassDisplay('discon', 'block');
+        setClassDisplay('updated', 'none');
+        connected = false;
+    }
+}
+
+navigator.usb.addEventListener('connect', function (event) {
+    autoConnect(event.device);
+});
+
+navigator.usb.addEventListener('disconnect', function (event) {
+    setConnectionStatus(false);
+});
+
 async function autoConnect(dev) {
     if (dev.manufacturerName == 'Acme') {
         try {
+            statusNode.innerHTML = 'Device present. Connecting...';
+
             await dev.open();
             if (!dev.configuration) {
                 await dev.selectConfiguration(1);
@@ -33,29 +62,31 @@ async function autoConnect(dev) {
             await dev.claimInterface(2);
             device = dev;
             await ctrlTransfer();
-	        statusNode.innerHTML = "Connected";
-            connectBtn.innerHTML = "Disconnect";
-
-            setClassDisplay('con', 'block');
-            setClassDisplay('con-inline', 'inline-block');
-            setClassDisplay('discon', 'none');
-            connected = true;
 
             // read configured delay value when safe
-            console.log('about to set timeout');
             setTimeout(async function () {
-                console.log('done set timeout');
                 await sendCommand('read delay');
                 let maxlen = 64;
-                console.log('receiving');
-                let result = await device.transferIn(3, maxlen);
-                console.log('received', typeof(result));
-                console.log('received', result);
 
-                var decoder = new TextDecoder("utf-8");
-                var s = decoder.decode(result.data);
-                delayInput.value = parseInt(s);
-                console.log('updated value: ', delayInput.value);
+                var promise = device.transferIn(3, maxlen);
+                promise.then(function (result) {
+                    if (result.status == 'stall') {
+                        console.warn('connection lost');
+                        return;
+                    }
+
+                    setConnectionStatus(true);
+
+                    var decoder = new TextDecoder("utf-8");
+                    var s = decoder.decode(result.data);
+                    delayInput.value = parseInt(s);
+                });
+
+                setTimeout(async function () {
+                    if (!connected) {
+                        statusNode.innerHTML = 'Device not in configuration mode';
+                    }
+                }, 2000);
             }, 250);
         }
         catch (e) {
@@ -72,7 +103,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function ctrlTransfer() {
-	console.log('control transfer...');
 	await device.controlTransferOut({
 	    requestType: 'class',
 	    recipient: 'interface',
@@ -87,13 +117,12 @@ async function sendCommand(command) {
     var buf = encoder.encode(command);
     await device.transferOut(2, buf);
 }
-    
+
 async function updateConfiguration() {
     let command = 'set delay ' + delayInput.value;
-    console.log('command:', command);
-
     await sendCommand(command);
 	statusNode.innerHTML = "Connected and Updated";
+    setClassDisplay('updated', 'block');
 }
 
 updateBtn.addEventListener('click', updateConfiguration);
@@ -101,25 +130,16 @@ updateBtn.addEventListener('click', updateConfiguration);
 async function disconnect() {
     let devices = await navigator.usb.getDevices();
     devices.forEach(device => {
-            device.close();
+        device.close();
     });
-    statusNode.innerHTML = 'Disconnected';
-    connectBtn.innerHTML = "Connect";
-    setClassDisplay('con', 'none');
-    console.log("SETTING TO NONE!");
-    setClassDisplay('con-inline', 'none');
-    setClassDisplay('discon', 'block');
-    connected = false;
 }
 
 document.getElementById('connect').addEventListener('click', async () => {
     if (connected) {
-        console.log('discon...');
-        return disconnect();
+        setConnectionStatus(false);
+        return;
     }
     try {
-	    console.log("requesting device...");
-
         // filter to show only Intel devices
 	    let dev = await navigator.usb.requestDevice({
             filters: [{
@@ -129,6 +149,6 @@ document.getElementById('connect').addEventListener('click', async () => {
         await autoConnect(dev);
     }
     catch (e) {
-	    console.log('no device selected');
+	    console.warn('no device selected');
     }
 });

@@ -66,6 +66,7 @@ div.blue {
 
 div#sorry {
     display: none;
+    font-style: italic;
 }
 
 span.title {
