@@ -44,9 +44,9 @@ function handleConfigRequest(data) {
 
     var buf = new Buffer(5);
     data.copy(buf, 0, 0, 5);
-    if (buf.toString() == 'read ') {
+    if (buf.toString() === 'read ') {
         data.copy(buf, 0, 5, 10);
-        if (buf.toString() == 'delay') {
+        if (buf.toString() === 'delay') {
             var sbuf = new Buffer(anvilDelay + '');
             webusb.write(sbuf);
             console.log('Sent current delay value:', anvilDelay);
@@ -58,8 +58,8 @@ function handleConfigRequest(data) {
 
     var cmdlen = 10;
     buf = new Buffer(cmdlen);
-    data.copy(buf, 0, 0, cmdlen)
-    if (buf.toString() != 'set delay ') {
+    data.copy(buf, 0, 0, cmdlen);
+    if (buf.toString() !== 'set delay ') {
         console.log('Error: unknown command received');
         return;
     }
@@ -164,7 +164,7 @@ resetButton.onchange = function () {
     if (screenState && !timer) {
         animate();
     }
-}
+};
 
 function resetAnvil() {
     ledAnvil.write(0);
@@ -219,7 +219,7 @@ var timer = null;
 function drawSections(sections) {
     for (var i = 0; i < sections.length; i++) {
         var section = sections[i];
-        if (typeof(sections[0]) != 'object') {
+        if (typeof(sections[0]) !== 'object') {
             section = sections;
         }
         glcd.setCursorPos(section[0], section[1]);
@@ -233,7 +233,7 @@ function animate() {
     var fMessageTime = 8;
     var fClientSpeed = 2, fSlinkSpeed = 4;
 
-    var winner = anvilDelay == 1250;
+    var winner = anvilDelay === 1250;
     var rrFrames = 16;
     if (winner) {
         rrFrames = 11;
@@ -254,96 +254,96 @@ function animate() {
         }
 
         if (!winner) {
-            if (frame == 16) {
+            if (frame === 16) {
                 drawSections([0, 1, '_']);
             }
 
-            if (frame == fEscape) {
+            if (frame === fEscape) {
                 glcd.setColor(128, 255, 128);
                 drawSections([[5, 0, 'Target     '],
-                              [0, 1, '    Escaped!    ']])
+                              [0, 1, '    Escaped!    ']]);
             }
 
-            if (frame == fEscape + fMessageTime) {
+            if (frame === fEscape + fMessageTime) {
                 glcd.setColor(128, 128, 255);
                 drawSections([[3, 0, '  A         S'],
-                              [0, 1, '________________']])
+                              [0, 1, '________________']]);
             }
 
             // client walks in
-            if (frame == fClient) {
+            if (frame === fClient) {
                 drawSections([0, 1, 'W']);
             }
             if (frame >= fClient + fClientSpeed &&
                 frame <= fClient + 5 * fClientSpeed &&
-                frame % fClientSpeed == 0) {
+                frame % fClientSpeed === 0) {
                 drawSections([(frame - (fClient + fClientSpeed)) /
                               fClientSpeed, 1, '_W']);
             }
         }
 
         // anvil falls
-        if (frame == fAnvil) {
+        if (frame === fAnvil) {
             drawSections([[5, 0, ' '], [5, 1, 'A']]);
         }
-        if (frame == fAnvil + 1) {
+        if (frame === fAnvil + 1) {
             drawSections([[5, 0, '*'], [4, 1, '*A*']]);
         }
-        if (frame == fAnvil + 2) {
+        if (frame === fAnvil + 2) {
             drawSections([[4, 0, '* *'], [3, 1, '*_A_*']]);
         }
-        if (frame == fAnvil + 3) {
+        if (frame === fAnvil + 3) {
             drawSections([[3, 0, '*   *'], [2, 1, '*__A__*']]);
         }
-        if (frame == fAnvil + 4) {
+        if (frame === fAnvil + 4) {
             drawSections([[3, 0, '     '], [2, 1, '___A___']]);
         }
 
-        if (frame == fOuch) {
+        if (frame === fOuch) {
             glcd.setColor(255, 32, 32);
             drawSections([3, 0, 'Ouch!']);
         }
-        if (frame == fOuch + fMessageTime) {
+        if (frame === fOuch + fMessageTime) {
             glcd.setColor(128, 128, 255);
             drawSections([3, 0, '     ']);
         }
 
         if (winner) {
-            if (frame == fVictory) {
+            if (frame === fVictory) {
                 glcd.setColor(128, 255, 128);
                 drawSections([[0, 0, '    Victory!    '],
                               [0, 1, '                ']]);
             }
-            if (frame == fVictory + 10) {
+            if (frame === fVictory + 10) {
                 drawSections([3, 1, 'Or was it?']);
             }
-            if (frame == fVictory + 20) {
+            if (frame === fVictory + 20) {
                 drawSections([4, 0, 'Beep!   ']);
             }
-            if (frame == fVictory + 21) {
+            if (frame === fVictory + 21) {
                 drawSections([3, 1, '    Beep! ']);
                 fDone = frame + 6;
             }
         }
         else {
             // client slinks out
-            if (frame == fSlink) {
+            if (frame === fSlink) {
                 drawSections([4, 1, 'w']);
             }
-            if (frame >= fSlink + fSlinkSpeed && frame <= fSlink + 4 * fSlinkSpeed && frame % fSlinkSpeed == 0) {
+            if (frame >= fSlink + fSlinkSpeed && frame <= fSlink + 4 * fSlinkSpeed && frame % fSlinkSpeed === 0) {
                 drawSections([3 - (frame - (fSlink + fSlinkSpeed)) / fSlinkSpeed, 1, 'w_']);
             }
-            if (frame == fSlink + 5 * fSlinkSpeed) {
+            if (frame === fSlink + 5 * fSlinkSpeed) {
                 drawSections([0, 1, '_']);
             }
 
-            if (frame == fAgain) {
+            if (frame === fAgain) {
                 drawSections([[0, 0, '     Maybe      '],
                               [0, 1, '   Next Time!   ']]);
             }
         }
 
-        if (frame == fDone) {
+        if (frame === fDone) {
             screenOff();
             clearInterval(timer);
             timer = null;
@@ -357,4 +357,4 @@ configButton.onchange = function() {
     if (!screenState) {
         resetScreen();
     }
-}
+};
