@@ -90,6 +90,7 @@ async function autoConnect(dev) {
             }, 250);
         }
         catch (e) {
+            statusNode.innerHTML = 'Unable to connect';
             console.log("Exception:", e.message);
         }
     }
