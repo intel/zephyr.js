@@ -68,11 +68,12 @@ function handleConfigRequest(data) {
     buf = new Buffer(data.length - cmdlen);
     data.copy(buf, 0, cmdlen, data.length);
 
-    for (var i = 0; i < buf.length; i++) {
-        if (buf[i] < '0' || buf[i] > '9') {
-            console.log('Error: expected integer delay value');
-            return;
-        }
+    try {
+        var num = buf.toString() | 0;
+        anvilDelay = num;
+    }
+    catch (e) {
+        console.log('Error: expected integer delay value:', e.message);
     }
 
     // write it to the filesystem
@@ -92,14 +93,6 @@ function handleConfigRequest(data) {
 
 var configMode = false;
 
-function bootConfigMode() {
-    // suggest that the browser visit this URL to connect to the device
-    configMode = true;
-    webusb.setURL(url);
-    console.log('Advertising URL on WebUSB:', url);
-    webusb.on('read', handleConfigRequest);
-}
-
 var led = gpio.open({pin: 'LED1', activeLow: true});
 led.write(1);  // indicate operational status
 
@@ -111,6 +104,7 @@ var blinkIndex = 0;
 readConfig();
 
 var toggle = 0;
+var debounce = false;
 
 function blinker() {
     led.write(toggle);
@@ -132,7 +126,17 @@ else if (configButton.read()) {
     blinker();
 }
 
-var debounce = false;
+function bootConfigMode() {
+    // suggest that the browser visit this URL to connect to the device
+    configMode = true;
+    webusb.setURL(url);
+    console.log('Advertising URL on WebUSB:', url);
+    webusb.on('read', handleConfigRequest);
+    debounce = true;
+    setTimeout(function () {
+        debounce = false;
+    }, 3000);
+}
 
 var ledAnvil = gpio.open({pin: 'LED0', activeLow: true});
 ledAnvil.write(0);
@@ -151,7 +155,7 @@ function blinkAnvil() {
 }
 
 resetButton.onchange = function () {
-    if (configMode || debounce)
+    if (debounce)
         return;
 
     debounce = true;
@@ -350,10 +354,6 @@ function animate() {
 }
 
 configButton.onchange = function() {
-    if (configMode) {
-        return;
-    }
-
     if (!screenState) {
         resetScreen();
     }
