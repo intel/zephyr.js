@@ -34,7 +34,7 @@ void zjs_math_init(void)
 
     // initialize the Math object
     ZVAL global_obj = jerry_get_global_object();
-    zjs_set_property(global_obj, "Math", math);
+    zjs_set_property(global_obj, "MathStubs", math);
 }
 
 void zjs_math_cleanup()

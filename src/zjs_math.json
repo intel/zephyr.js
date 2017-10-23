@@ -1,6 +1,6 @@
 {
     "module": "math",
-    "object": "Math",
+    "object": "MathStubs",
     "zjs_config": ["-DBUILD_MODULE_MATH"],
     "src": ["zjs_math.c"],
     "header": ["zjs_math.h"],
