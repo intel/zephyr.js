@@ -66,7 +66,8 @@ LINUX_DEFINES +=	-DZJS_LINUX_BUILD \
 			-DBUILD_MODULE_GPIO \
 			-DZJS_GPIO_MOCK \
 			-DZJS_FIND_FUNC_NAME \
-			-DJERRY_PORT_ENABLE_JOBQUEUE
+			-DJERRY_PORT_ENABLE_JOBQUEUE \
+			-DENABLE_INIT_FINI
 
 LINUX_FLAGS += 	-fno-asynchronous-unwind-tables \
 		-fno-omit-frame-pointer \
