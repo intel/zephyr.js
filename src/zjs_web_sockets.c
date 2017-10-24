@@ -21,7 +21,7 @@ static char FTRACE_PREFIX[] = "net";
 #include <net/net_mgmt.h>
 #include <net/net_pkt.h>
 
-#ifdef CONFIG_NET_L2_BLUETOOTH
+#ifdef CONFIG_NET_L2_BT
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
 #endif

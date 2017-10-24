@@ -7,9 +7,9 @@
 // Zephyr includes
 #include "zjs_zephyr_port.h"
 #include <zephyr.h>
-#if defined(BUILD_MODULE_BLE) || (CONFIG_NET_L2_BLUETOOTH)
+#if defined(BUILD_MODULE_BLE) || (CONFIG_NET_L2_BT)
 #include <bluetooth/bluetooth.h>
-#ifdef CONFIG_NET_L2_BLUETOOTH
+#ifdef CONFIG_NET_L2_BT
 #include <bluetooth/storage.h>
 #include <gatt/ipss.h>
 #include "zjs_net_config.h"
@@ -236,7 +236,7 @@ if (start_debug_server) {
        goto error;
     }
 #endif
-#ifdef CONFIG_NET_L2_BLUETOOTH
+#ifdef CONFIG_NET_L2_BT
     if (bt_enable(NULL)) {
        ERR_PRINT("Failed to enable Bluetooth\n");
        goto error;

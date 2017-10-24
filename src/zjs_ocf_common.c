@@ -526,7 +526,7 @@ jerry_value_t zjs_ocf_init()
 #endif
 
 #ifndef ZJS_LINUX_BUILD
-#if defined(CONFIG_NET_L2_BLUETOOTH)
+#if defined(CONFIG_NET_L2_BT)
     // init BLE address
     zjs_init_ble_address();
 #endif

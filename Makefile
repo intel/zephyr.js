@@ -299,15 +299,15 @@ analyze: $(JS)
 	@# Add bluetooth debug configs if BLE is enabled
 	@if grep -q BUILD_MODULE_BLE src/Makefile; then \
 		if [ "$(VARIANT)" = "debug" ]; then \
-			echo "CONFIG_BLUETOOTH_DEBUG_LOG=y" >> prj.conf; \
+			echo "CONFIG_BT_DEBUG_LOG=y" >> prj.conf; \
 		fi \
 	fi
 
 	@if grep -q BUILD_MODULE_OCF src/Makefile; then \
-		echo "CONFIG_BLUETOOTH_DEVICE_NAME=\"$(DEVICE_NAME)\"" >> prj.conf; \
+		echo "CONFIG_BT_DEVICE_NAME=\"$(DEVICE_NAME)\"" >> prj.conf; \
 	fi
 	@if grep -q BUILD_MODULE_DGRAM src/Makefile; then \
-		echo "CONFIG_BLUETOOTH_DEVICE_NAME=\"$(DEVICE_NAME)\"" >> prj.conf; \
+		echo "CONFIG_BT_DEVICE_NAME=\"$(DEVICE_NAME)\"" >> prj.conf; \
 	fi
 	@if [ -e outdir/$(BOARD)/jerry_feature.profile.bak ]; then \
 		if ! cmp outdir/$(BOARD)/jerry_feature.profile.bak outdir/$(BOARD)/jerry_feature.profile; \
