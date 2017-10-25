@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016 - 2017, Intel Corporation.
 
 // Sample code demonstrating how to use I2C to communicate with slave devices
 
