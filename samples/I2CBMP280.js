@@ -130,4 +130,4 @@ glcdInit();
 
 /* Loop read forever */
 
-var timer = setInterval(readTemperature, 10);
+var timer = setInterval(readTemperature, 200);
