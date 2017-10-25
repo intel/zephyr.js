@@ -757,6 +757,9 @@ least two plus-ones (+1) , "Look Good To Me (LGTM)" or other positive signals
 for the project members. Once you have gained the required signals the project
 maintainers will merge the PR.
 
+To report a security issue, please follow the procedure described
+[here](https://01.org/security).
+
 ### Travis and local sanity checking
 
 We run a series of tests on each pull request and merged commit using Travis.
