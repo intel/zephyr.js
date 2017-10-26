@@ -317,7 +317,6 @@ static int uart_out(int c)
     return 1;
 }
 
-#ifdef CONFIG_UART_LINE_CTRL
 u32_t uart_get_baudrate(void)
 {
     u32_t baudrate;
@@ -330,7 +329,6 @@ u32_t uart_get_baudrate(void)
 
     return baudrate;
 }
-#endif
 
 static void uart_ready()
 {
@@ -378,14 +376,12 @@ static bool check_uart_connection()
  */
 void uart_process()
 {
-    #ifdef CONFIG_UART_LINE_CTRL
     if (!dtr) {
         if (!check_uart_connection()) {
             // No connection yet, bail out
             return;
         }
     }
-    #endif
 
     static struct uart_input *data = NULL;
     char *buf = NULL;
