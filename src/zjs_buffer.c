@@ -126,7 +126,7 @@ static ZJS_DECL_FUNC_ARGS(zjs_buffer_write_bytes, int bytes, bool big_endian)
 
     if (offset + bytes > buf->bufsize) {
         DBG_PRINT("bufsize %d, write attempted from %d to %d\n",
-                  offset, offset + bytes);
+                  buf->bufsize, offset, offset + bytes);
         return zjs_error("write attempted beyond buffer");
     }
 

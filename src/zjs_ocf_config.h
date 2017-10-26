@@ -13,4 +13,6 @@ typedef uint64_t oc_clock_time_t;
 
 #define OC_DYNAMIC_ALLOCATION
 
+#define MAX_APP_DATA_SIZE 1024
+
 #endif

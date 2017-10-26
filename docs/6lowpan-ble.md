@@ -154,8 +154,8 @@ device. You can now connect an OCF client. There are OCF client samples in the
 [iot-rest-api-server](https://github.com/01org/iot-rest-api-server) repo.
 ```bash
 $ git clone git@github.com:01org/iot-rest-api-server.git
-$ npm i
-$ node index.js
+$ npm install iot-rest-api-server
+$ iot-rest-api-server
 ```
 
 You can then do discovery from the browser or using one of the test scripts:

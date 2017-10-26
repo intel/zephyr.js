@@ -2,6 +2,11 @@
 
 // Sample client that works with OcfSensorServer.js
 
+// To run it on the Arduino 101, you'll need to connect via BLE with your
+// host machine (e.g. Linux), then add a new route for the bt0 interface:
+
+// ip -6 route add 2001:db8::/64 dev bt0
+
 var ocf = require('ocf');
 var client = ocf.client;
 
