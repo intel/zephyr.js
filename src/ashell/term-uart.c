@@ -357,7 +357,7 @@ static void uart_ready()
     process_state = 0;
 
     atomic_set(&uart_state, UART_INIT);
-    
+
     DBG("[Init]\n");
     terminal->init();
 }
