@@ -43,9 +43,9 @@ function handleConfigRequest(data) {
 
     var buf = new Buffer(5);
     data.copy(buf, 0, 0, 5);
-    if (buf.toString() == 'read ') {
+    if (buf.toString() === 'read ') {
         data.copy(buf, 0, 5, 10);
-        if (buf.toString() == 'delay') {
+        if (buf.toString() === 'delay') {
             var sbuf = new Buffer(anvilDelay + '');
             webusb.write(sbuf);
             console.log('Sent current delay value:', anvilDelay);
@@ -57,8 +57,8 @@ function handleConfigRequest(data) {
 
     var cmdlen = 10;
     buf = new Buffer(cmdlen);
-    data.copy(buf, 0, 0, cmdlen)
-    if (buf.toString() != 'set delay ') {
+    data.copy(buf, 0, 0, cmdlen);
+    if (buf.toString() !== 'set delay ') {
         console.log('Error: unknown command received');
         return;
     }
@@ -77,7 +77,7 @@ function handleConfigRequest(data) {
     // write it to the filesystem
     var fd = fs.openSync('device.cfg', 'w');
     var bytes = fs.writeSync(fd, buf, 0, buf.length);
-    if (bytes != buf.length) {
+    if (bytes !== buf.length) {
         console.log('Error: delay write failed');
         return;
     }
@@ -152,7 +152,7 @@ resetButton.onchange = function () {
 
     debounce = true;
     setTimeout(dropAnvil, anvilDelay);
-}
+};
 
 function resetAnvil() {
     ledAnvil.write(0);
