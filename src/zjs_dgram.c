@@ -6,7 +6,7 @@
 #include <net/net_context.h>
 #include <net/net_pkt.h>
 #include <net/udp.h>
-#if defined(CONFIG_NET_L2_BLUETOOTH)
+#if defined(CONFIG_NET_L2_BT)
 #include <bluetooth/bluetooth.h>
 #endif
 

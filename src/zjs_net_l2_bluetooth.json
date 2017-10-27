@@ -12,8 +12,8 @@
             "CONFIG_BT_L2CAP_DYNAMIC_CHANNEL=y",
             "CONFIG_NETWORKING_WITH_6LOWPAN=y",
             "CONFIG_6LOWPAN_COMPRESSION_IPHC=y",
-            "CONFIG_NET_L2_BLUETOOTH_ZEP1656=y",
-            "CONFIG_NET_L2_BLUETOOTH=y"
+            "CONFIG_NET_L2_BT_ZEP1656=y",
+            "CONFIG_NET_L2_BT=y"
         ]
     },
     "src": ["../deps/zephyr/samples/bluetooth/gatt/ipss.c"],
