@@ -14,6 +14,10 @@ arbitrary JavaScript directly from the USB port of a Zephyr enabled device.
 Although the shell would look like a common Unix Bash, it is heavily limited
 due the constraints of the micro-controller.
 
+NOTE: Because the filesystem module is used by ashell, the SPI module is also
+included. This means that on the Arduino 101, pins 10 - 13 are set as SPI and
+can't be used as GPIO pins.
+
 Compilation
 ------------
 

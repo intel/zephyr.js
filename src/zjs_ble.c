@@ -15,6 +15,7 @@
 #include <zephyr.h>
 
 // ZJS includes
+#include "zjs_ble.h"
 #include "zjs_buffer.h"
 #include "zjs_callbacks.h"
 #include "zjs_event.h"
@@ -68,7 +69,7 @@ typedef struct zjs_ble_service {
     struct bt_uuid *uuid;
     ble_characteristic_t *characteristics;
     struct zjs_ble_service *next;
-    struct bt_gatt_attr *attr_db;
+    struct bt_gatt_service svc;
 } ble_service_t;
 
 typedef struct zjs_ble_connection {
@@ -77,7 +78,7 @@ typedef struct zjs_ble_connection {
 } ble_connection_t;
 
 typedef struct zjs_ble_handle {
-    struct bt_gatt_ccc_cfg blvl_ccc_cfg[CONFIG_BLUETOOTH_MAX_PAIRED];
+    struct bt_gatt_ccc_cfg blvl_ccc_cfg[CONFIG_BT_MAX_PAIRED];
     jerry_value_t ble_obj;
     ble_service_t *services;
     ble_connection_t *connections;
@@ -213,8 +214,8 @@ static void zjs_ble_free_services(ble_service_t *service)
             zjs_free(tmp->uuid);
         if (tmp->characteristics)
             zjs_ble_free_characteristics(tmp->characteristics);
-        if (tmp->attr_db)
-            zjs_free(tmp->attr_db);
+        if (tmp->svc.attrs)
+            zjs_free(tmp->svc.attrs);
 
         zjs_free(tmp);
     }
@@ -508,12 +509,13 @@ static void zjs_ble_blvl_ccc_cfg_changed(const struct bt_gatt_attr *attr,
 }
 
 // a zjs_pre_emit callback
-static void string_arg(void *unused, jerry_value_t argv[], u32_t *argc,
+static bool string_arg(void *unused, jerry_value_t argv[], u32_t *argc,
                        const char *buffer, u32_t bytes)
 {
     // requires: buffer contains string with bytes chars including null term
     argv[0] = jerry_create_string((jerry_char_t *)buffer);
     *argc = 1;
+    return true;
 }
 
 // INTERRUPT SAFE FUNCTION: No JerryScript VM, allocs, or release prints!
@@ -581,6 +583,7 @@ static struct bt_conn_auth_cb zjs_ble_auth_cb_display = {
 void zjs_ble_emit_powered_event()
 {
     const char state[] = "poweredOn";
+    ZJS_ASSERT(ble_handle, "ble_handle not set");
     zjs_defer_emit_event(ble_handle->ble_obj, "stateChange", state,
                          sizeof(state), string_arg, zjs_release_args);
 }
@@ -1003,6 +1006,8 @@ static bool zjs_ble_register_service(ble_service_t *service)
         return false;
     }
 
+    // FIXME: it appears this is leaking malloced buffers like a sieve on error
+
     // calculate the number of GATT attributes to allocate
     int entry_index = 0;
     int num_of_entries = 1;    // 1 attribute for service uuid
@@ -1022,10 +1027,10 @@ static bool zjs_ble_register_service(ble_service_t *service)
         ch = ch->next;
     }
 
-   struct bt_gatt_attr *bt_attrs = zjs_malloc(sizeof(struct bt_gatt_attr) *
-                                              num_of_entries);
+    struct bt_gatt_attr *bt_attrs = zjs_malloc(sizeof(struct bt_gatt_attr) *
+                                               num_of_entries);
     if (!bt_attrs) {
-        ERR_PRINT("out of memory allocating struct bt_gatt_attr\n");
+        ERR_PRINT("out of memory\n");
         return false;
     }
 
@@ -1133,8 +1138,10 @@ static bool zjs_ble_register_service(ble_service_t *service)
 
     DBG_PRINT("registered service: %d entries\n", entry_index);
     // keep reference to the bt attributes so we can free it
-    service->attr_db = bt_attrs;
-    bt_gatt_register(service->attr_db, entry_index);
+    service->svc.attrs = bt_attrs;
+    service->svc.attr_count = entry_index;
+
+    bt_gatt_service_register(&service->svc);
     return true;
 }
 
@@ -1301,6 +1308,13 @@ static const jerry_object_native_info_t ble_module_type_info = {
    .free_cb = zjs_ble_cleanup
 };
 
+// INTERRUPT SAFE FUNCTION: No JerryScript VM, allocs, or release prints!
+void ble_bt_ready(int err)
+{
+    DBG_PRINT("bt_ready() is called [err %d]\n", err);
+    zjs_ble_emit_powered_event();
+}
+
 static jerry_value_t zjs_ble_init()
 {
     k_sem_init(&ble_sem, 0, 1);
@@ -1335,9 +1349,13 @@ static jerry_value_t zjs_ble_init()
     bt_conn_auth_cb_register(&zjs_ble_auth_cb_display);
 
     ble_handle = handle;
-
     jerry_set_object_native_pointer(ble_obj, ble_handle, &ble_module_type_info);
 
+#ifdef ZJS_ASHELL
+    if (bt_enable(ble_bt_ready)) {
+        ERR_PRINT("Failed to enable Bluetooth and may not be enabled again, please reboot\n");
+    }
+#endif
     return ble_obj;
 }
 

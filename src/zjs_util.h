@@ -86,7 +86,7 @@ void zjs_pop_mem_stat(void *ptr);
     ({                                             \
         void *zjs_ptr = zjs_malloc_with_retry(sz); \
         if (!zjs_ptr) {                            \
-            ERR_PRINT("malloc failed\n");          \
+            ERR_PRINT("malloc(%d) failed\n", sz);  \
         }                                          \
         zjs_ptr;                                   \
     })
@@ -672,6 +672,14 @@ void zjs_loop_init(void);
     }
 #else
 #define CHECK_REF_COUNT(str, obj)
+#endif
+
+#ifdef DEBUG_BUILD
+// prints label string, then dumps hex contents of buffer buf of length len
+void dump_buffer(const char *label, const void *buf, int len);
+#define DUMP_BUFFER(label, buf, len) dump_buffer(label, buf, len)
+#else
+#define DUMP_BUFFER(label, buf, len) do {} while (0)
 #endif
 
 #endif  // __zjs_util_h__

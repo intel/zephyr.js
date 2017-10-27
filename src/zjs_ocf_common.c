@@ -279,7 +279,7 @@ static void issue_requests(void)
 #ifdef ZJS_LINUX_BUILD
 #define CONFIG_DEVICE_NAME "ZJS Device"
 #else
-#define CONFIG_DEVICE_NAME CONFIG_BLUETOOTH_DEVICE_NAME
+#define CONFIG_DEVICE_NAME CONFIG_BT_DEVICE_NAME
 #endif
 
 void zjs_set_uuid(char *uuid)
@@ -541,7 +541,7 @@ static jerry_value_t zjs_ocf_init()
 #endif
 
 #ifndef ZJS_LINUX_BUILD
-#if defined(CONFIG_NET_L2_BLUETOOTH)
+#if defined(CONFIG_NET_L2_BT)
     // init BLE address
     zjs_init_ble_address();
 #endif

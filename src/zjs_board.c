@@ -8,98 +8,203 @@
 #include "zjs_common.h"
 #include "zjs_util.h"
 
+#define PIN_NAME_MAX_LEN 8
+
+typedef u8_t pin_id_t;
+
+typedef struct {
+    pin_id_t start;
+    pin_id_t end;
+} pin_range_t;
+
+typedef struct {
+    const char *name;
+    pin_id_t id;
+} extra_pin_t;
+
 #if defined(CONFIG_BOARD_ARDUINO_101) || defined(ZJS_LINUX_BUILD)
 // data from zephyr/boards/x86/arduino_101/pinmux.c
 // *dual pins mean there's another zephyr pin that maps to the same user pin,
 //    exposing distinct functionality; unclear how to understand this so far
 static const zjs_pin_t pin_data[] = {
-    {"IO0",  "0",  NULL,   0, 255,   9, 255},
-    {"IO1",  "1",  NULL,   0, 255,   8, 255},
-    {"IO2",  "2",  NULL,   0,  18, 255, 255},
-    {"IO3",  "3",  "PWM0", 0,  17,  10,   0},
-    {"IO4",  "4",  NULL,   0,  19, 255, 255},
-    {"IO5",  "5",  "PWM1", 0,  15,  11,   1},
-    {"IO6",  "6",  "PWM2", 0, 255,  12,   2},
-    {"IO7",  "7",  NULL,   0,  20, 255, 255},
-    {"IO8",  "8",  NULL,   0,  16, 255, 255},
-    {"IO9",  "9",  "PWM3", 0, 255,  13,   3},
-    {"IO10", "10", NULL,   0,  11,   0, 255},
-    {"IO11", "11", NULL,   0,  10,   3, 255},
-    {"IO12", "12", NULL,   0,   9,   1, 255},
-    {"IO13", "13", "LED2", 0,   8,   2, 255},
-    {"AD0",  "A0", NULL,   0, 255,  10, 255},
-    {"AD1",  "A1", NULL,   0, 255,  11, 255},
-    {"AD2",  "A2", NULL,   0, 255,  12, 255},
-    {"AD3",  "A3", NULL,   0, 255,  13, 255},
-    {"AD4",  "A4", NULL,   0, 255,  14, 255},
-    {"AD5",  "A5", NULL,   0, 255,   9, 255},
-    {"LED0", NULL, NULL,   0,  26, 255, 255},
-    {"LED1", NULL, NULL,   0,  12, 255, 255}
+    {0, 255,   9},  // IO0
+    {0, 255,   8},  // IO1
+    {0,  18, 255},  // IO2
+    {0,  17,  10},  // IO3
+    {0,  19, 255},  // IO4
+    {0,  15,  11},  // IO5
+    {0, 255,  12},  // IO6
+    {0,  20, 255},  // IO7
+    {0,  16, 255},  // IO8
+    {0, 255,  13},  // IO9
+    {0,  11,   0},  // IO10
+    {0,  10,   3},  // IO11
+    {0,   9,   1},  // IO12
+    {0,   8,   2},  // IO13
+    {0, 255,  10},  // AD0
+    {0, 255,  11},  // AD1
+    {0, 255,  12},  // AD2
+    {0, 255,  13},  // AD3
+    {0, 255,  14},  // AD4
+    {0, 255,   9},  // AD5
+    {0,  26, 255},  // LED0
+    {0,  12, 255},  // LED1
+    {0,   8,   2},  // LED2 (aka IO13)
+    {0,  17,  10},  // PWM0 (aka IO3)
+    {0,  15,  11},  // PWM1 (aka IO5)
+    {0, 255,  12},  // PWM2 (aka IO6)
+    {0, 255,  13}   // PWM3 (aka IO9)
 };
+
+static const pin_range_t digital_pins = {0, 13};
+static const pin_range_t analog_pins = {14, 19};
+static const pin_range_t led_pins = {20, 22};
+static const pin_range_t pwm_pins = {23, 26};
+static const extra_pin_t extra_pins[] = {};
+
 #elif CONFIG_BOARD_FRDM_K64F
 enum gpio_ports {
     PTA, PTB, PTC, PTD, PTE
 };
 
 static const zjs_pin_t pin_data[] = {
-    {"D0",    "0",  NULL, PTC, 16, 255},
-    {"D1",    "1",  NULL, PTC, 17, 255},
-    {"D2",    "2",  NULL, PTB,  9, 255},
-    {"D3",    "3",  NULL, PTA,  1, 255},
-    {"D4",    "4",  NULL, PTB, 23, 255},
-    {"D5",    "5",  NULL, PTA,  2, 255},
-    {"D6",    "6",  NULL, PTC,  2, 255},
-    {"D7",    "7",  NULL, PTC,  3, 255},
-    // currently not working on rev E3; used to work as input/output
-    {"D8",    "8",  NULL, PTC, 12, 255},  // PTA0 for Rev <= D
-    {"D9",    "9",  NULL, PTC,  4, 255},
-    {"D10",  "10",  NULL, PTD,  0, 255},
-    {"D11",  "11",  NULL, PTD,  2, 255},
-    {"D12",  "12",  NULL, PTD,  3, 255},
-    {"D13",  "13",  NULL, PTD,  1, 255},
-    {"D14",  "14",  NULL, PTE, 25, 255},
-    {"D15",  "15",  NULL, PTE, 24, 255},
-    {"A0",   NULL,  NULL, PTB,  2, 255},
-    {"A1",   NULL,  NULL, PTB,  3, 255},
-    {"A2",   NULL,  NULL, PTB, 10, 255},
-    {"A3",   NULL,  NULL, PTB, 11, 255},
-    {"A4",   NULL,  NULL, PTC, 11, 255},
-    {"A5",   NULL,  NULL, PTC, 10, 255},
-    {"LEDR", NULL,  NULL, PTB, 22, 255},
-    {"LEDG", NULL,  NULL, PTE, 26, 255},
-    {"LEDB", NULL,  NULL, PTB, 21, 255},
-    {"SW2",  NULL,  NULL, PTC,  6, 255},
-    {"SW3",  NULL,  NULL, PTA,  4, 255},
-    {"PWM0", NULL,  NULL, PTA,  1,   0},
-    {"PWM1", NULL,  NULL, PTA,  2,   2},
-    {"PWM2", NULL,  NULL, PTC,  2,   3},
-    {"PWM3", NULL,  NULL, PTC,  3,   3},
-    {"PWM4", NULL,  NULL, PTC, 12,   4},
-    {"PWM5", NULL,  NULL, PTC,  4,   5},
-    {"PWM6", NULL,  NULL, PTD,  0,   6},
-    {"PWM7", NULL,  NULL, PTD,  2,   7},
-    {"PWM8", NULL,  NULL, PTD,  3,   8},
-    {"PWM9", NULL,  NULL, PTD,  1,   9}
+    {PTC, 16},  // D0
+    {PTC, 17},  // D1
+    {PTB,  9},  // D2
+    {PTA,  1},  // D3
+    {PTB, 23},  // D4
+    {PTA,  2},  // D5
+    {PTC,  2},  // D6
+    {PTC,  3},  // D7
+    // D8 currently not working on rev E3; used to work as input/output
+    {PTC, 12},  // D8 (PTA0 for Rev <= D)
+    {PTC,  4},  // D9
+    {PTD,  0},  // D10
+    {PTD,  2},  // D11
+    {PTD,  3},  // D12
+    {PTD,  1},  // D13
+    {PTE, 25},  // D14
+    {PTE, 24},  // D15
+    {PTB,  2},  // A0
+    {PTB,  3},  // A1
+    {PTB, 10},  // A2
+    {PTB, 11},  // A3
+    {PTC, 11},  // A4
+    {PTC, 10},  // A5
+    {PTB, 22},  // LEDR
+    {PTE, 26},  // LEDG
+    {PTB, 21},  // LEDB
+    {PTC,  6},  // SW2
+    {PTA,  4},  // SW3
+    {PTA,  1},  // PWM0
+    {PTA,  2},  // PWM1
+    {PTC,  2},  // PWM2
+    {PTC,  3},  // PWM3
+    {PTC, 12},  // PWM4
+    {PTC,  4},  // PWM5
+    {PTD,  0},  // PWM6
+    {PTD,  2},  // PWM7
+    {PTD,  3},  // PWM8
+    {PTD,  1}   // PWM9
     // TODO: More pins at https://developer.mbed.org/platforms/FRDM-K64F/
 };
+
+static const pin_range_t digital_pins = {0, 15};
+static const pin_range_t analog_pins = {16, 21};
+static const pin_range_t led_pins = {22, 24};
+static const pin_range_t pwm_pins = {27, 36};
+static const extra_pin_t extra_pins[] = {
+    {"LEDR", 22},
+    {"LEDG", 23},
+    {"LEDB", 24},
+    { "SW2", 25},
+    { "SW3", 26}
+};
+
 #else
 // for boards without pin name support, use pass-through method
 static const zjs_pin_t pin_data[] = {};
 #endif
 
-static const zjs_pin_t *zjs_find_pin(const char *name)
+typedef struct {
+    const char *prefix;
+    const pin_range_t *range;
+} prefix_t;
+
+static const prefix_t prefix_map[] = {
+    { "IO", &digital_pins},
+    {  "D", &digital_pins},
+    { "AD", &analog_pins},
+    {  "A", &analog_pins},
+    {"LED", &led_pins},
+    {"PWM", &pwm_pins}
+};
+
+const zjs_pin_t *zjs_find_pin(const char *name)
 {
     // effects: searches all name fields in pin_data array for a match
     //            with name, and returns the matching record or NULL
-    int len = sizeof(pin_data) / sizeof(zjs_pin_t);
-    for (int i = 0; i < len; ++i) {
-        const zjs_pin_t *pin = &pin_data[i];
-        if (strequal(name, pin->name) ||
-            (pin->altname && strequal(name, pin->altname)) ||
-            (pin->altname2 && strequal(name, pin->altname2)))
-            return pin;
+    if (strnlen(name, PIN_NAME_MAX_LEN) == PIN_NAME_MAX_LEN) {
+        // pin name too long
+        return NULL;
     }
-    return NULL;
+
+    // find where number starts
+    int index = -1;
+    for (int i = 0; name[i]; ++i) {
+        if (name[i] >= '0' && name[i] <= '9') {
+            index = i;
+            break;
+        }
+    }
+
+    pin_id_t id = 0;
+
+    if (index != -1) {
+        const pin_range_t *range = NULL;
+        if (!index) {
+            range = &digital_pins;
+        }
+        else {
+            char prefix[index + 1];
+            strncpy(prefix, name, index);
+            prefix[index] = '\0';
+            int len = sizeof(prefix_map) / sizeof(prefix_t);
+            for (int i = 0; i < len; ++i) {
+                if (strequal(prefix, prefix_map[i].prefix)) {
+                    range = prefix_map[i].range;
+                }
+            }
+        }
+
+        if (range) {
+            int num = atoi(name + index) + range->start;
+            if (num < range->start || num > range->end) {
+                // apparently out of range, but check "extras"
+                index = -1;
+            }
+            id = num;
+        }
+    }
+
+    if (index == -1) {
+        // still not found, try extras
+        int len = sizeof(extra_pins) / sizeof(extra_pin_t);
+        for (int i = 0; i < len; ++i) {
+            if (strequal(name, extra_pins[i].name)) {
+                index = 0;
+                id = extra_pins[i].id;
+                break;
+            }
+        }
+
+        if (index == -1) {
+            return NULL;
+        }
+    }
+
+    ZJS_ASSERT(id < sizeof(pin_data) / sizeof(zjs_pin_t), "pin id overflow");
+    return pin_data + id;
 }
 
 int zjs_board_find_pin(jerry_value_t pin, char devname[20], int *pin_num)
@@ -148,8 +253,9 @@ int zjs_board_find_pin(jerry_value_t pin, char devname[20], int *pin_num)
         *dot = '\0';
         char *end;
         int ipin = (int)strtol(dot + 1, &end, 10);
-        if (*end != '\0')
+        if (*end != '\0') {
             return FIND_PIN_FAILURE;
+        }
         int bytes = snprintf(devname, LEN, "%s", name);
         if (bytes >= LEN || ipin < 0) {
             return FIND_PIN_FAILURE;

@@ -67,6 +67,13 @@ change in Zephyr, so it could be left out currently if you don't use k64f.
 Before that, for a while python-yaml was needed when the script was using
 Python 2.
 
+You may also need to install pip3 to get pyelftools:
+
+```bash
+$ sudo apt-get install python3-pip
+$ sudo pip3 install pyelftools
+```
+
 #### Clone the ZJS repo
 Next, clone this git repo:
 ```bash
@@ -749,6 +756,9 @@ repository. The PR will be reviewed by the project team members. You need at
 least two plus-ones (+1) , "Look Good To Me (LGTM)" or other positive signals
 for the project members. Once you have gained the required signals the project
 maintainers will merge the PR.
+
+To report a security issue, please follow the procedure described
+[here](https://01.org/security).
 
 ### Travis and local sanity checking
 

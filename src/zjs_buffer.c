@@ -115,15 +115,20 @@ static ZJS_DECL_FUNC_ARGS(zjs_buffer_write_bytes, int bytes, bool big_endian)
     u32_t value = (u32_t)(dval < 0 ? (s32_t)dval : dval);
 
     u32_t offset = 0;
-    if (argc > 1)
+    if (argc > 1) {
         offset = (u32_t)jerry_get_number_value(argv[1]);
+    }
 
     zjs_buffer_t *buf = zjs_buffer_find(this);
-    if (!buf)
+    if (!buf) {
         return zjs_error("buffer not found on write");
+    }
 
-    if (offset + bytes > buf->bufsize)
+    if (offset + bytes > buf->bufsize) {
+        DBG_PRINT("bufsize %d, write attempted from %d to %d\n",
+                  offset, offset + bytes);
         return zjs_error("write attempted beyond buffer");
+    }
 
     int dir = big_endian ? -1 : 1;
     if (big_endian)
@@ -200,45 +205,52 @@ char zjs_int_to_hex(int value)
 static ZJS_DECL_FUNC(zjs_buffer_to_string)
 {
     // requires: this must be a JS buffer object, if an argument is present it
-    //             must be the string 'ascii' or 'hex', as those are the only
-    //             supported encodings for now
-    //  effects: if the buffer object is found, converts its contents to a hex
-    //             string and returns it
+    //             must be the string 'utf8' (default), 'ascii' or 'hex', as
+    //             those are the only supported encodings for now
+    //  effects: if the buffer object is found, converts its contents to the
+    //             given encoding
 
     // args: [encoding]
-    ZJS_VALIDATE_ARGS(Z_OPTIONAL Z_STRING);
+    ZJS_VALIDATE_ARGS_OPTCOUNT(optcount, Z_OPTIONAL Z_STRING);
 
     zjs_buffer_t *buf = zjs_buffer_find(this);
-    if (buf && argc == 0) {
-        return jerry_create_string((jerry_char_t *)"[Buffer Object]");
+    ZJS_ASSERT(buf, "buffer not found");
+    if (!buf) {
+        return zjs_error("not a buffer");
     }
 
     const int MAX_ENCODING_LEN = 16;
     jerry_size_t size = MAX_ENCODING_LEN;
-    char encoding[size];
-    zjs_copy_jstring(argv[0], encoding, &size);
-    if (!size) {
-        return zjs_error("encoding argument too long");
+    char enc[size];
+    const char *encoding = "utf8";
+    if (optcount) {
+        zjs_copy_jstring(argv[0], enc, &size);
+        if (!size) {
+            return zjs_error("encoding argument too long");
+        }
+        encoding = enc;
     }
 
-    if (strequal(encoding, "ascii")) {
+    if (strequal(encoding, "utf8")) {
+        return jerry_create_string_sz_from_utf8((jerry_char_t *)buf->buffer,
+                                                buf->bufsize);
+    } else if (strequal(encoding, "ascii")) {
         char *str = zjs_malloc(buf->bufsize);
         if (!str) {
             return zjs_error("out of memory");
         }
 
-        for (int i = 0; i < buf->bufsize; ++i) {
+        int len;
+        for (len = 0; len < buf->bufsize; ++len) {
             // strip off high bit if present
-            str[i] = buf->buffer[i] & 0x7f;
+            str[len] = buf->buffer[len] & 0x7f;
+            if (!str[len]) {
+                break;
+            }
         }
-        /*
-         * If there is a NULL terminator before the end of the buffer we only
-         * want to create a string of that length, not including the extra
-         * bytes. And if there is no NULL terminator, we want to limit the size
-         * to the stored buffer size.
-         */
-        jerry_value_t jstr = jerry_create_string_sz((jerry_char_t *)str,
-                strnlen((char *)buf->buffer, buf->bufsize));
+
+        jerry_value_t jstr;
+        jstr = jerry_create_string_sz_from_utf8((jerry_char_t *)str, len);
         zjs_free(str);
         return jstr;
     } else if (strequal(encoding, "hex")) {
@@ -257,6 +269,58 @@ static ZJS_DECL_FUNC(zjs_buffer_to_string)
         return zjs_error("unsupported encoding type");
     }
     return zjs_error("buffer is empty");
+}
+
+static ZJS_DECL_FUNC(zjs_buffer_copy)
+{
+    // requires: this must be a JS buffer object and argv[0] a target buffer
+    //             object
+    //  effects: copies buffer contents w/ optional offsets considered to the
+    //             target buffer (following Node v6.11 API)
+
+    // args: target, [targetStart], [sourceStart], [sourceEnd]
+    ZJS_VALIDATE_ARGS_OPTCOUNT(optcount, Z_BUFFER,
+                               Z_OPTIONAL Z_NUMBER Z_UNDEFINED,
+                               Z_OPTIONAL Z_NUMBER Z_UNDEFINED,
+                               Z_OPTIONAL Z_NUMBER Z_UNDEFINED);
+
+    zjs_buffer_t *source = zjs_buffer_find(this);
+    zjs_buffer_t *target = zjs_buffer_find(argv[0]);
+    if (!source || !target) {
+        return zjs_error("buffer not found");
+    }
+
+    int targetStart = 0;
+    int sourceStart = 0;
+    int sourceEnd = -1;
+    if (optcount >= 1 && !jerry_value_is_undefined(argv[1])) {
+        targetStart = (int)jerry_get_number_value(argv[1]);
+    }
+    if (optcount >= 2 && !jerry_value_is_undefined(argv[2])) {
+        sourceStart = (int)jerry_get_number_value(argv[2]);
+    }
+    if (optcount >= 3 && !jerry_value_is_undefined(argv[3])) {
+        sourceEnd = (int)jerry_get_number_value(argv[3]);
+    }
+
+    if (sourceEnd == -1) {
+        sourceEnd = source->bufsize;
+    }
+
+    if (targetStart < 0 || targetStart >= target->bufsize ||
+        sourceStart < 0 || sourceStart >= source->bufsize ||
+        sourceEnd < 0 || sourceEnd <= sourceStart ||
+        sourceEnd > source->bufsize) {
+        return zjs_standard_error(RangeError, "invalid copy range", 0, 0);
+    }
+
+    if (sourceEnd - sourceStart > target->bufsize - targetStart) {
+        return zjs_error("target buffer insufficient");
+    }
+
+    int len = sourceEnd - sourceStart;
+    memcpy(target->buffer + targetStart, source->buffer + sourceStart, len);
+    return jerry_create_number(len);
 }
 
 static ZJS_DECL_FUNC(zjs_buffer_write_string)
@@ -439,6 +503,7 @@ jerry_value_t zjs_buffer_create(u32_t size, zjs_buffer_t **ret_buf)
         maxLength = (1 << 30) - 1;
     }
     if (size > maxLength) {
+        DBG_PRINT("size: %d\n", size);
         return zjs_standard_error(RangeError, "size greater than max length", 0,
                                   0);
     }
@@ -551,6 +616,7 @@ void zjs_buffer_init()
         { zjs_buffer_read_uint32_le, "readUInt32LE" },
         { zjs_buffer_write_uint32_le, "writeUInt32LE" },
         { zjs_buffer_to_string, "toString" },
+        { zjs_buffer_copy, "copy" },
         { zjs_buffer_write_string, "write" },
         { zjs_buffer_fill, "fill" },
         { NULL, NULL }

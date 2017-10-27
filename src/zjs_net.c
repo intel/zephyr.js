@@ -16,7 +16,6 @@ static char FTRACE_PREFIX[] = "net";
 #include <errno.h>
 
 // Zephyr includes
-#include <sections.h>
 #include <zephyr.h>
 
 #include <net/net_context.h>
@@ -194,12 +193,14 @@ static void zjs_copy_sockaddr(struct sockaddr *dst, struct sockaddr *src,
     //  effects: copies src to dest, but only the number of bytes required by
     //             the underlying address family; if len is given, asserts
     //             that it matches the expected size
-    if (src->family == AF_INET) {
-        ZJS_ASSERT(!len || len == sizeof(sockaddr_in), "expected IPv4 length");
+    if (src->sa_family == AF_INET) {
+        ZJS_ASSERT(!len || len == sizeof(struct sockaddr_in),
+                   "expected IPv4 length");
         *(struct sockaddr_in *)dst = *(struct sockaddr_in *)src;
     }
-    else if (src->family == AF_INET6) {
-        ZJS_ASSERT(!len || len == sizeof(sockaddr_in6), "expected IPv6 length");
+    else if (src->sa_family == AF_INET6) {
+        ZJS_ASSERT(!len || len == sizeof(struct sockaddr_in6),
+                   "expected IPv6 length");
         *(struct sockaddr_in6 *)dst = *(struct sockaddr_in6 *)src;
     }
     else {
@@ -380,7 +381,7 @@ static error_desc_t create_error_desc(u32_t error_id, jerry_value_t this,
 }
 
 // a zjs_pre_emit callback
-static void handle_error_arg(void *unused, jerry_value_t argv[], u32_t *argc,
+static bool handle_error_arg(void *unused, jerry_value_t argv[], u32_t *argc,
                              const char *buffer, u32_t bytes)
 {
     // requires: buffer contains a u32_t with an error constant
@@ -398,6 +399,7 @@ static void handle_error_arg(void *unused, jerry_value_t argv[], u32_t *argc,
     jerry_value_clear_error_flag(&error);
     argv[0] = error;
     *argc = 1;
+    return true;
 }
 
 typedef struct {
@@ -1055,13 +1057,13 @@ static ZJS_DECL_FUNC(server_listen)
 
     struct sockaddr addr;
     memset(&addr, 0, sizeof(struct sockaddr));
-    addr.family = (family == 6) ? AF_INET6 : AF_INET;  // default to IPv4
+    addr.sa_family = (family == 6) ? AF_INET6 : AF_INET;  // default to IPv4
 
-    CHECK(net_context_get(addr.family, SOCK_STREAM, IPPROTO_TCP,
+    CHECK(net_context_get(addr.sa_family, SOCK_STREAM, IPPROTO_TCP,
                           &server_h->server_ctx));
 
     u32_t addrlen;
-    if (addr.family == AF_INET) {
+    if (addr.sa_family == AF_INET) {
         struct sockaddr_in *addr4 = (struct sockaddr_in *)&addr;
         addr4->sin_port = htons((int)port);
         net_addr_pton(AF_INET, hostname, &addr4->sin_addr);
@@ -1151,7 +1153,7 @@ static ZJS_DECL_FUNC(net_create_server)
 }
 
 // a zjs_pre_emit_callback
-static void connect_callback(void *h, jerry_value_t argv[], u32_t *argc,
+static bool connect_callback(void *h, jerry_value_t argv[], u32_t *argc,
                              const char *buffer, u32_t bytes)
 {
     FTRACE("h = %p, buffer = %p, bytes = %d\n", h, buffer, bytes);
@@ -1159,6 +1161,7 @@ static void connect_callback(void *h, jerry_value_t argv[], u32_t *argc,
     zjs_obj_add_boolean(handle->socket, "connecting", false);
     zjs_add_event_listener(handle->socket, "connect",
                            handle->connect_listener);
+    return true;
 }
 
 static void tcp_connected(struct net_context *context, int status,

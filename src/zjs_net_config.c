@@ -12,7 +12,7 @@ static char FTRACE_PREFIX[] = "net";
 #include <net/net_context.h>
 #endif
 
-#ifdef CONFIG_NET_L2_BLUETOOTH
+#ifdef CONFIG_NET_L2_BT
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/storage.h>
 #include <gatt/ipss.h>
@@ -26,7 +26,7 @@ static char FTRACE_PREFIX[] = "net";
 #ifndef BUILD_MODULE_NET_CONFIG
 static u8_t net_enabled = 0;
 #endif
-#ifdef CONFIG_NET_L2_BLUETOOTH
+#ifdef CONFIG_NET_L2_BT
 u8_t net_ble_enabled = 0;
 #endif
 
@@ -37,7 +37,7 @@ void zjs_net_config_default(void)
      */
     FTRACE("\n");
 #ifndef BUILD_MODULE_NET_CONFIG
-#ifdef CONFIG_NET_L2_BLUETOOTH
+#ifdef CONFIG_NET_L2_BT
     if (!net_ble_enabled) {
         zjs_init_ble_address();
     }
@@ -99,7 +99,7 @@ int zjs_is_ip(char *addr)
     }
 }
 
-#ifdef CONFIG_NET_L2_BLUETOOTH
+#ifdef CONFIG_NET_L2_BT
 static bt_addr_le_t id_addr;
 #ifdef ZJS_CONFIG_BLE_ADDRESS
 static char default_ble[18] = ZJS_CONFIG_BLE_ADDRESS;
@@ -271,7 +271,7 @@ static ZJS_DECL_FUNC(dhcp)
 }
 #endif
 
-#ifdef CONFIG_NET_L2_BLUETOOTH
+#ifdef CONFIG_NET_L2_BT
 static ZJS_DECL_FUNC(set_ble_address)
 {
 #ifndef ZJS_CONFIG_BLE_ADDRESS
@@ -356,7 +356,7 @@ static jerry_value_t zjs_net_config_init(void)
 #ifdef CONFIG_NET_DHCPV4
     zjs_obj_add_function(config, "dhcp", dhcp);
 #endif
-#ifdef CONFIG_NET_L2_BLUETOOTH
+#ifdef CONFIG_NET_L2_BT
     zjs_obj_add_function(config, "setBleAddress", set_ble_address);
 #endif
     zjs_make_emitter(config, ZJS_UNDEFINED, NULL, NULL);
@@ -371,7 +371,7 @@ static jerry_value_t zjs_net_config_init(void)
             NET_EVENT_IF_UP | NET_EVENT_IF_DOWN);
     net_mgmt_add_event_callback(&cb);
 
-#ifdef CONFIG_NET_L2_BLUETOOTH
+#ifdef CONFIG_NET_L2_BT
     if (!net_ble_enabled) {
         zjs_init_ble_address();
     }

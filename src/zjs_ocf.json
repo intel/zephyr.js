@@ -37,8 +37,8 @@
             "CONFIG_NET_APP_PEER_IPV6_ADDR=\"2001:db8::2\""
         ],
         "arduino_101": [
-            "CONFIG_BLUETOOTH_L2CAP_TX_BUF_COUNT=15",
-            "CONFIG_BLUETOOTH_RX_BUF_COUNT=15"
+            "CONFIG_BT_L2CAP_TX_BUF_COUNT=15",
+            "CONFIG_BT_RX_BUF_COUNT=15"
         ]
     },
     "header": ["zjs_ocf_server.h", "zjs_ocf_client.h", "zjs_ocf_common.h"]

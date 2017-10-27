@@ -191,7 +191,6 @@ ble.on('advertisingStart', function(error) {
 
 ble.on('accept', function(clientAddress) {
     console.log("Client connected: " + clientAddress);
-    glcd.clear();
 
     var lastTemp = 0;
 

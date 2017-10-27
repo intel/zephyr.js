@@ -87,8 +87,10 @@ The `BE` or `LE` refers to whether the value will be written in big-endian
 
 `string toString(string encoding);`
 
-Currently, the only supported `encoding` is 'hex'. If 'hex' is given, returns
-the contents of the Buffer encoded in hexadecimal digits. Otherwises, returns an
+Currently, the supported encodings are 'utf8' (default), 'ascii', and 'hex'.
+If 'ascii' is given, drops the high bit from every character and terminates at
+'\0' byte if found. If 'hex' is given, returns the contents of the buffer
+encoded in hexadecimal digits (two characters per byte). Otherwise, returns an
 error.
 
 ### Buffer.fill

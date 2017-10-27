@@ -5,7 +5,7 @@
 #ifndef ZJS_LINUX_BUILD
 #include <net/net_context.h>
 
-#ifdef CONFIG_NET_L2_BLUETOOTH
+#ifdef CONFIG_NET_L2_BT
 extern u8_t net_ble_enabled;
 #endif
 #endif

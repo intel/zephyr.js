@@ -7,9 +7,9 @@
 // Zephyr includes
 #include "zjs_zephyr_port.h"
 #include <zephyr.h>
-#if defined(BUILD_MODULE_BLE) || (CONFIG_NET_L2_BLUETOOTH)
+#if defined(BUILD_MODULE_BLE) || (CONFIG_NET_L2_BT)
 #include <bluetooth/bluetooth.h>
-#ifdef CONFIG_NET_L2_BLUETOOTH
+#ifdef CONFIG_NET_L2_BT
 #include <bluetooth/storage.h>
 #include <gatt/ipss.h>
 #include "zjs_net_config.h"
@@ -108,14 +108,9 @@ u8_t process_cmd_line(int argc, char *argv[])
 }
 #else
 #ifdef BUILD_MODULE_BLE
-// INTERRUPT SAFE FUNCTION: No JerryScript VM, allocs, or release prints!
-static void ble_bt_ready(int err)
-{
-    DBG_PRINT("bt_ready() is called [err %d]\n", err);
-#ifdef BUILD_MODULE_BLE
-    zjs_ble_emit_powered_event();
+#ifndef BUILD_MODULE_OCF  // OCF will call bt_enable() itself
+extern void ble_bt_ready(int err);
 #endif
-}
 #endif
 #endif
 
@@ -233,6 +228,7 @@ if (start_debug_server) {
     }
 
 #ifndef ZJS_LINUX_BUILD
+#ifndef ZJS_ASHELL  // Ashell will call bt_enable when module is loaded
 #ifndef BUILD_MODULE_OCF  // OCF will call bt_enable() itself
 #ifdef BUILD_MODULE_BLE
     if (bt_enable(ble_bt_ready)) {
@@ -240,7 +236,7 @@ if (start_debug_server) {
        goto error;
     }
 #endif
-#ifdef CONFIG_NET_L2_BLUETOOTH
+#ifdef CONFIG_NET_L2_BT
     if (bt_enable(NULL)) {
        ERR_PRINT("Failed to enable Bluetooth\n");
        goto error;
@@ -248,6 +244,7 @@ if (start_debug_server) {
     ipss_init();
     ipss_advertise();
     net_ble_enabled = 1;
+#endif
 #endif
 #endif
 #endif

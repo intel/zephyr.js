@@ -18,24 +18,28 @@
 /**
  * Callback prototype for before an event is emitted
  *
- * The callback is responsible for setting up the arguments
+ * The callback is responsible for setting up the arguments; if it returns
+ * false, the event will not fire and the post callback will not be called, so
+ * it must clean up after itself.
  *
- * @param handle        Event user handle provided to zjs_make_emitter
- * @param argv          Arg array w/ max of four args to be set up
- * @param argc          Pointer to arg count to be set (default 0)
- * @param buffer        Data provided to zjs_defer_emit_event from which to
- *                        construct arguments
- * @param length        Length of buffer
+ * @param handle  Event user handle provided to zjs_make_emitter
+ * @param argv    Arg array w/ max of four args to be set up
+ * @param argc    Pointer to arg count to be set (default 0)
+ * @param buffer  Data provided to zjs_defer_emit_event from which to
+ *                  construct arguments
+ * @param length  Length of buffer
+ *
+ * @return        true to confirm event, false to cancel event
  */
-typedef void (*zjs_pre_emit)(void *handle, jerry_value_t argv[], u32_t *argc,
+typedef bool (*zjs_pre_emit)(void *handle, jerry_value_t argv[], u32_t *argc,
                              const char *buffer, u32_t length);
 
 /**
  * Callback prototype for after an event is emitted
  *
- * @param handle        Event user handle provided to zjs_make_emitter
- * @param argv          Arg array w/ max of four args to be cleaned up
- * @param argc          Arg count
+ * @param handle  Event user handle provided to zjs_make_emitter
+ * @param argv    Arg array w/ max of four args to be cleaned up
+ * @param argc    Arg count
  */
 typedef void (*zjs_post_emit)(void *handle, jerry_value_t argv[], u32_t argc);
 
@@ -176,7 +180,7 @@ bool zjs_emit_event_priv(jerry_value_t obj, const char *name,
  *
  * A zjs_pre_emit callback.
  */
-void zjs_copy_arg(void *unused, jerry_value_t argv[], u32_t *argc,
+bool zjs_copy_arg(void *unused, jerry_value_t argv[], u32_t *argc,
                   const char *buffer, u32_t bytes);
 
 /**

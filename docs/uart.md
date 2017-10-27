@@ -68,7 +68,7 @@ UARTConnection is an [EventEmitter](./events.md) with the following events:
 * `Buffer` `data`
 
 Emitted when data is received on the UART RX line. The `data` parameter is a
-`Buffer` with the recieved data.
+`Buffer` with the received data.
 
 ### UARTConnection.write
 

@@ -99,7 +99,7 @@ targets. For example, a simplified version of the "net" module:
     ...
     "zephyr_conf": {
         "all": ["CONFIG_NETWORKING=y"],
-        "arduino_101": ["CONFIG_BLUETOOTH=y"],
+        "arduino_101": ["CONFIG_BT=y"],
         "qemu_x86": ["CONFIG_NET_SLIP_TAP=y"],
         "frdm_k64f": ["CONFIG_NET_L2_ETHERNET=y"]
     }

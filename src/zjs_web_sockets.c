@@ -11,7 +11,6 @@ static char FTRACE_PREFIX[] = "net";
 #include <random.h>
 
 // Zephyr includes
-#include <sections.h>
 #include <zephyr.h>
 
 #include "mbedtls/base64.h"
@@ -22,7 +21,7 @@ static char FTRACE_PREFIX[] = "net";
 #include <net/net_mgmt.h>
 #include <net/net_pkt.h>
 
-#ifdef CONFIG_NET_L2_BLUETOOTH
+#ifdef CONFIG_NET_L2_BT
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
 #endif
@@ -158,7 +157,7 @@ static error_desc_t create_error_desc(u32_t error_id, jerry_value_t this,
 }
 
 // a zjs_pre_emit callback
-static void handle_error_arg(void *unused, jerry_value_t argv[], u32_t *argc,
+static bool handle_error_arg(void *unused, jerry_value_t argv[], u32_t *argc,
                              const char *buffer, u32_t bytes)
 {
     // requires: buffer contains a u32_t with an error constant
@@ -166,10 +165,7 @@ static void handle_error_arg(void *unused, jerry_value_t argv[], u32_t *argc,
     //             the error flag, and sets this as the first arg; the error
     //             value must be released later (e.g. zjs_release_args)
     FTRACE("buffer = %p, bytes = %d\n", buffer, bytes);
-    if (bytes != sizeof(error_desc_t)) {
-        DBG_PRINT("invalid data in handle_error_arg");
-        return;
-    }
+    ZJS_ASSERT(bytes == sizeof(error_desc_t), "invalid data received");
 
     error_desc_t *desc = (error_desc_t *)buffer;
     const char *message = error_messages[desc->error_id];
@@ -179,6 +175,7 @@ static void handle_error_arg(void *unused, jerry_value_t argv[], u32_t *argc,
     jerry_value_clear_error_flag(&error);
     argv[0] = error;
     *argc = 1;
+    return true;
 }
 
 static void emit_error(jerry_value_t obj, const char *format, ...)
@@ -452,13 +449,14 @@ static void consume_data(ws_connection_t *con, u16_t len)
 }
 
 // a zjs_pre_emit_callback
-static void trigger_data(void *h, jerry_value_t argv[], u32_t *argc,
+static bool trigger_data(void *h, jerry_value_t argv[], u32_t *argc,
                          const char *buffer, u32_t bytes)
 {
     // requires: buffer contains 2-byte length
     FTRACE("h = %p, buffer = %p, bytes = %d\n", h, buffer, bytes);
-    ws_connection_t *con = (ws_connection_t *)h;
+    ZJS_ASSERT(bytes == sizeof(u16_t), "invalid data received");
 
+    ws_connection_t *con = (ws_connection_t *)h;
     u16_t len = *(u16_t *)buffer;
     zjs_buffer_t *buf;
     jerry_value_t buf_obj = zjs_buffer_create(len, &buf);
@@ -467,21 +465,25 @@ static void trigger_data(void *h, jerry_value_t argv[], u32_t *argc,
         consume_data(con, len);
         argv[0] = buf_obj;
         *argc = 1;
+        return true;
     }
+    return false;
 }
 
 // a zjs_pre_emit callback
-static void pre_close_connection(void *handle, jerry_value_t argv[],
+static bool pre_close_connection(void *handle, jerry_value_t argv[],
                                  u32_t *argc, const char *buffer, u32_t length)
 {
     FTRACE("handle = %p, buffer = %p, length = %d\n", handle, buffer, length);
+    ZJS_ASSERT(bytes == sizeof(u16_t), "invalid data received");
 
-    jerry_value_t code = jerry_create_number(*((uint16_t *)buffer));
+    jerry_value_t code = jerry_create_number(*((u16_t *)buffer));
     jerry_value_t reason = jerry_create_string("socket closed");
 
     argv[0] = code;
     argv[1] = reason;
     *argc = 2;
+    return true;
 }
 
 // a zjs_post_emit callback
@@ -564,7 +566,7 @@ static void process_packet(ws_connection_t *con, u8_t *data, u32_t len)
         break;
     case WS_PACKET_CLOSE:
         zjs_defer_emit_event(con->conn, "close", packet->payload,
-                             sizeof(uint16_t), pre_close_connection,
+                             sizeof(packet->payload), pre_close_connection,
                              close_connection);
         break;
     default:
@@ -715,7 +717,7 @@ static void receive_packet(const void *buffer, u32_t length)
         dump_bytes("DATA", data, len);
 #endif
         if (con->state == UNCONNECTED) {
-            ZVAL_MUTABLE protocol_list;
+            ZVAL_MUTABLE protocol_list = ZJS_UNDEFINED;
             con->accept_key = zjs_malloc(64);
             if (!con->accept_key) {
                 DBG_PRINT("could not allocate accept key\n");
@@ -801,6 +803,10 @@ static void receive_packet(const void *buffer, u32_t length)
                 jerry_value_t conn = create_ws_connection(con);
                 zjs_emit_event(con->server, "connection", &conn, 1);
             } else {
+                if (jerry_value_is_undefined(protocol_list)) {
+                    // create empty array so handler can check length
+                    protocol_list = jerry_create_array(0);
+                }
                 // handler registered, accepted based on return of handler
                 zjs_signal_callback(con->accept_handler_id, &protocol_list,
                                     sizeof(jerry_value_t));
@@ -829,8 +835,8 @@ static void tcp_received(struct net_context *context,
         net_pkt_unref(pkt);
         if (con && con->state == CONNECTED) {
             // close the socket
-            uint16_t stat = (uint16_t)status;
-            zjs_defer_emit_event(con->conn, "close", &stat, sizeof(uint16_t),
+            u16_t stat = (u16_t)status;
+            zjs_defer_emit_event(con->conn, "close", &stat, sizeof(stat),
                                  pre_close_connection, close_connection);
             return;
         } else {
@@ -880,7 +886,7 @@ static void post_accept_handler(void *handle, jerry_value_t ret_val)
         emit_error(con->server, "out of memory");
         return;
     }
-    snprintf(send_data, sdata_size, "%s%s\r\nSec-WebSocket-Protcol: %s\r\n\r\n",
+    snprintf(send_data, sdata_size, "%s%s\r\nSec-WebSocket-Protocol: %s\r\n\r\n",
              accept_header, con->accept_key, proto);
 
     DBG_PRINT("Sending accept packet\n");

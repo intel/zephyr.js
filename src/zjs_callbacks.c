@@ -327,6 +327,12 @@ static void zjs_remove_callback_priv(zjs_callback_id id, bool skip_flush)
     // effects: removes the callback associated with id; if skip_flush is true,
     //            assumes the callback will be "flushed" elsewhere, that is
     //            freed and the id reclaimed; otherwise, tries to do it here
+
+    // Don't free a callback after its been freed
+    if (GET_CB_REMOVED(cb_map[id]->flags)) {
+        return;
+    }
+
     CB_LOCK();
     if (id >= 0 && cb_map[id]) {
         if (GET_TYPE(cb_map[id]->flags) == CALLBACK_TYPE_JS) {
@@ -604,7 +610,7 @@ u8_t zjs_service_callbacks(void)
                     case CB_FLUSH_ALL:
                         DBG_PRINT("flushed all callbacks, freeing\n");
                         for (int i = 0; i < cb_size; i++)
-                            zjs_free_callback(id);
+                            zjs_free_callback(i);
                         break;
 
                     default:
