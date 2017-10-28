@@ -350,12 +350,16 @@ static ZJS_DECL_FUNC(zjs_gfx_draw_string)
     gfx_data_t argData;
     args_to_data(&argData, argc, argv);
     jerry_value_t ret = ZJS_UNDEFINED;
+    u32_t x = argData.coords[0];
 
     for (u8_t i = 0; i < argData.textSize; i++) {
-        ret = zjs_gfx_draw_char_priv(argData.coords[0] + (i * 7 * argData.size), argData.coords[1], argData.text[i], argData.color, argData.size, handle);
+        u32_t asciiIndex = (u8_t)argData.text[i] - 33;    // To save size our font doesn't include the first 33 chars
+        u8_t charWidth = font_data_descriptors[asciiIndex][0] + 1;  // Add a one for space
+        ret = zjs_gfx_draw_char_priv(x, argData.coords[1], argData.text[i], argData.color, argData.size, handle);
         if (jerry_value_has_error_flag (ret)) {
             return ret;
         }
+        x = x + (charWidth * argData.size);
     }
     return ret;
 }
@@ -364,7 +368,7 @@ static ZJS_DECL_FUNC(zjs_gfx_set_cb)
 {
     // requires: Requires 4 arguments
     //           arg[0] - The width of the screen.
-    //           arg[1] - The hight of the screen.
+    //           arg[1] - The height of the screen.
     //           arg[2] - The init callback to use.
     //           arg[3] - The drawRect callback to use.
     //           arg[4] - optional JS 'this' object
