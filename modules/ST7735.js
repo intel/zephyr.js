@@ -58,7 +58,7 @@ function ST7735() {
         this.dcPin.write(1);    // Set DC pin low to indicate data
         this.csPin.write(0);
         this.spiBus.transceive(1, data, "write");
-        this.csPin.write(1);        
+        this.csPin.write(1);
     }
 
      // Send data over SPI
