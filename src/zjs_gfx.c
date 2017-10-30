@@ -115,7 +115,14 @@ static jerry_value_t zjs_gfx_fill_rect_priv (u32_t x, u32_t y, u32_t w, u32_t h,
 // Draws the rectangles needed to create the given char
 static jerry_value_t zjs_gfx_draw_char_priv(u32_t x, u32_t y, char c, u8_t color[], u32_t size, gfx_handle_t *gfxHandle)
 {
-    u32_t asciiIndex = (u8_t)c - 33;    // To save size our font doesn't include the first 33 chars
+    u32_t asciiIndex = (u8_t)c - 32;    // To save size our font doesn't include the first 32 chars
+
+    // Check that character is supported
+    if (asciiIndex < 0 || asciiIndex > 93) {
+        ERR_PRINT("GFX doesn't support '%c'\n", c);
+        asciiIndex = 31;    // Set char to ?
+    }
+
     u8_t fontBytes = font_data_descriptors[asciiIndex][0] * 2;  // 2 bytes per pixel
     u16_t index = font_data_descriptors[asciiIndex][1];
     jerry_value_t ret = ZJS_UNDEFINED;
@@ -353,12 +360,20 @@ static ZJS_DECL_FUNC(zjs_gfx_draw_string)
     u32_t x = argData.coords[0];
 
     for (u8_t i = 0; i < argData.textSize; i++) {
-        u32_t asciiIndex = (u8_t)argData.text[i] - 33;    // To save size our font doesn't include the first 33 chars
-        u8_t charWidth = font_data_descriptors[asciiIndex][0] + 1;  // Add a one for space
+        u32_t asciiIndex = (u8_t)argData.text[i] - 32;    // To save size our font doesn't include the first 32 chars
+
+        // Check that character is supported
+        if (asciiIndex < 0 || asciiIndex > 93) {
+            ERR_PRINT("GFX doesn't support '%c'\n", argData.text[i]);
+            asciiIndex = 31;    // Set char to ?
+        }
+
         ret = zjs_gfx_draw_char_priv(x, argData.coords[1], argData.text[i], argData.color, argData.size, handle);
         if (jerry_value_has_error_flag (ret)) {
             return ret;
         }
+
+        u8_t charWidth = font_data_descriptors[asciiIndex][0] + 1;  // Add a one for space
         x = x + (charWidth * argData.size);
     }
     return ret;
