@@ -4,8 +4,6 @@
 // ZJS includes
 #include "zjs_util.h"
 
-#define RANDOM_MAX 32767
-
 u32_t random_generator()
 {
     // pseudorandom number generator using Xorshift
@@ -23,8 +21,10 @@ u32_t random_generator()
 
 static ZJS_DECL_FUNC(math_random)
 {
-    u32_t next = random_generator() % RANDOM_MAX;
-    return jerry_create_number(next);
+    u32_t next = random_generator();
+    // normalize to 0 - 1.0
+    double normalized = (double)next / UINT32_MAX;
+    return jerry_create_number(normalized);
 }
 
 void zjs_math_init(void)

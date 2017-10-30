@@ -1,5 +1,5 @@
 // Copyright (c) 2017, Intel Corporation.
 
-while (true) {
+setInterval(function () {
     console.log('random number:', MathStubs.random());
-}
+}, 500);
