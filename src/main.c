@@ -65,7 +65,6 @@ const char script_jscode[] = {
 #endif
 
 #ifdef ZJS_ASHELL
-const char *BUILD_TIME_STAMP = __DATE__ " " __TIME__ "\n";
 static bool ashell_mode = false;
 #endif
 
@@ -125,7 +124,6 @@ extern void ble_bt_ready(int err);
 #ifdef ZJS_ASHELL
 static bool config_mode_detected()
 {
-    // connect a button to GPIO pin IO8
 #ifdef IDE_GPIO_PIN
     char devname[20];
     int pin;
@@ -219,45 +217,26 @@ if (config_mode_detected()) {
     ashell_mode = true;
 } else {
     // boot to cfg file if found
-    fs_file_t *file;
-    size_t count;
-    file = fs_open_alloc("boot.cfg", "r");
-
-    if (file) {
-        DBG_PRINT("JS boot config found, booting JS...\n\n\n");
-        size_t ts_len = strlen(BUILD_TIME_STAMP);
-        ssize_t size = fs_size(file);
-        // Check that there is something after the timestamp
-        if (size > ts_len) {
-            file_name_len = size - ts_len;
-            char ts[ts_len];
-            char filename[file_name_len + 1];
-            count = fs_read(file, ts, ts_len); // skip the timestamp
-            count = fs_read(file, filename, file_name_len);
-            if (count > 0) {
-                filename[file_name_len] = '\0';
-                DBG_PRINT("running JS %s\n", filename);
-                // read JS stored in filesystem
-                fs_file_t *js_file = fs_open_alloc(filename, "r");
-                if (!js_file) {
-                    ZJS_PRINT("\nFile %s not found on filesystem, exiting!\n",
-                              filename);
-                    fs_close_alloc(file);
-                    goto error;
-                }
-                script_len = fs_size(js_file);
-                script = zjs_malloc(script_len + 1);
-                count = fs_read(js_file, script, script_len);
-                if (script_len != count) {
-                    ZJS_PRINT("\nfailed to read JS file\n");
-                    zjs_free(script);
-                    fs_close_alloc(file);
-                    goto error;
-                }
-                script[script_len] = '\0';
-            }
+    char filename[MAX_FILENAME_SIZE];
+    if (fs_get_boot_cfg_filename(NULL, filename) == 0) {
+        // read JS stored in filesystem
+        fs_file_t *js_file = fs_open_alloc(filename, "r");
+        if (!js_file) {
+            ZJS_PRINT("\nFile %s not found on filesystem, \
+                      please boot into IDE mode, exiting!\n",
+                      filename);
+            goto error;
         }
-        fs_close_alloc(file);
+        script_len = fs_size(js_file);
+        script = zjs_malloc(script_len + 1);
+        ssize_t count = fs_read(js_file, script, script_len);
+        if (script_len != count) {
+            ZJS_PRINT("\nfailed to read JS file\n");
+            zjs_free(script);
+            goto error;
+        }
+        script[script_len] = '\0';
+        ZJS_PRINT("JS boot config found, booting JS %s...\n\n\n", filename);
     } else {
         // boot cfg file not found
         ZJS_PRINT("\nNo JS found, please boot into IDE mode, exiting!\n");
