@@ -103,7 +103,7 @@ static jerry_value_t zjs_gfx_fill_rect_priv (u32_t x, u32_t y, u32_t w, u32_t h,
                             jerry_create_number(w), jerry_create_number(h), recBufObj};
 
     // Send the buffer as many times as needed to fill the rectangle
-    for ( int i = 0; i < passes ; i++) {
+    for (int i = 0; i < passes ; i++) {
         jerry_value_t ret = jerry_call_function(gfxHandle->drawDataCB, gfxHandle->jsThis, args, 5);
         if (jerry_value_has_error_flag (ret)) {
             return ret;
@@ -128,10 +128,10 @@ static jerry_value_t zjs_gfx_draw_char_priv(u32_t x, u32_t y, char c, u8_t color
         }
     }
 
-    for(int i = 0; i < fontBytes; i+=2) {
+    for (int i = 0; i < fontBytes; i+=2) {
         u16_t line = (((u16_t)charBuf->buffer[i]) << 8) | charBuf->buffer[i+1];
-        for(int j = 0; j < 16; j++) {
-            if((line >> j)  & 1) {
+        for (int j = 0; j < 16; j++) {
+            if ((line >> j) & 1) {
                 int recX = x + (i/2) * size;
                 int recY = y + j * size;
                 // Draw each bit
