@@ -325,9 +325,6 @@ static ZJS_DECL_FUNC(zjs_spi_open)
 
 static void zjs_spi_cleanup(void *native)
 {
-    // requires: handle is the native pointer we registered with
-    //           jerry_set_object_native_handle
-    //  effects: frees the spi item
     jerry_release_value(zjs_spi_prototype);
 }
 
@@ -354,4 +351,4 @@ static jerry_value_t zjs_spi_init()
     return spi_obj;
 }
 
-JERRYX_NATIVE_MODULE (spi, zjs_spi_init)
+JERRYX_NATIVE_MODULE(spi, zjs_spi_init)

@@ -31,5 +31,5 @@ static jerry_value_t zjs_performance_init()
     return performance_obj;
 }
 
-JERRYX_NATIVE_MODULE (performance, zjs_performance_init)
+JERRYX_NATIVE_MODULE(performance, zjs_performance_init)
 #endif  // BUILD_MODULE_PERFORMANCE

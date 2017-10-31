@@ -50,14 +50,14 @@ static ZJS_DECL_FUNC(native_require_handler)
         return RANGE_ERROR("argument too long");
     }
 
-    //const jerry_char_t *modulePtr = module;
-    jerry_value_t native_module = jerryx_module_resolve (argv[0], resolvers, 1);
+    jerry_value_t native_module = jerryx_module_resolve(argv[0], resolvers, 1);
     // If we found our module, return it.
-    if (jerry_value_has_error_flag (native_module)) {
+    if (jerry_value_has_error_flag(native_module)) {
         jerry_release_value(native_module);
     }
-    else
+    else {
         return native_module;
+    }
     DBG_PRINT("Native module not found, searching for JavaScript module %s\n",
               module);
 #ifdef ZJS_LINUX_BUILD

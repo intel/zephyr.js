@@ -188,7 +188,7 @@ static ZJS_DECL_FUNC(zjs_pwm_open)
     return pin_obj;
 }
 
-static void zjs_pwm_cleanup()
+static void zjs_pwm_cleanup(void *native)
 {
     jerry_release_value(zjs_pwm_pin_prototype);
 }
@@ -228,5 +228,5 @@ static jerry_value_t zjs_pwm_init()
     return pwm_obj;
 }
 
-JERRYX_NATIVE_MODULE (pwm, zjs_pwm_init)
+JERRYX_NATIVE_MODULE(pwm, zjs_pwm_init)
 #endif  // BUILD_MODULE_PWM

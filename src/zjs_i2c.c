@@ -185,11 +185,9 @@ static ZJS_DECL_FUNC(zjs_i2c_open)
     return i2c_obj;
 }
 
-static void zjs_i2c_cleanup()
+static void zjs_i2c_cleanup(void *native)
 {
-    zjs_print_mem_stats();
     jerry_release_value(zjs_i2c_prototype);
-    zjs_print_mem_stats();
 }
 
 static const jerry_object_native_info_t i2c_module_type_info = {
@@ -221,5 +219,5 @@ static jerry_value_t zjs_i2c_init()
     return i2c_obj;
 }
 
-JERRYX_NATIVE_MODULE (i2c, zjs_i2c_init)
+JERRYX_NATIVE_MODULE(i2c, zjs_i2c_init)
 #endif  // QEMU_BUILD

@@ -1067,7 +1067,7 @@ static ZJS_DECL_FUNC(ws_server)
     return server;
 }
 
-static void zjs_ws_cleanup()
+static void zjs_ws_cleanup(void *native)
 {
     FTRACE("\n");
 }
@@ -1088,4 +1088,4 @@ static jerry_value_t zjs_ws_init()
     return ws;
 }
 
-JERRYX_NATIVE_MODULE (ws, zjs_ws_init)
+JERRYX_NATIVE_MODULE(ws, zjs_ws_init)

@@ -504,7 +504,7 @@ static ZJS_DECL_FUNC(ocf_start)
     return ZJS_UNDEFINED;
 }
 
-static void zjs_ocf_cleanup()
+static void zjs_ocf_cleanup(void *native)
 {
 #ifdef OC_SERVER
     zjs_ocf_server_cleanup();
@@ -551,5 +551,5 @@ static jerry_value_t zjs_ocf_init()
     return ocf_object;
 }
 
-JERRYX_NATIVE_MODULE (ocf, zjs_ocf_init)
+JERRYX_NATIVE_MODULE(ocf, zjs_ocf_init)
 #endif  // BUILD_MODULE_OCF

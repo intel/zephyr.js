@@ -97,4 +97,4 @@ static jerry_value_t zjs_a101_init()
     return obj;
 }
 
-JERRYX_NATIVE_MODULE (arduino101_pins, zjs_a101_init)
+JERRYX_NATIVE_MODULE(arduino101_pins, zjs_a101_init)

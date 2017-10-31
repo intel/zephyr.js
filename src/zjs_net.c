@@ -1450,7 +1450,7 @@ static ZJS_DECL_FUNC(net_is_ip6)
 
 static jerry_value_t net_obj;
 
-static void zjs_net_cleanup()
+static void zjs_net_cleanup(void *native)
 {
     FTRACE("\n");
     jerry_release_value(zjs_net_prototype);
@@ -1511,5 +1511,5 @@ static jerry_value_t zjs_net_init()
     return jerry_acquire_value(net_obj);
 }
 
-JERRYX_NATIVE_MODULE (net, zjs_net_init)
+JERRYX_NATIVE_MODULE(net, zjs_net_init)
 #endif  // BUILD_MODULE_NET

@@ -57,6 +57,6 @@ obj-y += main.o \
 
 ifneq (,$(findstring zjs_ashell,$(ASHELL)))
 $(info Insecure Mode (development))
-export JERRY_INCLUDE = $(JERRY_BASE)/jerry-core/include
+export JERRY_INCLUDE = $(JERRY_BASE)/jerry-core/include $(JERRY_BASE)/jerry-ext/include
 export JERRY_BASE = $(ZJS_BASE)/deps/jerryscript
 endif

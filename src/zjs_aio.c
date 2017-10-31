@@ -305,12 +305,12 @@ static ZJS_DECL_FUNC(zjs_aio_open)
     if (!handle)
         return zjs_error("could not allocate handle");
 
-      jerry_set_object_native_pointer(pinobj, handle, &aio_type_info);
+    jerry_set_object_native_pointer(pinobj, handle, &aio_type_info);
 
     return pinobj;
 }
 
-static void zjs_aio_cleanup()
+static void zjs_aio_cleanup(void *native)
 {
     jerry_release_value(zjs_aio_prototype);
 }
@@ -344,6 +344,6 @@ static jerry_value_t zjs_aio_init()
     return aio_obj;
 }
 
-JERRYX_NATIVE_MODULE (aio, zjs_aio_init)
+JERRYX_NATIVE_MODULE(aio, zjs_aio_init)
 #endif  // QEMU_BUILD
 #endif  // BUILD_MODULE_AIO

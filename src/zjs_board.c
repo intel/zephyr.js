@@ -294,4 +294,4 @@ static jerry_value_t zjs_board_init()
     return board_obj;
 }
 
-JERRYX_NATIVE_MODULE (board, zjs_board_init)
+JERRYX_NATIVE_MODULE(board, zjs_board_init)

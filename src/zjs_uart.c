@@ -304,7 +304,7 @@ static ZJS_DECL_FUNC(uart_init)
     return handle->uart_obj;
 }
 
-static void zjs_uart_cleanup()
+static void zjs_uart_cleanup(void *native)
 {
     jerry_release_value(zjs_uart_prototype);
 }
@@ -330,5 +330,5 @@ static jerry_value_t zjs_uart_init()
     return uart_obj;
 }
 
-JERRYX_NATIVE_MODULE (uart, zjs_uart_init)
+JERRYX_NATIVE_MODULE(uart, zjs_uart_init)
 #endif  // BUILD_MODULE_UART

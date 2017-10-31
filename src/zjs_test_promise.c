@@ -55,5 +55,5 @@ void zjs_test_promise_cleanup()
 {
 }
 
-JERRYX_NATIVE_MODULE (test_promise, zjs_test_promise_init)
+JERRYX_NATIVE_MODULE(test_promise, zjs_test_promise_init)
 #endif  // BUILD_MODULE_CONSOLE

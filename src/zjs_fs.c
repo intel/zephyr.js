@@ -981,7 +981,7 @@ static ZJS_DECL_FUNC(zjs_fs_read_file_async)
 }
 #endif
 
-static void zjs_fs_cleanup()
+static void zjs_fs_cleanup(void *native)
 {
     ZJS_LIST_FREE(file_handle_t, opened_handles, free_file);
 }
@@ -1026,5 +1026,5 @@ static jerry_value_t zjs_fs_init()
     return fs;
 }
 
-JERRYX_NATIVE_MODULE (fs, zjs_fs_init)
+JERRYX_NATIVE_MODULE(fs, zjs_fs_init)
 #endif

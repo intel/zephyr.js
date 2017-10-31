@@ -446,7 +446,7 @@ static ZJS_DECL_FUNC(zjs_pme_restore_neurons)
     return ZJS_UNDEFINED;
 }
 
-static void zjs_pme_cleanup()
+static void zjs_pme_cleanup(void *native)
 {
     jerry_release_value(zjs_pme_prototype);
 }
@@ -538,4 +538,4 @@ static jerry_value_t zjs_pme_init()
     return pme_obj;
 }
 
-JERRYX_NATIVE_MODULE (pme, zjs_pme_init)
+JERRYX_NATIVE_MODULE(pme, zjs_pme_init)

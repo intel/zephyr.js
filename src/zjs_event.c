@@ -443,7 +443,7 @@ void *zjs_event_get_user_handle(jerry_value_t obj)
     return NULL;
 }
 
-static void zjs_event_cleanup()
+static void zjs_event_cleanup(void *native)
 {
     jerry_release_value(zjs_event_emitter_prototype);
     zjs_event_initialized = false;
@@ -513,4 +513,4 @@ static jerry_value_t zjs_event_init()
     return jerry_create_external_function(event_constructor);
 }
 
-JERRYX_NATIVE_MODULE (events, zjs_event_init)
+JERRYX_NATIVE_MODULE(events, zjs_event_init)

@@ -362,4 +362,4 @@ static jerry_value_t zjs_gpio_init()
     return gpio_api;
 }
 
-JERRYX_NATIVE_MODULE (gpio, zjs_gpio_init)
+JERRYX_NATIVE_MODULE(gpio, zjs_gpio_init)

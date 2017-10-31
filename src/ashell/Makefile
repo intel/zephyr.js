@@ -6,7 +6,7 @@ endif
 
 # Adding path for jerry script APIs
 DEPS_BASE ?= $(ZJS_BASE)/deps
-ZEPHYRINCLUDE += -I$(JERRY_INCLUDE) -I$(JERRY_BASE)/jerry-ext/include -I$(DEPS_BASE)
+ZEPHYRINCLUDE += -I$(JERRY_INCLUDE) -I$(DEPS_BASE)
 ifneq ($(CONFIG_USB_CDC_ACM),y)
 ZEPHYRINCLUDE += -I$(ZEPHYR_BASE)/samples/subsys/usb/webusb/src \
                  -I${ZEPHYR_BASE}/include/drivers/usb \
@@ -30,6 +30,5 @@ ifneq ($(BOARD), linux)
 # Select extended ANSI C/POSIX function set in recent Newlib versions
 ccflags-y += -D_XOPEN_SOURCE=700
 endif
-ccflags-y += -I$(JERRY_BASE)/jerry-ext/include
-ccflags-y += -I$(ZJS_BASE)/outdir/include
+ccflags-y += -I$(ZJS_BASE)/outdir/include -I$(JERRY_BASE)/jerry-ext/include
 ccflags-y += -DZJS_ASHELL -Wall -Werror

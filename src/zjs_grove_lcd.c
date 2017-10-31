@@ -172,7 +172,7 @@ static ZJS_DECL_FUNC(zjs_glcd_init)
     return dev_obj;
 }
 
-static void zjs_grove_lcd_cleanup()
+static void zjs_grove_lcd_cleanup(void *native)
 {
     jerry_release_value(zjs_glcd_prototype);
 }
@@ -277,6 +277,6 @@ static jerry_value_t zjs_grove_lcd_init()
     return glcd_obj;
 }
 
-JERRYX_NATIVE_MODULE (grove_lcd, zjs_grove_lcd_init)
+JERRYX_NATIVE_MODULE(grove_lcd, zjs_grove_lcd_init)
 #endif  // QEMU_BUILD
 #endif  // BUILD_MODULE_GROVE_LCD

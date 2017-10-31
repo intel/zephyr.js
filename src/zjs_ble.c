@@ -1289,7 +1289,7 @@ static ZJS_DECL_FUNC(zjs_ble_descriptor)
     return jerry_acquire_value(argv[0]);
 }
 
-static void zjs_ble_cleanup()
+static void zjs_ble_cleanup(void *native)
 {
     ble_connection_t *conn = ble_handle->connections;
     while (conn) {
@@ -1359,6 +1359,6 @@ static jerry_value_t zjs_ble_init()
     return ble_obj;
 }
 
-JERRYX_NATIVE_MODULE (ble, zjs_ble_init)
+JERRYX_NATIVE_MODULE(ble, zjs_ble_init)
 #endif  // QEMU_BUILD
 #endif  // BUILD_MODULE_BLE

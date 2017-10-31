@@ -322,7 +322,7 @@ static ZJS_DECL_FUNC(zjs_dgram_sock_close)
     return ZJS_UNDEFINED;
 }
 
-static void zjs_dgram_cleanup()
+static void zjs_dgram_cleanup(void *native)
 {
     jerry_release_value(zjs_dgram_socket_prototype);
 }
@@ -354,5 +354,5 @@ static jerry_value_t zjs_dgram_init()
     return dgram_obj;
 }
 
-JERRYX_NATIVE_MODULE (dgram, zjs_dgram_init)
+JERRYX_NATIVE_MODULE(dgram, zjs_dgram_init)
 #endif  // BUILD_MODULE_DGRAM
