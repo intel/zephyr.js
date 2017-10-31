@@ -24,6 +24,7 @@
 #include <misc/printk.h>
 
 // ZJS includes
+#include "file-utils.h"
 #include "../zjs_util.h"
 
 int fs_exist(const char *path)
@@ -121,4 +122,51 @@ bool fs_valid_filename(char *filename)
         return false;
     }
     return true;
+}
+
+int fs_get_boot_cfg_filename(const char *timestamp, char *filename)
+{
+    fs_file_t *file;
+    size_t count;
+    file = fs_open_alloc("boot.cfg", "r");
+
+    if (!file) {
+        DBG_PRINT("failed to open boot.cfg\n");
+        return -1;
+    }
+
+    size_t tssize;
+    if (timestamp) {
+        tssize = strlen(timestamp);
+    } else {
+        tssize = strlen(__DATE__ " " __TIME__ "\n");
+    }
+    ssize_t size = fs_size(file);
+
+    // Check that there is something after the timestamp
+    if (size > tssize) {
+        char ts[tssize];
+        count = fs_read(file, ts, tssize);
+        if (count == tssize) {
+            // if there's timestamp, check against timestamp
+            if (!timestamp ||
+                (timestamp && strncmp(ts, timestamp, tssize) == 0)) {
+                size_t filenamesize = size - tssize;
+                count = fs_read(file, filename, filenamesize);
+                filename[filenamesize] = '\0';
+                if (count > 0) {
+                    fs_close_alloc(file);
+                    return 0;
+                }
+            }
+        }
+    }
+
+    // boot.cfg is invalid, remove it
+    if (fs_unlink("boot.cfg") != 0) {
+        DBG_PRINT("cannot remove boot.cfg\n");
+    }
+
+    fs_close_alloc(file);
+    return -1;
 }

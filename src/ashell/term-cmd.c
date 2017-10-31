@@ -941,38 +941,11 @@ s32_t ashell_help(char *buf)
 
 void ashell_run_boot_cfg()
 {
-    fs_file_t *file;
-    size_t count;
-    file = fs_open_alloc("boot.cfg", "r");
-    // Failed to open boot.cfg
-    if (!file) {
-        return;
-    }
+    char filename[MAX_FILENAME_SIZE];
 
-    size_t tssize = strlen(BUILD_TIMESTAMP);
-    ssize_t size = fs_size(file);
-    // Check that there is something after the timestamp
-    if (size > tssize) {
-        char ts[tssize];
-        count = fs_read(file, ts, tssize);
-        if (count == tssize && strncmp(ts, BUILD_TIMESTAMP, tssize) == 0) {
-            size_t filenamesize = size - tssize;
-            char filename[filenamesize + 1];
-            count = fs_read(file, filename, filenamesize);
-
-            if (count > 0) {
-                filename[filenamesize] = '\0';
-                ashell_run_javascript(filename);
-            }
-        } else {
-            // This is a newly flashed board, delete boot.cfg
-            ashell_remove_file("boot.cfg");
-        }
-    } else {
-        // boot.cfg is invalid, remove it
-        ashell_remove_file("boot.cfg");
+    if (fs_get_boot_cfg_filename(BUILD_TIMESTAMP, filename) == 0) {
+        ashell_run_javascript(filename);
     }
-    fs_close_alloc(file);
 }
 
 s32_t ashell_main_state(char *buf, u32_t len)
