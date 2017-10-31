@@ -196,13 +196,6 @@ int main(int argc, char *argv[])
     // the beginning of the program
     ZJS_PRINT("\n");
 
-#ifdef ZJS_POOL_CONFIG
-    zjs_init_mem_pools();
-#ifdef DUMP_MEM_STATS
-    zjs_print_pools();
-#endif
-#endif
-
     jerry_init(JERRY_INIT_EMPTY);
     // initialize modules
     zjs_modules_init();

@@ -14,7 +14,7 @@ ROM ?= 144
 V ?= 0
 JS_TMP = js.tmp
 
-# Dump memory information: on = print allocs, full = print allocs + dump pools
+# Dump memory information: on = print allocs, full = print allocs
 TRACE ?= off
 
 # Enable jerry-debugger, currently only work on linux
