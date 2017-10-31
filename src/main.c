@@ -114,8 +114,8 @@ u8_t process_cmd_line(int argc, char *argv[])
     return 1;
 }
 #else
+#ifndef CONFIG_NET_APP_AUTO_INIT
 #ifdef BUILD_MODULE_BLE
-#ifndef BUILD_MODULE_OCF  // OCF will call bt_enable() itself
 extern void ble_bt_ready(int err);
 #endif
 #endif
@@ -311,22 +311,24 @@ if (start_debug_server) {
 
 #ifndef ZJS_LINUX_BUILD
 #ifndef ZJS_ASHELL  // Ashell will call bt_enable when module is loaded
-#ifndef BUILD_MODULE_OCF  // OCF will call bt_enable() itself
+
+#ifndef CONFIG_NET_APP_AUTO_INIT  // net_app will call bt_enable() itself
+    int err = 0;
 #ifdef BUILD_MODULE_BLE
-    if (bt_enable(ble_bt_ready)) {
-       ERR_PRINT("Failed to enable Bluetooth\n");
+    err = bt_enable(ble_bt_ready);
+#elif CONFIG_NET_L2_BT
+    err = bt_enable(NULL);
+#endif
+    if (err) {
+       ERR_PRINT("Failed to enable Bluetooth, error %d\n", err);
        goto error;
     }
 #endif
+
 #ifdef CONFIG_NET_L2_BT
-    if (bt_enable(NULL)) {
-       ERR_PRINT("Failed to enable Bluetooth\n");
-       goto error;
-    }
     ipss_init();
     ipss_advertise();
     net_ble_enabled = 1;
-#endif
 #endif
 #endif
 #endif
