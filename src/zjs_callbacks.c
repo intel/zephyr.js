@@ -331,6 +331,7 @@ static void zjs_remove_callback_priv(zjs_callback_id id, bool skip_flush)
     if (id >= 0 && cb_map[id]) {
         // Don't free a callback after its been freed
         if (GET_CB_REMOVED(cb_map[id]->flags)) {
+            CB_UNLOCK();
             return;
         }
 
