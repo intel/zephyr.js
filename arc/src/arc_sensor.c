@@ -23,9 +23,9 @@
 u32_t sensor_poll_freq = 20;        // default polling frequency
 
 #ifdef BUILD_MODULE_SENSOR_LIGHT
-static atomic_t pin_values[ARC_AIO_LEN] = {};
-static atomic_t pin_last_values[ARC_AIO_LEN] = {};
-static u8_t light_send_updates[ARC_AIO_LEN] = {};
+static atomic_t pin_values[AIO_LEN] = {};
+static atomic_t pin_last_values[AIO_LEN] = {};
+static u8_t light_send_updates[AIO_LEN] = {};
 #endif
 
 static struct device *bmi160 = NULL;
@@ -489,22 +489,22 @@ static void handle_sensor_light(struct zjs_ipm_message *msg)
         break;
     case TYPE_SENSOR_START:
         pin = msg->data.sensor.pin;
-        if (pin < ARC_AIO_MIN || pin > ARC_AIO_MAX) {
+        if (pin < AIO_MIN || pin > AIO_MAX) {
             ERR_PRINT("pin #%u out of range\n", pin);
             error_code = ERROR_IPM_OPERATION_FAILED;
         } else {
             DBG_PRINT("start ambient light %u\n", msg->data.sensor.pin);
-            light_send_updates[pin - ARC_AIO_MIN] = 1;
+            light_send_updates[pin - AIO_MIN] = 1;
         }
         break;
     case TYPE_SENSOR_STOP:
         pin = msg->data.sensor.pin;
-        if (pin < ARC_AIO_MIN || pin > ARC_AIO_MAX) {
+        if (pin < AIO_MIN || pin > AIO_MAX) {
             ERR_PRINT("pin #%u out of range\n", pin);
             error_code = ERROR_IPM_OPERATION_FAILED;
         } else {
             DBG_PRINT("stop ambient light %u\n", msg->data.sensor.pin);
-            light_send_updates[pin - ARC_AIO_MIN] = 0;
+            light_send_updates[pin - AIO_MIN] = 0;
         }
         break;
     default:
@@ -581,7 +581,7 @@ void arc_fetch_light()
 {
     for (int i = 0; i <= 5; i++) {
         if (light_send_updates[i]) {
-            u32_t value = arc_pin_read(ARC_AIO_MIN + i);
+            u32_t value = arc_pin_read(AIO_MIN + i);
             atomic_set(&pin_values[i], value);
             if (pin_values[i] != pin_last_values[i]) {
                 // The formula for converting the analog value to lux is taken
@@ -595,7 +595,7 @@ void arc_fetch_light()
                 double resistance, base;
                 union sensor_reading reading;
                 // rescale sample from 12bit (Zephyr) to 10bit (Grove)
-                uint16_t analog_val = pin_values[i] >> 2;
+                u16_t analog_val = pin_values[i] >> 2;
                 if (analog_val > 1015) {
                     // any thing over 1015 will be considered maximum brightness
                     reading.dval = 10000.0;

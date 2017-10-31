@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, Intel Corporation.
+// Copyright (c) 2017, Intel Corporation.
 
 #ifdef BUILD_MODULE_AIO
 #ifndef QEMU_BUILD
@@ -6,26 +6,67 @@
 #include <string.h>
 
 // Zephyr includes
+#include <adc.h>
 #include <misc/util.h>
 
 // ZJS includes
 #include "zjs_callbacks.h"
-#include "zjs_ipm.h"
+#include "zjs_event.h"
+#include "zjs_common.h"
+#include "zjs_modules.h"
 #include "zjs_util.h"
 
-#define ZJS_AIO_TIMEOUT_TICKS 5000
+#define AIO_POLL_FREQUENCY 10  // default AIO poll frequency is 10Hz
 
 const int MAX_TYPE_LEN = 20;
 
-static struct k_sem aio_sem;
+static struct device *adc_device[2] = { NULL, NULL }; // ADC_0 and ADC_1
+static u8_t pin_enabled[AIO_LEN] = {};
+static u32_t pin_values[AIO_LEN] = {};
+static u32_t pin_last_values[AIO_LEN] = {};
+static u8_t seq_buffer[ADC_BUFFER_SIZE];
+static u32_t last_read_time = 0;
+
 static jerry_value_t zjs_aio_prototype;
 
 typedef struct aio_handle {
-    zjs_callback_id callback_id;
-    double value;
+    jerry_value_t pin_obj;
+    u32_t pin;
+    struct aio_handle *next;
 } aio_handle_t;
 
-static aio_handle_t *zjs_aio_alloc_handle()
+static aio_handle_t *opened_handles = NULL;
+
+// get the aio handle or return a JS error
+#define GET_AIO_HANDLE(obj, var)                                     \
+aio_handle_t *var = (aio_handle_t *)zjs_event_get_user_handle(obj);  \
+if (!var) { return zjs_error("no aio handle"); }
+
+static u8_t map_device(u8_t pin)
+{
+    if (pin == 12 || pin == 13) {
+        return 0;
+    } else if (pin == 14 || pin == 15) {
+        return 1;
+    }
+
+    ERR_PRINT("invalid pin %d\n", pin);
+    return -1;
+}
+
+static const char* map_device_name(u8_t pin)
+{
+    if (pin == 12 || pin == 13) {
+        return CONFIG_ADC_0_NAME;
+    } else if (pin == 14 || pin == 15) {
+        return CONFIG_ADC_1_NAME;
+    }
+
+    ERR_PRINT("invalid pin %d\n", pin);
+    return NULL;
+}
+
+static aio_handle_t *aio_alloc_handle()
 {
     size_t size = sizeof(aio_handle_t);
     aio_handle_t *handle = zjs_malloc(size);
@@ -35,217 +76,106 @@ static aio_handle_t *zjs_aio_alloc_handle()
     return handle;
 }
 
-static void zjs_aio_free_cb(void *ptr)
+static void aio_free_cb(void *ptr)
 {
     aio_handle_t *handle = (aio_handle_t *)ptr;
-    zjs_remove_callback(handle->callback_id);
+    u32_t pin = handle->pin;
+    pin_enabled[pin - AIO_MIN]--;
+    DBG_PRINT("AIO pin %d refcount %d\n", pin, pin_enabled[pin - AIO_MIN]);
+
+    struct device *dev = adc_device[map_device(handle->pin)];
+    if (dev) {
+        if (((pin == 12 || pin == 13) &&
+             (pin_enabled[0] == 0 && pin_enabled[1] == 0)) ||
+            ((pin == 14 || pin == 15) &&
+             (pin_enabled[2] == 0 && pin_enabled[3] == 0))) {
+            // if no more A0 and A1 pins opened, disable ADC_0
+            // if no more A2 and A3 pins opened, disable ADC_1
+            DBG_PRINT("disabling ADC device\n");
+            adc_disable(dev);
+            adc_device[map_device(handle->pin)] = NULL;
+        }
+    }
+
+    jerry_release_value(handle->pin_obj);
+
+    // remove from the list of opened handles
+    ZJS_LIST_REMOVE(aio_handle_t, opened_handles, handle);
     zjs_free(handle);
 }
 
-static void zjs_aio_free_callback(void *ptr, jerry_value_t rval)
+static s32_t pin_read(u8_t pin)
 {
-    zjs_aio_free_cb(ptr);
+    struct adc_seq_entry entry = {
+        .sampling_delay = 30 ,
+        .channel_id = pin,
+        .buffer = seq_buffer,
+        .buffer_length = ADC_BUFFER_SIZE,
+    };
+
+    struct adc_seq_table entry_table = {
+        .entries = &entry,
+        .num_entries = 1,
+    };
+
+    struct device *dev = adc_device[map_device(pin)];
+    if (!dev) {
+        ERR_PRINT("ADC device not found with pin %d\n", pin);
+        return -1;
+    }
+
+    if (adc_read(dev, &entry_table) != 0) {
+        ERR_PRINT("couldn't read from pin %d\n", pin);
+        return -1;
+    }
+
+    // read from buffer, not sure if byte order is important
+    u32_t raw_value = (u32_t)seq_buffer[0] | (u32_t)seq_buffer[1] << 8;
+
+    return raw_value;
 }
 
-static const jerry_object_native_info_t aio_type_info = {
-   .free_cb = zjs_aio_free_cb
-};
-
-static bool zjs_aio_ipm_send_async(u32_t type, u32_t pin, void *data) {
-    zjs_ipm_message_t msg;
-    msg.id = MSG_ID_AIO;
-    msg.flags = 0;
-    msg.type = type;
-    msg.user_data = data;
-    msg.data.aio.pin = pin;
-    msg.data.aio.value = 0;
-
-    int success = zjs_ipm_send(MSG_ID_AIO, &msg);
-    if (success != 0) {
-        ERR_PRINT("failed to send message\n");
-        return false;
-    }
-
-    return true;
-}
-
-static bool zjs_aio_ipm_send_sync(zjs_ipm_message_t *send,
-                                  zjs_ipm_message_t *result)
+static jerry_value_t aio_pin_read(const jerry_value_t function_obj,
+                                  const jerry_value_t this,
+                                  const jerry_value_t argv[],
+                                  const jerry_length_t argc,
+                                  bool async)
 {
-    send->id = MSG_ID_AIO;
-    send->flags = 0 | MSG_SYNC_FLAG;
-    send->user_data = (void *)result;
-    send->error_code = ERROR_IPM_NONE;
+    u32_t pin;
+    zjs_obj_get_uint32(this, "pin", &pin);
 
-    if (zjs_ipm_send(MSG_ID_AIO, send) != 0) {
-        ERR_PRINT("failed to send message\n");
-        return false;
+    if (pin < AIO_MIN || pin > AIO_MAX) {
+        DBG_PRINT("PIN: #%u\n", pin);
+        return zjs_error("pin out of range");
     }
 
-    // block until reply or timeout, we shouldn't see the ARC
-    // time out, if the ARC response comes back after it
-    // times out, it could pollute the result on the stack
-    if (k_sem_take(&aio_sem, ZJS_AIO_TIMEOUT_TICKS)) {
-        ERR_PRINT("FATAL ERROR, ipm timed out\n");
-        return false;
+    s32_t value = pin_read(pin);
+    if (value < 0) {
+        return ZJS_ERROR("AIO read failed");
     }
 
-    return true;
-}
+    jerry_value_t result = jerry_create_number(value);
 
-static jerry_value_t zjs_aio_call_remote_function(zjs_ipm_message_t *send)
-{
-    if (!send)
-        return zjs_error_context("invalid send message", 0, 0);
-
-    zjs_ipm_message_t reply;
-
-    bool success = zjs_aio_ipm_send_sync(send, &reply);
-
-    if (!success) {
-        return zjs_error_context("ipm message failed or timed out!", 0, 0);
-    }
-
-    if (reply.error_code != ERROR_IPM_NONE) {
-        ERR_PRINT("error code: %u\n", (unsigned int)reply.error_code);
-        return zjs_error_context("error received", 0, 0);
-    }
-
-    u32_t value = reply.data.aio.value;
-    return jerry_create_number(value);
-}
-
-// INTERRUPT SAFE FUNCTION: No JerryScript VM, allocs, or likely prints!
-static void ipm_msg_receive_callback(void *context, u32_t id,
-                                     volatile void *data)
-{
-    if (id != MSG_ID_AIO)
-        return;
-
-    zjs_ipm_message_t *msg = *(zjs_ipm_message_t **)data;
-
-    if (msg->flags & MSG_SYNC_FLAG) {
-        zjs_ipm_message_t *result = (zjs_ipm_message_t *)msg->user_data;
-
-        // synchronous ipm, copy the results
-        if (result) {
-            *result = *msg;
-        }
-
-        // un-block sync api
-        k_sem_give(&aio_sem);
-    } else {
-        // asynchronous ipm
-        aio_handle_t *handle = (aio_handle_t *)msg->user_data;
-        u32_t pin_value = msg->data.aio.value;
-#ifdef DEBUG_BUILD
-        u32_t pin = msg->data.aio.pin;
+    if (async) {
+#ifdef ZJS_FIND_FUNC_NAME
+        zjs_obj_add_string(argv[0], ZJS_HIDDEN_PROP("function_name"),
+                           "readAsync");
 #endif
-
-        switch (msg->type) {
-        case TYPE_AIO_PIN_READ:
-        case TYPE_AIO_PIN_EVENT_VALUE_CHANGE:
-            handle->value = (double)pin_value;
-            ZVAL num = jerry_create_number(handle->value);
-            zjs_signal_callback(handle->callback_id, &num, sizeof(num));
-            break;
-        case TYPE_AIO_PIN_SUBSCRIBE:
-            DBG_PRINT("subscribed to events on pin %u\n", pin);
-            break;
-        case TYPE_AIO_PIN_UNSUBSCRIBE:
-            DBG_PRINT("unsubscribed to events on pin %u\n", pin);
-            break;
-
-        default:
-            ERR_PRINT("IPM message not handled %u\n", (unsigned int)msg->type);
-        }
+        zjs_callback_id id = zjs_add_callback_once(argv[0], this, NULL, NULL);
+        zjs_signal_callback(id, &result, sizeof(result));
+        return ZJS_UNDEFINED;
+    } else {
+        return result;
     }
 }
 
 static ZJS_DECL_FUNC(zjs_aio_pin_read)
 {
-    u32_t pin;
-    zjs_obj_get_uint32(this, "pin", &pin);
-
-    if (pin < ARC_AIO_MIN || pin > ARC_AIO_MAX) {
-        DBG_PRINT("PIN: #%u\n", pin);
-        return zjs_error("pin out of range");
-    }
-
-    // send IPM message to the ARC side
-    zjs_ipm_message_t send;
-    send.type = TYPE_AIO_PIN_READ;
-    send.data.aio.pin = pin;
-
-    jerry_value_t result = zjs_aio_call_remote_function(&send);
-    return result;
-}
-
-static ZJS_DECL_FUNC(zjs_aio_pin_close)
-{
-    u32_t pin;
-    zjs_obj_get_uint32(this, "pin", &pin);
-
-    aio_handle_t *handle;
-    const jerry_object_native_info_t *tmp;
-    if (jerry_get_object_native_pointer(this, (void **)&handle, &tmp)) {
-        if (tmp == &aio_type_info) {
-            // remove existing onchange handler and unsubscribe
-            zjs_aio_ipm_send_async(TYPE_AIO_PIN_UNSUBSCRIBE, pin, handle);
-            zjs_remove_callback(handle->callback_id);
-            zjs_free(handle);
-        }
-    }
-
-    return ZJS_UNDEFINED;
-}
-
-static ZJS_DECL_FUNC(zjs_aio_pin_on)
-{
-    // args: event name, callback
-    ZJS_VALIDATE_ARGS(Z_STRING, Z_FUNCTION Z_NULL);
-
-    u32_t pin;
-    zjs_obj_get_uint32(this, "pin", &pin);
-
-    jerry_size_t size = MAX_TYPE_LEN;
-    char event[size];
-    zjs_copy_jstring(argv[0], event, &size);
-    if (!strequal(event, "change"))
-        return zjs_error("unsupported event type");
-
-    aio_handle_t *handle;
-    const jerry_object_native_info_t *tmp;
-    if (jerry_get_object_native_pointer(this, (void **)&handle, &tmp)) {
-        if (tmp == &aio_type_info) {
-            if (jerry_value_is_null(argv[1])) {
-                // no change function, remove if one existed before
-                zjs_aio_ipm_send_async(TYPE_AIO_PIN_UNSUBSCRIBE, pin, handle);
-                zjs_remove_callback(handle->callback_id);
-                zjs_free(handle);
-            } else {
-                // switch to new change function
-                zjs_edit_js_func(handle->callback_id, argv[1]);
-            }
-        }
-    } else if (!jerry_value_is_null(argv[1])) {
-        // new change function
-        handle = zjs_aio_alloc_handle();
-        if (!handle)
-            return zjs_error("could not allocate handle");
-
-        jerry_set_object_native_pointer(this, handle, &aio_type_info);
-#ifdef ZJS_FIND_FUNC_NAME
-        if (jerry_value_is_function(argv[1])) {
-            zjs_obj_add_string(argv[1], ZJS_HIDDEN_PROP("function_name"),
-                               "aio: onchange");
-        }
-#endif
-        handle->callback_id = zjs_add_callback(argv[1], this, handle, NULL);
-        zjs_aio_ipm_send_async(TYPE_AIO_PIN_SUBSCRIBE, pin, handle);
-    }
-
-    return ZJS_UNDEFINED;
+    return aio_pin_read(function_obj,
+                        this,
+                        argv,
+                        argc,
+                        false);
 }
 
 // Asynchronous Operations
@@ -254,24 +184,21 @@ static ZJS_DECL_FUNC(zjs_aio_pin_read_async)
     // args: callback
     ZJS_VALIDATE_ARGS(Z_FUNCTION);
 
+    return aio_pin_read(function_obj,
+                        this,
+                        argv,
+                        argc,
+                        true);
+}
+
+static ZJS_DECL_FUNC(zjs_aio_pin_close)
+{
     u32_t pin;
     zjs_obj_get_uint32(this, "pin", &pin);
+    GET_AIO_HANDLE(this, handle);
 
-    aio_handle_t *handle = zjs_aio_alloc_handle();
-    if (!handle)
-        return zjs_error("could not allocate handle");
+    aio_free_cb(handle);
 
-#ifdef ZJS_FIND_FUNC_NAME
-    zjs_obj_add_string(argv[0], ZJS_HIDDEN_PROP("function_name"), "readAsync");
-#endif
-
-    handle->callback_id = zjs_add_callback(argv[0], this, handle,
-                                           zjs_aio_free_callback);
-
-    jerry_set_object_native_pointer(this, handle, &aio_type_info);
-
-    // send IPM message to the ARC side; response will come on an ISR
-    zjs_aio_ipm_send_async(TYPE_AIO_PIN_READ, pin, handle);
     return ZJS_UNDEFINED;
 }
 
@@ -286,28 +213,90 @@ static ZJS_DECL_FUNC(zjs_aio_open)
     if (!zjs_obj_get_uint32(data, "pin", &pin))
         return zjs_error("missing required field (pin)");
 
-    // send IPM message to the ARC side
-    zjs_ipm_message_t send;
-    send.type = TYPE_AIO_OPEN;
-    send.data.aio.pin = pin;
-
-    jerry_value_t result = zjs_aio_call_remote_function(&send);
-    if (jerry_value_has_error_flag(result))
-        return result;
-    jerry_release_value(result);
+    if (pin < AIO_MIN || pin > AIO_MAX) {
+        DBG_PRINT("PIN: #%u\n", pin);
+        return zjs_error("pin out of range");
+    }
 
     // create the AIOPin object
     jerry_value_t pinobj = zjs_create_object();
     jerry_set_prototype(pinobj, zjs_aio_prototype);
     zjs_obj_add_number(pinobj, "pin", pin);
 
-    aio_handle_t *handle = zjs_aio_alloc_handle();
-    if (!handle)
+    aio_handle_t *handle = aio_alloc_handle();
+    if (!handle) {
         return zjs_error("could not allocate handle");
+    }
 
+    // lookup what device the pins are connected to
+    // A0 and A1 are connected to ADC_0, A2 and A3 are connected to ADC_1
+    struct device *dev = adc_device[map_device(pin)];
+    if (!dev) {
+        const char *dev_name = map_device_name(pin);
+        if (dev_name) {
+            dev = device_get_binding(dev_name);
+            if (!dev) {
+                zjs_free(handle);
+                return zjs_error("failed to initialize AIO device");
+            }
+            adc_enable(dev);
+            adc_device[map_device(pin)] = dev;
+        } else {
+            zjs_free(handle);
+            return zjs_error("failed to find ADC device");
+        }
+    }
+
+    pin_enabled[pin - AIO_MIN]++;
+    DBG_PRINT("AIO pin %d refcount %d\n", pin, pin_enabled[pin-12]);
+
+    handle->pin_obj = jerry_acquire_value(pinobj);
+    handle->pin = pin;
+
+    // make it an emitter object
+    zjs_make_emitter(pinobj, zjs_aio_prototype, handle, aio_free_cb);
+
+    // add to the list of opened handles
+    ZJS_LIST_APPEND(aio_handle_t, opened_handles, handle);
     jerry_set_object_native_pointer(pinobj, handle, &aio_type_info);
-
     return pinobj;
+}
+
+static s32_t aio_poll_routine(void *h)
+{
+    u32_t uptime = k_uptime_get_32();
+    if ((uptime - last_read_time) > ((u32_t)(CONFIG_SYS_CLOCK_TICKS_PER_SEC /
+                                             AIO_POLL_FREQUENCY * 10))) {
+        for (int i = 0; i < AIO_LEN; i++) {
+            if (pin_enabled[i]) {
+                // FIXME: We dont know when a object subscribes to onchange
+                // events, need a way to intercept the .on()
+                // currently, if the pin is opened, then it do a read
+                // and signal the event, this could slow down the system
+                // when there are multiple AIO pins opened.
+                pin_values[i] = pin_read(i + AIO_MIN);
+                last_read_time = uptime;
+                if (pin_values[i] != pin_last_values[i]) {
+                    // send updates only if value has changed
+                    aio_handle_t *h = ZJS_LIST_FIND(aio_handle_t,
+                                                    opened_handles, pin,
+                                                    i + AIO_MIN);
+                    if (h) {
+                        ZVAL val = jerry_create_number(pin_values[i]);
+                        zjs_defer_emit_event(h->pin_obj, "change",
+                                             &val,
+                                             sizeof(val),
+                                             zjs_copy_arg,
+                                             zjs_release_args);
+                    }
+                    pin_last_values[i] = pin_values[i];
+                }
+            }
+        }
+    }
+
+    zjs_loop_unblock();
+    return K_FOREVER;
 }
 
 static void zjs_aio_cleanup(void *native)
@@ -319,20 +308,18 @@ static const jerry_object_native_info_t aio_module_type_info = {
    .free_cb = zjs_aio_cleanup
 };
 
-static jerry_value_t zjs_aio_init()
+jerry_value_t zjs_aio_init()
 {
-    zjs_ipm_init();
-    zjs_ipm_register_callback(MSG_ID_AIO, ipm_msg_receive_callback);
-
-    k_sem_init(&aio_sem, 0, 1);
+    // FIXME: need a way to unregister service routines
+    zjs_register_service_routine(NULL, aio_poll_routine);
 
     zjs_native_func_t array[] = {
         { zjs_aio_pin_read, "read" },
         { zjs_aio_pin_read_async, "readAsync" },
         { zjs_aio_pin_close, "close" },
-        { zjs_aio_pin_on, "on" },
         { NULL, NULL }
     };
+
     zjs_aio_prototype = zjs_create_object();
     zjs_obj_add_functions(zjs_aio_prototype, array);
 

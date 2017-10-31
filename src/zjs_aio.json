@@ -1,8 +1,7 @@
 {
     "module": "aio",
     "require": "aio",
-    "depends": ["ipm"],
-    "targets": ["arduino_101"],
-    "zjs_config": ["-DBUILD_MODULE_AIO"],
-    "src": ["zjs_aio.c"]
+    "depends": ["aio_a101", "aio_k64f", "events"],
+    "targets": ["arduino_101", "frdm_k64f"],
+    "header": ["zjs_aio.h"]
 }

@@ -90,6 +90,7 @@ u32_t free_count = 0;
 static struct uart_input *isr_data = NULL;
 static u32_t tail = 0;
 static char *buf;
+static u32_t dtr = 0;
 
 struct uart_input *fifo_get_isr_buffer()
 {
@@ -316,7 +317,6 @@ static int uart_out(int c)
     return 1;
 }
 
-#ifdef CONFIG_UART_LINE_CTRL
 u32_t uart_get_baudrate(void)
 {
     u32_t baudrate;
@@ -329,13 +329,60 @@ u32_t uart_get_baudrate(void)
 
     return baudrate;
 }
-#endif
+
+static void uart_ready()
+{
+    // Need a short wait after uart_line_ctrl_get success
+    k_sleep(1000);
+
+    uart_irq_rx_disable(dev_upload);
+    uart_irq_tx_disable(dev_upload);
+
+    uart_irq_callback_set(dev_upload, uart_interrupt_handler);
+    terminal->send(banner, sizeof(banner));
+
+    /* Enable rx interrupts */
+    uart_irq_rx_enable(dev_upload);
+    DBG("[Listening]\n");
+
+    __stdout_hook_install(uart_out);
+
+    // Disable buffering on stdout since some parts write directly to uart fifo
+    setbuf(stdout, NULL);
+
+    ashell_help("");
+    comms_print(comms_get_prompt());
+    process_state = 0;
+
+    atomic_set(&uart_state, UART_INIT);
+
+    DBG("[Init]\n");
+    terminal->init();
+}
+
+static bool check_uart_connection()
+{
+    // Try to connect to the device
+    uart_line_ctrl_get(dev_upload, LINE_CTRL_DTR, &dtr);
+    if (dtr) {
+        uart_ready();
+        return true;
+    }
+    return false;
+}
 
 /*
  * Process user input
  */
 void uart_process()
 {
+    if (!dtr) {
+        if (!check_uart_connection()) {
+            // No connection yet, bail out
+            return;
+        }
+    }
+
     static struct uart_input *data = NULL;
     char *buf = NULL;
     u32_t len = 0;
@@ -416,47 +463,6 @@ void uart_init()
     k_fifo_init(&avail_queue);
 
     ashell_run_boot_cfg();
-
-#ifdef CONFIG_UART_LINE_CTRL
-    u32_t dtr = 0;
-
-    while (1) {
-        uart_line_ctrl_get(dev_upload, LINE_CTRL_DTR, &dtr);
-        if (dtr)
-            break;
-        // Sleep is needed to allow the javascript in boot.cfg to run
-        // while we wait for the connection.
-        k_sleep(1000);
-    }
-
-    /* 1000 msec = 1 sec */
-    k_sleep(1000);
-
-#endif
-
-    uart_irq_rx_disable(dev_upload);
-    uart_irq_tx_disable(dev_upload);
-
-    uart_irq_callback_set(dev_upload, uart_interrupt_handler);
-    terminal->send(banner, sizeof(banner));
-
-    /* Enable rx interrupts */
-    uart_irq_rx_enable(dev_upload);
-    DBG("[Listening]\n");
-
-    __stdout_hook_install(uart_out);
-
-    // Disable buffering on stdout since some parts write directly to uart fifo
-    setbuf(stdout, NULL);
-
-    ashell_help("");
-    comms_print(comms_get_prompt());
-    process_state = 0;
-
-    atomic_set(&uart_state, UART_INIT);
-
-    DBG("[Init]\n");
-    terminal->init();
 }
 
 void zjs_ashell_init()

@@ -11,12 +11,12 @@
 
 // AIO
 static struct device *adc_dev = NULL;
-static uint8_t pin_enabled[ARC_AIO_LEN] = {};
-static uint32_t pin_values[ARC_AIO_LEN] = {};
-static uint32_t pin_last_values[ARC_AIO_LEN] = {};
+static u8_t pin_enabled[AIO_LEN] = {};
+static u32_t pin_values[AIO_LEN] = {};
+static u32_t pin_last_values[AIO_LEN] = {};
 static u8_t seq_buffer[ADC_BUFFER_SIZE];
-static void *pin_user_data[ARC_AIO_LEN] = {};
-static u8_t pin_send_updates[ARC_AIO_LEN] = {};
+static void *pin_user_data[AIO_LEN] = {};
+static u8_t pin_send_updates[AIO_LEN] = {};
 
 void arc_aio_init()
 {
@@ -63,7 +63,7 @@ void arc_process_aio_updates()
 {
     for (int i = 0; i <= 5; i++) {
         if (pin_send_updates[i]) {
-            pin_values[i] = arc_pin_read(ARC_AIO_MIN + i);
+            pin_values[i] = arc_pin_read(AIO_MIN + i);
             if (pin_values[i] != pin_last_values[i]) {
                 // send updates only if value has changed
                 // so it doesn't flood the IPM channel
@@ -72,7 +72,7 @@ void arc_process_aio_updates()
                 msg.type = TYPE_AIO_PIN_EVENT_VALUE_CHANGE;
                 msg.flags = 0;
                 msg.user_data = pin_user_data[i];
-                msg.data.aio.pin = ARC_AIO_MIN + i;
+                msg.data.aio.pin = AIO_MIN + i;
                 msg.data.aio.value = pin_values[i];
                 ipm_send_msg(&msg);
                 pin_last_values[i] = pin_values[i];
@@ -87,7 +87,7 @@ void arc_handle_aio(struct zjs_ipm_message *msg)
     u32_t reply_value = 0;
     u32_t error_code = ERROR_IPM_NONE;
 
-    if (pin < ARC_AIO_MIN || pin > ARC_AIO_MAX) {
+    if (pin < AIO_MIN || pin > AIO_MAX) {
         ERR_PRINT("pin #%u out of range\n", pin);
         ipm_send_error(msg, ERROR_IPM_INVALID_PARAMETER);
         return;
@@ -95,7 +95,7 @@ void arc_handle_aio(struct zjs_ipm_message *msg)
 
     switch (msg->type) {
     case TYPE_AIO_OPEN:
-        pin_enabled[pin - ARC_AIO_MIN] = 1;
+        pin_enabled[pin - AIO_MIN] = 1;
         break;
     case TYPE_AIO_PIN_READ:
         reply_value = arc_pin_read(pin);
@@ -104,16 +104,16 @@ void arc_handle_aio(struct zjs_ipm_message *msg)
         // NO OP - always success
         break;
     case TYPE_AIO_PIN_CLOSE:
-        pin_enabled[pin - ARC_AIO_MIN] = 0;
+        pin_enabled[pin - AIO_MIN] = 0;
         break;
     case TYPE_AIO_PIN_SUBSCRIBE:
-        pin_send_updates[pin - ARC_AIO_MIN] = 1;
+        pin_send_updates[pin - AIO_MIN] = 1;
         // save user data from subscribe request and return it in change msgs
-        pin_user_data[pin - ARC_AIO_MIN] = msg->user_data;
+        pin_user_data[pin - AIO_MIN] = msg->user_data;
         break;
     case TYPE_AIO_PIN_UNSUBSCRIBE:
-        pin_send_updates[pin - ARC_AIO_MIN] = 0;
-        pin_user_data[pin - ARC_AIO_MIN] = NULL;
+        pin_send_updates[pin - AIO_MIN] = 0;
+        pin_user_data[pin - AIO_MIN] = NULL;
         break;
     default:
         ERR_PRINT("unsupported aio message type %u\n", msg->type);
