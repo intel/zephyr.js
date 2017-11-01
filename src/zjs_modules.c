@@ -44,7 +44,7 @@ static ZJS_DECL_FUNC(native_require_handler)
     ZJS_VALIDATE_ARGS(Z_STRING);
 
     jerry_size_t size = MAX_MODULE_STR_LEN;
-    jerry_char_t module[size];
+    char module[size];
     zjs_copy_jstring(argv[0], module, &size);
     if (!size) {
         return RANGE_ERROR("argument too long");
