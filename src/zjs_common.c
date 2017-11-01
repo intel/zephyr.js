@@ -27,7 +27,6 @@ char *zjs_shorten_filepath(char *filepath)
 }
 
 #ifdef DEBUG_BUILD
-
 static int start = 0;
 
 int zjs_get_sec(void)

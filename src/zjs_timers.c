@@ -24,6 +24,11 @@ typedef struct zjs_timer {
     u32_t argc;
     zjs_callback_id callback_id;
     bool repeat;
+#ifdef ZJS_LINUX_BUILD
+    //FIXME - reverted patch #1542 to old timer implementation
+    u32_t interval;
+    bool completed;
+#endif
     struct zjs_timer *next;
 } zjs_timer_t;
 
@@ -33,6 +38,17 @@ static const jerry_object_native_info_t timer_type_info = {
    .free_cb = free_handle_nop
 };
 
+#ifdef ZJS_LINUX_BUILD
+// FIXME - reverted patch #1542 to old timer implementation
+jerry_value_t *pre_timer(void *h, u32_t *argc)
+{
+    zjs_timer_t *handle = (zjs_timer_t *)h;
+    *argc = handle->argc;
+    return handle->argv;
+}
+
+#define post_timer 0
+#else
 static bool delete_timer(zjs_timer_t *tm);
 
 static void post_timer(void *handle, jerry_value_t ret_val)
@@ -53,10 +69,8 @@ static void timer_callback(zjs_port_timer_t *handle)
     if (!timer->repeat) {
         zjs_port_timer_stop(handle);
     }
-#ifndef ZJS_LINUX_BUILD
-    zjs_loop_unblock();
-#endif
 }
+#endif
 
 /*
  * Allocate a new timer and add it to list
@@ -80,8 +94,15 @@ static zjs_timer_t *add_timer(u32_t interval,
         return NULL;
     }
 
+#ifdef ZJS_LINUX_BUILD
+    // FIXME - reverted patch #1542 to old timer implementation
+    zjs_port_timer_init(&tm->timer, NULL);
+    tm->interval = interval;
+    tm->completed = false;
+#else
     zjs_port_timer_init(&tm->timer, timer_callback);
     tm->timer.user_data = tm;
+#endif
     tm->repeat = repeat;
     tm->next = NULL;
     tm->argc = argc;
@@ -109,7 +130,12 @@ static zjs_timer_t *add_timer(u32_t interval,
 
     DBG_PRINT("add timer, id=%d, interval=%u, repeat=%u, argv=%p, argc=%u\n",
               tm->callback_id, interval, repeat, argv, argc);
+#ifdef ZJS_LINUX_BUILD
+    // FIXME - reverted patch #1542 to old timer implementation
+    zjs_port_timer_start(&tm->timer, interval, 0);
+#else
     zjs_port_timer_start(&tm->timer, repeat ? interval : 0, interval);
+#endif
     return tm;
 }
 
@@ -128,7 +154,12 @@ static bool delete_timer(zjs_timer_t *tm)
             jerry_release_value(tm->argv[i]);
         }
         // remove callbacks except for expired once timers
+#ifdef ZJS_LINUX_BUILD
+        //FIXME - reverted patch #1542 to old timer implementation
+        if (tm->repeat || !tm->completed) {
+#else
         if (tm->repeat) {
+#endif
             zjs_remove_callback(tm->callback_id);
         }
         ZJS_LIST_REMOVE(zjs_timer_t, zjs_timers, tm);
@@ -192,6 +223,42 @@ static ZJS_DECL_FUNC(native_clear_interval_handler)
 
     return ZJS_UNDEFINED;
 }
+
+#ifdef ZJS_LINUX_BUILD
+//FIXME - reverted patch #1542 to old timer implementation
+s32_t zjs_timers_process_events()
+{
+    s32_t wait = ZJS_TICKS_FOREVER;
+    for (zjs_timer_t *tm = zjs_timers; tm; tm = tm->next) {
+        if (tm->completed) {
+            delete_timer(tm);
+        } else if (zjs_port_timer_test(&tm->timer) > 0) {
+            // timer has expired, signal the callback
+            DBG_PRINT("signaling timer. id=%d, argv=%p, argc=%u\n",
+                      tm->callback_id, tm->argv, tm->argc);
+            zjs_signal_callback(tm->callback_id, tm->argv,
+                                tm->argc * sizeof(jerry_value_t));
+
+            // reschedule or remove timer
+            if (tm->repeat) {
+                zjs_port_timer_start(&tm->timer, tm->interval, 0);
+            } else {
+                // delete this timer next time around
+                tm->completed = true;
+            }
+        }
+
+        /*
+         * On Linux, we don't block on a semaphore; we just need to return if
+         * there were any timers serviced. If there was any timers in the list
+         * then we signal.
+         */
+        wait = 1;
+    }
+
+    return !(wait == ZJS_TICKS_FOREVER);
+}
+#endif
 
 void zjs_timers_init()
 {
