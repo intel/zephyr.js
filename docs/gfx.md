@@ -60,14 +60,14 @@ callback.  A 'this' object can also be provided if needed.
 
 ### GFXContext.fillRect
 
-`void drawPixel(number x coord, number y coord, char array color);`
+`void fillRect(number x coord, number y coord, number width, number height,
+               char array color);`
 
 Draws a solid rectangle of the given color at the coordinates provided.
 
 ### GFXContext.drawPixel
 
-`void drawPixel(number x coord, number y coord, number width, number height,
-                char array color);`
+`void drawPixel(number x coord, number y coord, char array color);`
 
 Draws a pixel of the given color at the coordinates provided.
 
