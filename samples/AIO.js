@@ -1,13 +1,18 @@
 // Copyright (c) 2016-2017, Intel Corporation.
 
 // Sample code for showing how to to read raw input value from the analog
-// pins on the Arduino 101, specifically A0 and A1, which is mapped
-// to pin 10 and pin 11 on Zephyr, where one is doing a synchronous
-// read and the other does it asynchronously
+// pins on FRDM_K64f board or the Arduino 101, specifically A0 and A1
+// on the Arduino 101, which is mapped to pin 10 and pin 11 on Zephyr,
+// where one is doing a synchronous read and the other does it asynchronously
 
 // import aio module
 var aio = require("aio");
-var pins = require("arduino101_pins");
+var board = require("board");
+if (board.name === "arduino_101") {
+    var pins = require("arduino101_pins");
+} else {
+    var pins = require("k64f_pins");
+}
 
 // pins
 var pinA = aio.open({ pin: pins.A0 });
