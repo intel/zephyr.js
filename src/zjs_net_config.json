@@ -11,6 +11,5 @@
             "CONFIG_NET_DHCPV4=y"
         ]
     },
-    "init": ["zjs_net_config_init"],
     "header": ["zjs_net_config.h"]
 }

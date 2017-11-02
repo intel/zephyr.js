@@ -4,7 +4,6 @@
 #include <zephyr.h>
 
 // ZJS includes
-#include "zjs_gpio.h"
 #include "zjs_pwm.h"
 #include "zjs_util.h"
 
@@ -22,7 +21,7 @@ static void zjs_k64f_num_to_pwm(u32_t num, int *dev, int *pin)
 }
 #endif
 
-jerry_value_t zjs_k64f_init()
+static jerry_value_t zjs_k64f_init()
 {
     // effects: returns an object with FRDM-K64F pin mappings
 #ifdef BUILD_MODULE_PWM
@@ -90,3 +89,5 @@ jerry_value_t zjs_k64f_init()
 
     return obj;
 }
+
+JERRYX_NATIVE_MODULE(k64f_pins, zjs_k64f_init)

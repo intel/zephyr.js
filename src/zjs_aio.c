@@ -10,7 +10,6 @@
 #include <misc/util.h>
 
 // ZJS includes
-#include "zjs_aio.h"
 #include "zjs_callbacks.h"
 #include "zjs_event.h"
 #include "zjs_common.h"
@@ -259,7 +258,7 @@ static ZJS_DECL_FUNC(zjs_aio_open)
 
     // add to the list of opened handles
     ZJS_LIST_APPEND(aio_handle_t, opened_handles, handle);
-
+    jerry_set_object_native_pointer(pinobj, handle, &aio_type_info);
     return pinobj;
 }
 
@@ -300,6 +299,15 @@ static s32_t aio_poll_routine(void *h)
     return K_FOREVER;
 }
 
+static void zjs_aio_cleanup(void *native)
+{
+    jerry_release_value(zjs_aio_prototype);
+}
+
+static const jerry_object_native_info_t aio_module_type_info = {
+   .free_cb = zjs_aio_cleanup
+};
+
 jerry_value_t zjs_aio_init()
 {
     // FIXME: need a way to unregister service routines
@@ -318,14 +326,11 @@ jerry_value_t zjs_aio_init()
     // create global AIO object
     jerry_value_t aio_obj = zjs_create_object();
     zjs_obj_add_function(aio_obj, "open", zjs_aio_open);
-
+    // Set up cleanup function for when the object gets freed
+    jerry_set_object_native_pointer(aio_obj, NULL, &aio_module_type_info);
     return aio_obj;
 }
 
-void zjs_aio_cleanup()
-{
-    jerry_release_value(zjs_aio_prototype);
-}
-
+JERRYX_NATIVE_MODULE(aio, zjs_aio_init)
 #endif  // QEMU_BUILD
 #endif  // BUILD_MODULE_AIO

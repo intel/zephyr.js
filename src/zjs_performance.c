@@ -23,7 +23,7 @@ static ZJS_DECL_FUNC(zjs_performance_now)
     return jerry_create_number((double)useconds / 1000);
 }
 
-jerry_value_t zjs_performance_init()
+static jerry_value_t zjs_performance_init()
 {
     // create global performance object
     jerry_value_t performance_obj = zjs_create_object();
@@ -31,4 +31,5 @@ jerry_value_t zjs_performance_init()
     return performance_obj;
 }
 
+JERRYX_NATIVE_MODULE(performance, zjs_performance_init)
 #endif  // BUILD_MODULE_PERFORMANCE

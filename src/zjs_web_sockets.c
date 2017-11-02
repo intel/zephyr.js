@@ -1067,18 +1067,25 @@ static ZJS_DECL_FUNC(ws_server)
     return server;
 }
 
-jerry_value_t zjs_ws_init()
+static void zjs_ws_cleanup(void *native)
+{
+    FTRACE("\n");
+}
+
+static const jerry_object_native_info_t ws_module_type_info = {
+   .free_cb = zjs_ws_cleanup
+};
+
+static jerry_value_t zjs_ws_init()
 {
     FTRACE("\n");
     zjs_net_config_default();
 
     jerry_value_t ws = zjs_create_object();
     zjs_obj_add_function(ws, "Server", ws_server);
-
+    // Set up cleanup function for when the object gets freed
+    jerry_set_object_native_pointer(ws, NULL, &ws_module_type_info);
     return ws;
 }
 
-void zjs_ws_cleanup()
-{
-    FTRACE("\n");
-}
+JERRYX_NATIVE_MODULE(ws, zjs_ws_init)

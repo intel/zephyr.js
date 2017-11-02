@@ -41,7 +41,5 @@
             "CONFIG_BT_RX_BUF_COUNT=15"
         ]
     },
-    "header": ["zjs_ocf_server.h", "zjs_ocf_client.h", "zjs_ocf_common.h"],
-    "init": ["zjs_ocf_init"],
-    "cleanup": ["zjs_ocf_cleanup"]
+    "header": ["zjs_ocf_server.h", "zjs_ocf_client.h", "zjs_ocf_common.h"]
 }

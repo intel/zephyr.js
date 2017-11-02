@@ -15,7 +15,6 @@
 #include <misc/util.h>
 
 // ZJS includes
-#include "zjs_grove_lcd.h"
 #include "zjs_util.h"
 
 #define MAX_BUFFER_SIZE 256
@@ -173,11 +172,20 @@ static ZJS_DECL_FUNC(zjs_glcd_init)
     return dev_obj;
 }
 
+static void zjs_grove_lcd_cleanup(void *native)
+{
+    jerry_release_value(zjs_glcd_prototype);
+}
+
+static const jerry_object_native_info_t grove_lcd_module_type_info = {
+   .free_cb = zjs_grove_lcd_cleanup
+};
+
 // Note. setInputState is not supported in Zephyr driver yet
 // with right-to-left text flow (GLCD_IS_SHIFT_DECREMENT|GLCD_IS_ENTRY_RIGHT)
 // and defaults to left-to-right only, so we don't support
 // configuring input state until Zephyr implements this feature
-jerry_value_t zjs_grove_lcd_init()
+static jerry_value_t zjs_grove_lcd_init()
 {
     zjs_native_func_t array[] = {
         { zjs_glcd_print, "print" },
@@ -264,13 +272,11 @@ jerry_value_t zjs_grove_lcd_init()
     zjs_set_property(glcd_obj, "GROVE_RGB_BLUE", val);
     jerry_release_value(val);
 
+    // Set up cleanup function for when the object gets freed
+    jerry_set_object_native_pointer(glcd_obj, NULL, &grove_lcd_module_type_info);
     return glcd_obj;
 }
 
-void zjs_grove_lcd_cleanup()
-{
-    jerry_release_value(zjs_glcd_prototype);
-}
-
+JERRYX_NATIVE_MODULE(grove_lcd, zjs_grove_lcd_init)
 #endif  // QEMU_BUILD
 #endif  // BUILD_MODULE_GROVE_LCD

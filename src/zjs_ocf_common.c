@@ -504,7 +504,22 @@ static ZJS_DECL_FUNC(ocf_start)
     return ZJS_UNDEFINED;
 }
 
-jerry_value_t zjs_ocf_init()
+static void zjs_ocf_cleanup(void *native)
+{
+#ifdef OC_SERVER
+    zjs_ocf_server_cleanup();
+#endif
+#ifdef OC_CLIENT
+    zjs_ocf_client_cleanup();
+#endif
+    jerry_release_value(ocf_object);
+}
+
+static const jerry_object_native_info_t ocf_module_type_info = {
+   .free_cb = zjs_ocf_cleanup
+};
+
+static jerry_value_t zjs_ocf_init()
 {
     ocf_object = zjs_create_object();
 
@@ -531,18 +546,10 @@ jerry_value_t zjs_ocf_init()
     zjs_init_ble_address();
 #endif
 #endif
+    // Set up cleanup function for when the object gets freed
+    jerry_set_object_native_pointer(ocf_object, NULL, &ocf_module_type_info);
     return ocf_object;
 }
 
-void zjs_ocf_cleanup()
-{
-#ifdef OC_SERVER
-    zjs_ocf_server_cleanup();
-#endif
-#ifdef OC_CLIENT
-    zjs_ocf_client_cleanup();
-#endif
-    jerry_release_value(ocf_object);
-}
-
+JERRYX_NATIVE_MODULE(ocf, zjs_ocf_init)
 #endif  // BUILD_MODULE_OCF

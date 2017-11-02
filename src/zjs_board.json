@@ -2,7 +2,5 @@
     "module": "board",
     "require": "board",
     "zjs_config": ["-DBUILD_MODULE_BOARD"],
-    "src": ["zjs_board.c"],
-    "header": ["zjs_board.h"],
-    "init": ["zjs_board_init"]
+    "src": ["zjs_board.c"]
 }

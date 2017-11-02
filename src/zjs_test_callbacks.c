@@ -33,7 +33,7 @@ static ZJS_DECL_FUNC(signal_callback)
     return ZJS_UNDEFINED;
 }
 
-jerry_value_t zjs_test_callbacks_init(void)
+static jerry_value_t zjs_test_callbacks_init(void)
 {
     jerry_value_t cb_obj = zjs_create_object();
 
@@ -43,3 +43,5 @@ jerry_value_t zjs_test_callbacks_init(void)
 
     return cb_obj;
 }
+
+JERRYX_NATIVE_MODULE(test_callbacks, zjs_test_callbacks_init)

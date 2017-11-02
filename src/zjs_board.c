@@ -6,7 +6,6 @@
 // ZJS includes
 #include "zjs_board.h"
 #include "zjs_common.h"
-#include "zjs_gpio.h"
 #include "zjs_util.h"
 
 #define PIN_NAME_MAX_LEN 8
@@ -285,7 +284,7 @@ int zjs_board_find_pin(jerry_value_t pin, char devname[20], int *pin_num)
 #define BOARD_NAME "unknown"
 #endif
 
-jerry_value_t zjs_board_init()
+static jerry_value_t zjs_board_init()
 {
     // create board object
     jerry_value_t board_obj = zjs_create_object();
@@ -294,3 +293,5 @@ jerry_value_t zjs_board_init()
 
     return board_obj;
 }
+
+JERRYX_NATIVE_MODULE(board, zjs_board_init)

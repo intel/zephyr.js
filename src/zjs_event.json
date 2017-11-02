@@ -3,7 +3,5 @@
     "require": "events",
     "src": ["zjs_event.c"],
     "zjs_config": ["-DBUILD_MODULE_EVENT"],
-    "header": ["zjs_event.h"],
-    "init": ["zjs_event_init"],
-    "cleanup": ["zjs_event_cleanup"]
+    "header": ["zjs_event.h"]
 }

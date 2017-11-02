@@ -337,17 +337,11 @@ def write_zconf(list, file):
 def write_modules(list, tree):
     """Write zjs_modules_gen.h file"""
     headers = []
-    inits = {}
     gbl_inits = {}
     with open('outdir/include/zjs_modules_gen.h', 'w') as file:
         for i in list:
             entry = tree.get(i, None)
             if entry:
-                if 'init' in entry:
-                    inits[i] = {}
-                    inits[i]["inits"] = entry['init']
-                if 'cleanup' in entry:
-                    inits[i]["cleanups"] = entry['cleanup']
                 if 'header' in entry:
                     merge_lists(headers, entry['header'])
                 if 'global_init' in entry:
@@ -363,24 +357,11 @@ def write_modules(list, tree):
             file.write("#include \"%s\"\n" % i)
         file.write("""typedef jerry_value_t (*initcb_t)();
 typedef void (*cleanupcb_t)();
-typedef struct module {
-    const char *name;
-    initcb_t init;
-    cleanupcb_t cleanup;
-    jerry_value_t instance;
-} module_t;
 typedef struct gbl_module {
     const char *name;
     void (*init)();
     void (*cleanup)();
-} gbl_module_t;
-module_t zjs_modules_array[] = {\n""")
-        for i in inits:
-            file.write("    {\"%s\", %s" % (i, inits[i]["inits"][0]))
-            if 'cleanups' in inits[i]:
-                file.write(", %s" % inits[i]["cleanups"][0])
-            file.write("},\n")
-        file.write("};\n")
+} gbl_module_t;\n""")
         file.write("gbl_module_t zjs_global_array[] = {\n")
         for i in gbl_inits:
             file.write("    {\"%s\", %s" % (i, gbl_inits[i]["inits"][0]))

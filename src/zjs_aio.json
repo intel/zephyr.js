@@ -2,8 +2,5 @@
     "module": "aio",
     "require": "aio",
     "depends": ["aio_a101", "aio_k64f", "events"],
-    "targets": ["arduino_101", "frdm_k64f"],
-    "header": ["zjs_aio.h"],
-    "init": ["zjs_aio_init"],
-    "cleanup": ["zjs_aio_cleanup"]
+    "targets": ["arduino_101", "frdm_k64f"]
 }

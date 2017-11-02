@@ -1289,6 +1289,25 @@ static ZJS_DECL_FUNC(zjs_ble_descriptor)
     return jerry_acquire_value(argv[0]);
 }
 
+static void zjs_ble_cleanup(void *native)
+{
+    ble_connection_t *conn = ble_handle->connections;
+    while (conn) {
+        ble_connection_t *tmp = conn;
+        bt_conn_unref(tmp->bt_conn);
+        conn = conn->next;
+        zjs_free(tmp);
+    }
+    zjs_ble_free_services(ble_handle->services);
+    jerry_release_value(ble_handle->ble_obj);
+    zjs_free(ble_handle);
+    ble_handle = NULL;
+}
+
+static const jerry_object_native_info_t ble_module_type_info = {
+   .free_cb = zjs_ble_cleanup
+};
+
 // INTERRUPT SAFE FUNCTION: No JerryScript VM, allocs, or release prints!
 void ble_bt_ready(int err)
 {
@@ -1296,7 +1315,7 @@ void ble_bt_ready(int err)
     zjs_ble_emit_powered_event();
 }
 
-jerry_value_t zjs_ble_init()
+static jerry_value_t zjs_ble_init()
 {
     k_sem_init(&ble_sem, 0, 1);
 
@@ -1330,6 +1349,7 @@ jerry_value_t zjs_ble_init()
     bt_conn_auth_cb_register(&zjs_ble_auth_cb_display);
 
     ble_handle = handle;
+    jerry_set_object_native_pointer(ble_obj, ble_handle, &ble_module_type_info);
 
 #ifdef ZJS_ASHELL
     if (bt_enable(ble_bt_ready)) {
@@ -1339,20 +1359,6 @@ jerry_value_t zjs_ble_init()
     return ble_obj;
 }
 
-void zjs_ble_cleanup()
-{
-    ble_connection_t *conn = ble_handle->connections;
-    while (conn) {
-        ble_connection_t *tmp = conn;
-        bt_conn_unref(tmp->bt_conn);
-        conn = conn->next;
-        zjs_free(tmp);
-    }
-    zjs_ble_free_services(ble_handle->services);
-    jerry_release_value(ble_handle->ble_obj);
-    zjs_free(ble_handle);
-    ble_handle = NULL;
-}
-
+JERRYX_NATIVE_MODULE(ble, zjs_ble_init)
 #endif  // QEMU_BUILD
 #endif  // BUILD_MODULE_BLE

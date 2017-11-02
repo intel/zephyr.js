@@ -3,8 +3,5 @@
     "require": "pme",
     "depends": ["buffer", "ipm", "json"],
     "zjs_config": ["-DBUILD_MODULE_PME"],
-    "src": ["zjs_pme.c"],
-    "header": ["zjs_pme.h"],
-    "init": ["zjs_pme_init"],
-    "cleanup": ["zjs_pme_cleanup"]
+    "src": ["zjs_pme.c"]
 }

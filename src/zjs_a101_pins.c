@@ -2,7 +2,6 @@
 
 // ZJS includes
 #include "zjs_common.h"
-#include "zjs_gpio.h"
 #include "zjs_pwm.h"
 #include "zjs_util.h"
 
@@ -45,7 +44,7 @@ static void zjs_a101_num_to_pwm(u32_t num, int *dev, int *pin)
 }
 #endif
 
-jerry_value_t zjs_a101_init()
+static jerry_value_t zjs_a101_init()
 {
     // effects: returns an object with Arduino 101 pin mappings
 #ifdef BUILD_MODULE_PWM
@@ -97,3 +96,5 @@ jerry_value_t zjs_a101_init()
 
     return obj;
 }
+
+JERRYX_NATIVE_MODULE(arduino101_pins, zjs_a101_init)

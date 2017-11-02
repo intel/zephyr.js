@@ -9,10 +9,6 @@
 extern u8_t net_ble_enabled;
 #endif
 #endif
-/*
- * Returns the net-config object from require.
- */
-jerry_value_t zjs_net_config_init(void);
 
 /*
  * Do the default network configuration. This should always be called when

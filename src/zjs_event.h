@@ -190,14 +190,4 @@ bool zjs_copy_arg(void *unused, jerry_value_t argv[], u32_t *argc,
  */
 void zjs_release_args(void *unused, jerry_value_t argv[], u32_t argc);
 
-/**
- * Initialize the event module
- *
- * @return              Event constructor
- */
-jerry_value_t zjs_event_init();
-
-/** Release resources held by the event module */
-void zjs_event_cleanup();
-
 #endif

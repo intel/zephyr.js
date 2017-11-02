@@ -15,7 +15,6 @@
 #include "zjs_buffer.h"
 #include "zjs_callbacks.h"
 #include "zjs_error.h"
-#include "zjs_spi.h"
 #include "zjs_util.h"
 
 #define SPI_BUS "SPI_"
@@ -324,7 +323,16 @@ static ZJS_DECL_FUNC(zjs_spi_open)
     return spi_obj;
 }
 
-jerry_value_t zjs_spi_init()
+static void zjs_spi_cleanup(void *native)
+{
+    jerry_release_value(zjs_spi_prototype);
+}
+
+static const jerry_object_native_info_t spi_module_type_info = {
+   .free_cb = zjs_spi_cleanup
+};
+
+static jerry_value_t zjs_spi_init()
 {
     // Create SPI pin prototype object
     zjs_native_func_t array[] = {
@@ -338,11 +346,9 @@ jerry_value_t zjs_spi_init()
     // Create SPI object
     jerry_value_t spi_obj = zjs_create_object();
     zjs_obj_add_function(spi_obj, "open", zjs_spi_open);
-
+    // Set up cleanup function for when the object gets freed
+    jerry_set_object_native_pointer(spi_obj, NULL, &spi_module_type_info);
     return spi_obj;
 }
 
-void zjs_spi_cleanup()
-{
-    jerry_release_value(zjs_spi_prototype);
-}
+JERRYX_NATIVE_MODULE(spi, zjs_spi_init)

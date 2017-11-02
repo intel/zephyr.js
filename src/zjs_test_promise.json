@@ -3,8 +3,5 @@
     "require": "test_promise",
     "depends": ["promise"],
     "zjs_config": ["-DBUILD_MODULE_TEST_PROMISE"],
-    "src": ["zjs_test_promise.c"],
-    "header": ["zjs_test_promise.h"],
-    "init": ["zjs_test_promise_init"],
-    "cleanup": ["zjs_test_promise_cleanup"]
+    "src": ["zjs_test_promise.c"]
 }

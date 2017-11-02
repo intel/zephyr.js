@@ -9,7 +9,6 @@
 #include <misc/util.h>
 
 // ZJS includes
-#include "zjs_aio.h"
 #include "zjs_callbacks.h"
 #include "zjs_event.h"
 #include "zjs_ipm.h"

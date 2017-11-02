@@ -347,7 +347,7 @@ static void iface_event(struct net_mgmt_event_callback *cb,
     }
 }
 
-jerry_value_t zjs_net_config_init(void)
+static jerry_value_t zjs_net_config_init(void)
 {
     FTRACE("\n");
     config = zjs_create_object();
@@ -379,4 +379,6 @@ jerry_value_t zjs_net_config_init(void)
 
     return config;
 }
+
+JERRYX_NATIVE_MODULE(net-config, zjs_net_config_init)
 #endif

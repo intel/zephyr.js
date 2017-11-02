@@ -15,7 +15,6 @@
 #include "zjs_board.h"
 #include "zjs_callbacks.h"
 #include "zjs_common.h"
-#include "zjs_gpio.h"
 #include "zjs_util.h"
 
 #ifdef ZJS_GPIO_MOCK
@@ -27,7 +26,6 @@
 #define zjs_gpio_mock_cleanup()
 #endif
 
-static jerry_value_t gpio_api = 0;
 static jerry_value_t gpio_pin_prototype = 0;
 
 // Handle for GPIO input pins, passed around between ISR/C callbacks
@@ -327,13 +325,19 @@ static ZJS_DECL_FUNC(zjs_gpio_open)
     return pin_obj;
 }
 
-jerry_value_t zjs_gpio_init()
+static void zjs_gpio_cleanup(void *native) {
+        zjs_gpio_mock_cleanup();
+        jerry_release_value(gpio_pin_prototype);
+        gpio_pin_prototype = 0;
+}
+
+static const jerry_object_native_info_t gpio_module_type_info = {
+    .free_cb = zjs_gpio_cleanup
+};
+
+static jerry_value_t zjs_gpio_init()
 {
     zjs_gpio_mock_pre_init();
-
-    if (gpio_api) {
-        return jerry_acquire_value(gpio_api);
-    }
 
     // create GPIO pin prototype object
     zjs_native_func_t array[] = {
@@ -346,19 +350,16 @@ jerry_value_t zjs_gpio_init()
     zjs_obj_add_functions(gpio_pin_prototype, array);
 
     // create GPIO object
-    gpio_api = zjs_create_object();
+    jerry_value_t gpio_api = zjs_create_object();
     zjs_obj_add_function(gpio_api, "open", zjs_gpio_open);
+
+    // Set up cleanup function for when the object gets freed
+    jerry_set_object_native_pointer(gpio_api, NULL, &gpio_module_type_info);
 
     zjs_gpio_mock_post_init(gpio_api);
 
-    return jerry_acquire_value(gpio_api);
+    //return jerry_acquire_value(gpio_api);
+    return gpio_api;
 }
 
-void zjs_gpio_cleanup()
-{
-    zjs_gpio_mock_cleanup();
-    jerry_release_value(gpio_pin_prototype);
-    jerry_release_value(gpio_api);
-    gpio_pin_prototype = 0;
-    gpio_api = 0;
-}
+JERRYX_NATIVE_MODULE(gpio, zjs_gpio_init)

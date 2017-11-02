@@ -10,13 +10,6 @@
 
 struct device;
 
-/**
- * Initialize the board module, or reinitialize after cleanup
- *
- * @return Board API object
- */
-jerry_value_t zjs_board_init();
-
 typedef struct zjs_pin {
     u8_t device;
     u8_t gpio;

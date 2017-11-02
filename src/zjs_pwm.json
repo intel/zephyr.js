@@ -7,7 +7,5 @@
     },
     "zjs_config": ["-DBUILD_MODULE_PWM"],
     "src": ["zjs_pwm.c"],
-    "header": ["zjs_pwm.h"],
-    "init": ["zjs_pwm_init"],
-    "cleanup": ["zjs_pwm_cleanup"]
+    "header": ["zjs_pwm.h"]
 }

@@ -322,7 +322,16 @@ static ZJS_DECL_FUNC(zjs_dgram_sock_close)
     return ZJS_UNDEFINED;
 }
 
-jerry_value_t zjs_dgram_init()
+static void zjs_dgram_cleanup(void *native)
+{
+    jerry_release_value(zjs_dgram_socket_prototype);
+}
+
+static const jerry_object_native_info_t dgram_module_type_info = {
+   .free_cb = zjs_dgram_cleanup
+};
+
+static jerry_value_t zjs_dgram_init()
 {
     zjs_net_config_default();
 
@@ -340,12 +349,10 @@ jerry_value_t zjs_dgram_init()
     // create module object
     jerry_value_t dgram_obj = zjs_create_object();
     zjs_obj_add_function(dgram_obj, "createSocket", zjs_dgram_createSocket);
+    // Set up cleanup function for when the object gets freed
+    jerry_set_object_native_pointer(dgram_obj, NULL, &dgram_module_type_info);
     return dgram_obj;
 }
 
-void zjs_dgram_cleanup()
-{
-    jerry_release_value(zjs_dgram_socket_prototype);
-}
-
+JERRYX_NATIVE_MODULE(dgram, zjs_dgram_init)
 #endif  // BUILD_MODULE_DGRAM
