@@ -303,6 +303,7 @@ static ZJS_DECL_FUNC(zjs_gpio_open)
     gpio_handle_t *handle = zjs_malloc(sizeof(gpio_handle_t));
     memset(handle, 0, sizeof(gpio_handle_t));
     handle->pin = pin;
+    // FIXME: this seems wrong, it can probably never be freed
     handle->pin_obj = jerry_acquire_value(pin_obj);
     handle->port = gpiodev;
     handle->callbackId = -1;

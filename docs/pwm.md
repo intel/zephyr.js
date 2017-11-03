@@ -31,6 +31,8 @@ If you give it a duty cycle of 10% (such as 1ms on, 9ms off), it will glow at
 10% brightness. So as with the Arduino API, you can think of this as a way to
 set an "analog" brightness, not just "on" or "off".
 
+The PWM API intends to follow the [iot-js-api specification](https://github.com/01org/iot-js-api/tree/master/board/pwm.md).
+
 Web IDL
 -------
 This IDL provides an overview of the interface; see below for documentation of
@@ -46,10 +48,8 @@ interface PWM {
 };
 
 dictionary PWMInit {
-    unsigned long channel;
-    double period;               // in milliseconds
-    double pulseWidth;           // in milliseconds
-    string polarity = "normal";  // normal, reverse
+    number or string pin;
+    boolean reversePolarity = false;
 };
 
 [NoInterfaceObject]
@@ -63,29 +63,36 @@ API Documentation
 -----------------
 ### PWM.open
 
-`PWMPin open(PWMInit init);`
+`PWMPin open(number or string or PWMInit init);`
 
-The `init` object lets you set the channel number. You can either use a raw
-number for your device or use the board support module such as
-[Arduino 101](./a101_pins.md) or [K64F](./k64f_pins.md) to specify a named pin.
+If the argument is a number, it is a pin channel number. If it is a string, it
+is a pin name. Otherwise, it must be a `PWMInit` object.
+
+The `init` object lets you set the pin channel number with the `pin` property.
+You can use a pin name like "PWM_0.2" where "PWM_0" is the name of a Zephyr
+pwm controller device for your board and 210 is the pin/channel number. This
+will work on any board as long as you find the right values in Zephyr
+documentation. But for boards with specific ZJS support, you can use friendly
+names. Currently this means Arduino 101 and FRDM-K64F.
+
+*Arduino 101*
+For the A101, you can use numbers 0-3 or strings "PWM0" through "PWM3", or the
+corresponding digital pin names "IO3", "IO5", "IO6", and "IO9".
+
+*FRDM-K64F*
+For the K64F, you can use numbers 0-11 or strings "D3", "D5" through "D13",
+"A4" and "A5".
+
 The term 'channel' is used to refer to the fact that PWM controller hardware has
 multiple channels, but these are connected to output pins so as the user of the
 hardware you will think of them as pins.
 
-The initial `period` and `pulseWidth` can be specified in milliseconds. These
-mean the signal will go on (high) for `pulseWidth` milliseconds and then back
-off (low) again, every `period` milliseconds.
+The `reversePolarity` value should flip the signal if set to 'reverse', meaning
+the signal will be off (low) for the pulseWidth, and back on (high) for the
+rest of the period.
 
-If you instead want to specify the period and pulseWidth with finer granularity
-in hardware cycles, you can use the corresonding setter functions after the
-open.
-
-The `polarity` value should flip the signal if set to 'reverse', meaning the
-signal will be off (low) for the pulseWidth, and back on (high) for the rest of
-the period. *NOTE: This doesn't seem to work currently on Arduino 101.*
-
-The function returns a PWMPin object that can be used to change the period and
-pulse width later.
+The function returns a PWMPin object that can be used to set the period and
+pulse width.
 
 ### PWMPin.setCycles
 
@@ -99,9 +106,9 @@ Throws an error if pulseWidth is greater than period.
 
 This version of the API is useful when the duty cycle is what matters (e.g.
 using the 'analog' model of PWM control described in the
-[Introduction](#introduction)). For example, a period of 2 with a pulse width of
-1 will make an LED at 50% brightness, with no flicker because the changes occur
-far faster than visible to the human eye.
+[Introduction](#introduction)). For example, a period of 20 with a pulse width
+of 10 will make an LED at 50% brightness, with no flicker because the changes
+occur far faster than visible to the human eye.
 
 ### PWMPin.setMilliseconds
 

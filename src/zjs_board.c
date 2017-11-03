@@ -73,8 +73,8 @@ static const pin_map_t pin_data[] = {
     {0,   3, 255}   // PWM3 (aka IO9)
 };
 
-#ifdef BUILD_MODULE_GPIO
 static const pin_range_t digital_pins = {0, 13};
+#ifdef BUILD_MODULE_GPIO
 static const pin_range_t led_pins = {14, 16};
 #endif
 #ifdef BUILD_MODULE_AIO
@@ -139,8 +139,8 @@ static const pin_map_t pin_data[] = {
     // TODO: More pins at https://developer.mbed.org/platforms/FRDM-K64F/
 };
 
-#ifdef BUILD_MODULE_GPIO
 static const pin_range_t digital_pins = {0, 15};
+#ifdef BUILD_MODULE_GPIO
 static const pin_range_t led_pins = {16, 18};
 #endif
 #ifdef BUILD_MODULE_AIO
@@ -183,9 +183,9 @@ typedef struct {
 } prefix_t;
 
 static const prefix_t prefix_map[] = {
-#ifdef BUILD_MODULE_GPIO
     { "IO", &digital_pins},
     {  "D", &digital_pins},
+#ifdef BUILD_MODULE_GPIO
     {"LED", &led_pins},
 #endif
 #ifdef BUILD_MODULE_AIO
@@ -205,8 +205,9 @@ static int find_named_pin(const char *name, const pin_range_t *default_range,
     //             start and end values if name is a numeric pin; device_prefix
     //             is the prefix string e.g. GPIO for GPIO_0 device; remap is
     //             an array of pin numbers that should be remapped if found, or
-    //             NULL; remap_len is the length of that array, and device_out
-    //             is a place to store the device driver binding
+    //             NULL; remap_len is the length of that array, and device_name
+    //             is a place to store the device driver name, name_len is the
+    //             receiving buffer length
     //  effects: searches for a pin name matching name, which may have an alpha
     //             prefix and may have a numeric suffix, but at least one of the
     //             two; if the name is numeric only, uses default_range to
@@ -217,7 +218,6 @@ static int find_named_pin(const char *name, const pin_range_t *default_range,
     ZJS_ASSERT(name, "name is NULL");
     ZJS_ASSERT(default_range, "default_range is NULL");
     ZJS_ASSERT(device_prefix, "device_prefix is NULL");
-    ZJS_ASSERT(device_out, "device_out is NULL");
 
     if (strnlen(name, NAMED_PIN_MAX_LEN) == NAMED_PIN_MAX_LEN) {
         DBG_PRINT("pin name too long\n");
@@ -251,6 +251,7 @@ static int find_named_pin(const char *name, const pin_range_t *default_range,
             for (int i = 0; i < len; ++i) {
                 if (strequal(prefix, prefix_map[i].prefix)) {
                     range = prefix_map[i].range;
+                    break;
                 }
             }
         }
@@ -378,7 +379,7 @@ int zjs_board_find_aio(jerry_value_t jspin, char *device_name, int len)
 #endif
 
 #ifdef BUILD_MODULE_PWM
-int zjs_find_pwm(jerry_value_t jspin, char *device_name, int name_len)
+int zjs_board_find_pwm(jerry_value_t jspin, char *device_name, int name_len)
 {
     int remap_len = sizeof(pwm_map) / sizeof(pin_remap_t);
     return find_pin(jspin, &pwm_pins, "PWM", pwm_map, remap_len, device_name,

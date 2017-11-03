@@ -99,15 +99,12 @@ ColorCharacteristic._value.writeUInt8(255, 0);
 ColorCharacteristic._value.writeUInt8(0, 1);
 ColorCharacteristic._value.writeUInt8(0, 2);
 
-ColorCharacteristic.ledR = pwm.open({
-    channel: pins.IO3, period: 0.256, pulseWidth: 0.255
-});
-ColorCharacteristic.ledG = pwm.open({
-    channel: pins.IO5, period: 0.256, pulseWidth: 0
-});
-ColorCharacteristic.ledB = pwm.open({
-    channel: pins.IO6, period: 0.256, pulseWidth: 0
-});
+ColorCharacteristic.ledR = pwm.open(0);
+ColorCharacteristic.ledG = pwm.open(1);
+ColorCharacteristic.ledB = pwm.open(2);
+ColorCharacteristic.ledR.setCycles(256, 255);
+ColorCharacteristic.ledG.setCycles(256, 0);
+ColorCharacteristic.ledB.setCycles(256, 0);
 
 ColorCharacteristic.onReadRequest = function(offset, callback) {
     console.log("Color change: #" + this._value.toString('hex'));
