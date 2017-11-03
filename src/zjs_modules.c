@@ -235,6 +235,18 @@ void zjs_register_service_routine(void *handle, zjs_service_routine func)
     return;
 }
 
+void zjs_unregister_service_routine(zjs_service_routine func) {
+    for (int i = 0; i < num_routines; i++) {
+        if (svc_routine_map[i].func == func) {
+            svc_routine_map[i].handle = NULL;
+            zjs_free(&svc_routine_map[i].func);
+            num_routines--;
+            return;
+        }
+    }
+    ERR_PRINT("Couldn't unregister routine for %p\n", func);
+}
+
 s32_t zjs_service_routines(void)
 {
     s32_t wait = ZJS_TICKS_FOREVER;

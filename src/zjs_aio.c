@@ -302,6 +302,7 @@ static s32_t aio_poll_routine(void *h)
 static void zjs_aio_cleanup(void *native)
 {
     jerry_release_value(zjs_aio_prototype);
+    zjs_unregister_service_routine(aio_poll_routine);
 }
 
 static const jerry_object_native_info_t aio_module_type_info = {
