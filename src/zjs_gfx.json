@@ -4,9 +4,6 @@
     "depends": ["buffer"],
     "zephyr_conf": {
     },
-    "zjs_config": ["-DBUILD_MODULE_FONTS"],
-    "src": ["zjs_gfx.c"],
-    "header": ["zjs_gfx.h"],
-    "init": ["zjs_gfx_init"],
-    "cleanup": ["zjs_gfx_cleanup"]
+    "zjs_config": ["-DBUILD_MODULE_GFX"],
+    "src": ["zjs_gfx.c"]
 }
