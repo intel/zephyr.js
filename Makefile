@@ -151,10 +151,6 @@ endif
 endif
 
 ifeq ($(BOARD), arduino_101)
-ifneq ($(OS), Darwin)
-EXT_JERRY_FLAGS += -DENABLE_LTO=ON
-endif
-$(info makecmd: $(MAKECMDGOALS))
 ifeq ($(MAKECMDGOALS),)
 TARGETS=all
 else
