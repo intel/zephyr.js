@@ -67,11 +67,13 @@ $(error ROM must be no higher than 296)
 endif
 
 # IDE_GPIO_PIN has to be between 0 to 20
+ifneq ($(IDE_GPIO_PIN),)
 ifeq ($(shell test $(IDE_GPIO_PIN) -lt 0; echo $$?), 0)
 $(error IDE_GPIO_PIN must be no lower than 0)
 endif
 ifeq ($(shell test $(IDE_GPIO_PIN) -gt 20; echo $$?), 0)
 $(error IDE_GPIO_PIN must be no higher than 20)
+endif
 endif
 endif  # BOARD = arduino_101
 
