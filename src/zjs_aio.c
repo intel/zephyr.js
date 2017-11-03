@@ -258,7 +258,6 @@ static ZJS_DECL_FUNC(zjs_aio_open)
 
     // add to the list of opened handles
     ZJS_LIST_APPEND(aio_handle_t, opened_handles, handle);
-    jerry_set_object_native_pointer(pinobj, handle, &aio_type_info);
     return pinobj;
 }
 
