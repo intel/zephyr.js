@@ -6,13 +6,12 @@ var assert = require("Assert.js");
 
 var pwm = require("pwm");
 var gpio = require("gpio");
-var pins = require("arduino101_pins");
 var pinA, pinB, msTimer, cycleTimer;
 
 pinB = gpio.open({pin: "IO2", mode: 'in'});
 
 // PWMPins open
-pinA = pwm.open({channel: pins.IO3});
+pinA = pwm.open('IO3');
 assert(pinA !== null && typeof pinA === "object",
       "open: defined pin and default argument");
 
@@ -24,10 +23,6 @@ assert.throws(function () {
 // duty cycle: 33%
 var msTrue = 0;
 var msFalse = 0;
-
-pinA = pwm.open({channel: pins.IO3, period: 3, pulseWidth: 1});
-assert(pinA !== null && typeof pinA === "object",
-       "open: with period and pulseWidth");
 
 // set pulse width greater than period
 assert.throws(function() {
@@ -70,7 +65,7 @@ setTimeout(function () {
     var periodCount = 0;
     var Flag = 0;
     var oldFlag = 0;
-    pinA = pwm.open({ channel: pins.IO3, polarity: "reverse" });
+    pinA = pwm.open({ pin: 'IO3', reversePolarity: true });
     assert(pinA !== null && typeof pinA === "object", "open: reverse polarity");
 
     pinA.setCycles(10000000, 3000000);

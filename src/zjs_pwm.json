@@ -1,6 +1,7 @@
 {
     "module": "pwm",
     "require": "pwm",
+    "depends": ["board"],
     "targets": ["arduino_101"],
     "zephyr_conf": {
         "all": ["CONFIG_PWM=y", "CONFIG_PWM_QMSI_NUM_PORTS=4"]

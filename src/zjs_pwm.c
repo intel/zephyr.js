@@ -11,12 +11,30 @@
 #include <zephyr.h>
 
 // ZJS includes
+#include "zjs_board.h"
+#include "zjs_pwm.h"
 #include "zjs_util.h"
 
 static jerry_value_t zjs_pwm_pin_prototype;
 
-static const char *ZJS_POLARITY_NORMAL = "normal";
-static const char *ZJS_POLARITY_REVERSE = "reverse";
+typedef struct {
+    struct device *device;
+    u32_t pin;
+    jerry_value_t pin_obj;
+    bool reverse;
+} pwm_handle_t;
+
+static void zjs_pwm_free_cb(void *native)
+{
+    pwm_handle_t *handle = (pwm_handle_t *)native;
+    // set to pulse of 0 w/ arbitrary period of 100 to turn it off
+    pwm_pin_set_cycles(handle->device, handle->pin, 0, 100);
+    zjs_free(handle);
+}
+
+static const jerry_object_native_info_t pwm_type_info = {
+    .free_cb = zjs_pwm_free_cb
+};
 
 #ifdef CONFIG_BOARD_FRDM_K64F
 #define PWM_DEV_COUNT 4
@@ -26,52 +44,45 @@ static const char *ZJS_POLARITY_REVERSE = "reverse";
 
 static struct device *zjs_pwm_dev[PWM_DEV_COUNT];
 
-void (*zjs_pwm_convert_pin)(u32_t orig,
-                            int *dev,
+void (*zjs_pwm_convert_pin)(u32_t orig, int *dev,
                             int *pin) = zjs_default_convert_pin;
 
 static void zjs_pwm_set_cycles(jerry_value_t obj, u32_t periodHW,
                                u32_t pulseWidthHW)
 {
-    u32_t orig_chan;
-    zjs_obj_get_uint32(obj, "channel", &orig_chan);
-
-    int devnum, channel;
-    zjs_pwm_convert_pin(orig_chan, &devnum, &channel);
-
-    const int BUFLEN = 10;
-    char buffer[BUFLEN];
-    if (zjs_obj_get_string(obj, "polarity", buffer, BUFLEN)) {
-        if (!strncmp(buffer, ZJS_POLARITY_REVERSE, BUFLEN)) {
-            pulseWidthHW = periodHW - pulseWidthHW;
-        }
+    ZJS_GET_HANDLE_OR_NULL(obj, pwm_handle_t, handle, pwm_type_info);
+    if (!handle) {
+        DBG_PRINT("obj %p\n", (void *)obj);
+        ZJS_ASSERT(false, "no handle found");
+        return;
     }
 
-    DBG_PRINT("Setting [cycles] channel=%d dev=%d, period=%lu, pulse=%lu\n",
-              channel, devnum, (u32_t)periodHW, (u32_t)pulseWidthHW);
-    pwm_pin_set_cycles(zjs_pwm_dev[devnum], channel, periodHW, pulseWidthHW);
+    if (handle->reverse) {
+        pulseWidthHW = periodHW - pulseWidthHW;
+    }
+
+    DBG_PRINT("Setting [cycles] dev=%p, pin=%d period=%lu, pulse=%lu\n",
+              handle->device, handle->pin, (u32_t)periodHW,
+              (u32_t)pulseWidthHW);
+    pwm_pin_set_cycles(handle->device, handle->pin, periodHW, pulseWidthHW);
 }
 
 static void zjs_pwm_set_ms(jerry_value_t obj, double period, double pulseWidth)
 {
-    u32_t orig_chan;
-    zjs_obj_get_uint32(obj, "channel", &orig_chan);
-
-    int devnum, channel;
-    zjs_pwm_convert_pin(orig_chan, &devnum, &channel);
-
-    const int BUFLEN = 10;
-    char buffer[BUFLEN];
-    if (zjs_obj_get_string(obj, "polarity", buffer, BUFLEN)) {
-        if (!strncmp(buffer, ZJS_POLARITY_REVERSE, BUFLEN)) {
-            pulseWidth = period - pulseWidth;
-        }
+    ZJS_GET_HANDLE_OR_NULL(obj, pwm_handle_t, handle, pwm_type_info);
+    if (!handle) {
+        ZJS_ASSERT(false, "no handle found");
+        return;
     }
 
-    DBG_PRINT("Setting [uSec] channel=%d dev=%d, period=%lu, pulse=%lu\n",
-              channel, devnum, (u32_t)(period * 1000),
+    if (handle->reverse) {
+        pulseWidth = period - pulseWidth;
+    }
+
+    DBG_PRINT("Setting [uSec] dev=%p, pin=%d period=%lu, pulse=%lu\n",
+              handle->device, handle->pin, (u32_t)(period * 1000),
               (u32_t)(pulseWidth * 1000));
-    pwm_pin_set_usec(zjs_pwm_dev[devnum], channel, (u32_t)(period * 1000),
+    pwm_pin_set_usec(handle->device, handle->pin, (u32_t)(period * 1000),
                      (u32_t)(pulseWidth * 1000));
 }
 
@@ -137,52 +148,56 @@ static ZJS_DECL_FUNC(zjs_pwm_pin_set_ms)
 
 static ZJS_DECL_FUNC(zjs_pwm_open)
 {
-    // requires: arg 0 is an object with these members: channel (int), period in
-    //             hardware cycles (defaults to 255), pulse width in hardware
-    //             cycles (defaults to 0), polarity (defaults to "normal")
+    // requires: arg 0 is a pin number or string, or an object with these
+    //             members: pin (int or string), reversePolarity (defaults to
+    //             false)
     //  effects: returns a new PWMPin object representing the given channel
 
     // args: initialization object
-    ZJS_VALIDATE_ARGS(Z_OBJECT);
+    ZJS_VALIDATE_ARGS(Z_NUMBER Z_STRING Z_OBJECT);
 
-    // data input object
-    jerry_value_t data = argv[0];
+    ZVAL_MUTABLE pin_str = 0;
+    jerry_value_t pin_val = argv[0];
+    jerry_value_t init = 0;
 
-    u32_t channel;
-    if (!zjs_obj_get_uint32(data, "channel", &channel))
-        return zjs_error("missing required field");
-
-    int devnum, newchannel;
-    zjs_pwm_convert_pin(channel, &devnum, &newchannel);
-    if (newchannel == -1)
-        return zjs_error("invalid channel");
-
-    double period, pulseWidth;
-    if (!zjs_obj_get_double(data, "period", &period)) {
-        period = 0;
-    }
-    if (!zjs_obj_get_double(data, "pulseWidth", &pulseWidth)) {
-        pulseWidth = 0;
+    if (jerry_value_is_object(argv[0])) {
+        init = argv[0];
+        pin_str = zjs_get_property(init, "pin");
+        pin_val = pin_str;
     }
 
-    const int BUFLEN = 10;
-    char buffer[BUFLEN];
-    const char *polarity = ZJS_POLARITY_NORMAL;
-    if (zjs_obj_get_string(data, "polarity", buffer, BUFLEN)) {
-        if (strequal(buffer, ZJS_POLARITY_REVERSE))
-            polarity = ZJS_POLARITY_REVERSE;
+    char devname[20];
+    int pin = zjs_board_find_pwm(pin_val, devname, 20);
+    if (pin == FIND_PIN_INVALID) {
+        return TYPE_ERROR("bad pin argument");
+    }
+    else if (pin == FIND_DEVICE_FAILURE) {
+        return zjs_error("device not found");
+    }
+    else if (pin < 0) {
+        return zjs_error("pin not found");
+    }
+    struct device *pwmdev = device_get_binding(devname);
+
+    // set defaults
+    bool reverse = false;
+
+    if (init) {
+        zjs_obj_get_boolean(init, "reversePolarity", &reverse);
     }
 
     // create the PWMPin object
     jerry_value_t pin_obj = zjs_create_object();
     jerry_set_prototype(pin_obj, zjs_pwm_pin_prototype);
 
-    zjs_obj_add_number(pin_obj, "channel", channel);
-    zjs_obj_add_number(pin_obj, "period", period);
-    zjs_obj_add_number(pin_obj, "pulseWidth", pulseWidth);
-    zjs_obj_add_string(pin_obj, "polarity", polarity);
+    pwm_handle_t *handle = zjs_malloc(sizeof(pwm_handle_t));
+    memset(handle, 0, sizeof(pwm_handle_t));
+    handle->device = pwmdev;
+    handle->pin = pin;
+    handle->reverse = reverse;
+    handle->pin_obj = pin_obj;  // weak reference
 
-    zjs_pwm_set_ms(pin_obj, period, pulseWidth);
+    jerry_set_object_native_pointer(pin_obj, handle, &pwm_type_info);
 
     // TODO: When we implement close, we should release the reference on this
     return pin_obj;

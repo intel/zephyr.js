@@ -26,16 +26,9 @@ var delay = 30;  // time between adjustments (in ms)
 
 // import pwm module
 var pwm = require("pwm");
-var pins = require("arduino101_pins");
 
-var led1 = pwm.open({
-    channel: pins.IO3
-});
-
-var led2 = pwm.open({
-    channel: pins.IO5,
-    polarity: "reverse"
-});
+var led1 = pwm.open('IO3');
+var led2 = pwm.open({pin: 'IO5', reversePolarity: true});
 
 // update the brightness every 30ms
 setInterval(function () {

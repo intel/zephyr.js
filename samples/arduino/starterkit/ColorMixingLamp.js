@@ -19,15 +19,9 @@ var aio = require('aio');
 var pins = require('arduino101_pins');
 
 // set up the PWM pins
-var redLED = pwm.open({
-    channel: pins.IO3
-});
-var greenLED = pwm.open({
-    channel: pins.IO5
-});
-var blueLED = pwm.open({
-    channel: pins.IO6
-});
+var redLED = pwm.open('IO3');
+var greenLED = pwm.open('IO5');
+var blueLED = pwm.open('IO6');
 
 // set up the AIO pins
 var redSensor = aio.open({

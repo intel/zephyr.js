@@ -58,7 +58,7 @@ API Documentation
 `GPIOPin open(number or string or GPIOInit init);`
 
 If the argument is a number, it is a pin number. If it is a string, it is a
-pin name. Otherwise, it must be an `init` object.
+pin name. Otherwise, it must be a GPIOInit object.
 
 The `init` object lets you set the pin number or name with the `pin` property.
 
