@@ -195,4 +195,5 @@ void zjs_sensor_board_cleanup()
         }
         mod->instance = NULL;
     }
+    zjs_unregister_service_routine(zjs_sensor_poll_routine);
 }
