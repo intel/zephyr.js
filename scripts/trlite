@@ -238,8 +238,18 @@ function try_test()
         rm -f /tmp/trlite_output
         exit 1
     fi
+    if ! grep -q TOTAL /tmp/trlite_output; then
+        echo
+        echo "******************************************************************************"
+        echo Error: Test incomplete in $LABEL subtest \#$TESTNUM with code $CODE \(rerun with: trlite $VMNUM $TESTNUM\)!
+        echo "******************************************************************************"
+        # FIXME: Should exit here but we'll soft fail until we fix things
+        # The callbacks, event, gpio, promise, and timers tests all fail ATM
+        #   and were broken by PR #1542 (commit a36b2c9)
+    else
+        echo Success: $LABEL
+    fi
     rm -f /tmp/trlite_output
-    echo Success: $LABEL
 }
 
 # requires: first arg is tmpfile name, second arg is modules array, third arg
@@ -445,8 +455,7 @@ if [ "$RUN" == "all" -o "$RUN" == "3" ]; then
     try_command "unit tests" ./outdir/linux/release/jslinux --unittest
 
     # linux runtime tests
-    # TODO: Add buffer, it fails in Linux ATM
-    for i in buffer buffer-rw callbacks eval error event gpio promise timers; do
+    for i in buffer buffer-rw callbacks eval event error gpio promise timers; do
         try_test "t-$i" ./outdir/linux/release/jslinux tests/test-$i.js
     done
 fi
