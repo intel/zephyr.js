@@ -7,7 +7,6 @@
 #include "zjs_buffer.h"
 #include "zjs_callbacks.h"
 #include "zjs_error.h"
-#include "zjs_gfx.h"
 #include "zjs_util.h"
 #include "zjs_gfx_font.h"
 
@@ -409,7 +408,16 @@ static ZJS_DECL_FUNC(zjs_gfx_set_cb)
     return gfx_obj;
 }
 
-jerry_value_t zjs_gfx_init()
+static void zjs_gfx_cleanup(void *native)
+{
+    jerry_release_value(zjs_gfx_prototype);
+}
+
+static const jerry_object_native_info_t gfx_module_type_info = {
+   .free_cb = zjs_gfx_cleanup
+};
+
+static jerry_value_t zjs_gfx_init()
 {
     zjs_native_func_t proto[] = {
         { zjs_gfx_fill_rect, "fillRect" },
@@ -428,9 +436,8 @@ jerry_value_t zjs_gfx_init()
 
     jerry_value_t gfx_obj = zjs_create_object();
     zjs_obj_add_function(gfx_obj, "init", zjs_gfx_set_cb);
+    jerry_set_object_native_pointer(gfx_obj, NULL, &gfx_module_type_info);
     return gfx_obj;
 }
 
-void zjs_gfx_cleanup() {
-    jerry_release_value(zjs_gfx_prototype);
-}
+JERRYX_NATIVE_MODULE(gfx, zjs_gfx_init)
