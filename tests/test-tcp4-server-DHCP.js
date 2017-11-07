@@ -7,7 +7,7 @@ console.log("Test TCP server for IPv4 with DHCP mode");
 
 var net = require("net");
 var assert = require("Assert.js");
-var netConfig = require("net-config");
+var netConfig = require("net_config");
 
 var IPv4Address = "0.0.0.0";
 var IPv4Port = 9876;

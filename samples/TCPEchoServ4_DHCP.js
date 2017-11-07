@@ -22,7 +22,7 @@
 console.log("Starting TCPEchoServ4_DHCP.js sample...");
 
 var net = require('net');
-var net_cfg = require('net-config');
+var net_cfg = require('net_config');
 
 net_cfg.dhcp(function(address, subnet, gateway) {
     console.log("Got IP: " + address);

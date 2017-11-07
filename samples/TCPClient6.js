@@ -19,7 +19,7 @@
 console.log("Starting TCPClient6.js sample...");
 
 var net = require('net');
-var net_cfg = require('net-config');
+var net_cfg = require('net_config');
 
 var localIP = "2001:db8::1";
 var localPort = 8484;

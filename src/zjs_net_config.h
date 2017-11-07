@@ -12,7 +12,7 @@ extern u8_t net_ble_enabled;
 
 /*
  * Do the default network configuration. This should always be called when
- * initializing a networking module. If the 'net-config' require was used,
+ * initializing a networking module. If the 'net_config' require was used,
  * this function has no effect.
  */
 void zjs_net_config_default(void);

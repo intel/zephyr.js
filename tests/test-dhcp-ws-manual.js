@@ -3,7 +3,7 @@
 console.log("Test DHCP APIs");
 
 var WebSocket = require("ws");
-var netConfig = require("net-config");
+var netConfig = require("net_config");
 var board = require("board");
 
 var IPState;
