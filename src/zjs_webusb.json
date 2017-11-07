@@ -21,8 +21,5 @@
                    "-I${ZEPHYR_BASE}/include/drivers/usb",
                    "-I${ZEPHYR_BASE}/subsys/usb/class"],
     "src": ["zjs_webusb.c",
-            "../deps/zephyr/samples/subsys/usb/webusb/src/webusb_serial.c"],
-    "header": ["zjs_webusb.h"],
-    "init": ["zjs_webusb_init"],
-    "cleanup": ["zjs_webusb_cleanup"]
+            "../deps/zephyr/samples/subsys/usb/webusb/src/webusb_serial.c"]
 }
