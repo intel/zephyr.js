@@ -33,7 +33,7 @@ u8_t net_ble_enabled = 0;
 void zjs_net_config_default(void)
 {
     /*
-     * if net_config was not included, just do the default configuration
+     * if netconfig was not included, just do the default configuration
      */
     FTRACE("\n");
 #ifndef BUILD_MODULE_NET_CONFIG
@@ -380,5 +380,5 @@ static jerry_value_t zjs_net_config_init(void)
     return config;
 }
 
-JERRYX_NATIVE_MODULE(net_config, zjs_net_config_init)
+JERRYX_NATIVE_MODULE(netconfig, zjs_net_config_init)
 #endif

@@ -12,8 +12,8 @@ ZJS provides network configuration API's allowing the application to set the
 IP address, start DHCP, configure the Bluetooth MAC address, and be notified
 when the network interface has come up or gone down.
 
-If you include the net_config module, you *must* either set a static IP address
-or use DHCP. If you don't include the net_config module, you will get default
+If you include the netconfig module, you *must* either set a static IP address
+or use DHCP. If you don't include the netconfig module, you will get default
 static IP addresses of 192.0.2.1 and 2001:db8::1.
 
 Web IDL
@@ -23,7 +23,7 @@ specific API functions.
 
 ```javascript
 // require returns a Net object
-// var net_cfg = require('net_config');
+// var net_cfg = require('netconfig');
 
 interface NetConfig: EventEmitter {
     // set a static IP
