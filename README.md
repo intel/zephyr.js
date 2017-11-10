@@ -20,7 +20,7 @@ everything else.
    + [FRDM-K64F Platform](#frdm-k64f-platform)
 * [Running the JS app on Linux or Mac](#running-the-js-app-on-linux-or-mac)
    + [Building and running on Linux](#building-and-running-on-linux)
-   + [Building and running on Mac OSX](#building-and-running-on-mac-osx)
+   + [Building and running on MacOS](#building-and-running-on-macos)
    + [Supported modules on Linux and Zephyr](#supported-modules-on-linux-and-zephyr)
 * [Networking with QEMU](#networking-with-qemu)
 * [Networking with BLE](#networking-with-ble)
@@ -425,7 +425,7 @@ Zephyr is a trademark of the Linux Foundation. *Other names and brands may be cl
 ### Building and running on Linux
 
 In addition to Zephyr there is a "linux" target which does not use Zephyr at all
-and instead uses the host OS. This can be built on Linux or Mac OSX using the
+and instead uses the host OS. This can be built on Linux or MacOS using the
 command:
 
 ```bash
@@ -437,7 +437,7 @@ The executable will be outputted to `outdir/linux/<variant>/jslinux`. Where
 Zephyr target by passing in `VARIANT=` when running `make`. The default is
 release.
 
-Note: To build on Mac OSX using BOARD=linux, see instructions in the next section.
+Note: To build on MacOS using BOARD=linux, see instructions in the next section.
 
 What makes the linux target convenient is that a JS script does not have to be
 bundled with the final executable. By default `samples/HelloWorld.js` will be
@@ -459,7 +459,7 @@ run until a specified timeout (in milliseconds) is met.
 This flag can be used like:
 
 ```bash
-./jslinux -t <ms>
+./outdir/linux/release/jslinux -t <ms>
 ```
 
 It should be noted that the Linux target has only very partial support to hardware
@@ -468,10 +468,10 @@ on it, specifically the hardware modules (AIO, I2C, GPIO etc.). There are some
 modules which can be used though like Events, Promises, Performance and OCF. This
 list may grow if other modules are ported to the Linux target.
 
-### Building and running on Mac OSX
+### Building and running on MacOS
 
 Mac support is still limited at this point. As Zephyr does not provide the SDK/toolchain
-to compile on Mac OSX natively, you will have to build your own or use a 3rd-party toolchain.
+to compile on MacOS natively, you will have to build your own or use a 3rd-party toolchain.
 Currently the targets we support building on Mac are "linux", "qemu_x86", with limited
 support for "arduino_101" and "frdm-k64f" boards. You'll need to have a recent version of
 OSX and XCode command line tools from App store to get you started. Depending on your
@@ -493,7 +493,7 @@ support image.
 
 Requirements:
 
-* OSX: Sierra 10.12 or later
+* MacOS 10.11 (El Capitan) or later
 * XCode Command Line Tools: 8.1 or later (clang)
 * Python: 2.7 or later
 * Homebrew
@@ -503,11 +503,23 @@ Requirements:
 
 First, make sure you have Homebrew installed, instructions [here](https://brew.sh/), and then install the following brew packages:
 ```bash
-brew install cmake libtool automake gcc
+brew install dfu-util doxygen qemu dtc python3
+curl -O 'https://bootstrap.pypa.io/get-pip.py'
+sudo python ./get-pip.py
+rm get-pip.py
+pip3 install --user -r scripts/requirements.txt
 ```
 
-Next, you'll need to update to the latest OSX and install/upgrade to
-the latest XCode Command Line Tools (we build Sierra 10.12 and XCode 8.3) from App store.
+Install tools needed for building the toolchain (if needed):
+```bash
+brew install binutils gawk gettext help2man mpfr gmp coreutils wget
+brew tap homebrew/dupes
+brew install grep --with-default-names
+brew install gnu-sed
+```
+
+Next, you'll need to update to the latest MacOS and install/upgrade to
+the latest XCode Command Line Tools (we tested MacOS Sierra 10.12 and XCode 8.3) from App store.
 
 To install XCode Command Line Tools, open a terminal and type:
 ```bash
@@ -523,12 +535,20 @@ source deps/zephyr/zephyr-env.sh
 ```
 
 #### Building Linux target
-You can build the "linux" target on Mac OSX using BOARD=linux, follow instructions for "Building and running on Linux". This will create the jslinux ouput.
+You can build the "linux" target on MacOS using BOARD=linux, follow instructions for "Building and running on Linux". This will create the jslinux ouput.
 
 #### Building QEMU and Arduino 101 targets
-You can build QEMU with BOARD=qemu_x86 and Arduino 101 with BOARD=arduino_101, you'll need to install crosstool-ng and ARC compiler from Arduino IDE. (**Note** there's a linker issue currently with crosstool-ng when building Arduino 101 see [here](https://jira.zephyrproject.org/browse/ZEP-1994), but qemu_x86 should work)
+You can build QEMU with BOARD=qemu_x86 and Arduino 101 with BOARD=arduino_101, you'll need to install crosstool-ng (1.23 or later) and ARC compiler from Arduino IDE. (**Note** there's a linker issue currently with crosstool-ng when building Arduino 101 see [here](https://jira.zephyrproject.org/browse/ZEP-1994), but qemu_x86 should work)
 
-Install crosstool-ng following the Zephyr instructions [here](https://www.zephyrproject.org/doc/getting_started/installation_mac.html)
+Install crosstool-ng:
+```bash
+wget http://crosstool-ng.org/download/crosstool-ng/crosstool-ng-1.23.0.tar.bz2
+tar xvf crosstool-ng-1.23.0.tar.bz2
+cd crosstool-ng-1.23.0/
+./configure
+make
+make install
+```
 
 After installing crosstool-ng, create and mount the image using our script [osxmountzephyr.sh](scripts/osxmountzephyr.sh):
 ```bash
@@ -546,12 +566,8 @@ This will create an image mounted under /Volumes/CrossToolNG.  You can then conf
 cd /Volumes/CrossToolNG
 mkdir build
 cd build
-cp ${ZEPHYR_BASE}/scripts/cross_compiler/x86.config .config
-```
-
-(optional). You can customize an existing configuration yourself using the configuration menus:
-```bash
-ct-ng menuconfig
+cp ${ZEPHYR_BASE}/scripts/cross_compiler/i586.config .config
+ct-ng oldconfig
 ```
 
 After you are done, edit the generated .config, and make sure you have these settings, or you will run into build errors later:
@@ -565,8 +581,26 @@ CT_INSTALL_DIR="${CT_PREFIX_DIR}"
 # Following options prevent link errors
 CT_WANTS_STATIC_LINK=n
 CT_CC_STATIC_LIBSTDCXX=n
-CT_CC_GCC_STATIC_LIBSTDCXX=n
+# This is needed with Zephyr 1.9 toolchain
+CT_FORCE_SYSROOT=y
+CT_USE_SYSROOT=y
+CT_SYSROOT_NAME="sysroot"
+CT_SYSROOT_DIR_PREFIX=""
+CT_TARGET_VENDOR="pc"
 ...
+```
+
+If you see an error complaining about configure.ac:25: error: version mismatch.  This is Automake 1.15.1, run autoreconf and rebuild:
+```
+cd /Volumes/CrossToolNG/build/.build/src/gettext-0.19.8.1
+autoreconf
+cd -
+ct-ng build
+```
+
+If you experience issue building Cross GDB, comment out the following:
+```bash
+# CT_GDB_CROSS=y
 ```
 
 Now you can build crosstool-ng. It will take 15~20 mins:
@@ -618,7 +652,7 @@ version of the board support package "Intel Curie Boards". This will install the
 
 Then copy the compiler to where you installed the crosstool-ng toolchain:
 ```bash
-cp –pR $HOME/Library/Arduino15/packages/Intel/tools/arc-elf32 /Volumes/CrossToolNG/
+cp -pR $HOME/Library/Arduino15/packages/Intel/tools/arc-elf32 /Volumes/CrossToolNG/
 ```
 
 The compiler is in a subdirectory, such as 1.6.9+1.0.1. You'll need
