@@ -7,7 +7,7 @@ console.log("Test websocket server APIs on IPv4 with DHCP mode...");
 
 var WebSocket = require("ws");
 var assert = require("Assert.js");
-var netConfig = require("net-config");
+var netConfig = require("netconfig");
 
 netConfig.dhcp(function(address, subnet, gateway) {
     console.log("IPv4 address: " + address);

@@ -8,7 +8,7 @@
 // to connect and interact with the server.
 
 var WebSocket = require('ws');
-var net_cfg = require('net-config');
+var net_cfg = require('netconfig');
 
 console.log("starting DHCP");
 net_cfg.dhcp(function(address, subnet, gateway) {

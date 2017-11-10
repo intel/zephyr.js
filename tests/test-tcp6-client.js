@@ -18,7 +18,7 @@ console.log("Test socket connection as TCP client for IPv6");
 var net = require("net");
 var board = require("board");
 var assert = require("Assert.js");
-var net_cfg = require("net-config");
+var net_cfg = require("netconfig");
 
 var my_addr = '2001:db8::1';
 net_cfg.setStaticIP(my_addr);

@@ -1,6 +1,6 @@
 {
-    "module": "net-config",
-    "require": "net-config",
+    "module": "netconfig",
+    "require": "netconfig",
     "depends": ["events"],
     "zjs_config": ["-DBUILD_MODULE_NET_CONFIG"],
     "zephyr_conf": {
