@@ -461,8 +461,6 @@ void uart_init()
 
     k_fifo_init(&data_queue);
     k_fifo_init(&avail_queue);
-
-    ashell_run_boot_cfg();
 }
 
 void zjs_ashell_init()
