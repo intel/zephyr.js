@@ -7,7 +7,7 @@ endif
 JERRY_BASE ?= $(ZJS_BASE)/deps/jerryscript
 OCF_ROOT ?= deps/iotivity-constrained
 
-BUILD_DIR = $(O)/linux/$(VARIANT)
+BUILD_DIR = $(O)/$(VARIANT)
 
 UNAME := $(shell uname)
 
@@ -137,7 +137,7 @@ LINUX_INCLUDES += 	-I$(OCF_ROOT)/deps/tinydtls \
 			-I$(OCF_ROOT)/messaging/coap \
 			-I$(OCF_ROOT)/api \
 			-include $(ZJS_BASE)/src/zjs_ocf_config.h \
-			-I$(O)/include
+			-I$(O)/../include
 
 include Makefile.ocf_linux
 
@@ -172,5 +172,5 @@ linux: setup $(BUILD_OBJ)
 
 .PHONY: clean
 clean:
-	rm -rf $(O)/linux/
+	rm -rf $(O)
 	rm -rf $(JERRY_BASE)/build/lib/
