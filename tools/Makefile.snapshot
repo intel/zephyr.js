@@ -6,7 +6,7 @@ JERRY_BASE ?= $(ZJS_BASE)/deps/jerryscript
 
 JERRY_FLAGS ?= --snapshot-save=on
 
-BUILD_DIR = $(ZJS_BASE)/outdir/snapshot/
+BUILD_DIR = $(O)/snapshot/
 
 UNAME := $(shell uname)
 ifeq ($(UNAME),Darwin)
@@ -20,8 +20,8 @@ all: snapshot
 
 .PHONY: setup
 setup:
-	@if [ ! -d $(ZJS_BASE)/outdir/snapshot/ ]; then \
-		mkdir -p $(ZJS_BASE)/outdir/snapshot/; \
+	@if [ ! -d $(O)/snapshot/ ]; then \
+		mkdir -p $(O)/snapshot/; \
 	fi
 
 CORE_SRC +=		tools/snapshot.c \

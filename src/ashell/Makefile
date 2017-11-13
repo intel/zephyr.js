@@ -30,5 +30,5 @@ ifneq ($(BOARD), linux)
 # Select extended ANSI C/POSIX function set in recent Newlib versions
 ccflags-y += -D_XOPEN_SOURCE=700
 endif
-ccflags-y += -I$(ZJS_BASE)/outdir/include -I$(JERRY_BASE)/jerry-ext/include
+ccflags-y += -I$(O)/include -I$(JERRY_BASE)/jerry-ext/include
 ccflags-y += -DZJS_ASHELL -Wall -Werror
