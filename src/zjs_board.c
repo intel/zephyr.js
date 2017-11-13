@@ -8,6 +8,7 @@
 #include "zjs_common.h"
 #include "zjs_util.h"
 
+#if defined(BUILD_MODULE_GPIO) || defined(BUILD_MODULE_PWM) || defined(BUILD_MODULE_AIO)
 // max length of a named pin like IO3, PWM0, LED0
 #define NAMED_PIN_MAX_LEN 8
 
@@ -386,6 +387,7 @@ int zjs_board_find_pwm(jerry_value_t jspin, char *device_name, int name_len)
                     name_len);
 }
 #endif
+#endif  //BUILD_MODULE_GPIO || BUILD_MODULE_PWM || BUILD_MODULE_AIO
 
 #ifdef CONFIG_BOARD_ARDUINO_101
 #define BOARD_NAME "arduino_101"
