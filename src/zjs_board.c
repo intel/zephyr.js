@@ -387,7 +387,7 @@ int zjs_board_find_pwm(jerry_value_t jspin, char *device_name, int name_len)
                     name_len);
 }
 #endif
-#endif  //BUILD_MODULE || GPIO BUILD_MODULE_PWM || BUILD_MODULE_AIO
+#endif  //BUILD_MODULE_GPIO || BUILD_MODULE_PWM || BUILD_MODULE_AIO
 
 #ifdef CONFIG_BOARD_ARDUINO_101
 #define BOARD_NAME "arduino_101"
