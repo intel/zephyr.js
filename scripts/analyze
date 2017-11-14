@@ -20,6 +20,7 @@ def usage():
     print("      FORCE=      Force inclusion of certain JSON files")
     print("      PROFILE=    Where to write the JerryScript profile")
     print("      JS_OUT=     Output file if any JS modules are found in SCRIPT")
+    print("      O=          Output directory")
     quit()
 
 args = {}
@@ -54,6 +55,11 @@ if 'SCRIPT' not in args:
 else:
     script = args['SCRIPT']
     print("Analyzing %s for %s" % (script, board))
+
+if 'O' not in args:
+    outdir = 'outdir'
+else:
+    outdir = args['O']
 
 def do_print(s):
     """Debug print controlled with V option"""
@@ -338,7 +344,8 @@ def write_modules(list, tree):
     """Write zjs_modules_gen.h file"""
     headers = []
     gbl_inits = {}
-    with open('outdir/include/zjs_modules_gen.h', 'w') as file:
+    with open(os.path.join(outdir, 'include/zjs_modules_gen.h'),
+              'w') as file:
         for i in list:
             entry = tree.get(i, None)
             if entry:

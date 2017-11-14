@@ -23,6 +23,13 @@ DEBUGGER ?= off
 # ALL-IN-ONE build, slightly shrink build size, may not work on all platforms
 ALL_IN_ONE ?= off
 
+ifeq (,$(O))
+O := outdir
+endif
+
+OUT := $(abspath $(O))
+$(info Using outdir: $(OUT))
+
 ifneq (,$(DEV))
 $(error DEV= is no longer supported, please use make ide or make ashell)
 endif
@@ -104,7 +111,7 @@ FUNC_NAME ?= off
 JERRY_BASE ?= $(ZJS_BASE)/deps/jerryscript
 EXT_JERRY_FLAGS ?=	-DENABLE_ALL_IN_ONE=$(ALL_IN_ONE) \
 			-DFEATURE_INIT_FINI=ON \
-			-DFEATURE_PROFILE=$(ZJS_BASE)/outdir/$(BOARD)/jerry_feature.profile \
+			-DFEATURE_PROFILE=$(OUT)/$(BOARD)/jerry_feature.profile \
 			-DFEATURE_ERROR_MESSAGES=ON \
 			-DJERRY_LIBM=OFF \
 			-DJERRY_PORT_DEFAULT=OFF
@@ -194,8 +201,8 @@ check:
 quickcheck:
 	trlite -l 3
 
-A101BIN = outdir/arduino_101/zephyr.bin
-A101SSBIN = arc/outdir/arduino_101_sss/zephyr.bin
+A101BIN = $(OUT)/arduino_101/zephyr.bin
+A101SSBIN = $(OUT)/arduino_101_sss/zephyr.bin
 
 .PHONY: ram_report
 ram_report: zephyr
@@ -205,6 +212,7 @@ ram_report: zephyr
 					PRINT_FLOAT=$(PRINT_FLOAT) \
 					SNAPSHOT=$(SNAPSHOT) \
 					ZJS_FLAGS="$(ZJS_FLAGS)" \
+					O=$(OUT)/$(BOARD) \
 					ram_report
 
 .PHONY: rom_report
@@ -215,13 +223,14 @@ rom_report: zephyr
 					PRINT_FLOAT=$(PRINT_FLOAT) \
 					SNAPSHOT=$(SNAPSHOT) \
 					ZJS_FLAGS="$(ZJS_FLAGS)" \
+					O=$(OUT)/$(BOARD) \
 					rom_report
 
 # choose name of jerryscript library based on snapshot feature
 ifeq ($(SNAPSHOT), on)
-JERRYLIB=outdir/$(BOARD)/libjerry-core-snapshot.a
+JERRYLIB=$(OUT)/$(BOARD)/libjerry-core-snapshot.a
 else
-JERRYLIB=outdir/$(BOARD)/libjerry-core-parser.a
+JERRYLIB=$(OUT)/$(BOARD)/libjerry-core-parser.a
 endif
 
 .PHONY: flash
@@ -233,12 +242,13 @@ flash:  analyze generate $(JERRYLIB) $(ARC)
 		SNAPSHOT=$(SNAPSHOT) \
 		BLE_ADDR=$(BLE_ADDR) \
 		ASHELL=$(ASHELL) \
+		O=$(OUT)/$(BOARD) \
 		NETWORK_BUILD=$(NET_BUILD)
 
 # Build for zephyr, default target
 .PHONY: zephyr
-zephyr: analyze generate $(JERRYLIB) outdir/$(BOARD)/libjerry-ext.a $(ARC)
-	@make -f Makefile.zephyr -j4 \
+zephyr: analyze generate $(JERRYLIB) $(OUT)/$(BOARD)/libjerry-ext.a $(ARC)
+	@make -f Makefile.zephyr -j1 \
 					BOARD=$(BOARD) \
 					VARIANT=$(VARIANT) \
 					VERBOSITY=$(VERBOSITY) \
@@ -248,6 +258,7 @@ zephyr: analyze generate $(JERRYLIB) outdir/$(BOARD)/libjerry-ext.a $(ARC)
 					BLE_ADDR=$(BLE_ADDR) \
 					ASHELL=$(ASHELL) \
 					NETWORK_BUILD=$(NET_BUILD) \
+					O=$(OUT)/$(BOARD) \
 					ZJS_FLAGS="$(ZJS_FLAGS)"
 ifeq ($(BOARD), arduino_101)
 	@echo
@@ -275,9 +286,9 @@ $(JERRYLIB):
 	@echo "Building" $@
 	@rm -rf $(JERRY_BASE)/build/$(BOARD)/
 	$(MAKE) -C $(JERRY_BASE) -f targets/zephyr/Makefile.zephyr BOARD=$(BOARD) EXT_JERRY_FLAGS="$(EXT_JERRY_FLAGS)" jerry
-	mkdir -p outdir/$(BOARD)/
+	mkdir -p $(OUT)/$(BOARD)/
 	cp $(JERRY_BASE)/build/$(BOARD)/obj-$(BOARD)/lib/libjerry-core.a $(JERRYLIB)
-	cp $(JERRY_BASE)/build/$(BOARD)/obj-$(BOARD)/lib/libjerry-ext.a outdir/$(BOARD)/
+	cp $(JERRY_BASE)/build/$(BOARD)/obj-$(BOARD)/lib/libjerry-ext.a $(OUT)/$(BOARD)/
 
 # Give an error if we're asked to create the JS file
 $(JS):
@@ -286,8 +297,8 @@ $(JS):
 # Find the modules the JS file depends on
 .PHONY: analyze
 analyze: $(JS)
-	@mkdir -p outdir/$(BOARD)/
-	@mkdir -p outdir/include
+	@mkdir -p $(OUT)/$(BOARD)/
+	@mkdir -p $(OUT)/include
 	@echo "% This is a generated file" > prj.mdef
 
 	./scripts/analyze	V=$(V) \
@@ -295,11 +306,12 @@ analyze: $(JS)
 		JS_OUT=$(JS_TMP) \
 		BOARD=$(BOARD) \
 		JSON_DIR=src/ \
+		O=$(OUT) \
 		FORCE=$(FORCED) \
 		PRJCONF=prj.conf \
 		MAKEFILE=src/Makefile \
 		MAKEBASE=src/Makefile.base \
-		PROFILE=outdir/$(BOARD)/jerry_feature.profile
+		PROFILE=$(OUT)/$(BOARD)/jerry_feature.profile
 
 	@if [ "$(TRACE)" = "on" ] || [ "$(TRACE)" = "full" ]; then \
 		echo "ccflags-y += -DZJS_TRACE_MALLOC" >> src/Makefile; \
@@ -320,15 +332,15 @@ analyze: $(JS)
 	@if grep -q BUILD_MODULE_DGRAM src/Makefile; then \
 		echo "CONFIG_BT_DEVICE_NAME=\"$(DEVICE_NAME)\"" >> prj.conf; \
 	fi
-	@if [ -e outdir/$(BOARD)/jerry_feature.profile.bak ]; then \
-		if ! cmp outdir/$(BOARD)/jerry_feature.profile.bak outdir/$(BOARD)/jerry_feature.profile; \
+	@if [ -e $(OUT)/$(BOARD)/jerry_feature.profile.bak ]; then \
+		if ! cmp $(OUT)/$(BOARD)/jerry_feature.profile.bak $(OUT)/$(BOARD)/jerry_feature.profile; \
 		then \
-			rm -f outdir/$(BOARD)/libjerry-core*.a; \
-			rm -f outdir/$(BOARD)/libjerry-ext*.a; \
+			rm -f $(OUT)/$(BOARD)/libjerry-core*.a; \
+			rm -f $(OUT)/$(BOARD)/libjerry-ext*.a; \
 		fi \
 	else \
-		rm -f outdir/$(BOARD)/libjerry-core*.a; \
-		rm -f outdir/$(BOARD)/libjerry-ext*.a; \
+		rm -f $(OUT)/$(BOARD)/libjerry-core*.a; \
+		rm -f $(OUT)/$(BOARD)/libjerry-ext*.a; \
 	fi
 
 # Update dependency repos
@@ -375,11 +387,6 @@ cleanlocal:
 	@rm -f arc/prj.conf
 	@rm -f arc/prj.conf.tmp
 	@rm -f arc/src/Makefile
-	@rm -f arc/outdir/arduino_101_sss/zephyr.bin.dfu
-	@rm -f outdir/arduino_101/zephyr.bin.dfu
-	@rm -f outdir/jsgen.tmp
-	@rm -f outdir/include/zjs_script_gen.h
-	@rm -f outdir/include/zjs_snapshot_gen.h
 	@rm -f prj.conf
 	@rm -f prj.conf.tmp
 	@rm -f prj.mdef
@@ -390,43 +397,43 @@ cleanlocal:
 .PHONY: clean
 clean: cleanlocal
 ifeq ($(BOARD), linux)
-	@make -f Makefile.linux clean
+	@make -f Makefile.linux O=$(OUT)/$(BOARD) clean
 else
 	@rm -rf $(JERRY_BASE)/build/$(BOARD)/;
-	@rm -f outdir/$(BOARD)/libjerry-core*.a;
-	@rm -f outdir/$(BOARD)/libjerry-ext*.a;
-	@make -f Makefile.zephyr clean BOARD=$(BOARD);
+	@rm -f $(OUT)/$(BOARD)/libjerry-core*.a;
+	@rm -f $(OUT)/$(BOARD)/libjerry-ext*.a;
+	@make -f Makefile.zephyr BOARD=$(BOARD) O=$(OUT)/$(BOARD) clean;
 	@cd arc/; make clean;
 endif
 
 .PHONY: pristine
 pristine: cleanlocal
 	@rm -rf $(JERRY_BASE)/build;
-	@make -f Makefile.zephyr pristine;
+	@make -f Makefile.zephyr O=$(OUT) pristine;
 	@cd arc; make pristine;
 
 # Generate the script file from the JS variable
 .PHONY: generate
 generate: $(JS) setup
-	@mkdir -p outdir/include/
+	@mkdir -p $(OUT)/include/
 ifeq ($(SNAPSHOT), on)
 	@echo Building snapshot generator...
-	@if ! [ -e outdir/snapshot/snapshot ]; then \
-		make -f tools/Makefile.snapshot; \
+	@if ! [ -e $(OUT)/snapshot/snapshot ]; then \
+		make -f tools/Makefile.snapshot O=$(OUT); \
 	fi
 	@echo Creating snapshot bytecode from JS application...
 	@if [ -x /usr/bin/uglifyjs ]; then \
-		uglifyjs $(JS_TMP) -nc -mt > outdir/jsgen.tmp; \
+		uglifyjs $(JS_TMP) -nc -mt > $(OUT)/jsgen.tmp; \
 	else \
-		cat $(JS_TMP) > outdir/jsgen.tmp; \
+		cat $(JS_TMP) > $(OUT)/jsgen.tmp; \
 	fi
-	@outdir/snapshot/snapshot outdir/jsgen.tmp > outdir/include/zjs_snapshot_gen.h
+	@$(OUT)/snapshot/snapshot $(OUT)/jsgen.tmp > $(OUT)/include/zjs_snapshot_gen.h
 else
 	@echo Creating C string from JS application...
 ifeq ($(BOARD), linux)
-	@./scripts/convert.sh $(JS) outdir/include/zjs_script_gen.h
+	@./scripts/convert.sh $(JS) $(OUT)/include/zjs_script_gen.h
 else
-	@./scripts/convert.sh $(JS_TMP) outdir/include/zjs_script_gen.h
+	@./scripts/convert.sh $(JS_TMP) $(OUT)/include/zjs_script_gen.h
 endif
 endif
 
@@ -439,6 +446,7 @@ qemu: zephyr
 		CB_STATS=$(CB_STATS) \
 		SNAPSHOT=$(SNAPSHOT) \
 		NETWORK_BUILD=$(NET_BUILD) \
+		O=$(OUT) \
 		ZJS_FLAGS="$(ZJS_FLAGS)"
 
 ARC_RESTRICT="zjs_ipm_arc.json,\
@@ -464,16 +472,17 @@ arc: analyze
 		PRJCONF=arc/prj.conf \
 		MAKEFILE=arc/src/Makefile \
 		MAKEBASE=arc/src/Makefile.base \
+		O=$(OUT)/arduino_101_sss \
 		FORCE=$(ASHELL_ARC)
 
 	@printf "CONFIG_SRAM_SIZE=%d\n" $$((79 - $(RAM))) >> arc/prj.conf
 	@printf "CONFIG_FLASH_BASE_ADDRESS=0x400%x\n" $$((($(ROM) + 64) * 1024)) >> arc/prj.conf
 	@if [ "$(OS)" = "Darwin" ]; then \
 		sed -i.bu '/This is a generated file/r./zjs.conf.tmp' arc/src/Makefile; \
-		cd arc; make BOARD=arduino_101_sss CROSS_COMPILE=$(ARC_CROSS_COMPILE); \
+		cd arc; make BOARD=arduino_101_sss CROSS_COMPILE=$(ARC_CROSS_COMPILE) O=$(OUT)/arduino_101_sss; \
 	else \
 		sed -i '/This is a generated file/r./zjs.conf.tmp' arc/src/Makefile; \
-		cd arc; make BOARD=arduino_101_sss KBUILD_CFLAGS_OPTIMIZE=$(KBUILD_CFLAGS_OPTIMIZE) -j4; \
+		cd arc; make BOARD=arduino_101_sss KBUILD_CFLAGS_OPTIMIZE=$(KBUILD_CFLAGS_OPTIMIZE) O=$(OUT)/arduino_101_sss -j1; \
 	fi
 ifeq ($(BOARD), arduino_101)
 	@echo
@@ -487,23 +496,23 @@ endif
 # Run debug server over JTAG
 .PHONY: debug
 debug:
-	make -f Makefile.zephyr BOARD=arduino_101 ARCH=x86 debugserver
+	make -f Makefile.zephyr BOARD=arduino_101 ARCH=x86 O=$(OUT)/arduino_101 debugserver
 
 # Run gdb to connect to debug server for x86
 .PHONY: gdb
 gdb:
-	$$ZEPHYR_SDK_INSTALL_DIR/sysroots/x86_64-pokysdk-linux/usr/bin/i586-zephyr-elfiamcu/i586-zephyr-elfiamcu-gdb outdir/arduino_101/zephyr.elf -ex "target remote :3333"
+	$$ZEPHYR_SDK_INSTALL_DIR/sysroots/x86_64-pokysdk-linux/usr/bin/i586-zephyr-elfiamcu/i586-zephyr-elfiamcu-gdb $(OUT)/arduino_101/zephyr.elf -ex "target remote :3333"
 
 # Run gdb to connect to debug server for ARC
 .PHONY: arcgdb
 arcgdb:
-	$$ZEPHYR_SDK_INSTALL_DIR/sysroots/i686-pokysdk-linux/usr/bin/arc-poky-elf/arc-poky-elf-gdb arc/outdir/zephyr.elf -ex "target remote :3334"
+	$$ZEPHYR_SDK_INSTALL_DIR/sysroots/i686-pokysdk-linux/usr/bin/arc-poky-elf/arc-poky-elf-gdb $(OUT)/arduino_101_sss/zephyr.elf -ex "target remote :3334"
 
 # Linux target
 .PHONY: linux
 # Linux command line target, script can be specified on the command line
 linux: generate
-	make -f Makefile.linux JS=$(JS) VARIANT=$(VARIANT) CB_STATS=$(CB_STATS) V=$(V) SNAPSHOT=$(SNAPSHOT) DEBUGGER=$(DEBUGGER)
+	make -f Makefile.linux JS=$(JS) VARIANT=$(VARIANT) CB_STATS=$(CB_STATS) V=$(V) SNAPSHOT=$(SNAPSHOT) DEBUGGER=$(DEBUGGER) O=$(OUT)/linux
 
 .PHONY: help
 help:
