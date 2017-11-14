@@ -5,9 +5,9 @@ ifneq ($(shell pwd)/deps/zephyr, $(ZEPHYR_BASE))
 $(info Note: ZEPHYR_BASE is set outside the current ZJS tree ($(ZEPHYR_BASE)))
 endif
 
-MDEF_FILE = prj.mdef
+CONF_FILE ?= $(O)/prj.conf
+MDEF_FILE = $(O)/prj.mdef
 BOARD ?= arduino_101
-CONF_FILE ?= prj.conf
 
 ifeq ($(SNAPSHOT), on)
 KBUILD_ZEPHYR_APP = 	libjerry-core-snapshot.a \
