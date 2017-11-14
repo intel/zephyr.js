@@ -11,8 +11,7 @@
 #define ZJS_MAX_EVENT_NAME_SIZE 24
 #define DEFAULT_MAX_LISTENERS   10
 
-static jerry_value_t zjs_event_emitter_prototype;
-static bool zjs_event_initialized = false;
+static jerry_value_t zjs_event_emitter_prototype = 0;
 
 typedef struct listener {
     jerry_value_t func;
@@ -40,6 +39,15 @@ static void free_listener(void *ptr)
     jerry_release_value(listener->func);
     zjs_free(listener);
 }
+
+static void zjs_event_proto_free_cb(void *native)
+{
+    zjs_event_emitter_prototype = 0;
+}
+
+static const jerry_object_native_info_t event_proto_type_info = {
+    .free_cb = zjs_event_proto_free_cb
+};
 
 static void zjs_emitter_free_cb(void *native)
 {
@@ -444,7 +452,7 @@ void *zjs_event_get_user_handle(jerry_value_t obj)
 }
 
 static void zjs_event_create_prototype() {
-    if (!zjs_event_initialized) {
+    if (!zjs_event_emitter_prototype) {
         zjs_native_func_t array[] = {
             { add_listener, "on" },
             { add_listener, "addListener" },
@@ -460,7 +468,8 @@ static void zjs_event_create_prototype() {
         };
         zjs_event_emitter_prototype = zjs_create_object();
         zjs_obj_add_functions(zjs_event_emitter_prototype, array);
-        zjs_event_initialized = true;
+        jerry_set_object_native_pointer(zjs_event_emitter_prototype, NULL, &event_proto_type_info);
+        jerry_release_value(zjs_event_emitter_prototype);
     }
 }
 

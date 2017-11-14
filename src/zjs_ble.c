@@ -1304,9 +1304,6 @@ static void zjs_ble_cleanup(void *native)
     ble_handle = NULL;
 }
 
-static const jerry_object_native_info_t ble_module_type_info = {
-   .free_cb = zjs_ble_cleanup
-};
 
 // INTERRUPT SAFE FUNCTION: No JerryScript VM, allocs, or release prints!
 void ble_bt_ready(int err)
@@ -1340,16 +1337,15 @@ static jerry_value_t zjs_ble_init()
     zjs_obj_add_function(ble_obj, "Descriptor", zjs_ble_descriptor);
 
     // make it an emitter object
-    zjs_make_emitter(ble_obj, ZJS_UNDEFINED, NULL, NULL);
+    zjs_make_emitter(ble_obj, ZJS_UNDEFINED, NULL, zjs_ble_cleanup);
 
-    handle->ble_obj = jerry_acquire_value(ble_obj);
+    handle->ble_obj = ble_obj;
 
     // setup connection callbacks
     bt_conn_cb_register(&zjs_ble_conn_callbacks);
     bt_conn_auth_cb_register(&zjs_ble_auth_cb_display);
 
     ble_handle = handle;
-    jerry_set_object_native_pointer(ble_obj, ble_handle, &ble_module_type_info);
 
 #ifdef ZJS_ASHELL
     if (bt_enable(ble_bt_ready)) {
