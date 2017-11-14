@@ -451,7 +451,7 @@ void *zjs_event_get_user_handle(jerry_value_t obj)
     return NULL;
 }
 
-static void zjs_event_create_prototype() {
+static void zjs_event_init_prototype() {
     if (!zjs_event_emitter_prototype) {
         zjs_native_func_t array[] = {
             { add_listener, "on" },
@@ -476,7 +476,7 @@ static void zjs_event_create_prototype() {
 void zjs_make_emitter(jerry_value_t obj, jerry_value_t prototype,
                       void *user_data, zjs_event_free free_cb)
 {
-    zjs_event_create_prototype();
+    zjs_event_init_prototype();
     emit_id = zjs_add_c_callback(NULL, emit_event_callback);
     jerry_value_t proto = zjs_event_emitter_prototype;
     if (jerry_value_is_object(prototype)) {
