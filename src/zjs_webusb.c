@@ -11,7 +11,6 @@
 #include "zjs_buffer.h"
 #include "zjs_event.h"
 #include "zjs_util.h"
-#include "zjs_webusb.h"
 
 // max size of pending TX and RX data
 #define RINGMAX 256
@@ -540,7 +539,22 @@ static void check_uart(struct k_timer *timer)
     }
 }
 
-jerry_value_t zjs_webusb_init()
+static void zjs_webusb_cleanup()
+{
+    zjs_free(tx_ring);
+    zjs_free(rx_ring);
+    tx_ring = rx_ring = NULL;
+    jerry_release_value(webusb_api);
+    webusb_api = 0;
+    zjs_free(webusb_origin_url);
+    webusb_origin_url = NULL;
+}
+/*
+static const jerry_object_native_info_t webusb_module_type_info = {
+   .free_cb = zjs_webusb_cleanup
+};
+*/
+static jerry_value_t zjs_webusb_init()
 {
     if (webusb_api) {
         return jerry_acquire_value(webusb_api);
@@ -556,7 +570,7 @@ jerry_value_t zjs_webusb_init()
     zjs_obj_add_functions(prototype, array);
 
     webusb_api = zjs_create_object();
-    zjs_make_emitter(webusb_api, prototype, NULL, NULL);
+    zjs_make_emitter(webusb_api, prototype, NULL, zjs_webusb_cleanup);
 
     // set the custom and vendor request handlers
     webusb_register_request_handlers(&req_handlers);
@@ -575,17 +589,7 @@ jerry_value_t zjs_webusb_init()
 
     memset(tx_ring, 0, sizeof(ringbuf_t));
     memset(rx_ring, 0, sizeof(ringbuf_t));
-
-    return jerry_acquire_value(webusb_api);
+    return webusb_api;
 }
 
-void zjs_webusb_cleanup()
-{
-    zjs_free(tx_ring);
-    zjs_free(rx_ring);
-    tx_ring = rx_ring = NULL;
-    jerry_release_value(webusb_api);
-    webusb_api = 0;
-    zjs_free(webusb_origin_url);
-    webusb_origin_url = NULL;
-}
+JERRYX_NATIVE_MODULE(webusb, zjs_webusb_init)
