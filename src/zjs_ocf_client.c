@@ -3,9 +3,11 @@
 #ifdef BUILD_MODULE_OCF
 
 // C includes
+#ifdef ZJS_LINUX_BUILD
 #include <pthread.h>
 #include <signal.h>
 #include <stdio.h>
+#endif
 
 // JerryScript includes
 #include "jerryscript.h"

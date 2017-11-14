@@ -10,5 +10,5 @@
             "CONFIG_ARC_INIT=y"
         ]
     },
-    "src":["zjs_ipm.c"]
+    "src":["src/zjs_ipm.c"]
 }

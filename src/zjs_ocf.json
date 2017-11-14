@@ -5,14 +5,14 @@
                 "iotivity_constrained"],
     "src": {
         "client": {
-            "src": ["zjs_ocf_client.c"],
+            "src": ["src/zjs_ocf_client.c"],
             "zjs_config": ["-DOC_CLIENT"]
         },
         "server": {
-            "src": ["zjs_ocf_server.c"],
+            "src": ["src/zjs_ocf_server.c"],
             "zjs_config": ["-DOC_SERVER"]
         },
-        "common": ["zjs_ocf_common.c"]
+        "common": ["src/zjs_ocf_common.c"]
     },
     "zjs_config": ["-DBUILD_MODULE_OCF"],
     "virtualdeps": ["net-l2"],
@@ -38,5 +38,9 @@
             "CONFIG_NET_APP_AUTO_INIT=n"
         ]
     },
-    "header": ["zjs_ocf_server.h", "zjs_ocf_client.h", "zjs_ocf_common.h"]
+    "header": [
+        "zjs_ocf_server.h",
+        "zjs_ocf_client.h",
+        "zjs_ocf_common.h"
+     ]
 }

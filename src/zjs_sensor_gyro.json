@@ -4,5 +4,5 @@
     "depends": ["sensor"],
     "targets": ["arduino_101"],
     "zjs_config": ["-DBUILD_MODULE_SENSOR_GYRO"],
-    "src": ["sensors/zjs_sensor_gyro.c"]
+    "src": ["src/sensors/zjs_sensor_gyro.c"]
 }

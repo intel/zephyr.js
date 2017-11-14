@@ -3,5 +3,5 @@
     "depends": ["ipm"],
     "targets": ["arduino_101"],
     "zjs_config": ["-DBUILD_MODULE_SENSOR"],
-    "src": ["zjs_sensor_board_a101.c"]
+    "src": ["src/zjs_sensor_board_a101.c"]
 }

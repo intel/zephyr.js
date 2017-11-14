@@ -3,5 +3,5 @@
     "require": "i2c",
     "depends": ["buffer", "i2c_a101", "i2c_k64f"],
     "zjs_config": ["-DBUILD_MODULE_I2C"],
-    "src": ["zjs_i2c.c"]
+    "src": ["src/zjs_i2c.c"]
 }

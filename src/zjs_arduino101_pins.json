@@ -3,5 +3,5 @@
     "require": "arduino101_pins",
     "targets": ["arduino_101"],
     "zjs_config": ["-DBUILD_MODULE_A101"],
-    "src": ["zjs_a101_pins.c"]
+    "src": ["src/zjs_a101_pins.c"]
 }

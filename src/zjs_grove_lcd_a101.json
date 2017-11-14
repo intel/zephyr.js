@@ -3,5 +3,5 @@
     "depends": ["ipm"],
     "targets": ["arduino_101"],
     "zjs_config": ["-DBUILD_MODULE_GROVE_LCD"],
-    "src": ["zjs_grove_lcd_ipm.c"]
+    "src": ["src/zjs_grove_lcd_ipm.c"]
 }

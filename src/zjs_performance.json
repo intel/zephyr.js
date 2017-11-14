@@ -1,6 +1,6 @@
 {
     "module": "performance",
     "require": "performance",
-    "src": ["zjs_performance.c"],
+    "src": ["src/zjs_performance.c"],
     "zjs_config": ["-DBUILD_MODULE_PERFORMANCE"]
 }

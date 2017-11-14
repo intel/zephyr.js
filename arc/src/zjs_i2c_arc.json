@@ -8,6 +8,8 @@
             "CONFIG_I2C=y"
         ]
     },
-    "src": ["arc_i2c.c", "../../src/zjs_ipm.c", "../../src/zjs_i2c_handler.c"],
+    "src": [
+        "src/arc_i2c.c"
+    ],
     "zjs_config": ["-DBUILD_MODULE_I2C"]
 }

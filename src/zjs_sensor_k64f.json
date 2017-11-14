@@ -11,5 +11,5 @@
         ]
     },
     "zjs_config": ["-DBUILD_MODULE_SENSOR"],
-    "src": ["zjs_sensor_board_k64f.c"]
+    "src": ["src/zjs_sensor_board_k64f.c"]
 }

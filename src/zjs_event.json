@@ -1,7 +1,7 @@
 {
     "module": "events",
     "require": "events",
-    "src": ["zjs_event.c"],
-    "zjs_config": ["-DBUILD_MODULE_EVENT"],
-    "header": ["zjs_event.h"]
+    "src": ["src/zjs_event.c"],
+    "header": ["zjs_event.h"],
+    "zjs_config": ["-DBUILD_MODULE_EVENT"]
 }

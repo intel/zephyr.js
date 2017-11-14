@@ -6,7 +6,7 @@
     "zephyr_conf": {
         "all": [
             "CONFIG_FILE_SYSTEM=y",
-            "CONFIG_FILE_SYSTEM_FAT=y",
+            "CONFIG_FAT_FILESYSTEM_ELM=y",
             "CONFIG_FLASH=y",
             "CONFIG_SPI=y",
             "CONFIG_GPIO=y"
@@ -20,6 +20,9 @@
             "CONFIG_HAS_SYSMPU=n"
         ]
     },
-    "zjs_config": ["-DBUILD_MODULE_FS"],
-    "src":["zjs_fs.c"]
+    "src":["src/zjs_fs.c"],
+    "zjs_config": [
+        "-I${ZEPHYR_BASE}/ext/fs/fat/include",
+        "-DBUILD_MODULE_FS"
+    ]
 }

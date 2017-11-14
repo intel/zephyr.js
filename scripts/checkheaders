@@ -23,13 +23,17 @@ echo "}"            >> $TEMPLATE
 SOURCE=$SRCDIR/zjs_source.c
 BINARY=$SRCDIR/zjs_source
 
-# create a stub generated dts board header to work around errors
+# create a stub generated dts board, i2c and ipm headers to work around errors
 touch $SRCDIR/generated_dts_board.h
+mkdir $SRCDIR/syscalls/
+touch $SRCDIR/syscalls/i2c.h
+touch $SRCDIR/syscalls/ipm.h
+touch $SRCDIR/syscalls/sensor.h
 
 PASSCOUNT=0
 TOTAL=0
 
-CFLAGS="-m32 -DCONFIG_X86 -DCONFIG_PREEMPT_ENABLED -DCONFIG_NET_IPV4 -DCONFIG_NET_IF_UNICAST_IPV4_ADDR_COUNT=1 -DCONFIG_NET_IF_MCAST_IPV4_ADDR_COUNT=1 -DCONFIG_LOAPIC_BASE_ADDRESS=0xFEE00000 -I. -I$SRCDIR -I../deps/jerryscript/jerry-core -I../deps/jerryscript/jerry-core/include -I../deps/jerryscript/jerry-ext/include -I../deps/zephyr/include -I../deps/zephyr/arch/x86/include -I../deps/iotivity-constrained/include -I../deps/iotivity-constrained -include../deps/iotivity-constrained/port/zephyr/src/config.h"
+CFLAGS="-m32 -DCONFIG_X86 -DCONFIG_PREEMPT_ENABLED -DCONFIG_LOAPIC_BASE_ADDRESS=0xFEE00000 -DCONFIG_NET_L2_RAW_CHANNEL -I. -I$SRCDIR -I../deps/jerryscript/jerry-core -I../deps/jerryscript/jerry-core/include -I../deps/jerryscript/jerry-ext/include -I../deps/zephyr/include -I../deps/zephyr/arch/x86/include -I../deps/iotivity-constrained/include -I../deps/iotivity-constrained -include../deps/iotivity-constrained/port/zephyr/src/config.h -I../deps/zephyr/tests/ztest/include"
 
 FAILURES=
 

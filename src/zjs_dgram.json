@@ -25,5 +25,5 @@
         ]
     },
     "zjs_config": ["-DBUILD_MODULE_DGRAM"],
-    "src": ["zjs_dgram.c"]
+    "src": ["src/zjs_dgram.c"]
 }

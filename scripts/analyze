@@ -13,8 +13,7 @@ def usage():
     print("      BOARD=      Target being built")
     print("      JSON_DIR=   Directory to look for JSON files")
     print("      PRJCONF=    File to write the prj.conf info to")
-    print("      MAKEFILE=   Makefile to write source/options to")
-    print("      MAKEBASE=   Makefile to use as a base to write MAKEFILE")
+    print("      CMAKEFILE=  CMake file to write source/options to")
     print("   Optional:")
     print("      SCRIPT=     JS script used to build")
     print("      FORCE=      Force inclusion of certain JSON files")
@@ -43,7 +42,7 @@ board = args['BOARD']
 if board == 'linux':
     req_options = ['BOARD', 'JSON_DIR']
 else:
-    req_options = ['BOARD', 'JSON_DIR', 'PRJCONF', 'MAKEFILE', 'MAKEBASE']
+    req_options = ['BOARD', 'JSON_DIR', 'PRJCONF', 'CMAKEFILE']
 
 for i in req_options:
     if i not in args:
@@ -305,19 +304,20 @@ def write_jrsconfig(list):
                 feature = feature.replace(i, "#" + i)
             p.write(feature)
 
-def write_makefile(src, zconf, file):
-    """Write out a src Makefile"""
-    with open(args['MAKEBASE'], "r") as b:
-        base = b.read()
+def write_cmakefile(src, zconf, file):
+    """Write out a src CMake file"""
     with open(file, "w") as f:
-        f.write(base)
+        f.write("# This is a generated file\n\n")
         if src:
-            f.write("obj-y += \\\n")
             for i in src:
-                f.write("\t" + i.replace(".c", ".o") + " \\\n")
-            f.write("\nccflags-y += \\\n")
+                f.write("target_sources(app PRIVATE " + i + ")\n")
+            f.write("\n")
             for i in zconf:
-                f.write("\t" + i + " \\\n")
+                """fixme: include paths should be a separate config"""
+                if i.startswith("-I"):
+                    f.write("target_include_directories(app PRIVATE " + i[2:] + ")\n")
+                elif i.startswith("-D"):
+                    f.write("add_definitions(" + i + ")\n")
             f.write("\n")
 
 def expand_match(match):
@@ -429,7 +429,7 @@ else:
         print("Using module: " + i)
 
     write_zconf(zconf, args['PRJCONF'])
-    write_makefile(lsrc, zjs_conf, args['MAKEFILE'])
+    write_cmakefile(lsrc, zjs_conf, args['CMAKEFILE'])
     write_jrsconfig(jrs_conf)
 
     # building for arc does not need zjs_modules_gen.h to be created

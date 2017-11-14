@@ -13,6 +13,6 @@
         ]
     },
     "zjs_config": ["-DBUILD_MODULE_BLE"],
-    "src": ["zjs_ble.c"],
+    "src": ["src/zjs_ble.c"],
     "header": ["zjs_ble.h"]
 }
