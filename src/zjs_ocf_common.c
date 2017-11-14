@@ -6,9 +6,11 @@
 #include "jerryscript.h"
 
 // C includes
+#ifdef ZJS_LINUX_BUILD
 #include <pthread.h>
 #include <signal.h>
 #include <stdio.h>
+#endif
 
 // ZJS includes
 #include "zjs_common.h"

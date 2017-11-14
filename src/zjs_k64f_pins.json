@@ -2,5 +2,5 @@
     "module": "k64f_pins",
     "require": "k64f_pins",
     "zjs_config": ["-DBUILD_MODULE_K64F"],
-    "src": ["zjs_k64f_pins.c"]
+    "src": ["src/zjs_k64f_pins.c"]
 }

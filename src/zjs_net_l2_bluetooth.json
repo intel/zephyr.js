@@ -17,6 +17,6 @@
             "CONFIG_NET_APP_AUTO_INIT=n"
         ]
     },
-    "src": ["../deps/zephyr/samples/bluetooth/gatt/ipss.c"],
-    "zjs_config": ["-I$(ZEPHYR_BASE)/samples/bluetooth"]
+    "src": ["${ZEPHYR_BASE}/samples/bluetooth/gatt/ipss.c"],
+    "zjs_config": ["-I${ZEPHYR_BASE}/samples/bluetooth"]
 }

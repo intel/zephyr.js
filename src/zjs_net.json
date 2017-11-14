@@ -27,5 +27,5 @@
         ]
     },
     "zjs_config": ["-DBUILD_MODULE_NET"],
-    "src": ["zjs_net.c"]
+    "src": ["src/zjs_net.c"]
 }

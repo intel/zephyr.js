@@ -10,5 +10,5 @@
             "CONFIG_NS16550=n"
         ]
     },
-    "src": ["../../src/zjs_common.c"]
+    "src": ["../src/zjs_common.c"]
 }

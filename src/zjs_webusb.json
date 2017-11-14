@@ -15,11 +15,14 @@
             "CONFIG_USB_DW=y"
         ]
     },
-    "zjs_config": ["-DBUILD_MODULE_WEBUSB",
-                   "-I$(ZEPHYR_BASE)/samples/subsys/usb/webusb/src",
-                   "-I$(ZEPHYR_BASE)/include/usb",
-                   "-I${ZEPHYR_BASE}/include/drivers/usb",
-                   "-I${ZEPHYR_BASE}/subsys/usb/class"],
-    "src": ["zjs_webusb.c",
-            "../deps/zephyr/samples/subsys/usb/webusb/src/webusb_serial.c"]
+    "zjs_config": [
+        "-DBUILD_MODULE_WEBUSB",
+        "-I${ZEPHYR_BASE}/samples/subsys/usb/webusb/src",
+        "-I${ZEPHYR_BASE}/include/usb",
+        "-I${ZEPHYR_BASE}/include/drivers/usb",
+        "-I${ZEPHYR_BASE}/subsys/usb/class"],
+    "src": [
+        "src/zjs_webusb.c",
+        "${ZEPHYR_BASE}/samples/subsys/usb/webusb/src/webusb_serial.c"
+    ]
 }

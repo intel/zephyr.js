@@ -3,6 +3,6 @@
     "constructor": "Accelerometer",
     "depends": ["sensor_arc"],
     "targets": ["arc"],
-    "src": ["arc_sensor.c"],
+    "src": ["src/arc_sensor.c"],
     "zjs_config": ["-DBUILD_MODULE_SENSOR_ACCEL"]
 }

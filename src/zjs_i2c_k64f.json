@@ -7,5 +7,5 @@
         ]
     },
     "zjs_config": ["-DBUILD_MODULE_I2C"],
-    "src": ["zjs_i2c_handler.c"]
+    "src": ["src/zjs_i2c_handler.c"]
 }

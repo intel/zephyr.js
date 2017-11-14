@@ -10,5 +10,5 @@
         ]
     },
     "zjs_config": ["-DBUILD_MODULE_GROVE_LCD"],
-    "src": ["zjs_grove_lcd.c"]
+    "src": ["src/zjs_grove_lcd.c"]
 }

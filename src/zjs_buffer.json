@@ -1,7 +1,7 @@
 {
     "module": "buffer",
     "constructor": "Buffer",
-    "src": ["zjs_buffer.c"],
+    "src": ["src/zjs_buffer.c"],
     "zjs_config": ["-DBUILD_MODULE_BUFFER"],
     "header": ["zjs_buffer.h"],
     "global_init": ["zjs_buffer_init"],

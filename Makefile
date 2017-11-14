@@ -9,6 +9,7 @@ VERBOSITY ?= 1
 OS := $(shell uname)
 
 BOARD ?= arduino_101
+
 RAM ?= 64
 ROM ?= 144
 V ?= 0
@@ -19,9 +20,6 @@ TRACE ?= off
 
 # Enable jerry-debugger, currently only work on linux
 DEBUGGER ?= off
-
-# ALL-IN-ONE build, slightly shrink build size, may not work on all platforms
-ALL_IN_ONE ?= off
 
 ifeq (,$(O))
 O := outdir
@@ -49,7 +47,6 @@ endif
 endif
 
 ifeq ($(BOARD), arduino_101)
-ALL_IN_ONE=on
 # RAM can't be less than the 55KB normally allocated for x86
 # NOTE: We could change this and allow it though, find a sane minimum
 ifeq ($(shell test $(RAM) -lt 55; echo $$?), 0)
@@ -109,17 +106,7 @@ BLE_ADDR ?= none
 FUNC_NAME ?= off
 # JerryScript options
 JERRY_BASE ?= $(ZJS_BASE)/deps/jerryscript
-EXT_JERRY_FLAGS ?=	-DENABLE_ALL_IN_ONE=$(ALL_IN_ONE) \
-			-DFEATURE_INIT_FINI=ON \
-			-DFEATURE_PROFILE=$(OUT)/$(BOARD)/jerry_feature.profile \
-			-DFEATURE_ERROR_MESSAGES=ON \
-			-DJERRY_LIBM=OFF \
-			-DJERRY_PORT_DEFAULT=OFF
-
-# Work-around for #2363 until Zephyr fixes the SDK
-ifeq ($(VARIANT), release)
-KBUILD_CFLAGS_OPTIMIZE = -O2
-endif
+JERRY_OUTPUT = $(OUT)/$(BOARD)/jerry/build
 
 # Generate and run snapshot as byte code instead of running JS directly
 ifneq (,$(filter $(MAKECMDGOALS),ide ashell linux))
@@ -131,9 +118,6 @@ endif
 else
 # snapshot is enabled by default
 SNAPSHOT ?= on
-ifeq ($(SNAPSHOT), on)
-EXT_JERRY_FLAGS += -DFEATURE_JS_PARSER=OFF
-endif
 endif
 
 ifeq ($(FUNC_NAME), on)
@@ -158,6 +142,11 @@ endif
 endif
 
 ifeq ($(BOARD), arduino_101)
+ARC = arc
+ARC_RAM = $$((79 - $(RAM)))
+ARC_ROM = $$((296 - $(ROM)))
+PHYS_RAM_ADDR = $(shell printf "%x" $$(((80 - $(RAM)) * 1024)))
+FLASH_BASE_ADDR = $(shell printf "%x" $$((($(ROM) + 64) * 1024)))
 ifeq ($(MAKECMDGOALS),)
 TARGETS=all
 else
@@ -167,8 +156,8 @@ endif
 # if actually building for A101 (not clean), report RAM/ROM allocation
 ifneq ($(filter all zephyr arc,$(TARGETS)),)
 $(info Building for Arduino 101...)
-$(info $() $() RAM allocation: $(RAM)KB for X86, $(shell echo $$((79 - $(RAM))))KB for ARC)
-$(info $() $() ROM allocation: $(ROM)KB for X86, $(shell echo $$((296 - $(ROM))))KB for ARC)
+$(info $() $() RAM allocation: $(RAM)KB for X86, $(shell echo $(ARC_RAM))KB for ARC)
+$(info $() $() ROM allocation: $(ROM)KB for X86, $(shell echo $(ARC_ROM))KB for ARC)
 endif
 endif  # BOARD = arduino_101
 
@@ -180,10 +169,6 @@ PRINT_FLOAT ?= off
 
 ifeq ($(BOARD), linux)
 	SNAPSHOT = off
-endif
-
-ifeq ($(BOARD), arduino_101)
-ARC = arc
 endif
 
 .PHONY: all
@@ -201,37 +186,26 @@ check:
 quickcheck:
 	trlite -l 3
 
-A101BIN = $(OUT)/arduino_101/zephyr.bin
-A101SSBIN = $(OUT)/arduino_101_sss/zephyr.bin
+A101BIN = $(OUT)/arduino_101/zephyr/zephyr.bin
+A101SSBIN = $(OUT)/arduino_101_sss/zephyr/zephyr.bin
 
 .PHONY: ram_report
 ram_report: zephyr
-	@make -f Makefile.zephyr $(MAKEFLAGS) ram_report
+	@make -C $(OUT)/$(BOARD) ram_report
 
 .PHONY: rom_report
 rom_report: zephyr
-	@make -f Makefile.zephyr $(MAKEFLAGS) rom_report
-
-# choose name of jerryscript library based on snapshot feature
-ifeq ($(SNAPSHOT), on)
-JERRYLIB=$(OUT)/$(BOARD)/libjerry-core-snapshot.a
-else
-JERRYLIB=$(OUT)/$(BOARD)/libjerry-core-parser.a
-endif
+	@make -C $(OUT)/$(BOARD) rom_report
 
 .PHONY: flash
-flash:  analyze generate $(JERRYLIB) $(ARC)
-	@make -f Makefile.zephyr $(MAKEFLAGS) flash
-
-.PHONY: debug
-debug:  analyze generate $(JERRYLIB) $(ARC)
-	@make -f Makefile.zephyr $(MAKEFLAGS) debug
+flash:
+	@make -C $(OUT)/$(BOARD) flash
 
 # Build for zephyr, default target
 .PHONY: zephyr
-zephyr: analyze generate $(JERRYLIB) $(OUT)/$(BOARD)/libjerry-ext.a $(ARC)
-	@make -f Makefile.zephyr -j4 $(MAKEFLAGS)
-
+zephyr: analyze generate $(ARC)
+	@cmake $(CMAKEFLAGS) -H. && \
+	make -C $(OUT)/$(BOARD) -j4
 ifeq ($(BOARD), arduino_101)
 	@echo
 	@echo -n Creating dfu images...
@@ -239,6 +213,7 @@ ifeq ($(BOARD), arduino_101)
 	@dd if=$(A101BIN) of=$(A101SSBIN).dfu bs=1024 skip=144 2> /dev/null
 	@dd if=$(A101SSBIN) of=$(A101SSBIN).dfu bs=1024 seek=$$(($(ROM) - 144)) 2> /dev/null
 	@echo " done."
+	@cp -p $(BOARD).overlay $(OUT)/$(BOARD)/$(BOARD).overlay.bak
 endif
 
 .PHONY: ide
@@ -253,15 +228,6 @@ dfu:
 	dfu-util -a x86_app -D $(A101BIN).dfu
 	dfu-util -a sensor_core -D $(A101SSBIN).dfu
 
-# Build JerryScript as a library (libjerry-core.a)
-$(JERRYLIB):
-	@echo "Building" $@
-	@rm -rf $(JERRY_BASE)/build/$(BOARD)/
-	$(MAKE) -C $(JERRY_BASE) -f targets/zephyr/Makefile.zephyr BOARD=$(BOARD) EXT_JERRY_FLAGS="$(EXT_JERRY_FLAGS)" jerry
-	mkdir -p $(OUT)/$(BOARD)/
-	cp $(JERRY_BASE)/build/$(BOARD)/obj-$(BOARD)/lib/libjerry-core.a $(JERRYLIB)
-	cp $(JERRY_BASE)/build/$(BOARD)/obj-$(BOARD)/lib/libjerry-ext.a $(OUT)/$(BOARD)/
-
 # Give an error if we're asked to create the JS file
 $(JS):
 	$(error The file $(JS) does not exist.)
@@ -269,65 +235,70 @@ $(JS):
 # Find the modules the JS file depends on
 .PHONY: analyze
 analyze: $(JS)
+	@if [ -e $(OUT)/$(BOARD)/$(BOARD).overlay.bak ]; then \
+		if ! cmp $(OUT)/$(BOARD)/$(BOARD).overlay.bak $(BOARD).overlay; then \
+			echo "RAM/ROM size has updated, rebuild..."; \
+			rm -rf $(OUT)/$(BOARD)/zephyr; \
+			rm -rf $(OUT)/$(BOARD)/deps; \
+		fi \
+	fi
 	@mkdir -p $(OUT)/$(BOARD)/
 	@mkdir -p $(OUT)/include
-	@echo "% This is a generated file" > prj.mdef
 
 	./scripts/analyze	V=$(V) \
 		SCRIPT=$(JS) \
-		JS_OUT=$(JS_TMP) \
+		JS_OUT=$(OUT)/$(JS_TMP) \
 		BOARD=$(BOARD) \
 		JSON_DIR=src/ \
 		O=$(OUT) \
 		FORCE=$(FORCED) \
 		PRJCONF=prj.conf \
-		MAKEFILE=src/Makefile \
-		MAKEBASE=src/Makefile.base \
+		CMAKEFILE=$(OUT)/$(BOARD)/generated.cmake \
 		PROFILE=$(OUT)/$(BOARD)/jerry_feature.profile
 
 	@if [ "$(TRACE)" = "on" ] || [ "$(TRACE)" = "full" ]; then \
-		echo "ccflags-y += -DZJS_TRACE_MALLOC" >> src/Makefile; \
+		echo "add_definitions(-DZJS_TRACE_MALLOC)" >> $(OUT)/$(BOARD)/generated.cmake; \
 	fi
 	@if [ "$(SNAPSHOT)" = "on" ]; then \
-		echo "ccflags-y += -DZJS_SNAPSHOT_BUILD" >> src/Makefile; \
+		echo "add_definitions(-DZJS_SNAPSHOT_BUILD)" >> $(OUT)/$(BOARD)/generated.cmake; \
 	fi
 	@# Add bluetooth debug configs if BLE is enabled
-	@if grep -q BUILD_MODULE_BLE src/Makefile; then \
+	@if grep -q BUILD_MODULE_BLE $(OUT)/$(BOARD)/generated.cmake; then \
 		if [ "$(VARIANT)" = "debug" ]; then \
 			echo "CONFIG_BT_DEBUG_LOG=y" >> prj.conf; \
 		fi \
 	fi
 
-	@if grep -q BUILD_MODULE_OCF src/Makefile; then \
+	@if grep -q BUILD_MODULE_OCF $(OUT)/$(BOARD)/generated.cmake; then \
 		echo "CONFIG_BT_DEVICE_NAME=\"$(DEVICE_NAME)\"" >> prj.conf; \
 	fi
-	@if grep -q BUILD_MODULE_DGRAM src/Makefile; then \
+	@if grep -q BUILD_MODULE_DGRAM $(OUT)/$(BOARD)/generated.cmake; then \
 		echo "CONFIG_BT_DEVICE_NAME=\"$(DEVICE_NAME)\"" >> prj.conf; \
 	fi
 	@if [ -e $(OUT)/$(BOARD)/jerry_feature.profile.bak ]; then \
-		if ! cmp $(OUT)/$(BOARD)/jerry_feature.profile.bak $(OUT)/$(BOARD)/jerry_feature.profile; \
-		then \
-			rm -f $(OUT)/$(BOARD)/libjerry-core*.a; \
-			rm -f $(OUT)/$(BOARD)/libjerry-ext*.a; \
+		if ! cmp $(OUT)/$(BOARD)/jerry_feature.profile.bak $(OUT)/$(BOARD)/jerry_feature.profile; then \
+			echo "JerryScript profile changed, rebuild..."; \
+			rm -rf $(OUT)/$(BOARD)/zephyr; \
+			rm -rf $(OUT)/$(BOARD)/deps; \
 		fi \
-	else \
-		rm -f $(OUT)/$(BOARD)/libjerry-core*.a; \
-		rm -f $(OUT)/$(BOARD)/libjerry-ext*.a; \
 	fi
 
 	$(eval NET_BUILD=$(shell grep -q -E "BUILD_MODULE_OCF|BUILD_MODULE_DGRAM|BUILD_MODULE_NET|BUILD_MODULE_WS" src/Makefile && echo y))
-	$(eval MAKEFLAGS = \
-		BOARD=$(BOARD) \
-		VARIANT=$(VARIANT) \
-		VERBOSITY=$(VERBOSITY) \
-		CB_STATS=$(CB_STATS) \
-		PRINT_FLOAT=$(PRINT_FLOAT) \
-		SNAPSHOT=$(SNAPSHOT) \
-		BLE_ADDR=$(BLE_ADDR) \
-		ASHELL=$(ASHELL) \
-		O=$(OUT)/$(BOARD) \
-		NETWORK_BUILD=$(NET_BUILD) \
-		ZJS_FLAGS="$(ZJS_FLAGS)")
+	$(eval CMAKEFLAGS = \
+		-B$(OUT)/$(BOARD) \
+		-DASHELL=$(ASHELL) \
+		-DBLE_ADDR=$(BLE_ADDR) \
+		-DBOARD=$(BOARD) \
+		-DCB_STATS=$(CB_STATS) \
+		-DJERRY_BASE=$(JERRY_BASE) \
+		-DJERRY_OUTPUT=$(JERRY_OUTPUT) \
+		-DJERRY_PROFILE=$(OUT)/$(BOARD)/jerry_feature.profile \
+		-DNETWORK_BUILD=$(NET_BUILD) \
+		-DPRINT_FLOAT=$(PRINT_FLOAT) \
+		-DSNAPSHOT=$(SNAPSHOT) \
+		-DVARIANT=$(VARIANT) \
+		-DZJS_FLAGS="$(ZJS_FLAGS)")
+	$(info CMAKEFLAGS = $(CMAKEFLAGS))
 
 # Update dependency repos
 .PHONY: update
@@ -338,15 +309,7 @@ update:
 # set up prj.conf file
 -.PHONY: setup
 setup:
-ifeq ($(BOARD), qemu_x86)
-ifneq ($(OS), Darwin)
-	echo "CONFIG_XIP=y" >> prj.conf
-else
-	echo "CONFIG_RAM_SIZE=192" >> prj.conf
-endif
-else
 ifeq ($(ASHELL), ashell)
-	@cat fragments/prj.mdef.ashell >> prj.mdef
 ifeq ($(filter ide,$(MAKECMDGOALS)),ide)
 	@echo CONFIG_USB_CDC_ACM=n >> prj.conf
 else
@@ -355,29 +318,28 @@ endif
 endif
 ifeq ($(BOARD), arduino_101)
 ifeq ($(OS), Darwin)
-	# work around for OSX where the xtool toolchain do not
-	# support iamcu instruction set on the Arduino 101
+	@# work around for OSX where the xtool toolchain do not
+	@# support iamcu instruction set on the Arduino 101
 	@echo "CONFIG_X86_IAMCU=n" >> prj.conf
 endif
-	@printf "CONFIG_PHYS_RAM_ADDR=0xA800%x\n" $$(((80 - $(RAM)) * 1024)) >> prj.conf
 	@echo "CONFIG_RAM_SIZE=$(RAM)" >> prj.conf
 	@echo "CONFIG_ROM_SIZE=$(ROM)" >> prj.conf
 	@printf "CONFIG_SS_RESET_VECTOR=0x400%x\n" $$((($(ROM) + 64) * 1024)) >> prj.conf
-endif
+	@echo "&flash0 { reg = <0x40010000 ($(ROM) * 1024)>; };" > arduino_101.overlay
+	@echo "&flash1 { reg = <0x40030000 ($(ROM) * 1024)>; };" >> arduino_101.overlay
+	@echo "&sram0 { reg = <0xa800$(PHYS_RAM_ADDR) ($(RAM) * 1024)>; };" >> arduino_101.overlay
 endif
 
 .PHONY: cleanlocal
 cleanlocal:
-	@rm -f src/*.o
-	@rm -f src/Makefile
+	@rm -f $(OUT)/$(BOARD)/generated.cmake
+	@rm -f arc/arduino_101_sss.overlay
 	@rm -f arc/prj.conf
 	@rm -f arc/prj.conf.tmp
-	@rm -f arc/src/Makefile
+	@rm -f arduino_101.overlay
 	@rm -f prj.conf
 	@rm -f prj.conf.tmp
-	@rm -f prj.mdef
-	@rm -f zjs.conf.tmp
-	@rm -f $(JS_TMP)
+	@rm -f $(OUT)/$(JS_TMP)
 
 # Explicit clean
 .PHONY: clean
@@ -386,17 +348,14 @@ ifeq ($(BOARD), linux)
 	@make -f Makefile.linux O=$(OUT)/$(BOARD) clean
 else
 	@rm -rf $(JERRY_BASE)/build/$(BOARD)/;
-	@rm -f $(OUT)/$(BOARD)/libjerry-core*.a;
-	@rm -f $(OUT)/$(BOARD)/libjerry-ext*.a;
-	@make -f Makefile.zephyr BOARD=$(BOARD) O=$(OUT)/$(BOARD) clean;
-	@cd arc/; make clean;
+	@rm -rf $(OUT)/$(BOARD)/
+	@rm -f $(OUT)/jsgen.tmp
 endif
 
 .PHONY: pristine
 pristine: cleanlocal
 	@rm -rf $(JERRY_BASE)/build;
-	@make -f Makefile.zephyr O=$(OUT) pristine;
-	@cd arc; make pristine;
+	@rm -rf $(OUT)
 
 # Generate the script file from the JS variable
 .PHONY: generate
@@ -409,9 +368,9 @@ ifeq ($(SNAPSHOT), on)
 	fi
 	@echo Creating snapshot bytecode from JS application...
 	@if [ -x /usr/bin/uglifyjs ]; then \
-		uglifyjs $(JS_TMP) -nc -mt > $(OUT)/jsgen.tmp; \
+		uglifyjs $(OUT)/$(JS_TMP) -nc -mt > $(OUT)/jsgen.tmp; \
 	else \
-		cat $(JS_TMP) > $(OUT)/jsgen.tmp; \
+		cat $(OUT)/$(JS_TMP) > $(OUT)/jsgen.tmp; \
 	fi
 	@$(OUT)/snapshot/snapshot $(OUT)/jsgen.tmp > $(OUT)/include/zjs_snapshot_gen.h
 else
@@ -419,19 +378,14 @@ else
 ifeq ($(BOARD), linux)
 	@./scripts/convert.sh $(JS) $(OUT)/include/zjs_script_gen.h
 else
-	@./scripts/convert.sh $(JS_TMP) $(OUT)/include/zjs_script_gen.h
+	@./scripts/convert.sh $(OUT)/$(JS_TMP) $(OUT)/include/zjs_script_gen.h
 endif
 endif
 
 # Run QEMU target
 .PHONY: qemu
 qemu: zephyr
-	make -f Makefile.zephyr qemu \
-		CB_STATS=$(CB_STATS) \
-		SNAPSHOT=$(SNAPSHOT) \
-		NETWORK_BUILD=$(NET_BUILD) \
-		O=$(OUT)/qemu_x86 \
-		ZJS_FLAGS="$(ZJS_FLAGS)"
+	@make -C $(OUT)/qemu_x86 run
 
 ARC_RESTRICT="zjs_ipm_arc.json,\
 		zjs_i2c_arc.json,\
@@ -448,26 +402,23 @@ ARC_RESTRICT="zjs_ipm_arc.json,\
 # Builds ARC binary
 .PHONY: arc
 arc: analyze
-	# Restrict ARC build to only certain "arc specific" modules
+	@# Restrict ARC build to only certain "arc specific" modules
+	@mkdir -p $(OUT)/arduino_101_sss
 	./scripts/analyze	V=$(V) \
-		SCRIPT=$(JS_TMP) \
+		SCRIPT=$(OUT)/$(JS_TMP) \
 		BOARD=arc \
 		JSON_DIR=arc/src/ \
 		PRJCONF=arc/prj.conf \
-		MAKEFILE=arc/src/Makefile \
-		MAKEBASE=arc/src/Makefile.base \
+		CMAKEFILE=$(OUT)/arduino_101_sss/generated.cmake \
 		O=$(OUT)/arduino_101_sss \
 		FORCE=$(ASHELL_ARC)
 
-	@printf "CONFIG_SRAM_SIZE=%d\n" $$((79 - $(RAM))) >> arc/prj.conf
-	@printf "CONFIG_FLASH_BASE_ADDRESS=0x400%x\n" $$((($(ROM) + 64) * 1024)) >> arc/prj.conf
-	@if [ "$(OS)" = "Darwin" ]; then \
-		sed -i.bu '/This is a generated file/r./zjs.conf.tmp' arc/src/Makefile; \
-		cd arc; make BOARD=arduino_101_sss CROSS_COMPILE=$(ARC_CROSS_COMPILE) O=$(OUT)/arduino_101_sss; \
-	else \
-		sed -i '/This is a generated file/r./zjs.conf.tmp' arc/src/Makefile; \
-		cd arc; make BOARD=arduino_101_sss KBUILD_CFLAGS_OPTIMIZE=$(KBUILD_CFLAGS_OPTIMIZE) O=$(OUT)/arduino_101_sss -j4; \
-	fi
+	@echo "&flash0 { reg = <0x400$(FLASH_BASE_ADDR) ($(ARC_ROM) * 1024)>; };" > arc/arduino_101_sss.overlay
+	@echo "&sram0 { reg = <0xa8000400 ($(ARC_RAM) * 1024)>; };" >> arc/arduino_101_sss.overlay
+	@cmake -B$(OUT)/arduino_101_sss \
+		-DBOARD=arduino_101_sss \
+		-H./arc && \
+	make -C $(OUT)/arduino_101_sss -j4
 ifeq ($(BOARD), arduino_101)
 	@echo
 ifeq ($(OS), Darwin)
@@ -480,7 +431,7 @@ endif
 # Run debug server over JTAG
 .PHONY: adebug
 adebug:
-	make -f Makefile.zephyr BOARD=arduino_101 ARCH=x86 O=$(OUT)/arduino_101 debugserver
+	@make -C $(OUT)/$(BOARD) debugserver
 
 # Run gdb to connect to debug server for x86
 .PHONY: agdb

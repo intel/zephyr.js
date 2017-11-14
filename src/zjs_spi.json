@@ -11,5 +11,5 @@
         ]
     },
     "zjs_config": ["-DBUILD_MODULE_SPI"],
-    "src": ["zjs_spi.c"]
+    "src": ["src/zjs_spi.c"]
 }

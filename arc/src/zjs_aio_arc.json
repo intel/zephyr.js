@@ -6,6 +6,6 @@
     "zephyr_conf": {
         "arc": ["CONFIG_ADC=y"]
     },
-    "src": ["arc_aio.c"],
+    "src": ["src/arc_aio.c"],
     "zjs_config": ["-DBUILD_MODULE_AIO"]
 }

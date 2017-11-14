@@ -1,4 +1,4 @@
 {
     "module": "net_config_default",
-    "src": ["zjs_net_config.c"]
+    "src": ["src/zjs_net_config.c"]
 }

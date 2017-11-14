@@ -29,6 +29,9 @@
             "CONFIG_MBEDTLS_CFG_FILE=\"$(ZJS_BASE)/src/zjs_mbedtls_config.h\""
         ]
     },
-    "src": ["zjs_web_sockets.c"],
-    "zjs_config": ["-DBUILD_MODULE_WS"]
+    "src": ["src/zjs_web_sockets.c"],
+    "zjs_config": [
+        "-DBUILD_MODULE_WS",
+        "-I${ZEPHYR_BASE}/ext/lib/crypto/mbedtls/include"
+    ]
 }

@@ -3,5 +3,5 @@
     "require": "test_promise",
     "depends": ["promise"],
     "zjs_config": ["-DBUILD_MODULE_TEST_PROMISE"],
-    "src": ["zjs_test_promise.c"]
+    "src": ["src/zjs_test_promise.c"]
 }

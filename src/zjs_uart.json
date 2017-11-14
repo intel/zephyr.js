@@ -18,5 +18,5 @@
         "ashell": ["CONFIG_USB_CDC_ACM=y"]
     },
     "zjs_config": ["-DBUILD_MODULE_UART"],
-    "src": ["zjs_uart.c"]
+    "src": ["src/zjs_uart.c"]
 }

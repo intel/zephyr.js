@@ -1,10 +1,32 @@
 {
     "module": "ashell",
-    "depends": ["aio", "arduino101_pins", "ble", "common", "console",
-                "gpio", "i2c", "performance", "pwm", "sensor_accel",
-                "sensor_gyro", "sensor_light", "sensor_temp", "spi"],
+    "depends": [
+        "aio",
+        "arduino101_pins",
+        "ble",
+        "common",
+        "console",
+        "gpio",
+        "i2c",
+        "performance",
+        "pwm",
+        "sensor_accel",
+        "sensor_gyro",
+        "sensor_light",
+        "sensor_temp",
+        "spi"
+    ],
     "targets": ["arduino_101"],
-    "src": ["ashell/"],
+    "src": [
+        "src/ashell/file-utils.c",
+        "src/ashell/jerry-code.c",
+        "src/ashell/term-cmd.c",
+        "src/ashell/term-ihex.c",
+        "src/ashell/term-uart.c",
+        "src/ashell/term-webusb.c",
+        "${ZEPHYR_BASE}/samples/subsys/usb/webusb/src/webusb_serial.c",
+        "./deps/ihex/kk_ihex_read.c"
+    ],
     "zephyr_conf": {
         "arduino_101": [
             "CONFIG_EARLY_CONSOLE=y",
@@ -23,7 +45,7 @@
             "CONFIG_USB_CDC_ACM_DEBUG=n",
             "CONFIG_DEVICE_POWER_MANAGEMENT=y",
             "CONFIG_FILE_SYSTEM=y",
-            "CONFIG_FILE_SYSTEM_FAT=y",
+            "CONFIG_FAT_FILESYSTEM_ELM=y",
             "CONFIG_DISK_ACCESS_FLASH=y",
             "CONFIG_FS_FAT_FLASH_DISK_W25QXXDV=y",
             "CONFIG_FLASH=y",
@@ -36,5 +58,10 @@
             "CONFIG_BT_GATT_DYNAMIC_DB=y"
         ]
     },
-    "zjs_config": ["-DZJS_ASHELL"]
+    "zjs_config": [
+        "-I${ZEPHYR_BASE}/ext/fs/fat/include",
+        "-I${ZEPHYR_BASE}/samples/subsys/usb/webusb/src/",
+        "-I./deps",
+        "-DZJS_ASHELL"
+    ]
 }

@@ -5,5 +5,5 @@
     "zephyr_conf": {
     },
     "zjs_config": ["-DBUILD_MODULE_GFX"],
-    "src": ["zjs_gfx.c"]
+    "src": ["src/zjs_gfx.c"]
 }

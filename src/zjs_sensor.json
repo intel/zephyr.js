@@ -1,8 +1,11 @@
 {
     "module": "sensor",
     "depends": ["sensor_a101", "sensor_k64f"],
-    "zjs_config": ["-I$(ZJS_BASE)/src/sensors", "-DBUILD_MODULE_SENSOR"],
-    "src": ["zjs_sensor.c"],
+    "zjs_config": [
+        "-I${CMAKE_SOURCE_DIR}/src/sensors",
+        "-DBUILD_MODULE_SENSOR"
+    ],
+    "src": ["src/zjs_sensor.c"],
     "header": ["zjs_sensor.h"],
     "global_init": ["zjs_sensor_init"],
     "global_cleanup": ["zjs_sensor_cleanup"]

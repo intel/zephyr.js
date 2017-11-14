@@ -6,5 +6,8 @@
         "all": ["CONFIG_GPIO=y"]
     },
     "zjs_config": ["-DBUILD_MODULE_GPIO"],
-    "src": ["zjs_gpio.c", "zjs_gpio_mock.c"]
+    "src": [
+        "src/zjs_gpio.c",
+        "src/zjs_gpio_mock.c"
+    ]
 }

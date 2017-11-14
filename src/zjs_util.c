@@ -351,7 +351,7 @@ char *zjs_alloc_from_string(const char *str, size_t *maxlen)
 {
     // if no max or string small enough, copy the whole string
     if (!maxlen || !*maxlen || strnlen(str, *maxlen) < *maxlen) {
-        return strdup(str);
+        return (char*)strdup(str);
     }
 
     // otherwise, limit the size of the string

@@ -8,7 +8,6 @@ static char FTRACE_PREFIX[] = "net";
 
 // C includes
 #include <errno.h>
-#include <random.h>
 
 // Zephyr includes
 #include <zephyr.h>
