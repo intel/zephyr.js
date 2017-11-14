@@ -12,7 +12,6 @@ BOARD ?= arduino_101
 RAM ?= 64
 ROM ?= 144
 V ?= 0
-JS_TMP = js.tmp
 
 # Dump memory information: on = print allocs, full = print allocs
 TRACE ?= off
@@ -29,6 +28,11 @@ endif
 
 OUT := $(abspath $(O))
 $(info Using outdir: $(OUT))
+
+CONF_FILE = $(OUT)/$(BOARD)/prj.conf
+MDEF_FILE = $(OUT)/$(BOARD)/prj.mdef
+JS_TMP = $(OUT)/js.tmp
+ARC_CONF_FILE = $(OUT)/$(BOARD)/prj.conf
 
 ifneq (,$(DEV))
 $(error DEV= is no longer supported, please use make ide or make ashell)
@@ -299,7 +303,7 @@ $(JS):
 analyze: $(JS)
 	@mkdir -p $(OUT)/$(BOARD)/
 	@mkdir -p $(OUT)/include
-	@echo "% This is a generated file" > prj.mdef
+	@echo "% This is a generated file" > $(MDEF_FILE)
 
 	./scripts/analyze	V=$(V) \
 		SCRIPT=$(JS) \
@@ -308,7 +312,7 @@ analyze: $(JS)
 		JSON_DIR=src/ \
 		O=$(OUT) \
 		FORCE=$(FORCED) \
-		PRJCONF=prj.conf \
+		PRJCONF=$(CONF_FILE) \
 		MAKEFILE=src/Makefile \
 		MAKEBASE=src/Makefile.base \
 		PROFILE=$(OUT)/$(BOARD)/jerry_feature.profile
@@ -322,15 +326,15 @@ analyze: $(JS)
 	@# Add bluetooth debug configs if BLE is enabled
 	@if grep -q BUILD_MODULE_BLE src/Makefile; then \
 		if [ "$(VARIANT)" = "debug" ]; then \
-			echo "CONFIG_BT_DEBUG_LOG=y" >> prj.conf; \
+			echo "CONFIG_BT_DEBUG_LOG=y" >> $(CONF_FILE); \
 		fi \
 	fi
 
 	@if grep -q BUILD_MODULE_OCF src/Makefile; then \
-		echo "CONFIG_BT_DEVICE_NAME=\"$(DEVICE_NAME)\"" >> prj.conf; \
+		echo "CONFIG_BT_DEVICE_NAME=\"$(DEVICE_NAME)\"" >> $(CONF_FILE); \
 	fi
 	@if grep -q BUILD_MODULE_DGRAM src/Makefile; then \
-		echo "CONFIG_BT_DEVICE_NAME=\"$(DEVICE_NAME)\"" >> prj.conf; \
+		echo "CONFIG_BT_DEVICE_NAME=\"$(DEVICE_NAME)\"" >> $(CONF_FILE); \
 	fi
 	@if [ -e $(OUT)/$(BOARD)/jerry_feature.profile.bak ]; then \
 		if ! cmp $(OUT)/$(BOARD)/jerry_feature.profile.bak $(OUT)/$(BOARD)/jerry_feature.profile; \
@@ -354,29 +358,29 @@ update:
 setup:
 ifeq ($(BOARD), qemu_x86)
 ifneq ($(OS), Darwin)
-	echo "CONFIG_XIP=y" >> prj.conf
+	echo "CONFIG_XIP=y" >> $(CONF_FILE)
 else
-	echo "CONFIG_RAM_SIZE=192" >> prj.conf
+	echo "CONFIG_RAM_SIZE=192" >> $(CONF_FILE)
 endif
 else
 ifeq ($(ASHELL), ashell)
-	@cat fragments/prj.mdef.ashell >> prj.mdef
+	@cat fragments/prj.mdef.ashell >> $(MDEF_FILE)
 ifeq ($(filter ide,$(MAKECMDGOALS)),ide)
-	@echo CONFIG_USB_CDC_ACM=n >> prj.conf
+	@echo CONFIG_USB_CDC_ACM=n >> $(CONF_FILE)
 else
-	@echo CONFIG_USB_CDC_ACM=y >> prj.conf
+	@echo CONFIG_USB_CDC_ACM=y >> $(CONF_FILE)
 endif
 endif
 ifeq ($(BOARD), arduino_101)
 ifeq ($(OS), Darwin)
 	# work around for OSX where the xtool toolchain do not
 	# support iamcu instruction set on the Arduino 101
-	@echo "CONFIG_X86_IAMCU=n" >> prj.conf
+	@echo "CONFIG_X86_IAMCU=n" >> $(CONF_FILE)
 endif
-	@printf "CONFIG_PHYS_RAM_ADDR=0xA800%x\n" $$(((80 - $(RAM)) * 1024)) >> prj.conf
-	@echo "CONFIG_RAM_SIZE=$(RAM)" >> prj.conf
-	@echo "CONFIG_ROM_SIZE=$(ROM)" >> prj.conf
-	@printf "CONFIG_SS_RESET_VECTOR=0x400%x\n" $$((($(ROM) + 64) * 1024)) >> prj.conf
+	@printf "CONFIG_PHYS_RAM_ADDR=0xA800%x\n" $$(((80 - $(RAM)) * 1024)) >> $(CONF_FILE)
+	@echo "CONFIG_RAM_SIZE=$(RAM)" >> $(CONF_FILE)
+	@echo "CONFIG_ROM_SIZE=$(ROM)" >> $(CONF_FILE)
+	@printf "CONFIG_SS_RESET_VECTOR=0x400%x\n" $$((($(ROM) + 64) * 1024)) >> $(CONF_FILE)
 endif
 endif
 
@@ -384,12 +388,10 @@ endif
 cleanlocal:
 	@rm -f src/*.o
 	@rm -f src/Makefile
-	@rm -f arc/prj.conf
-	@rm -f arc/prj.conf.tmp
+	@rm -f $(ARC_CONF_FILE)
 	@rm -f arc/src/Makefile
-	@rm -f prj.conf
-	@rm -f prj.conf.tmp
-	@rm -f prj.mdef
+	@rm -f $(CONF_FILE)
+	@rm -f $(MDEF_FILE)
 	@rm -f zjs.conf.tmp
 	@rm -f $(JS_TMP)
 
@@ -469,14 +471,14 @@ arc: analyze
 		SCRIPT=$(JS_TMP) \
 		BOARD=arc \
 		JSON_DIR=arc/src/ \
-		PRJCONF=arc/prj.conf \
+		PRJCONF=$(ARC_CONF_FILE) \
 		MAKEFILE=arc/src/Makefile \
 		MAKEBASE=arc/src/Makefile.base \
 		O=$(OUT)/arduino_101_sss \
 		FORCE=$(ASHELL_ARC)
 
-	@printf "CONFIG_SRAM_SIZE=%d\n" $$((79 - $(RAM))) >> arc/prj.conf
-	@printf "CONFIG_FLASH_BASE_ADDRESS=0x400%x\n" $$((($(ROM) + 64) * 1024)) >> arc/prj.conf
+	@printf "CONFIG_SRAM_SIZE=%d\n" $$((79 - $(RAM))) >> $(ARC_CONF_FILE)
+	@printf "CONFIG_FLASH_BASE_ADDRESS=0x400%x\n" $$((($(ROM) + 64) * 1024)) >> $(ARC_CONF_FILE)
 	@if [ "$(OS)" = "Darwin" ]; then \
 		sed -i.bu '/This is a generated file/r./zjs.conf.tmp' arc/src/Makefile; \
 		cd arc; make BOARD=arduino_101_sss CROSS_COMPILE=$(ARC_CROSS_COMPILE) O=$(OUT)/arduino_101_sss; \
