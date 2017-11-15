@@ -549,11 +549,7 @@ static void zjs_webusb_cleanup()
     zjs_free(webusb_origin_url);
     webusb_origin_url = NULL;
 }
-/*
-static const jerry_object_native_info_t webusb_module_type_info = {
-   .free_cb = zjs_webusb_cleanup
-};
-*/
+
 static jerry_value_t zjs_webusb_init()
 {
     if (webusb_api) {
