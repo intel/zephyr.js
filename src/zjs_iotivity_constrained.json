@@ -38,7 +38,7 @@
         "-I${ZEPHYR_BASE}/samples/bluetooth",
         "-I$(OCF_ROOT)/port/zephyr/src",
         "-I$(OCF_ROOT)/include -I$(OCF_ROOT)",
-        "-I$(OCF_ROOT)/deps/tinydtls",
+        "-I$(OCF_ROOT)/deps/mbeddtls",
         "-DWITH_OCF",
         "-DNDEBUG",
         "-include $(ZJS_BASE)/src/zjs_ocf_config.h",

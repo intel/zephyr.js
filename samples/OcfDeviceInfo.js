@@ -3,6 +3,11 @@
 // Sample server that works with the linux server found in iotivity-constrained
 // This sample will find the resource and retrieve its device info
 
+// To run it on the Arduino 101, you'll need to connect via BLE with your
+// host machine (e.g. Linux), then add a new route for the bt0 interface:
+
+// ip -6 route add 2001:db8::/64 dev bt0
+
 var ocf = require('ocf');
 var client = ocf.client;
 

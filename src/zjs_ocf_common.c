@@ -25,10 +25,10 @@
 #include "port/oc_clock.h"
 
 #ifdef DEBUG_BUILD
-#define PROPS_PRINT(n, ...) \
-    if (n) {                \
-        printf("%s: ", n);  \
-    }                       \
+#define PROPS_PRINT(n, ...)        \
+    if (n) {                       \
+        printf("%s: ", (char*)n);  \
+    }                              \
     printf(__VA_ARGS__)
 #else
 #define PROPS_PRINT(n, ...) do {} while (0)
@@ -498,6 +498,14 @@ static const oc_handler_t handler = {
 
 static ZJS_DECL_FUNC(ocf_start)
 {
+#ifdef OC_DYNAMIC_ALLOCATION
+    // The default app data size for dynamic allocation
+    // is 8k, which is too high for Bluetooth 6lowpan
+    // and cause random crashes. Reducing this to
+    // a lower value like 1k will improve stability
+    oc_set_max_app_data_size(MAX_APP_DATA_SIZE);
+#endif
+
     if (oc_main_init(&handler) < 0) {
         return zjs_error("OCF failed to start");
     }

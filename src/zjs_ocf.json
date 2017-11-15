@@ -23,22 +23,19 @@
             "CONFIG_NET_UDP=y",
             "CONFIG_TEST_RANDOM_GENERATOR=y",
             "CONFIG_INIT_STACKS=y",
-            "CONFIG_NET_BUF=y",
             "CONFIG_NET_PKT_RX_COUNT=5",
             "CONFIG_NET_PKT_TX_COUNT=5",
             "CONFIG_NET_BUF_RX_COUNT=10",
             "CONFIG_NET_BUF_TX_COUNT=10",
-            "CONFIG_NET_BUF_DATA_SIZE=512",
-            "CONFIG_NET_IF_UNICAST_IPV6_ADDR_COUNT=1",
-            "CONFIG_NET_IF_MCAST_IPV6_ADDR_COUNT=1",
+            "CONFIG_NET_IF_UNICAST_IPV6_ADDR_COUNT=3",
+            "CONFIG_NET_IF_MCAST_IPV6_ADDR_COUNT=2",
             "CONFIG_NET_MAX_CONTEXTS=3",
             "CONFIG_NET_APP_SETTINGS=y",
             "CONFIG_NET_APP_MY_IPV6_ADDR=\"2001:db8::1\"",
             "CONFIG_NET_APP_PEER_IPV6_ADDR=\"2001:db8::2\""
         ],
         "arduino_101": [
-            "CONFIG_BT_L2CAP_TX_BUF_COUNT=15",
-            "CONFIG_BT_RX_BUF_COUNT=15"
+            "CONFIG_NET_APP_AUTO_INIT=n"
         ]
     },
     "header": ["zjs_ocf_server.h", "zjs_ocf_client.h", "zjs_ocf_common.h"]
