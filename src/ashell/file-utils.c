@@ -170,3 +170,38 @@ int fs_get_boot_cfg_filename(const char *timestamp, char *filename)
     fs_close_alloc(file);
     return -1;
 }
+
+char *read_file_alloc(const char *file_name, ssize_t *size)
+{
+    char *file_buf = NULL;
+    fs_file_t *fp = fs_open_alloc(file_name, "r");
+
+    if (fp == NULL)
+        return 0;
+
+    *size = fs_size(fp);
+    if (*size == 0) {
+        ERR_PRINT("[ERR] Empty file (%s)\n", file_name);
+        fs_close_alloc(fp);
+        return NULL;
+    }
+
+    file_buf = (char *)zjs_malloc(*size);
+    if (file_buf == NULL) {
+        ERR_PRINT("[ERR] Not enough memory for (%s)\n", file_name);
+        fs_close_alloc(fp);
+        return NULL;
+    }
+
+    ssize_t brw = fs_read(fp, file_buf, *size);
+
+    if (brw != *size) {
+        ERR_PRINT("[ERR] Not enough memory for (%s)\n", file_name);
+        fs_close_alloc(fp);
+        zjs_free(file_buf);
+        return NULL;
+    }
+
+    fs_close_alloc(fp);
+    return file_buf;
+}
