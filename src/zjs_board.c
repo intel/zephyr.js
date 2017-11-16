@@ -308,6 +308,12 @@ static int find_named_pin(const char *name, const pin_range_t *default_range,
 
     ZJS_ASSERT(id < sizeof(pin_data) / sizeof(pin_map_t), "pin id overflow");
 
+    if (pin_data[id].zpin == 255) {
+        // mode not supported
+        DBG_PRINT("unsupported mode for id %d\n", id);
+        return FIND_PIN_FAILURE;
+    }
+
     // pin found, return results
     int written = snprintf(device_name, name_len, "%s_%d", device_prefix,
                            pin_data[id].device);
