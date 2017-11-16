@@ -2,10 +2,10 @@
 
 // Test Arduino101Pins API
 
-var pins = require('arduino101_pins');
-var gpio = require('gpio');
-var pwm = require('pwm');
-var aio = require('aio');
+var pins = require("arduino101_pins");
+var gpio = require("gpio");
+var pwm = require("pwm");
+var aio = require("aio");
 var assert = require("Assert.js");
 
 // Check pins defined and typeof Number
@@ -96,7 +96,7 @@ for (var i = 0; i < PWMPins.length; i++) {
 
     checkDefined(pinName);
 
-    var pin = pwm.open({channel: pins[pinName]});
+    var pin = pwm.open(pinName);
     assert(pin != null && typeof pin == "object",
            "Arduino101Pins: " + pinName + " open");
 }
@@ -108,7 +108,7 @@ for (var i = 0; i < AIOPins.length; i++) {
 
     checkDefined(pinName);
 
-    var pin = aio.open({device: 0, pin: pins[pinName]});
+    var pin = aio.open({pin: pins[pinName]});
     var pinValue = pin.read();
     assert(pinValue >= 0 && pinValue <= 4095,
            "Arduino101Pins: " + pinName + " digital value");
