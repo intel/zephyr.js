@@ -8,7 +8,6 @@
 #include "zjs_common.h"
 #include "zjs_util.h"
 
-#if defined(BUILD_MODULE_GPIO) || defined(BUILD_MODULE_PWM) || defined(BUILD_MODULE_AIO)
 // max length of a named pin like IO3, PWM0, LED0
 #define NAMED_PIN_MAX_LEN 8
 
@@ -41,6 +40,10 @@ typedef struct {
 } pin_remap_t;
 
 #if defined(CONFIG_BOARD_ARDUINO_101) || defined(ZJS_LINUX_BUILD)
+//
+// Arduino 101 board support
+//
+
 // data from zephyr/boards/x86/arduino_101/pinmux.c
 // *dual pins mean there's another zephyr pin that maps to the same user pin,
 //    exposing distinct functionality; unclear how to understand this so far
@@ -94,6 +97,10 @@ static const pin_remap_t pwm_map[] = {  // maps normal pins to PWM pins
 #endif
 
 #elif CONFIG_BOARD_FRDM_K64F
+//
+// FRDM-K64F board support
+//
+
 enum gpio_ports {
     PTA, PTB, PTC, PTD, PTE
 };
@@ -174,15 +181,22 @@ static const pin_remap_t pwm_map[] = {
 #endif
 
 #else
+//
+// Basic support for all other boards
+//
+
 // for boards without pin name support, use pass-through method
-static const pin_map_t pin_data[] = {};
-#endif
+#define BASIC_BOARD_SUPPORT
+#endif  // end of board support
 
 typedef struct {
     const char *prefix;
     const pin_range_t *range;
 } prefix_t;
 
+#if defined(BUILD_MODULE_GPIO) || defined(BUILD_MODULE_PWM) || defined(BUILD_MODULE_AIO)
+
+#ifndef BASIC_BOARD_SUPPORT
 static const prefix_t prefix_map[] = {
     { "IO", &digital_pins},
     {  "D", &digital_pins},
@@ -304,6 +318,7 @@ static int find_named_pin(const char *name, const pin_range_t *default_range,
 
     return pin_data[id].zpin;
 }
+#endif  // !BASIC_BOARD_SUPPORT
 
 static int find_full_pin(const char *name, const char *pin,
                          char *device_name, int name_len)
@@ -328,66 +343,106 @@ static int find_full_pin(const char *name, const char *pin,
     return num;
 }
 
-static int find_pin(jerry_value_t jspin, const pin_range_t *default_range,
-                    char *device_prefix, const pin_remap_t *remap,
-                    int remap_len, char *device_name, int name_len)
+static jerry_value_t pin2string(jerry_value_t jspin, int *rval)
 {
-    ZVAL_MUTABLE pin_str = 0;
+    // effects: sets rval to 0 on success, <0 otherwise
+    *rval = 0;
     if (jerry_value_is_number(jspin)) {
         // no error is possible w/ number or string
-        jspin = jerry_value_to_string(jspin);
-
-        // save in pin_str just so it gets released on return
-        pin_str = jspin;
+        return jerry_value_to_string(jspin);
     }
 
-    if (!jerry_value_is_string(jspin)) {
-        DBG_PRINT("pin value wrong type\n");
-        return FIND_PIN_INVALID;
+    if (jerry_value_is_string(jspin)) {
+        return jerry_acquire_value(jspin);
+    }
+
+    DBG_PRINT("pin value wrong type\n");
+    *rval = FIND_PIN_INVALID;
+    return ZJS_UNDEFINED;
+}
+
+static int find_pin(jerry_value_t jspin, char *pin_name,
+                    char *device_name, int name_len)
+{
+    // requires: pin_name is an output buffer with at least FULL_PIN_MAX_LEN
+    //             bytes, device_name is a buffer to receive driver name, and
+    //             name_len is the length of that buffer
+    //  effects: tries to resolve pin as a full pin name, like GPIO_0.15
+    //           returns pin number if found; returns FIND_PIN_INVALID on
+    //           error; returns FIND_PIN_FAILURE if it's not a full pin
+    //           but rather a named pin and writes pin name to pin_name
+    int rval;
+    ZVAL pin = pin2string(jspin, &rval);
+    if (rval < 0) {
+        return rval;
     }
 
     jerry_size_t size = FULL_PIN_MAX_LEN;
-    char name[size];
-    zjs_copy_jstring(jspin, name, &size);
+    zjs_copy_jstring(pin, pin_name, &size);
     if (!size) {
         DBG_PRINT("pin name too long\n");
-        return FIND_PIN_FAILURE;
+        return FIND_PIN_INVALID;
     }
 
-    char *ptr = strchr(name, '.');
+    char *ptr = strchr(pin_name, '.');
     if (ptr) {
         // split the string into device and pin portions
         *ptr = '\0';
-        return find_full_pin(name, ptr + 1, device_name, name_len);
+        return find_full_pin(pin_name, ptr + 1, device_name, name_len);
     }
 
-    return find_named_pin(name, default_range, device_prefix,
-                          remap, remap_len, device_name, name_len);
+    return FIND_PIN_FAILURE;
 }
+#endif  // BUILD_MODULE_GPIO || BUILD_MODULE_PWM || BUILD_MODULE_AIO
 
 #ifdef BUILD_MODULE_GPIO
 int zjs_board_find_gpio(jerry_value_t jspin, char *device_name, int len)
 {
-    return find_pin(jspin, &digital_pins, "GPIO", NULL, 0, device_name, len);
+    char name[FULL_PIN_MAX_LEN];
+    int pin = find_pin(jspin, name, device_name, len);
+
+#ifndef BASIC_BOARD_SUPPORT
+    if (pin == FIND_PIN_FAILURE) {
+        pin = find_named_pin(name, &digital_pins, "GPIO", NULL, 0,
+                             device_name, len);
+    }
+#endif
+    return pin;
 }
 #endif
 
 #ifdef BUILD_MODULE_AIO
 int zjs_board_find_aio(jerry_value_t jspin, char *device_name, int len)
 {
-    return find_pin(jspin, &analog_pins, "AIO", NULL, 0, device_name, len);
+    char name[FULL_PIN_MAX_LEN];
+    int pin = find_pin(jspin, name, device_name, len);
+
+#ifndef BASIC_BOARD_SUPPORT
+    if (pin == FIND_PIN_FAILURE) {
+        pin = find_named_pin(name, &analog_pins, "AIO", NULL, 0,
+                             device_name, len);
+    }
+#endif
+    return pin;
 }
 #endif
 
 #ifdef BUILD_MODULE_PWM
-int zjs_board_find_pwm(jerry_value_t jspin, char *device_name, int name_len)
+int zjs_board_find_pwm(jerry_value_t jspin, char *device_name, int len)
 {
-    int remap_len = sizeof(pwm_map) / sizeof(pin_remap_t);
-    return find_pin(jspin, &pwm_pins, "PWM", pwm_map, remap_len, device_name,
-                    name_len);
+    char name[FULL_PIN_MAX_LEN];
+    int pin = find_pin(jspin, name, device_name, len);
+
+#ifndef BASIC_BOARD_SUPPORT
+    if (pin == FIND_PIN_FAILURE) {
+        int remap_len = sizeof(pwm_map) / sizeof(pin_remap_t);
+        pin = find_named_pin(name, &pwm_pins, "PWM", pwm_map, remap_len,
+                             device_name, len);
+    }
+#endif
+    return pin;
 }
 #endif
-#endif  //BUILD_MODULE_GPIO || BUILD_MODULE_PWM || BUILD_MODULE_AIO
 
 #ifdef CONFIG_BOARD_ARDUINO_101
 #define BOARD_NAME "arduino_101"
