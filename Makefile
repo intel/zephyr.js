@@ -248,7 +248,7 @@ flash:  analyze generate $(JERRYLIB) $(ARC)
 # Build for zephyr, default target
 .PHONY: zephyr
 zephyr: analyze generate $(JERRYLIB) $(OUT)/$(BOARD)/libjerry-ext.a $(ARC)
-	@make -f Makefile.zephyr -j1 \
+	@make -f Makefile.zephyr -j4 \
 					BOARD=$(BOARD) \
 					VARIANT=$(VARIANT) \
 					VERBOSITY=$(VERBOSITY) \
@@ -482,7 +482,7 @@ arc: analyze
 		cd arc; make BOARD=arduino_101_sss CROSS_COMPILE=$(ARC_CROSS_COMPILE) O=$(OUT)/arduino_101_sss; \
 	else \
 		sed -i '/This is a generated file/r./zjs.conf.tmp' arc/src/Makefile; \
-		cd arc; make BOARD=arduino_101_sss KBUILD_CFLAGS_OPTIMIZE=$(KBUILD_CFLAGS_OPTIMIZE) O=$(OUT)/arduino_101_sss -j1; \
+		cd arc; make BOARD=arduino_101_sss KBUILD_CFLAGS_OPTIMIZE=$(KBUILD_CFLAGS_OPTIMIZE) O=$(OUT)/arduino_101_sss -j4; \
 	fi
 ifeq ($(BOARD), arduino_101)
 	@echo
