@@ -1,7 +1,7 @@
 # Copyright (c) 2016-2017, Intel Corporation.
 
 # a place to add temporary defines to ZJS builds such as -DZJS_GPIO_MOCK
-ZJS_FLAGS :=
+#ZJS_FLAGS :=
 
 # control verbosity of debug prints: 1 = text, 2 = func/line, 3 = timestamp
 VERBOSITY ?= 1
@@ -137,7 +137,7 @@ endif
 endif
 
 ifeq ($(FUNC_NAME), on)
-ZJS_FLAGS := $(ZJS_FLAGS) -DZJS_FIND_FUNC_NAME
+ZJS_FLAGS += -DZJS_FIND_FUNC_NAME
 endif
 
 ifeq ($(FORCE),)
@@ -204,27 +204,27 @@ quickcheck:
 A101BIN = $(OUT)/arduino_101/zephyr.bin
 A101SSBIN = $(OUT)/arduino_101_sss/zephyr.bin
 
+MAKEFLAGS = \
+	BOARD=$(BOARD) \
+	VARIANT=$(VARIANT) \
+	VERBOSITY=$(VERBOSITY) \
+	CB_STATS=$(CB_STATS) \
+	PRINT_FLOAT=$(PRINT_FLOAT) \
+	SNAPSHOT=$(SNAPSHOT) \
+	BLE_ADDR=$(BLE_ADDR) \
+	ASHELL=$(ASHELL) \
+	O=$(OUT)/$(BOARD) \
+	NETWORK_BUILD=$(NET_BUILD) \
+	ZJS_FLAGS="$(ZJS_FLAGS)"
+$(info MAKEFLAGS = $(MAKEFLAGS))
+
 .PHONY: ram_report
 ram_report: zephyr
-	@make -f Makefile.zephyr	BOARD=$(BOARD) \
-					VARIANT=$(VARIANT) \
-					CB_STATS=$(CB_STATS) \
-					PRINT_FLOAT=$(PRINT_FLOAT) \
-					SNAPSHOT=$(SNAPSHOT) \
-					ZJS_FLAGS="$(ZJS_FLAGS)" \
-					O=$(OUT)/$(BOARD) \
-					ram_report
+	@make -f Makefile.zephyr $(MAKEFLAGS) ram_report
 
 .PHONY: rom_report
 rom_report: zephyr
-	@make -f Makefile.zephyr	BOARD=$(BOARD) \
-					VARIANT=$(VARIANT) \
-					CB_STATS=$(CB_STATS) \
-					PRINT_FLOAT=$(PRINT_FLOAT) \
-					SNAPSHOT=$(SNAPSHOT) \
-					ZJS_FLAGS="$(ZJS_FLAGS)" \
-					O=$(OUT)/$(BOARD) \
-					rom_report
+	@make -f Makefile.zephyr $(MAKEFLAGS) rom_report
 
 # choose name of jerryscript library based on snapshot feature
 ifeq ($(SNAPSHOT), on)
@@ -235,31 +235,13 @@ endif
 
 .PHONY: flash
 flash:  analyze generate $(JERRYLIB) $(ARC)
-	@make -f Makefile.zephyr flash	BOARD=$(BOARD) \
-		VARIANT=$(VARIANT) \
-		CB_STATS=$(CB_STATS) \
-		PRINT_FLOAT=$(PRINT_FLOAT) \
-		SNAPSHOT=$(SNAPSHOT) \
-		BLE_ADDR=$(BLE_ADDR) \
-		ASHELL=$(ASHELL) \
-		O=$(OUT)/$(BOARD) \
-		NETWORK_BUILD=$(NET_BUILD)
+	@make -f Makefile.zephyr $(MAKEFLAGS) flash
 
 # Build for zephyr, default target
 .PHONY: zephyr
 zephyr: analyze generate $(JERRYLIB) $(OUT)/$(BOARD)/libjerry-ext.a $(ARC)
-	@make -f Makefile.zephyr -j4 \
-					BOARD=$(BOARD) \
-					VARIANT=$(VARIANT) \
-					VERBOSITY=$(VERBOSITY) \
-					CB_STATS=$(CB_STATS) \
-					PRINT_FLOAT=$(PRINT_FLOAT) \
-					SNAPSHOT=$(SNAPSHOT) \
-					BLE_ADDR=$(BLE_ADDR) \
-					ASHELL=$(ASHELL) \
-					NETWORK_BUILD=$(NET_BUILD) \
-					O=$(OUT)/$(BOARD) \
-					ZJS_FLAGS="$(ZJS_FLAGS)"
+	@make -f Makefile.zephyr -j4 $(MAKEFLAGS)
+
 ifeq ($(BOARD), arduino_101)
 	@echo
 	@echo -n Creating dfu images...

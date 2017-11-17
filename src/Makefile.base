@@ -3,7 +3,8 @@
 JERRY_BASE ?= $(ZJS_BASE)/deps/jerryscript
 OCF_ROOT ?= deps/iotivity-constrained
 
-ccflags-y += -Wall -Werror $(ZJS_FLAGS)
+# strip off outer quotes from ZJS_FLAGS
+ccflags-y += -Wall -Werror $(patsubst "%",%,$(ZJS_FLAGS))
 
 # TODO: iotivity-constrained gives some warnings and until we figure out how to
 #       disable them just for iotivity-constrained, we need to turn them back
