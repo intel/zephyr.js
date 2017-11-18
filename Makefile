@@ -237,6 +237,10 @@ endif
 flash:  analyze generate $(JERRYLIB) $(ARC)
 	@make -f Makefile.zephyr $(MAKEFLAGS) flash
 
+.PHONY: debug
+debug:  analyze generate $(JERRYLIB) $(ARC)
+	@make -f Makefile.zephyr $(MAKEFLAGS) debug
+
 # Build for zephyr, default target
 .PHONY: zephyr
 zephyr: analyze generate $(JERRYLIB) $(OUT)/$(BOARD)/libjerry-ext.a $(ARC)
@@ -476,13 +480,13 @@ endif
 endif
 
 # Run debug server over JTAG
-.PHONY: debug
-debug:
+.PHONY: adebug
+adebug:
 	make -f Makefile.zephyr BOARD=arduino_101 ARCH=x86 O=$(OUT)/arduino_101 debugserver
 
 # Run gdb to connect to debug server for x86
-.PHONY: gdb
-gdb:
+.PHONY: agdb
+agdb:
 	$$ZEPHYR_SDK_INSTALL_DIR/sysroots/x86_64-pokysdk-linux/usr/bin/i586-zephyr-elfiamcu/i586-zephyr-elfiamcu-gdb $(OUT)/arduino_101/zephyr.elf -ex "target remote :3333"
 
 # Run gdb to connect to debug server for ARC
@@ -505,9 +509,11 @@ help:
 	@echo "    zephyr:     Build Zephyr for the given BOARD (A101 is default)"
 	@echo "    ide         Build Zephyr in development mode for the IDE"
 	@echo "    ashell      Build Zephyr in development mode for command line"
+	@echo "    debug:      Run Zephyr debug target"
+	@echo "    flash:      Run Zephyr flash target"
 	@echo "    dfu:        Flash x86 and arc images to A101 with dfu-util"
-	@echo "    debug:      Run debug server using JTAG"
-	@echo "    gdb:        Run gdb to connect to debug server for x86"
+	@echo "    adebug:     Run debug server for A101 using JTAG"
+	@echo "    agdb:       Run gdb to connect to A101 debug server"
 	@echo "    qemu:       Run QEMU after building"
 	@echo "    clean:      Clean stale build objects for given BOARD"
 	@echo "    pristine:   Completely remove all generated files"
