@@ -37,7 +37,7 @@ CORE_SRC +=	src/zjs_a101_pins.c \
 CORE_OBJ =	$(CORE_SRC:%.c=%.o)
 
 LINUX_INCLUDES += 	-Isrc/ \
-			-I$(O)/include \
+			-I$(O)/../include \
 			-I$(JERRY_BASE)/jerry-core/include \
 			-I$(JERRY_BASE)/jerry-ext/include \
 			-I$(JERRY_BASE)/jerry-core/jrt
