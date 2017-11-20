@@ -1,28 +1,67 @@
 // Copyright (c) 2016-2017, Intel Corporation.
 
-console.log("Wire IO2 to IO3");
-
 var assert = require("Assert.js");
-
 var pwm = require("pwm");
 var gpio = require("gpio");
-var pinA, pinB, msTimer, cycleTimer;
+var board = require("board");
 
-pinB = gpio.open({pin: "IO2", mode: 'in'});
+if (board.name === "arduino_101") {
+    console.log("Wire IO2 to IO3");
 
-// PWMPins open
-pinA = pwm.open('IO3');
-assert(pinA !== null && typeof pinA === "object",
-      "open: defined pin and default argument");
+    var pinNames = [
+        [1, "number"],
+        ["1", "string"],
+        ["PWM1", "string"],
+        ["IO5", "string"],
+        ["PWM_0.1", "string"]
+    ];
+    for (var i = 0; i < pinNames.length; i++) {
+        var pinOpen = pwm.open(pinNames[i][0]);
+
+        assert(pinOpen !== null && typeof pinOpen === "object",
+              "open: defined pin with " + pinNames[i][1] +
+               " '" + pinNames[i][0] + "'");
+    }
+
+    var pinA = pwm.open({ pin: "IO3" });
+    assert(pinA !== null && typeof pinA === "object",
+          "open: defined pin with 'pin' property and default argument");
+
+    var pinB = gpio.open({pin: "IO2", mode: "in"});
+} else {
+    console.log("Wire D2 to D3");
+
+    var pinNames = [
+        [1, "number"],
+        [11, "number"],
+        ["PWM_0.1", "string"],
+        ["D5", "string"],
+        ["A4", "string"]
+    ];
+    for (var i = 0; i < pinNames.length; i++) {
+        var pinOpen = pwm.open(pinNames[i][0]);
+
+        assert(pinOpen !== null && typeof pinOpen === "object",
+              "open: defined pin with " + pinNames[i][1] +
+               " '" + pinNames[i][0] + "'");
+    }
+
+    var pinA = pwm.open({ pin: "D3" });
+    assert(pinA !== null && typeof pinA === "object",
+          "open: defined pin with 'pin' property and default argument");
+
+    var pinB = gpio.open({pin: "D2", mode: "in"});
+}
 
 assert.throws(function () {
-    pinA = pwm.open({channel: 1024});
+    pinOpen = pwm.open({pin: 1024});
 }, "open: undefined pin");
 
 // set Period and PulseWidth with ms
 // duty cycle: 33%
 var msTrue = 0;
 var msFalse = 0;
+var msTimer, cycleTimer;
 
 // set pulse width greater than period
 assert.throws(function() {
@@ -65,8 +104,15 @@ setTimeout(function () {
     var periodCount = 0;
     var Flag = 0;
     var oldFlag = 0;
-    pinA = pwm.open({ pin: 'IO3', reversePolarity: true });
-    assert(pinA !== null && typeof pinA === "object", "open: reverse polarity");
+    if (board.name === "arduino_101") {
+        pinA = pwm.open({ pin: "IO3", reversePolarity: true });
+        assert(pinA !== null && typeof pinA === "object",
+               "open: reverse polarity");
+    } else {
+        pinA = pwm.open({ pin: "D3", reversePolarity: true });
+        assert(pinA !== null && typeof pinA === "object",
+               "open: reverse polarity");
+    }
 
     pinA.setCycles(10000000, 3000000);
 
