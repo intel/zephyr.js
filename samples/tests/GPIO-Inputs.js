@@ -21,7 +21,7 @@ else if (board.name == 'frdm_k64f') {
 }
 else if (board.name == 'nucleo_f411re') {
     // expected results: pins D2-D15 all work as inputs, but only
-    //   D3,5,6 and D11-15 will give rising edge interrupts
+    //   D3,5,6 and D11-15 will give rising edge interrupts (not sure why)
     // NOTE: D0 (GPIOA.3) must be left out or it will corrupt serial output;
     //   D1 (GPIOA.2) must be left out or it will hang on pin configure
     testpins = ['GPIOA.10', 'GPIOB.3', 'GPIOB.5', 'GPIOB.4', 'GPIOB.10',
@@ -30,10 +30,10 @@ else if (board.name == 'nucleo_f411re') {
                 'GPIOB.13'];
 }
 
-var debounce = false;
-
+// open all pins for input and sign up for rising edge events
 var pincount = testpins.length;
 var gpios = [];
+var debounce = false;
 for (var i = 0; i < pincount; i++) {
     try {
         gpios[i] = gpio.open({pin: testpins[i], mode: 'in', edge: 'rising',
@@ -59,3 +59,20 @@ for (var i = 0; i < pincount; i++) {
 function resetDebounce() {
     debounce = false;
 }
+
+// read initial states
+var last = [];
+for (var i = 0; i < pincount; i++) {
+    last[i] = gpios[i].read();
+}
+
+// check for changes to pin state; this catches pins where interrupts don't work
+setInterval(function() {
+    for (var i = 0; i < pincount; i++) {
+        var val = gpios[i].read();
+        if (val != last[i]) {
+            console.log('Pin ' + testpins[i] + ' changed to ' + val);
+            last[i] = val;
+        }
+    }
+}, 250);
