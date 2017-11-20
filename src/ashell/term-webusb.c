@@ -98,7 +98,7 @@ static const u8_t webusb_origin_url[] = {
     0x1F,  // Length
     0x03,  // URL descriptor
     0x01,  // Scheme https://
-    '0', '1', 'o', 'r', 'g', '.', 'g', 'i', 't', 'h', 'u', 'b', '.',
+    'i', 'n', 't', 'e', 'l', '.', 'g', 'i', 't', 'h', 'u', 'b', '.',
     'i', 'o', '/', 'z', 'e', 'p', 'h', 'y', 'r', 'j', 's', '-', 'i',
     'd', 'e'
 };
