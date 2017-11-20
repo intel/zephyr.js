@@ -833,4 +833,4 @@ configure the heap size available to the ZJS API.
 - `tests/` - JavaScript unit tests (incomplete).
 
 
-[Web IDE]: https://01org.github.io/zephyrjs-ide
+[Web IDE]: https://intel.github.io/zephyrjs-ide
