@@ -2,11 +2,11 @@
 
 // Test Arduino101Pins API
 
-var pins = require("arduino101_pins");
-var gpio = require("gpio");
-var pwm = require("pwm");
-var aio = require("aio");
-var assert = require("Assert.js");
+var pins = require('arduino101_pins');
+var gpio = require('gpio');
+var pwm = require('pwm');
+var aio = require('aio');
+var assert = require('Assert.js');
 
 // Check pins defined and typeof Number
 function checkDefined(name) {
