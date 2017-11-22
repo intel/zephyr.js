@@ -232,6 +232,9 @@ static ZJS_DECL_FUNC(zjs_gpio_open)
         return zjs_error("pin not found");
     }
     DEVICE gpiodev = device_get_binding(devname);
+    if (!gpiodev) {
+        return zjs_error("device not found");
+    }
 
     // ignore mapping for now as we can do it automatically
 
