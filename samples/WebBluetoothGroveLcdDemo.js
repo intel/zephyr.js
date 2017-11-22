@@ -189,28 +189,29 @@ ble.on('advertisingStart', function(error) {
     console.log("Advertising as Physical Web device");
 });
 
+var lastTemp = 0;
+var valueChangedCB = function(data) {
+    var voltage = (data / 4096.0) * 3.3;
+    var celsius = (voltage - 0.5) * 100 + 0.5;
+    celsius = celsius | 0;
+
+    if (celsius !== lastTemp) {
+        lastTemp = celsius;
+        console.log("Temperature change: " + celsius + "C");
+        TemperatureCharacteristic.valueChange(celsius);
+    }
+};
+
 ble.on('accept', function(clientAddress) {
     console.log("Client connected: " + clientAddress);
 
-    var lastTemp = 0;
-
-    tmp36.on("change", function(data) {
-        var voltage = (data / 4096.0) * 3.3;
-        var celsius = (voltage - 0.5) * 100 + 0.5;
-        celsius = celsius | 0;
-
-        if (celsius !== lastTemp) {
-            lastTemp = celsius;
-            console.log("Temperature change: " + celsius + "C");
-            TemperatureCharacteristic.valueChange(celsius);
-        }
-    });
+    tmp36.on("change", valueChangedCB);
 });
 
 ble.on('disconnect', function(clientAddress) {
     console.log("Client disconnected: " + clientAddress);
 
-    tmp36.on("change", null);
+    tmp36.removeListener("change", valueChangedCB);
 });
 
 console.log("WebBluetooth Demo with Grove LCD...");
