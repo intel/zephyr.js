@@ -105,7 +105,7 @@ OCF_ROOT ?= deps/iotivity-constrained
 JS ?= samples/HelloWorld.js
 VARIANT ?= release
 DEVICE_NAME ?= "ZJS Device"
-BLE_ADDR ?= "none"
+BLE_ADDR ?= none
 FUNC_NAME ?= off
 # JerryScript options
 JERRY_BASE ?= $(ZJS_BASE)/deps/jerryscript
