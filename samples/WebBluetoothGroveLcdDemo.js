@@ -64,7 +64,7 @@ var TemperatureCharacteristic = new ble.Characteristic({
 TemperatureCharacteristic._lastValue = undefined;
 TemperatureCharacteristic._onChange = null;
 
-var tmp36 = aio.open({ device: 0, pin: pins.A0 });
+var tmp36 = aio.open({ pin: pins.A0 });
 
 TemperatureCharacteristic.onReadRequest = function(offset, callback) {
     if (!this._lastValue) {
@@ -186,14 +186,7 @@ ble.on('advertisingStart', function(error) {
         })
     ]);
 
-    console.log("Advertising as Physical Web device");
-});
-
-ble.on('accept', function(clientAddress) {
-    console.log("Client connected: " + clientAddress);
-
     var lastTemp = 0;
-
     tmp36.on("change", function(data) {
         var voltage = (data / 4096.0) * 3.3;
         var celsius = (voltage - 0.5) * 100 + 0.5;
@@ -205,12 +198,16 @@ ble.on('accept', function(clientAddress) {
             TemperatureCharacteristic.valueChange(celsius);
         }
     });
+
+    console.log("Advertising as Physical Web device");
+});
+
+ble.on('accept', function(clientAddress) {
+    console.log("Client connected: " + clientAddress);
 });
 
 ble.on('disconnect', function(clientAddress) {
     console.log("Client disconnected: " + clientAddress);
-
-    tmp36.on("change", null);
 });
 
 console.log("WebBluetooth Demo with Grove LCD...");
