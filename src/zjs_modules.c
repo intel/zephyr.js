@@ -41,23 +41,25 @@ struct routine_map svc_routine_map[NUM_SERVICE_ROUTINES];
 ******************************************************************/
 #ifndef ZJS_LINUX_BUILD
 #ifdef ZJS_ASHELL
+
 // Eval the JavaScript, and return the module.
 static bool javascript_eval_code(const char *source_buffer, ssize_t size, jerry_value_t *ret_val)
 {
     (*ret_val) = jerry_eval((jerry_char_t *)source_buffer, size, false);
     if (jerry_value_has_error_flag(*ret_val)) {
-        ERR_PRINT("[ERR] failed to evaluate JS\n");
+        ERR_PRINT("failed to evaluate JS\n");
         return false;
     }
     return true;
 }
 #endif
+
 // Find the module on the filestystem
-static bool load_js_module_fs (const jerry_value_t module_name, jerry_value_t *result)
+static bool load_js_module_fs(const jerry_value_t module_name, jerry_value_t *result)
 {
     // Currently searching the filesystem is only supported on ashell
-    #ifdef ZJS_ASHELL
-    jerry_size_t module_size = jerry_get_utf8_string_size (module_name) + 1;
+#ifdef ZJS_ASHELL
+    jerry_size_t module_size = jerry_get_utf8_string_size(module_name) + 1;
     char module[module_size];
     zjs_copy_jstring(module_name, module, &module_size);
     ssize_t file_size = 0;
@@ -72,26 +74,26 @@ static bool load_js_module_fs (const jerry_value_t module_name, jerry_value_t *r
     bool ret = javascript_eval_code(req_file_buffer, file_size, result);
     zjs_free(req_file_buffer);
     return ret;
-    #else
+#else   // ZJS_ASHELL
     return false;
-    #endif // ZJS_ASHELL
+#endif  // ZJS_ASHELL
 
 }
-#else // ZJS_LINUX_BUILD
+#else   // ZJS_LINUX_BUILD
 /****************************************
 *   Linux JavaScript module resolver
 *****************************************/
 // Find the module on the filestystem
-static bool load_js_module_fs (const jerry_value_t module_name, jerry_value_t *result)
+static bool load_js_module_fs(const jerry_value_t module_name, jerry_value_t *result)
 {
     // Linux can pass in the script at runtime, so we have to read in/parse any
     // JS modules now rather than at compile time
-    #ifdef ZJS_SNAPSHOT_BUILD
+#ifdef ZJS_SNAPSHOT_BUILD
     DBG_PRINT("Parser disabled, can't check FS for module\n");
     return false;
-    #endif
+#endif  //ZJS_SNAPSHOT_BUILD
 
-    jerry_size_t module_size = jerry_get_utf8_string_size (module_name) + 1;
+    jerry_size_t module_size = jerry_get_utf8_string_size(module_name) + 1;
     char module[module_size];
     zjs_copy_jstring(module_name, module, &module_size);
 
@@ -118,12 +120,12 @@ static bool load_js_module_fs (const jerry_value_t module_name, jerry_value_t *r
     zjs_free_script(str);
     return ret;
 }
-#endif // !ZJS_LINUX_BUILD
+#endif  // !ZJS_LINUX_BUILD
 
 // Try to find the module in the main JS file
-static bool load_js_module_obj (const jerry_value_t module_name, jerry_value_t *result)
+static bool load_js_module_obj(const jerry_value_t module_name, jerry_value_t *result)
 {
-    jerry_size_t module_size = jerry_get_utf8_string_size (module_name) + 1;
+    jerry_size_t module_size = jerry_get_utf8_string_size(module_name) + 1;
     char module[module_size];
 
     // Get the module name
@@ -186,12 +188,12 @@ static ZJS_DECL_FUNC(native_require_handler)
     ZJS_VALIDATE_ARGS(Z_STRING);
 
     // Get the module name
-    jerry_size_t module_size = jerry_get_utf8_string_size (argv[0]) + 1;
+    jerry_size_t module_size = jerry_get_utf8_string_size(argv[0]) + 1;
     char module[module_size];
     zjs_copy_jstring(argv[0], module, &module_size);
 
     // Try each of the resolvers to see if we can find the requested module
-    jerry_value_t result = jerryx_module_resolve (argv[0], resolvers, 3);
+    jerry_value_t result = jerryx_module_resolve(argv[0], resolvers, 3);
     if (jerry_value_has_error_flag(result)) {
         ERR_PRINT("Couldn't load module %s\n", module);
     }

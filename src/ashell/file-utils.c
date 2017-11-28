@@ -27,6 +27,8 @@
 #include "file-utils.h"
 #include "../zjs_util.h"
 
+#define FILE_ERR ERR_PRINT("Read file failed\n")
+
 int fs_exist(const char *path)
 {
     int res;
@@ -177,18 +179,20 @@ char *read_file_alloc(const char *file_name, ssize_t *size)
     fs_file_t *fp = fs_open_alloc(file_name, "r");
 
     if (fp == NULL)
-        return 0;
+        return NULL;
 
     *size = fs_size(fp);
     if (*size == 0) {
-        ERR_PRINT("[ERR] Empty file (%s)\n", file_name);
+        DBG_PRINT("Empty file (%s)\n", file_name);
+        FILE_ERR;
         fs_close_alloc(fp);
         return NULL;
     }
 
     file_buf = (char *)zjs_malloc(*size);
     if (file_buf == NULL) {
-        ERR_PRINT("[ERR] Not enough memory for (%s)\n", file_name);
+        DBG_PRINT("Not enough memory for (%s)\n", file_name);
+        FILE_ERR;
         fs_close_alloc(fp);
         return NULL;
     }
@@ -196,7 +200,8 @@ char *read_file_alloc(const char *file_name, ssize_t *size)
     ssize_t brw = fs_read(fp, file_buf, *size);
 
     if (brw != *size) {
-        ERR_PRINT("[ERR] Not enough memory for (%s)\n", file_name);
+        DBG_PRINT("Read failed for (%s)\n", file_name);
+        FILE_ERR;
         fs_close_alloc(fp);
         zjs_free(file_buf);
         return NULL;

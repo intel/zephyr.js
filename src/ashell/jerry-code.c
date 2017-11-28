@@ -32,74 +32,12 @@
 
 static jerry_value_t parsed_code = 0;
 
-static void javascript_print_error(jerry_value_t error_value)
-{
-    if (!jerry_value_has_error_flag(error_value))
-        return;
-
-    jerry_value_clear_error_flag(&error_value);
-    ZVAL err_str_val = jerry_value_to_string(error_value);
-
-    jerry_size_t size = 0;
-    char *msg = zjs_alloc_from_jstring(err_str_val, &size);
-    const char *err_str = msg;
-    if (!msg) {
-        err_str = "[Error message too long]";
-    }
-
-    jerry_port_log(JERRY_LOG_LEVEL_ERROR, "%s\n", err_str);
-    zjs_free(msg);
-}
-
-static void javascript_print_value(const jerry_value_t value)
-{
-    if (jerry_value_is_undefined(value)) {
-        jerry_port_log(JERRY_LOG_LEVEL_TRACE, "undefined");
-    } else if (jerry_value_is_null(value)) {
-        jerry_port_log(JERRY_LOG_LEVEL_TRACE, "null");
-    } else if (jerry_value_is_boolean(value)) {
-        if (jerry_get_boolean_value(value)) {
-            jerry_port_log(JERRY_LOG_LEVEL_TRACE, "true");
-        } else {
-            jerry_port_log(JERRY_LOG_LEVEL_TRACE, "false");
-        }
-    }
-    /* Float value */
-    else if (jerry_value_is_number(value)) {
-        double val = jerry_get_number_value(value);
-        // %lf prints an empty value :?
-        jerry_port_log(JERRY_LOG_LEVEL_TRACE, "Number [%d]\n", (int)val);
-    }
-    /* String value */
-    else if (jerry_value_is_string(value)) {
-        /* Determining required buffer size */
-        jerry_size_t size = 0;
-        char *str = zjs_alloc_from_jstring(value, &size);
-        if (str) {
-            jerry_port_log(JERRY_LOG_LEVEL_TRACE, "%s", str);
-            zjs_free(str);
-        } else {
-            jerry_port_log(JERRY_LOG_LEVEL_TRACE, "[String too long]");
-        }
-    }
-    /* Object reference */
-    else if (jerry_value_is_object(value)) {
-        jerry_port_log(JERRY_LOG_LEVEL_TRACE, "[JS object]");
-    }
-
-    jerry_port_log(JERRY_LOG_LEVEL_TRACE, "\n");
-}
-
 void javascript_eval_code(const char *source_buffer, ssize_t size)
 {
     ZVAL ret_val = jerry_eval((jerry_char_t *)source_buffer, size, false);
-
     if (jerry_value_has_error_flag(ret_val)) {
         printf("[ERR] failed to evaluate JS\n");
-        javascript_print_error(ret_val);
-    } else {
-        if (!jerry_value_is_undefined(ret_val))
-            javascript_print_value(ret_val);
+        zjs_print_error_message(ret_val, ZJS_UNDEFINED);
     }
 }
 
