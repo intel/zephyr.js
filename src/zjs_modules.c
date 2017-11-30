@@ -74,9 +74,9 @@ static bool load_js_module_fs(const jerry_value_t module_name, jerry_value_t *re
     bool ret = javascript_eval_code(req_file_buffer, file_size, result);
     zjs_free(req_file_buffer);
     return ret;
-#else   // ZJS_ASHELL
+#else
     return false;
-#endif  // ZJS_ASHELL
+#endif
 
 }
 #else   // ZJS_LINUX_BUILD
@@ -91,7 +91,7 @@ static bool load_js_module_fs(const jerry_value_t module_name, jerry_value_t *re
 #ifdef ZJS_SNAPSHOT_BUILD
     DBG_PRINT("Parser disabled, can't check FS for module\n");
     return false;
-#endif  //ZJS_SNAPSHOT_BUILD
+#endif
 
     jerry_size_t module_size = jerry_get_utf8_string_size(module_name) + 1;
     char module[module_size];
