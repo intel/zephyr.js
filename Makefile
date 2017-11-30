@@ -328,7 +328,6 @@ analyze: $(JS)
 		O=$(OUT)/$(BOARD) \
 		NETWORK_BUILD=$(NET_BUILD) \
 		ZJS_FLAGS="$(ZJS_FLAGS)")
-	$(info MAKEFLAGS = $(MAKEFLAGS))
 
 # Update dependency repos
 .PHONY: update
