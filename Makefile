@@ -430,7 +430,7 @@ qemu: zephyr
 		CB_STATS=$(CB_STATS) \
 		SNAPSHOT=$(SNAPSHOT) \
 		NETWORK_BUILD=$(NET_BUILD) \
-		O=$(OUT) \
+		O=$(OUT)/qemu_x86 \
 		ZJS_FLAGS="$(ZJS_FLAGS)"
 
 ARC_RESTRICT="zjs_ipm_arc.json,\
