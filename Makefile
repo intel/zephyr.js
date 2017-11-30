@@ -204,20 +204,6 @@ quickcheck:
 A101BIN = $(OUT)/arduino_101/zephyr.bin
 A101SSBIN = $(OUT)/arduino_101_sss/zephyr.bin
 
-MAKEFLAGS = \
-	BOARD=$(BOARD) \
-	VARIANT=$(VARIANT) \
-	VERBOSITY=$(VERBOSITY) \
-	CB_STATS=$(CB_STATS) \
-	PRINT_FLOAT=$(PRINT_FLOAT) \
-	SNAPSHOT=$(SNAPSHOT) \
-	BLE_ADDR=$(BLE_ADDR) \
-	ASHELL=$(ASHELL) \
-	O=$(OUT)/$(BOARD) \
-	NETWORK_BUILD=$(NET_BUILD) \
-	ZJS_FLAGS="$(ZJS_FLAGS)"
-$(info MAKEFLAGS = $(MAKEFLAGS))
-
 .PHONY: ram_report
 ram_report: zephyr
 	@make -f Makefile.zephyr $(MAKEFLAGS) ram_report
@@ -329,6 +315,20 @@ analyze: $(JS)
 		rm -f $(OUT)/$(BOARD)/libjerry-ext*.a; \
 	fi
 
+	$(eval NET_BUILD=$(shell grep -q -E "BUILD_MODULE_OCF|BUILD_MODULE_DGRAM|BUILD_MODULE_NET|BUILD_MODULE_WS" src/Makefile && echo y))
+	$(eval MAKEFLAGS = \
+		BOARD=$(BOARD) \
+		VARIANT=$(VARIANT) \
+		VERBOSITY=$(VERBOSITY) \
+		CB_STATS=$(CB_STATS) \
+		PRINT_FLOAT=$(PRINT_FLOAT) \
+		SNAPSHOT=$(SNAPSHOT) \
+		BLE_ADDR=$(BLE_ADDR) \
+		ASHELL=$(ASHELL) \
+		O=$(OUT)/$(BOARD) \
+		NETWORK_BUILD=$(NET_BUILD) \
+		ZJS_FLAGS="$(ZJS_FLAGS)")
+
 # Update dependency repos
 .PHONY: update
 update:
@@ -422,8 +422,6 @@ else
 	@./scripts/convert.sh $(JS_TMP) $(OUT)/include/zjs_script_gen.h
 endif
 endif
-
-NET_BUILD=$(shell grep -q -E "BUILD_MODULE_OCF|BUILD_MODULE_DGRAM|BUILD_MODULE_NET|BUILD_MODULE_WS" src/Makefile && echo y)
 
 # Run QEMU target
 .PHONY: qemu
