@@ -156,11 +156,11 @@ static const pin_range_t analog_pins = {21, 26};
 #endif
 static const extra_pin_t extra_pins[] = {
 #ifdef BUILD_MODULE_GPIO
-    {"LEDR", 22},
-    {"LEDG", 23},
-    {"LEDB", 24},
-    { "SW2", 25},
-    { "SW3", 26}
+    {"LEDR", 16},
+    {"LEDG", 17},
+    {"LEDB", 18},
+    { "SW2", 19},
+    { "SW3", 20}
 #endif
 };
 
