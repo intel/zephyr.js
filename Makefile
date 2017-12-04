@@ -268,7 +268,6 @@ analyze: $(JS)
 			echo "CONFIG_BT_DEBUG_LOG=y" >> prj.conf; \
 		fi \
 	fi
-
 	@if grep -q BUILD_MODULE_OCF $(OUT)/$(BOARD)/generated.cmake; then \
 		echo "CONFIG_BT_DEVICE_NAME=\"$(DEVICE_NAME)\"" >> prj.conf; \
 	fi

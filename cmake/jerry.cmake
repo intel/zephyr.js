@@ -12,13 +12,13 @@ set(jerry_cflags " \
  -Wno-undef"
 )
 
-zephyr_get_include_directories_as_string(includes)
-zephyr_get_system_include_directories_as_string(system_includes)
-zephyr_get_compile_definitions_as_string(definitions)
-zephyr_get_compile_options_as_string(options)
+zephyr_get_include_directories_for_lang_as_string(C includes)
+zephyr_get_system_include_directories_for_lang_as_string(C system_includes)
+zephyr_get_compile_definitions_for_lang_as_string(C definitions)
+zephyr_get_compile_options_for_lang_as_string(C options)
 
 set(external_project_cflags
-  ${includes}${definitions}${options}${system_includes}${jerry_cflags}
+  "${includes} ${definitions} ${options} ${system_includes}${jerry_cflags}"
   )
 
 if("${SNAPSHOT}" STREQUAL "on")
