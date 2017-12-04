@@ -32,7 +32,10 @@ if(ZJS_FLAGS)
   add_definitions(${ZJS_FLAGS_LIST})
 endif()
 
-target_compile_options(app PRIVATE -Wall -Wno-implicit-function-declaration)
+target_compile_options(app PRIVATE
+  -Wall
+  -Wno-implicit-function-declaration
+  )
 
 target_include_directories(app PRIVATE ./src)
 target_include_directories(app PRIVATE ${ZEPHYR_BASE}/drivers)
