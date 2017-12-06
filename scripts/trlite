@@ -243,9 +243,7 @@ function try_test()
         echo "******************************************************************************"
         echo Error: Test incomplete in $LABEL subtest \#$TESTNUM with code $CODE \(rerun with: trlite $VMNUM $TESTNUM\)!
         echo "******************************************************************************"
-        # FIXME: Should exit here but we'll soft fail until we fix things
-        # The callbacks, event, gpio, promise, and timers tests all fail ATM
-        #   and were broken by PR #1542 (commit a36b2c9)
+        exit 1
     else
         echo Success: $LABEL
     fi
