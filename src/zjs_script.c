@@ -56,13 +56,4 @@ uint8_t zjs_read_script(char *name, char **script, uint32_t *length)
 
     return 0;
 }
-
-void zjs_free_script(char *script)
-{
-    if (script) {
-        free(script);
-    }
-    return;
-}
-
 #endif

@@ -92,33 +92,30 @@ static bool load_js_module_fs(const jerry_value_t module_name, jerry_value_t *re
     DBG_PRINT("Parser disabled, can't check FS for module\n");
     return false;
 #endif
-
     jerry_size_t module_size = jerry_get_utf8_string_size(module_name) + 1;
     char module[module_size];
     zjs_copy_jstring(module_name, module, &module_size);
-
     jerry_size_t size = MAX_MODULE_STR_LEN;
     char full_path[size + 9];
-    char *str;
+    char *str = NULL;
     u32_t len;
     bool ret = false;
     sprintf(full_path, "modules/%s", module);
     full_path[size + 8] = '\0';
 
     if (zjs_read_script(full_path, &str, &len)) {
-        ret = false;
+        return false;
     }
 
-    ZVAL res = jerry_eval((jerry_char_t *)str, len, false);
-    if (jerry_value_has_error_flag(res)) {
+    (*result) = jerry_eval((jerry_char_t *)str, len, false);
+    if (jerry_value_has_error_flag(*result)) {
         ERR_PRINT("failed to evaluate JS\n");
         ret = false;
     }
     else {
         ret = true;
     }
-
-    zjs_free_script(str);
+    zjs_free(str);
     return ret;
 }
 #endif  // !ZJS_LINUX_BUILD
@@ -190,46 +187,21 @@ static ZJS_DECL_FUNC(native_require_handler)
 
     // Get the module name
     jerry_size_t module_size = jerry_get_utf8_string_size(argv[0]) + 1;
+    if (module_size > MAX_MODULE_STR_LEN) {
+        return RANGE_ERROR("module name too long");
+    }
+
     char module[module_size];
     zjs_copy_jstring(argv[0], module, &module_size);
 
     // Try each of the resolvers to see if we can find the requested module
     jerry_value_t result = jerryx_module_resolve(argv[0], resolvers, 3);
     if (jerry_value_has_error_flag(result)) {
-        ERR_PRINT("Couldn't load module %s\n", module);
+        //ERR_PRINT("Couldn't load module %s\n", module);
+        return NOTSUPPORTED_ERROR("Module not found");
     }
     else {
         DBG_PRINT("Module %s loaded\n", module);
-#ifdef ZJS_LINUX_BUILD
-        // Linux requires JavaScript module actually be returned for it to work
-        ZVAL global_obj = jerry_get_global_object();
-        ZVAL modules_obj = zjs_get_property(global_obj, "module");
-
-        if (!jerry_value_is_object(modules_obj)) {
-            return SYSTEM_ERROR("modules object not found");
-        }
-
-        ZVAL exports_obj = zjs_get_property(modules_obj, "exports");
-        if (!jerry_value_is_object(exports_obj)) {
-            return SYSTEM_ERROR("exports object not found");
-        }
-
-        char mod_trim[module_size];
-        strncpy(mod_trim, module, module_size);
-        if (module_size > 3 && !strncmp(mod_trim + module_size - 3, ".js", 3)) {
-            // strip the ".js"
-            mod_trim[module_size - 3] = '\0';
-        }
-
-        ZVAL found_obj = zjs_get_property(exports_obj, mod_trim);
-        if (!jerry_value_is_object(found_obj)) {
-            DBG_PRINT("Native module found: '%s'", module);
-            return result;
-        }
-
-        DBG_PRINT("JavaScript module %s loaded\n", module);
-        return jerry_acquire_value(found_obj);
-#endif //ZJS_LINUX_BUILD
     }
     return result;
 }

@@ -46,7 +46,8 @@ int main(int argc, char *argv[])
                                                 snapshot_buf,
                                                 sizeof(snapshot_buf));
 
-    zjs_free_script(script);
+    if (script != NULL)
+        free(script);
 
     if (size == 0) {
         fprintf(stderr, "JerryScript: failed to parse JS and create snapshot\n");
