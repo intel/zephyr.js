@@ -672,7 +672,7 @@ need to install the GCC ARM Embedded cross compiler [here](https://developer.arm
 
 After you download it, set these environment variables:
 ```bash
-export GCCARMEMB_TOOLCHAIN_PATH="~/Downloads/gcc-arm-none-eabi-6-2017-q1-update/"
+export GCCARMEMB_TOOLCHAIN_PATH="/Users/<USERNAME>/Downloads/gcc-arm-none-eabi-6-2017-q1-update"
 export ZEPHYR_GCC_VARIANT=gccarmemb
 ```
 
