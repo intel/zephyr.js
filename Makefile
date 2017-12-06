@@ -351,13 +351,9 @@ cleanlocal:
 # Explicit clean
 .PHONY: clean
 clean: cleanlocal
-ifeq ($(BOARD), linux)
-	@make -f Makefile.linux O=$(OUT)/$(BOARD) clean
-else
 	@rm -rf $(JERRY_BASE)/build/$(BOARD)/;
 	@rm -rf $(OUT)/$(BOARD)/
 	@rm -f $(OUT)/jsgen.tmp
-endif
 
 .PHONY: pristine
 pristine: cleanlocal
@@ -454,7 +450,14 @@ arcgdb:
 .PHONY: linux
 # Linux command line target, script can be specified on the command line
 linux: generate
-	make -f Makefile.linux JS=$(JS) VARIANT=$(VARIANT) CB_STATS=$(CB_STATS) V=$(V) SNAPSHOT=$(SNAPSHOT) DEBUGGER=$(DEBUGGER) O=$(OUT)/linux
+	@cmake -B$(OUT)/linux \
+		-DBOARD=linux \
+		-DCB_STATS=$(CB_STATS) \
+		-DDEBUGGER=$(DEBUGGER) \
+		-DV=$(V) \
+		-DVARIANT=$(VARIANT) \
+		-H. && \
+	make -C $(OUT)/linux;
 
 .PHONY: help
 help:

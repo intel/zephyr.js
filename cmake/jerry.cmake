@@ -73,11 +73,9 @@ ExternalProject_Add(
   )
 
 add_library(jerry-core STATIC IMPORTED)
-set(JERRY_CORE_LIB ${JERRY_LIBDIR}/lib/libjerry-core.a)
 add_dependencies(jerry-core jerry_project)
-set_target_properties(jerry-core PROPERTIES IMPORTED_LOCATION ${JERRY_CORE_LIB})
+set_target_properties(jerry-core PROPERTIES IMPORTED_LOCATION ${JERRY_LIBDIR}/lib/libjerry-core.a)
 
 add_library(jerry-ext STATIC IMPORTED)
-set(JERRY_EXT_LIB ${JERRY_LIBDIR}/lib/libjerry-ext.a)
 add_dependencies(jerry-ext jerry_project)
-set_target_properties(jerry-ext PROPERTIES IMPORTED_LOCATION ${JERRY_EXT_LIB})
+set_target_properties(jerry-ext PROPERTIES IMPORTED_LOCATION ${JERRY_LIBDIR}/lib/libjerry-ext.a)
