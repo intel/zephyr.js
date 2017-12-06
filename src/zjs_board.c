@@ -39,6 +39,8 @@ typedef struct {
     pin_id_t to;
 } pin_remap_t;
 
+#if defined(BUILD_MODULE_GPIO) || defined(BUILD_MODULE_PWM) || defined(BUILD_MODULE_AIO)
+
 #if defined(CONFIG_BOARD_ARDUINO_101) || defined(ZJS_LINUX_BUILD)
 //
 // Arduino 101 board support
@@ -193,8 +195,6 @@ typedef struct {
     const char *prefix;
     const pin_range_t *range;
 } prefix_t;
-
-#if defined(BUILD_MODULE_GPIO) || defined(BUILD_MODULE_PWM) || defined(BUILD_MODULE_AIO)
 
 #ifndef BASIC_BOARD_SUPPORT
 static const prefix_t prefix_map[] = {
