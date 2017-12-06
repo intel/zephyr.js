@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, Intel Corporation.
+// Copyright (c) 2016-2018, Intel Corporation.
 
 // C includes
 #include <stdlib.h>
@@ -329,7 +329,6 @@ void zjs_unregister_service_routine(zjs_service_routine func) {
     for (int i = 0; i < num_routines; i++) {
         if (svc_routine_map[i].func == func) {
             svc_routine_map[i].handle = NULL;
-            zjs_free(&svc_routine_map[i].func);
             num_routines--;
             return;
         }
