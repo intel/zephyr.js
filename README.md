@@ -18,6 +18,8 @@ everything else.
 * [Other HW Platforms](#other-hw-platforms)
    + [nRF52 Platform](#nrf52-platform)
    + [FRDM-K64F Platform](#frdm-k64f-platform)
+   + [ST STM32F4DISCOVERY Platform](#st-stm32f4discovery-platform)
+   + [OLIMEX-STM32-E407 Platform](#olimex-stm32-e407-platform)
 * [Running the JS app on Linux or Mac](#running-the-js-app-on-linux-or-mac)
    + [Building and running on Linux](#building-and-running-on-linux)
    + [Building and running on MacOS](#building-and-running-on-macos)
@@ -440,6 +442,63 @@ cp outdir/frdm_k64f/zephyr.bin /media/<USERNAME>/MBED/
 
 Using the same procedure as above, once you hit Reset you should see
 "Hello World!" within a second on your serial console.
+
+### ST STM32F4DISCOVERY Platform
+
+See the
+[Zephyr Project Wiki](http://docs.zephyrproject.org/boards/arm/stm32f4_disco/doc/stm32f4_disco.html)
+for general information about running Zephyr OS on the STM32F4DISCOVERY.
+
+Building is the same as any other ZJS platform, just use `stm32f4_disco` as
+the BOARD name:
+
+```bash
+make BOARD=stm32f4_disco ide
+```
+
+You should now have a Zephyr binary in `outdir/stm32f4_disco/`. You can flash
+it to the STM32F4DISCOVERY board with the openocd:
+
+1. Connect the Mini USB cable from the device(CN1) to your PC.
+2. Connect a micro-USB cable from the device (CN5) to your PC.
+
+3. Flash the application using the following command:
+```bash
+make BOARD=stm32f4_disco flash
+```
+
+You should see the lights flashing on the STM32F4DISCOVERY board. When it stops you should
+see WebIDE url notification from Chrome.
+
+From here the device can be connected with WebIDE and upload JS code to the device.
+
+### OLIMEX-STM32-E407 Platform
+
+See the
+[Zephyr Project Wiki](http://docs.zephyrproject.org/boards/arm/olimex_stm32_e407/doc/olimex_stm32_e407.html)
+for general information about running Zephyr OS on the OLIMEX-STM32-E407.
+
+Building is the same as any other ZJS platform, just use `olimex_stm32_e407` as
+the BOARD name:
+
+```bash
+make BOARD=olimex_stm32_e407 ide
+```
+
+You should now have a Zephyr binary in `outdir/olimex_stm32_e407/`. You can flash
+it to the OLIMEX-STM32-E407 board with the openocd:
+
+1. Connect the ST-Link USB dongle to your host computer and to the JTAG port of the OLIMEX-STM32-E407 board.
+2. Connect the Mini USB cable to the device(OTG1 near LAN connector) to your PC.
+3. Flash the application using the following command:
+```bash
+make BOARD=olimex_stm32_e407 flash
+```
+
+You should see the lights flashing on the ST-Link USB dongle. When it stops you should see WebIDE
+url notification from Chrome.
+
+From here the device can be connected with WebIDE and upload JS code to the device.
 
 ## Running the JS app on Linux or Mac
 
