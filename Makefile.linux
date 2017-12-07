@@ -11,8 +11,7 @@ BUILD_DIR = $(O)/$(VARIANT)
 
 UNAME := $(shell uname)
 
-CORE_SRC +=	src/zjs_a101_pins.c \
-		src/zjs_board.c \
+CORE_SRC +=	src/zjs_board.c \
 		src/zjs_buffer.c \
 		src/zjs_callbacks.c \
 		src/zjs_common.c \

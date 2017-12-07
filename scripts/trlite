@@ -292,8 +292,7 @@ if [ "$RUN" == "all" -o "$RUN" == "1" ]; then
     # A101 build tests spanning all modules
     try_command "hello world" make $VERBOSE
 
-    MODULES=(aio arduino101_pins ble dgram events gpio grove_lcd i2c \
-             performance pwm uart)
+    MODULES=(aio ble dgram events gpio grove_lcd i2c performance pwm uart)
     SENSORS=(Accelerometer AmbientLightSensor Gyroscope Magnetometer TemperatureSensor)
     write_modules_test $TMPFILE $MODULES $SENSORS
 
@@ -327,8 +326,7 @@ if [ "$RUN" == "all" -o "$RUN" == "2" ]; then
     # k64f build tests
     try_command "k64f hello" make $VERBOSE BOARD=frdm_k64f
 
-    MODULES=(ble board dgram events fs gpio grove_lcd i2c k64f_pins performance
-             pwm uart)
+    MODULES=(ble board dgram events fs gpio grove_lcd i2c performance pwm uart)
     SENSORS=(Accelerometer)
     write_modules_test $TMPFILE $MODULES $SENSORS
 

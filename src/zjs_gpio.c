@@ -304,6 +304,9 @@ static ZJS_DECL_FUNC(zjs_gpio_open)
     jerry_set_prototype(pin_obj, gpio_pin_prototype);
 
     gpio_handle_t *handle = zjs_malloc(sizeof(gpio_handle_t));
+    if (!handle) {
+        return zjs_error("out of memory");
+    }
     memset(handle, 0, sizeof(gpio_handle_t));
     handle->pin = pin;
     // FIXME: this seems wrong, it can probably never be freed
