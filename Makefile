@@ -282,7 +282,7 @@ analyze: $(JS)
 		fi \
 	fi
 
-	$(eval NET_BUILD=$(shell grep -q -E "BUILD_MODULE_OCF|BUILD_MODULE_DGRAM|BUILD_MODULE_NET|BUILD_MODULE_WS" src/Makefile && echo y))
+	$(eval NET_BUILD=$(shell grep -q -E "BUILD_MODULE_OCF|BUILD_MODULE_DGRAM|BUILD_MODULE_NET|BUILD_MODULE_WS" $(OUT)/$(BOARD)/generated.cmake && echo y))
 	$(eval CMAKEFLAGS = \
 		-B$(OUT)/$(BOARD) \
 		-DASHELL=$(ASHELL) \
