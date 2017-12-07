@@ -1,7 +1,0 @@
-ccflags-y += ${PROJECTINCLUDE} \
-             -I$(ZEPHYR_BASE)/drivers \
-             -I$(src)/../../src \
-
-obj-y = main.o
-
-ccflags-y += -Wall -Werror
