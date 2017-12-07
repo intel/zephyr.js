@@ -130,7 +130,7 @@ int zjs_get_ms(void);
 // this is arbitrary but okay for now; added to avoid plain strlen below
 #define MAX_SCRIPT_SIZE 8192
 
-// board-specifc
+// board-specific
 #if defined(CONFIG_BOARD_ARDUINO_101) || defined(CONFIG_BOARD_ARDUINO_101_SSS)
 #define ADC_DEVICE_NAME "ADC_0"
 #define ADC_BUFFER_SIZE 2
@@ -147,9 +147,6 @@ int zjs_get_ms(void);
 #define TEMP_DEVICE_NAME BMI160_NAME
 #elif CONFIG_BOARD_FRDM_K64F
 #define ADC_BUFFER_SIZE 5
-#define AIO_MIN 12
-#define AIO_MAX 15
-#define AIO_LEN 4
 #define ACCEL_DEVICE_NAME CONFIG_FXOS8700_NAME
 #define MAGN_DEVICE_NAME CONFIG_FXOS8700_NAME
 #endif

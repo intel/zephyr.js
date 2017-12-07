@@ -2,7 +2,6 @@
     "module": "ashell",
     "depends": [
         "aio",
-        "arduino101_pins",
         "ble",
         "common",
         "console",

@@ -9,6 +9,7 @@
 #include <misc/util.h>
 
 // ZJS includes
+#include "zjs_board.h"
 #include "zjs_callbacks.h"
 #include "zjs_event.h"
 #include "zjs_ipm.h"
@@ -71,16 +72,6 @@ static bool zjs_aio_ipm_send_sync(zjs_ipm_message_t *send,
     }
 
     return true;
-}
-
-static aio_handle_t *aio_alloc_handle()
-{
-    size_t size = sizeof(aio_handle_t);
-    aio_handle_t *handle = zjs_malloc(size);
-    if (handle) {
-        memset(handle, 0, size);
-    }
-    return handle;
 }
 
 static void aio_free_cb(void *ptr)
@@ -170,18 +161,12 @@ static jerry_value_t aio_pin_read(const jerry_value_t function_obj,
                                   const jerry_length_t argc,
                                   bool async)
 {
-    u32_t pin;
-    zjs_obj_get_uint32(this, "pin", &pin);
-
-    if (pin < AIO_MIN || pin > AIO_MAX) {
-        DBG_PRINT("PIN: #%u\n", pin);
-        return zjs_error("pin out of range");
-    }
+    GET_AIO_HANDLE(this, handle);
 
     // send IPM message to the ARC side
     zjs_ipm_message_t send;
     send.type = TYPE_AIO_PIN_READ;
-    send.data.aio.pin = pin;
+    send.data.aio.pin = handle->pin;
 
     jerry_value_t result = zjs_aio_call_remote_function(&send);
 
@@ -232,18 +217,29 @@ static ZJS_DECL_FUNC(zjs_aio_pin_close)
 
 static ZJS_DECL_FUNC(zjs_aio_open)
 {
-    // args: initialization object
-    ZJS_VALIDATE_ARGS(Z_OBJECT);
+    // args: initialization object or int/string pin number
+    ZJS_VALIDATE_ARGS(Z_NUMBER Z_STRING Z_OBJECT);
 
-    jerry_value_t data = argv[0];
+    ZVAL_MUTABLE pin_str = 0;
+    jerry_value_t pin_val = argv[0];
+    jerry_value_t init = 0;
 
-    u32_t pin;
-    if (!zjs_obj_get_uint32(data, "pin", &pin))
-        return zjs_error("missing required field (pin)");
+    if (jerry_value_is_object(argv[0])) {
+        init = argv[0];
+        pin_str = zjs_get_property(init, "pin");
+        pin_val = pin_str;
+    }
 
-    if (pin < AIO_MIN || pin > AIO_MAX) {
-        DBG_PRINT("PIN: #%u\n", pin);
-        return zjs_error("pin out of range");
+    char devname[20];
+    int pin = zjs_board_find_aio(pin_val, devname, 20);
+    if (pin == FIND_PIN_INVALID) {
+        return TYPE_ERROR("bad pin argument");
+    }
+    else if (pin == FIND_DEVICE_FAILURE) {
+        return zjs_error("device not found");
+    }
+    else if (pin < 0) {
+        return zjs_error("pin not found");
     }
 
     // send IPM message to the ARC side
@@ -251,25 +247,25 @@ static ZJS_DECL_FUNC(zjs_aio_open)
     send.type = TYPE_AIO_OPEN;
     send.data.aio.pin = pin;
 
-    jerry_value_t result = zjs_aio_call_remote_function(&send);
+    ZVAL result = zjs_aio_call_remote_function(&send);
     if (jerry_value_has_error_flag(result))
         return result;
-    jerry_release_value(result);
 
     // create the AIOPin object
     jerry_value_t pinobj = zjs_create_object();
     jerry_set_prototype(pinobj, zjs_aio_prototype);
-    zjs_obj_add_number(pinobj, "pin", pin);
 
-    aio_handle_t *handle = aio_alloc_handle();
+    aio_handle_t *handle = zjs_malloc(sizeof(aio_handle_t));
     if (!handle) {
-        return zjs_error("could not allocate handle");
+        return zjs_error("out of memory");
     }
-
-    handle->pin_obj = jerry_acquire_value(pinobj);
+    memset(handle, 0, sizeof(aio_handle_t));
     handle->pin = pin;
 
-    // make it an emitter object and subscribe to changes
+    // TODO: verify that not acquiring here is okay
+    handle->pin_obj = pinobj;
+
+    // make it an emitter object
     zjs_make_emitter(pinobj, zjs_aio_prototype, handle, aio_free_cb);
     zjs_aio_ipm_send_async(TYPE_AIO_PIN_SUBSCRIBE, pin, handle);
 
