@@ -33,13 +33,15 @@ else if (board.name == 'frdm_k64f') {
         testpins = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
     }
     else {
-        // expected results: with default Zephyr config only D0 - D15 and the
-        //   onboard switch SW2 work as inputs. However, D8 and onboard switch
-        //   SW3 do not work. Also, PTE26 is both wired to one of the pins on
-        //   the inner right connector and to the green LED of the RGB and
-        //   actually works as an input too.
-        // The diagram below shows other GPIO pins connected but these may
-        //   require different pinmux settings to enable:
+        // expected results: With updated pinmux settings merged into ZJS,
+        //   D0 - D15 all work, as well as onboard switch SW2; 10 other pins
+        //   on the inner side of the left and right connectors as list below
+        //   also work; if analog inputs are not used as such they can be used
+        //   as GPIOs too, as in this sample. However, onboard switch SW3 still
+        //   doesn't work. PTE26 is both wired to one of the pins on the inner
+        //   right connector and to the green LED of the RGB and works as an
+        //   input too.
+        // The diagrams on the page below show the various GPIO pins:
         //     https://os.mbed.com/platforms/FRDM-K64F/
         testpins = [
             // outer left pins (analog inputs)

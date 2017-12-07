@@ -23,12 +23,11 @@ else if (board.name == 'frdm_k64f') {
         testpins = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
     }
     else {
-        // expected results: with default Zephyr config only D0 - D15 and the
-        //   RGB LED work as outputs. However, D8 does not work. Also, PTE26 is
-        //   both wired to one of the pins on the inner right bank and to the
-        //   green LED of the RGB. The green LED appears to be active-low.
-        // The diagram below shows other GPIO pins connected but these may
-        //   require different pinmux settings to enable:
+        // expected results: With updated pinmux settings merged into ZJS, all
+        //   the pins below work. PTE26 is both wired to one of the pins on the
+        //   inner right bank and to the green LED of the RGB. The onboard LEDs
+        //   appear to be active-low.
+        // The diagrams on the page below show the various GPIO pins:
         //     https://os.mbed.com/platforms/FRDM-K64F/
         testpins = [
             // outer left pins (analog inputs)
