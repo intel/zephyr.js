@@ -1,5 +1,7 @@
 # Copyright (c) 2017, Intel Corporation.
 
+cmake_minimum_required(VERSION 3.9)
+
 if(NOT DEFINED ENV{ZEPHYR_BASE})
   message(FATAL_ERROR "Missing Zephyr base, did you source zephyr-env.sh?")
 endif()
