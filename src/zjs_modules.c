@@ -197,7 +197,7 @@ static ZJS_DECL_FUNC(native_require_handler)
     // Try each of the resolvers to see if we can find the requested module
     jerry_value_t result = jerryx_module_resolve(argv[0], resolvers, 3);
     if (jerry_value_has_error_flag(result)) {
-        //ERR_PRINT("Couldn't load module %s\n", module);
+        DBG_PRINT("Couldn't load module %s\n", module);
         return NOTSUPPORTED_ERROR("Module not found");
     }
     else {
