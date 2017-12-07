@@ -505,7 +505,7 @@ static char *create_js_path(char *obj_name, name_element_t *parent)
     strcpy(str, obj_name);
 
     while (parent) {
-        u32_t size = 32;
+        jerry_size_t size = 32;
         char name[size];
         zjs_copy_jstring(parent->name, name, &size);
         total += size + 1;
