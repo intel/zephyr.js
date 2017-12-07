@@ -92,32 +92,30 @@ static bool load_js_module_fs(const jerry_value_t module_name, jerry_value_t *re
     DBG_PRINT("Parser disabled, can't check FS for module\n");
     return false;
 #endif
-
     jerry_size_t module_size = jerry_get_utf8_string_size(module_name) + 1;
     char module[module_size];
     zjs_copy_jstring(module_name, module, &module_size);
-
     jerry_size_t size = MAX_MODULE_STR_LEN;
     char full_path[size + 9];
-    char *str;
+    char *str = NULL;
     u32_t len;
     bool ret = false;
     sprintf(full_path, "modules/%s", module);
     full_path[size + 8] = '\0';
 
     if (zjs_read_script(full_path, &str, &len)) {
-        ret = false;
-    }
-    ZVAL code_eval = jerry_parse((jerry_char_t *)str, len, false);
-    if (jerry_value_has_error_flag(code_eval)) {
-        ret = false;
-    }
-    ZVAL res = jerry_run(code_eval);
-    if (!jerry_value_has_error_flag(res)) {
-        ret = true;
+        return false;
     }
 
-    zjs_free_script(str);
+    (*result) = jerry_eval((jerry_char_t *)str, len, false);
+    if (jerry_value_has_error_flag(*result)) {
+        ERR_PRINT("failed to evaluate JS\n");
+        ret = false;
+    }
+    else {
+        ret = true;
+    }
+    zjs_free(str);
     return ret;
 }
 #endif  // !ZJS_LINUX_BUILD
@@ -189,13 +187,18 @@ static ZJS_DECL_FUNC(native_require_handler)
 
     // Get the module name
     jerry_size_t module_size = jerry_get_utf8_string_size(argv[0]) + 1;
+    if (module_size > MAX_MODULE_STR_LEN) {
+        return RANGE_ERROR("module name too long");
+    }
+
     char module[module_size];
     zjs_copy_jstring(argv[0], module, &module_size);
 
     // Try each of the resolvers to see if we can find the requested module
     jerry_value_t result = jerryx_module_resolve(argv[0], resolvers, 3);
     if (jerry_value_has_error_flag(result)) {
-        ERR_PRINT("Couldn't load module %s\n", module);
+        DBG_PRINT("Couldn't load module %s\n", module);
+        return NOTSUPPORTED_ERROR("Module not found");
     }
     else {
         DBG_PRINT("Module %s loaded\n", module);

@@ -291,7 +291,7 @@ if (start_debug_server) {
 #endif
 
 #ifdef ZJS_LINUX_BUILD
-    zjs_free_script(script);
+    zjs_free(script);
 #endif
 
 #ifdef ZJS_SNAPSHOT_BUILD
