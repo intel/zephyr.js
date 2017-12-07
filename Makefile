@@ -222,7 +222,7 @@ ide: zephyr
 .PHONY: ashell
 ashell: zephyr
 
-# Flash for Arduino 101 x86 and arc images, olimex_stm32_e407, 96b_carbon
+# Flash images
 .PHONY: dfu
 dfu:
 ifeq ($(BOARD), arduino_101)
