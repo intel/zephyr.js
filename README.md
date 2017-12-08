@@ -408,7 +408,7 @@ Then, follow [these instructions](https://developer.mbed.org/handbook/Firmware-F
 Next, you can try to build ZJS for the platform:
 ```bash
 make BOARD=frdm_k64f JS=samples/HelloWorld.js
-cp outdir/frdm_k64f/zephyr.bin /media/<USERNAME>/MBED/
+cp outdir/frdm_k64f/zephyr/zephyr.bin /media/<USERNAME>/MBED/
 ```
 
 After you copy the new `.bin` file to that directory, the device will reboot,
