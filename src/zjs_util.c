@@ -820,7 +820,7 @@ void dump_buffer(const char *label, const void *buf, int len)
     char *spaces = "  ";
     u8_t *u8buf = (u8_t *)buf;
     for (int i = 0; i < rows; i++) {
-        ZJS_PRINT(" %x :", (uintptr_t)(buf + i * cols));
+        ZJS_PRINT(" %x :", (unsigned int)(buf + i * cols));
         for (int j = 0; j < cols; j++) {
             if (i * cols + j >= len) {
                 int left = (i + 1) * cols - len;
@@ -849,7 +849,7 @@ void dump_buffer(const char *label, const void *buf, int len)
                 prefix++;
             }
             char c = u8buf[i * cols + j];
-            if (c < 32 || c >= 128) {
+            if (c < 32) {
                 c = '.';
             }
             ZJS_PRINT("%s%c", prefix, c);

@@ -22,8 +22,8 @@ if(PRINT_FLOAT)
   add_definitions(-DPRINT_FLOAT=${PRINT_FLOAT})
 endif()
 
-if(VARIANT)
-  add_definitions(-DVARIANT=${VARIANT})
+if("${VARIANT}" STREQUAL "debug")
+  add_definitions(-DDEBUG_BUILD -DOC_DEBUG)
 endif()
 
 if(ZJS_FLAGS)
