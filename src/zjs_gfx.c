@@ -110,14 +110,14 @@ static void zjs_gfx_touch_pixels(u32_t x, u32_t y, u32_t w, u32_t h, u8_t color[
         return;
 
     if (gfxHandle->tpX0 > x ) {
-            gfxHandle->tpX0 = x;
+        gfxHandle->tpX0 = x;
     }
 
     if (gfxHandle->tpX1 < x + w - 1) {
         if (x + w - 1 < gfxHandle->screenW) {
             gfxHandle->tpX1 = x + w - 1;
         }
-        else{
+        else {
             gfxHandle->tpX1 = gfxHandle->screenW - 1;
             w = gfxHandle->tpX1 - x;
         }
@@ -154,7 +154,7 @@ static void zjs_gfx_touch_pixels(u32_t x, u32_t y, u32_t w, u32_t h, u8_t color[
                 for (u8_t cbyte = 0; cbyte < COLORBYTES; cbyte++) {
                     gfxHandle->pixelsPtr->buffer[pixelsIndex + cbyte] = color[cbyte];
                 }
-                pixelsIndex+=COLORBYTES;
+                pixelsIndex += COLORBYTES;
             }
         }
     }
