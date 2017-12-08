@@ -106,24 +106,21 @@ static void zjs_gfx_reset_touched_pixels(gfx_handle_t *gfxHandle)
 static void zjs_gfx_touch_pixels(u32_t x, u32_t y, u32_t w, u32_t h, u8_t color[], gfx_handle_t *gfxHandle)
 {
     // Check that x and y aren't past the screen
-    if (x > gfxHandle->screenW || y > gfxHandle->screenH)
+    if (x >= gfxHandle->screenW || y >= gfxHandle->screenH)
         return;
 
-    if (x >= gfxHandle->screenW) {
-        x = gfxHandle->screenW - 1;
-    }
-    if (y >= gfxHandle->screenH) {
-        y = gfxHandle->screenH - 1;
+    if (gfxHandle->tpX0 > x ) {
+            gfxHandle->tpX0 = x;
     }
 
     if (gfxHandle->tpX1 < x + w - 1) {
-        if (x + w -1 < gfxHandle->screenW) {
-            gfxHandle->tpX1 = x + w -1;
+        if (x + w - 1 < gfxHandle->screenW) {
+            gfxHandle->tpX1 = x + w - 1;
         }
         else{
             gfxHandle->tpX1 = gfxHandle->screenW - 1;
+            w = gfxHandle->tpX1 - x;
         }
-
     }
 
     if (gfxHandle->tpY0 > y) {
@@ -136,11 +133,8 @@ static void zjs_gfx_touch_pixels(u32_t x, u32_t y, u32_t w, u32_t h, u8_t color[
         }
         else {
             gfxHandle->tpY1 = gfxHandle->screenH - 1;
+            h = gfxHandle->tpY1 - y;
         }
-    }
-
-    if (gfxHandle->tpX0 > x ) {
-            gfxHandle->tpX0 = x;
     }
 
     if (!drawImmediate) {
@@ -187,7 +181,7 @@ static jerry_value_t zjs_gfx_flush(gfx_handle_t *gfxHandle)
 {
     if (!gfxHandle->touched)
         return ZJS_UNDEFINED;
-    u32_t tpW = gfxHandle->tpX1 - gfxHandle->tpX0 + 1 ;
+    u32_t tpW = gfxHandle->tpX1 - gfxHandle->tpX0 + 1;
     u32_t tpH = gfxHandle->tpY1 - gfxHandle->tpY0 + 1;
     u32_t pixels = tpW * tpH * COLORBYTES;
     zjs_buffer_t *recBuf = NULL;
