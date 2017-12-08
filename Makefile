@@ -230,10 +230,10 @@ ifeq ($(BOARD), arduino_101)
 	dfu-util -a sensor_core -D $(A101SSBIN).dfu
 endif
 ifeq ($(BOARD), olimex_stm32_e407)
-	dfu-util -a 0 -d 0483:df11 -D $(OUT)/olimex_stm32_e407/zephyr.bin --dfuse-address 0x08000000
+	dfu-util -a 0 -d 0483:df11 -D $(OUT)/olimex_stm32_e407/zephyr/zephyr.bin --dfuse-address 0x08000000
 endif
 ifeq ($(BOARD), 96b_carbon)
-	dfu-util -a 0 -d 0483:df11 -D $(OUT)/96b_carbon/zephyr.bin --dfuse-address 0x08000000
+	dfu-util -a 0 -d 0483:df11 -D $(OUT)/96b_carbon/zephyr/zephyr.bin --dfuse-address 0x08000000
 endif
 
 # Give an error if we're asked to create the JS file
