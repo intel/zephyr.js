@@ -12,8 +12,8 @@ var gpio = require('gpio');
 
 var testpins;
 if (board.name == 'arduino_101') {
-    // expected results: works with IO2, IO4, IO7-8, IO10-13; others have
-    //   incompatible pinmux settings, I think
+    // expected results: works with IO2, IO4, IO7, IO12-13; not sure why IO8,
+    //   IO10-11 not working; others can only be used from ARC side
     testpins = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
 }
 else if (board.name == 'frdm_k64f') {
@@ -78,14 +78,22 @@ else if (board.name == 'nucleo_f411re') {
 var pincount = testpins.length;
 var gpios = [];
 for (var i = 0; i < pincount; i++) {
-    gpios[i] = gpio.open({pin: testpins[i]});
+    try {
+        gpios[i] = gpio.open({pin: testpins[i]});
+    }
+    catch (e) {
+        console.log('Error opening pin ' + testpins[i] + ':', e.message);
+    }
 }
 
 // toggle all pins off in sequence, then on in sequence, and so on
 var tick = 75, toggle = 0;
 var index = 0;
 setInterval(function () {
-    gpios[index++].write(toggle);
+    var gpio = gpios[index++];
+    if (gpio) {
+        gpio.write(toggle);
+    }
     if (index >= pincount) {
         toggle = 1 - toggle;
         index = 0;

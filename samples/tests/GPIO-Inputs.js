@@ -114,7 +114,6 @@ for (var i = 0; i < pincount; i++) {
         };
         if (controllerIndex < 0 ||
             testpins[i][controllerIndex] == intController) {
-            console.log('rising for', testpins[i]);
             init['edge'] = 'rising';
         }
         gpios[i] = gpio.open(init);
