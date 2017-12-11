@@ -709,26 +709,26 @@ reason we have the following possibilities for support:
 * NT - Not tested at all
 * Blank - Not Supported
 
-| Module    | Linux | Arduino 101 | K64F  | nRF52 | Arduino DUE | ST F411RE |
-| :---:     | :---: |    :---:    | :---: | :---: |    :---:    |   :---:   |
-|HelloWorld |   X   |      X      |   X   |   X   |      X      |     X     |
-|  ADC      |       |      X      |       |       |             |           |
-|  PWM      |       |      X      |       |       |             |           |
-|  GPIO     |       |      X      |   X   |       |             |           |
-|  I2C      |       |      X      |   X   |       |             |           |
-|  BLE      |       |      X      |       |       |             |           |
-|  UART     |       |      X      |       |   NT  |             |           |
-| Sensor    |       |      X      |       |       |             |           |
-| Buffer    |   X   |      X      |   X   |   X   |      X      |     X     |
-| Console   |   X   |      X      |   X   |   X   |      X      |     X     |
-| Event     |   X   |      X      |   X   |   X   |      X      |     X     |
-|File System|       |      X      |   X   |       |             |           |
-| OCF       |   X   |      X      |   X   |       |             |           |
-|Performance|   X   |      X      |   X   |   X   |      X      |     X     |
-| Timers    |   X   |      X      |   X   |   X   |      X      |     X     |
-| Dgram     |       |      X      |   X   |       |             |           |
-| Net       |       |      X      |   X   |       |             |           |
-| WebSocket |       |      X      |   X   |       |             |           |
+| Module    | Linux | Arduino 101 | tinyTILE | K64F  | nRF52 | Arduino DUE | ST F411RE | ST STM32F4DISCOVERY | OLIMEX STM32 E407 | 96Boards Carbon |
+| :---:     | :---: |    :---:    |   :---:  | :---: | :---: |    :---:    |   :---:   |        :---:        |       :---:       |      :---:      |
+|HelloWorld |   X   |      X      |     X    |   X   |   X   |      X      |     X     |          X          |         X         |        X        |
+|  ADC      |       |      X      |     X    |       |       |             |           |                     |                   |                 |
+|  PWM      |       |      X      |     X    |       |       |             |           |                     |                   |                 |
+|  GPIO     |       |      X      |     X    |   X   |       |             |           |                     |                   |                 |
+|  I2C      |       |      X      |     X    |   X   |       |             |           |                     |                   |                 |
+|  BLE      |       |      X      |     X    |       |       |             |           |          NT         |                   |                 |
+|  UART     |       |      X      |     X    |       |   NT  |             |           |                     |                   |                 |
+| Sensor    |       |      X      |     X    |       |       |             |           |                     |                   |                 |
+| Buffer    |   X   |      X      |     X    |   X   |   X   |      X      |     X     |          X          |         X         |        X        |
+| Console   |   X   |      X      |     X    |   X   |   X   |      X      |     X     |          X          |         X         |        X        |
+| Event     |   X   |      X      |     X    |   X   |   X   |      X      |     X     |          X          |         X         |        X        |
+|File System|       |      X      |     X    |   X   |       |             |           |                     |                   |                 |
+| OCF       |   X   |      X      |     X    |   X   |       |             |           |                     |         NT        |                 |
+|Performance|   X   |      X      |     X    |   X   |   X   |      X      |     X     |          X          |         X         |        X        |
+| Timers    |   X   |      X      |     X    |   X   |   X   |      X      |     X     |          X          |         X         |        X        |
+| Dgram     |       |      X      |     X    |   X   |       |             |           |                     |                   |                 |
+| Net       |       |      X      |     X    |   X   |       |             |           |                     |                   |                 |
+| WebSocket |       |      X      |     X    |   X   |       |             |           |                     |                   |                 |
 
 ## Networking with QEMU
 QEMU has support for networking features that can be tested on your Linux
