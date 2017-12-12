@@ -96,7 +96,7 @@ int zjs_get_ms(void);
  * Use by defining USE_FTRACE and ftrace_prefix string in a file (see zjs_net.c)
  *
  * FTRACE takes format string and arguments like printf
- * FTRACE_JSAPI takes not arguments and expects to run in a ZJS_DECL_FUNC API
+ * FTRACE_JSAPI takes no arguments and expects to run in a ZJS_DECL_FUNC API
  */
 #ifdef USE_FTRACE
 #define FTRACE                                                   \

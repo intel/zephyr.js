@@ -1,5 +1,11 @@
 // Copyright (c) 2017, Intel Corporation.
 
+// enable to use function tracing for debug purposes
+#if 0
+#define USE_FTRACE
+static char FTRACE_PREFIX[] = "aio";
+#endif
+
 #ifdef BUILD_MODULE_AIO
 #ifndef QEMU_BUILD
 // C includes
@@ -40,6 +46,8 @@ if (!var) { return zjs_error("no aio handle"); }
 
 static void aio_free_cb(void *ptr)
 {
+    FTRACE("ptr = %p\n", ptr);
+
     // remove from the list of opened handles
     aio_handle_t *handle = (aio_handle_t *)ptr;
     ZJS_LIST_REMOVE(aio_handle_t, opened_handles, handle);
@@ -48,6 +56,7 @@ static void aio_free_cb(void *ptr)
 
 static u16_t pin_read(struct device *dev, u8_t pin)
 {
+    FTRACE("dev = %p, pin = %d\n", dev, (s32_t)pin);
     u8_t seq_buffer[ADC_BUFFER_SIZE];
 
     struct adc_seq_entry entry = {
@@ -73,6 +82,7 @@ static u16_t pin_read(struct device *dev, u8_t pin)
 
 static ZJS_DECL_FUNC_ARGS(aio_pin_read, bool async)
 {
+    FTRACE_JSAPI;
     GET_AIO_HANDLE(this, handle);
 
     u16_t value = pin_read(handle->dev, handle->pin);
@@ -97,6 +107,7 @@ static ZJS_DECL_FUNC_ARGS(aio_pin_read, bool async)
 
 static ZJS_DECL_FUNC(zjs_aio_pin_read)
 {
+    FTRACE_JSAPI;
     return aio_pin_read(function_obj,
                         this,
                         argv,
@@ -107,6 +118,7 @@ static ZJS_DECL_FUNC(zjs_aio_pin_read)
 // Asynchronous Operations
 static ZJS_DECL_FUNC(zjs_aio_pin_read_async)
 {
+    FTRACE_JSAPI;
     // args: callback
     ZJS_VALIDATE_ARGS(Z_FUNCTION);
 
@@ -119,6 +131,7 @@ static ZJS_DECL_FUNC(zjs_aio_pin_read_async)
 
 static ZJS_DECL_FUNC(zjs_aio_pin_close)
 {
+    FTRACE_JSAPI;
     GET_AIO_HANDLE(this, handle);
     aio_free_cb(handle);
     return ZJS_UNDEFINED;
@@ -126,6 +139,7 @@ static ZJS_DECL_FUNC(zjs_aio_pin_close)
 
 static ZJS_DECL_FUNC(zjs_aio_open)
 {
+    FTRACE_JSAPI;
     // args: initialization object or int/string pin number
     ZJS_VALIDATE_ARGS(Z_NUMBER Z_STRING Z_OBJECT);
 
@@ -180,6 +194,7 @@ static ZJS_DECL_FUNC(zjs_aio_open)
 
 static s32_t aio_poll_routine(void *h)
 {
+    FTRACE("h = %p\n", h);
     static u32_t last_read_time = 0;
     u32_t uptime = k_uptime_get_32();
     if ((uptime - last_read_time) > ((u32_t)(CONFIG_SYS_CLOCK_TICKS_PER_SEC /
@@ -210,6 +225,7 @@ static s32_t aio_poll_routine(void *h)
 
 static void zjs_aio_cleanup(void *native)
 {
+    FTRACE("native = %p\n", native);
     while (opened_handles) {
         zjs_free(opened_handles);
         opened_handles = opened_handles->next;
@@ -224,6 +240,7 @@ static const jerry_object_native_info_t aio_module_type_info = {
 
 jerry_value_t zjs_aio_init()
 {
+    FTRACE("");
     // FIXME: need a way to unregister service routines
     zjs_register_service_routine(NULL, aio_poll_routine);
 
