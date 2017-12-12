@@ -716,7 +716,7 @@ reason we have the following possibilities for support:
 |  PWM      |       |      X      |     X    |       |       |             |           |                     |                   |                 |
 |  GPIO     |       |      X      |     X    |   X   |       |             |           |                     |                   |                 |
 |  I2C      |       |      X      |     X    |   X   |       |             |           |                     |                   |                 |
-|  BLE      |       |      X      |     X    |       |       |             |           |          NT         |                   |                 |
+|  BLE      |       |      X      |     X    |       |       |             |           |                     |                   |        X        |
 |  UART     |       |      X      |     X    |       |   NT  |             |           |                     |                   |                 |
 | Sensor    |       |      X      |     X    |       |       |             |           |                     |                   |                 |
 | Buffer    |   X   |      X      |     X    |   X   |   X   |      X      |     X     |          X          |         X         |        X        |
