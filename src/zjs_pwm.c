@@ -61,7 +61,7 @@ static void zjs_pwm_set_cycles(jerry_value_t obj, u32_t periodHW,
         pulseWidthHW = periodHW - pulseWidthHW;
     }
 
-    DBG_PRINT("Setting [cycles] dev=%p, pin=%d period=%lu, pulse=%lu\n",
+    DBG_PRINT("Setting [cycles] dev=%p, pin=%d period=%u, pulse=%u\n",
               handle->device, handle->pin, (u32_t)periodHW,
               (u32_t)pulseWidthHW);
     pwm_pin_set_cycles(handle->device, handle->pin, periodHW, pulseWidthHW);
@@ -79,7 +79,7 @@ static void zjs_pwm_set_ms(jerry_value_t obj, double period, double pulseWidth)
         pulseWidth = period - pulseWidth;
     }
 
-    DBG_PRINT("Setting [uSec] dev=%p, pin=%d period=%lu, pulse=%lu\n",
+    DBG_PRINT("Setting [uSec] dev=%p, pin=%d period=%u, pulse=%u\n",
               handle->device, handle->pin, (u32_t)(period * 1000),
               (u32_t)(pulseWidth * 1000));
     pwm_pin_set_usec(handle->device, handle->pin, (u32_t)(period * 1000),
@@ -140,7 +140,7 @@ static ZJS_DECL_FUNC(zjs_pwm_pin_set_ms)
     zjs_obj_add_number(this, "period", period);
     zjs_obj_add_number(this, "pulseWidth", period);
 
-    DBG_PRINT("period: %lu, pulse: %lu\n", (u32_t)period, (u32_t)pulseWidth);
+    DBG_PRINT("period: %u, pulse: %u\n", (u32_t)period, (u32_t)pulseWidth);
 
     zjs_pwm_set_ms(this, period, pulseWidth);
     return ZJS_UNDEFINED;
