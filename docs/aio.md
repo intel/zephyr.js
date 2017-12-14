@@ -58,7 +58,8 @@ API Documentation
 
 The `init` object lets you set the pin number. You can either use a raw
 number for your device or use the board support module such as
-[Arduino 101](./a101_pins.md) or [K64F](./k64f_pins.md) to specify a named pin.
+[Arduino 101](./boards/arduino_101.md) or [K64F](./boards/frdm_k64f.md) to
+specify a named pin.
 
 Use the AIOPin object returned to read values from the pin.
 
