@@ -13,10 +13,9 @@
 
 var gpio = require('gpio');
 var aio = require('aio');
-var pins = require('arduino101_pins');
 
 // set up the GPIO pins
-var sensor = aio.open({device: 0, pin: pins.A0});
+var sensor = aio.open('A0');
 var led1 = gpio.open(4);
 var led2 = gpio.open(7);
 var led3 = gpio.open(8);

@@ -25,7 +25,6 @@
 var aio = require("aio");
 var ble = require("ble");
 var grove_lcd = require("grove_lcd");
-var pins = require("arduino101_pins");
 
 try {
     var perf = require("performance");
@@ -64,7 +63,7 @@ var TemperatureCharacteristic = new ble.Characteristic({
 TemperatureCharacteristic._lastValue = undefined;
 TemperatureCharacteristic._onChange = null;
 
-var tmp36 = aio.open({ pin: pins.A0 });
+var tmp36 = aio.open('A0');
 
 TemperatureCharacteristic.onReadRequest = function(offset, callback) {
     if (!this._lastValue) {
