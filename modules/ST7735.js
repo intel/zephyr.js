@@ -19,12 +19,15 @@ function ST7735() {
     var spi = require("spi");
     var board = require('board');
     var busSpeed = board.name === "arduino_101" ? 16000000 : 32000000;
+    var busNum = board.name === "arduino_101" ? 1 : 0;
+    var dcPinNum = board.name === "arduino_101" ? 8 : 9;
 
     // You can reset these pins from your JS if you want
-    st7735API.dcPin = gpio.open(8);   // Command / Data select pin
+    st7735API.dcPin = gpio.open(dcPinNum);   // Command / Data select pin
     st7735API.csPin = gpio.open(4);   // SPI slave pin
     st7735API.rstPin = gpio.open(7);  // Reset pin
-    st7735API.spiBus = spi.open({bus:1, speed:busSpeed, polarity:0, phase:0, bits:8});
+    st7735API.spiBus = spi.open({bus:busNum, speed:busSpeed, polarity:0,
+                                 phase:0, bits:8});
 
     st7735API.cmdAddrs = {
         SWRESET: [0x01],    // Software reset
