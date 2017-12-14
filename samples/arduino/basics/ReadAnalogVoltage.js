@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 // Reimplementation of Arduino - Basics - ReadAnaloglVoltage example
 //   - Reads analog input, convert to voltage, and report on serial console
@@ -13,12 +13,8 @@
 console.log("Starting ReadAnalogVoltage example...");
 
 var aio = require("aio");
-var pins = require("arduino101_pins");
 
-var pin = aio.open({
-    device: 0,
-    pin: pins.A0
-});
+var pin = aio.open('A0');
 
 // schedule a function to run every 1s (1000)
 setInterval(function () {

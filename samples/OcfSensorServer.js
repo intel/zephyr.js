@@ -8,10 +8,9 @@ var server = ocf.server;
 
 var aio = require('aio');
 var gpio = require('gpio');
-var pins = require('arduino101_pins');
 
 var led = gpio.open({pin: 'LED2', activeLow: true});
-var pinA = aio.open({ device: 0, pin: pins.A0 });
+var pinA = aio.open('A0');
 
 console.log('Started OCF server');
 

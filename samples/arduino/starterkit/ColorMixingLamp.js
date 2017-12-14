@@ -16,7 +16,6 @@
 
 var pwm = require('pwm');
 var aio = require('aio');
-var pins = require('arduino101_pins');
 
 // set up the PWM pins
 var redLED = pwm.open('IO3');
@@ -24,18 +23,9 @@ var greenLED = pwm.open('IO5');
 var blueLED = pwm.open('IO6');
 
 // set up the AIO pins
-var redSensor = aio.open({
-    device: 0,
-    pin: pins.A0
-});
-var greenSensor = aio.open({
-    device: 0,
-    pin: pins.A1
-});
-var blueSensor = aio.open({
-    device: 0,
-    pin: pins.A2
-});
+var redSensor = aio.open('A0');
+var greenSensor = aio.open('A1');
+var blueSensor = aio.open('A2');
 
 setInterval(function () {
     var redValue = redSensor.read();

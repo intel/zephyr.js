@@ -4,10 +4,9 @@ var ocf = require('ocf');
 var server = ocf.server;
 
 var aio = require('aio');
-var pins = require("arduino101_pins");
 
-var light = aio.open({ device: 0, pin: pins.A0 });
-var temp = aio.open({ device: 0, pin: pins.A1 });
+var light = aio.open('A0');
+var temp = aio.open('A1');
 
 console.log("Started OCF server");
 
