@@ -55,7 +55,7 @@ before_install:
       sudo pip3 install pyelftools &&
       echo -------- &&
       which cmake &&
-      echo PATH: $PATH &&
+      echo PATH $PATH &&
       ls -l /usr/local/bin &&
       /usr/local/bin/cmake --version &&
       cmake --version &&
