@@ -49,13 +49,13 @@ cache:
     - /usr/local/bin
 
 before_install:
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
       sudo apt-get update -qq &&
       sudo apt-get install libc6-dev-i386 make gperf gcc g++ python3-ply python3-yaml python3-pip device-tree-compiler ncurses-dev uglifyjs -qq &&
-      sudo pip3 install pyelftools;
+      sudo pip3 install pyelftools &&
+      sudo apt-get purge cmake;
     fi
-  - if [ "$TRAVIS_OS_NAME" == "linux" -a "$(cmake --version | head -1)" != "cmake version $CMAKE_VERSION" ]; then
-      sudo apt-get purge cmake &&
+  - if [[ "$TRAVIS_OS_NAME" == "linux" && (! $(which cmake) -o "$(cmake --version | head -1)" != "cmake version $CMAKE_VERSION") ]]; then
       wget https://cmake.org/files/v$CMAKE_SHORTVER/cmake-$CMAKE_VERSION.tar.gz &&
       tar xf cmake-$CMAKE_VERSION.tar.gz &&
       cd cmake-$CMAKE_VERSION &&
@@ -64,14 +64,14 @@ before_install:
       sudo make install &&
       cd ..;
     fi
-  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
       brew update &&
       brew install python3 &&
       sudo pip3 install pyelftools;
     fi
 
 install: >
-  if [ "$TARGET" != "linux" -a "$(cat $ZEPHYR_SDK_INSTALL_DIR/sdk_version)" != "$ZEPHYR_SDK_VERSION" ]; then
+  if [[ "$TARGET" != "linux" && "$(cat $ZEPHYR_SDK_INSTALL_DIR/sdk_version)" != "$ZEPHYR_SDK_VERSION" ]; then
     wget $ZEPHYR_SDK_DOWNLOAD_URL &&
     chmod +x $ZEPHYR_SDK_SETUP_BINARY &&
     rm -rf $ZEPHYR_SDK_INSTALL_DIR &&
