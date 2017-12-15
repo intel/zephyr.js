@@ -44,20 +44,13 @@ matrix:
 cache:
   directories:
     - $ZEPHYR_SDK_INSTALL_DIR
+    - /usr/local/bin
 
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
       sudo apt-get update -qq &&
       sudo apt-get install libc6-dev-i386 make gperf gcc g++ python3-ply python3-yaml python3-pip device-tree-compiler ncurses-dev uglifyjs -qq &&
-      sudo pip3 install pyelftools &&
-      sudo apt-get purge cmake &&
-      wget https://cmake.org/files/v3.9/cmake-3.9.5.tar.gz &&
-      tar -xf cmake-3.9.5.tar.gz &&
-      cd cmake-3.9.5/ &&
-      ./bootstrap &&
-      make -j4 &> /dev/null &&
-      sudo make install &&
-      cd ..;
+      sudo pip3 install pyelftools;
     fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
       brew update &&
@@ -66,7 +59,7 @@ before_install:
     fi
 
 install: >
-  if [ "$TARGET" != "linux" -a "$(cat $ZEPHYR_SDK_INSTALL_DIR/sdk_version)" != "$ZEPHYR_SDK_VERSION" ]; then
+  if [[ "$TARGET" != "linux" && "$(cat $ZEPHYR_SDK_INSTALL_DIR/sdk_version)" != "$ZEPHYR_SDK_VERSION" ]]; then
     wget $ZEPHYR_SDK_DOWNLOAD_URL &&
     chmod +x $ZEPHYR_SDK_SETUP_BINARY &&
     rm -rf $ZEPHYR_SDK_INSTALL_DIR &&
