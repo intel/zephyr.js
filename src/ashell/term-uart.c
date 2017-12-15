@@ -34,10 +34,8 @@
 #include <fs.h>
 #include <misc/printk.h>
 
-// JerryScript includes
-#include "jerry-code.h"
-
 // ZJS includes
+#include "ashell.h"
 #include "term-cmd.h"
 #include "term-uart.h"
 
@@ -45,12 +43,7 @@
 #include "webusb_serial.h"
 #endif
 
-#include "ihex/kk_ihex_read.h"
-
 #include "../zjs_util.h"
-
-#define FIVE_SECONDS    (5 * sys_clock_ticks_per_sec)
-#define TEN_SECONDS     (10 * sys_clock_ticks_per_sec)
 
 #define CTRL_START 0x00
 #define CTRL_END   0x1F
@@ -68,8 +61,10 @@ static const char banner[] = "Zephyr.js DEV MODE " __DATE__ " " __TIME__ "\r\n";
 
 #define FIFO_CACHE 2
 
+#ifndef ASHELL_IDE_PROTOCOL
 /* Configuration of the callbacks to be called */
 struct terminal_config *terminal = NULL;
+#endif
 
 struct uart_input {
     int _unused;
@@ -298,6 +293,17 @@ void uart_write_buf(const char *buf, int len)
 }
 
 /**
+* Provide console message implementation for the engine.
+*/
+void comms_printf(const char *format, ...)
+{
+    va_list args;
+    va_start(args, format);
+    vfprintf(stdout, format, args);
+    va_end(args);
+}
+
+/**
 * @brief Output one character to UART ACM
 *
 * @param c Character to output
@@ -311,7 +317,8 @@ static int uart_out(int c)
     char ch = (char)c;
     buf[size++] = ch;
     if (ch == '\n' || size == 80) {
-        terminal->send(buf, size);
+        //terminal->send(buf, size);
+        uart_write_buf(buf, size);
         size = 0;
     }
     return 1;
@@ -339,25 +346,23 @@ static void uart_ready()
     uart_irq_tx_disable(dev_upload);
 
     uart_irq_callback_set(dev_upload, uart_interrupt_handler);
-    terminal->send(banner, sizeof(banner));
+    // terminal->send(banner, sizeof(banner));
+    uart_write_buf(banner, sizeof(banner));
 
     /* Enable rx interrupts */
     uart_irq_rx_enable(dev_upload);
-    DBG("[Listening]\n");
 
     __stdout_hook_install(uart_out);
 
     // Disable buffering on stdout since some parts write directly to uart fifo
     setbuf(stdout, NULL);
-
-    ashell_help("");
-    comms_print(comms_get_prompt());
     process_state = 0;
 
     atomic_set(&uart_state, UART_INIT);
 
-    DBG("[Init]\n");
+#ifndef ASHELL_IDE_PROTOCOL
     terminal->init();
+#endif
 }
 
 static bool check_uart_connection()
@@ -387,16 +392,23 @@ void uart_process()
     char *buf = NULL;
     u32_t len = 0;
     atomic_set(&uart_state, UART_INIT);
-
+#ifdef ASHELL_IDE_PROTOCOL
+    while(1) {
+#else
     while (!terminal->done()) {
+#endif
         atomic_set(&uart_state, UART_WAITING);
         data = k_fifo_get(&data_queue, K_NO_WAIT);
         if (data) {
             atomic_dec(&data_queue_count);
             buf = data->line;
             len = strnlen(buf, MAX_LINE);
-
+#ifdef ASHELL_IDE_PROTOCOL
+            extern void ide_receive(u8_t *buf, size_t len);
+            ide_receive(buf, len);
+#else
             terminal->process(buf, len);
+#endif
             uart_process_done = true;
             DBG("[Recycle]\n");
             fifo_recycle_buffer(data);
@@ -428,7 +440,9 @@ void uart_process()
         }
     }
     atomic_set(&uart_state, UART_CLOSE);
+#ifdef ASHELL_IDE_PROTOCOL
     terminal->close();
+#endif
 }
 
 /**
@@ -438,11 +452,13 @@ void uart_process()
 
 void uart_init()
 {
+#ifndef ASHELL_IDE_PROTOCOL
     terminal_start();
 
     printk(banner);
     printk("Warning: The JavaScript terminal is in a different interface.\
             \nExamples:\n\tMac   /dev/cu.usbmodem\n\tLinux /dev/ttyACM0\n");
+#endif
 
 #ifdef CONFIG_USB_CDC_ACM
     dev_upload = device_get_binding(CONFIG_CDC_ACM_PORT_NAME);
@@ -456,19 +472,9 @@ void uart_init()
     }
 
 #ifndef CONFIG_USB_CDC_ACM
-    webusb_register_handlers();
+    webusb_init();
 #endif
 
     k_fifo_init(&data_queue);
     k_fifo_init(&avail_queue);
-}
-
-void zjs_ashell_init()
-{
-    uart_init();
-}
-
-void zjs_ashell_process()
-{
-    uart_process();
 }

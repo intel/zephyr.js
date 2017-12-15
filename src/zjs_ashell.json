@@ -19,13 +19,9 @@
     ],
     "targets": ["arduino_101", "stm32f4_disco", "olimex_stm32_e407"],
     "src": [
+        "src/ashell/ashell.c",
         "src/zjs_file_utils.c",
-        "src/ashell/jerry-code.c",
-        "src/ashell/term-cmd.c",
-        "src/ashell/term-ihex.c",
-        "src/ashell/term-uart.c",
-        "src/ashell/term-webusb.c",
-        "./deps/ihex/kk_ihex_read.c"
+        "src/ashell/jerry-code.c"
     ],
     "zephyr_conf": {
         "all": [
@@ -58,7 +54,6 @@
     },
     "zjs_config": [
         "-I${ZEPHYR_BASE}/ext/fs/fat/include",
-        "-I${ZEPHYR_BASE}/samples/subsys/usb/webusb/src/",
         "-I./deps",
         "-DZJS_ASHELL"
     ]
