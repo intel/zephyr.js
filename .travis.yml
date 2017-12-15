@@ -55,7 +55,7 @@ before_install:
       sudo pip3 install pyelftools &&
       sudo apt-get purge cmake;
     fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" && (! $(which cmake) -o "$(cmake --version | head -1)" != "cmake version $CMAKE_VERSION") ]]; then
+  - if [[ "$TRAVIS_OS_NAME" == "linux" && (! $(which cmake) || "$(cmake --version | head -1)" != "cmake version $CMAKE_VERSION") ]]; then
       wget https://cmake.org/files/v$CMAKE_SHORTVER/cmake-$CMAKE_VERSION.tar.gz &&
       tar xf cmake-$CMAKE_VERSION.tar.gz &&
       cd cmake-$CMAKE_VERSION &&
