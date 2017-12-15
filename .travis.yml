@@ -58,7 +58,7 @@ before_install:
       sudo apt-get purge cmake &&
       wget https://cmake.org/files/v$CMAKE_SHORTVER/cmake-$CMAKE_VERSION.tar.gz &&
       tar xf cmake-$CMAKE_VERSION.tar.gz &&
-      cd $CMAKE_VERSION &&
+      cd cmake-$CMAKE_VERSION &&
       ./bootstrap &&
       make -j4 &> /dev/null &&
       sudo make install &&
