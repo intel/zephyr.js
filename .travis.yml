@@ -53,6 +53,12 @@ before_install:
       sudo apt-get update -qq &&
       sudo apt-get install libc6-dev-i386 make gperf gcc g++ python3-ply python3-yaml python3-pip device-tree-compiler ncurses-dev uglifyjs -qq &&
       sudo pip3 install pyelftools &&
+      echo ******* &&
+      which cmake &&
+      echo PATH: $PATH &&
+      ls -l /usr/local/bin &&
+      /usr/local/bin/cmake --version &&
+      cmake --version &&
       sudo apt-get purge cmake;
     fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" && (! $(which cmake) || "$(cmake --version | head -1)" != "cmake version $CMAKE_VERSION") ]]; then
