@@ -62,19 +62,6 @@ sudo apt-get update
 sudo apt-get install cmake dfu-util git python3-yaml screen uglifyjs
 ```
 
-Note: cmake 3.8.2 or later is required, and your system might install an older
-version, if this is the case, you'll have to manually install the latest
-version of cmake:
-```bash
-sudo apt-get purge cmake
-wget https://cmake.org/files/v3.9/cmake-3.9.5.tar.gz
-tar -xzvf cmake-3.9.5.tar.gz
-cd cmake-3.9.5/
-./bootstrap
-make -j4
-sudo make install
-```
-
 Note: python3-yaml is a recent requirement for the frdm-k64f build due to a
 change in Zephyr, so it could be left out currently if you don't use k64f.
 Before that, for a while python-yaml was needed when the script was using
@@ -178,6 +165,18 @@ environment variables, too. Here's the right way to do that:
 
 ```bash
 source deps/zephyr/zephyr-env.sh
+```
+
+Note: cmake 3.8.2 or later is required, and your system might install an older
+version, if this is the case, you'll have to manually install the latest
+version of cmake:
+```bash
+$ mkdir $HOME/cmake && cd $HOME/cmake
+$ wget https://cmake.org/files/v3.8/cmake-3.8.2-Linux-x86_64.sh
+$ yes | sh cmake-3.8.2-Linux-x86_64.sh | cat
+$ echo "export PATH=$PWD/cmake-3.8.2-Linux-x86_64/bin:\$PATH" >> $HOME/.zephyrrc
+$ source $ZJS_ROOT/deps/zephyr/zephyr-env.sh
+$ cmake --version
 ```
 
 ### Build and Flash
