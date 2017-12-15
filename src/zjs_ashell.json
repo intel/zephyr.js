@@ -18,12 +18,15 @@
     ],
     "targets": ["arduino_101"],
     "src": [
+        "src/ashell/ashell.c",
+        "src/ashell/ide-comms.c",
+        "src/ashell/ide-cmd.c",
         "src/ashell/file-utils.c",
         "src/ashell/jerry-code.c",
         "src/ashell/term-cmd.c",
         "src/ashell/term-ihex.c",
         "src/ashell/term-uart.c",
-        "src/ashell/term-webusb.c",
+        "src/ashell/webusb-uart.c",
         "${ZEPHYR_BASE}/samples/subsys/usb/webusb/src/webusb_serial.c",
         "./deps/ihex/kk_ihex_read.c"
     ],

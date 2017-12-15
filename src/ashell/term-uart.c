@@ -38,6 +38,7 @@
 #include "jerry-code.h"
 
 // ZJS includes
+#include "ashell.h"
 #include "term-uart.h"
 #include "term-cmd.h"
 
@@ -349,8 +350,9 @@ static void uart_ready()
 
     // Disable buffering on stdout since some parts write directly to uart fifo
     setbuf(stdout, NULL);
-
+#if ASHELL_IDE_PROTOCOL == 0
     ashell_help("");
+#endif
     comms_print(comms_get_prompt());
     process_state = 0;
 
@@ -461,14 +463,4 @@ void uart_init()
 
     k_fifo_init(&data_queue);
     k_fifo_init(&avail_queue);
-}
-
-void zjs_ashell_init()
-{
-    uart_init();
-}
-
-void zjs_ashell_process()
-{
-    uart_process();
 }
