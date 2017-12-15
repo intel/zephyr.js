@@ -71,7 +71,7 @@ before_install:
     fi
 
 install: >
-  if [[ "$TARGET" != "linux" && "$(cat $ZEPHYR_SDK_INSTALL_DIR/sdk_version)" != "$ZEPHYR_SDK_VERSION" ]; then
+  if [[ "$TARGET" != "linux" && "$(cat $ZEPHYR_SDK_INSTALL_DIR/sdk_version)" != "$ZEPHYR_SDK_VERSION" ]]; then
     wget $ZEPHYR_SDK_DOWNLOAD_URL &&
     chmod +x $ZEPHYR_SDK_SETUP_BINARY &&
     rm -rf $ZEPHYR_SDK_INSTALL_DIR &&
