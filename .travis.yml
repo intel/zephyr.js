@@ -55,7 +55,14 @@ before_install:
       sudo pip3 install pyelftools;
     fi
   - if [ "$TRAVIS_OS_NAME" == "linux" -a "$(cmake --version | head -1)" != "cmake version $CMAKE_VERSION" ]; then
-      echo hooray;
+      sudo apt-get purge cmake &&
+      wget https://cmake.org/files/v$CMAKE_SHORTVER/cmake-$CMAKE_VERSION.tar.gz &&
+      tar xf cmake-$CMAKE_VERSION.tar.gz &&
+      cd $CMAKE_VERSION &&
+      ./bootstrap &&
+      make -j4 &> /dev/null &&
+      sudo make install &&
+      cd ..;
     fi
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
       brew update &&
