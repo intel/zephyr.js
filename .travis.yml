@@ -23,6 +23,8 @@ env:
     - ZEPHYR_SDK_DOWNLOAD_FOLDER=https://github.com/zephyrproject-rtos/meta-zephyr-sdk/releases/download/$ZEPHYR_SDK_VERSION
     - ZEPHYR_SDK_SETUP_BINARY=zephyr-sdk-$ZEPHYR_SDK_VERSION-setup.run
     - ZEPHYR_SDK_DOWNLOAD_URL=$ZEPHYR_SDK_DOWNLOAD_FOLDER/$ZEPHYR_SDK_SETUP_BINARY
+    - CMAKE_SHORTVER=3.9
+    - CMAKE_VERSION=3.9.5
 matrix:
   fast_finish: true
   include:
@@ -44,16 +46,19 @@ matrix:
 cache:
   directories:
     - $ZEPHYR_SDK_INSTALL_DIR
+    - /usr/local/bin
 
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
       sudo apt-get update -qq &&
       sudo apt-get install libc6-dev-i386 make gperf gcc g++ python3-ply python3-yaml python3-pip device-tree-compiler ncurses-dev uglifyjs -qq &&
-      sudo pip3 install pyelftools &&
+      sudo pip3 install pyelftools;
+    fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" -a "$(cmake --version | head -1)" != "cmake version $CMAKE_VERSION" ]]; then
       sudo apt-get purge cmake &&
-      wget https://cmake.org/files/v3.9/cmake-3.9.5.tar.gz &&
-      tar -xf cmake-3.9.5.tar.gz &&
-      cd cmake-3.9.5/ &&
+      wget https://cmake.org/files/v$CMAKE_SHORTVER/cmake-$CMAKE_VERSION.tar.gz &&
+      tar xf cmake-$CMAKE_VERSION.tar.gz &&
+      cd $CMAKE_VERSION &&
       ./bootstrap &&
       make -j4 &> /dev/null &&
       sudo make install &&
