@@ -1,0 +1,19 @@
+{
+    "module": "ashell_ide_term",
+    "depends": ["ashell"],
+    "src": [
+        "${ZEPHYR_BASE}/samples/subsys/usb/webusb/src/webusb_serial.c",
+        "src/ashell/term-uart.c",
+        "src/ashell/term-cmd.c",
+        "src/ashell/term-ihex.c",
+        "./deps/ihex/kk_ihex_read.c",
+        "src/ashell/term-webusb.c"
+],
+    "zephyr_conf": {
+        "arduino_101": ["CONFIG_USB_CDC_ACM=n"]
+    },
+    "zjs_config": [
+        "-I${ZEPHYR_BASE}/samples/subsys/usb/webusb/src/",
+        "-DASHELL_IDE_UART"
+    ]
+}
