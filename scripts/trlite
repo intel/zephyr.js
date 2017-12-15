@@ -29,6 +29,10 @@ if [ ! -d "$ZJS_BASE" ]; then
    exit 1
 fi
 
+if [ ! -v TRAVIS_COMMIT_RANGE ]; then
+    TRAVIS_COMMIT_RANGE=$(git log origin/master..HEAD --format='format:%H')
+fi
+
 RUNLOCAL=n
 
 if [ "$1" == "-l" ]; then
@@ -424,6 +428,17 @@ function check_copyright() {
     return $RVAL
 }
 
+function check_signed_off_by() {
+    for i in $TRAVIS_COMMIT_RANGE; do
+        if [ "1" != "$(grep -c '^Signed-off-by: ' <<< "$(git log --format=%B -n 1 $i)")" ]; then
+            echo "Commit ID $i does not have Signed-off-by line"
+            return 1
+        fi
+    done
+
+    return 0
+}
+
 if [ "$RUN" == "all" -o "$RUN" == "3" ]; then
     VMNUM=3
     TESTNUM=0
@@ -442,6 +457,9 @@ if [ "$RUN" == "all" -o "$RUN" == "3" ]; then
 
     # check that headers include all needed dependencies
     try_command "headers" checkheaders -v
+
+    # check that new commits have signed-off-by
+    try_command "signed-off" check_signed_off_by
 
     # linux build tests
     try_command "linux" make $VERBOSE BOARD=linux
