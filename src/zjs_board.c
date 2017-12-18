@@ -96,7 +96,11 @@ static int split_pin_name(const char *name, char *prefix, int *number)
     }
 
     long num = -1;
-    if (index != -1) {
+    if (index == -1) {
+        // no numeric portion
+        strcpy(prefix, name);
+    }
+    else {
         // at least one digit was found
         char *end;
         num = strtol(name + index, &end, 10);
@@ -104,10 +108,11 @@ static int split_pin_name(const char *name, char *prefix, int *number)
             DBG_PRINT("invalid pin suffix: '%s'\n", end);
             return FIND_PIN_INVALID;
         }
+
+        strncpy(prefix, name, index);
+        prefix[index] = '\0';
     }
 
-    strncpy(prefix, name, index);
-    prefix[index] = '\0';
     *number = num;
     return 0;
 }
