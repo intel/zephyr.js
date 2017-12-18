@@ -23,7 +23,6 @@
         "src/ashell/term-ihex.c",
         "src/ashell/term-uart.c",
         "src/ashell/term-webusb.c",
-        "${ZEPHYR_BASE}/samples/subsys/usb/webusb/src/webusb_serial.c",
         "./deps/ihex/kk_ihex_read.c"
     ],
     "zephyr_conf": {
