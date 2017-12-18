@@ -39,6 +39,7 @@ else if (board.name == 'frdm_k64f') {
             'GPIO_4.26', 'GPIO_2.5',  'GPIO_2.7',  'GPIO_2.0',  'GPIO_2.9',
             'GPIO_2.8',  'GPIO_2.1',  'GPIO_1.19', 'GPIO_1.18',
             // outer right pins (D0 - D15)
+            //   (reverse order from the top down in the diagram)
             'GPIO_4.24', 'GPIO_4.25', 'GPIO_3.1',  'GPIO_3.3', 'GPIO_3.2',
             'GPIO_3.0',  'GPIO_2.4',  'GPIO_2.12', 'GPIO_2.3',  'GPIO_2.2',
             'GPIO_0.2',  'GPIO_1.23', 'GPIO_0.1',  'GPIO_1.9',  'GPIO_2.17',
