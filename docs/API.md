@@ -57,7 +57,7 @@ Board Support
 
 [FRDM-K64F](./boards/frdm_k64f.md)
 
-[Basic Board Support](./board/basic.md) for all other boards
+[Basic Board Support](./boards/basic.md) for all other boards
 
 Devices
 -------
