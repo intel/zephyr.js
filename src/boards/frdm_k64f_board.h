@@ -134,4 +134,3 @@ static const prefix_range_t pwm_map[] = {
 
 static const extra_pin_t pwm_extras[] = {};
 #endif  // BUILD_MODULE_PWM
-
