@@ -6,6 +6,7 @@
 #include <string.h>
 
 // ZJS includes
+#include "zjs_board.h"
 #include "zjs_callbacks.h"
 #include "zjs_util.h"
 
@@ -466,6 +467,58 @@ static void test_str_matches()
     zjs_assert(!zjs_str_matches("dog", array), "string not present");
 }
 
+// Test split_pin_name in zjs_board.c
+
+static void test_split_pin_name()
+{
+    char str[NAMED_PIN_MAX_LEN + 3];
+    char prefix[NAMED_PIN_MAX_LEN];
+    int number = 0;
+
+    // set up str with len NAMED_PIN_MAX_LEN + 2
+    for (int i = 0; i < NAMED_PIN_MAX_LEN + 2; i++) {
+        str[i] = 'a';
+    }
+    str[NAMED_PIN_MAX_LEN + 2] = '\0';
+    zjs_assert(wrap_split_pin_name(str, prefix, &number) == FIND_PIN_INVALID,
+               "name at max len + 2");
+
+    // terminate right at max len
+    for (int i = 0; i < 2; i++) {
+        str[NAMED_PIN_MAX_LEN + i] = 'b';
+    }
+    str[NAMED_PIN_MAX_LEN + 2] = '\0';
+    zjs_assert(wrap_split_pin_name(str, prefix, &number) == FIND_PIN_INVALID,
+               "name at max len");
+
+    // terminate at one less than max
+    str[NAMED_PIN_MAX_LEN - 1] = '\0';
+    number = 0;
+    zjs_assert(wrap_split_pin_name(str, prefix, &number) == 0,
+               "name at max len - 1");
+    zjs_assert(number == -1, "no number at max - 1");
+    zjs_assert(strequal(str, prefix), "prefix is name at max - 1");
+
+    // prefix plus number
+    zjs_assert(wrap_split_pin_name("LED2", prefix, &number) == 0, "LED2 name");
+    zjs_assert(strequal(prefix, "LED"), "LED2 prefix");
+    zjs_assert(number == 2, "LED2 number");
+
+    // just prefix
+    zjs_assert(wrap_split_pin_name("BTN", prefix, &number) == 0, "BTN name");
+    zjs_assert(strequal(prefix, "BTN"), "BTN prefix");
+    zjs_assert(number == -1, "BTN number");
+
+    // just number
+    zjs_assert(wrap_split_pin_name("42", prefix, &number) == 0, "42 name");
+    zjs_assert(strequal(prefix, ""), "42 prefix");
+    zjs_assert(number == 42, "42 number");
+
+    // extra junk after number
+    zjs_assert(wrap_split_pin_name("A1A", prefix, &number) == FIND_PIN_INVALID,
+               "junk after number");
+}
+
 void zjs_run_unit_tests()
 {
     test_hex_to_byte();
@@ -475,6 +528,7 @@ void zjs_run_unit_tests()
     test_c_callbacks();
     test_list_macros();
     test_str_matches();
+    test_split_pin_name();
 
     printf("TOTAL - %d of %d passed\n", passed, total);
     exit(!(passed == total));

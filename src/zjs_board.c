@@ -8,9 +8,6 @@
 #include "zjs_common.h"
 #include "zjs_util.h"
 
-// max length of a named pin like IO3, PWM0, LED0
-#define NAMED_PIN_MAX_LEN 8
-
 // max length of a pass-through pin like GPIO_0.12
 #define FULL_PIN_MAX_LEN 16
 
@@ -565,6 +562,14 @@ int zjs_board_find_pwm(jerry_value_t jspin, char *device_name, int len)
 #endif
     DBG_PRINT("pwm device name: '%s'\n", device_name);
     return pin;
+}
+#endif
+
+// wrappers for unit tests
+#ifdef ZJS_LINUX_BUILD
+int wrap_split_pin_name(const char *name, char *prefix, int *number)
+{
+    return split_pin_name(name, prefix, number);
 }
 #endif
 
