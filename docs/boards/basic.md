@@ -25,8 +25,8 @@ one per GPIO controller. For STM32 boards, on the other hand, they are named
 can probably find them by looking up the `pinmux.c` file for your board in
 Zephyr.
 
-On a board without specific ZJS support like the STM32-F411RE (though we'll
-probably add that soon!) you would need to refer to the "D6" pin (aka PB_10)
+On a board without specific ZJS support like the Nucleo F411RE (though we'll
+probably add that soon!), you would need to refer to the "D6" pin (aka PB_10)
 with the name "GPIOB.10".
 
 These full pin specifications can be used on boards with "friendly" name support
