@@ -313,6 +313,8 @@ static int split_pin_name(const char *name, char *prefix, int *number)
             DBG_PRINT("invalid pin suffix: '%s'\n", end);
             return FIND_PIN_INVALID;
         }
+    } else {
+        index = 0;
     }
 
     strncpy(prefix, name, index);
