@@ -53,9 +53,9 @@ Board Support
 -------------
 [Board](./board.md)
 
-[Arduino 101](./a101_pins.md)
+[Arduino 101](./boards/arduino_101.md)
 
-[FRDM-K64F](./k64f_pins.md)
+[FRDM-K64F](./boards/frdm_k64f.md)
 
 Devices
 -------

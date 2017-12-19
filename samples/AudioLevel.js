@@ -6,7 +6,6 @@
 
 console.log("Audio Level sample...");
 
-var pins = require("arduino101_pins");
 var aio = require("aio");
 var lcd = require("grove_lcd");
 
@@ -30,7 +29,7 @@ glcd.print('|');
 var lastlevel = 0;
 var lastbright = 0;
 
-var knob = aio.open({ device: 0, pin: pins.A1 });
+var knob = aio.open('A1');
 setInterval(function () {
     var value = 4096.0 - knob.read();
     var level = (value / 256.0) | 0;

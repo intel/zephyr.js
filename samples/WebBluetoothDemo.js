@@ -19,7 +19,6 @@
 var aio = require("aio");
 var ble = require("ble");
 var pwm = require("pwm");
-var pins = require("arduino101_pins");
 
 var DEVICE_NAME = 'Arduino101';
 
@@ -37,7 +36,7 @@ var TemperatureCharacteristic = new ble.Characteristic({
 TemperatureCharacteristic._lastValue = undefined;
 TemperatureCharacteristic._onChange = null;
 
-var tmp36 = aio.open({ pin: pins.A0 });
+var tmp36 = aio.open('A0');
 
 TemperatureCharacteristic.onReadRequest = function(offset, callback) {
     if (!this._lastValue) {

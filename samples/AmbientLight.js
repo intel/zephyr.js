@@ -26,12 +26,10 @@
 // 10,000 - 25,000 lux          Full daylight (not direct sun)
 // 32,000 - 130,000 lux         Direct sunlight
 
-var pins = require("arduino101_pins");
-
 console.log("Ambient light test...");
 
 var sensor = new AmbientLightSensor({
-    pin: pins.A2
+    pin: 'A2'
 });
 
 sensor.onchange = function() {

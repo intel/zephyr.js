@@ -1256,7 +1256,7 @@ u32_t terminal_process(const char *buf, u32_t len)
             }
 
             u32_t length = strnlen(shell_line, MAX_LINE);
-#if ASHELL_IDE_PROTOCOL
+#ifdef ASHELL_IDE_PROTOCOL
             extern void ide_receive(u8_t *buf, size_t len);
             // kludge for getting IDE protocol work with WebUSB UART
             // TODO: remove this

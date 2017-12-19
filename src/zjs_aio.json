@@ -1,6 +1,6 @@
 {
     "module": "aio",
     "require": "aio",
-    "depends": ["aio_a101", "aio_k64f", "events"],
+    "depends": ["aio_a101", "aio_k64f", "board", "events"],
     "targets": ["arduino_101", "frdm_k64f"]
 }

@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 // Hardware Requirements:
 //   - A Grove Light sensor
@@ -10,10 +10,9 @@
 console.log("Testing ambientlight APIs");
 
 var genericSensor = require("GenericSensor.js");
-var pins = require("arduino101_pins");
 
 var sensor = new AmbientLightSensor({
-    pin: pins.A2,
+    pin: 'A2',
     frequency: 50
 });
 

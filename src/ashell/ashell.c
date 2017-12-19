@@ -17,7 +17,7 @@ void zjs_ashell_init()
 {
     extern void uart_init();
     uart_init();
-#if (ASHELL_IDE_PROTOCOL == 1)
+#ifdef ASHELL_IDE_PROTOCOL
     ide_init();
 #endif
 }

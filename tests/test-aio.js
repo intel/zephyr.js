@@ -9,11 +9,9 @@ var assert = require("Assert.js");
 var board = require("board");
 if (board.name === "arduino_101") {
     console.log("Wire IO4 to A0!");
-    var pins = require("arduino101_pins");
     var pinB = gpio.open({pin: "IO4", mode: "out"});
 } else {
     console.log("Wire D3 to A0!");
-    var pins = require("k64f_pins");
     var pinB = gpio.open({pin: "D3", mode: "out"});
 }
 
@@ -22,7 +20,7 @@ assert.throws(function() {
     aio.open({pin: 1024});
 }, "open: undefined pin");
 
-var pinA = aio.open({pin: pins.A0});
+var pinA = aio.open('A0');
 assert(pinA !== null && typeof pinA === "object", "open: defined pin");
 
 var readFlag = 0;
@@ -79,7 +77,7 @@ var onInterval = setInterval(function () {
         readCount = 0;
 
         // reopen AIOPin after closed
-        pinA = aio.open({pin: pins.A0});
+        pinA = aio.open('A0');
 
         pinA.on("change", valueChanged);
 
@@ -94,7 +92,7 @@ var onInterval = setInterval(function () {
     // test AIOPin readAsync
     if (readTimes === 10) {
         // reopen AIOPin for init
-        pinA = aio.open({pin: pins.A0});
+        pinA = aio.open('A0');
 
         pinA.readAsync(function (rawValue) {
             if (rawValue >= 4000) {

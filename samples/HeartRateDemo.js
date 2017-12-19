@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 // This implementation includes the source code from PulseSensor.com,
 // which is licensed under MIT license.
@@ -33,7 +33,6 @@
 var aio = require("aio");
 var ble = require("ble");
 var grove_lcd = require("grove_lcd");
-var pins = require("arduino101_pins");
 
 // heart rate calculation
 var IBI = 600;               // value holds the time interval between beats! Must be seeded!
@@ -63,7 +62,7 @@ var checkTime = 2000;
 var colorIndex = 0;
 
 // pins
-var pin = aio.open({ device: 0, pin: pins.A1 });
+var pin = aio.open('A1');
 
 // Bluetooth LE
 var deviceName = 'Zephyr Heartrate Monitor';

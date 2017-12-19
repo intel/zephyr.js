@@ -350,7 +350,7 @@ static void uart_ready()
 
     // Disable buffering on stdout since some parts write directly to uart fifo
     setbuf(stdout, NULL);
-#if ASHELL_IDE_PROTOCOL == 0
+#ifdef ASHELL_IDE_PROTOCOL
     ashell_help("");
 #endif
     comms_print(comms_get_prompt());

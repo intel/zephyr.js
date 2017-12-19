@@ -2,7 +2,6 @@
     "module": "ashell",
     "depends": [
         "aio",
-        "arduino101_pins",
         "ble",
         "common",
         "console",
@@ -27,7 +26,6 @@
         "src/ashell/term-ihex.c",
         "src/ashell/term-uart.c",
         "src/ashell/webusb-uart.c",
-        "${ZEPHYR_BASE}/samples/subsys/usb/webusb/src/webusb_serial.c",
         "./deps/ihex/kk_ihex_read.c"
     ],
     "zephyr_conf": {
