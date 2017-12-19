@@ -19,10 +19,13 @@
 console.log("Test GFX APIs with SPI LCD screen(ST7735)");
 
 var LCD = require("ST7735.js");
+var board = require('board');
+var drawImmediate = board.name === "arduino_101" ? true : false;
 var gfxLib = require("gfx");
 
 try {
-    var GFX = gfxLib.init(LCD.width, LCD.height, LCD.initScreen, LCD.drawCB);
+    var GFX = gfxLib.init(LCD.width, LCD.height, LCD.initScreen,
+                          LCD.drawCB, drawImmediate);
     GFX.drawPixel(0, 0, [0xF8, 0x00]);
 } catch (e) {
     console.log("\n" + e.name + " : " + e.message);
@@ -30,7 +33,8 @@ try {
     console.log("expected result: Expected a function");
 }
 
-GFX = gfxLib.init(LCD.width, LCD.height, LCD.initScreen, LCD.drawCB, LCD);
+GFX = gfxLib.init(LCD.width, LCD.height, LCD.initScreen,
+                  LCD.drawCB, drawImmediate, LCD);
 console.log("\ninit(width, height, screen, draw, optional): ");
 console.log("expected result: screen init successful");
 
