@@ -173,7 +173,7 @@ static struct webusb_req_handlers req_handlers = {
  *
  * @return N/A
  */
-void webusb_register_handlers()
+void webusb_init()
 {
     /* Set the custom and vendor request handlers */
     webusb_register_request_handlers(&req_handlers);

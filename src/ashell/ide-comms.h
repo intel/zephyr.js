@@ -12,43 +12,6 @@
 #define ASCII_RS     0x1E  // record separator
 #define ASCII_US     0x1F  // unit separator
 
-/**
- TODO: move this text to a README.
-
- IDE mode defines its own protocol over WebUSB that is also implemented by
- a WebIDE module on the client side. The client sends text command lines, and
- receives JSON replies.
-
- The content of the messages is not generic, but applied to the ashell/WebIDE
- use cases. Message serialization is experimental. CBOR is possible later.
-
- * Request packet serialization: text commands
- - preamble: '{'
- - separator: ' '
- - postamble: '}'
- - first token: command (init, save, run, stop, ls, cat, mv, rm, boot, reboot)
- - second token: arg1, string (required for: save, run, mv, rm, boot)
- - third token: arg2, string (move), or <0x1E><bytes><0x1A> (save)
-
-[Binary] data stream:
-- preamble: 0x1E
-- postamble: 0x1A.
-Inside the stream, the 0x1E, 0x1A, and \ characters are escaped with \.
-
- * Reply packet serialization: JSON
- - preamble: '{'
- - "cmd" : "string" (init, save, run, stop, list, move, remove, boot, reboot)
- - "status": "string" (ok | error)
- - "data": ["string"] (only needed for list, as array of strings)
- - postamble: '}'
-
-Text data stream as reply (cat command):
- - a message as JSON reply with data: ["start"]
- - binary data
- - a message as JSON reply with data: ["end"]
-
-**/
-
 #ifndef TX_POOL_SIZE      // from WebUSB driver
 #define TX_POOL_SIZE      64
 #endif
@@ -101,7 +64,7 @@ char *ide_spool_ptr();
 // Add the given number of bytes to the spool current length.
 void ide_spool_adjust(size_t size);
 
-#if ASHELL_IDE_DBG
+#ifdef ASHELL_IDE_DBG
 #define IDE_DBG(...) do { \
     ide_spool( __VA_ARGS__ ); \
     ide_spool_flush(); \

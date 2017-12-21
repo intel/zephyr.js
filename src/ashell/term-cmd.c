@@ -1156,7 +1156,8 @@ ansi_cmd:
 
 u32_t terminal_init()
 {
-    DBG("[SHELL] Init\n");
+    ashell_help("");
+    comms_print(comms_get_prompt());
     ashell_run_boot_cfg();
     return 0;
 }
@@ -1256,18 +1257,7 @@ u32_t terminal_process(const char *buf, u32_t len)
             }
 
             u32_t length = strnlen(shell_line, MAX_LINE);
-#ifdef ASHELL_IDE_PROTOCOL
-            extern void ide_receive(u8_t *buf, size_t len);
-            // kludge for getting IDE protocol work with WebUSB UART
-            // TODO: remove this
-            if (shell_line[length - 1] != '}') {
-                shell_line[length++] = '\r';
-                shell_line[length++] = '\n';
-            }
-            ide_receive((u8_t *)shell_line, length);
-#else
             ashell_main_state(shell_line, length);
-#endif
             comms_print("\r\n");
             comms_print(comms_get_prompt());
 

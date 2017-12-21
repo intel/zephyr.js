@@ -118,9 +118,6 @@ static void parser_reset()
 void parser_init()
 {
     parser_reset();
-    IDE_DBG("parser.state: %u\r\n", parser.state);
-    IDE_DBG("parser.cmd_id: %u\r\n", parser.cmd_id);
-    IDE_DBG("parser.cmd: %s\r\n", cmd_arg_map[parser.cmd_id].cmd);
 }
 
 // Parser delimiters may be single or multiple or control characters.
@@ -184,13 +181,13 @@ int ide_start_message(char *cmd)
 
 int ide_end_message(int status)
 {
-    ide_spool(", \"status\": %d }", status);
+    ide_spool(", \"status\": %d }\r\n", status);
     return ide_spool_flush();
 }
 
 int ide_reply(int status, char *message)
 {
-    ide_spool("{\"reply\": %s, \"status\":%d, \"data\": %s }",
+    ide_spool("{\"reply\": %s, \"status\":%d, \"data\": %s }\r\n",
               cmd_arg_map[parser.cmd_id].cmd, status, message);
     ide_spool_flush();
     if (!(status == NO_ERROR && parser.state == PARSE_ARG_STREAM))
@@ -256,7 +253,6 @@ void ide_parse(char *buf, size_t len) {
         IDE_DBG("\r\nParser received invalid buffer.");
         return;
     }
-    // IDE_DBG("\r\nReceived %u bytes.", len);
 
     int ret = 0;
     // Parser states allow resuming parsing with successive input buffers.
@@ -378,9 +374,10 @@ int save_stream(char *filename, char *buffer, size_t len)
         return ide_reply(ERROR_INVALID_STREAM, "\"Not in streaming mode.\"");
     }
 
-    if(match_stream_end(buffer + len - 2) &&
-       match_postamble(buffer + len - 1)) {
-        len -= 2;  // TODO: use stream_end_size() + postamble_size()
+    // The IDE client will always terminate with '#}\n' sequence.
+    if(match_stream_end(buffer + len - 3) &&
+       match_postamble(buffer + len - 2)) {
+        len -= 3;  // TODO: use stream_end_size() + postamble_size()
         end = true;
     }
 
@@ -463,8 +460,8 @@ static void ide_cmd_list(char *buf, size_t len)
 {
     static struct fs_dirent entry;
     fs_dir_t dir;
-    char *start_format = "\t{ \"name\": \"%s\", \"size\": %d }\r\n";
-    char *format = ", \t{ \"name\": \"%s\", \"size\": %d }\r\n";
+    char *start_format = "\r\n\t{ \"name\": \"%s\", \"size\": %d }";
+    char *format = ",\r\n\t{ \"name\": \"%s\", \"size\": %d }";
 
     IDE_DBG("\r\nInvoking list...");
 

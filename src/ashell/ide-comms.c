@@ -30,7 +30,7 @@ void ide_receive(u8_t *buffer, size_t len)
     if (len == 1) {  // character mode; buffer a command
         ide_send_buffer(buf, 1);  // echo
         if (rx_cursor >= P_SPOOL_SIZE || *buf == '\n' || *buf == '\r') {
-            //IDE_DBG("\r\nReceived %u chars.\r\n", rx_cursor);
+            IDE_DBG("\r\nReceived %u chars.\r\n", rx_cursor);
             ide_parse(rx_buffer, rx_cursor);
             rx_cursor = 0;
             memset(rx_buffer, P_SPOOL_SIZE + 1, 0);
@@ -39,14 +39,13 @@ void ide_receive(u8_t *buffer, size_t len)
             rx_buffer[rx_cursor] = '\0';
         }
     } else {
-        //IDE_DBG("\r\nReceived %u bytes.\r\n", len);
+        IDE_DBG("\r\nReceived %u bytes.\r\n", len);
         ide_parse(buf, len);
     }
 }
 
 // Placeholder for switching WebUSB driver.
-#define ASHELL_IDE_UART 1  // Use WebUSB over UART for now.
-#if ASHELL_IDE_UART
+#ifdef ASHELL_IDE_UART
 int ide_send_buffer(char *buf, size_t len)
 {
     extern void uart_write_buf(char *buf, int len);
@@ -77,30 +76,37 @@ int ide_spool_space()
 
 void ide_spool_adjust(size_t size)
 {
-    spool_cursor += size;
+    if (spool_cursor + size < P_SPOOL_SIZE)
+        spool_cursor += size;
+    else
+        spool_cursor = P_SPOOL_SIZE;
 }
 
-// Save multiple calls to ide_send, spool the output. Truncate if overflown.
+// Save multiple calls to ide_send, spool the output.
 int ide_spool(char *format, ...)
 {
-    size_t size = 0;
+    size_t size;
+    if (spool_cursor + 10 >= P_SPOOL_SIZE) {
+        ide_spool_flush();
+    }
     va_list args;
     va_start(args, format);
-    size = vsnprintf(spool + spool_cursor, P_SPOOL_SIZE - spool_cursor,
-                     format, args);
+    size = vsnprintf(spool + spool_cursor, ide_spool_space(), format, args);
     va_end(args);
     spool_cursor += size;
     if (spool_cursor >= P_SPOOL_SIZE) {
         spool_cursor = P_SPOOL_SIZE;
         ide_spool_flush();
+        return P_SPOOL_SIZE;
     }
     return size;
 }
 
 int ide_spool_flush()
 {
-    if (spool_cursor == 0)
+    if (spool_cursor == 0) {
         return 0;
+    }
     int size = ide_send_buffer(spool, spool_cursor);
     spool_cursor = 0;
     memset(spool, 0, P_SPOOL_SIZE + 1);
