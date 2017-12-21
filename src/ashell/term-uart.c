@@ -34,9 +34,6 @@
 #include <fs.h>
 #include <misc/printk.h>
 
-// JerryScript includes
-//#include "jerry-code.h"
-
 // ZJS includes
 #include "ashell.h"
 #include "term-uart.h"
@@ -49,12 +46,7 @@
 #include "webusb_serial.h"
 #endif
 
-// #include "ihex/kk_ihex_read.h"
-
 #include "../zjs_util.h"
-
-// #define FIVE_SECONDS    (5 * sys_clock_ticks_per_sec)
-// #define TEN_SECONDS     (10 * sys_clock_ticks_per_sec)
 
 #define CTRL_START 0x00
 #define CTRL_END   0x1F
@@ -301,6 +293,17 @@ void uart_write_buf(const char *buf, int len)
     }
 
     uart_irq_tx_disable(dev_upload);
+}
+
+/**
+* Provide console message implementation for the engine.
+*/
+void comms_printf(const char *format, ...)
+{
+    va_list args;
+    va_start(args, format);
+    vfprintf(stdout, format, args);
+    va_end(args);
 }
 
 /**

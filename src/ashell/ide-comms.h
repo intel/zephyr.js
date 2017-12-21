@@ -16,7 +16,7 @@
 #define TX_POOL_SIZE      64
 #endif
 
-#define P_SPOOL_SIZE      (2 * TX_POOL_SIZE)  // WebUSB driver tx buffer size
+#define P_SPOOL_SIZE      63
 
 // Errors are used as negative numbers in the code, and sent as positive numbers.
 typedef enum {
@@ -56,7 +56,7 @@ int ide_spool(char *format, ...);
 int ide_spool_flush();
 
 // Return remaning bytes in spool.
-int ide_spool_space();
+size_t ide_spool_space();
 
 // Return a pointer to the first free byte in the spool.
 char *ide_spool_ptr();

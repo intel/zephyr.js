@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, Intel Corporation.
+// Copyright (c) 2017, Intel Corporation.
 
 /**
  * @file
@@ -18,10 +18,12 @@
 // ZJS includes
 #include "ashell.h"
 #include "ide-comms.h"
+#include "term-uart.h"
 
 // Process a buffer (part of a message) in WebUSB driver context.
 void ide_receive(u8_t *buffer, size_t len)
 {
+    // TODO: remove this when zephyrjs-ide is switched to IDE protocol.
     static char rx_buffer[P_SPOOL_SIZE + 1];
     static size_t rx_cursor = 0;
     extern void ide_parse(char *buf, size_t len);
@@ -39,28 +41,19 @@ void ide_receive(u8_t *buffer, size_t len)
             rx_buffer[rx_cursor] = '\0';
         }
     } else {
+        // TODO: keep only this part after cleanup.
         IDE_DBG("\r\nReceived %u bytes.\r\n", len);
         ide_parse(buf, len);
     }
 }
 
-// Placeholder for switching WebUSB driver.
-#ifdef ASHELL_IDE_UART
 int ide_send_buffer(char *buf, size_t len)
 {
-    extern void uart_write_buf(char *buf, int len);
     uart_write_buf(buf, len);
     return len;
 }
-#else
-int ide_send_buffer(char *buf, size_t len)
-{
-    return webusb_write((u8_t *) buf, len);
-}
-#endif  // ASHELL_IDE_UART
 
-// Spooled write for webusb-raw is needed, but already there for webusb-uart.
-// Temporarily keeping here for testing webusb-raw as well.
+// Spooling is needed for assembling an IDE message and to read files.
 static char spool[P_SPOOL_SIZE + 1];
 static u32_t spool_cursor = 0;
 
@@ -69,9 +62,10 @@ char *ide_spool_ptr()
     return spool + spool_cursor;
 }
 
-int ide_spool_space()
+size_t ide_spool_space()
 {
-    return P_SPOOL_SIZE - spool_cursor;
+    int space = P_SPOOL_SIZE - spool_cursor;
+    return space > 0 ? space : 0;
 }
 
 void ide_spool_adjust(size_t size)

@@ -173,17 +173,6 @@ void comms_print(const char *buf)
 }
 
 /**
-* Provide console message implementation for the engine.
-*/
-void comms_printf(const char *format, ...)
-{
-    va_list args;
-    va_start(args, format);
-    vfprintf(stdout, format, args);
-    va_end(args);
-}
-
-/**
  * @brief Skips all the spaces until it finds the first character
  *
  * @param str   Null terminated string

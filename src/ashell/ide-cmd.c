@@ -22,7 +22,6 @@
 
 // ZJS includes
 #include "../zjs_util.h"
-// #include "../zjs_util.h"
 
 // Local includes
 #include "ashell.h"
@@ -71,7 +70,7 @@ static const struct {
     ide_cmd_handler_t handler;
     size_t argc;
 } cmd_arg_map[CMD_MAX + 1] =
-{ //  index        command    handler        argc       length
+{ //  index        command    handler        argc    length
     { CMD_INIT,    "init",    ide_cmd_init,    0 },  // 7
     { CMD_SAVE,    "save",    ide_cmd_save,    2 },  // 20 + data
     { CMD_RUN,     "run",     ide_cmd_run,     1 },  // 19
@@ -257,7 +256,7 @@ void ide_parse(char *buf, size_t len) {
     int ret = 0;
     // Parser states allow resuming parsing with successive input buffers.
     // Since all commands (except save) fit in one input buffer, it is enough to
-    //   handle idle and stream states as possible entry points.
+    // handle idle and stream states as possible entry points.
     switch (parser.state) {
         case PARSER_IDLE:  // entry point
             IDE_DBG("\r\nParser state: idle.");
