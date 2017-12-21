@@ -18,15 +18,9 @@
     "targets": ["arduino_101"],
     "src": [
         "src/ashell/ashell.c",
-        "src/ashell/ide-comms.c",
-        "src/ashell/ide-cmd.c",
-        "src/ashell/file-utils.c",
-        "src/ashell/jerry-code.c",
-        "src/ashell/term-cmd.c",
-        "src/ashell/term-ihex.c",
         "src/ashell/term-uart.c",
-        "src/ashell/webusb-uart.c",
-        "./deps/ihex/kk_ihex_read.c"
+        "src/ashell/file-utils.c",
+        "src/ashell/jerry-code.c"
     ],
     "zephyr_conf": {
         "arduino_101": [
@@ -63,7 +57,6 @@
     },
     "zjs_config": [
         "-I${ZEPHYR_BASE}/ext/fs/fat/include",
-        "-I${ZEPHYR_BASE}/samples/subsys/usb/webusb/src/",
         "-I./deps",
         "-DZJS_ASHELL"
     ]

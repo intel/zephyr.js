@@ -15,8 +15,10 @@ void ide_init()
 
 void zjs_ashell_init()
 {
+#ifdef ASHELL_IDE_UART
     extern void uart_init();
     uart_init();
+#endif
 #ifdef ASHELL_IDE_PROTOCOL
     ide_init();
 #endif
@@ -24,6 +26,8 @@ void zjs_ashell_init()
 
 void zjs_ashell_process()
 {
+#ifdef ASHELL_IDE_UART
     extern void uart_process();
     uart_process();
+#endif
 }
