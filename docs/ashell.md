@@ -56,7 +56,7 @@ below instructions to connect to the device from the browser IDE directly.
     ```
 3. Connect the device to the host PC using a USB cable.
 4. A notification from Chrome will appear with an URL of the IDE. If not, the
-   address for the IDE is https://01.org/iot-ide.
+   address for the IDE is https://intel.github.io/zephyrjs-ide/.
 5. Click on the notification to open IDE in the browser.
 6. Click on connect button and grant an access to the device.
 7. Try uploading JS code to the device.
@@ -65,7 +65,7 @@ below instructions to connect to the device from the browser IDE directly.
 
     The landing page detection is disabled on Windows on Chrome so you don't see a
     notification in the upper right corner when the device is connected to the host,
-    but the WebUSB will continue to work. Visit the [IDE](https://01.org/iot-ide)
+    but the WebUSB will continue to work. Visit the [IDE](https://intel.github.io/zephyrjs-ide/)
     site and click on connect.
 
 Commands
