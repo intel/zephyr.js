@@ -11,7 +11,7 @@ var webusb = require('webusb');
 //   notification for other URLs.
 
 // suggest that the browser visit this URL to connect to the device
-webusb.setURL('https://01org.github.io/zephyr.js/webusb');
+webusb.setURL('https://intel.github.io/zephyr.js/webusb');
 
 sizes = [13, 17, 23, 19, 4, 8];
 offset = 0;

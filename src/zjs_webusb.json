@@ -12,7 +12,9 @@
             "CONFIG_USB_DEVICE_STACK=y"
         ],
         "arduino_101": [
-            "CONFIG_USB_DW=y"
+            "CONFIG_USB_DW=y",
+            "CONFIG_USB_DEVICE_VID=0x8086",
+            "CONFIG_USB_DEVICE_PID=0xF8A1"
         ]
     },
     "zjs_config": [
