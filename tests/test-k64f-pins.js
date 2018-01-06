@@ -1,6 +1,6 @@
 // Copyright (c) 2016-2017, Intel Corporation.
 
-console.log("Test FRDM-K64f pins APIs");
+console.log("Test FRDM-K64F pins APIs");
 
 var gpio = require('gpio');
 var assert = require("Assert.js");
