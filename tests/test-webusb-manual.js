@@ -1,4 +1,4 @@
-// Copyright (c) 2017, Intel Corporation.
+// Copyright (c) 2017-2018, Intel Corporation.
 
 console.log("Test WebUSB APIs");
 
@@ -6,7 +6,7 @@ var webusb = require("webusb");
 
 console.log("Please run Google Chrome >= 60");
 
-var URL = "https://01org.github.io/zephyr.js/webusb";
+var URL = "https://intel.github.io/zephyr.js/webusb";
 webusb.setURL(URL);
 console.log("\nsetURL(URL): " + URL);
 console.log("expected result: a notification prompting");

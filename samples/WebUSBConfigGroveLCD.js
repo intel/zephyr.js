@@ -1,4 +1,4 @@
-// Copyright (c) 2017, Intel Corporation.
+// Copyright (c) 2017-2018, Intel Corporation.
 
 // this sample shows how device settings such as the WebUSB URL itself could
 //   be configured via the web over WebUSB
@@ -14,7 +14,7 @@ var webusb = require('webusb');
 //   you to visit the URL specified below.
 // Note: You should only use https URLs because Chrome will not display a
 //   notification for other URLs.
-var url = 'https://01org.github.io/zephyr.js/webusb/acme';
+var url = 'https://intel.github.io/zephyr.js/webusb/acme';
 
 var anvilDelay = 6875;
 
