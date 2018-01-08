@@ -1,4 +1,4 @@
-// Copyright (c) 2017, Intel Corporation.
+// Copyright (c) 2017-2018, Intel Corporation.
 
 // enable to use function tracing for debug purposes
 #if 0
@@ -474,7 +474,6 @@ static bool pre_close_connection(void *handle, jerry_value_t argv[],
                                  u32_t *argc, const char *buffer, u32_t length)
 {
     FTRACE("handle = %p, buffer = %p, length = %d\n", handle, buffer, length);
-    ZJS_ASSERT(bytes == sizeof(u16_t), "invalid data received");
 
     jerry_value_t code = jerry_create_number(*((u16_t *)buffer));
     jerry_value_t reason = jerry_create_string("socket closed");
