@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (c) 2016-2017, Intel Corporation.
+# Copyright (c) 2016-2018, Intel Corporation.
 # Author: Geoff Gustafson <geoff@linux.intel.com>
 
 # trlite - a local version of the tests we run in Travis
@@ -415,8 +415,7 @@ function check_copyright() {
         elif ! $(head -1 $f | grep -q $YEAR); then
             if [ "$INTEL" ]; then
                 if head -1 $f | grep -q Intel; then
-                    echo Error: Add $YEAR to copyright in $f!
-                    RVAL=1
+                    echo Warning: Add $YEAR to copyright in $f!
                 fi
             fi
         fi
