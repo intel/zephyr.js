@@ -12,18 +12,17 @@ need to use ZJS "Basic Board Support" to use GPIO, AIO, or PWM features.
 
 Full Pin Specification
 ----------------------
-Using basic board support means that rather than referring to pins by the same
-friendly names you find in board documentation (IO3, A2, etc.) you will need to
-specify the device name and pin number that Zephyr expects.
+Using basic board support means that there are no "friendly names" predefined
+for your board such as "IO3" or "A2". Instead, you will need to specify the
+device name and pin number that Zephyr expects. The format these are provided
+in is called a full pin specification and that simply means the device name
+followed by a '.' and then the pin/channel number.
 
-The format these are provided in is called a full pin specification and that
-simply means the device name followed by a '.' and then the pin/channel number.
-
-For example, GPIO devices in Zephyr are often named "GPIO_0", "GPIO_1", etc. -
-one per GPIO controller. For STM32 boards, on the other hand, they are named
-'GPIOA', 'GPIOB', etc. Then the pin numbers will depend on the platform but you
-can probably find them by looking up the `pinmux.c` file for your board in
-Zephyr.
+For example, GPIO devices in Zephyr are often named "GPIO_0", "GPIO_1", and so
+on -- one per GPIO controller. For STM32 boards, on the other hand, they are
+named 'GPIOA', 'GPIOB', etc. Then the pin numbers will depend on the platform
+but you can probably find them by looking up the `pinmux.c` file for your board
+in Zephyr.
 
 On a board without specific ZJS support like the Nucleo F411RE (though we'll
 probably add that soon!), you would need to refer to the "D6" pin (aka PB_10)
