@@ -19,7 +19,7 @@
 console.log("Test GFX APIs with SPI LCD screen(ST7735)");
 
 var LCD = require("ST7735.js");
-var board = require('board');
+var board = require("board");
 var drawImmediate = board.name === "arduino_101" ? true : false;
 var gfxLib = require("gfx");
 
