@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, Intel Corporation.
+// Copyright (c) 2016-2018, Intel Corporation.
 
 #ifdef BUILD_MODULE_BUFFER
 
@@ -105,7 +105,8 @@ static ZJS_DECL_FUNC_ARGS(zjs_buffer_write_bytes, int bytes, bool big_endian)
     //             little endian order
     //  effects: writes bytes into the buffer associated with this JS object, if
     //             found, at the given offset, if within the bounds of the
-    //             buffer; otherwise returns an error
+    //             buffer and returns the offset just beyond what was written;
+    //             otherwise returns an error
 
     // args: value[, offset]
     ZJS_VALIDATE_ARGS(Z_NUMBER, Z_OPTIONAL Z_NUMBER);
@@ -124,9 +125,10 @@ static ZJS_DECL_FUNC_ARGS(zjs_buffer_write_bytes, int bytes, bool big_endian)
         return zjs_error("buffer not found on write");
     }
 
-    if (offset + bytes > buf->bufsize) {
+    u32_t beyond = offset + bytes;
+    if (beyond > buf->bufsize) {
         DBG_PRINT("bufsize %d, write attempted from %d to %d\n",
-                  buf->bufsize, offset, offset + bytes);
+                  buf->bufsize, offset, beyond);
         return zjs_error("write attempted beyond buffer");
     }
 
@@ -140,7 +142,7 @@ static ZJS_DECL_FUNC_ARGS(zjs_buffer_write_bytes, int bytes, bool big_endian)
         offset += dir;
     }
 
-    return ZJS_UNDEFINED;
+    return jerry_create_number(beyond);
 }
 
 static ZJS_DECL_FUNC(zjs_buffer_read_uint8)
