@@ -247,12 +247,12 @@ var screenTimer = setInterval(function () {
                 radius = 3;
                 chessPiece(x, y, radius, ChessPieceColor);
             } else {
-                chessPiece(0, 0, 1, BLUE);
-                chessPiece(0, 16, 1, MAGENTA);
-                chessPiece(16, 0, 1, YELLOW);
-                chessPiece(16, 16, 1, CYAN);
-                chessPiece(5, 5, 1, RED);
-                chessPiece(10, 10, 1, GREEN);
+                chessPiece(0, 0, 2, BLUE);
+                chessPiece(0, 16, 2, MAGENTA);
+                chessPiece(16, 0, 2, YELLOW);
+                chessPiece(16, 16, 2, CYAN);
+                chessPiece(5, 5, 2, RED);
+                chessPiece(10, 10, 2, GREEN);
 
                 console.log("expected result: Gobang chess pieces");
 
@@ -326,8 +326,8 @@ var screenTimer = setInterval(function () {
         var lineMap = [
             [0, 0, 128, 0],
             [126, 0, 126, 160],
-            [128, 157, 0, 157],
-            [4, 160, 4, 0],
+            [0, 157, 128, 157],
+            [0, 0, 0, 160],
             [0, 0, 128, 160],
             [128, 0, 0, 160]
         ];
