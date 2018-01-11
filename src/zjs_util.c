@@ -820,7 +820,7 @@ void dump_buffer(const char *label, const void *buf, int len)
     char *spaces = "  ";
     u8_t *u8buf = (u8_t *)buf;
     for (int i = 0; i < rows; i++) {
-        ZJS_PRINT(" %x :", (unsigned int)(buf + i * cols));
+        ZJS_PRINT(" %x :", (unsigned int)(uintptr_t)(buf + i * cols));
         for (int j = 0; j < cols; j++) {
             if (i * cols + j >= len) {
                 int left = (i + 1) * cols - len;
