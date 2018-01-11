@@ -738,10 +738,15 @@ cd net-tools
 make
 ```
 
-Open up 2 terminals to run the tools:
+If the build fails, you may need to install the libpcap-dev package:
+```bash
+sudo apt install libpcap-dev
+```
+
+Open up 2 terminals to run the tools from the net-tools directory:
 Terminal 1:
 ```bash
-sudo ./net-tools/loop-socat.sh
+./loop-socat.sh
 ```
 
 If this fails, you may need to install the socat package:
@@ -751,7 +756,7 @@ sudo apt-get install socat
 
 Terminal 2:
 ```bash
-./net-tools/loop-slip-tap.sh
+sudo ./loop-slip-tap.sh
 ```
 Then run QEMU as your normally would e.g.
 ```bash
