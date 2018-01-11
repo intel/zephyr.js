@@ -58,8 +58,8 @@ First, install these packages that you will need beyond those installed by
 default with Ubuntu:
 
 ```bash
-sudo apt-get update
-sudo apt-get install cmake dfu-util git python3-yaml screen uglifyjs
+sudo apt update
+sudo apt install cmake dfu-util git python3-yaml screen uglifyjs
 ```
 
 Note: python3-yaml is a recent requirement for the frdm-k64f build due to a
@@ -70,7 +70,7 @@ Python 2.
 You may also need to install pip3 to get pyelftools:
 
 ```bash
-$ sudo apt-get install python3-pip
+$ sudo apt install python3-pip
 $ sudo pip3 install pyelftools
 ```
 
@@ -316,7 +316,7 @@ To save space it is recommended to use a minifier. In `convert.sh`, the script
 used to encode your JS into a source file, we use `uglifyjs`. If you didn't
 install this earlier, you can do so with the command:
 ```bash
-sudo apt-get install node-uglify
+sudo apt install node-uglify
 ```
 
 ## Other HW Platforms
@@ -746,7 +746,7 @@ sudo ./net-tools/loop-socat.sh
 
 If this fails, you may need to install the socat package:
 ```bash
-sudo apt-get install socat
+sudo apt install socat
 ```
 
 Terminal 2:
