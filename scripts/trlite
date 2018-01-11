@@ -310,7 +310,7 @@ if [ "$RUN" == "all" -o "$RUN" == "1" ]; then
     # also, try printing a float w/ PRINT_FLOAT
     echo "console.log(3.14159);" >> $TMPFILE
 
-    try_command "net" make $VERBOSE JS=$TMPFILE PRINT_FLOAT=on ROM=256
+    try_command "net" make $VERBOSE JS=$TMPFILE PRINT_FLOAT=on ROM=259
 
     # OCF test
     echo "var ocf = require('ocf');" > $TMPFILE
