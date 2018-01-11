@@ -7,7 +7,7 @@ if(ASHELL)
 endif()
 
 if(BLE_ADDR)
-  add_definitions(-DBLE_ADDR=${BLE_ADDR})
+  add_definitions(-DZJS_CONFIG_BLE_ADDRESS="${BLE_ADDR}")
 endif()
 
 if(CB_STATS)
