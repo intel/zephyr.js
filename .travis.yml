@@ -75,10 +75,10 @@ install: >
 
 before_script: >
   source zjs-env.sh &&
-  if [ "$TARGET" != "linux" ]; then
+  if [[ "$TARGET" != "linux" ]]; then
     make update &&
     source deps/zephyr/zephyr-env.sh;
-  else
+  elif [[ "$TRAVIS_OS_NAME" != "osx" ]]; then
     export CXX="g++-5" CC="gcc-5";
   fi
 
