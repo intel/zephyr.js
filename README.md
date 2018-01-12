@@ -335,7 +335,7 @@ install the [JLink Software and Documentation Pack](https://www.segger.com/jlink
 and the [nRF5x command-line tools](http://www.nordicsemi.com/eng/Products/Bluetooth-Smart-Bluetooth-low-energy/nRF52-DK).
 
 See the
-[Zephyr Project page](https://www.zephyrproject.org/doc/boards/arm/nrf52_pca10040/doc/nrf52_pca10040.html)
+[Zephyr docs](https://www.zephyrproject.org/doc/boards/arm/nrf52_pca10040/doc/nrf52_pca10040.html)
 for general information about running Zephyr OS on the nRF52.
 
 Connecting to serial output is quite similar to the Arduino 101, except the
@@ -348,7 +348,7 @@ minicom -D /dev/ttyACM0
 Building is the same as any other ZJS platform, just use `nrf52_pca10040` as
 the BOARD name:
 ```bash
-make JS=samples/HellowWorld.js BOARD=nrf52_pca10040
+make JS=samples/HelloWorld.js BOARD=nrf52_pca10040
 ```
 
 You should now have a Zephyr binary in `outdir/nrf52_pca10040/`. You can flash
@@ -377,8 +377,7 @@ an Arduino 101.
 
 ### FRDM-K64F Platform
 
-See the
-[Zephyr Project Wiki](https://wiki.zephyrproject.org/view/NXP_FRDM-K64F)
+See the [Zephyr docs](http://docs.zephyrproject.org/boards/arm/frdm_k64f/doc/frdm_k64f.html)
 for general information about running Zephyr OS on the FRDM-K64F.
 
 The instructions below assume Ubuntu 14.04 on the host PC.
@@ -430,8 +429,6 @@ cp outdir/frdm_k64f/zephyr.bin /media/<USERNAME>/MBED/
 
 Using the same procedure as above, once you hit Reset you should see
 "Hello World!" within a second on your serial console.
-
-Zephyr is a trademark of the Linux Foundation. *Other names and brands may be claimed as the property of others.
 
 ## Running the JS app on Linux or Mac
 
@@ -852,3 +849,6 @@ configure the heap size available to the ZJS API.
 
 
 [Web IDE]: https://intel.github.io/zephyrjs-ide
+
+<!-- LEAVE THIS AT THE VERY BOTTOM -->
+Zephyr is a trademark of the Linux Foundation. *Other names and brands may be claimed as the property of others.
