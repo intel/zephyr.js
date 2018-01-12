@@ -47,8 +47,8 @@ if(NETWORK_BUILD)
   add_definitions(-DNETWORK_BUILD=${NETWORK_BUILD})
 endif()
 
-if(PRINT_FLOAT)
-  add_definitions(-DPRINT_FLOAT=${PRINT_FLOAT})
+if("${PRINT_FLOAT}" STREQUAL "on")
+  add_definitions(-DZJS_PRINT_FLOATS)
 endif()
 
 if("${VARIANT}" STREQUAL "debug")

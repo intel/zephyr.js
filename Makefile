@@ -270,6 +270,10 @@ analyze: $(JS)
 	@if [ "$(SNAPSHOT)" = "on" ]; then \
 		echo "add_definitions(-DZJS_SNAPSHOT_BUILD)" >> $(OUT)/$(BOARD)/generated.cmake; \
 	fi
+	@# Build NEWLIB with float print support, this will increase ROM size
+	@if [ "$(PRINT_FLOAT)" = "on" ]; then \
+		echo "CONFIG_NEWLIB_LIBC_FLOAT_PRINTF=y" >> prj.conf; \
+	fi
 	@# Add bluetooth debug configs if BLE is enabled
 	@if grep -q BUILD_MODULE_BLE $(OUT)/$(BOARD)/generated.cmake; then \
 		if [ "$(VARIANT)" = "debug" ]; then \
