@@ -10,7 +10,7 @@ Introduction
 ------------
 The Board API provides information about the circuit board ZJS is running on.
 
-The Board API intends to follow the [iot-js-api specification](https://github.com/01org/iot-js-api/tree/master/board),
+The Board API intends to follow the [iot-js-api specification](https://github.com/intel/iot-js-api/tree/master/board),
 but both that and ZJS are under a lot of change at the moment.
 
 Web IDL

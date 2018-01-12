@@ -36,8 +36,9 @@ application on Arduino 101\*.
 ### Prerequisites
 * [Arduino 101 board](https://www.arduino.cc/en/Main/ArduinoBoard101)
 * Ubuntu\* 16.04 host; adapt as necessary for other platforms.
-* If you're behind a proxy, go through all the [usual pain](https://github.com/01org/zephyr.js/wiki/Proxy) to get ssh working to
-github.com and http working to zephyrproject.org.
+* If you're behind a proxy, go through all the
+[usual pain](https://github.com/intel/zephyr.js/wiki/Proxy)
+to get ssh working to github.com and http working to zephyrproject.org.
 * If you wish to use the [Web IDE] (highly recommended!), please follow the [Zephyr Project JavaScript & WebIDE Tutorial](http://www.youtube.com/watch?v=4ZrrsCVbPJs).
 
 
@@ -77,7 +78,7 @@ $ sudo pip3 install pyelftools
 #### Clone the ZJS repo
 Next, clone this git repo:
 ```bash
-git clone http://github.com/01org/zephyr.js.git
+git clone http://github.com/intel/zephyr.js.git
 ```
 
 #### Check out the desired version

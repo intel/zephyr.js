@@ -151,9 +151,9 @@ echo 'hello' | nc -6 2001:db8::1 33333
 ## Connecting to your OCF server
 Now that your Arduino 101 is connected, it is as if it's a regular OCF IP
 device. You can now connect an OCF client. There are OCF client samples in the
-[iot-rest-api-server](https://github.com/01org/iot-rest-api-server) repo.
+[iot-rest-api-server](https://github.com/intel/iot-rest-api-server) repo.
 ```bash
-$ git clone git@github.com:01org/iot-rest-api-server.git
+$ git clone git@github.com:intel/iot-rest-api-server.git
 $ npm install iot-rest-api-server
 $ iot-rest-api-server
 ```

@@ -218,7 +218,7 @@ setup:
 
 * Update the Bluetooth firmware, follow instructions [here](https://wiki.zephyrproject.org/view/Arduino_101#Bluetooth_firmware_for_the_Arduino_101)
 * Any Android device running Android 6.0 Marshmallow or higher (We use Nexus 5/5X, iOS devices not tested)
-* Let the x86 core use 256K of flash space with ROM=256 as described [here](https://github.com/01org/zephyr.js#getting-more-space-on-your-arduino-101)
+* Let the x86 core use 256K of flash space with ROM=256 as described [here](https://github.com/intel/zephyr.js#getting-more-space-on-your-arduino-101)
 
 For the WebBluetooth Demo which supports the Physical Web, you'll need:
 * Chromium version 50.0 or higher
