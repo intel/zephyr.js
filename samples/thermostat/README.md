@@ -12,4 +12,4 @@ This folder contains the example code for building a ZJS based thermostat using 
 [Grove Temperature & Humidity Sensor]: http://wiki.seeed.cc/Grove-TemptureAndHumidity_Sensor-High-Accuracy_AndMini-v1.0
 [Environmental Sensing Service]: https://www.bluetooth.org/docman/handlers/downloaddoc.ashx?doc_id=294797
 [OCF]: https://openconnectivity.org
-[ZJS communications API]: https://github.com/01org/zephyr.js/blob/master/docs/API.md#communications
+[ZJS communications API]: https://github.com/intel/zephyr.js/blob/master/docs/API.md#communications

@@ -11,7 +11,7 @@ Introduction
 The GPIO API supports digital I/O pins. Pins can be configured as inputs or
 outputs, with some board-specific limitations.
 
-The GPIO API intends to follow the [iot-js-api specification](https://github.com/01org/iot-js-api/tree/master/board/gpio.md),
+The GPIO API intends to follow the [iot-js-api specification](https://github.com/intel/iot-js-api/tree/master/board/gpio.md),
 but both that and ZJS are under a lot of change at the moment.
 
 Web IDL
