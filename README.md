@@ -30,6 +30,18 @@ everything else.
 
 ## Getting Started
 
+ZJS should work on most of the boards supported by the Zephyr OS, though it
+does have higher memory / flash requirements so it won't work on the very
+smallest boards. So far we've had our hands on these boards:
+Arduino 101 / tinyTILE, FRDM-K64F, nRF52-DK, Arduino DUE, NUCLEO-F411RE,
+STM32F4DISCOVERY, 96Boards Carbon, and OLIMEX STM32 E407. Please do try it with
+any other boards Zephyr supports and let us know what works and what doesn't.
+
+Up until recently, the Web IDE which makes ZJS development very easy only worked
+on Arduino 101. So the following instructions are still specific to Arduino 101
+but we'll try to update them soon; until then please ask for help on IRC if you
+have questions about working with a particular board.
+
 This section will walk you through building and running your first ZJS
 application on Arduino 101\*.
 
@@ -40,7 +52,6 @@ application on Arduino 101\*.
 [usual pain](https://github.com/intel/zephyr.js/wiki/Proxy)
 to get ssh working to github.com and http working to zephyrproject.org.
 * If you wish to use the [Web IDE] (highly recommended!), please follow the [Zephyr Project JavaScript & WebIDE Tutorial](http://www.youtube.com/watch?v=4ZrrsCVbPJs).
-
 
 ## Developing with the Web-based IDE
 The easiest way to develop your JavaScript app on Zephyr is using our Web-based IDE which allows you to write JS apps on the fly in our online editor and upload them directly to the Arduino 101 board through WebUSB. Please follow our [Zephyr Project JavaScript & WebIDE Tutorial](http://www.youtube.com/watch?v=4ZrrsCVbPJs) to get started with the [Web IDE] and check out the [ashell guide](./docs/ashell.md) for more advanced usages.
@@ -847,7 +858,7 @@ configure the heap size available to the ZJS API.
 - `src/` - JS API bindings for JerryScript written directly on top of Zephyr.
 - `tests/` - JavaScript unit tests (incomplete).
 
-
+<!-- This doesn't show up directly but is used for the Web IDE links above -->
 [Web IDE]: https://intel.github.io/zephyrjs-ide
 
 <!-- LEAVE THIS AT THE VERY BOTTOM -->
