@@ -35,7 +35,7 @@ if(ASHELL)
   add_definitions(-DASHELL=${ASHELL})
 endif()
 
-if(BLE_ADDR)
+if(NOT "${BLE_ADDR}" STREQUAL "none")
   add_definitions(-DZJS_CONFIG_BLE_ADDRESS="${BLE_ADDR}")
 endif()
 
