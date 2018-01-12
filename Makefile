@@ -243,9 +243,16 @@ $(JS):
 # Find the modules the JS file depends on
 .PHONY: analyze
 analyze: $(JS)
+	@if [ -e $(OUT)/$(BOARD)/$(BOARD).overlay.bak ]; then \
+		if ! cmp $(OUT)/$(BOARD)/$(BOARD).overlay.bak $(BOARD).overlay; then \
+			echo "RAM/ROM size change detected in overlay, rebuild..."; \
+			rm -rf $(OUT)/$(BOARD)/zephyr; \
+			rm -rf $(OUT)/$(BOARD)/deps; \
+		fi \
+	fi
 	@if [ -e prj.conf ]; then \
 		if ! grep -q CONFIG_ROM_SIZE=$(ROM) prj.conf || ! grep CONFIG_RAM_SIZE=$(RAM) prj.conf; then \
-			echo "RAM/ROM size has updated, rebuild..."; \
+			echo "RAM/ROM size change detected in prj.conf, rebuild..."; \
 			rm -rf $(OUT)/$(BOARD)/zephyr; \
 			rm -rf $(OUT)/$(BOARD)/deps; \
 		fi \
