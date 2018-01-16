@@ -1,4 +1,4 @@
-// Copyright (c) 2017, Intel Corporation.
+// Copyright (c) 2017-2018, Intel Corporation.
 
 // Zephyr includes
 #include <adc.h>
@@ -32,7 +32,7 @@ void arc_aio_cleanup()
 u32_t arc_pin_read(u8_t pin)
 {
     struct adc_seq_entry entry = {
-        .sampling_delay = 26, // anything smaller than 26 have error
+        .sampling_delay = 30, // anything smaller might give an error
         .channel_id = pin,
         .buffer = seq_buffer,
         .buffer_length = ADC_BUFFER_SIZE,
