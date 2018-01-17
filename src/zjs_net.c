@@ -1,4 +1,5 @@
-// Copyright (c) 2017, Intel Corporation.
+// Copyright (c) 2017-2018, Intel Corporation.
+
 #ifdef BUILD_MODULE_NET
 
 // enable to use function tracing for debug purposes
@@ -943,16 +944,13 @@ static ZJS_DECL_FUNC(server_address)
         zjs_obj_add_string(info, "family", "IPv6");
         struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)&server_h->local;
         net_addr_ntop(family, &addr6->sin6_addr, ipstr, INET6_ADDRSTRLEN);
-        zjs_obj_add_string(info, "address", ipstr);
-
     } else {
         zjs_obj_add_string(info, "family", "IPv4");
         struct sockaddr_in *addr = (struct sockaddr_in *)&server_h->local;
         net_addr_ntop(family, &addr->sin_addr, ipstr, INET6_ADDRSTRLEN);
-        zjs_obj_add_string(info, "address", ipstr);
     }
 
-
+    zjs_obj_add_string(info, "address", ipstr);
     return info;
 }
 
