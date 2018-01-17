@@ -36,6 +36,9 @@
         ],
         "arduino_101": [
             "CONFIG_NET_APP_AUTO_INIT=n"
+        ],
+        "96b_carbon": [
+            "CONFIG_NET_APP_AUTO_INIT=n"
         ]
     },
     "header": [

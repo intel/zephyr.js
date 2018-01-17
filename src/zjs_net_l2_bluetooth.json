@@ -2,9 +2,12 @@
     "module": "net-l2-bluetooth",
     "fulfills": "net-l2",
     "description": "Enables IP over Bluetooth",
-    "targets": ["arduino_101"],
+    "targets": [
+        "arduino_101",
+        "96b_carbon"
+    ],
     "zephyr_conf": {
-        "arduino_101": [
+        "all": [
             "CONFIG_BT=y",
             "CONFIG_BT_SMP=y",
             "CONFIG_BT_PERIPHERAL=y",

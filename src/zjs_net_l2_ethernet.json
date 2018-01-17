@@ -2,8 +2,11 @@
     "module": "net-l2-ethernet",
     "fulfills": "net-l2",
     "description": "Enables onboard Ethernet",
-    "targets": ["frdm_k64f"],
+    "targets": [
+        "frdm_k64f",
+        "olimex_stm32_e407"
+    ],
     "zephyr_conf": {
-        "frdm_k64f": ["CONFIG_NET_L2_ETHERNET=y"]
+        "all": ["CONFIG_NET_L2_ETHERNET=y"]
     }
 }

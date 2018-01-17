@@ -3,8 +3,10 @@
     "description": "Virtual module to require an L2 network driver be present",
     "virtual": "yes",
     "defaults": {
+        "96b_carbon": "net-l2-bluetooth",
         "arduino_101": "net-l2-bluetooth",
         "frdm_k64f": "net-l2-ethernet",
+        "olimex_stm32_e407": "net-l2-ethernet",
         "qemu_x86": "net-l2-tap"
     }
 }

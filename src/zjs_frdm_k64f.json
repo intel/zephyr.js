@@ -4,7 +4,6 @@
     "src": ["src/zjs_pinmux.c"],
     "zephyr_conf": {
         "frdm_k64f": [
-            "CONFIG_MAIN_STACK_SIZE=2048",
             "CONFIG_PINMUX_MCUX_PORTD=y"
         ]
     }
