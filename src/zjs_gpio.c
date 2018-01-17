@@ -307,8 +307,7 @@ static ZJS_DECL_FUNC(zjs_gpio_open)
     }
     memset(handle, 0, sizeof(gpio_handle_t));
     handle->pin = pin;
-    // FIXME: this seems wrong, it can probably never be freed
-    handle->pin_obj = jerry_acquire_value(pin_obj);
+    handle->pin_obj = pin_obj;  // weak reference
     handle->port = gpiodev;
     handle->callbackId = -1;
     handle->active_low = active_low;
@@ -328,7 +327,7 @@ static ZJS_DECL_FUNC(zjs_gpio_open)
         handle->edge_both = (edge == ZJS_EDGE_BOTH) ? 1 : 0;
     }
 
-    return pin_obj;
+    return jerry_acquire_value(pin_obj);
 }
 
 static void zjs_gpio_cleanup(void *native)

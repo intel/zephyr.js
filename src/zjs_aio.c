@@ -170,9 +170,7 @@ static ZJS_DECL_FUNC(zjs_aio_open)
     memset(handle, 0, sizeof(aio_handle_t));
     handle->dev = aiodev;
     handle->pin = pin;
-
-    // TODO: verify that not acquiring here is okay
-    handle->pin_obj = pinobj;
+    handle->pin_obj = pinobj;  // weak reference
 
     // make it an emitter object
     zjs_make_emitter(pinobj, zjs_aio_prototype, handle, aio_free_cb);
