@@ -1,4 +1,5 @@
-// Copyright (c) 2017, Intel Corporation.
+// Copyright (c) 2017-2018, Intel Corporation.
+
 #ifdef BUILD_MODULE_NET
 
 // enable to use function tracing for debug purposes
