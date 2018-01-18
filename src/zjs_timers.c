@@ -165,7 +165,7 @@ static bool delete_timer(zjs_timer_t *tm)
         if (tm->repeat) {
 #endif
             zjs_remove_callback(tm->callback_id);
-        }        
+        }
         zjs_free(tm->argv);
         zjs_free(tm);
         return true;
