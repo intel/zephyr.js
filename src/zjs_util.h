@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2018, Intel Corporation.
+// Copyright (c) 2016-2017, Intel Corporation.
 
 #ifndef __zjs_util_h__
 #define __zjs_util_h__
@@ -551,26 +551,24 @@ void zjs_loop_init(void);
 //     void remove(list_item_t *to_remove) {
 //         ZJS_LIST_REMOVE(list_item_t, my_list, to_remove);
 //     }
-#define ZJS_LIST_REMOVE(type, list, p)       \
-    ({                                       \
-        u8_t removed = 0;                    \
-        if (p != NULL && list != NULL) {     \
-            type *cur = list;                \
-            if (p == list) {                 \
-                list = p->next;              \
-                removed = 1;                 \
-            } else {                         \
-                while (cur->next) {          \
-                    if (cur->next == p) {    \
-                        cur->next = p->next; \
-                        removed = 1;         \
-                        break;               \
-                    }                        \
-                    cur = cur->next;         \
-                }                            \
-            }                                \
-        }                                    \
-        removed;                             \
+#define ZJS_LIST_REMOVE(type, list, p)   \
+    ({                                   \
+        u8_t removed = 0;                \
+        type *cur = list;                \
+        if (p == list) {                 \
+            list = p->next;              \
+            removed = 1;                 \
+        } else {                         \
+            while (cur->next) {          \
+                if (cur->next == p) {    \
+                    cur->next = p->next; \
+                    removed = 1;         \
+                    break;               \
+                }                        \
+                cur = cur->next;         \
+            }                            \
+        }                                \
+        removed;                         \
     })
 
 // Free and iterate over a linked list, calling a callback for each list item
