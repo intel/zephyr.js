@@ -6,7 +6,8 @@
             "CONFIG_STDOUT_CONSOLE=y",
             "CONFIG_NEWLIB_LIBC=y",
             "CONFIG_FLOAT=y",
-            "CONFIG_RING_BUFFER=y"
+            "CONFIG_RING_BUFFER=y",
+            "CONFIG_MAIN_STACK_SIZE=4096"
         ]
     },
     "zjs_config": ["-DENABLE_INIT_FINI"]

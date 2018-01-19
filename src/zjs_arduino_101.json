@@ -1,9 +1,0 @@
-{
-    "module": "arduino_101",
-    "targets": ["arduino_101"],
-    "zephyr_conf": {
-        "arduino_101": [
-            "CONFIG_MAIN_STACK_SIZE=4096"
-        ]
-    }
-}
