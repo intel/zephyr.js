@@ -33,7 +33,7 @@ everything else.
 ZJS should work on most of the boards supported by the Zephyr OS, though it
 does have higher memory / flash requirements so it won't work on the very
 smallest boards. So far we've had our hands on these boards:
-Arduino 101 / tinyTILE, FRDM-K64F, nRF52-DK, Arduino DUE, NUCLEO-F411RE,
+Arduino 101 / tinyTILE, FRDM-K64F, nRF52-DK, Arduino Due, NUCLEO-F411RE,
 STM32F4DISCOVERY, 96Boards Carbon, and OLIMEX STM32 E407. Please do try it with
 any other boards Zephyr supports and let us know what works and what doesn't.
 
@@ -705,6 +705,8 @@ make JS=samples/HelloWorld.js BOARD=frdm_k64f CROSS_COMPILE=~/Downloads/gcc-arm-
 For additional information, see [here](https://www.zephyrproject.org/doc/getting_started/getting_started.html#third-party-x-compilers) on how to setup third-party compilers.
 
 ### Supported modules on Linux and Zephyr
+See [board summary](docs/boards/summary.md) for some basic comparison information about the boards we've tested on.
+
 There is only partial support for modules on Linux compared to Zephyr. Any hardware
 specific module (I2C, UART, GPIO, ADC etc.) is not supported on Linux. Trying
 to run a Zephyr specific module on Linux will result in the JavaScript not running
@@ -717,26 +719,27 @@ reason we have the following possibilities for support:
 * NT - Not tested at all
 * Blank - Not Supported
 
-| Module    | Linux | Arduino 101 | tinyTILE | K64F  | nRF52 | Arduino DUE | ST F411RE | ST STM32F4DISCOVERY | OLIMEX STM32 E407 | 96Boards Carbon |
-| :---:     | :---: |    :---:    |   :---:  | :---: | :---: |    :---:    |   :---:   |        :---:        |       :---:       |      :---:      |
-|HelloWorld |   X   |      X      |     X    |   X   |   X   |      X      |     X     |          X          |         X         |        X        |
-|  ADC      |       |      X      |     X    |       |       |             |           |                     |                   |                 |
-|  PWM      |       |      X      |     X    |       |       |             |           |                     |                   |                 |
-|  GPIO     |       |      X      |     X    |   X   |       |             |           |                     |                   |                 |
-|  I2C      |       |      X      |     X    |   X   |       |             |           |                     |                   |                 |
-|  BLE      |       |      X      |     X    |       |       |             |           |                     |                   |        X        |
-|  UART     |       |      X      |     X    |       |   NT  |             |           |                     |                   |                 |
-| Sensor    |       |      X      |     X    |       |       |             |           |                     |                   |                 |
-| Buffer    |   X   |      X      |     X    |   X   |   X   |      X      |     X     |          X          |         X         |        X        |
-| Console   |   X   |      X      |     X    |   X   |   X   |      X      |     X     |          X          |         X         |        X        |
-| Event     |   X   |      X      |     X    |   X   |   X   |      X      |     X     |          X          |         X         |        X        |
-|File System|       |      X      |     X    |   X   |       |             |           |                     |                   |                 |
-| OCF       |   X   |      X      |     X    |   X   |       |             |           |                     |         NT        |                 |
-|Performance|   X   |      X      |     X    |   X   |   X   |      X      |     X     |          X          |         X         |        X        |
-| Timers    |   X   |      X      |     X    |   X   |   X   |      X      |     X     |          X          |         X         |        X        |
-| Dgram     |       |      X      |     X    |   X   |       |             |           |                     |                   |                 |
-| Net       |       |      X      |     X    |   X   |       |             |           |                     |                   |                 |
-| WebSocket |       |      X      |     X    |   X   |       |             |           |                     |                   |                 |
+<!--- Module| Linux | A101/tT | K64F | nRF52 | Due | F411RE | STM32F4 |OLIMEX E407| Carbon | --->
+| Module    | Linux | [A101](https://store.arduino.cc/usa/arduino-101 "Arduino 101")/[tT](https://software.intel.com/en-us/node/675623 "tinyTILE") | [K64F](https://os.mbed.com/platforms/FRDM-K64F/ "FRDM-K64F")  | [nRF52](http://infocenter.nordicsemi.com/pdf/nRF52_DK_PB_v1.2.pdf "nRF52 DK") | [Due](https://store.arduino.cc/usa/arduino-due "Arduino Due") | [F411RE](http://www.st.com/en/evaluation-tools/nucleo-f411re.html "STM32 Nucleo-F411RE") | [STM32F4](http://www.st.com/en/evaluation-tools/stm32f4discovery.html "STM32F4DISCOVERY") | [OLIMEX E407](https://www.olimex.com/Products/ARM/ST/STM32-E407/open-source-hardware "OLIMEX STM32 E407") | [Carbon](https://www.96boards.org/product/carbon/ "96Boards Carbon") |
+|   :---:   | :---: |  :---:  | :---:| :---: |:---:|  :---: |  :---:  |   :---:   |  :---: |
+|HelloWorld |   X   |    X    |   X  |   X   |  X  |    X   |    X    |     X     |    X   |
+|  ADC      |       |    X    |      |       |     |        |         |           |        |
+|  PWM      |       |    X    |      |       |     |        |         |           |        |
+|  GPIO     |       |    X    |   X  |       |     |        |         |           |        |
+|  I2C      |       |    X    |   X  |       |     |        |         |           |        |
+|  BLE      |       |    X    |      |       |     |        |         |           |    X   |
+|  UART     |       |    X    |      |   NT  |     |        |         |           |        |
+| Sensor    |       |    X    |      |       |     |        |         |           |        |
+| Buffer    |   X   |    X    |   X  |   X   |  X  |    X   |    X    |     X     |    X   |
+| Console   |   X   |    X    |   X  |   X   |  X  |    X   |    X    |     X     |    X   |
+| Event     |   X   |    X    |   X  |   X   |  X  |    X   |    X    |     X     |    X   |
+|File System|       |    X    |   X  |       |     |        |         |           |        |
+| OCF       |   X   |    X    |   X  |       |     |        |         |     NT    |        |
+|Performance|   X   |    X    |   X  |   X   |  X  |    X   |    X    |     X     |    X   |
+| Timers    |   X   |    X    |   X  |   X   |  X  |    X   |    X    |     X     |    X   |
+| Dgram     |       |    X    |   X  |       |     |        |         |           |        |
+| Net       |       |    X    |   X  |       |     |        |         |           |        |
+| WebSocket |       |    X    |   X  |       |     |        |         |           |        |
 
 ## Networking with QEMU
 QEMU has support for networking features that can be tested on your Linux
