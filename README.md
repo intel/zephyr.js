@@ -719,8 +719,8 @@ reason we have the following possibilities for support:
 * NT - Not tested at all
 * Blank - Not Supported
 
-| Module    | Linux | [A101](https://store.arduino.cc/usa/arduino-101 "Arduino 101")/[tT](https://software.intel.com/en-us/node/675623 "tinyTILE") | [K64F](https://os.mbed.com/platforms/FRDM-K64F/ "FRDM-K64F")  | [nRF52](http://infocenter.nordicsemi.com/pdf/nRF52_DK_PB_v1.2.pdf "nRF52 DK") | [Due](https://store.arduino.cc/usa/arduino-due "Arduino Due") | [F411RE](http://www.st.com/en/evaluation-tools/nucleo-f411re.html "STM32 Nucleo-F411RE") | [STM32F4](http://www.st.com/en/evaluation-tools/stm32f4discovery.html "STM32F4DISCOVERY") | [OLIMEX E407](https://www.olimex.com/Products/ARM/ST/STM32-E407/open-source-hardware "OLIMEX STM32 E407") | [96b_carbon](https://www.96boards.org/product/carbon/ "96Boards Carbon") |
 <!--- Module| Linux | A101/tT | K64F | nRF52 | Due | F411RE | STM32F4 |OLIMEX E407|96b_carbon| --->
+| Module    | Linux | [A101](https://store.arduino.cc/usa/arduino-101 "Arduino 101")/[tT](https://software.intel.com/en-us/node/675623 "tinyTILE") | [K64F](https://os.mbed.com/platforms/FRDM-K64F/ "FRDM-K64F")  | [nRF52](http://infocenter.nordicsemi.com/pdf/nRF52_DK_PB_v1.2.pdf "nRF52 DK") | [Due](https://store.arduino.cc/usa/arduino-due "Arduino Due") | [F411RE](http://www.st.com/en/evaluation-tools/nucleo-f411re.html "STM32 Nucleo-F411RE") | [STM32F4](http://www.st.com/en/evaluation-tools/stm32f4discovery.html "STM32F4DISCOVERY") | [OLIMEX E407](https://www.olimex.com/Products/ARM/ST/STM32-E407/open-source-hardware "OLIMEX STM32 E407") | [96b_carbon](https://www.96boards.org/product/carbon/ "96Boards Carbon") |
 |   :---:   | :---: |  :---:  | :---:| :---: |:---:|  :---: |  :---:  |   :---:   |   :---:  |
 |HelloWorld |   X   |    X    |   X  |   X   |  X  |    X   |    X    |     X     |     X    |
 |  ADC      |       |    X    |      |       |     |        |         |           |          |
