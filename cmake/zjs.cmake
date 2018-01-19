@@ -20,9 +20,7 @@ else()
 endif()
 
 if(VERBOSITY)
-  set(VERBOSE BOOL=TRUE)
-else()
-  set(VERBOSE BOOL=FALSE)
+  add_definitions(-DZJS_VERBOSE=${VERBOSITY})
 endif()
 
 if("${SNAPSHOT}" STREQUAL "on")
