@@ -5,7 +5,7 @@ For quick reference, here is some basic info about the boards that we've tested 
 
 | Board                                                    | MCU        | Core       | Flash |  RAM  | Ethernet | BLE | Sensors       | GPIOs | AINs | AOUTs | PWMs |
 | :---:                                                    | :---:      | :---:      | :---: | :---: |   :---:  |:---:|  :---:        | :---: | :---:| :---: | :---:|
-| [96Boards Carbon](http://goo.gl/UuzFou)                  | SM32F401   | Cortex M4  | 512KB |  96KB |          |  X  |               |  26?  |   6  |   ?   |  3?  |
+| [96Boards Carbon](http://goo.gl/UuzFou)                  | STM32F401  | Cortex M4  | 512KB |  96KB |          |  X  |               |  26?  |   6  |   ?   |  3?  |
 | [Arduino 101](https://store.arduino.cc/usa/arduino-101)  | Curie      | Quark SE   | 384KB |  80KB |          |  X  | accel, gyro   |   14  |   6  |   0   |   4  |
 | [Arduino Due](https://store.arduino.cc/usa/arduino-due)  | ATSAM3X8E  | Cortex M3  | 512KB |  96KB |          |     |               |   54  |  12  |   2   |  12  |
 | [FRDM-K64F](https://os.mbed.com/platforms/FRDM-K64F/)    | K64F       | Cortex M4  |   1MB | 256KB |     X    |     | accel, magnet |   40  |   ?  |   ?   |  18  |
