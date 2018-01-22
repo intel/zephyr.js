@@ -1,4 +1,4 @@
-// Copyright (c) 2017, Intel Corporation.
+// Copyright (c) 2017-2018, Intel Corporation.
 
 // Run this test case and run simple TCP client on linux
 //     TCP client: /tests/tools/test-tcp4-client-dhcp.py
@@ -234,7 +234,7 @@ netConfig.dhcp(function(address, subnet, gateway) {
                    "ServerObject: get server address information");
             assert(typeof Info.port === "number" && Info.port === IPv4Port,
                    "ServerObject: get server port as '" + Info.port + "'");
-            assert(typeof Info.address === "string" && Info.address === IPv4Address,
+            assert(typeof Info.address === "string" && Info.address === address,
                    "ServerObject: get server address as '" + Info.address + "'");
             assert(typeof Info.family === "string" && Info.family === "IPv4",
                    "ServerObject: get server family as '" + Info.family + "'");
@@ -244,7 +244,7 @@ netConfig.dhcp(function(address, subnet, gateway) {
             console.log("    server.port:", Info.port);
             console.log("    server.family:", Info.family);
 
-            console.log("TCP server listen: " + IPv4Address + ":" + IPv4Port);
+            console.log("TCP server listen: " + address + ":" + IPv4Port);
         });
 
         var errorFlag = true;
