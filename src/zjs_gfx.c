@@ -106,10 +106,8 @@ static void zjs_gfx_reset_touched_pixels(gfx_handle_t *gfxHandle)
 static void zjs_gfx_touch_pixels(int32_t x, int32_t y, u32_t w, u32_t h, u8_t color[], gfx_handle_t *gfxHandle)
 {
     // Check that x and y aren't past the screen
-    if (x >= gfxHandle->screenW || y >= gfxHandle->screenH || (int32_t)(x + w) <= 0 || (int32_t)(y + h) <= 0) {
-        zjs_gfx_reset_touched_pixels(gfxHandle);
+    if (x >= gfxHandle->screenW || y >= gfxHandle->screenH || (int32_t)(x + w) <= 0 || (int32_t)(y + h) <= 0)
         return;
-    }
 
     if (x < 0) {
         if (x + w <= gfxHandle->screenW) {
@@ -121,7 +119,7 @@ static void zjs_gfx_touch_pixels(int32_t x, int32_t y, u32_t w, u32_t h, u8_t co
             gfxHandle->tpX1 = gfxHandle->screenW;
         }
     }
-    else if (x >= 0 && x < gfxHandle->screenW) {
+    else if (x < gfxHandle->screenW) {
         if (x + w <= gfxHandle->screenW) {
             gfxHandle->tpX0 = x;
             gfxHandle->tpX1 = x + w - 1;
@@ -142,7 +140,7 @@ static void zjs_gfx_touch_pixels(int32_t x, int32_t y, u32_t w, u32_t h, u8_t co
             gfxHandle->tpY1 = gfxHandle->screenH;
         }
     }
-    else if (y >= 0 && y < gfxHandle->screenH) {
+    else if (y < gfxHandle->screenH) {
         if (y + h <= gfxHandle->screenH) {
             gfxHandle->tpY0 = y;
             gfxHandle->tpY1 = y + h - 1;
