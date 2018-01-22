@@ -1,4 +1,4 @@
-// Copyright (c) 2017, Intel Corporation.
+// Copyright (c) 2017-2018, Intel Corporation.
 
 // This graphics library was inspired by the Adafruit GFX library
 // https://github.com/adafruit/Adafruit-GFX-Library
@@ -377,10 +377,8 @@ static ZJS_DECL_FUNC(zjs_gfx_draw_line)
     ZJS_GET_HANDLE(this, gfx_handle_t, handle, gfx_type_info);
     gfx_data_t argData;
     args_to_data(&argData, argc, argv);
-    int xLen = argData.coords[2] > argData.coords[0] ? argData.coords[2] - argData.coords[0] : argData.coords[0] - argData.coords[2];
-    int yLen = argData.coords[3] > argData.coords[1] ? argData.coords[3] - argData.coords[1] : argData.coords[1] - argData.coords[3];
-    xLen = xLen == 0 ? 1 : xLen; // Line width has to be at least a pixel
-    yLen = yLen == 0 ? 1 : yLen;
+    int xLen = argData.coords[2] > argData.coords[0] ? argData.coords[2] - argData.coords[0] + 1 : argData.coords[0] - argData.coords[2] + 1;
+    int yLen = argData.coords[3] > argData.coords[1] ? argData.coords[3] - argData.coords[1] + 1 : argData.coords[1] - argData.coords[3] + 1;
     bool neg = false;
 
     if (xLen <= yLen) {
@@ -397,7 +395,11 @@ static ZJS_DECL_FUNC(zjs_gfx_draw_line)
         if (argData.coords[3] < argData.coords[1])
                 neg = true;
 
-        u32_t pos = argData.coords[1];
+        u32_t pos;
+        if (argData.coords[0] == argData.coords[2] && argData.coords[1] > argData.coords[3])
+            pos = argData.coords[3];
+        else
+            pos = argData.coords[1];
         u32_t step = yLen / xLen;
         u32_t trueStep = (yLen * 100) / xLen;
         u32_t stepRemain = trueStep - (step * 100);
@@ -431,7 +433,11 @@ static ZJS_DECL_FUNC(zjs_gfx_draw_line)
         if (argData.coords[2] < argData.coords[0])
             neg = true;
 
-        u32_t pos = argData.coords[0];
+        u32_t pos;
+        if (argData.coords[1] == argData.coords[3] && argData.coords[0] > argData.coords[2])
+            pos = argData.coords[2];
+        else
+            pos = argData.coords[0];
         u32_t step = xLen / yLen;
         u32_t trueStep = (xLen * 100) / yLen;
         u32_t stepRemain = trueStep - (step * 100);
