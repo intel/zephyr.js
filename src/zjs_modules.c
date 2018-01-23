@@ -330,7 +330,7 @@ void zjs_modules_init()
 #ifdef ZJS_DYNAMIC_LOAD
     zjs_obj_add_function(global_obj, "runJS", zjs_run_js);
 #endif // ZJS_DYNAMIC_LOAD
-    
+
     // create the C handler for require JS call
     zjs_obj_add_function(global_obj, "require", native_require_handler);
 
