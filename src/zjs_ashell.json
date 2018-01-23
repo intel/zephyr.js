@@ -18,7 +18,6 @@
     "targets": ["arduino_101"],
     "src": [
         "src/ashell/ashell.c",
-        "src/ashell/term-uart.c",
         "src/ashell/file-utils.c",
         "src/ashell/jerry-code.c"
     ],

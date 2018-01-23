@@ -3,6 +3,7 @@
     "depends": ["ashell"],
     "src": [
         "${ZEPHYR_BASE}/samples/subsys/usb/webusb/src/webusb_serial.c",
+        "src/ashell/term-uart.c",
         "src/ashell/term-cmd.c",
         "src/ashell/term-ihex.c",
         "./deps/ihex/kk_ihex_read.c",

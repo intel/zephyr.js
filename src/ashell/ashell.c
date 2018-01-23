@@ -7,19 +7,13 @@
 
 #include "ashell.h"
 
-void ide_init()
-{
-    extern void parser_init();
-    parser_init();
-}
-
 void zjs_ashell_init()
 {
 #ifdef ASHELL_IDE_UART
     extern void uart_init();
     uart_init();
-#endif
-#ifdef ASHELL_IDE_PROTOCOL
+#else
+    extern void ide_init();
     ide_init();
 #endif
 }

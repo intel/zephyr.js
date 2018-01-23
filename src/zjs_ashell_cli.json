@@ -2,6 +2,7 @@
     "module": "ashell_cli",
     "depends": ["ashell"],
     "src": [
+        "src/ashell/term-uart.c",
         "src/ashell/term-cmd.c",
         "src/ashell/term-ihex.c",
         "./deps/ihex/kk_ihex_read.c"

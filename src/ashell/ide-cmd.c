@@ -29,7 +29,7 @@
 #include "jerryscript-port.h"
 #include "ide-comms.h"
 
-/* ************************** Parsing **************************************
+/* ************************** Parser structures ******************************
    A stream parser for arbitrarily long input sequences provided in chunks
    over successive invocation of the parser, through which parser state is
    maintained.
@@ -85,6 +85,7 @@ static const struct {
 };
 
 #define CMD_MAX_LEN 6
+#define FILENAME_MAX_LEN 13
 
 // Parsing requires at least 10, preferably 34 bytes or larger rx buffer.
 // Introducing parser states to handle re-entering parsing with successive
@@ -118,6 +119,9 @@ void parser_init()
 {
     parser_reset();
 }
+
+
+/* ************************* IDE protocol syntax *************************** */
 
 // Parser delimiters may be single or multiple or control characters.
 // Providing functions for parsing them, rather than handling as chars.
@@ -172,6 +176,75 @@ inline void skip_stream_start(char **pbuf, size_t *plen)
     skip_size(pbuf, plen, 1);
 }
 
+/* **************************** I/O, spooling ****************************** */
+
+#define MIN(a,b) ((a) < (b) ? (a) : (b))
+
+// Spooling is needed for assembling an IDE message and to read files.
+static char spool[P_SPOOL_SIZE + 1];
+static u32_t spool_cursor = 0;
+
+char *ide_spool_ptr()
+{
+    return spool + spool_cursor;
+}
+
+size_t ide_spool_space()
+{
+    int space = P_SPOOL_SIZE - spool_cursor;
+    return space > 0 ? space : 0;
+}
+
+void ide_spool_adjust(size_t size)
+{
+    if (spool_cursor + size < P_SPOOL_SIZE)
+        spool_cursor += size;
+    else
+        spool_cursor = P_SPOOL_SIZE;
+}
+
+// Save multiple calls to ide_send, spool the output.
+int ide_spool(char *format, ...)
+{
+    #define SPOOL_HEADROOM (P_SPOOL_SIZE/3)
+    size_t size;
+    va_list args;
+    if (spool_cursor + SPOOL_HEADROOM >= P_SPOOL_SIZE) {
+        ide_spool_flush();
+    }
+    va_start(args, format);
+    size = vsnprintf(spool + spool_cursor, ide_spool_space(), format, args);
+    va_end(args);
+
+    spool_cursor += size;
+    if (spool_cursor >= P_SPOOL_SIZE) {
+        spool_cursor = P_SPOOL_SIZE;
+        ide_spool_flush();
+    }
+    return spool_cursor;
+}
+
+int ide_spool_flush()
+{
+    if (spool_cursor == 0) {
+        return 0;
+    }
+    int size = ide_send_buffer(spool, MIN(spool_cursor, P_SPOOL_SIZE));
+    spool_cursor = 0;
+    // memset(spool, 0, P_SPOOL_SIZE + 1);
+    return size;
+}
+
+int ide_reply(int status, char *message)
+{
+    ide_spool("{\"reply\": %s, \"status\":%d, \"data\": %s }\r\n",
+              cmd_arg_map[parser.cmd_id].cmd, status, message);
+    ide_spool_flush();
+    if (!(status == NO_ERROR && parser.state == PARSE_ARG_STREAM))
+        parser_reset();
+    return -status;
+}
+
 // Functions for building a complete message in the spool before sending.
 int ide_start_message(char *cmd)
 {
@@ -184,15 +257,16 @@ int ide_end_message(int status)
     return ide_spool_flush();
 }
 
-int ide_reply(int status, char *message)
-{
-    ide_spool("{\"reply\": %s, \"status\":%d, \"data\": %s }\r\n",
-              cmd_arg_map[parser.cmd_id].cmd, status, message);
-    ide_spool_flush();
-    if (!(status == NO_ERROR && parser.state == PARSE_ARG_STREAM))
-        parser_reset();
-    return -status;
-}
+#ifdef ASHELL_IDE_DBG
+#define IDE_DBG(...) do { \
+    ide_spool( __VA_ARGS__ ); \
+    ide_spool_flush(); \
+} while(0)
+#else
+#define IDE_DBG(...)  do { ; } while (0)
+#endif
+
+/* ***************************** Parsing *********************************** */
 
 // Match input to supported commands.
 static ide_cmd_t match_cmd(char *buf, size_t len) {
@@ -250,7 +324,7 @@ void ide_parse(char *buf, size_t len) {
         return;
     } else if (buf[len] != '\0') {
         IDE_DBG("\r\nParser received invalid buffer.");
-        return;
+        // return;
     }
 
     int ret = 0;
@@ -355,7 +429,6 @@ static void ide_cmd_init(char *buf, size_t len)
 // May be invoked multiple times. Leaves file open until end of stream received.
 int save_stream(char *filename, char *buffer, size_t len)
 {
-    #define FILE_SPOOL_SIZE P_SPOOL_SIZE
     int ret = NO_ERROR;
     bool end = false;
 
@@ -455,37 +528,58 @@ static void ide_cmd_stop(char *buf, size_t len)
 
 // Send the list names of saved programs and sizes, e.g.
 // [1234, "file1.ext"], [234, "file2.ext"]
+//TODO: this function is instrumented now for debugging FS access issues
 static void ide_cmd_list(char *buf, size_t len)
 {
     static struct fs_dirent entry;
     fs_dir_t dir;
-    char *start_format = "\r\n\t{ \"name\": \"%s\", \"size\": %d }";
-    char *format = ",\r\n\t{ \"name\": \"%s\", \"size\": %d }";
+    //char *start_format = "\r\n\t{ \"name\": \"%s\", \"size\": %d }";
+    // char *format = ",\r\n\t{ \"name\": \"%s\", \"size\": %d }";
 
     IDE_DBG("\r\nInvoking list...");
 
     if (fs_opendir(&dir, "")) {
-        ide_reply(ERROR_DIR_OPEN, "\"Cannot open current directory.\"");
+        IDE_DBG("\r\nError: cannot open current dir.");
+        //ide_reply(ERROR_DIR_OPEN, "\"Cannot open current directory.\"");
         return;
     }
 
-    ide_start_message("list");
-    ide_spool("[");  // data is an array of dictionaries
-    for (bool first = true; !fs_readdir(&dir, &entry) && entry.name[0];) {
+    IDE_DBG("\r\nCurrent directory opened.");
+    //ide_start_message("list");
+    IDE_DBG("\r\nMessage started");
+    //ide_spool("[");  // data is an array of dictionaries
+    //for (bool first = true; !fs_readdir(&dir, &entry) && entry.name[0];) {
+    bool first = true;
+    do {
+        IDE_DBG("\r\nLooping...");
+        int res = fs_readdir(&dir, &entry);
+        if (res || entry.name[0] == 0) {
+            IDE_DBG("\r\nError reading dir.");
+            break;
+        }
         if (entry.type != FS_DIR_ENTRY_DIR) {
             char *p = entry.name;
             for (; *p; ++p) {
                 *p = tolower((int)*p);
             }
-            ide_spool(first ? start_format : format, entry.name, entry.size);
+            //ide_spool(first ? start_format : format, entry.name, entry.size);
+            IDE_DBG("\r\nFile: %s, size: %d", entry.name, entry.size);
             first = false;
-            if (ide_spool_space() < 20)  // appr. one dir entry size
+#if 0
+            if (ide_spool_space() < 20) {  // appr. one dir entry size
+                IDE_DBG("\r\nFlushing...");
                 ide_spool_flush();
+            }
+#endif
         }
-    }
+    } while(1);
+    IDE_DBG("\r\nClosing dir...");
     fs_closedir(&dir);
-    ide_spool("]");  // end of data
-    ide_end_message(NO_ERROR);
+    IDE_DBG("\r\nDir closed...");
+    //ide_spool("]");  // end of data
+    IDE_DBG("\r\nEnding message...");
+    //ide_end_message(NO_ERROR);
+    IDE_DBG("\r\nMessage sent, resetting parser...");
     parser_reset();
 }
 

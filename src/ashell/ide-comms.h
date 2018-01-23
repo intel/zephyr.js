@@ -12,11 +12,7 @@
 #define ASCII_RS     0x1E  // record separator
 #define ASCII_US     0x1F  // unit separator
 
-#ifndef TX_POOL_SIZE      // from WebUSB driver
-#define TX_POOL_SIZE      64
-#endif
-
-#define P_SPOOL_SIZE      63
+#define P_SPOOL_SIZE 128   // aligned with TX_POOL_SIZE from WebUSB driver
 
 // Errors are used as negative numbers in the code, and sent as positive numbers.
 typedef enum {
@@ -49,6 +45,9 @@ void ide_process();
 // Send arbitrary data over WebUSB.
 int ide_send_buffer(char *buffer, size_t size);
 
+#if 0
+// TODO: remove this section
+
 // Spool formatted data, but don't send it yet.
 int ide_spool(char *format, ...);
 
@@ -63,14 +62,6 @@ char *ide_spool_ptr();
 
 // Add the given number of bytes to the spool current length.
 void ide_spool_adjust(size_t size);
-
-#ifdef ASHELL_IDE_DBG
-#define IDE_DBG(...) do { \
-    ide_spool( __VA_ARGS__ ); \
-    ide_spool_flush(); \
-} while(0)
-#else
-#define IDE_DBG(...)  do { ; } while (0)
 #endif
 
 #endif  // __ashell_comms_h__
