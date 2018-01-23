@@ -20,12 +20,14 @@
 #endif  // ZJS_LINUX_BUILD
 #include "zjs_script.h"
 #include "zjs_util.h"
-#ifdef ZJS_ASHELL
+#if defined (ZJS_ASHELL) || defined (ZJS_DYNAMIC_LOAD)
 #include <gpio.h>
 #include "zjs_board.h"
-#include "ashell/ashell.h"
 #include "ashell/file-utils.h"
-#endif
+#ifdef ZJS_ASHELL
+#include "ashell/ashell.h"
+#endif // ZJS_ASHELL
+#endif // defined (ZJS_ASHELL) || defined (ZJS_DYNAMIC_LOAD)
 
 // JerryScript includes
 #include "jerryscript.h"
@@ -183,7 +185,7 @@ int main(int argc, char *argv[])
 
     file_name = argv[1];
     file_name_len = strlen(argv[1]);
-#elif defined ZJS_ASHELL
+#elif defined ZJS_ASHELL || defined ZJS_DYNAMIC_LOAD
     char *script = NULL;
 #else
     const char *script = NULL;
@@ -356,6 +358,10 @@ if (start_debug_server) {
     }
 #endif
     while (1) {
+#ifdef ZJS_DYNAMIC_LOAD
+	// Check if we should load a new JS file
+        zjs_modules_check_load_file();
+#endif
 #ifdef ZJS_ASHELL
         if (ashell_mode) {
             zjs_ashell_process();

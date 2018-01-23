@@ -39,6 +39,12 @@ int fs_exist(const char *path)
 
 fs_file_t *fs_open_alloc(const char *filename, const char *mode)
 {
+#ifndef ZJS_ASHELL
+    if (mode[0] == 'w') {
+        DBG_PRINT("Write not enabled on FS for non ASHELL builds\n");
+        return NULL;
+    }
+#endif // !ZJS_ASHELL
     int res;
 
     /* Delete file if exists */
