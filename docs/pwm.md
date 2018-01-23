@@ -31,7 +31,7 @@ If you give it a duty cycle of 10% (such as 1ms on, 9ms off), it will glow at
 10% brightness. So as with the Arduino API, you can think of this as a way to
 set an "analog" brightness, not just "on" or "off".
 
-The PWM API intends to follow the [iot-js-api specification](https://github.com/01org/iot-js-api/tree/master/board/pwm.md).
+The PWM API intends to follow the [iot-js-api specification](https://github.com/intel/iot-js-api/tree/master/board/pwm.md).
 
 Web IDL
 -------

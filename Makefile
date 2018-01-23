@@ -257,7 +257,14 @@ $(JS):
 analyze: $(JS)
 	@if [ -e $(OUT)/$(BOARD)/$(BOARD).overlay.bak ]; then \
 		if ! cmp $(OUT)/$(BOARD)/$(BOARD).overlay.bak $(BOARD).overlay; then \
-			echo "RAM/ROM size has updated, rebuild..."; \
+			echo "RAM/ROM size change detected in overlay, rebuild..."; \
+			rm -rf $(OUT)/$(BOARD)/zephyr; \
+			rm -rf $(OUT)/$(BOARD)/deps; \
+		fi \
+	fi
+	@if [ -e prj.conf ]; then \
+		if ! grep -q CONFIG_ROM_SIZE=$(ROM) prj.conf || ! grep CONFIG_RAM_SIZE=$(RAM) prj.conf; then \
+			echo "RAM/ROM size change detected in prj.conf, rebuild..."; \
 			rm -rf $(OUT)/$(BOARD)/zephyr; \
 			rm -rf $(OUT)/$(BOARD)/deps; \
 		fi \
@@ -281,6 +288,10 @@ analyze: $(JS)
 	fi
 	@if [ "$(SNAPSHOT)" = "on" ]; then \
 		echo "add_definitions(-DZJS_SNAPSHOT_BUILD)" >> $(OUT)/$(BOARD)/generated.cmake; \
+	fi
+	@# Build NEWLIB with float print support, this will increase ROM size
+	@if [ "$(PRINT_FLOAT)" = "on" ]; then \
+		echo "CONFIG_NEWLIB_LIBC_FLOAT_PRINTF=y" >> prj.conf; \
 	fi
 	@# Add bluetooth debug configs if BLE is enabled
 	@if grep -q BUILD_MODULE_BLE $(OUT)/$(BOARD)/generated.cmake; then \
@@ -316,6 +327,7 @@ analyze: $(JS)
 		-DPRINT_FLOAT=$(PRINT_FLOAT) \
 		-DSNAPSHOT=$(SNAPSHOT) \
 		-DVARIANT=$(VARIANT) \
+		-DVERBOSITY=$(VERBOSITY) \
 		-DZJS_FLAGS="$(ZJS_FLAGS)")
 	$(info CMAKEFLAGS = $(CMAKEFLAGS))
 
@@ -363,13 +375,9 @@ cleanlocal:
 # Explicit clean
 .PHONY: clean
 clean: cleanlocal
-ifeq ($(BOARD), linux)
-	@make -f Makefile.linux O=$(OUT)/$(BOARD) clean
-else
 	@rm -rf $(JERRY_BASE)/build/$(BOARD)/;
 	@rm -rf $(OUT)/$(BOARD)/
 	@rm -f $(OUT)/jsgen.tmp
-endif
 
 .PHONY: pristine
 pristine: cleanlocal
@@ -466,7 +474,14 @@ arcgdb:
 .PHONY: linux
 # Linux command line target, script can be specified on the command line
 linux: generate
-	make -f Makefile.linux JS=$(JS) VARIANT=$(VARIANT) CB_STATS=$(CB_STATS) V=$(V) SNAPSHOT=$(SNAPSHOT) DEBUGGER=$(DEBUGGER) O=$(OUT)/linux
+	@cmake -B$(OUT)/linux \
+		-DBOARD=linux \
+		-DCB_STATS=$(CB_STATS) \
+		-DDEBUGGER=$(DEBUGGER) \
+		-DV=$(V) \
+		-DVARIANT=$(VARIANT) \
+		-H. && \
+	make -C $(OUT)/linux;
 
 .PHONY: help
 help:

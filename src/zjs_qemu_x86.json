@@ -3,7 +3,6 @@
     "targets": ["qemu_x86"],
     "zephyr_conf": {
         "qemu_x86": [
-            "CONFIG_MAIN_STACK_SIZE=2048",
             "CONFIG_RAM_SIZE=4096",
             "CONFIG_ROM_SIZE=4092"
         ]

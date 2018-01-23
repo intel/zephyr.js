@@ -57,6 +57,8 @@ Board Support
 
 [FRDM-K64F](./boards/frdm_k64f.md)
 
+[Basic Board Support](./boards/basic.md) for all other boards
+
 Devices
 -------
 [Grove LCD](./grove_lcd.md)

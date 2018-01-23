@@ -10,6 +10,9 @@ Introduction
 The FRDM-K64F is pretty well supported by ZJS. This page lists the available
 pins and how to refer to them in ZJS.
 
+For multi-board support, you can use the [board module](../board.md) to detect
+whether you're running on the FRDM-K64F with `board.name === 'frdm_k64f'`.
+
 Available Pins
 --------------
 It will be helpful to refer to the two diagrams

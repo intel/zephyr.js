@@ -27,11 +27,20 @@
 #include "port/oc_clock.h"
 
 #ifdef DEBUG_BUILD
-#define PROPS_PRINT(n, ...)        \
-    if (n) {                       \
-        printf("%s: ", (char*)n);  \
-    }                              \
-    printf(__VA_ARGS__)
+#include <stdarg.h>
+static inline void PROPS_PRINT(const char *tag, const char *format, ...)
+{
+    va_list ap;
+
+    va_start(ap, format);
+
+    if (tag) {
+        printf("%s: ", tag);
+    }
+
+    vprintf(format, ap);
+    va_end(ap);
+}
 #else
 #define PROPS_PRINT(n, ...) do {} while (0)
 #endif

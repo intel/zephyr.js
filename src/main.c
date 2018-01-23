@@ -176,6 +176,11 @@ int main(int argc, char *argv[])
     size_t file_name_len = 0;
 #ifdef ZJS_LINUX_BUILD
     char *script = NULL;
+    if (argc < 2) {
+        ZJS_PRINT("usage: jslinux [--unittests] [path/to/file.js]\n");
+        return 1;
+    }
+
     file_name = argv[1];
     file_name_len = strlen(argv[1]);
 #elif defined ZJS_ASHELL

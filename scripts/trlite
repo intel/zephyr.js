@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (c) 2016-2017, Intel Corporation.
+# Copyright (c) 2016-2018, Intel Corporation.
 # Author: Geoff Gustafson <geoff@linux.intel.com>
 
 # trlite - a local version of the tests we run in Travis
@@ -27,6 +27,10 @@
 if [ ! -d "$ZJS_BASE" ]; then
    >&2 echo "ZJS_BASE not defined. You need to source zjs-env.sh."
    exit 1
+fi
+
+if [ ! -v TRAVIS_COMMIT_RANGE ]; then
+    TRAVIS_COMMIT_RANGE=$(git log origin/master..HEAD --format='format:%H')
 fi
 
 RUNLOCAL=n
@@ -306,7 +310,7 @@ if [ "$RUN" == "all" -o "$RUN" == "1" ]; then
     # also, try printing a float w/ PRINT_FLOAT
     echo "console.log(3.14159);" >> $TMPFILE
 
-    try_command "net" make $VERBOSE JS=$TMPFILE PRINT_FLOAT=on ROM=256
+    try_command "net" make $VERBOSE JS=$TMPFILE PRINT_FLOAT=on ROM=259
 
     # OCF test
     echo "var ocf = require('ocf');" > $TMPFILE
@@ -415,14 +419,24 @@ function check_copyright() {
         elif ! $(head -1 $f | grep -q $YEAR); then
             if [ "$INTEL" ]; then
                 if head -1 $f | grep -q Intel; then
-                    echo Error: Add $YEAR to copyright in $f!
-                    RVAL=1
+                    echo Warning: Add $YEAR to copyright in $f!
                 fi
             fi
         fi
     done
 
     return $RVAL
+}
+
+function check_signed_off_by() {
+    for i in $TRAVIS_COMMIT_RANGE; do
+        if [ "1" != "$(grep -c '^Signed-off-by: ' <<< "$(git log --format=%B -n 1 $i)")" ]; then
+            echo "Commit ID $i does not have Signed-off-by line"
+            return 1
+        fi
+    done
+
+    return 0
 }
 
 if [ "$RUN" == "all" -o "$RUN" == "3" ]; then
@@ -443,6 +457,9 @@ if [ "$RUN" == "all" -o "$RUN" == "3" ]; then
 
     # check that headers include all needed dependencies
     try_command "headers" checkheaders -v
+
+    # check that new commits have signed-off-by
+    try_command "signed-off" check_signed_off_by
 
     # linux build tests
     try_command "linux" make $VERBOSE BOARD=linux

@@ -11,6 +11,7 @@
 #endif
 
 // ZJS includes
+#include "zjs_board.h"
 #include "zjs_callbacks.h"
 #include "zjs_common.h"
 #include "zjs_sensor.h"
@@ -296,7 +297,21 @@ ZJS_DECL_FUNC_ARGS(zjs_sensor_create,
         }
 
         u32_t option_pin;
+#ifdef BUILD_MODULE_AIO
+        ZVAL pin_val = zjs_get_property(options, "pin");
+        if (jerry_value_is_string(pin_val)) {
+            char devname[20];
+            option_pin = zjs_board_find_aio(pin_val, devname, 20);
+            if (option_pin == FIND_PIN_INVALID) {
+                return TYPE_ERROR("bad pin argument");
+            } else if (option_pin == FIND_DEVICE_FAILURE) {
+                return zjs_error("device not found");
+            } else if (option_pin < 0) {
+                return zjs_error("pin not found");
+            }
+#else
         if (zjs_obj_get_uint32(options, "pin", &option_pin)) {
+#endif
             controller.pin = option_pin;
         } else if (pin != -1) {
             controller.pin = pin;

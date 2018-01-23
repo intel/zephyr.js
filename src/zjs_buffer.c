@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, Intel Corporation.
+// Copyright (c) 2016-2018, Intel Corporation.
 
 #ifdef BUILD_MODULE_BUFFER
 
@@ -105,7 +105,8 @@ static ZJS_DECL_FUNC_ARGS(zjs_buffer_write_bytes, int bytes, bool big_endian)
     //             little endian order
     //  effects: writes bytes into the buffer associated with this JS object, if
     //             found, at the given offset, if within the bounds of the
-    //             buffer; otherwise returns an error
+    //             buffer and returns the offset just beyond what was written;
+    //             otherwise returns an error
 
     // args: value[, offset]
     ZJS_VALIDATE_ARGS(Z_NUMBER, Z_OPTIONAL Z_NUMBER);
@@ -124,9 +125,10 @@ static ZJS_DECL_FUNC_ARGS(zjs_buffer_write_bytes, int bytes, bool big_endian)
         return zjs_error("buffer not found on write");
     }
 
-    if (offset + bytes > buf->bufsize) {
+    u32_t beyond = offset + bytes;
+    if (beyond > buf->bufsize) {
         DBG_PRINT("bufsize %d, write attempted from %d to %d\n",
-                  buf->bufsize, offset, offset + bytes);
+                  buf->bufsize, offset, beyond);
         return zjs_error("write attempted beyond buffer");
     }
 
@@ -140,7 +142,7 @@ static ZJS_DECL_FUNC_ARGS(zjs_buffer_write_bytes, int bytes, bool big_endian)
         offset += dir;
     }
 
-    return ZJS_UNDEFINED;
+    return jerry_create_number(beyond);
 }
 
 static ZJS_DECL_FUNC(zjs_buffer_read_uint8)
@@ -213,6 +215,8 @@ static ZJS_DECL_FUNC(zjs_buffer_to_string)
     // args: [encoding]
     ZJS_VALIDATE_ARGS_OPTCOUNT(optcount, Z_OPTIONAL Z_STRING);
 
+    // TODO: add start and end arguments found in Node
+
     zjs_buffer_t *buf = zjs_buffer_find(this);
     ZJS_ASSERT(buf, "buffer not found");
     if (!buf) {
@@ -276,7 +280,7 @@ static ZJS_DECL_FUNC(zjs_buffer_copy)
     // requires: this must be a JS buffer object and argv[0] a target buffer
     //             object
     //  effects: copies buffer contents w/ optional offsets considered to the
-    //             target buffer (following Node v6.11 API)
+    //             target buffer (following Node v8.9.4 API)
 
     // args: target, [targetStart], [sourceStart], [sourceEnd]
     ZJS_VALIDATE_ARGS_OPTCOUNT(optcount, Z_BUFFER,
@@ -391,10 +395,10 @@ static ZJS_DECL_FUNC(zjs_buffer_write_string)
 
 static ZJS_DECL_FUNC(zjs_buffer_fill)
 {
-    // requires: string - what will be written to buf
+    // requires: value - what will be written to buf
     //           offset - where to start writing (Default: 0)
-    //           length - how many bytes to write (Default: buf.length -offset)
-    //           encoding - the character encoding of string. Currently only
+    //           end - offset at which to stop writing (Default: buf.length)
+    //           encoding - the character encoding of value. Currently only
     //             supports the default of utf8
     //  effects: writes string to buf at offset according to the character
     //             encoding in encoding.
@@ -402,6 +406,8 @@ static ZJS_DECL_FUNC(zjs_buffer_fill)
     // args: data[, offset[, length[, encoding]]]
     ZJS_VALIDATE_ARGS(Z_STRING Z_NUMBER Z_BUFFER, Z_OPTIONAL Z_NUMBER,
                       Z_OPTIONAL Z_NUMBER, Z_OPTIONAL Z_STRING);
+
+    // TODO: support encodings other than 'utf8'
 
     u32_t num;
     char *source = NULL;
@@ -581,6 +587,7 @@ static ZJS_DECL_FUNC(zjs_buffer)
         }
         return new_buf;
     } else {
+        // FIXME: this should take an encoding too
         // treat string argument as initializer
         jerry_size_t size = 0;
         char *str = zjs_alloc_from_jstring(argv[0], &size);
@@ -615,10 +622,10 @@ void zjs_buffer_init()
         { zjs_buffer_write_uint32_be, "writeUInt32BE" },
         { zjs_buffer_read_uint32_le, "readUInt32LE" },
         { zjs_buffer_write_uint32_le, "writeUInt32LE" },
-        { zjs_buffer_to_string, "toString" },
         { zjs_buffer_copy, "copy" },
-        { zjs_buffer_write_string, "write" },
         { zjs_buffer_fill, "fill" },
+        { zjs_buffer_to_string, "toString" },
+        { zjs_buffer_write_string, "write" },
         { NULL, NULL }
     };
     zjs_buffer_prototype = zjs_create_object();

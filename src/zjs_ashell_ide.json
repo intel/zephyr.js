@@ -2,7 +2,7 @@
     "module": "ashell_ide",
     "depends": ["ashell"],
     "src": [
-        "${ZEPHYR_BASE}/samples/subsys/usb/webusb/src/webusb_serial.c",
+        "${ZEPHYR_BASE}/samples/subsys/usb/webusb-netbuf/src/webusb_serial.c",
         "src/ashell/webusb-netbuf.c",
         "src/ashell/ide-comms.c",
         "src/ashell/ide-cmd.c"
@@ -11,7 +11,7 @@
         "arduino_101": ["CONFIG_USB_CDC_ACM=n"]
     },
     "zjs_config": [
-        "-I${ZEPHYR_BASE}/samples/subsys/usb/webusb/src/",
+        "-I${ZEPHYR_BASE}/samples/subsys/usb/webusb-netbuf/src/",
         "-DASHELL_IDE_DBG"
     ]
 }

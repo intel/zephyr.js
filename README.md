@@ -30,16 +30,28 @@ everything else.
 
 ## Getting Started
 
+ZJS should work on most of the boards supported by the Zephyr OS, though it
+does have higher memory / flash requirements so it won't work on the very
+smallest boards. So far we've had our hands on these boards:
+Arduino 101 / tinyTILE, FRDM-K64F, nRF52-DK, Arduino Due, NUCLEO-F411RE,
+STM32F4DISCOVERY, 96Boards Carbon, and OLIMEX STM32 E407. Please do try it with
+any other boards Zephyr supports and let us know what works and what doesn't.
+
+Up until recently, the Web IDE which makes ZJS development very easy only worked
+on Arduino 101. So the following instructions are still specific to Arduino 101
+but we'll try to update them soon; until then please ask for help on IRC if you
+have questions about working with a particular board.
+
 This section will walk you through building and running your first ZJS
 application on Arduino 101\*.
 
 ### Prerequisites
 * [Arduino 101 board](https://www.arduino.cc/en/Main/ArduinoBoard101)
 * Ubuntu\* 16.04 host; adapt as necessary for other platforms.
-* If you're behind a proxy, go through all the [usual pain](https://github.com/01org/zephyr.js/wiki/Proxy) to get ssh working to
-github.com and http working to zephyrproject.org.
+* If you're behind a proxy, go through all the
+[usual pain](https://github.com/intel/zephyr.js/wiki/Proxy)
+to get ssh working to github.com and http working to zephyrproject.org.
 * If you wish to use the [Web IDE] (highly recommended!), please follow the [Zephyr Project JavaScript & WebIDE Tutorial](http://www.youtube.com/watch?v=4ZrrsCVbPJs).
-
 
 ## Developing with the Web-based IDE
 The easiest way to develop your JavaScript app on Zephyr is using our Web-based IDE which allows you to write JS apps on the fly in our online editor and upload them directly to the Arduino 101 board through WebUSB. Please follow our [Zephyr Project JavaScript & WebIDE Tutorial](http://www.youtube.com/watch?v=4ZrrsCVbPJs) to get started with the [Web IDE] and check out the [ashell guide](./docs/ashell.md) for more advanced usages.
@@ -58,8 +70,8 @@ First, install these packages that you will need beyond those installed by
 default with Ubuntu:
 
 ```bash
-sudo apt-get update
-sudo apt-get install cmake dfu-util git python3-yaml screen uglifyjs
+sudo apt update
+sudo apt install cmake dfu-util git python3-yaml screen uglifyjs
 ```
 
 Note: python3-yaml is a recent requirement for the frdm-k64f build due to a
@@ -70,14 +82,14 @@ Python 2.
 You may also need to install pip3 to get pyelftools:
 
 ```bash
-$ sudo apt-get install python3-pip
+$ sudo apt install python3-pip
 $ sudo pip3 install pyelftools
 ```
 
 #### Clone the ZJS repo
 Next, clone this git repo:
 ```bash
-git clone http://github.com/01org/zephyr.js.git
+git clone http://github.com/intel/zephyr.js.git
 ```
 
 #### Check out the desired version
@@ -316,7 +328,7 @@ To save space it is recommended to use a minifier. In `convert.sh`, the script
 used to encode your JS into a source file, we use `uglifyjs`. If you didn't
 install this earlier, you can do so with the command:
 ```bash
-sudo apt-get install node-uglify
+sudo apt install node-uglify
 ```
 
 ## Other HW Platforms
@@ -334,7 +346,7 @@ install the [JLink Software and Documentation Pack](https://www.segger.com/jlink
 and the [nRF5x command-line tools](http://www.nordicsemi.com/eng/Products/Bluetooth-Smart-Bluetooth-low-energy/nRF52-DK).
 
 See the
-[Zephyr Project page](https://www.zephyrproject.org/doc/boards/arm/nrf52_pca10040/doc/nrf52_pca10040.html)
+[Zephyr docs](https://www.zephyrproject.org/doc/boards/arm/nrf52_pca10040/doc/nrf52_pca10040.html)
 for general information about running Zephyr OS on the nRF52.
 
 Connecting to serial output is quite similar to the Arduino 101, except the
@@ -347,7 +359,7 @@ minicom -D /dev/ttyACM0
 Building is the same as any other ZJS platform, just use `nrf52_pca10040` as
 the BOARD name:
 ```bash
-make JS=samples/HellowWorld.js BOARD=nrf52_pca10040
+make JS=samples/HelloWorld.js BOARD=nrf52_pca10040
 ```
 
 You should now have a Zephyr binary in `outdir/nrf52_pca10040/`. You can flash
@@ -376,8 +388,7 @@ an Arduino 101.
 
 ### FRDM-K64F Platform
 
-See the
-[Zephyr Project Wiki](https://wiki.zephyrproject.org/view/NXP_FRDM-K64F)
+See the [Zephyr docs](http://docs.zephyrproject.org/boards/arm/frdm_k64f/doc/frdm_k64f.html)
 for general information about running Zephyr OS on the FRDM-K64F.
 
 The instructions below assume Ubuntu 14.04 on the host PC.
@@ -429,8 +440,6 @@ cp outdir/frdm_k64f/zephyr.bin /media/<USERNAME>/MBED/
 
 Using the same procedure as above, once you hit Reset you should see
 "Hello World!" within a second on your serial console.
-
-Zephyr is a trademark of the Linux Foundation. *Other names and brands may be claimed as the property of others.
 
 ## Running the JS app on Linux or Mac
 
@@ -696,6 +705,8 @@ make JS=samples/HelloWorld.js BOARD=frdm_k64f CROSS_COMPILE=~/Downloads/gcc-arm-
 For additional information, see [here](https://www.zephyrproject.org/doc/getting_started/getting_started.html#third-party-x-compilers) on how to setup third-party compilers.
 
 ### Supported modules on Linux and Zephyr
+See [board summary](docs/boards/summary.md) for some basic comparison information about the boards we've tested on.
+
 There is only partial support for modules on Linux compared to Zephyr. Any hardware
 specific module (I2C, UART, GPIO, ADC etc.) is not supported on Linux. Trying
 to run a Zephyr specific module on Linux will result in the JavaScript not running
@@ -708,26 +719,27 @@ reason we have the following possibilities for support:
 * NT - Not tested at all
 * Blank - Not Supported
 
-| Module    | Linux | Arduino 101 | tinyTILE | K64F  | nRF52 | Arduino DUE | ST F411RE | ST STM32F4DISCOVERY | OLIMEX STM32 E407 | 96Boards Carbon |
-| :---:     | :---: |    :---:    |   :---:  | :---: | :---: |    :---:    |   :---:   |        :---:        |       :---:       |      :---:      |
-|HelloWorld |   X   |      X      |     X    |   X   |   X   |      X      |     X     |          X          |         X         |        X        |
-|  ADC      |       |      X      |     X    |       |       |             |           |                     |                   |                 |
-|  PWM      |       |      X      |     X    |       |       |             |           |                     |                   |                 |
-|  GPIO     |       |      X      |     X    |   X   |       |             |           |                     |                   |                 |
-|  I2C      |       |      X      |     X    |   X   |       |             |           |                     |                   |                 |
-|  BLE      |       |      X      |     X    |       |       |             |           |                     |                   |        X        |
-|  UART     |       |      X      |     X    |       |   NT  |             |           |                     |                   |                 |
-| Sensor    |       |      X      |     X    |       |       |             |           |                     |                   |                 |
-| Buffer    |   X   |      X      |     X    |   X   |   X   |      X      |     X     |          X          |         X         |        X        |
-| Console   |   X   |      X      |     X    |   X   |   X   |      X      |     X     |          X          |         X         |        X        |
-| Event     |   X   |      X      |     X    |   X   |   X   |      X      |     X     |          X          |         X         |        X        |
-|File System|       |      X      |     X    |   X   |       |             |           |                     |                   |                 |
-| OCF       |   X   |      X      |     X    |   X   |       |             |           |                     |         NT        |                 |
-|Performance|   X   |      X      |     X    |   X   |   X   |      X      |     X     |          X          |         X         |        X        |
-| Timers    |   X   |      X      |     X    |   X   |   X   |      X      |     X     |          X          |         X         |        X        |
-| Dgram     |       |      X      |     X    |   X   |       |             |           |                     |                   |                 |
-| Net       |       |      X      |     X    |   X   |       |             |           |                     |                   |                 |
-| WebSocket |       |      X      |     X    |   X   |       |             |           |                     |                   |                 |
+<!--- Module| Linux | A101/tT | K64F | nRF52 | Due | F411RE | STM32F4 |OLIMEX E407| Carbon | --->
+| Module    | Linux | [A101](https://store.arduino.cc/usa/arduino-101 "Arduino 101")/[tT](https://software.intel.com/en-us/node/675623 "tinyTILE") | [K64F](https://os.mbed.com/platforms/FRDM-K64F/ "FRDM-K64F")  | [nRF52](http://infocenter.nordicsemi.com/pdf/nRF52_DK_PB_v1.2.pdf "nRF52 DK") | [Due](https://store.arduino.cc/usa/arduino-due "Arduino Due") | [F411RE](http://www.st.com/en/evaluation-tools/nucleo-f411re.html "STM32 Nucleo-F411RE") | [STM32F4](http://www.st.com/en/evaluation-tools/stm32f4discovery.html "STM32F4DISCOVERY") | [OLIMEX E407](https://www.olimex.com/Products/ARM/ST/STM32-E407/open-source-hardware "OLIMEX STM32 E407") | [Carbon](https://www.96boards.org/product/carbon/ "96Boards Carbon") |
+|   :---:   | :---: |  :---:  | :---:| :---: |:---:|  :---: |  :---:  |   :---:   |  :---: |
+|HelloWorld |   X   |    X    |   X  |   X   |  X  |    X   |    X    |     X     |    X   |
+|  ADC      |       |    X    |      |       |     |        |         |           |        |
+|  PWM      |       |    X    |      |       |     |        |         |           |        |
+|  GPIO     |       |    X    |   X  |       |     |        |         |           |        |
+|  I2C      |       |    X    |   X  |       |     |        |         |           |        |
+|  BLE      |       |    X    |      |       |     |        |         |           |    X   |
+|  UART     |       |    X    |      |   NT  |     |        |         |           |        |
+| Sensor    |       |    X    |      |       |     |        |         |           |        |
+| Buffer    |   X   |    X    |   X  |   X   |  X  |    X   |    X    |     X     |    X   |
+| Console   |   X   |    X    |   X  |   X   |  X  |    X   |    X    |     X     |    X   |
+| Event     |   X   |    X    |   X  |   X   |  X  |    X   |    X    |     X     |    X   |
+|File System|       |    X    |   X  |       |     |        |         |           |        |
+| OCF       |   X   |    X    |   X  |       |     |        |         |     NT    |        |
+|Performance|   X   |    X    |   X  |   X   |  X  |    X   |    X    |     X     |    X   |
+| Timers    |   X   |    X    |   X  |   X   |  X  |    X   |    X    |     X     |    X   |
+| Dgram     |       |    X    |   X  |       |     |        |         |           |        |
+| Net       |       |    X    |   X  |       |     |        |         |           |        |
+| WebSocket |       |    X    |   X  |       |     |        |         |           |        |
 
 ## Networking with QEMU
 QEMU has support for networking features that can be tested on your Linux
@@ -738,20 +750,25 @@ cd net-tools
 make
 ```
 
-Open up 2 terminals to run the tools:
+If the build fails, you may need to install the libpcap-dev package:
+```bash
+sudo apt install libpcap-dev
+```
+
+Open up 2 terminals to run the tools from the net-tools directory:
 Terminal 1:
 ```bash
-sudo ./net-tools/loop-socat.sh
+./loop-socat.sh
 ```
 
 If this fails, you may need to install the socat package:
 ```bash
-sudo apt-get install socat
+sudo apt install socat
 ```
 
 Terminal 2:
 ```bash
-./net-tools/loop-slip-tap.sh
+sudo ./loop-slip-tap.sh
 ```
 Then run QEMU as your normally would e.g.
 ```bash
@@ -844,5 +861,8 @@ configure the heap size available to the ZJS API.
 - `src/` - JS API bindings for JerryScript written directly on top of Zephyr.
 - `tests/` - JavaScript unit tests (incomplete).
 
-
+<!-- This doesn't show up directly but is used for the Web IDE links above -->
 [Web IDE]: https://intel.github.io/zephyrjs-ide
+
+<!-- LEAVE THIS AT THE VERY BOTTOM -->
+Zephyr is a trademark of the Linux Foundation. *Other names and brands may be claimed as the property of others.

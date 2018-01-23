@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, Intel Corporation.
+// Copyright (c) 2016-2018, Intel Corporation.
 
 // enable to use function tracing for debug purposes
 #if 0
@@ -65,17 +65,19 @@ struct sockaddr *zjs_net_config_get_ip(struct net_context *context)
 {
     FTRACE("context = %p\n", context);
     struct net_if *iface = net_context_get_iface(context);
+
+    // FIXME: hardcoding unicast[0] below may bite us someday
     if (net_context_get_family(context) == AF_INET) {
 #ifndef CONFIG_NET_IPV4
         return NULL;
 #else
-        return (struct sockaddr *)&iface->ipv4.unicast[0].address.in_addr;
+        return (struct sockaddr *)&iface->ipv4.unicast[0].address;
 #endif
     } else {
 #ifndef CONFIG_NET_IPV6
         return NULL;
 #else
-        return (struct sockaddr *)&iface->ipv6.unicast[0].address.in6_addr;
+        return (struct sockaddr *)&iface->ipv6.unicast[0].address;
 #endif
     }
 }
