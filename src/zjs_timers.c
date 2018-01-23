@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, Intel Corporation.
+// Copyright (c) 2016-2018, Intel Corporation.
 
 // C includes
 #include <string.h>
@@ -149,6 +149,11 @@ static zjs_timer_t *add_timer(u32_t interval,
 static bool delete_timer(zjs_timer_t *tm)
 {
     if (tm) {
+        // If the timer isn't in the list, its already been deleted
+        if (zjs_timers == NULL ||
+            !ZJS_LIST_REMOVE(zjs_timer_t, zjs_timers, tm)) {
+            return false;
+        }
         zjs_port_timer_stop(&tm->timer);
         for (int i = 0; i < tm->argc; ++i) {
             jerry_release_value(tm->argv[i]);
@@ -162,7 +167,6 @@ static bool delete_timer(zjs_timer_t *tm)
 #endif
             zjs_remove_callback(tm->callback_id);
         }
-        ZJS_LIST_REMOVE(zjs_timer_t, zjs_timers, tm);
         zjs_free(tm->argv);
         zjs_free(tm);
         return true;
@@ -216,10 +220,10 @@ static ZJS_DECL_FUNC(native_clear_interval_handler)
     // FIXME: timers should be ints, not objects!
     ZJS_VALIDATE_ARGS(Z_OBJECT);
 
-    ZJS_GET_HANDLE(argv[0], zjs_timer_t, handle, timer_type_info);
+    ZJS_GET_HANDLE_OR_NULL(argv[0], zjs_timer_t, handle, timer_type_info);
 
     if (!delete_timer(handle))
-        return zjs_error("timer not found");
+        DBG_PRINT("timer not found");
 
     return ZJS_UNDEFINED;
 }
