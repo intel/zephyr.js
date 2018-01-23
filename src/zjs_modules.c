@@ -267,7 +267,7 @@ static ZJS_DECL_FUNC(process_exit)
 #ifdef ZJS_DYNAMIC_LOAD
 void zjs_modules_check_load_file(char *file)
 {
-    // No file waiting to load, just return 
+    // No file waiting to load, just return
     if (load_file == NULL) {
         return;
     }
@@ -327,8 +327,10 @@ void zjs_modules_init()
     zjs_obj_add_function(global_obj, "eval", native_eval_handler);
     zjs_obj_add_function(global_obj, "print", native_print_handler);
     zjs_obj_add_function(global_obj, "stopJS", stop_js_handler);
+#ifdef ZJS_DYNAMIC_LOAD
     zjs_obj_add_function(global_obj, "runJS", zjs_run_js);
-
+#endif // ZJS_DYNAMIC_LOAD
+    
     // create the C handler for require JS call
     zjs_obj_add_function(global_obj, "require", native_require_handler);
 

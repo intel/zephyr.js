@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, Intel Corporation.
+// Copyright (c) 2016-2018, Intel Corporation.
 
 // C includes
 #include <string.h>
