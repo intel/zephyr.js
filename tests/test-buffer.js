@@ -7,7 +7,7 @@ var assert = require("Assert.js");
 
 var buff;
 
-// Creat buffer: array (not test out of memory)
+// Create buffer: array (not test out of memory)
 var lens = [1, 10, 100, 1024];
 buff = new Buffer(lens);
 assert(buff !== null && typeof buff === "object",
@@ -18,9 +18,10 @@ assert(buff.length === 4,
 var lens = [[1, 10], "ZJS", "w"];
 buff = new Buffer(lens);
 assert(buff !== null && typeof buff === "object" && buff.length === 3,
-       "Creating buffer with not array and treating as 0");
+       "Creating buffer with non-numeric array and " +
+       "the array will be treated as 0");
 
-// Creat buffer: string (not test out of memory)
+// Create buffer: string (not test out of memory)
 var lens = ["w", "ZJS", "1234567890", "!@#$%^&*()"];
 for (var i = 0; i < lens.length; i++) {
     buff = new Buffer(lens[i]);
