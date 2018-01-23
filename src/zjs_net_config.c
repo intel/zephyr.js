@@ -77,7 +77,14 @@ struct sockaddr *zjs_net_config_get_ip(struct net_context *context)
 #ifndef CONFIG_NET_IPV6
         return NULL;
 #else
-        return (struct sockaddr *)&iface->ipv6.unicast[0].address;
+        struct net_address *addr = &iface->ipv6.unicast[0].address;
+        struct sockaddr_in6 *in6 = (struct sockaddr_in6 *)addr;
+        if (in6->sin6_addr.in6_u.u6_addr8[0] == 0xfe &&
+            (in6->sin6_addr.in6_u.u6_addr8[1] & 0xc0) == 0x80) {
+            // link local, use the next one
+            addr = &iface->ipv6.unicast[1].address;
+        }
+        return (struct sockaddr *)addr;
 #endif
     }
 }
