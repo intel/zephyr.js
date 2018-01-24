@@ -229,8 +229,8 @@ make dfu
 
 This will flash both the images to the device using the dfu-util program.
 
-If you get a permission error, make sure you followed the [plugdev group](#join-the-plugdev-group) instructions above for this user. You shouldn't need
-to run this command with `sudo`.
+If you get a permission error, make sure you followed the [plugdev group](#join-the-plugdev-group)
+instructions above for this user. You shouldn't need to run this command with `sudo`.
 
 After this flashing completes successfully, reboot the device with the Master
 Reset button to start the application. After a few seconds the onboard LEDs
@@ -775,6 +775,9 @@ You can now build for Arduino 101 (without setting BOARD=, it builds arduino_101
 ```bash
 make JS=samples/HelloWorld.js
 ```
+
+**Note** There's currently a bug that you'll run into a build issue when buiding
+for the Arduino 101 using the latest Zephyr (1.10.). See [bug](https://github.com/zephyrproject-rtos/zephyr/issues/5807)
 
 #### Other targets like FRDM-K64F or possibly other ARM boards on Mac
 These also have limited support currently. The requiremenet is that you'll
