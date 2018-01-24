@@ -33,7 +33,7 @@ wss.on('connection', function(ws) {
     ws.on('message', function(message) {
         console.log("MESSAGE: " + message.toString('ascii'));
         t = setTimeout(function() {
-            ws.send(new Buffer("A MESSAGE"), true);
+            ws.send(new Buffer("Message #" + count), true);
             if (count % 10 == 0) {
                 ws.ping(new Buffer("PING"));
             }
