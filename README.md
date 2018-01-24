@@ -79,7 +79,7 @@ sudo apt update
 sudo apt install cmake dfu-util git python3-yaml screen uglifyjs
 ```
 
-Note: python3-yaml is a recent requirement for the frdm-k64f build due to a
+**Note**: python3-yaml is a recent requirement for the frdm-k64f build due to a
 change in Zephyr, so it could be left out currently if you don't use k64f.
 Before that, for a while python-yaml was needed when the script was using
 Python 2.
@@ -185,7 +185,7 @@ environment variables, too. Here's the right way to do that:
 source deps/zephyr/zephyr-env.sh
 ```
 
-Note: cmake 3.8.2 or later is required, and your system might install an older
+**Note**: cmake 3.8.2 or later is required, and your system might install an older
 version, if this is the case, you'll have to manually install the latest
 version of cmake:
 ```bash
@@ -205,7 +205,7 @@ your JavaScript application, and the ARC support image acts as a helper
 library that channels some of the data needed from the ARC processor to the
 x86 processor.
 
-**Note**, you'll need to build both the x86 and ARC images
+**Note**: you'll need to build both the x86 and ARC images
 with the same JS file so the required sub-modules are enabled on both images.
 
 You can build both with a single command:
@@ -317,7 +317,7 @@ That implies you need an extra 53K of space, so you could try passing ROM=200.
 If it's the ARC image that needs more space, you should decrease the ROM you're
 passing instead.
 
-**NOTE**: Earlier, we would physically repartition the device and install a new
+**Note**: Earlier, we would physically repartition the device and install a new
 bootloader that knew about it. This is no longer necessary, so if you have such
 a device you should restore it to factory condition with the 256-to-144
 flashpack.
@@ -466,7 +466,7 @@ The executable will be outputted to `outdir/linux/<variant>/jslinux`. Where
 Zephyr target by passing in `VARIANT=` when running `make`. The default is
 release.
 
-Note: To build on MacOS using BOARD=linux, see instructions in the next section.
+**Note**: To build on MacOS using BOARD=linux, see instructions in the next section.
 
 What makes the linux target convenient is that a JS script does not have to be
 bundled with the final executable. By default `samples/HelloWorld.js` will be
@@ -589,7 +589,7 @@ echo "export PATH=$PWD/kconfig:\$PATH" >> $HOME/.zephyrrc
 source $ZEPHYR_BASE/zephyr-env.sh
 ```
 
-**Note** You only need to do this once after cloning the git repository.
+**Note**: You only need to do this once after cloning the git repository.
 
 #### Building Linux target
 You can build the "linux" target on MacOS using BOARD=linux, follow instructions
@@ -640,7 +640,7 @@ Currently the following configurations are provided:
 i586.config: for standard ABI, for example for Galileo and qemu_x86
 iamcu.config: for IAMCU ABI, for example for the Arduino 101
 ```bash
- (replace i586.config with iamcu.config for Arduino 101)
+(replace i586.config with iamcu.config for Arduino 101)
 cp ${ZEPHYR_BASE}/scripts/cross_compiler/i586.config .config
 ct-ng oldconfig
 ```
@@ -707,13 +707,13 @@ Booting from ROM..
 Hello, ZJS world!
 ```
 
-**Note** There are currently some cmake issues and crosstool-ng using the latest
+**Note**: There are currently some cmake issues and crosstool-ng using the latest
 Zephyr (1.10.0), and here are some of the work-arounds.
 
 If you see an compile error like:
 ```bash
-  No such file or directory: CMAKE_READELF:
-  '/Volumes/CrossToolNG/x-tools/i586-zephyr-elfiamcu/bin/i586-zephyr-elfiamcu-readelf'
+No such file or directory: CMAKE_READELF:
+'/Volumes/CrossToolNG/x-tools/i586-zephyr-elfiamcu/bin/i586-zephyr-elfiamcu-readelf'
 ```
 
 edit ${ZEPHYR_BASE}/cmake/toolchain-xtools.cmake and change the line:
@@ -776,7 +776,7 @@ You can now build for Arduino 101 (without setting BOARD=, it builds arduino_101
 make JS=samples/HelloWorld.js
 ```
 
-**Note** There's currently a bug that you'll run into a build issue when buiding
+**Note**: There's currently a bug that you'll run into a build issue when buiding
 for the Arduino 101 using the latest Zephyr (1.10.). See [bug](https://github.com/zephyrproject-rtos/zephyr/issues/5807)
 
 #### Other targets like FRDM-K64F or possibly other ARM boards on Mac
@@ -864,7 +864,7 @@ Then run QEMU as your normally would e.g.
 make BOARD=qemu_x86 JS=samples/OcfServer.js qemu
 ```
 
-Note: At this point, this setup is relatively unstable. You may experience
+**Note**: At this point, this setup is relatively unstable. You may experience
 crashes or things just not working in general. If the behavior does not seem
 normal you can usually fix it by restarting the two scripts and running QEMU
 again.
