@@ -3,7 +3,7 @@
 // enable to use function tracing for debug purposes
 #if 0
 #define USE_FTRACE
-static char FTRACE_PREFIX[] = "net";
+static char FTRACE_PREFIX[] = "ws";
 #endif
 
 // C includes
