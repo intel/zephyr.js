@@ -2,6 +2,7 @@ ZJS API for Buffer
 ==================
 
 * [Introduction](#introduction)
+* [Web IDL](#web-idl)
 * [Class: Buffer](#buffer-api)
   * [new Buffer(array)](#new-bufferarray)
   * [new Buffer(size)](#new-buffersize)
@@ -19,6 +20,33 @@ Introduction
 Buffer is a [Node.js API](https://nodejs.org/dist/latest-v8.x/docs/api/buffer.html)
 to read and write binary data accurately from JavaScript. ZJS supports a minimal
 subset of this API that will be expanded as the need arises.
+
+Web IDL
+-------
+
+[
+  Constructor(Uint8Array initial_values),
+  Constructor(unsigned long size),
+  Constructor(ByteString initial_string)
+]
+interface Buffer {
+    readonly attribute unsigned long length;
+	unsigned long copy(Buffer target, optional unsigned long targetStart,
+	optional unsigned long sourceStart
+	optional unsigned long sourceEnd);
+    octet readUInt8(unsigned long offset);
+    void writeUInt8(octet value, unsigned long offset);
+    unsigned short readUInt16BE(unsigned long offset);
+    void writeUInt16BE(unsigned short value, unsigned long offset);
+    unsigned short readUInt16LE(unsigned long offset);
+    void writeUInt16LE(unsigned short value, unsigned long offset);
+    unsigned long readUInt32BE(unsigned long offset);
+    void writeUInt32BE(unsigned long value, unsigned long offset);
+    unsigned long readUInt32LE(unsigned long offset);
+    void writeUInt32LE(unsigned long value, unsigned long offset);
+    string toString(string encoding);
+};
+
 
 Buffer API
 ----------
