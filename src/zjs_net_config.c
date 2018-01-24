@@ -80,7 +80,7 @@ struct sockaddr *zjs_net_config_get_ip(struct net_context *context)
 #ifdef CONFIG_NET_IPV6
         for (int i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
             if (iface->ipv6.unicast[i].is_used) {
-                struct net_address *addr = &iface->ipv6.unicast[i].address;
+                struct net_addr *addr = &iface->ipv6.unicast[i].address;
                 struct sockaddr_in6 *in6 = (struct sockaddr_in6 *)addr;
                 if (in6->sin6_addr.in6_u.u6_addr8[0] != 0xfe ||
                     (in6->sin6_addr.in6_u.u6_addr8[1] & 0xc0) != 0x80) {
