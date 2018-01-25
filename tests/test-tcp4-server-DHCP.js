@@ -95,7 +95,7 @@ netConfig.dhcp(function(address, subnet, gateway) {
                        " is defined as '" + properties[i][0] + "'");
 
                 var propertiesTemp = properties[i][0];
-                propertiesTemp = propertiesTemp + properties[i][3];
+                properties[i][0] = propertiesTemp + properties[i][3];
                 assert(properties[i][0] === propertiesTemp,
                        "SocketPro: " + properties[i][2] +
                        " property is read-only");

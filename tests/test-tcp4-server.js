@@ -1,4 +1,4 @@
-// Copyright (c) 2017, Intel Corporation.
+// Copyright (c) 2017-2018, Intel Corporation.
 
 // Run this test case and run simple TCP client on linux
 //     TCP client: /tests/tools/test-tcp4-client.py
@@ -148,7 +148,7 @@ setTimeout(function() {
                    " is defined as '" + properties[i][0] + "'");
 
             var propertiesTemp = properties[i][0];
-            propertiesTemp = propertiesTemp + properties[i][3];
+            properties[i][0] = propertiesTemp + properties[i][3];
             assert(properties[i][0] === propertiesTemp,
                    "SocketPro: " + properties[i][2] +
                    " property is read-only");

@@ -63,23 +63,35 @@ void zjs_net_config_default(void)
 
 struct sockaddr *zjs_net_config_get_ip(struct net_context *context)
 {
+    // effects: returns pointer to sockaddr for a valid, non-link-local address
+    //            of the right family for this context, or NULL if not found
     FTRACE("context = %p\n", context);
     struct net_if *iface = net_context_get_iface(context);
 
-    // FIXME: hardcoding unicast[0] below may bite us someday
     if (net_context_get_family(context) == AF_INET) {
-#ifndef CONFIG_NET_IPV4
-        return NULL;
-#else
-        return (struct sockaddr *)&iface->ipv4.unicast[0].address;
+#ifdef CONFIG_NET_IPV4
+        for (int i = 0; i < NET_IF_MAX_IPV4_ADDR; i++) {
+            if (iface->ipv4.unicast[i].is_used) {
+                return (struct sockaddr *)&iface->ipv4.unicast[i].address;
+            }
+        }
 #endif
     } else {
-#ifndef CONFIG_NET_IPV6
-        return NULL;
-#else
-        return (struct sockaddr *)&iface->ipv6.unicast[0].address;
+#ifdef CONFIG_NET_IPV6
+        for (int i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
+            if (iface->ipv6.unicast[i].is_used) {
+                struct net_addr *addr = &iface->ipv6.unicast[i].address;
+                struct sockaddr_in6 *in6 = (struct sockaddr_in6 *)addr;
+                if (in6->sin6_addr.in6_u.u6_addr8[0] != 0xfe ||
+                    (in6->sin6_addr.in6_u.u6_addr8[1] & 0xc0) != 0x80) {
+                    // not link local, use this one
+                    return (struct sockaddr *)addr;
+                }
+            }
+        }
 #endif
     }
+    return NULL;
 }
 
 int zjs_is_ip(char *addr)

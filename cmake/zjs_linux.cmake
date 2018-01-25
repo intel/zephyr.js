@@ -131,7 +131,15 @@ if(NOT APPLE)
     ${IOTC_BASE}/util
     )
 
-  add_definitions(-DOC_SERVER -DOC_CLIENT -DBUILD_MODULE_OCF -DZJS_GPIO_MOCK)
+  add_definitions(
+      -DOC_SERVER
+      -DOC_CLIENT
+      -DOC_DYNAMIC_ALLOCATION
+      -DOC_CLOCK_CONF_TICKS_PER_SECOND=1000
+      -DMAX_APP_DATA_SIZE=1024
+      -DBUILD_MODULE_OCF
+      -DZJS_GPIO_MOCK
+      )
 
   # these flags are needed to get rid of warnings in iotivity-constrained
   list(APPEND APP_COMPILE_OPTIONS -Wno-pointer-sign)
