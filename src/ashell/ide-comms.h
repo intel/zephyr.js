@@ -39,7 +39,7 @@ void ide_receive(u8_t *buf, size_t len);
 // Init WebUSB with a receiver callback.
 void ide_init();
 
-// For periodic jobs called from mainloop. Not used.
+// For periodic jobs called from mainloop.
 void ide_process();
 
 // Send arbitrary data over WebUSB.

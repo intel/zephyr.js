@@ -23,5 +23,8 @@ void zjs_ashell_process()
 #ifdef ASHELL_IDE_UART
     extern void uart_process();
     uart_process();
+#else
+    extern void ide_process();
+    ide_process();
 #endif
 }

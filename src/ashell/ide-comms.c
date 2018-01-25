@@ -16,6 +16,7 @@
 #include <string.h>
 
 // Zephyr includes
+#include <atomic.h>
 #include <device.h>
 #include <init.h>
 
@@ -25,8 +26,11 @@
 #include "../zjs_util.h"
 
 #ifdef ASHELL_IDE_UART
-#include "term-uart.h"
+  #include "term-uart.h"
+#else
+  #include "ide-webusb.h"
 #endif
+
 
 static void process_rx_buffer(u8_t *buffer, size_t len)
 {
@@ -53,27 +57,32 @@ static void process_rx_buffer(u8_t *buffer, size_t len)
     }
 }
 
-void ide_init()
+int ide_send_buffer(char *buf, size_t len)
 {
-    extern void webusb_init();
-    webusb_init();
-
-    extern void parser_init();
-    parser_init();
+#ifdef ASHELL_IDE_UART
+    uart_write_buf(buf, len);
+    return len;
+#else
+    return webusb_write(buf, len);
+#endif
 }
 
-// Process a buffer (part of a message) in WebUSB driver context.
+// Process a buffer (part of a message) in the webusb_receive_process.
 void ide_receive(u8_t *buffer, size_t len)
 {
     process_rx_buffer(buffer, len);
 }
 
-int ide_send_buffer(char *buf, size_t len)
+void ide_init()
 {
-#ifdef ASHELL_IDE_UART
-    uart_write_buf(buf, len);
-#else
-    webusb_write(buf, len);
-#endif
-    return len;
+    webusb_init(ide_receive);
+
+    extern void parser_init();
+    parser_init();
 }
+
+void ide_process()
+{
+    webusb_receive_process();
+}
+

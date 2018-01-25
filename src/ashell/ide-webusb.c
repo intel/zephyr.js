@@ -14,8 +14,8 @@
 #include <device.h>
 #include <zephyr.h>
 
-#include "webusb_serial.h"
 #include "ide-comms.h"
+#include "ide-webusb.h"
 
 /* WebUSB Platform Capability Descriptor */
 static const u8_t webusb_bos_descriptor[] = {
@@ -93,14 +93,89 @@ int vendor_handle_req(struct usb_setup_packet *pSetup,
   return -ENOTSUP;
 }
 
-/* Custom and Vendor request handlers */
+/*
+ *  Receive buffer management for the WebUSB driver.
+ */
+#define WEBUSB_RX_POOL_SIZE    4
+
+typedef struct {
+    u32_t _for_kernel_use;
+    u8_t data[WEBUSB_RX_BUFFER_SIZE];
+    size_t length;
+    atomic_t lock;
+} webusb_rx_buf_t;
+
+// The WebUSB driver will use these buffers.
+webusb_rx_buf_t webusb_rx_buffers[WEBUSB_RX_POOL_SIZE];
+static u32_t webusb_rx_index = 0;
+
+// Release an rx buffer (from the ide_process).
+static void webusb_release_buffer(webusb_rx_buf_t *buf)
+{
+    atomic_set(&(buf->lock), 0);
+    buf->length = 0;
+    memset(buf->data, 0, WEBUSB_RX_BUFFER_SIZE);
+}
+
+// Provide a buffer to the WebUSB driver. Return a pointer to the data part.
+u8_t *get_rx_buf()
+{
+    for (int i = 0; i < WEBUSB_RX_POOL_SIZE; i++) {
+        webusb_rx_buf_t *buf = &(webusb_rx_buffers[webusb_rx_index++]);
+        webusb_rx_index %= WEBUSB_RX_POOL_SIZE;
+        if (atomic_get(&(buf->lock)) == 0) {
+          atomic_set(&(buf->lock), 1);
+          return buf->data;
+        }
+    }
+    return NULL;
+}
+
+// Obtain the webusb_rx_buf_t buffer pointer from the data pointer.
+static inline webusb_rx_buf_t * buffer_from_data(u8_t *data)
+{
+    return (webusb_rx_buf_t *)(data - sizeof(u32_t));
+}
+
+// Use this queue to store buffers available from the WebUSB driver.
+// The ide_process will consume them from here.
+static struct k_fifo rx_queue;
+
+// Consume a buffer (part of a message) in WebUSB driver context.
+static void webusb_receive(u8_t *data, size_t len)
+{
+    webusb_rx_buf_t *buf = buffer_from_data(data);
+    buf->length = len;
+    k_fifo_put(&rx_queue, buf);
+}
+
+// Initialize Custom and Vendor request handlers, and buffer handling callbacks.
 static struct webusb_req_handlers req_handlers = {
   .custom_handler = custom_handle_req,
   .vendor_handler = vendor_handle_req,
-  .rx_cb = ide_receive
+  .rx_handler = webusb_receive,
+  .get_buffer = get_rx_buf
 };
 
-void webusb_init()
+// Store the receive callback provided by the application here.
+static webusb_process_cb webusb_cb = NULL;
+
+void webusb_init(webusb_process_cb cb)
 {
+  k_fifo_init(&rx_queue);
+  webusb_cb = cb;
   webusb_register_request_handlers(&req_handlers);
 }
+
+void webusb_receive_process()
+{
+  webusb_rx_buf_t *buf;
+  while ((buf = (webusb_rx_buf_t *) k_fifo_get(&rx_queue, K_FOREVER))) {
+    if (webusb_cb) {
+        webusb_cb(buf->data, buf->length);
+        webusb_release_buffer(buf);
+    }
+    k_yield();
+  }
+}
+

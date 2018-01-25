@@ -546,11 +546,12 @@ static void ide_cmd_list(char *buf, size_t len)
 
     ide_start_message("list");
     ide_spool("[");  // data is an array of dictionaries
-    for (bool first = true; !fs_readdir(&dir, &entry) && entry.name[0];) {
+    bool first = true;
+    while (true) {
         int res = fs_readdir(&dir, &entry);
         if (res || entry.name[0] == 0) {
             IDE_DBG("\r\nError reading dir.\r\n");
-            continue;
+            break;
         }
         if (entry.type != FS_DIR_ENTRY_DIR) {
             p = entry.name;

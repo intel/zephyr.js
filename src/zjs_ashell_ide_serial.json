@@ -4,7 +4,7 @@
     "src": [
         "${ZEPHYR_BASE}/samples/subsys/usb/webusb/src/webusb_serial.c",
         "src/ashell/term-uart.c",
-        "src/ashell/webusb-uart.c",
+        "src/ashell/term-webusb.c",
         "src/ashell/ide-comms.c",
         "src/ashell/ide-cmd.c"
 ],
@@ -14,7 +14,6 @@
     "zjs_config": [
         "-I${ZEPHYR_BASE}/samples/subsys/usb/webusb/src/",
         "-DASHELL_IDE_UART",
-        "-DASHELL_IDE_PROTOCOL",
-        "-DASHELL_IDE_DBG"
+        "-DASHELL_IDE_PROTOCOL"
     ]
 }

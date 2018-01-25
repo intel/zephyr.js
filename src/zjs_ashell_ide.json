@@ -2,8 +2,8 @@
     "module": "ashell_ide",
     "depends": ["ashell"],
     "src": [
-        "${ZEPHYR_BASE}/samples/subsys/usb/webusb-ide/src/webusb_serial.c",
-        "src/ashell/webusb-ide.c",
+        "${ZEPHYR_BASE}/samples/subsys/usb/webusb-ide/src/webusb_driver.c",
+        "src/ashell/ide-webusb.c",
         "src/ashell/ide-comms.c",
         "src/ashell/ide-cmd.c"
 ],
@@ -13,7 +13,6 @@
         ]
     },
     "zjs_config": [
-        "-I${ZEPHYR_BASE}/samples/subsys/usb/webusb-ide/src/",
-        "-DASHELL_IDE_DBG"
+        "-I${ZEPHYR_BASE}/samples/subsys/usb/webusb-ide/src/"
     ]
 }
