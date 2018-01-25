@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, Intel Corporation.
+// Copyright (c) 2016-2018, Intel Corporation.
 
 // enable for verbose callback detail
 #if 0
@@ -625,13 +625,13 @@ u8_t zjs_service_callbacks(void)
                 }
 #ifdef ZJS_PRINT_CALLBACK_STATS
                 if (!header_printed) {
-                    PRINT("\n--------- Callback Stats ------------\n");
+                    ZJS_PRINT("\n--------- Callback Stats ------------\n");
                     header_printed = 1;
                 }
                 if (cb_map[id]) {
-                    PRINT("[cb stats] Callback[%u]: type=%s, arg_sz=%u\n", id,
-                          (cb_map[id]->type == CALLBACK_TYPE_JS) ? "JS" : "C",
-                          size);
+                    ZJS_PRINT("[cb stats] Callback[%u]: type=%s, arg_sz=%u\n", id,
+                              (GET_TYPE(cb_map[id]->flags) == CALLBACK_TYPE_JS) ? "JS" : "C",
+                              size);
                 }
                 num_callbacks++;
 #endif
@@ -642,11 +642,11 @@ u8_t zjs_service_callbacks(void)
         }
 #ifdef ZJS_PRINT_CALLBACK_STATS
         if (num_callbacks) {
-            PRINT("[cb stats] Number of Callbacks (this service): %lu\n",
-                  num_callbacks);
-            PRINT("[cb stats] Max Callbacks Per Service: %u\n",
-                  ZJS_MAX_CB_LOOP_ITERATION);
-            PRINT("------------- End ----------------\n");
+            ZJS_PRINT("[cb stats] Number of Callbacks (this service): %u\n",
+                      num_callbacks);
+            ZJS_PRINT("[cb stats] Max Callbacks Per Service: %u\n",
+                      ZJS_MAX_CB_LOOP_ITERATION);
+            ZJS_PRINT("------------- End ----------------\n");
         }
 #endif
     }
