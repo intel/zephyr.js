@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, Intel Corporation.
+// Copyright (c) 2016-2018, Intel Corporation.
 
 // C includes
 #include <string.h>
@@ -108,7 +108,7 @@ jerry_value_t zjs_add_event_listener(jerry_value_t obj, const char *event_name,
 
     if (ZJS_LIST_LENGTH(listener_t, event->listeners) > handle->max_listeners) {
         // warn of possible leak as per Node docs
-        ZJS_PRINT("possible memory leak on event %s", event_name);
+        ZJS_PRINT("possible memory leak on event %s\n", event_name);
     }
 
 #ifdef ZJS_FIND_FUNC_NAME

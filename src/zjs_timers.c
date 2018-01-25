@@ -223,7 +223,7 @@ static ZJS_DECL_FUNC(native_clear_interval_handler)
     ZJS_GET_HANDLE_OR_NULL(argv[0], zjs_timer_t, handle, timer_type_info);
 
     if (!delete_timer(handle))
-        DBG_PRINT("timer not found");
+        DBG_PRINT("timer not found\n");
 
     return ZJS_UNDEFINED;
 }

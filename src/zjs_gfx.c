@@ -82,7 +82,7 @@ static void args_to_data(gfx_data_t *data, u32_t argc, const jerry_value_t argv[
             else if (jerry_value_is_string(argv[i])) {
                 data->text = zjs_alloc_from_jstring(argv[i], &data->textSize);
                 if (!data->text) {
-                    ERR_PRINT ("GFX failed to copy text");
+                    ERR_PRINT("GFX failed to copy text\n");
                 }
             }
             else if (jerry_value_is_array(argv[i])) {
