@@ -41,10 +41,6 @@ if("${CB_STATS}" STREQUAL "on")
   add_definitions(-DZJS_PRINT_CALLBACK_STATS)
 endif()
 
-if(NETWORK_BUILD)
-  add_definitions(-DNETWORK_BUILD=${NETWORK_BUILD})
-endif()
-
 if("${PRINT_FLOAT}" STREQUAL "on")
   add_definitions(-DZJS_PRINT_FLOATS)
 endif()
