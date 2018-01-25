@@ -90,7 +90,7 @@ typedef struct zjs_callback {
 static u8_t args_buffer[ZJS_CALLBACK_BUF_SIZE];
 static struct zjs_port_ring_buf ring_buffer;
 #else
-SYS_RING_BUF_DECLARE_POW2(ring_buffer, 5);
+SYS_RING_BUF_DECLARE_POW2(ring_buffer, 6);
 #endif
 static u8_t ring_buf_initialized = 1;
 
