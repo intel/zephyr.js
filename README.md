@@ -1,9 +1,9 @@
 # JavaScript\* Runtime for Zephyr&trade; OS
 
-The JavaScript\* Runtime for the Zephyr&trade; OS project (ZJS for short) provides an IoT
-web runtime environment with JavaScript APIs for the Zephyr operating system,
-based on the JerryScript engine. It is intended for systems with little memory
-where Node.js with V8 is too big.
+The JavaScript\* Runtime for the Zephyr&trade; OS project (ZJS for short)
+provides an IoT web runtime environment with JavaScript APIs for the Zephyr
+operating system, based on the JerryScript engine. It is intended for systems
+with little memory where Node.js with V8 is too big.
 
 This code requires a local copy of JerryScript and Zephyr OS source. We
 will upstream patches to those projects as appropriate, but this repo is for
@@ -54,7 +54,12 @@ to get ssh working to github.com and http working to zephyrproject.org.
 * If you wish to use the [Web IDE] (highly recommended!), please follow the [Zephyr Project JavaScript & WebIDE Tutorial](http://www.youtube.com/watch?v=4ZrrsCVbPJs).
 
 ## Developing with the Web-based IDE
-The easiest way to develop your JavaScript app on Zephyr is using our Web-based IDE which allows you to write JS apps on the fly in our online editor and upload them directly to the Arduino 101 board through WebUSB. Please follow our [Zephyr Project JavaScript & WebIDE Tutorial](http://www.youtube.com/watch?v=4ZrrsCVbPJs) to get started with the [Web IDE] and check out the [ashell guide](./docs/ashell.md) for more advanced usages.
+The easiest way to develop your JavaScript app on Zephyr is using our Web-based
+IDE which allows you to write JS apps on the fly in our online editor and upload
+them directly to the Arduino 101 board through WebUSB. Please follow our
+[Zephyr Project JavaScript & WebIDE Tutorial](http://www.youtube.com/watch?v=4ZrrsCVbPJs)
+to get started with the [Web IDE] and check out the [ashell guide](./docs/ashell.md)
+for more advanced usages.
 
 [![Zephyr Project JavaScript & WebIDE Tutorial](http://img.youtube.com/vi/4ZrrsCVbPJs/0.jpg)](http://www.youtube.com/watch?v=4ZrrsCVbPJs)
 
@@ -74,7 +79,7 @@ sudo apt update
 sudo apt install cmake dfu-util git python3-yaml screen uglifyjs
 ```
 
-Note: python3-yaml is a recent requirement for the frdm-k64f build due to a
+**Note**: python3-yaml is a recent requirement for the frdm-k64f build due to a
 change in Zephyr, so it could be left out currently if you don't use k64f.
 Before that, for a while python-yaml was needed when the script was using
 Python 2.
@@ -114,8 +119,8 @@ sudo /path/to/zephyr-sdk-<VERSION>-setup.run
 Follow the prompts, but the defaults should be fine.
 
 #### Set up Zephyr SDK environment variables
-Add the following two lines to your `~/.bashrc`. If you installed your Zephyr SDK
-elsewhere, adjust as needed.
+Add the following two lines to your `~/.bashrc`. If you installed your Zephyr
+SDK elsewhere, adjust as needed.
 ```bash
 export ZEPHYR_GCC_VARIANT=zephyr
 export ZEPHYR_SDK_INSTALL_DIR=/opt/zephyr-sdk
@@ -134,7 +139,8 @@ sudo usermod -a -G plugdev USERNAME
 ```
 
 #### Add udev rules
-Copy these two files into your /etc/udev/rules.d directory (/etc/udev.rules for Ubuntu 14.04):
+Copy these two files into your /etc/udev/rules.d directory (/etc/udev.rules for
+Ubuntu 14.04):
 
 * [60-openocd.rules](https://raw.githubusercontent.com/arduino/OpenOCD/master/contrib/60-openocd.rules) (from this [Arduino github project](https://github.com/arduino/OpenOCD/blob/master/contrib/60-openocd.rules))
 * [99-dfu.rules](https://raw.githubusercontent.com/01org/CODK-A-ARC/master/bin/99-dfu.rules) (from this [01org github project](https://github.com/01org/CODK-A-ARC/blob/master/bin/99-dfu.rules))
@@ -179,7 +185,7 @@ environment variables, too. Here's the right way to do that:
 source deps/zephyr/zephyr-env.sh
 ```
 
-Note: cmake 3.8.2 or later is required, and your system might install an older
+**Note**: cmake 3.8.2 or later is required, and your system might install an older
 version, if this is the case, you'll have to manually install the latest
 version of cmake:
 ```bash
@@ -199,7 +205,7 @@ your JavaScript application, and the ARC support image acts as a helper
 library that channels some of the data needed from the ARC processor to the
 x86 processor.
 
-**Note**, you'll need to build both the x86 and ARC images
+**Note**: you'll need to build both the x86 and ARC images
 with the same JS file so the required sub-modules are enabled on both images.
 
 You can build both with a single command:
@@ -223,8 +229,8 @@ make dfu
 
 This will flash both the images to the device using the dfu-util program.
 
-If you get a permission error, make sure you followed the [plugdev group](#join-the-plugdev-group) instructions above for this user. You shouldn't need to run this command
-with `sudo`.
+If you get a permission error, make sure you followed the [plugdev group](#join-the-plugdev-group)
+instructions above for this user. You shouldn't need to run this command with `sudo`.
 
 After this flashing completes successfully, reboot the device with the Master
 Reset button to start the application. After a few seconds the onboard LEDs
@@ -242,8 +248,9 @@ you just need to repeat the steps the desired JavaScript filename.
 Without the serial console set up, you won't be able to see error messages and
 other output from your ZJS application. To hook up the serial console, you need
 a USB to TTL Serial Cable, such as the TTL-232R-3V3. On that particular cable,
-you wire the black wire to ground on the Arduino 101 board, the orange wire to GPIO pin 0
-(RX), and the yellow wire to GPIO pin 1 (TX). The other three are unused.
+you wire the black wire to ground on the Arduino 101 board, the orange wire to
+GPIO pin 0 (RX), and the yellow wire to GPIO pin 1 (TX). The other three are
+unused.
 
 When you plug this in, the device should show up as something such as
 `/dev/ttyUSB0`. You can then use the screen command to connect to the device
@@ -257,8 +264,8 @@ The `watch` utility will restart screen when you disconnect and reconnect your
 Arduino 101, so you shouldn't miss anything. You can leave a dedicated terminal
 running to watch the output.
 
-In `screen`, you can scroll back the output with Ctrl-A, Esc, followed by PgUp/PgDn.
-Then Esc again to get back to the latest output (out of "Copy Mode").
+In `screen`, you can scroll back the output with Ctrl-A, Esc, followed by
+PgUp/PgDn. Then Esc again to get back to the latest output (out of "Copy Mode").
 
 #### Debugging
 
@@ -268,11 +275,11 @@ to connect to the device with a debugger. Then you can set breakpoints such as
 `b main` and `run` to start debugging as usual with gdb.
 
 ##### Debugging JavaScript code
-JerryScript has a built-in remote debugger which allows debugging JavaScript programs.
-At the moment only a Websocket-based implementation is provided by JerryScript which
-transmits messages over TCP/IP networks. This implementation requires a socket API which
-currently only work when running on Linux.  The socket API is not yet supported
-with NewLib when building with Zephyr natively.
+JerryScript has a built-in remote debugger which allows debugging JavaScript
+programs. At the moment only a Websocket-based implementation is provided by
+JerryScript which transmits messages over TCP/IP networks. This implementation
+requires a socket API which currently only work when running on Linux.  The
+socket API is not yet supported with NewLib when building with Zephyr natively.
 
 To enable the remote debugger for a particular JS application:
 ```bash
@@ -281,7 +288,8 @@ outdir/linux/release/jslinux app.js --debugger
 ```
 
 It will then be run on debugger mode waiting for client connection, you can then
-in another terminal, you can connect to it by running the python client in JerryScript:
+in another terminal, you can connect to it by running the python client in
+JerryScript:
 ```bash
 jerry-debugger/jerry-client-ws.py
 ```
@@ -309,7 +317,7 @@ That implies you need an extra 53K of space, so you could try passing ROM=200.
 If it's the ARC image that needs more space, you should decrease the ROM you're
 passing instead.
 
-**NOTE**: Earlier, we would physically repartition the device and install a new
+**Note**: Earlier, we would physically repartition the device and install a new
 bootloader that knew about it. This is no longer necessary, so if you have such
 a device you should restore it to factory condition with the 256-to-144
 flashpack.
@@ -458,12 +466,12 @@ The executable will be outputted to `outdir/linux/<variant>/jslinux`. Where
 Zephyr target by passing in `VARIANT=` when running `make`. The default is
 release.
 
-Note: To build on MacOS using BOARD=linux, see instructions in the next section.
+**Note**: To build on MacOS using BOARD=linux, see instructions in the next section.
 
 What makes the linux target convenient is that a JS script does not have to be
 bundled with the final executable. By default `samples/HelloWorld.js` will be
-bundled but you can always just pass in a script on the command line when running
-jslinux e.g.:
+bundled but you can always just pass in a script on the command line when
+running jslinux e.g.:
 
 ```bash
 ./outdir/linux/release/jslinux samples/Timers.js
@@ -483,38 +491,39 @@ This flag can be used like:
 ./outdir/linux/release/jslinux -t <ms>
 ```
 
-It should be noted that the Linux target has only very partial support to hardware
-compared to Zephyr. This target runs the core code, but most modules do not run
-on it, specifically the hardware modules (AIO, I2C, GPIO etc.). There are some
-modules which can be used though like Events, Promises, Performance and OCF. This
-list may grow if other modules are ported to the Linux target.
+It should be noted that the Linux target has only very partial support to
+hardware compared to Zephyr. This target runs the core code, but most modules do
+not run on it, specifically the hardware modules (AIO, I2C, GPIO etc.). There
+are some modules which can be used though like Events, Promises, Performance an
+OCF. This list may grow if other modules are ported to the Linux target.
 
 ### Building and running on MacOS
 
-Mac support is still limited at this point. As Zephyr does not provide the SDK/toolchain
-to compile on MacOS natively, you will have to build your own or use a 3rd-party toolchain.
-Currently the targets we support building on Mac are "linux", "qemu_x86", with limited
-support for "arduino_101" and "frdm-k64f" boards. You'll need to have a recent version of
-OSX and XCode command line tools from App store to get you started. Depending on your
-system setup and target, you might have to perform additional steps, but if you run
-into build issues, you should first make sure that you can build Zephyr native apps on Mac
-using the toolchain you installed. Once you verify that it works, then our project should
-also build and link correctly, but we'll try to update the document as we find these kinds
-of issues. Currently we enable Travis CI to build the linux target only against the
-latest OSX (10.12) and XCode Command Line Tools (provided by XCode SDK) for sanity check
-purposes.
+Mac support is still limited at this point. As Zephyr does not provide the
+SDK/toolchain to compile on MacOS natively, you will have to build your own or
+use a 3rd-party toolchain. Currently the targets we support building on Mac are
+"linux", "qemu_x86", with limited support for "arduino_101" and "frdm-k64f"
+boards. You'll need to have a recent version of MacOS and XCode command line
+tools from App store to get you started. Depending on your system setup and
+target, you might have to perform additional steps, but if you run into build
+issues, you should first make sure that you can build Zephyr native apps on Mac
+using the toolchain you installed. Once you verify that it works, then our
+project should also build and link correctly, but we'll try to update the
+document as we find these kinds of issues. Currently we enable Travis CI to
+build the linux target only against a recent version of MacOS (10.12) and XCode
+Command Line Tools (provided by XCode SDK) for sanity check purposes.
 
 #### Set up
-The basic requirement for building Zephyr boards is that you'll need to install and
-setup the correct cross-compiler toolchain on your Mac for the boards you are trying to
-build. You need to install crosstool-ng, which allows you to build the x86 images
-you can run on QEMU, and for Arduino 101, you need to install the ARC compiler,
-which can be found by installing the Arduino IDE for Mac, this is used to build the ARC
-support image.
+The basic requirement for building Zephyr boards is that you'll need to install
+and setup the correct cross-compiler toolchain on your Mac for the boards you
+are trying to build. You need to install crosstool-ng, which allows you to build
+the x86 images you can run on QEMU, and for Arduino 101, you need to install the
+ARC compiler, which can be found by installing the Arduino IDE for Mac, this is
+used to build the ARC support image.
 
 Requirements:
 
-* MacOS 10.11 (El Capitan) or later
+* MacOS 10.12 (Sierra) or later
 * XCode Command Line Tools: 8.1 or later (clang)
 * Python: 2.7 or later
 * Homebrew
@@ -522,16 +531,13 @@ Requirements:
 * ARC cross-compiler (for building Arduino 101)
 * Python-yaml
 
-First, make sure you have Homebrew installed, instructions [here](https://brew.sh/), and then install the following brew packages:
+First, make sure you have Homebrew installed, instructions [here](https://brew.sh/),
+and then install the following brew packages:
 ```bash
-brew install dfu-util doxygen qemu dtc python3
-curl -O 'https://bootstrap.pypa.io/get-pip.py'
-sudo python ./get-pip.py
-rm get-pip.py
-pip3 install --user -r scripts/requirements.txt
+brew install cmake ninja dfu-util doxygen qemu dtc python3 gperf
 ```
 
-Install tools needed for building the toolchain (if needed):
+Install tools needed for building the toolchain:
 ```bash
 brew install binutils gawk gettext help2man mpfr gmp coreutils wget
 brew tap homebrew/dupes
@@ -539,15 +545,23 @@ brew install grep --with-default-names
 brew install gnu-sed
 ```
 
-Next, you'll need to update to the latest MacOS and install/upgrade to
-the latest XCode Command Line Tools (we tested MacOS Sierra 10.12 and XCode 9.1) from App store.
+If you have installed these packages before, make sure you update to the latest:
+```bash
+brew update
+brew upgrade
+```
 
-To install XCode Command Line Tools, open a terminal and type:
+Next, you'll need to update to the latest MacOS and install/upgrade to
+the latest XCode Command Line Tools (we tested MacOS Sierra 10.12 and XCode 9.1)
+from App store.
+
+To install XCode Command Line Tools, open a terminal and type the following,
+it should pop up a window to ask you to install the tools:
 ```bash
 xcode-select --install
 ```
 
-It should pop up a window to ask you to install the tools. You'll then set up the environment variables
+You'll then set up the environment variables:
 ```bash
 cd zephyr.js
 source zjs-env.sh
@@ -555,11 +569,36 @@ make update
 source deps/zephyr/zephyr-env.sh
 ```
 
+Install Zephyr dependencies:
+```bash
+curl -O 'https://bootstrap.pypa.io/get-pip.py'
+sudo python ./get-pip.py
+rm get-pip.py
+cd deps/zephyr
+pip3 install --user -r scripts/requirements.txt
+```
+
+Build Kconfig in $ZEPHYR_BASE/build and add it to path
+```bash
+brew install gtk+ libglade
+cd $ZEPHYR_BASE
+mkdir build && cd build
+cmake ../scripts
+make
+echo "export PATH=$PWD/kconfig:\$PATH" >> $HOME/.zephyrrc
+source $ZEPHYR_BASE/zephyr-env.sh
+```
+
+**Note**: You only need to do this once after cloning the git repository.
+
 #### Building Linux target
-You can build the "linux" target on MacOS using BOARD=linux, follow instructions for "Building and running on Linux". This will create the jslinux ouput.
+You can build the "linux" target on MacOS using BOARD=linux, follow instructions
+ for "Building and running on Linux". This will create the jslinux ouput.
 
 #### Building QEMU and Arduino 101 targets
-You can build QEMU with BOARD=qemu_x86 and Arduino 101 with BOARD=arduino_101, you'll need to install crosstool-ng (1.23 or later) and ARC compiler from Arduino IDE. (**Note** there's a linker issue currently with crosstool-ng when building Arduino 101 see [here](https://jira.zephyrproject.org/browse/ZEP-1994), but qemu_x86 should work)
+You can build QEMU with BOARD=qemu_x86 and Arduino 101 with BOARD=arduino_101,
+you'll need to install crosstool-ng (1.23 or later) and ARC compiler from
+Arduino IDE.
 
 Install crosstool-ng:
 ```bash
@@ -576,67 +615,73 @@ After installing crosstool-ng, create and mount the image using our script [osxm
 osxmountzephyr.sh
 ```
 
-Once you've created the image the first time, you can subsequently re-mount and un-mount the images with:
+Once you've created the image the first time, you can subsequently re-mount
+and un-mount the images with:
 ```bash
 hdiutil mount CrossToolNG.sparseimage
 diskutil umount force /Volumes/CrossToolNG
 ```
 
-This will create an image mounted under /Volumes/CrossToolNG.  You can then configure crosstool-ng:
+This will create an image mounted under /Volumes/CrossToolNG.  You can then
+configure crosstool-ng:
 ```bash
 cd /Volumes/CrossToolNG
 mkdir build
 cd build
+```
+
+In the Zephyr kernel source tree we provide configurations that can be used to
+preselect the options needed for building the toolchain.
+
+The configuration files can be found in $ZEPHYR_BASE/scripts/cross_compiler/.
+
+Currently the following configurations are provided:
+
+i586.config: for standard ABI, for example for Galileo and qemu_x86
+iamcu.config: for IAMCU ABI, for example for the Arduino 101
+```bash
+(replace i586.config with iamcu.config for Arduino 101)
 cp ${ZEPHYR_BASE}/scripts/cross_compiler/i586.config .config
 ct-ng oldconfig
 ```
 
-After you are done, edit the generated .config, and make sure you have these settings, or you will run into build errors later:
+After you are done, edit the generated .config, and make sure you have these
+settings, or you will run into build errors later:
 ```bash
 ...
 CT_LOCAL_TARBALLS_DIR="/Volumes/CrossToolNG/src"
 # CT_SAVE_TARBALLS is not set
 CT_WORK_DIR="${CT_TOP_DIR}/.build"
+CT_BUILD_TOP_DIR="${CT_WORK_DIR}/${CT_HOST:+HOST-${CT_HOST}/}${CT_TARGET}"
 CT_PREFIX_DIR="/Volumes/CrossToolNG/x-tools/${CT_TARGET}"
 CT_INSTALL_DIR="${CT_PREFIX_DIR}"
 # Following options prevent link errors
 CT_WANTS_STATIC_LINK=n
 CT_CC_STATIC_LIBSTDCXX=n
-# This is needed with Zephyr 1.9 toolchain
-CT_FORCE_SYSROOT=y
-CT_USE_SYSROOT=y
-CT_SYSROOT_NAME="sysroot"
-CT_SYSROOT_DIR_PREFIX=""
-CT_TARGET_VENDOR="pc"
 ...
 ```
 
-If you see an error complaining about configure.ac:25: error: version mismatch.  This is Automake 1.15.1, run autoreconf and rebuild:
-```
-cd /Volumes/CrossToolNG/build/.build/src/gettext-0.19.8.1
-autoreconf
-cd -
-ct-ng build
-```
-
-If you experience issue building Cross GDB, comment out the following:
+If you experience issue building Cross GDB at the end, you can ignore it or
+comment out the following:
 ```bash
 # CT_GDB_CROSS=y
 ```
 
-Now you can build crosstool-ng. It will take 15~20 mins:
+Now you can build crosstool-ng. It will take 20~30 mins:
 ```bash
 ct-ng build
 ```
 
-When finished, you should have the toolchain setup in /Volumes/CrossToolNG/x-tools directory.
+When finished, you should have the toolchain setup in /Volumes/CrossToolNG/x-tools
+directory.
 now go back to the project's directory and set some environment variables:
 ```bash
 export ZEPHYR_GCC_VARIANT=xtools
 export XTOOLS_TOOLCHAIN_PATH=/Volumes/CrossToolNG/x-tools
 ```
 
-To use the same toolchain in future sessions, you can set the variables in the file $HOME/.zephyrrc. For example:
+To use the same toolchain in future sessions, you can set the variables in the
+file $HOME/.zephyrrc. For example:
 ```bash
 cat <<EOF > ~/.zephyrrc
 export XTOOLS_TOOLCHAIN_PATH=/Volumes/CrossToolNG/x-tools
@@ -654,13 +699,51 @@ Now, you can build and run on QEMU using this command:
 make JS=samples/HelloWorld.js BOARD=qemu_x86 qemu
 ```
 
-You should see output:
+You should see output (To exit from QEMU enter: 'CTRL+a, x')
+:
 ```bash
-To exit from QEMU enter: 'CTRL+a, x'
-[QEMU] CPU: qemu32
-qemu-system-i386: warning: Unknown firmware file in legacy mode: genroms/multiboot.bin
-
+SeaBIOS (version rel-1.11.0-0-g63451fca13-prebuilt.qemu-project.org)
+Booting from ROM..
 Hello, ZJS world!
+```
+
+**Note**: There are currently some cmake issues and crosstool-ng using the latest
+Zephyr (1.10.0), and here are some of the work-arounds.
+
+If you see an compile error like:
+```bash
+No such file or directory: CMAKE_READELF:
+'/Volumes/CrossToolNG/x-tools/i586-zephyr-elfiamcu/bin/i586-zephyr-elfiamcu-readelf'
+```
+
+edit ${ZEPHYR_BASE}/cmake/toolchain-xtools.cmake and change the line:
+```bash
+set(CROSS_COMPILE_TARGET_x86 i586-zephyr-elfiamcu)
+```
+to
+```bash
+set(CROSS_COMPILE_TARGET_x86 i586-zephyr-elf)
+```
+
+and append the following line:
+```bash
+set(TOOLCHAIN_INCLUDES ${TOOLCHAIN_HOME}/${CROSS_COMPILE_TARGET}/${CROSS_COMPILE_TARGET}/include)
+```
+
+If you see a QEMU error like, it could be the qemu package on your system
+were installed to /usr/local/share/
+:
+```bash
+qemu-system-i386: -L -bios: Could not open 'bios.bin': No such file or directory
+```
+
+edit ${ZEPHYR_BASE}/boards/x86/qemu_x86/board.cmake and change the line:
+```bash
+-L ${QEMU_BIOS}
+```
+to
+```bash
+-L /usr/share/local/qemu
 ```
 
 To build for Arduino 101, you'll need to download the latest Arduino IDE
@@ -677,15 +760,24 @@ cp -pR $HOME/Library/Arduino15/packages/Intel/tools/arc-elf32 /Volumes/CrossTool
 ```
 
 The compiler is in a subdirectory, such as 1.6.9+1.0.1. You'll need
-to pass this to make to find the right bin file.
+to set this path in cmake to make to find the right bin file.
+
+Edit deps/zephyr/cmake/toolchain-xtools.cmake, and change the following:
+```bash
+set(CROSS_COMPILE ${TOOLCHAIN_HOME}/${CROSS_COMPILE_TARGET}/bin/${CROSS_COMPILE_TARGET}-)
+```
+to
+```bash
+set(CROSS_COMPILE /Volumes/CrossToolNG/arc-elf32/1.6.9+1.0.1/bin/arc-elf32-)
+```
 
 You can now build for Arduino 101 (without setting BOARD=, it builds arduino_101 by default)
 ```bash
-make JS=samples/HelloWorld.js ARC_CROSS_COMPILE=/Volumes/CrossToolNG/arc-elf32/1.6.9+1.0.1/bin/arc-elf32-
+make JS=samples/HelloWorld.js
 ```
 
-**Note** There's currently a bug that you'll run into a linker issue using the latest Zephyr (1.7.0).
-We filed a bug upstream to track this; we'll update this document once that is fixed.
+**Note**: There's currently a bug that you'll run into a build issue when buiding
+for the Arduino 101 using the latest Zephyr (1.10.). See [bug](https://github.com/zephyrproject-rtos/zephyr/issues/5807)
 
 #### Other targets like FRDM-K64F or possibly other ARM boards on Mac
 These also have limited support currently. The requiremenet is that you'll
@@ -775,7 +867,7 @@ Then run QEMU as your normally would e.g.
 make BOARD=qemu_x86 JS=samples/OcfServer.js qemu
 ```
 
-Note: At this point, this setup is relatively unstable. You may experience
+**Note**: At this point, this setup is relatively unstable. You may experience
 crashes or things just not working in general. If the behavior does not seem
 normal you can usually fix it by restarting the two scripts and running QEMU
 again.
@@ -865,4 +957,5 @@ configure the heap size available to the ZJS API.
 [Web IDE]: https://intel.github.io/zephyrjs-ide
 
 <!-- LEAVE THIS AT THE VERY BOTTOM -->
-Zephyr is a trademark of the Linux Foundation. *Other names and brands may be claimed as the property of others.
+Zephyr is a trademark of the Linux Foundation. *Other names and brands may be
+claimed as the property of others.
