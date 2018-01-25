@@ -270,8 +270,8 @@ int ide_end_message(int status)
 
 // Match input to supported commands.
 static ide_cmd_t match_cmd(char *buf, size_t len) {
-    int i;
-    for (i = 0; i < CMD_MAX && strncmp(cmd_arg_map[i].cmd, buf, len); i++);
+    int i = 0;
+    for (; i < CMD_MAX && strncmp(cmd_arg_map[i].cmd, buf, len); i++);
     return i;  // CMD_MAX means no match
 }
 
@@ -282,7 +282,7 @@ static int parse_command(char *buf, size_t len)
     char cmd_buf[CMD_MAX_LEN + 1];
 
     IDE_DBG("\r\nParsing command.");
-    for (size = 0; len > 0 && size < CMD_MAX_LEN; len--) {
+    for (size = 0; len > 0 && size <= CMD_MAX_LEN; len--) {
         if(match_separator(buf) || match_postamble(buf)) {
             cmd_buf[size] = '\0';
             id = match_cmd(cmd_buf, size);
@@ -403,7 +403,7 @@ static int parse_filename(char *buf, size_t len, size_t pos)
                     ret = -ERROR_INVALID_FILENAME;
             } else if (*cur == '.') {
                 dot = true;
-                if (index > 8)
+                if (index > 12)
                     ret = -ERROR_INVALID_FILENAME;
             }
             if (ret < 0 || !isprint((int)(*cur)))
@@ -423,6 +423,12 @@ static void ide_cmd_init(char *buf, size_t len)
 {
     IDE_DBG("\r\nInvoking init...\r\n");
     ide_reply(NO_ERROR, "{ \"mode\": \"ide\", \"version\": \"0.0.1\"}");
+}
+
+static inline bool test_stream_end(char *buf, size_t len, size_t offset)
+{
+    return match_stream_end(buf + len - 2 - offset) &&
+           match_postamble(buf + len - 1 - offset);
 }
 
 // Save a [portion of a] program in a file with a given name.
@@ -447,9 +453,8 @@ int save_stream(char *filename, char *buffer, size_t len)
     }
 
     // The IDE client will always terminate with '#}\n' sequence.
-    if(match_stream_end(buffer + len - 3) &&
-       match_postamble(buffer + len - 2)) {
-        len -= 3;  // TODO: use stream_end_size() + postamble_size()
+    if(test_stream_end(buffer, len, 0)) {
+        len -= 2;  // TODO: use stream_end_size() + postamble_size()
         end = true;
     }
 
@@ -528,58 +533,43 @@ static void ide_cmd_stop(char *buf, size_t len)
 
 // Send the list names of saved programs and sizes, e.g.
 // [1234, "file1.ext"], [234, "file2.ext"]
-//TODO: this function is instrumented now for debugging FS access issues
 static void ide_cmd_list(char *buf, size_t len)
 {
     static struct fs_dirent entry;
     fs_dir_t dir;
-    //char *start_format = "\r\n\t{ \"name\": \"%s\", \"size\": %d }";
-    // char *format = ",\r\n\t{ \"name\": \"%s\", \"size\": %d }";
-
-    IDE_DBG("\r\nInvoking list...");
+    char *p;
 
     if (fs_opendir(&dir, "")) {
-        IDE_DBG("\r\nError: cannot open current dir.");
-        //ide_reply(ERROR_DIR_OPEN, "\"Cannot open current directory.\"");
+        ide_reply(ERROR_DIR_OPEN, "\"Cannot open current directory.\"");
         return;
     }
 
-    IDE_DBG("\r\nCurrent directory opened.");
-    //ide_start_message("list");
-    IDE_DBG("\r\nMessage started");
-    //ide_spool("[");  // data is an array of dictionaries
-    //for (bool first = true; !fs_readdir(&dir, &entry) && entry.name[0];) {
-    bool first = true;
-    do {
-        IDE_DBG("\r\nLooping...");
+    ide_start_message("list");
+    ide_spool("[");  // data is an array of dictionaries
+    for (bool first = true; !fs_readdir(&dir, &entry) && entry.name[0];) {
         int res = fs_readdir(&dir, &entry);
         if (res || entry.name[0] == 0) {
-            IDE_DBG("\r\nError reading dir.");
-            break;
+            IDE_DBG("\r\nError reading dir.\r\n");
+            continue;
         }
         if (entry.type != FS_DIR_ENTRY_DIR) {
-            char *p = entry.name;
+            p = entry.name;
             for (; *p; ++p) {
                 *p = tolower((int)*p);
             }
-            //ide_spool(first ? start_format : format, entry.name, entry.size);
-            IDE_DBG("\r\nFile: %s, size: %d", entry.name, entry.size);
-            first = false;
-#if 0
-            if (ide_spool_space() < 20) {  // appr. one dir entry size
-                IDE_DBG("\r\nFlushing...");
-                ide_spool_flush();
+            if (first) {
+                ide_spool("\r\n\t{ \"name\": \"%s\", \"size\": %d }",
+                    entry.name, entry.size);
+                first = false;
+            } else {
+                ide_spool(",\r\n\t{ \"name\": \"%s\", \"size\": %d }",
+                    entry.name, entry.size);
             }
-#endif
         }
-    } while(1);
-    IDE_DBG("\r\nClosing dir...");
+    };
+    ide_spool("]");  // end of data
+    ide_end_message(NO_ERROR);
     fs_closedir(&dir);
-    IDE_DBG("\r\nDir closed...");
-    //ide_spool("]");  // end of data
-    IDE_DBG("\r\nEnding message...");
-    //ide_end_message(NO_ERROR);
-    IDE_DBG("\r\nMessage sent, resetting parser...");
     parser_reset();
 }
 
@@ -593,29 +583,33 @@ static void ide_cmd_cat(char *buf, size_t len)
     if ((ret = parse_filename(buf, len, 1)) > 0) {
         skip_size(&buf, &len, ret);
         IDE_DBG("\r\nFilename: %s\r\n", filename);
-        if (fs_exist(filename) &&
-            (file = fs_open_alloc(filename, "r")) != NULL) {
-            if (fs_size(file) == 0) {
-                fs_close_alloc(file);
-                ide_reply(ERROR_FILE, "\"Empty file.\"");
-                return;
-            }
-            // send a separate message for stream start and stream end
-            ide_start_message("cat");
-            ide_spool("\"start\"");  // data
-            ide_end_message(NO_ERROR);
 
-            fs_seek(file, 0, SEEK_SET);
-            do {
-                count = fs_read(file, ide_spool_ptr(), ide_spool_space());
-                ide_spool_adjust(count);
-                ide_spool_flush();
-            } while (count > 0);
-            fs_close_alloc(file);
-            ide_reply(NO_ERROR, "\"end\"");
+        if (!fs_exist(filename) || !(file = fs_open_alloc(filename, "r"))) {
+            ide_reply(ERROR_FILE_OPEN, "\"Cannot open file.\"");
             return;
         }
-        ide_reply(ERROR_FILE_OPEN, "\"Cannot open file.\"");
+
+        if (fs_size(file) == 0) {
+            fs_close_alloc(file);
+            ide_reply(ERROR_FILE, "\"Empty file.\"");
+            return;
+        }
+
+        // send a separate message for stream start and stream end
+        ide_start_message("cat");
+        ide_spool("\"start\"");  // data
+        ide_end_message(NO_ERROR);
+
+        fs_seek(file, 0, SEEK_SET);
+        do {
+            count = fs_read(file, ide_spool_ptr(), ide_spool_space());
+            ide_spool_adjust(count);
+            ide_spool_flush();
+        } while (count > 0);
+        fs_close_alloc(file);
+
+        ide_reply(NO_ERROR, "\"end\"");
+        return;
     }
 }
 
