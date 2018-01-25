@@ -259,6 +259,8 @@ analyze: $(JS)
 	fi
 	@mkdir -p $(OUT)/$(BOARD)/
 	@mkdir -p $(OUT)/include
+	@# create an config.h file to needed for iotivity-constrained
+	@cp -p src/zjs_ocf_config.h $(OUT)/include/config.h
 
 	./scripts/analyze	V=$(V) \
 		SCRIPT=$(JS) \
