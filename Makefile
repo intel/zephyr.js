@@ -434,6 +434,7 @@ arc: analyze
 	@echo "&sram0 { reg = <0xa8000400 ($(ARC_RAM) * 1024)>; };" >> arc/arduino_101_sss.overlay
 	@cmake -B$(OUT)/arduino_101_sss \
 		-DBOARD=arduino_101_sss \
+		-DVARIANT=$(VARIANT) \
 		-H./arc && \
 	make -C $(OUT)/arduino_101_sss -j4
 ifeq ($(BOARD), arduino_101)
