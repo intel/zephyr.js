@@ -31,7 +31,7 @@ typedef struct gfx_handle {
 } gfx_handle_t;
 
 typedef struct gfx_data {
-    u32_t coords[4];
+    int32_t coords[4];
     u8_t color[COLORBYTES];
     char *text;
     jerry_size_t textSize;
@@ -45,7 +45,7 @@ static jerry_value_t zjs_gfx_prototype;
 bool drawImmediate = true;
 // Draw function depends on whether we are in immediate draw mode or not.
 // It gets set by init
-void (*zjs_gfx_draw_pixels)(u32_t, u32_t, u32_t, u32_t, u8_t[], gfx_handle_t*);
+void (*zjs_gfx_draw_pixels)(int32_t, int32_t, u32_t, u32_t, u8_t[], gfx_handle_t*);
 
 static void zjs_gfx_callback_free(void *native)
 {
@@ -75,7 +75,7 @@ static void args_to_data(gfx_data_t *data, u32_t argc, const jerry_value_t argv[
         for (u8_t i = 0; i < argc; i++) {
             if (jerry_value_is_number(argv[i])) {
                 if (i < 4)
-                    data->coords[i] = (u32_t)jerry_get_number_value(argv[i]);
+                    data->coords[i] = (int32_t)jerry_get_number_value(argv[i]);
                 else
                     data->size = (u32_t)jerry_get_number_value(argv[i]);
             }
@@ -96,44 +96,58 @@ static void args_to_data(gfx_data_t *data, u32_t argc, const jerry_value_t argv[
 
 static void zjs_gfx_reset_touched_pixels(gfx_handle_t *gfxHandle)
 {
-    gfxHandle->tpX0 = gfxHandle->screenW;
+    gfxHandle->tpX0 = 0;
     gfxHandle->tpX1 = 0;
-    gfxHandle->tpY0 = gfxHandle->screenH;
+    gfxHandle->tpY0 = 0;
     gfxHandle->tpY1 = 0;
     gfxHandle->touched = false;
 }
 
-static void zjs_gfx_touch_pixels(u32_t x, u32_t y, u32_t w, u32_t h, u8_t color[], gfx_handle_t *gfxHandle)
+static void zjs_gfx_touch_pixels(int32_t x, int32_t y, u32_t w, u32_t h, u8_t color[], gfx_handle_t *gfxHandle)
 {
     // Check that x and y aren't past the screen
-    if (x >= gfxHandle->screenW || y >= gfxHandle->screenH)
+    if (x >= gfxHandle->screenW || y >= gfxHandle->screenH || (int32_t)(x + w) <= 0 || (int32_t)(y + h) <= 0)
         return;
 
-    if (gfxHandle->tpX0 > x ) {
-        gfxHandle->tpX0 = x;
-    }
-
-    if (gfxHandle->tpX1 < x + w - 1) {
-        if (x + w - 1 < gfxHandle->screenW) {
+    if (x < 0) {
+        if (x + w <= gfxHandle->screenW) {
+            gfxHandle->tpX0 = 0;
             gfxHandle->tpX1 = x + w - 1;
         }
         else {
-            gfxHandle->tpX1 = gfxHandle->screenW - 1;
-            w = gfxHandle->tpX1 - x;
+            gfxHandle->tpX0 = 0;
+            gfxHandle->tpX1 = gfxHandle->screenW;
+        }
+    }
+    else if (x < gfxHandle->screenW) {
+        if (x + w <= gfxHandle->screenW) {
+            gfxHandle->tpX0 = x;
+            gfxHandle->tpX1 = x + w - 1;
+        }
+        else {
+            gfxHandle->tpX0 = x;
+            gfxHandle->tpX1 = gfxHandle->screenW;
         }
     }
 
-    if (gfxHandle->tpY0 > y) {
-        gfxHandle->tpY0 = y;
-    }
-
-    if (gfxHandle->tpY1 < y + h - 1) {
-        if (y + h - 1 < gfxHandle->screenH) {
+    if (y < 0) {
+        if (y + h <= gfxHandle->screenH) {
+            gfxHandle->tpY0 = 0;
             gfxHandle->tpY1 = y + h - 1;
         }
         else {
-            gfxHandle->tpY1 = gfxHandle->screenH - 1;
-            h = gfxHandle->tpY1 - y;
+            gfxHandle->tpY0 = 0;
+            gfxHandle->tpY1 = gfxHandle->screenH;
+        }
+    }
+    else if (y < gfxHandle->screenH) {
+        if (y + h <= gfxHandle->screenH) {
+            gfxHandle->tpY0 = y;
+            gfxHandle->tpY1 = y + h - 1;
+        }
+        else {
+            gfxHandle->tpY0 = y;
+            gfxHandle->tpY1 = gfxHandle->screenH;
         }
     }
 
@@ -215,7 +229,7 @@ static jerry_value_t zjs_gfx_flush(gfx_handle_t *gfxHandle)
         u32_t currH = 0;
         u16_t currPass = 0;
 
-            for (u16_t j = gfxHandle->tpY0; currPass < passes ; j++) {
+        for (u16_t j = gfxHandle->tpY0; currPass < passes ; j++) {
             currH++;
             currY++;
             xStart = gfxHandle->tpX0;
@@ -269,7 +283,7 @@ static jerry_value_t zjs_gfx_flush(gfx_handle_t *gfxHandle)
     return ZJS_UNDEFINED;
 }
 
-static void zjs_gfx_fill_rect_priv (u32_t x, u32_t y, u32_t w, u32_t h, u8_t color[], gfx_handle_t *gfxHandle)
+static void zjs_gfx_fill_rect_priv (int32_t x, int32_t y, u32_t w, u32_t h, u8_t color[], gfx_handle_t *gfxHandle)
 {
     zjs_gfx_touch_pixels(x, y, w, h, color, gfxHandle);
     for (u8_t cbyte = 0; cbyte < COLORBYTES; cbyte++) {
@@ -384,7 +398,7 @@ static ZJS_DECL_FUNC(zjs_gfx_draw_line)
     if (xLen <= yLen) {
         // We always draw left to right, swap if argData.coords[0] is larger
         if (argData.coords[0] > argData.coords[2]) {
-            u32_t tmp = argData.coords[0];
+            int32_t tmp = argData.coords[0];
             argData.coords[0] = argData.coords[2];
             argData.coords[2] = tmp;
             tmp = argData.coords[1];
@@ -395,18 +409,19 @@ static ZJS_DECL_FUNC(zjs_gfx_draw_line)
         if (argData.coords[3] < argData.coords[1])
                 neg = true;
 
-        u32_t pos;
+        int32_t pos;
         if (argData.coords[0] == argData.coords[2] && argData.coords[1] > argData.coords[3])
             pos = argData.coords[3];
         else
             pos = argData.coords[1];
+
         u32_t step = yLen / xLen;
         u32_t trueStep = (yLen * 100) / xLen;
         u32_t stepRemain = trueStep - (step * 100);
         u32_t leftoverStep = 0;
         u16_t currStep = step;
 
-        for (u32_t x = argData.coords[0]; x <= argData.coords[2]; x++) {
+        for (int32_t x = argData.coords[0]; x <= argData.coords[2]; x++) {
             if (leftoverStep > 100) {
                 currStep = step + 1;
                 leftoverStep -= 100;
@@ -422,7 +437,7 @@ static ZJS_DECL_FUNC(zjs_gfx_draw_line)
     else {
         // We always draw left to right, swap if argData.coords[1] is larger
         if (argData.coords[1] > argData.coords[3]) {
-            u32_t tmp = argData.coords[0];
+            int32_t tmp = argData.coords[0];
             argData.coords[0] = argData.coords[2];
             argData.coords[2] = tmp;
             tmp = argData.coords[1];
@@ -433,17 +448,18 @@ static ZJS_DECL_FUNC(zjs_gfx_draw_line)
         if (argData.coords[2] < argData.coords[0])
             neg = true;
 
-        u32_t pos;
+        int32_t pos;
         if (argData.coords[1] == argData.coords[3] && argData.coords[0] > argData.coords[2])
             pos = argData.coords[2];
         else
             pos = argData.coords[0];
+
         u32_t step = xLen / yLen;
         u32_t trueStep = (xLen * 100) / yLen;
         u32_t stepRemain = trueStep - (step * 100);
         u32_t leftoverStep = 0;
         u16_t currStep = step;
-        for (u32_t y = argData.coords[1]; y <= argData.coords[3]; y++) {
+        for (int32_t y = argData.coords[1]; y <= argData.coords[3]; y++) {
             if (leftoverStep > 100) {
                 currStep = step + 1;
                 leftoverStep -= 100;
