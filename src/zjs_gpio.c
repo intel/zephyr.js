@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, Intel Corporation.
+// Copyright (c) 2016-2018, Intel Corporation.
 
 // C includes
 #include <stdlib.h>
@@ -224,11 +224,9 @@ static ZJS_DECL_FUNC(zjs_gpio_open)
     int pin = zjs_board_find_gpio(pin_val, devname, 20);
     if (pin == FIND_PIN_INVALID) {
         return TYPE_ERROR("bad pin argument");
-    }
-    else if (pin == FIND_DEVICE_FAILURE) {
+    } else if (pin == FIND_DEVICE_FAILURE) {
         return zjs_error("device not found");
-    }
-    else if (pin < 0) {
+    } else if (pin < 0) {
         return zjs_error("pin not found");
     }
     DEVICE gpiodev = device_get_binding(devname);
@@ -333,10 +331,11 @@ static ZJS_DECL_FUNC(zjs_gpio_open)
     return pin_obj;
 }
 
-static void zjs_gpio_cleanup(void *native) {
-        zjs_gpio_mock_cleanup();
-        jerry_release_value(gpio_pin_prototype);
-        gpio_pin_prototype = 0;
+static void zjs_gpio_cleanup(void *native)
+{
+    zjs_gpio_mock_cleanup();
+    jerry_release_value(gpio_pin_prototype);
+    gpio_pin_prototype = 0;
 }
 
 static const jerry_object_native_info_t gpio_module_type_info = {

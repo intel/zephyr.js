@@ -205,7 +205,8 @@ typedef struct deferred_work {
     char data[0];  // user data
 } deferred_work_t;
 
-static void deferred_work_callback(void *handle, const void *args) {
+static void deferred_work_callback(void *handle, const void *args)
+{
     const deferred_work_t *deferred = (const deferred_work_t *)args;
 
 #ifdef DEBUG_CALLBACKS
@@ -300,7 +301,7 @@ zjs_callback_id add_callback_priv(jerry_value_t js_func,
     cb_map[new_cb->id] = new_cb;
 
     DBG_PRINT("adding new callback id %d, js_func=%p, once=%u\n", new_cb->id,
-            (void *)(uintptr_t)new_cb->js_func, once);
+              (void *)(uintptr_t)new_cb->js_func, once);
 
 #ifdef INSTRUMENT_CALLBACKS
     set_info_string(cb_map[new_cb->id]->creator, file, func);
@@ -351,8 +352,7 @@ static void zjs_remove_callback_priv(zjs_callback_id id, bool skip_flush)
             }
         }
         DBG_PRINT("removing callback id %d\n", id);
-    }
-    else {
+    } else {
         CB_UNLOCK();
     }
 }
@@ -494,7 +494,7 @@ void print_callbacks(void)
                 if (jerry_value_is_function(cb_map[i]->js_func)) {
                     ZJS_PRINT("Single Function\n");
                     ZJS_PRINT("\tjs_func: %p\n",
-                            (void *)(uintptr_t)cb_map[i]->js_func);
+                              (void *)(uintptr_t)cb_map[i]->js_func);
                     ZJS_PRINT("\tonce: %u\n", GET_ONCE(cb_map[i]->flags));
                 } else {
                     ZJS_PRINT("js_func is not a function\n");

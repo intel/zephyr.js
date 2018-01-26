@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, Intel Corporation.
+// Copyright (c) 2016-2018, Intel Corporation.
 
 /**
  * @file
@@ -38,8 +38,8 @@
 #include "jerry-code.h"
 
 // ZJS includes
-#include "term-uart.h"
 #include "term-cmd.h"
+#include "term-uart.h"
 
 #ifndef CONFIG_USB_CDC_ACM
 #include "webusb_serial.h"

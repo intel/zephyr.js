@@ -25,7 +25,7 @@ typedef struct zjs_timer {
     zjs_callback_id callback_id;
     bool repeat;
 #ifdef ZJS_LINUX_BUILD
-    //FIXME - reverted patch #1542 to old timer implementation
+    // FIXME - reverted patch #1542 to old timer implementation
     u32_t interval;
     bool completed;
 #endif
@@ -35,7 +35,7 @@ typedef struct zjs_timer {
 static zjs_timer_t *zjs_timers = NULL;
 
 static const jerry_object_native_info_t timer_type_info = {
-   .free_cb = free_handle_nop
+    .free_cb = free_handle_nop
 };
 
 #ifdef ZJS_LINUX_BUILD
@@ -64,7 +64,8 @@ static void timer_callback(zjs_port_timer_t *handle)
 {
     zjs_timer_t *timer = (zjs_timer_t *)handle->user_data;
 
-    zjs_signal_callback(timer->callback_id, timer->argv, sizeof(jerry_value_t) * timer->argc);
+    zjs_signal_callback(timer->callback_id, timer->argv,
+                        sizeof(jerry_value_t) * timer->argc);
 
     if (!timer->repeat) {
         zjs_port_timer_stop(handle);
@@ -160,7 +161,7 @@ static bool delete_timer(zjs_timer_t *tm)
         }
         // remove callbacks except for expired once timers
 #ifdef ZJS_LINUX_BUILD
-        //FIXME - reverted patch #1542 to old timer implementation
+        // FIXME - reverted patch #1542 to old timer implementation
         if (tm->repeat || !tm->completed) {
 #else
         if (tm->repeat) {
@@ -229,7 +230,7 @@ static ZJS_DECL_FUNC(native_clear_interval_handler)
 }
 
 #ifdef ZJS_LINUX_BUILD
-//FIXME - reverted patch #1542 to old timer implementation
+// FIXME - reverted patch #1542 to old timer implementation
 s32_t zjs_timers_process_events()
 {
     s32_t wait = ZJS_TICKS_FOREVER;

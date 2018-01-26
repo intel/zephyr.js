@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, Intel Corporation.
+// Copyright (c) 2016-2018, Intel Corporation.
 
 #ifndef __zjs_util_h__
 #define __zjs_util_h__
@@ -9,8 +9,8 @@
 #include <stdlib.h>
 
 // JerryScript includes
-#include "jerryscript.h"
 #include "jerryscript-ext/module.h"
+#include "jerryscript.h"
 
 // ZJS includes
 #include "zjs_common.h"
@@ -71,37 +71,38 @@ void zjs_pop_mem_stat(void *ptr);
 #else
 #include <zephyr.h>
 #ifdef ZJS_TRACE_MALLOC
-#define zjs_malloc(sz)                                                      \
-    ({                                                                      \
-        void *zjs_ptr = zjs_malloc_with_retry(sz);                          \
-        ZJS_PRINT("%s:%d: allocating %u bytes (%p)\n", __func__, __LINE__,  \
-                  (u32_t)(sz), zjs_ptr);                                    \
-        zjs_push_mem_stat(zjs_ptr, __FILE__, __func__, __LINE__);           \
-        zjs_ptr;                                                            \
+#define zjs_malloc(sz)                                                     \
+    ({                                                                     \
+        void *zjs_ptr = zjs_malloc_with_retry(sz);                         \
+        ZJS_PRINT("%s:%d: allocating %u bytes (%p)\n", __func__, __LINE__, \
+                  (u32_t)(sz), zjs_ptr);                                   \
+        zjs_push_mem_stat(zjs_ptr, __FILE__, __func__, __LINE__);          \
+        zjs_ptr;                                                           \
     })
-#define zjs_free(ptr) \
-    (ZJS_PRINT("%s:%d: freeing %p\n", __func__, __LINE__, ptr), zjs_pop_mem_stat(ptr), free(ptr))
+#define zjs_free(ptr)                                           \
+    (ZJS_PRINT("%s:%d: freeing %p\n", __func__, __LINE__, ptr), \
+     zjs_pop_mem_stat(ptr), free(ptr))
 #else
-#define zjs_malloc(sz)                                      \
-    ({                                                      \
-        void *zjs_ptr = zjs_malloc_with_retry(sz);          \
-        if (!zjs_ptr) {                                     \
-            ERR_PRINT("malloc(%u) failed\n", (u32_t)(sz));  \
-        }                                                   \
-        zjs_ptr;                                            \
+#define zjs_malloc(sz)                                     \
+    ({                                                     \
+        void *zjs_ptr = zjs_malloc_with_retry(sz);         \
+        if (!zjs_ptr) {                                    \
+            ERR_PRINT("malloc(%u) failed\n", (u32_t)(sz)); \
+        }                                                  \
+        zjs_ptr;                                           \
     })
 #define zjs_free(ptr) free(ptr)
 #endif  // ZJS_TRACE_MALLOC
 #endif  // ZJS_LINUX_BUILD
 
 #ifdef DEBUG_BUILD
-#define zjs_create_object()                                     \
-    ({                                                          \
-        jerry_value_t jval = jerry_create_object();             \
-        DBG_PRINT("trace: T:%p: create object: %p\n",           \
-                (void *)(uintptr_t)zjs_port_get_thread_id(),    \
-                (void *)(uintptr_t)jval);                       \
-        jval;                                                   \
+#define zjs_create_object()                                    \
+    ({                                                         \
+        jerry_value_t jval = jerry_create_object();            \
+        DBG_PRINT("trace: T:%p: create object: %p\n",          \
+                  (void *)(uintptr_t)zjs_port_get_thread_id(), \
+                  (void *)(uintptr_t)jval);                    \
+        jval;                                                  \
     })
 #else
 #define zjs_create_object() jerry_create_object()
@@ -368,7 +369,7 @@ int zjs_validate_args(const char *expectations[], const jerry_length_t argc,
  *
  * NOTE: Expects argc and argv to exist as in a JerryScript native function
  */
-#define ZJS_CHECK_ARGS(...) \
+#define ZJS_CHECK_ARGS(...)                                               \
     (zjs_validate_args((const char *[]){ __VA_ARGS__, NULL }, argc, argv) \
      <= ZJS_INVALID_ARG) ? 1 : 0
 
@@ -664,11 +665,11 @@ void zjs_loop_init(void);
  * @param str  A label string that will be displayed to identify this call
  * @param obj  The JerryScript object in question
  */
-#define CHECK_REF_COUNT(str, obj)                              \
-    {                                                          \
-        uint16_t *ptr = (uint16_t *)(uintptr_t)(obj - 3);      \
-        ZJS_PRINT("%s: %p %d\n", str, (void *)(uintptr_t)obj,  \
-                  (uint32_t)(*ptr) >> 6);                      \
+#define CHECK_REF_COUNT(str, obj)                             \
+    {                                                         \
+        uint16_t *ptr = (uint16_t *)(uintptr_t)(obj - 3);     \
+        ZJS_PRINT("%s: %p %d\n", str, (void *)(uintptr_t)obj, \
+                  (uint32_t)(*ptr) >> 6);                     \
     }
 #else
 #define CHECK_REF_COUNT(str, obj)

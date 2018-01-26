@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, Intel Corporation.
+// Copyright (c) 2016-2018, Intel Corporation.
 
 /**
  * @file
@@ -18,9 +18,9 @@
 #include "jerry-code.h"
 
 // ZJS includes
+#include "ihex/kk_ihex_read.h"
 #include "term-cmd.h"
 #include "term-uart.h"
-#include "ihex/kk_ihex_read.h"
 
 #include "file-utils.h"
 
