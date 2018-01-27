@@ -400,7 +400,7 @@ void signal_callback_priv(zjs_callback_id id,
     int key = 0;
     if (in_thread) CB_LOCK();
     if (id < 0 || id >= cb_size || !cb_map[id]) {
-        DBG_PRINT("callback ID %u does not exist\n", id);
+        DBG_PRINT("callback ID %d does not exist\n", id);
         if (in_thread) CB_UNLOCK();
         return;
     }
@@ -665,10 +665,10 @@ void zjs_defer_work(zjs_deferred_work callback, const void *buffer, u32_t bytes)
         memcpy(defer->data, buffer, bytes);
     }
 #ifdef DEBUG_CALLBACKS
-    DBG_PRINT("deferring work: %d bytes\ncontents: ", len);
+    DBG_PRINT("full packet: %d bytes\ncontents: ", len);
     int count32 = (len + 3) / 4;
     for (int i = 0; i < count32; ++i) {
-        ZJS_PRINT("0x%x ", ((u32_t *)buf)[i]);
+        ZJS_PRINT("0x%08x ", ((u32_t *)buf)[i]);
     }
     ZJS_PRINT("\nbuffer: ");
     count32 = (bytes + 3) / 4;
