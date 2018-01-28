@@ -2,6 +2,7 @@ ZJS API for Buffer
 ==================
 
 * [Introduction](#introduction)
+* [Web IDL](#web-idl)
 * [Class: Buffer](#buffer-api)
   * [new Buffer(array)](#new-bufferarray)
   * [new Buffer(size)](#new-buffersize)
@@ -20,29 +21,64 @@ Buffer is a [Node.js API](https://nodejs.org/dist/latest-v8.x/docs/api/buffer.ht
 to read and write binary data accurately from JavaScript. ZJS supports a minimal
 subset of this API that will be expanded as the need arises.
 
+Web IDL
+-------
+This IDL provides an overview of the interface; see below for documentation of
+specific API functions.  Click [here](Notes_on_WebIDL.md) for an
+explanation of zephyr.js' WebIDL conventions.
+
+```javascript
+[ Constructor(Uint8Array initial_values),
+  Constructor(unsigned long size),
+  Constructor(ByteString initial_string) ]
+interface Buffer {
+    readonly attribute unsigned long length;
+    unsigned long copy(Buffer target, optional unsigned long targetStart = 0,
+                                      optional unsigned long sourceStart = 0,
+                                      optional unsigned long sourceEnd = this.length);
+    this fill((string or Buffer or long) value, optional long offset = 0,
+                                                optional long end = this.length,
+                                                optional string encoding = "utf8");
+    octet readUInt8(optional unsigned long offset = 0);
+    short readUInt16BE(optional unsigned long offset = 0);
+    short readUInt16LE(optional unsigned long offset = 0);
+    long readUInt32BE(optional unsigned long offset = 0);
+    long readUInt32LE(optional unsigned long offset = 0);
+    string toString(string encoding);
+    long write(string value, optional long offset = 0,
+                             optional long length = this.length-offset,
+                             optional string encoding = "utf8");
+    long writeUInt8(octet value, unsigned long offset);
+    long writeUInt16BE(unsigned short value, unsigned long offset);
+    long writeUInt16LE(unsigned short value, unsigned long offset);
+    long writeUInt32BE(unsigned long value, unsigned long offset);
+    long writeUInt32LE(unsigned long value, unsigned long offset);
+};
+```
+
 Buffer API
 ----------
 ### new Buffer(array)
 * `array` *integer[]* Array of octets to use as initial data.
 
-The `array` argument should be an array of numbers that will be treated as
-UInt8 integers. A new buffer object will be returned with the same size as the
-array and initialized with its contents. If there is not enough available
-memory, an error will be thrown.
+A new Buffer object will be returned with the same size as the array
+and initialized with the array's contents. If there is not enough
+available memory, an error will be thrown.
 
 ### new Buffer(size)
 * `size` *integer* Length in bytes of the new buffer.
 
 The `size` argument specifies the length in bytes of the array that the Buffer
 represents. If a negative length is passed, a 0-length Buffer will be returned.
-If the size is too long and there is not enough available memory, an error will
+If there is not enough available memory to allocate the Buffer, an error will
 be thrown.
 
 ### new Buffer(string)
 * `string` *string* String to use as initial data.
 
-The `string` argument will be treated as UTF8 and used to initialize the new
-buffer. If there is not enough available memory, an error will be thrown.
+The `string` argument will be treated as an array of UTF8 values and
+will be used to initialize the new buffer. If there is not enough
+available memory, an error will be thrown.
 
 ### buf.copy(target[, targetStart, [sourceStart[, sourceEnd]]])
 * `target` *Buffer* Buffer to receive the copied data.
