@@ -4,7 +4,7 @@ ZJS API for Analog I/O (AIO)
 * [Introduction](#introduction)
 * [Web IDL](#web-idl)
 * [Class: AIO](#aio-api)
-  * [aio.open(AIOInit)](#aiopin-openaioinit)
+  * [aio.open(AIOInit)](#aioopenaioinit)
 * [Class: AIOPin](#aiopin-api)
   * [pin.read()](#pinread)
   * [pin.readAsync(ReadCallback)](#pinreadasyncreadcallback)
@@ -29,8 +29,11 @@ not have support for this.
 
 Web IDL
 -------
-This IDL provides an overview of the interface; see below for documentation of
-specific API functions.
+
+This IDL provides an overview of the interface; see below for
+documentation of specific API functions.  Click
+[here](Notes_on_WebIDL.md) for an explanation of zephyr.js' WebIDL
+conventions.
 
 ```javascript
 // require returns an AIO object
@@ -57,17 +60,17 @@ callback ReadCallback = void (unsigned long value);
 
 AIO API
 -------
-### AIOPin open(AIOInit)
-* 'init' *object*  The AIOInit object has a single field called "pin"
+### aio.open(AIOInit)
+* 'AIOInit' *object*  The AIOInit object has a single field called "pin"
   that represents the name of the pin (either an integer or a string,
   depending on the board).
 
-The `init` object lets you set the pin number. You can either use a raw
+When setting the pin number, you can either use a raw
 number for your device or use the board support module such as
 [Arduino 101](./boards/arduino_101.md) or [K64F](./boards/frdm_k64f.md) to
 specify a named pin.
 
-Use the AIOPin object returned to read values from the pin.
+Returns an AIOPin object that be used to read values from the pin.
 
 AIOPin API
 ----------
@@ -76,24 +79,29 @@ AIOPin API
 Returns the latest reading from the pin (an unsigned integer). Blocks until it gets the result.
 
 ### pin.readAsync(ReadCallback)
+* 'ReadCallback' *callback* User-provided callback function that takes
+  a single unsigned integer and has no return value.
 
-Pass a function for `callback` that will be called later when the result is
+Pass a function for `ReadCallback` that will be called later when the result is
 obtained.
 
 *WARNING: Making an async call like this allocates some memory while the call
-is pending, so if you issue them faster than they are fulfilled, you will
+is pending; if async calls are issued faster than they are fulfilled,
+the system will
 eventually run out of memory - pretty soon on these small devices. So the best
-practice would be to make sure you only have a small, fixed number pending at
+practice would be to have only a small, fixed number pending at
 any given time.*
 
 *NOTE: This function will probably be replaced with a version that instead
 returns a promise.*
 
 ### pin.on(eventType, ReadCallback)
+* 'eventType' *string* Type of event; currently, the only supported
+  type is "change".
+* 'ReadCallback' *callback* User-provided callback function that takes
+  a single, unsigned integer and has no return value; can be null. 
 
-Currently, the only supported `eventType` is 'change', and `callback` should
-be either a function or null. When a function is passed for the change event,
-the function will be called any time the analog voltage changes. (At the moment,
+The callback function is called any time the analog voltage changes. (At the moment,
 it actually gets called periodically even when it hasn't changed.) When null is
 passed for the change event, the previously registered callback will be
 discarded and no longer called.
