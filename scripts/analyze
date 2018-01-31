@@ -288,7 +288,7 @@ def parse_json_tree_helper(js, dep, dlist, zlist, zjslist, jrslist, srclist,
 
 
 def parse_json_tree(file, dlist, zlist, zjslist, jrslist, srclist, tree,
-                    force=[]):
+                    force=None):
     """Using a JS file as input, gather dependencies and generate separate lists
     for each aspect of the build (zephyr options, zjs options, jrs options, src)
 
@@ -304,7 +304,7 @@ def parse_json_tree(file, dlist, zlist, zjslist, jrslist, srclist, tree,
     with open(file) as js:
         text = js.read()
 
-    if force != []:
+    if force is not None:
         for f in force:
             with open(args['JSON_DIR'] + f) as file:
                 data = json.load(file)
