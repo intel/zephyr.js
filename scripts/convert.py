@@ -20,9 +20,17 @@ Uglify = collections.namedtuple("Uglify", ['content', 'used_uglifyjs'])
 
 def main():
     args = parse_args()
-    minified_result = uglifyjs(args.input)
+    minified_result = None
+    if not args.full:
+        minified_result = uglifyjs(args.input)
+    if minified_result == None:
+        # full JS or couldn't uglify the JS,
+        # return content of the file as is
+        fp = open(str(args.input), "r")
+        content = fp.read()
+        fp.close()
+        minified_result = Uglify(content, False)
     write_minified(args.output, minified_result)
-
 
 def write_minified(output_path, minified_result):
     """Write the minified output, escaping things as necessary
@@ -61,6 +69,7 @@ def uglifyjs(input_path):
     :param input_path: A pathlib.Path() object of the input file.
     :returns: An Uglify() object
     """
+
     filename = str(input_path)
     # NOTE(jlvillal): The docs say that '-nc' is the same as '--no-copyright'
     # but in testing it is not.
@@ -73,8 +82,8 @@ def uglifyjs(input_path):
     try:
         result = subprocess.call(cmd_line, stdout=subprocess.DEVNULL)
     except FileNotFoundError:
-        # We don't have uglifyjs, so return the contents of the file
-        return Uglify(input_path.read_text(), False)
+        # We don't have uglifyjs
+        return None
 
     if result == 0:
         # We have newer uglifyjs
@@ -96,6 +105,8 @@ def parse_args():
                      "a C string format."))
     parser.add_argument("input", metavar='INPUT_FILE')
     parser.add_argument("output", metavar='OUTPUT_FILE')
+    parser.add_argument("-f", "--full", help="Skip minimizing JS for debugging",
+                        action="store_true")
     args = parser.parse_args()
     # Make all paths absolute and expand any "~/" usage.
     for arg_name in ('input', 'output'):

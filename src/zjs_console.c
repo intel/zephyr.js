@@ -12,6 +12,10 @@
 #include "zjs_zephyr_port.h"
 #endif
 
+#ifdef JERRY_DEBUGGER
+#include "debugger.h"
+#endif
+
 #define MAX_STR_LENGTH 256
 
 #ifdef ZJS_LINUX_BUILD
@@ -118,17 +122,29 @@ static void print_value(const jerry_value_t value, FILE *out, bool deep,
     if (!value2str(value, buf, MAX_STR_LENGTH, quotes) && deep) {
         if (jerry_value_is_array(value)) {
             u32_t len = jerry_get_array_length(value);
+#ifdef JERRY_DEBUGGER
+            jerry_debugger_send_output((jerry_char_t *)"[", 1, JERRY_DEBUGGER_OUTPUT_OK);
+#endif
             fprintf(out, "[");
             for (int i = 0; i < len; i++) {
                 if (i) {
+#ifdef JERRY_DEBUGGER
+                    jerry_debugger_send_output((jerry_char_t *)", ", 2, JERRY_DEBUGGER_OUTPUT_OK);
+#endif
                     fprintf(out, ", ");
                 }
                 ZVAL element = jerry_get_property_by_index(value, i);
                 print_value(element, out, false, true);
             }
+#ifdef JERRY_DEBUGGER
+            jerry_debugger_send_output((jerry_char_t *)"]", 1, JERRY_DEBUGGER_OUTPUT_OK);
+#endif
             fprintf(out, "]");
         }
     } else {
+#ifdef JERRY_DEBUGGER
+        jerry_debugger_send_output((jerry_char_t *)buf, strlen(buf), JERRY_DEBUGGER_OUTPUT_OK);
+#endif
         fprintf(out, "%s", buf);
     }
 }
@@ -138,6 +154,9 @@ static ZJS_DECL_FUNC_ARGS(do_print, FILE *out)
     for (int i = 0; i < argc; i++) {
         if (i) {
             // insert spaces between arguments
+#ifdef JERRY_DEBUGGER
+            jerry_debugger_send_output((jerry_char_t *)" ", 1, JERRY_DEBUGGER_OUTPUT_OK);
+#endif
             fprintf(out, " ");
         }
         print_value(argv[i], out, true, false);

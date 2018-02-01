@@ -332,6 +332,11 @@ if [ "$RUN" == "all" -o "$RUN" == "2" ]; then
     write_modules_test $TMPFILE $MODULES $SENSORS
     try_command "k64f net" make $VERBOSE JS=$TMPFILE ROM=256 BOARD=frdm_k64f
 
+    # debugger test
+    MODULES=(buffer)
+    write_modules_test $TMPFILE $MODULE
+    try_command "k64f debugger" make $VERBOSE JS=$TMPFILE ROM=256 BOARD=frdm_k64f DEBUGGER=on
+
     # OCF test
     echo "var ocf = require('ocf');" > $TMPFILE
     echo "var client = ocf.client;" >> $TMPFILE
@@ -449,6 +454,9 @@ if [ "$RUN" == "all" -o "$RUN" == "3" ]; then
 
     # linux build tests
     try_command "linux" make $VERBOSE BOARD=linux
+
+    # linux debugger tests
+    try_command "linux debuger" make $VERBOSE BOARD=linux DEBUGGER=on
 
     # linux unit tests
     try_command "unit tests" ./outdir/linux/release/jslinux --unittest
