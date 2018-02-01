@@ -96,8 +96,6 @@ static u8_t ring_buf_initialized = 1;
 
 #ifdef ZJS_LINUX_BUILD
 #define k_is_preempt_thread() 0
-#define irq_lock() 0
-#define irq_unlock(key) do {} while (0);
 #define RB_LOCK() do {} while (0)
 #define RB_UNLOCK() do {} while (0)
 #define CB_LOCK() do {} while (0)
@@ -397,7 +395,9 @@ void signal_callback_priv(zjs_callback_id id,
               args, size);
 #endif
     int in_thread = k_is_preempt_thread();  // versus ISR or co-op thread
+#ifndef ZJS_LINUX_BUILD
     int key = 0;
+#endif
     if (in_thread) CB_LOCK();
     if (id < 0 || id >= cb_size || !cb_map[id]) {
         DBG_PRINT("callback ID %d does not exist\n", id);
@@ -420,10 +420,12 @@ void signal_callback_priv(zjs_callback_id id,
 #ifdef INSTRUMENT_CALLBACKS
     set_info_string(cb_map[id]->caller, file, func);
 #endif
+#ifndef ZJS_LINUX_BUILD
     if (in_thread) {
         RB_LOCK();
         key = irq_lock();
     }
+#endif
     int ret = zjs_port_ring_buf_put(&ring_buffer,
                                     (u16_t)id,
                                     0,  // we use value for CB_FLUSH_ONE/ALL
@@ -434,11 +436,11 @@ void signal_callback_priv(zjs_callback_id id,
     // rather than locking everything, as we are only trying to prevent a
     // callback
     // from being edited and called at the same time.
+#ifndef ZJS_LINUX_BUILD
     if (in_thread) {
         irq_unlock(key);
         RB_UNLOCK();
     }
-#ifndef ZJS_LINUX_BUILD
     zjs_loop_unblock();
 #endif
     if (ret != 0) {
