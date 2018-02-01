@@ -1,5 +1,11 @@
 // Copyright (c) 2016-2018, Intel Corporation.
 
+// enable to use function tracing for debug purposes
+#if 0
+#define USE_FTRACE
+static char FTRACE_PREFIX[] = "gpio";
+#endif
+
 // C includes
 #include <stdlib.h>
 #include <string.h>
@@ -44,6 +50,7 @@ typedef struct gpio_handle {
 
 static void zjs_gpio_close(gpio_handle_t *handle)
 {
+    FTRACE("handle = %p\n", handle);
     zjs_remove_callback(handle->callbackId);
     gpio_remove_callback(handle->port, &handle->callback);
     handle->closed = true;
@@ -51,6 +58,7 @@ static void zjs_gpio_close(gpio_handle_t *handle)
 
 static void zjs_gpio_free_cb(void *native)
 {
+    FTRACE("native = %p\n", native);
     gpio_handle_t *handle = (gpio_handle_t *)native;
     if (!handle->closed)
         zjs_gpio_close(handle);
@@ -66,6 +74,7 @@ static const jerry_object_native_info_t gpio_type_info = {
 void gpio_internal_lookup_pin(const jerry_value_t pin_obj, DEVICE *port,
                               int *pin)
 {
+    FTRACE("pin_obj = %p, port = %p, pin = %p\n", (void *)pin_obj, port, pin);
     gpio_handle_t *handle;
     const jerry_object_native_info_t *tmp;
     jerry_get_object_native_pointer(pin_obj, (void **)&handle, &tmp);
@@ -78,6 +87,7 @@ void gpio_internal_lookup_pin(const jerry_value_t pin_obj, DEVICE *port,
 // C callback from task context in response to GPIO input interrupt
 static void zjs_gpio_c_callback(void *h, const void *args)
 {
+    FTRACE("h = %p, args = %p\n", h, args);
     gpio_handle_t *handle = (gpio_handle_t *)h;
     if (handle->closed) {
         ERR_PRINT("unexpected callback after close\n");
@@ -104,6 +114,7 @@ static void zjs_gpio_c_callback(void *h, const void *args)
 static void zjs_gpio_zephyr_callback(DEVICE port, struct gpio_callback *cb,
                                      u32_t pins)
 {
+    FTRACE("port = %p, cb = %p, pins = %x\n", (void *)port, cb, pins);
     // Get our handle for this pin
     gpio_handle_t *handle = CONTAINER_OF(cb, gpio_handle_t, callback);
     // Read the value and save it in the handle
@@ -332,6 +343,7 @@ static ZJS_DECL_FUNC(zjs_gpio_open)
 
 static void zjs_gpio_cleanup(void *native)
 {
+    FTRACE("native = %p\n", native);
     zjs_gpio_mock_cleanup();
     jerry_release_value(gpio_pin_prototype);
     gpio_pin_prototype = 0;
@@ -343,6 +355,7 @@ static const jerry_object_native_info_t gpio_module_type_info = {
 
 static jerry_value_t zjs_gpio_init()
 {
+    FTRACE("\n");
     zjs_gpio_mock_pre_init();
 
     // create GPIO pin prototype object
@@ -364,7 +377,6 @@ static jerry_value_t zjs_gpio_init()
 
     zjs_gpio_mock_post_init(gpio_api);
 
-    //return jerry_acquire_value(gpio_api);
     return gpio_api;
 }
 
