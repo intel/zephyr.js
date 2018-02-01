@@ -160,8 +160,8 @@ static ZJS_DECL_FUNC(zjs_aio_open)
     }
 
     // create the AIOPin object
-    jerry_value_t pinobj = zjs_create_object();
-    jerry_set_prototype(pinobj, zjs_aio_prototype);
+    ZVAL pin_obj = zjs_create_object();
+    jerry_set_prototype(pin_obj, zjs_aio_prototype);
 
     aio_handle_t *handle = zjs_malloc(sizeof(aio_handle_t));
     if (!handle) {
@@ -170,14 +170,14 @@ static ZJS_DECL_FUNC(zjs_aio_open)
     memset(handle, 0, sizeof(aio_handle_t));
     handle->dev = aiodev;
     handle->pin = pin;
-    handle->pin_obj = pinobj;  // weak reference
+    handle->pin_obj = pin_obj;  // weak reference
 
     // make it an emitter object
-    zjs_make_emitter(pinobj, zjs_aio_prototype, handle, aio_free_cb);
+    zjs_make_emitter(pin_obj, zjs_aio_prototype, handle, aio_free_cb);
 
     // add to the list of opened handles
     ZJS_LIST_APPEND(aio_handle_t, opened_handles, handle);
-    return pinobj;
+    return jerry_acquire_value(pin_obj);
 }
 
 static s32_t aio_poll_routine(void *h)
