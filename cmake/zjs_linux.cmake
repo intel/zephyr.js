@@ -77,12 +77,8 @@ set(APP_COMPILE_OPTIONS
   -std=gnu99
   )
 
-if(CB_STATS)
-  add_definitions(-DCB_STATS=${CB_STATS})
-endif()
-
-if(DEBUGGER)
-  add_definitions(-DZJS_DEBUGGER=${ZJS_DEBUGGER})
+if("${CB_STATS}" STREQUAL "on")
+  add_definitions(-DZJS_PRINT_CALLBACK_STATS)
 endif()
 
 if("${VARIANT}" STREQUAL "debug")
@@ -141,6 +137,17 @@ if(NOT APPLE)
 
   # these flags are needed to get rid of warnings in iotivity-constrained
   list(APPEND APP_COMPILE_OPTIONS -Wno-pointer-sign)
+
+  if("${DEBUGGER}" STREQUAL "on")
+    list(APPEND APP_INCLUDES
+      ${JERRY_BASE}/jerry-core/debugger
+      ${JERRY_BASE}/jerry-core/ecma/base
+      ${JERRY_BASE}/jerry-core/jmem
+      ${JERRY_BASE}/jerry-core/lit
+      )
+    add_definitions(-DJERRY_DEBUGGER)
+    add_definitions(-DZJS_DEBUGGER)
+  endif()
 endif()
 
 # build libjerry as a static library
