@@ -185,10 +185,14 @@ static ZJS_DECL_FUNC(zjs_pwm_open)
     }
 
     // create the PWMPin object
-    jerry_value_t pin_obj = zjs_create_object();
+    ZVAL pin_obj = zjs_create_object();
     jerry_set_prototype(pin_obj, zjs_pwm_pin_prototype);
 
     pwm_handle_t *handle = zjs_malloc(sizeof(pwm_handle_t));
+    if (!handle) {
+        return zjs_error("out of memory");
+    }
+
     memset(handle, 0, sizeof(pwm_handle_t));
     handle->device = pwmdev;
     handle->pin = pin;
@@ -197,8 +201,7 @@ static ZJS_DECL_FUNC(zjs_pwm_open)
 
     jerry_set_object_native_pointer(pin_obj, handle, &pwm_type_info);
 
-    // TODO: When we implement close, we should release the reference on this
-    return pin_obj;
+    return jerry_acquire_value(pin_obj);
 }
 
 static void zjs_pwm_cleanup(void *native)
