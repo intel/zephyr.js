@@ -209,6 +209,23 @@ static void zjs_copy_sockaddr(struct sockaddr *dst, struct sockaddr *src,
     }
 }
 
+static void *zjs_get_inaddr(struct sockaddr *addr)
+{
+    // requires: addr is a pointer to a valid sockaddr_in or sockaddr_in6 struct
+    //  effects: returns a void pointer to the in_addr or in6_addr within
+    if (addr->sa_family == AF_INET) {
+        struct sockaddr_in *addr4 = (struct sockaddr_in *)addr;
+        return &addr4->sin_addr;
+    }
+    else if (addr->sa_family == AF_INET6) {
+        struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)addr;
+        return &addr6->sin6_addr;
+    }
+    else {
+        ZJS_ASSERT(false, "invalid sockaddr struct");
+    }
+}
+
 static int match_timer(sock_handle_t *sock, struct k_timer *timer)
 {
     FTRACE("sock = %p, timer = %p\n", sock, timer);
@@ -820,14 +837,15 @@ static void add_socket_connection(jerry_value_t socket,
     }
 
     sa_family_t family = net_context_get_family(new);
-    char remote_ip[64];
-    net_addr_ntop(family, (const void *)remote, remote_ip, 64);
+    char remote_ip[INET6_ADDRSTRLEN];
+    net_addr_ntop(family, zjs_get_inaddr(remote), remote_ip, INET6_ADDRSTRLEN);
 
     zjs_obj_add_string(socket, "remoteAddress", remote_ip);
     zjs_obj_add_number(socket, "remotePort", server_h->port);
 
-    char local_ip[64];
-    net_addr_ntop(family, (const void *)&server_h->local, local_ip, 64);
+    char local_ip[INET6_ADDRSTRLEN];
+    net_addr_ntop(family, zjs_get_inaddr(&server_h->local), local_ip,
+                  INET6_ADDRSTRLEN);
 
     zjs_obj_add_string(socket, "localAddress", local_ip);
     zjs_obj_add_number(socket, "localPort", server_h->port);
@@ -940,15 +958,9 @@ static ZJS_DECL_FUNC(server_address)
     sa_family_t family = net_context_get_family(server_h->server_ctx);
     char ipstr[INET6_ADDRSTRLEN];
 
-    if (family == AF_INET6) {
-        zjs_obj_add_string(info, "family", "IPv6");
-        struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)&server_h->local;
-        net_addr_ntop(family, &addr6->sin6_addr, ipstr, INET6_ADDRSTRLEN);
-    } else {
-        zjs_obj_add_string(info, "family", "IPv4");
-        struct sockaddr_in *addr = (struct sockaddr_in *)&server_h->local;
-        net_addr_ntop(family, &addr->sin_addr, ipstr, INET6_ADDRSTRLEN);
-    }
+    zjs_obj_add_string(info, "family", family == AF_INET6 ? "IPv6" : "IPv4");
+    net_addr_ntop(family, zjs_get_inaddr(&server_h->local), ipstr,
+                  INET6_ADDRSTRLEN);
 
     zjs_obj_add_string(info, "address", ipstr);
     return info;
@@ -1384,7 +1396,7 @@ static ZJS_DECL_FUNC(net_is_ip)
     if (!jerry_value_is_string(argv[0]) || argc < 1) {
         return jerry_create_number(0);
     }
-    jerry_size_t size = 64;
+    jerry_size_t size = INET6_ADDRSTRLEN;
     char ip[size];
     zjs_copy_jstring(argv[0], ip, &size);
     if (!size) {
