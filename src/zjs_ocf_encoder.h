@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, Intel Corporation.
+// Copyright (c) 2016-2018, Intel Corporation.
 // Zephyr.js required its own versions of these macros from
 // iotivity-constrained.
 // in order to use the cbor_* API's in a dynamic way.
@@ -48,9 +48,9 @@ extern CborError g_err;
  * @param key           Child object (CborEncoder *)
  * @param name          Name of object (char *)
  */
-#define zjs_rep_set_object(object, key, name)                           \
-    if (name)                                                           \
-        g_err |= cbor_encode_text_string(object, name, strlen(name));   \
+#define zjs_rep_set_object(object, key, name)                         \
+    if (name)                                                         \
+        g_err |= cbor_encode_text_string(object, name, strlen(name)); \
     zjs_rep_start_object(object, key)
 
 /*
@@ -178,11 +178,11 @@ extern CborError g_err;
  * @param key           Name of boolean property
  * @param value         Value
  */
-#define zjs_rep_set_text_string(object, key, value)                         \
-    do {                                                                    \
-        if (key)                                                            \
-            g_err |= cbor_encode_text_string(object, key, strlen(key));     \
-        g_err |= cbor_encode_text_string(object, value, strlen(value));     \
+#define zjs_rep_set_text_string(object, key, value)                     \
+    do {                                                                \
+        if (key)                                                        \
+            g_err |= cbor_encode_text_string(object, key, strlen(key)); \
+        g_err |= cbor_encode_text_string(object, value, strlen(value)); \
     } while (0)
 
 /*
@@ -192,11 +192,11 @@ extern CborError g_err;
  * @param key           Name of boolean property
  * @param value         Value
  */
-#define zjs_rep_set_byte_string(object, key, value)                         \
-    do {                                                                    \
-        if (key)                                                            \
-            g_err |= cbor_encode_text_string(object, key, strlen(key));     \
-        g_err |= cbor_encode_byte_string(object, value, strlen(value));     \
+#define zjs_rep_set_byte_string(object, key, value)                     \
+    do {                                                                \
+        if (key)                                                        \
+            g_err |= cbor_encode_text_string(object, key, strlen(key)); \
+        g_err |= cbor_encode_byte_string(object, value, strlen(value)); \
     } while (0)
 
 #endif

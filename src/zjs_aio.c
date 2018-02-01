@@ -1,4 +1,4 @@
-// Copyright (c) 2017, Intel Corporation.
+// Copyright (c) 2017-2018, Intel Corporation.
 
 // enable to use function tracing for debug purposes
 #if 0
@@ -108,11 +108,7 @@ static ZJS_DECL_FUNC_ARGS(aio_pin_read, bool async)
 static ZJS_DECL_FUNC(zjs_aio_pin_read)
 {
     FTRACE_JSAPI;
-    return aio_pin_read(function_obj,
-                        this,
-                        argv,
-                        argc,
-                        false);
+    return aio_pin_read(function_obj, this, argv, argc, false);
 }
 
 // Asynchronous Operations
@@ -122,11 +118,7 @@ static ZJS_DECL_FUNC(zjs_aio_pin_read_async)
     // args: callback
     ZJS_VALIDATE_ARGS(Z_FUNCTION);
 
-    return aio_pin_read(function_obj,
-                        this,
-                        argv,
-                        argc,
-                        true);
+    return aio_pin_read(function_obj, this, argv, argc, true);
 }
 
 static ZJS_DECL_FUNC(zjs_aio_pin_close)
@@ -157,11 +149,9 @@ static ZJS_DECL_FUNC(zjs_aio_open)
     int pin = zjs_board_find_aio(pin_val, devname, 20);
     if (pin == FIND_PIN_INVALID) {
         return TYPE_ERROR("bad pin argument");
-    }
-    else if (pin == FIND_DEVICE_FAILURE) {
+    } else if (pin == FIND_DEVICE_FAILURE) {
         return zjs_error("device not found");
-    }
-    else if (pin < 0) {
+    } else if (pin < 0) {
         return zjs_error("pin not found");
     }
     struct device *aiodev = device_get_binding(devname);
@@ -235,7 +225,7 @@ static void zjs_aio_cleanup(void *native)
 }
 
 static const jerry_object_native_info_t aio_module_type_info = {
-   .free_cb = zjs_aio_cleanup
+    .free_cb = zjs_aio_cleanup
 };
 
 jerry_value_t zjs_aio_init()

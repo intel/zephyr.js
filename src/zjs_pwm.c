@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, Intel Corporation.
+// Copyright (c) 2016-2018, Intel Corporation.
 
 #ifdef BUILD_MODULE_PWM
 
@@ -170,11 +170,9 @@ static ZJS_DECL_FUNC(zjs_pwm_open)
     int pin = zjs_board_find_pwm(pin_val, devname, 20);
     if (pin == FIND_PIN_INVALID) {
         return TYPE_ERROR("bad pin argument");
-    }
-    else if (pin == FIND_DEVICE_FAILURE) {
+    } else if (pin == FIND_DEVICE_FAILURE) {
         return zjs_error("device not found");
-    }
-    else if (pin < 0) {
+    } else if (pin < 0) {
         return zjs_error("pin not found");
     }
     struct device *pwmdev = device_get_binding(devname);
@@ -209,7 +207,7 @@ static void zjs_pwm_cleanup(void *native)
 }
 
 static const jerry_object_native_info_t pwm_module_type_info = {
-   .free_cb = zjs_pwm_cleanup
+    .free_cb = zjs_pwm_cleanup
 };
 
 static jerry_value_t zjs_pwm_init()

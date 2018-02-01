@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, Intel Corporation.
+// Copyright (c) 2016-2018, Intel Corporation.
 
 #ifdef BUILD_MODULE_FS
 
@@ -987,7 +987,7 @@ static void zjs_fs_cleanup(void *native)
 }
 
 static const jerry_object_native_info_t fs_module_type_info = {
-   .free_cb = zjs_fs_cleanup
+    .free_cb = zjs_fs_cleanup
 };
 
 static jerry_value_t zjs_fs_init()

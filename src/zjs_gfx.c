@@ -7,10 +7,10 @@
 #include "zjs_buffer.h"
 #include "zjs_callbacks.h"
 #include "zjs_error.h"
-#include "zjs_util.h"
 #include "zjs_gfx_font.h"
+#include "zjs_util.h"
 
-#define COLORBYTES 2    // Number of bytes needed to represent the color
+#define COLORBYTES 2  // Number of bytes needed to represent the color
 #define MAXPIXELS  1000 * COLORBYTES
 
 typedef struct gfx_handle {
@@ -19,10 +19,10 @@ typedef struct gfx_handle {
     jerry_value_t pixels;
     zjs_buffer_t *pixelsPtr;
     // Touched pixels values will hold a rectangle containing the buffer to draw
-    u16_t tpX0;     // Touched pixels x start
-    u16_t tpX1;     // Touched pixels x end
-    u16_t tpY0;     // Touched pixels y start
-    u16_t tpY1;     // Touched pixels y end
+    u16_t tpX0;  // Touched pixels x start
+    u16_t tpX1;  // Touched pixels x end
+    u16_t tpY0;  // Touched pixels y start
+    u16_t tpY1;  // Touched pixels y end
     bool touched;
     u8_t fillStyle[COLORBYTES];
     jerry_value_t screenInitCB;
@@ -45,7 +45,8 @@ static jerry_value_t zjs_gfx_prototype;
 bool drawImmediate = true;
 // Draw function depends on whether we are in immediate draw mode or not.
 // It gets set by init
-void (*zjs_gfx_draw_pixels)(int32_t, int32_t, u32_t, u32_t, u8_t[], gfx_handle_t*);
+void (*zjs_gfx_draw_pixels)(int32_t, int32_t, u32_t, u32_t, u8_t[],
+                            gfx_handle_t *);
 
 static void zjs_gfx_callback_free(void *native)
 {
@@ -58,7 +59,7 @@ static void zjs_gfx_callback_free(void *native)
 }
 
 static const jerry_object_native_info_t gfx_type_info = {
-   .free_cb = zjs_gfx_callback_free
+    .free_cb = zjs_gfx_callback_free
 };
 
 // Extracts the args from jerry values and puts them into the data struct
@@ -78,17 +79,16 @@ static void args_to_data(gfx_data_t *data, u32_t argc, const jerry_value_t argv[
                     data->coords[i] = (int32_t)jerry_get_number_value(argv[i]);
                 else
                     data->size = (u32_t)jerry_get_number_value(argv[i]);
-            }
-            else if (jerry_value_is_string(argv[i])) {
+            } else if (jerry_value_is_string(argv[i])) {
                 data->text = zjs_alloc_from_jstring(argv[i], &data->textSize);
                 if (!data->text) {
                     ERR_PRINT("GFX failed to copy text\n");
                 }
-            }
-            else if (jerry_value_is_array(argv[i])) {
+            } else if (jerry_value_is_array(argv[i])) {
                 for (u8_t j = 0; j < COLORBYTES; j++) {
-                   data->color[j] = (u8_t)jerry_get_number_value(jerry_get_property_by_index(argv[i], j));
-               }
+                    data->color[j] = (u8_t)jerry_get_number_value(
+                        jerry_get_property_by_index(argv[i], j));
+                }
             }
         }
     }
@@ -103,28 +103,28 @@ static void zjs_gfx_reset_touched_pixels(gfx_handle_t *gfxHandle)
     gfxHandle->touched = false;
 }
 
-static void zjs_gfx_touch_pixels(int32_t x, int32_t y, u32_t w, u32_t h, u8_t color[], gfx_handle_t *gfxHandle)
+static void zjs_gfx_touch_pixels(int32_t x, int32_t y, u32_t w, u32_t h,
+                                 u8_t color[], gfx_handle_t *gfxHandle)
 {
     // Check that x and y aren't past the screen
-    if (x >= gfxHandle->screenW || y >= gfxHandle->screenH || (int32_t)(x + w) <= 0 || (int32_t)(y + h) <= 0)
+    if (x >= gfxHandle->screenW || y >= gfxHandle->screenH ||
+        (int32_t)(x + w) <= 0 || (int32_t)(y + h) <= 0) {
         return;
+    }
 
     if (x < 0) {
         if (x + w <= gfxHandle->screenW) {
             gfxHandle->tpX0 = 0;
             gfxHandle->tpX1 = x + w - 1;
-        }
-        else {
+        } else {
             gfxHandle->tpX0 = 0;
             gfxHandle->tpX1 = gfxHandle->screenW;
         }
-    }
-    else if (x < gfxHandle->screenW) {
+    } else if (x < gfxHandle->screenW) {
         if (x + w <= gfxHandle->screenW) {
             gfxHandle->tpX0 = x;
             gfxHandle->tpX1 = x + w - 1;
-        }
-        else {
+        } else {
             gfxHandle->tpX0 = x;
             gfxHandle->tpX1 = gfxHandle->screenW;
         }
@@ -134,18 +134,15 @@ static void zjs_gfx_touch_pixels(int32_t x, int32_t y, u32_t w, u32_t h, u8_t co
         if (y + h <= gfxHandle->screenH) {
             gfxHandle->tpY0 = 0;
             gfxHandle->tpY1 = y + h - 1;
-        }
-        else {
+        } else {
             gfxHandle->tpY0 = 0;
             gfxHandle->tpY1 = gfxHandle->screenH;
         }
-    }
-    else if (y < gfxHandle->screenH) {
+    } else if (y < gfxHandle->screenH) {
         if (y + h <= gfxHandle->screenH) {
             gfxHandle->tpY0 = y;
             gfxHandle->tpY1 = y + h - 1;
-        }
-        else {
+        } else {
             gfxHandle->tpY0 = y;
             gfxHandle->tpY1 = gfxHandle->screenH;
         }
@@ -166,7 +163,8 @@ static void zjs_gfx_touch_pixels(int32_t x, int32_t y, u32_t w, u32_t h, u8_t co
             for (u16_t iX = x; iX < x + w; iX++) {
                 // Each pixel can be several bytes, fill them in accordingly
                 for (u8_t cbyte = 0; cbyte < COLORBYTES; cbyte++) {
-                    gfxHandle->pixelsPtr->buffer[pixelsIndex + cbyte] = color[cbyte];
+                    gfxHandle->pixelsPtr->buffer[pixelsIndex + cbyte] =
+                        color[cbyte];
                 }
                 pixelsIndex += COLORBYTES;
             }
@@ -175,16 +173,22 @@ static void zjs_gfx_touch_pixels(int32_t x, int32_t y, u32_t w, u32_t h, u8_t co
     gfxHandle->touched = true;
 }
 
-static jerry_value_t zjs_gfx_call_cb(u32_t x, u32_t y, u32_t w, u32_t h, jerry_value_t data, gfx_handle_t *gfxHandle)
+static jerry_value_t zjs_gfx_call_cb(u32_t x, u32_t y, u32_t w, u32_t h,
+                                     jerry_value_t data,
+                                     gfx_handle_t *gfxHandle)
 {
-    jerry_value_t args[] = {jerry_create_number(x), jerry_create_number(y),
-                        jerry_create_number(w),
-                        jerry_create_number(h),
-                        data};
+    jerry_value_t args[] = {
+        jerry_create_number(x),
+        jerry_create_number(y),
+        jerry_create_number(w),
+        jerry_create_number(h),
+        data
+    };
 
-    jerry_value_t ret = jerry_call_function(gfxHandle->drawDataCB, gfxHandle->jsThis, args, 5);
+    jerry_value_t ret = jerry_call_function(gfxHandle->drawDataCB,
+                                            gfxHandle->jsThis, args, 5);
 
-    if (jerry_value_has_error_flag (ret)) {
+    if (jerry_value_has_error_flag(ret)) {
         ERR_PRINT("JS callback failed with %u..\n", (u32_t)ret);
         return ret;
     }
@@ -193,34 +197,36 @@ static jerry_value_t zjs_gfx_call_cb(u32_t x, u32_t y, u32_t w, u32_t h, jerry_v
 
 static jerry_value_t zjs_gfx_flush(gfx_handle_t *gfxHandle)
 {
-    if (!gfxHandle->touched)
+    if (!gfxHandle->touched) {
         return ZJS_UNDEFINED;
+    }
     u32_t tpW = gfxHandle->tpX1 - gfxHandle->tpX0 + 1;
     u32_t tpH = gfxHandle->tpY1 - gfxHandle->tpY0 + 1;
     u32_t pixels = tpW * tpH * COLORBYTES;
     zjs_buffer_t *recBuf = NULL;
     u16_t bufferIndex = 0;
     u32_t origIndex = 0;
-    u8_t passes = 1;    // Number of times the data buffer needs to be sent
+    u8_t passes = 1;  // Number of times the data buffer needs to be sent
     jerry_value_t ret;
 
     if (pixels > MAXPIXELS) {
-        u32_t  bytesPerRow = tpW * COLORBYTES;
-        u32_t rowsPerBuf = MAXPIXELS /  bytesPerRow;
-        passes = pixels / ( bytesPerRow * rowsPerBuf);
+        u32_t bytesPerRow = tpW * COLORBYTES;
+        u32_t rowsPerBuf = MAXPIXELS / bytesPerRow;
+        passes = pixels / (bytesPerRow * rowsPerBuf);
         // If passes has a remainder, add a pass
-        if (pixels % ( bytesPerRow * rowsPerBuf) != 0)
+        if (pixels % (bytesPerRow * rowsPerBuf) != 0) {
             passes++;
+        }
 
-        pixels =  bytesPerRow * rowsPerBuf;
+        pixels = bytesPerRow * rowsPerBuf;
     }
     // If there are a lot of passes, it will be faster to draw the whole buffer
     // Not valid for draw immidiate mode
     if (passes > 5 && !drawImmediate) {
-        ret = zjs_gfx_call_cb(0, 0, gfxHandle->screenW, gfxHandle->screenH, gfxHandle->pixels, gfxHandle);
-    }
-    else {
-        ZVAL recBufObj =  zjs_buffer_create(pixels, &recBuf);
+        ret = zjs_gfx_call_cb(0, 0, gfxHandle->screenW, gfxHandle->screenH,
+                              gfxHandle->pixels, gfxHandle);
+    } else {
+        ZVAL recBufObj = zjs_buffer_create(pixels, &recBuf);
         u32_t xStart = gfxHandle->tpX0;
         u32_t yStart = gfxHandle->tpY0;
         u32_t currX = xStart;
@@ -229,40 +235,45 @@ static jerry_value_t zjs_gfx_flush(gfx_handle_t *gfxHandle)
         u32_t currH = 0;
         u16_t currPass = 0;
 
-        for (u16_t j = gfxHandle->tpY0; currPass < passes ; j++) {
+        for (u16_t j = gfxHandle->tpY0; currPass < passes; j++) {
             currH++;
             currY++;
             xStart = gfxHandle->tpX0;
 
-            for (u16_t i = gfxHandle->tpX0; i <= gfxHandle->tpX1 && currPass < passes; i++) {
+            for (u16_t i = gfxHandle->tpX0;
+                 i <= gfxHandle->tpX1 && currPass < passes; i++) {
                 origIndex = (i + gfxHandle->screenW * j) * COLORBYTES;
 
                 // Fill the pixel
                 for (u8_t k = 0; k < COLORBYTES; k++) {
                     if (!drawImmediate) {
                         // Use cached pixel map
-                        recBuf->buffer[bufferIndex + k] = gfxHandle->pixelsPtr->buffer[origIndex + k];
-                    }
-                    else {
+                        recBuf->buffer[bufferIndex + k] =
+                            gfxHandle->pixelsPtr->buffer[origIndex + k];
+                    } else {
                         // We are just drawing a solid rectangle, use fillStyle
-                        recBuf->buffer[bufferIndex + k] = gfxHandle->fillStyle[k];
+                        recBuf->buffer[bufferIndex + k] =
+                            gfxHandle->fillStyle[k];
                     }
                 }
-                bufferIndex+=COLORBYTES;
+                bufferIndex += COLORBYTES;
                 // Width shouldn't be larger than touched pixel width
                 // This keeps track of widest point of the current buffer
                 if (currW < tpW) {
                     currW++;
                 }
                 // Send the buffer once its full or we are at the end
-                if (bufferIndex == recBuf->bufsize || currY > gfxHandle->tpY1 + 1) {
-                    // If we didn't fill the last buffer completely, reset the size
+                if (bufferIndex == recBuf->bufsize ||
+                    currY > gfxHandle->tpY1 + 1) {
+                    // If we didn't fill the last buffer completely, reset the
+                    // size
                     if (bufferIndex < recBuf->bufsize) {
                         recBuf->bufsize = bufferIndex;
                     }
 
-                    ret = zjs_gfx_call_cb(xStart, yStart, currW, currH, recBufObj, gfxHandle);
-                    if (jerry_value_has_error_flag (ret)) {
+                    ret = zjs_gfx_call_cb(xStart, yStart, currW, currH,
+                                          recBufObj, gfxHandle);
+                    if (jerry_value_has_error_flag(ret)) {
                         zjs_gfx_reset_touched_pixels(gfxHandle);
                         return ret;
                     }
@@ -283,7 +294,8 @@ static jerry_value_t zjs_gfx_flush(gfx_handle_t *gfxHandle)
     return ZJS_UNDEFINED;
 }
 
-static void zjs_gfx_fill_rect_priv (int32_t x, int32_t y, u32_t w, u32_t h, u8_t color[], gfx_handle_t *gfxHandle)
+static void zjs_gfx_fill_rect_priv(int32_t x, int32_t y, u32_t w, u32_t h,
+                                   u8_t color[], gfx_handle_t *gfxHandle)
 {
     zjs_gfx_touch_pixels(x, y, w, h, color, gfxHandle);
     for (u8_t cbyte = 0; cbyte < COLORBYTES; cbyte++) {
@@ -294,20 +306,23 @@ static void zjs_gfx_fill_rect_priv (int32_t x, int32_t y, u32_t w, u32_t h, u8_t
 }
 
 // Draws the rectangles needed to create the given char
-static jerry_value_t zjs_gfx_draw_char_priv(u32_t x, u32_t y, char c, u8_t color[], u32_t size, gfx_handle_t *gfxHandle)
+static jerry_value_t zjs_gfx_draw_char_priv(u32_t x, u32_t y, char c,
+                                            u8_t color[], u32_t size,
+                                            gfx_handle_t *gfxHandle)
 {
-    u32_t asciiIndex = (u8_t)c - 32;    // To save size our font doesn't include the first 32 chars
+    // To save size our font doesn't include the first 32 chars
+    u32_t asciiIndex = (u8_t)c - 32;
 
     // Check that character is supported
     if (asciiIndex < 0 || asciiIndex > 93) {
         ERR_PRINT("GFX doesn't support '%c'\n", c);
-        asciiIndex = 31;    // Set char to ?
+        asciiIndex = 31;  // Set char to ?
     }
 
     u8_t fontBytes = font_data_descriptors[asciiIndex][0] * 2;
     u16_t index = font_data_descriptors[asciiIndex][1];
     zjs_buffer_t *charBuf = NULL;
-    ZVAL charBufObj =  zjs_buffer_create(fontBytes, &charBuf);
+    ZVAL charBufObj = zjs_buffer_create(fontBytes, &charBuf);
 
     if (charBuf) {
         for (int i = 0; i < fontBytes; i++) {
@@ -315,11 +330,12 @@ static jerry_value_t zjs_gfx_draw_char_priv(u32_t x, u32_t y, char c, u8_t color
         }
     }
 
-    for(int i = 0; i < fontBytes; i+=2) {
-        u16_t line = (((u16_t)charBuf->buffer[i]) << 8) | charBuf->buffer[i+1];
-        for(int j = 0; j < 16; j++) {
-            if((line >> j)  & 1) {
-                int recX = x + (i/2) * size;
+    for (int i = 0; i < fontBytes; i += 2) {
+        u16_t line = (((u16_t)charBuf->buffer[i]) << 8) |
+                     charBuf->buffer[i + 1];
+        for (int j = 0; j < 16; j++) {
+            if ((line >> j) & 1) {
+                int recX = x + (i / 2) * size;
                 int recY = y + j * size;
                 // Draw each bit
                 zjs_gfx_draw_pixels(recX, recY, size, size, color, gfxHandle);
@@ -354,7 +370,8 @@ static ZJS_DECL_FUNC(zjs_gfx_fill_rect)
     ZJS_GET_HANDLE(this, gfx_handle_t, handle, gfx_type_info);
     gfx_data_t argData;
     args_to_data(&argData, argc, argv);
-    zjs_gfx_draw_pixels(argData.coords[0], argData.coords[1], argData.coords[2], argData.coords[3], argData.color, handle);
+    zjs_gfx_draw_pixels(argData.coords[0], argData.coords[1], argData.coords[2],
+                        argData.coords[3], argData.color, handle);
     return ZJS_UNDEFINED;
 }
 
@@ -371,7 +388,8 @@ static ZJS_DECL_FUNC(zjs_gfx_draw_pixel)
     ZJS_GET_HANDLE(this, gfx_handle_t, handle, gfx_type_info);
     gfx_data_t argData;
     args_to_data(&argData, argc, argv);
-    zjs_gfx_draw_pixels(argData.coords[0], argData.coords[1], 1, 1, argData.color, handle);
+    zjs_gfx_draw_pixels(argData.coords[0], argData.coords[1], 1, 1,
+                        argData.color, handle);
     return ZJS_UNDEFINED;
 }
 
@@ -387,12 +405,17 @@ static ZJS_DECL_FUNC(zjs_gfx_draw_line)
     //
     //  effects: Draws a line on the screen
 
-    ZJS_VALIDATE_ARGS(Z_NUMBER, Z_NUMBER, Z_NUMBER, Z_NUMBER, Z_ARRAY, Z_OPTIONAL Z_NUMBER);
+    ZJS_VALIDATE_ARGS(Z_NUMBER, Z_NUMBER, Z_NUMBER, Z_NUMBER, Z_ARRAY,
+                      Z_OPTIONAL Z_NUMBER);
     ZJS_GET_HANDLE(this, gfx_handle_t, handle, gfx_type_info);
     gfx_data_t argData;
     args_to_data(&argData, argc, argv);
-    int xLen = argData.coords[2] > argData.coords[0] ? argData.coords[2] - argData.coords[0] + 1 : argData.coords[0] - argData.coords[2] + 1;
-    int yLen = argData.coords[3] > argData.coords[1] ? argData.coords[3] - argData.coords[1] + 1 : argData.coords[1] - argData.coords[3] + 1;
+    int xLen = argData.coords[2] > argData.coords[0]
+                   ? argData.coords[2] - argData.coords[0] + 1
+                   : argData.coords[0] - argData.coords[2] + 1;
+    int yLen = argData.coords[3] > argData.coords[1]
+                   ? argData.coords[3] - argData.coords[1] + 1
+                   : argData.coords[1] - argData.coords[3] + 1;
     bool neg = false;
 
     if (xLen <= yLen) {
@@ -406,15 +429,17 @@ static ZJS_DECL_FUNC(zjs_gfx_draw_line)
             argData.coords[3] = tmp;
         }
         // Line is going up
-        if (argData.coords[3] < argData.coords[1])
-                neg = true;
+        if (argData.coords[3] < argData.coords[1]) {
+            neg = true;
+        }
 
         int32_t pos;
-        if (argData.coords[0] == argData.coords[2] && argData.coords[1] > argData.coords[3])
+        if (argData.coords[0] == argData.coords[2] &&
+            argData.coords[1] > argData.coords[3]) {
             pos = argData.coords[3];
-        else
+        } else {
             pos = argData.coords[1];
-
+        }
         u32_t step = yLen / xLen;
         u32_t trueStep = (yLen * 100) / xLen;
         u32_t stepRemain = trueStep - (step * 100);
@@ -425,16 +450,15 @@ static ZJS_DECL_FUNC(zjs_gfx_draw_line)
             if (leftoverStep > 100) {
                 currStep = step + 1;
                 leftoverStep -= 100;
-            }
-            else {
+            } else {
                 currStep = step;
             }
-            zjs_gfx_draw_pixels(x, pos, argData.size, currStep, argData.color, handle);
+            zjs_gfx_draw_pixels(x, pos, argData.size, currStep, argData.color,
+                                handle);
             pos = neg == false ? pos + currStep : pos - currStep;
             leftoverStep += stepRemain;
         }
-    }
-    else {
+    } else {
         // We always draw left to right, swap if argData.coords[1] is larger
         if (argData.coords[1] > argData.coords[3]) {
             int32_t tmp = argData.coords[0];
@@ -449,11 +473,12 @@ static ZJS_DECL_FUNC(zjs_gfx_draw_line)
             neg = true;
 
         int32_t pos;
-        if (argData.coords[1] == argData.coords[3] && argData.coords[0] > argData.coords[2])
+        if (argData.coords[1] == argData.coords[3] &&
+            argData.coords[0] > argData.coords[2]) {
             pos = argData.coords[2];
-        else
+        } else {
             pos = argData.coords[0];
-
+        }
         u32_t step = xLen / yLen;
         u32_t trueStep = (xLen * 100) / yLen;
         u32_t stepRemain = trueStep - (step * 100);
@@ -463,11 +488,11 @@ static ZJS_DECL_FUNC(zjs_gfx_draw_line)
             if (leftoverStep > 100) {
                 currStep = step + 1;
                 leftoverStep -= 100;
-            }
-            else {
+            } else {
                 currStep = step;
             }
-            zjs_gfx_draw_pixels(pos, y, currStep, argData.size, argData.color, handle);
+            zjs_gfx_draw_pixels(pos, y, currStep, argData.size, argData.color,
+                                handle);
             pos = neg == false ? pos + currStep : pos - currStep;
             leftoverStep += stepRemain;
         }
@@ -486,11 +511,13 @@ static ZJS_DECL_FUNC(zjs_gfx_draw_v_line)
     //
     //  effects: Draws a vertical line on the screen.
 
-    ZJS_VALIDATE_ARGS(Z_NUMBER, Z_NUMBER, Z_NUMBER, Z_ARRAY, Z_OPTIONAL Z_NUMBER);
+    ZJS_VALIDATE_ARGS(Z_NUMBER, Z_NUMBER, Z_NUMBER, Z_ARRAY,
+                      Z_OPTIONAL Z_NUMBER);
     ZJS_GET_HANDLE(this, gfx_handle_t, handle, gfx_type_info);
     gfx_data_t argData;
     args_to_data(&argData, argc, argv);
-    zjs_gfx_draw_pixels(argData.coords[0], argData.coords[1], argData.size, argData.coords[2], argData.color, handle);
+    zjs_gfx_draw_pixels(argData.coords[0], argData.coords[1], argData.size,
+                        argData.coords[2], argData.color, handle);
     return ZJS_UNDEFINED;
 }
 
@@ -505,11 +532,13 @@ static ZJS_DECL_FUNC(zjs_gfx_draw_h_line)
     //
     //  effects: Draws a horizontal line on the screen
 
-    ZJS_VALIDATE_ARGS(Z_NUMBER, Z_NUMBER, Z_NUMBER, Z_ARRAY, Z_OPTIONAL Z_NUMBER);
+    ZJS_VALIDATE_ARGS(Z_NUMBER, Z_NUMBER, Z_NUMBER, Z_ARRAY,
+                      Z_OPTIONAL Z_NUMBER);
     ZJS_GET_HANDLE(this, gfx_handle_t, handle, gfx_type_info);
     gfx_data_t argData;
     args_to_data(&argData, argc, argv);
-    zjs_gfx_draw_pixels(argData.coords[0], argData.coords[1], argData.coords[2], argData.size, argData.color, handle);
+    zjs_gfx_draw_pixels(argData.coords[0], argData.coords[1], argData.coords[2],
+                        argData.size, argData.color, handle);
     return ZJS_UNDEFINED;
 }
 
@@ -525,14 +554,21 @@ static ZJS_DECL_FUNC(zjs_gfx_draw_rect)
     //
     //  effects: Draws a rectangle on the screen
 
-    ZJS_VALIDATE_ARGS(Z_NUMBER, Z_NUMBER, Z_NUMBER, Z_NUMBER, Z_ARRAY, Z_OPTIONAL Z_NUMBER);
+    ZJS_VALIDATE_ARGS(Z_NUMBER, Z_NUMBER, Z_NUMBER, Z_NUMBER, Z_ARRAY,
+                      Z_OPTIONAL Z_NUMBER);
     ZJS_GET_HANDLE(this, gfx_handle_t, handle, gfx_type_info);
     gfx_data_t argData;
     args_to_data(&argData, argc, argv);
-    zjs_gfx_draw_pixels(argData.coords[0], argData.coords[1], argData.coords[2], argData.size, argData.color, handle);
-    zjs_gfx_draw_pixels(argData.coords[0], argData.coords[1] + argData.coords[3] - argData.size, argData.coords[2], argData.size, argData.color, handle);
-    zjs_gfx_draw_pixels(argData.coords[0], argData.coords[1], argData.size, argData.coords[3], argData.color, handle);
-    zjs_gfx_draw_pixels(argData.coords[0] + argData.coords[2] - argData.size, argData.coords[1], argData.size, argData.coords[3], argData.color, handle);
+    zjs_gfx_draw_pixels(argData.coords[0], argData.coords[1], argData.coords[2],
+                        argData.size, argData.color, handle);
+    zjs_gfx_draw_pixels(argData.coords[0],
+                        argData.coords[1] + argData.coords[3] - argData.size,
+                        argData.coords[2], argData.size, argData.color, handle);
+    zjs_gfx_draw_pixels(argData.coords[0], argData.coords[1], argData.size,
+                        argData.coords[3], argData.color, handle);
+    zjs_gfx_draw_pixels(argData.coords[0] + argData.coords[2] - argData.size,
+                        argData.coords[1], argData.size, argData.coords[3],
+                        argData.color, handle);
 
     return ZJS_UNDEFINED;
 }
@@ -548,11 +584,14 @@ static ZJS_DECL_FUNC(zjs_gfx_draw_char)
     //
     //  effects: Draws a character on the screen
 
-    ZJS_VALIDATE_ARGS(Z_NUMBER, Z_NUMBER, Z_STRING, Z_ARRAY, Z_OPTIONAL Z_NUMBER);
+    ZJS_VALIDATE_ARGS(Z_NUMBER, Z_NUMBER, Z_STRING, Z_ARRAY,
+                      Z_OPTIONAL Z_NUMBER);
     ZJS_GET_HANDLE(this, gfx_handle_t, handle, gfx_type_info);
     gfx_data_t argData;
     args_to_data(&argData, argc, argv);
-    return zjs_gfx_draw_char_priv(argData.coords[0], argData.coords[1], argData.text[0], argData.color, argData.size, handle);
+    return zjs_gfx_draw_char_priv(argData.coords[0], argData.coords[1],
+                                  argData.text[0], argData.color, argData.size,
+                                  handle);
 }
 
 static ZJS_DECL_FUNC(zjs_gfx_draw_string)
@@ -566,7 +605,8 @@ static ZJS_DECL_FUNC(zjs_gfx_draw_string)
     //
     //  effects: Draws a character on the screen
 
-    ZJS_VALIDATE_ARGS(Z_NUMBER, Z_NUMBER, Z_STRING, Z_ARRAY, Z_OPTIONAL Z_NUMBER);
+    ZJS_VALIDATE_ARGS(Z_NUMBER, Z_NUMBER, Z_STRING, Z_ARRAY,
+                      Z_OPTIONAL Z_NUMBER);
     ZJS_GET_HANDLE(this, gfx_handle_t, handle, gfx_type_info);
     gfx_data_t argData;
     args_to_data(&argData, argc, argv);
@@ -574,20 +614,23 @@ static ZJS_DECL_FUNC(zjs_gfx_draw_string)
     u32_t x = argData.coords[0];
 
     for (u8_t i = 0; i < argData.textSize; i++) {
-        u32_t asciiIndex = (u8_t)argData.text[i] - 32;    // To save size our font doesn't include the first 32 chars
+        // To save size our font doesn't include the first 32 chars
+        u32_t asciiIndex = (u8_t)argData.text[i] - 32;
 
         // Check that character is supported
         if (asciiIndex < 0 || asciiIndex > 93) {
             ERR_PRINT("GFX doesn't support '%c'\n", argData.text[i]);
-            asciiIndex = 31;    // Set char to ?
+            asciiIndex = 31;  // Set char to ?
         }
 
-        ret = zjs_gfx_draw_char_priv(x, argData.coords[1], argData.text[i], argData.color, argData.size, handle);
-        if (jerry_value_has_error_flag (ret)) {
+        ret = zjs_gfx_draw_char_priv(x, argData.coords[1], argData.text[i],
+                                     argData.color, argData.size, handle);
+        if (jerry_value_has_error_flag(ret)) {
             return ret;
         }
 
-        u8_t charWidth = font_data_descriptors[asciiIndex][0] + 1;  // Add a one for space
+        // Add a one for space
+        u8_t charWidth = font_data_descriptors[asciiIndex][0] + 1;
         x = x + (charWidth * argData.size);
     }
     return ret;
@@ -604,7 +647,8 @@ static ZJS_DECL_FUNC(zjs_gfx_set_cb)
     //
     //  effects: Initializes the GFX module
 
-    ZJS_VALIDATE_ARGS(Z_NUMBER, Z_NUMBER, Z_FUNCTION, Z_FUNCTION, Z_BOOL, Z_OPTIONAL Z_OBJECT);
+    ZJS_VALIDATE_ARGS(Z_NUMBER, Z_NUMBER, Z_FUNCTION, Z_FUNCTION, Z_BOOL,
+                      Z_OPTIONAL Z_OBJECT);
     gfx_handle_t *handle = zjs_malloc(sizeof(gfx_handle_t));
 
     if (!handle) {
@@ -628,8 +672,7 @@ static ZJS_DECL_FUNC(zjs_gfx_set_cb)
         u32_t totalPixels = handle->screenW * handle->screenH * COLORBYTES;
         handle->pixels = zjs_buffer_create(totalPixels, &handle->pixelsPtr);
         zjs_gfx_draw_pixels = zjs_gfx_touch_pixels;
-    }
-    else {
+    } else {
         handle->pixels = 0;
         handle->pixelsPtr = NULL;
         zjs_gfx_draw_pixels = zjs_gfx_fill_rect_priv;
@@ -648,7 +691,7 @@ static void zjs_gfx_cleanup(void *native)
 }
 
 static const jerry_object_native_info_t gfx_module_type_info = {
-   .free_cb = zjs_gfx_cleanup
+    .free_cb = zjs_gfx_cleanup
 };
 
 static jerry_value_t zjs_gfx_init()

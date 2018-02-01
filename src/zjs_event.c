@@ -319,7 +319,8 @@ typedef struct emit_event {
     char data[0];  // data is user data followed by null-terminated event name
 } emit_event_t;
 
-static void emit_event_callback(void *handle, const void *args) {
+static void emit_event_callback(void *handle, const void *args)
+{
     const emit_event_t *emit = (const emit_event_t *)args;
 
     void *user_handle = zjs_event_get_user_handle(emit->obj);
@@ -452,7 +453,8 @@ void *zjs_event_get_user_handle(jerry_value_t obj)
     return NULL;
 }
 
-static void zjs_event_init_prototype() {
+static void zjs_event_init_prototype()
+{
     if (!zjs_event_emitter_prototype) {
         zjs_native_func_t array[] = {
             { add_listener, "on" },

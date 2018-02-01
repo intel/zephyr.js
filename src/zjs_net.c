@@ -150,28 +150,32 @@ static server_handle_t *servers = &no_server;
 // mutex to ensure only one thread uses handle lists at time
 static struct k_mutex socket_mutex;
 
-#define S_LOCK()                             \
-    LPRINT("Sockets lock...");               \
-    k_mutex_lock(&socket_mutex, K_FOREVER);  \
+#define S_LOCK()                            \
+    LPRINT("Sockets lock...");              \
+    k_mutex_lock(&socket_mutex, K_FOREVER); \
     LPRINT("Sockets locked.")
-#define S_UNLOCK()                  \
-    LPRINT("Sockets unlock...");    \
-    k_mutex_unlock(&socket_mutex);  \
+#define S_UNLOCK()                 \
+    LPRINT("Sockets unlock...");   \
+    k_mutex_unlock(&socket_mutex); \
     LPRINT("Sockets unlocked.")
 
 // get the socket handle from the object or NULL
-#define GET_SOCK_HANDLE(obj, var)  \
+#define GET_SOCK_HANDLE(obj, var) \
     sock_handle_t *var = (sock_handle_t *)zjs_event_get_user_handle(obj);
 
 // get the socket handle or return a JS error
-#define GET_SOCK_HANDLE_JS(obj, var)                                       \
-    sock_handle_t *var = (sock_handle_t *)zjs_event_get_user_handle(obj);  \
-    if (!var) { return zjs_error("no socket handle"); }
+#define GET_SOCK_HANDLE_JS(obj, var)                                      \
+    sock_handle_t *var = (sock_handle_t *)zjs_event_get_user_handle(obj); \
+    if (!var) {                                                           \
+        return zjs_error("no socket handle");                             \
+    }
 
 // get the net handle or return a JS error
 #define GET_SERVER_HANDLE_JS(obj, var)                                        \
     server_handle_t *var = (server_handle_t *)zjs_event_get_user_handle(obj); \
-    if (!var) { return zjs_error("no socket handle"); }
+    if (!var) {                                                               \
+        return zjs_error("no socket handle");                                 \
+    }
 
 #define CHECK(x)                                 \
     ret = (x);                                   \
@@ -198,13 +202,11 @@ static void zjs_copy_sockaddr(struct sockaddr *dst, struct sockaddr *src,
         ZJS_ASSERT(!len || len == sizeof(struct sockaddr_in),
                    "expected IPv4 length");
         *(struct sockaddr_in *)dst = *(struct sockaddr_in *)src;
-    }
-    else if (src->sa_family == AF_INET6) {
+    } else if (src->sa_family == AF_INET6) {
         ZJS_ASSERT(!len || len == sizeof(struct sockaddr_in6),
                    "expected IPv6 length");
         *(struct sockaddr_in6 *)dst = *(struct sockaddr_in6 *)src;
-    }
-    else {
+    } else {
         ZJS_ASSERT(false, "invalid sockaddr struct");
     }
 }
@@ -344,8 +346,7 @@ static void release_close(void *handle, jerry_value_t argv[], u32_t argc)
             // no more sockets open and not listening, close server
             close_server(server_h);
         }
-    }
-    else {
+    } else {
         // for client sockets, we did get and need to do put
         net_context_put(h->tcp_sock);
     }
@@ -509,8 +510,7 @@ static void clear_closed(const void *buffer, u32_t length)
     DBG_PRINT("cleared early closed for server %p\n", clear->server_h);
     clear->server_h->early_closed = NULL;
 
-    sock_handle_t *handle = find_connection(clear->server_h,
-                                            clear->context);
+    sock_handle_t *handle = find_connection(clear->server_h, clear->context);
     ZJS_ASSERT(handle, "handle not found");
     if (handle) {
         // clear context reference out of the handle so it no longer shows
@@ -559,8 +559,7 @@ static void tcp_received(struct net_context *context,
             handle->closing = 1;
             zjs_defer_emit_event(handle->socket, "close", NULL, 0, NULL,
                                  release_close);
-        }
-        else {
+        } else {
             ZJS_ASSERT(server_h != &no_server,
                        "client connections shouldn't get here");
             if (server_h->early_closed) {
@@ -568,8 +567,7 @@ static void tcp_received(struct net_context *context,
                 //   handle to remember one early-closed socket; could be
                 //   increased to an array of them if need be
                 ERR_PRINT("Socket closed early with another in process\n");
-            }
-            else {
+            } else {
                 DBG_PRINT("socket closed before data received\n");
                 DBG_PRINT("marking server %p with early closed %p\n",
                           server_h, context);
@@ -885,8 +883,7 @@ static void accept_connection(const void *buffer, u32_t length)
 
     // add new socket to list
     S_LOCK();
-    ZJS_LIST_PREPEND(sock_handle_t, accept->server_h->connections,
-                     sock_handle);
+    ZJS_LIST_PREPEND(sock_handle_t, accept->server_h->connections, sock_handle);
     S_UNLOCK();
 
     zjs_emit_event(accept->server_h->server, "connection", &sock, 1);
@@ -1169,8 +1166,7 @@ static bool connect_callback(void *h, jerry_value_t argv[], u32_t *argc,
     FTRACE("h = %p, buffer = %p, bytes = %d\n", h, buffer, bytes);
     sock_handle_t *handle = (sock_handle_t *)h;
     zjs_obj_add_boolean(handle->socket, "connecting", false);
-    zjs_add_event_listener(handle->socket, "connect",
-                           handle->connect_listener);
+    zjs_add_event_listener(handle->socket, "connect", handle->connect_listener);
     return true;
 }
 
@@ -1469,7 +1465,7 @@ static void zjs_net_cleanup(void *native)
 }
 
 static const jerry_object_native_info_t net_module_type_info = {
-   .free_cb = zjs_net_cleanup
+    .free_cb = zjs_net_cleanup
 };
 
 static jerry_value_t zjs_net_init()
