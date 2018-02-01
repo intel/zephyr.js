@@ -77,12 +77,12 @@ set(APP_COMPILE_OPTIONS
   -std=gnu99
   )
 
-if(CB_STATS)
-  add_definitions(-DCB_STATS=${CB_STATS})
+if("${CB_STATS}" STREQUAL "on")
+  add_definitions(-DZJS_PRINT_CALLBACK_STATS)
 endif()
 
-if(DEBUGGER)
-  add_definitions(-DZJS_DEBUGGER=${ZJS_DEBUGGER})
+if("${DEBUGGER}" STREQUAL "on")
+  add_definitions(-DZJS_DEBUGGER)
 endif()
 
 if("${VARIANT}" STREQUAL "debug")

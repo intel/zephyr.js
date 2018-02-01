@@ -41,6 +41,10 @@ if("${CB_STATS}" STREQUAL "on")
   add_definitions(-DZJS_PRINT_CALLBACK_STATS)
 endif()
 
+if("${DEBUGGER}" STREQUAL "on")
+  add_definitions(-DZJS_DEBUGGER)
+endif()
+
 if("${VARIANT}" STREQUAL "debug")
   add_definitions(-DDEBUG_BUILD -DOC_DEBUG)
 endif()

@@ -37,8 +37,8 @@ $(error ZJS_BASE not defined. You need to source zjs-env.sh)
 endif
 
 ifeq ($(DEBUGGER), on)
-ifneq ($(BOARD), linux)
-$(error Debugger only runs on linux, set BOARD=linux)
+ifneq (,$(filter $(MAKECMDGOALS), linux arduino_101))
+$(error Debugger only runs on linux and arduino_101)
 endif
 ifneq ($(SNAPSHOT), on)
 $(warning Debugger on, disabling snapshot)
@@ -128,6 +128,11 @@ ifeq ($(FORCE),)
 FORCED := zjs_common.json
 else
 FORCED := $(FORCE),zjs_common.json
+endif
+
+ifeq ($(DEBUGGER), on)
+# debugger will require networking support
+FORCED := $(FORCED),zjs_debugger.json
 endif
 
 # Settings for ashell builds
@@ -308,6 +313,7 @@ analyze: $(JS)
 		-DBLE_ADDR=$(BLE_ADDR) \
 		-DBOARD=$(BOARD) \
 		-DCB_STATS=$(CB_STATS) \
+		-DDEBUGGER=$(DEBUGGER) \
 		-DJERRY_BASE=$(JERRY_BASE) \
 		-DJERRY_OUTPUT=$(JERRY_OUTPUT) \
 		-DJERRY_PROFILE=$(OUT)/$(BOARD)/jerry_feature.profile \
