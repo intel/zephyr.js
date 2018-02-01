@@ -127,7 +127,6 @@ if(NOT APPLE)
     ${IOTC_BASE}/api
     ${IOTC_BASE}/include
     ${IOTC_BASE}/messaging/coap
-    ${IOTC_BASE}/port/linux
     ${IOTC_BASE}/util
     )
 
