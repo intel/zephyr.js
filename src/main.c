@@ -31,6 +31,7 @@
 
 // JerryScript includes
 #include "jerryscript.h"
+#include "jerryscript-port.h"
 
 // Platform agnostic modules/headers
 #include "zjs_callbacks.h"
@@ -71,7 +72,12 @@ static bool ashell_mode = false;
 #endif
 
 #ifdef ZJS_DEBUGGER
+#ifdef ZJS_LINUX_BUILD
+// JS debugging on linux is toggled over cmdline
 static bool start_debug_server = false;
+#else
+static bool start_debug_server = true;
+#endif
 static uint16_t debug_port = 5001;
 #endif
 
@@ -189,6 +195,8 @@ int main(int argc, char *argv[])
     char *script = NULL;
 #else
     const char *script = NULL;
+    file_name = "js.tmp";
+    file_name_len = strlen("js.tmp");
 #endif
     jerry_value_t code_eval;
     u32_t script_len = 0;
@@ -279,6 +287,7 @@ int main(int argc, char *argv[])
 
 #ifdef ZJS_DEBUGGER
     if (start_debug_server) {
+        ZJS_PRINT("Debugger mode: connect using jerry-client-ws.py\n\n");
         jerry_debugger_init(debug_port);
     }
 #endif
@@ -304,9 +313,6 @@ int main(int argc, char *argv[])
 #ifdef ZJS_SNAPSHOT_BUILD
     result = jerry_exec_snapshot(snapshot_bytecode, snapshot_len, false);
 #else
-#ifdef ZJS_DEBUGGER
-    ZJS_PRINT("Debugger mode: connect using jerry-client-ws.py\n");
-#endif
     result = jerry_run(code_eval);
 #endif
 

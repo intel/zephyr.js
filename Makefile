@@ -10,6 +10,7 @@ OS := $(shell uname)
 
 BOARD ?= arduino_101
 
+SCRIPT_SIZE ?= 8192
 RAM ?= 64
 ROM ?= 144
 V ?= 0
@@ -37,9 +38,11 @@ $(error ZJS_BASE not defined. You need to source zjs-env.sh)
 endif
 
 ifeq ($(DEBUGGER), on)
-ifneq ($(BOARD), linux)
-$(error Debugger only runs on linux, set BOARD=linux)
+ifneq (,$(filter $(MAKECMDGOALS), linux arduino_101))
+$(error Debugger only runs on linux and arduino_101)
 endif
+# debugger requires unminimized JS which will require much a larger script size
+SCRIPT_SIZE = 16384
 ifneq ($(SNAPSHOT), on)
 $(warning Debugger on, disabling snapshot)
 SNAPSHOT=off
@@ -120,6 +123,8 @@ else
 SNAPSHOT ?= on
 endif
 
+ZJS_FLAGS += -DMAX_SCRIPT_SIZE=$(SCRIPT_SIZE)
+
 ifeq ($(FUNC_NAME), on)
 ZJS_FLAGS += -DZJS_FIND_FUNC_NAME
 endif
@@ -128,6 +133,11 @@ ifeq ($(FORCE),)
 FORCED := zjs_common.json
 else
 FORCED := $(FORCE),zjs_common.json
+endif
+
+ifeq ($(DEBUGGER), on)
+# debugger will require networking support
+FORCED := $(FORCED),zjs_debugger.json
 endif
 
 # Settings for ashell builds
@@ -308,6 +318,7 @@ analyze: $(JS)
 		-DBLE_ADDR=$(BLE_ADDR) \
 		-DBOARD=$(BOARD) \
 		-DCB_STATS=$(CB_STATS) \
+		-DDEBUGGER=$(DEBUGGER) \
 		-DJERRY_BASE=$(JERRY_BASE) \
 		-DJERRY_OUTPUT=$(JERRY_OUTPUT) \
 		-DJERRY_PROFILE=$(OUT)/$(BOARD)/jerry_feature.profile \
@@ -390,7 +401,11 @@ else
 ifeq ($(BOARD), linux)
 	@./scripts/convert.py $(JS) $(OUT)/include/zjs_script_gen.h
 else
+ifeq ($(DEBUGGER), on)
+	@./scripts/convert.py --full $(OUT)/$(JS_TMP) $(OUT)/include/zjs_script_gen.h
+else
 	@./scripts/convert.py $(OUT)/$(JS_TMP) $(OUT)/include/zjs_script_gen.h
+endif
 endif
 endif
 
@@ -466,6 +481,7 @@ linux: generate
 		-DDEBUGGER=$(DEBUGGER) \
 		-DV=$(V) \
 		-DVARIANT=$(VARIANT) \
+		-DZJS_FLAGS="$(ZJS_FLAGS)" \
 		-H. && \
 	make -C $(OUT)/linux;
 
