@@ -900,7 +900,7 @@ reason we have the following possibilities for support:
 QEMU has support for networking features that can be tested on your Linux
 desktop. To do this you will need to build a separate "net-tools" project:
 ```bash
-git clone https://gerrit.zephyrproject.org/r/net-tools
+git clone https://github.com/zephyrproject-rtos/net-tools
 cd net-tools
 make
 ```
