@@ -301,7 +301,6 @@ analyze: $(JS)
 		fi \
 	fi
 
-	$(eval NET_BUILD=$(shell grep -q -E "BUILD_MODULE_OCF|BUILD_MODULE_DGRAM|BUILD_MODULE_NET|BUILD_MODULE_WS" $(OUT)/$(BOARD)/generated.cmake && echo y))
 	$(eval CMAKEFLAGS = \
 		-B$(OUT)/$(BOARD) \
 		-DASHELL=$(ASHELL) \
@@ -311,7 +310,6 @@ analyze: $(JS)
 		-DJERRY_BASE=$(JERRY_BASE) \
 		-DJERRY_OUTPUT=$(JERRY_OUTPUT) \
 		-DJERRY_PROFILE=$(OUT)/$(BOARD)/jerry_feature.profile \
-		-DNETWORK_BUILD=$(NET_BUILD) \
 		-DPRINT_FLOAT=$(PRINT_FLOAT) \
 		-DSNAPSHOT=$(SNAPSHOT) \
 		-DVARIANT=$(VARIANT) \
