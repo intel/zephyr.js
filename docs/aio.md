@@ -31,9 +31,7 @@ Web IDL
 -------
 
 This IDL provides an overview of the interface; see below for
-documentation of specific API functions.  Click
-[here](Notes_on_WebIDL.md) for an explanation of zephyr.js' WebIDL
-conventions.
+documentation of specific API functions.  We have a short document explaining [ZJS WebIDL conventions](Notes_on_WebIDL.md).
 
 ```javascript
 // require returns an AIO object
@@ -60,26 +58,24 @@ callback ReadCallback = void (unsigned long value);
 
 AIO API
 -------
-### aio.open(AIOInit)
-* 'AIOInit' *object*  The AIOInit object has a single field called "pin"
+### aio.open(init)
+* 'init' *AIOInit object*  The AIOInit object has a single field called "pin"
   that represents the name of the pin (either an integer or a string,
   depending on the board).
+* Returns: an AIOPin object that may be used to read values from the pin.
 
 When setting the pin number, you can either use a raw
 number for your device or use the board support module such as
 [Arduino 101](./boards/arduino_101.md) or [K64F](./boards/frdm_k64f.md) to
 specify a named pin.
 
-Returns an AIOPin object that be used to read values from the pin.
-
 AIOPin API
 ----------
 ### pin.read()
+* Returns: the latest reading from the pin (an unsigned integer). Blocks until it gets the result.
 
-Returns the latest reading from the pin (an unsigned integer). Blocks until it gets the result.
-
-### pin.readAsync(ReadCallback)
-* 'ReadCallback' *callback* User-provided callback function that takes
+### pin.readAsync(callback)
+* 'callback' *ReadCallback* User-provided callback function that takes
   a single unsigned integer and has no return value.
 
 Pass a function for `ReadCallback` that will be called later when the result is
@@ -95,11 +91,11 @@ any given time.*
 *NOTE: This function will probably be replaced with a version that instead
 returns a promise.*
 
-### pin.on(eventType, ReadCallback)
+### pin.on(eventType, callback)
 * 'eventType' *string* Type of event; currently, the only supported
   type is "change".
-* 'ReadCallback' *callback* User-provided callback function that takes
-  a single, unsigned integer and has no return value; can be null. 
+* 'callback' *ReadCallback* User-provided callback function that takes
+  a single, unsigned integer and has no return value; can be null.
 
 The callback function is called any time the analog voltage changes. (At the moment,
 it actually gets called periodically even when it hasn't changed.) When null is

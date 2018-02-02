@@ -24,20 +24,19 @@ subset of this API that will be expanded as the need arises.
 Web IDL
 -------
 This IDL provides an overview of the interface; see below for documentation of
-specific API functions.  Click [here](Notes_on_WebIDL.md) for an
-explanation of zephyr.js' WebIDL conventions.
+specific API functions.  We have a short document explaining [ZJS WebIDL conventions](Notes_on_WebIDL.md).
 
 ```javascript
-[ Constructor(Uint8Array initial_values),
+[ Constructor(Uint8Array initialValues),
   Constructor(unsigned long size),
-  Constructor(ByteString initial_string) ]
+  Constructor(ByteString initialString) ]
 interface Buffer {
     readonly attribute unsigned long length;
     unsigned long copy(Buffer target, optional unsigned long targetStart = 0,
                                       optional unsigned long sourceStart = 0,
-                                      optional unsigned long sourceEnd = this.length);
+                                      optional unsigned long sourceEnd);
     this fill((string or Buffer or long) value, optional long offset = 0,
-                                                optional long end = this.length,
+                                                optional long end,
                                                 optional string encoding = "utf8");
     octet readUInt8(optional unsigned long offset = 0);
     short readUInt16BE(optional unsigned long offset = 0);
@@ -58,8 +57,8 @@ interface Buffer {
 
 Buffer API
 ----------
-### new Buffer(array)
-* `array` *integer[]* Array of octets to use as initial data.
+### new Buffer(initialValues)
+* `initialValues` *integer[]* Array of octets to use as initial data.
 
 A new Buffer object will be returned with the same size as the array
 and initialized with the array's contents. If there is not enough
@@ -73,8 +72,8 @@ represents. If a negative length is passed, a 0-length Buffer will be returned.
 If there is not enough available memory to allocate the Buffer, an error will
 be thrown.
 
-### new Buffer(string)
-* `string` *string* String to use as initial data.
+### new Buffer(initialString)
+* `initialString` *string* String to use as initial data.
 
 The `string` argument will be treated as an array of UTF8 values and
 will be used to initialize the new buffer. If there is not enough

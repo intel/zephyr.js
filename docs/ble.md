@@ -38,8 +38,7 @@ treat them like decimals.*
 Web IDL
 -------
 This IDL provides an overview of the interface; see below for documentation of
-specific API functions.  Click [here](Notes_on_WebIDL.md) for an
-explanation of zephyr.js' WebIDL conventions.
+specific API functions.  We also have a short document explaining [ZJS WebIDL conventions](Notes_on_WebIDL.md).
 
 
 ```javascript
@@ -79,16 +78,16 @@ interface Characteristic {
     attribute SubscribeCallback onSubscribe;
     attribute UnsubscribeCallback onUnsubscribe;
     attribute NotifyCallback onNotify;
-	attribute CharacteristicResult response;
+    attribute CharacteristicResult response;
 };
 
 callback ReadCallback = void (unsigned long offset,
-                              FulfillReadCallback fulfillreadcallback);
+                              FulfillReadCallback fulfillReadCallback);
 callback WriteCallback = void (Buffer data, unsigned long offset,
                                boolean withoutResponse,
-							   FulfillWriteCallback fulfillwritecallback);
+                               FulfillWriteCallback fulfillWriteCallback);
 callback SubscribeCallback = void (unsigned long maxValueSize,
-                                   FulfillSubscribeCallback fullfillsubscribecallback);
+                                   FulfillSubscribeCallback fullfillSubscribeCallback);
 callback FulfillReadCallback = void (CharacteristicResult result, Buffer data);
 callback FulfillWriteCallback = void (CharacteristicResult result);
 callback FulfillSubscribeCallback = void (Buffer data);
@@ -105,83 +104,80 @@ BLE-supported Events
 --------------------
 BLE is an [EventEmitter](./events.md) with the following events:
 
-### Event: 'accept'
+### Event: `accept`
 
 * `string` `clientAddress`
 
 Emitted when a BLE client has connected. `clientAddress` is a unique BLE address
 for the client in colon-separated format (e.g. 01:23:45:67:89:AB).
 
-### Event: 'advertisingStart'
+### Event: `advertisingStart`
 
 * `int` `status`
 
 Emitted when BLE services have begun to be advertised. The `status` will be 0
 for success, otherwise for an error.
 
-### Event: 'disconnect'
+### Event: `disconnect`
 
 * `string` `clientAddress`
 
 Emitted when a BLE client has disconnected. `clientAddress` will be the same as
-one previously sent with the 'accept' event.
+one previously sent with the `accept` event.
 
-### Event: 'stateChange'
+### Event: `stateChange`
 
 * `string` `newState`
 
-Emitted with 'poweredOn' when the BLE stack is ready to be used. No other states
+Emitted with `poweredOn` when the BLE stack is ready to be used. No other states
 are supported at this time.
 
 BLE API
 -------
 ### ble.disconnect(address)
-*'address' *string* The address of the connected client.
+* `address` *string* The address of the connected client.
 
 Disconnect the remote client.
 
 ### ble.startAdvertising(name, uuids, url)
-* name *string* The `name` is limited to 26 characters and will be
+* `name` *string* The `name` is limited to 26 characters and will be
   advertised as the device name to nearby BLE devices.
-* uuids *string[]*  The `uuids` array may contain at most 7 16-bit
+* `uuids` *string[]*  The `uuids` array may contain at most 7 16-bit
   UUIDs (four hex digits each).  These UUIDs identify available
   services to nearby BLE devices.
-* url *string* The `url` is optional and limited to around 24
+* `url` *string* The `url` is optional and limited to around 24
   characters (slightly more if part of the URL is able to be
   [encoded](https://github.com/google/eddystone/tree/master/eddystone-url). If
   provided, this will be used to create a physical web advertisement
   that will direct users to the given URL. At that URL they might be
   able to interact with the advertising device somehow.
-  
-Advertises the name of the device.
+
+Advertises the name and url of the device.
 
 ### ble.stopAdvertising()
 
 Currently does nothing.
 
 ### ble.setServices(primaryServices)
-* primaryServices *array of PrimaryService objects* The PrimaryService
+* `primaryServices` *array of [PrimaryService](#primaryservice) objects* The PrimaryService
   objects are used to set up the services that are implemented by your
   app.
-  
+
 The PrimaryService object contains the following fields:
 
 
 ### ble.newPrimaryService(init)
-* 'init' *PrimaryServiceInit*(#primaryserviceinit)
-
-Returns a new PrimaryService object.
+* `init` [*PrimaryServiceInit*](#primaryserviceinit)
+* Returns: a new PrimaryService object.
 
 ### ble.newCharacteristic(init)
-* init *CharacteristicInit* 
-
-Returns a new Characteristic object.
+* `init` [*CharacteristicInit*](#characteristicinit)
+* Returns: a new Characteristic object.
 
 
 ### ble.newDescriptor(init)
-* 'init' *DescriptorInit*(#descriptorinit-struct)
-
-Returns a new DescriptorInit object.
+* `init` [*DescriptorInit*](#descriptorinit)
+* Returns: a new DescriptorInit object.
 
 
 Characteristic API
@@ -204,8 +200,8 @@ Supporting Objects
 ### PrimaryServiceInit
 
 This object has two fields:
-1. 'uuid' *string* This field is a  16-bit service UUID (4 hex chars).
-2. `characteristics` *array of [Characteristics](#characteristic)*
+1. `uuid` *string* This field is a  16-bit service UUID (4 hex chars).
+2. `characteristics` *array of [Characteristics](#characteristic-api)*
 
 
 ### CharacteristicInit
@@ -236,9 +232,9 @@ It may also contain these optional callback fields:
 ### DescriptorInit
 
 This object has two fields:
-1. 'uuid' *string* This is a 16-bit descriptor UUID (4 hex chars)
+1. `uuid` *string* This is a 16-bit descriptor UUID (4 hex chars)
     * Defined descriptors are listed here in [Bluetooth Specifications](https://www.bluetooth.com/specifications/gatt/descriptors)
-2. 'value' *string* This string supplies the defined information.
+2. `value` *string* This string supplies the defined information.
     * *NOTE: Values can also be Buffer objects, but that's not currently
     supported.*
 
