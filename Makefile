@@ -260,16 +260,16 @@ analyze: $(JS)
 	@mkdir -p $(OUT)/$(BOARD)/
 	@mkdir -p $(OUT)/include
 
-	./scripts/analyze	V=$(V) \
-		SCRIPT=$(JS) \
-		JS_OUT=$(OUT)/$(JS_TMP) \
-		BOARD=$(BOARD) \
-		JSON_DIR=src/ \
-		O=$(OUT) \
-		FORCE=$(FORCED) \
-		PRJCONF=prj.conf \
-		CMAKEFILE=$(OUT)/$(BOARD)/generated.cmake \
-		PROFILE=$(OUT)/$(BOARD)/jerry_feature.profile
+	./scripts/analyze	--verbose=$(V) \
+		--script=$(JS) \
+		--js-out=$(OUT)/$(JS_TMP) \
+		--board=$(BOARD) \
+		--json-dir=src/ \
+		--output-dir=$(OUT) \
+		--force=$(FORCED) \
+		--prjconf=prj.conf \
+		--cmakefile=$(OUT)/$(BOARD)/generated.cmake \
+		--profile=$(OUT)/$(BOARD)/jerry_feature.profile
 
 	@if [ "$(TRACE)" = "on" ] || [ "$(TRACE)" = "full" ]; then \
 		echo "add_definitions(-DZJS_TRACE_MALLOC)" >> $(OUT)/$(BOARD)/generated.cmake; \
@@ -419,14 +419,14 @@ ARC_RESTRICT="zjs_ipm_arc.json,\
 arc: analyze
 	@# Restrict ARC build to only certain "arc specific" modules
 	@mkdir -p $(OUT)/arduino_101_sss
-	./scripts/analyze	V=$(V) \
-		SCRIPT=$(OUT)/$(JS_TMP) \
-		BOARD=arc \
-		JSON_DIR=arc/src/ \
-		PRJCONF=arc/prj.conf \
-		CMAKEFILE=$(OUT)/arduino_101_sss/generated.cmake \
-		O=$(OUT)/arduino_101_sss \
-		FORCE=$(ASHELL_ARC)
+	./scripts/analyze	--verbose=$(V) \
+		--script=$(OUT)/$(JS_TMP) \
+		--board=arc \
+		--json-dir=arc/src/ \
+		--prjconf=arc/prj.conf \
+		--cmakefile=$(OUT)/arduino_101_sss/generated.cmake \
+		--output-dir=$(OUT)/arduino_101_sss \
+		--force=$(ASHELL_ARC)
 
 	@echo "&flash0 { reg = <0x400$(FLASH_BASE_ADDR) ($(ARC_ROM) * 1024)>; };" > arc/arduino_101_sss.overlay
 	@echo "&sram0 { reg = <0xa8000400 ($(ARC_RAM) * 1024)>; };" >> arc/arduino_101_sss.overlay
