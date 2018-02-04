@@ -29,7 +29,7 @@ if [ ! -d "$ZJS_BASE" ]; then
    exit 1
 fi
 
-if [ ! -v TRAVIS_COMMIT_RANGE ]; then
+if [[ -z ${TRAVIS_COMMIT_RANGE} ]]; then
     TRAVIS_COMMIT_RANGE=$(git log origin/master..HEAD --format='format:%H')
 fi
 
