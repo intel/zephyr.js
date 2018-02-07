@@ -2,8 +2,8 @@
  scripts  - directory for utility scripts to help with ZJS development
 =========
 
-analyze.sh
-----------
+analyze
+-------
     Checks a .js file to determine what ZJS modules it is using so they can be
     auto-included in the build.
 

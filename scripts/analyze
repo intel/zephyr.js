@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
 
+# Static analysis tool to detect modules being used in a script so the compiler
+# can include or exclude certain modules based on whether they are used. This
+# will output gcc pre-processor defines (-D____) so it can be used in-line
+# during the compile step.
+
+import argparse
 import json
 import os
 import pprint
@@ -8,32 +14,15 @@ import shutil
 import sys
 
 # Globals
-args = {}
+args = None
 board = None
-outdir = ""
-
-
-def usage():
-    print("Usage: ./analyze <options>")
-    print("   Required:")
-    print("      BOARD=      Target being built")
-    print("      JSON_DIR=   Directory to look for JSON files")
-    print("      PRJCONF=    File to write the prj.conf info to")
-    print("      CMAKEFILE=  CMake file to write source/options to")
-    print("   Optional:")
-    print("      SCRIPT=     JS script used to build")
-    print("      FORCE=      Force inclusion of certain JSON files")
-    print("      PROFILE=    Where to write the JerryScript profile")
-    print("      JS_OUT=     Output file if any JS modules are found in SCRIPT")
-    print("      O=          Output directory")
-    sys.exit()
 
 
 def main():
-    global args, board, outdir
-    for i in sys.argv[1:]:
-        option, value = i.split('=')[:2]
-        args[option] = value
+    global args, board
+    args = parse_args()
+    board = args.board
+
     json_tree = {}
     deps_list = []
     zconf = []
@@ -41,42 +30,27 @@ def main():
     jrs_conf = []
     lsrc = []
     js_modules = []
-    board = args['BOARD']
-    if board == 'linux':
-        req_options = ['BOARD', 'JSON_DIR']
-    else:
-        req_options = ['BOARD', 'JSON_DIR', 'PRJCONF', 'CMAKEFILE']
-    for i in req_options:
-        if i not in args:
-            print("%s must be specified" % i)
-            usage()
-    if 'SCRIPT' not in args:
+
+    if not args.script:
         print("Generating modules header")
     else:
-        script = args['SCRIPT']
-        print("Analyzing %s for %s" % (script, board))
-    if 'O' not in args:
-        outdir = 'outdir'
-    else:
-        outdir = args['O']
+        print("Analyzing %s for %s" % (args.script, board))
 
     # Linux is special cased because it does not use a JS script to build
     if board == 'linux':
-        restrict = args['RESTRICT'].split(',')
-        restrict = [i.strip() for i in restrict]
-        build_tree(json_tree, restrict)
+        build_tree(json_tree, args.restrict)
         do_print(json_tree)
         all_list = []
         create_dep_list(all_list, board, json_tree)
         for i in sorted(all_list):
             print("Using module: " + i)
-        write_modules(all_list, json_tree)
+        write_modules(all_list, json_tree, args.output_dir)
     # normal case
     else:
-        if 'JS_OUT' in args:
-            with open(script, 'r') as s:
+        if args.js_out:
+            with open(args.script, 'r') as s:
                 js = s.read()
-            with open(args['JS_OUT'], 'w') as f:
+            with open(args.js_out, 'w') as f:
                 for i in os.listdir("modules/"):
                     if match_require(js, i):
                         js_modules += [i]
@@ -85,44 +59,35 @@ def main():
                         f.write(mod.read())
                         f.write("\n")
                 f.write(js)
-            js_file = args['JS_OUT']
+            js_file = args.js_out
         else:
-            js_file = script
+            js_file = args.script
 
-        restrict = args.get('RESTRICT', '')
-        if restrict != '':
-            restrict = restrict.split(',')
-            restrict = [i.strip() for i in restrict]
-            do_print("Only using modules: " + str(restrict))
-        else:
-            restrict = []
+        if args.restrict:
+            do_print("Only using modules: " + str(args.restrict))
 
-        force = args.get('FORCE', '')
-        if force != '':
-            force = force.split(',')
-            do_print("Forcing inclusion of: " + str(force))
-        else:
-            force = []
+        if args.force:
+            do_print("Forcing inclusion of: " + str(args.force))
 
-        build_tree(json_tree, restrict)
+        build_tree(json_tree, args.restrict)
         do_print(json_tree)
         parse_json_tree(js_file, deps_list, zconf, zjs_conf, jrs_conf, lsrc,
-                        json_tree, force=force)
+                        json_tree, force=args.force)
         for i in sorted(deps_list):
             print("Using module: " + i)
 
-        write_zconf(zconf, args['PRJCONF'])
-        write_cmakefile(lsrc, zjs_conf, args['CMAKEFILE'])
+        write_zconf(zconf, args.prjconf)
+        write_cmakefile(lsrc, zjs_conf, args.cmakefile)
         write_jrsconfig(jrs_conf)
 
         # building for arc does not need zjs_modules_gen.h to be created
         if board != 'arc':
-            write_modules(deps_list, json_tree)
+            write_modules(deps_list, json_tree, args.output_dir)
 
 
 def do_print(s):
     """Debug print controlled with V option"""
-    if 'V' in args and args['V'] == '1':
+    if args.verbose == '1':
         p = pprint.PrettyPrinter(indent=1)
         p.pprint(s)
 
@@ -143,7 +108,7 @@ def parse_list(tree, list):
     for file in list:
         if file.endswith(".json"):
             do_print("opening " + file)
-            with open(args['JSON_DIR'] + file) as f:
+            with open(os.path.join(args.json_dir, file)) as f:
                 try:
                     data = json.load(f)
                 except:
@@ -165,10 +130,10 @@ def parse_list(tree, list):
 
 def build_tree(tree, restrict):
     """Wrapper for parse_list() if a restricted list of JSON files is used"""
-    if restrict != []:
+    if restrict is not None:
         parse_list(tree, restrict)
     else:
-        parse_list(tree, os.listdir(args['JSON_DIR']))
+        parse_list(tree, os.listdir(args.json_dir))
 
 
 def create_dep_list_helper(dlist, dep, board, tree):
@@ -306,7 +271,7 @@ def parse_json_tree(file, dlist, zlist, zjslist, jrslist, srclist, tree,
 
     if force is not None:
         for f in force:
-            with open(args['JSON_DIR'] + f) as file:
+            with open(os.path.join(args.json_dir, f)) as file:
                 data = json.load(file)
                 parse_json_tree_helper(text, data['module'], dlist, zlist,
                                        zjslist, jrslist, srclist, tree)
@@ -363,12 +328,12 @@ def parse_json_tree(file, dlist, zlist, zjslist, jrslist, srclist, tree,
 
 def write_jrsconfig(list):
     """Write a JerryScript profile file"""
-    if 'PROFILE' in args:
-        if os.path.exists(args['PROFILE']):
-            shutil.copyfile(args['PROFILE'], args['PROFILE'] + '.bak')
+    if args.profile:
+        if os.path.exists(args.profile):
+            shutil.copyfile(args.profile, args.profile + '.bak')
         with open("fragments/jerry_feature.base", "r") as jrs:
             feature = jrs.read()
-        with open(args['PROFILE'], "w") as p:
+        with open(args.profile, "w") as p:
             for i in list:
                 feature = feature.replace(i, "#" + i)
             p.write(feature)
@@ -413,7 +378,7 @@ def write_zconf(list, file):
             f.write(expanded + '\n')
 
 
-def write_modules(list, tree):
+def write_modules(list, tree, outdir):
     """Write zjs_modules_gen.h file"""
     headers = []
     gbl_inits = {}
@@ -449,6 +414,63 @@ typedef struct gbl_module {
                 file.write(", %s" % gbl_inits[i]["cleanups"][0])
             file.write("},\n")
         file.write("};\n")
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description=(
+            "Static analysis tool to detect modules being used in a script so "
+            "the compiler can include or exclude certain modules if they "
+            "are/are not used.  This will output gcc pre-processor defines "
+            "(-D____) so it can be used in-line -during the compile step."),
+    )
+    parser.add_argument("--board", required=True, metavar="BOARD_NAME",
+                        help="Board target being built.")
+    parser.add_argument("--json-dir", required=True, metavar="DIR",
+                        help="Directory to look for JSON files.")
+    parser.add_argument("--prjconf", metavar="FILE",
+                        help="File to write the prj.conf information to.")
+    parser.add_argument("--cmakefile", metavar="FILE",
+                        help="CMake file to write source/options to.")
+
+    parser.add_argument("--script", metavar="FILE",
+                        help="JavaScript script used to build.")
+    parser.add_argument("--force", metavar="FILE,FILE,...",
+                        help=("Comma separated list of JSON files to force "
+                              "inclusion of. Files are located in  the "
+                              "directory specified by --json-dir."))
+    parser.add_argument("--restrict", metavar="FILE,FILE,...",
+                        help=("Comma separated list of JSON files. If "
+                              "specified only these JSON files will be used. "
+                              "Files are located in the directory specified "
+                              "by --json-dir."))
+    parser.add_argument("--profile", metavar="FILE",
+                        help="File to write the JerryScript profile to.")
+    parser.add_argument("--js-out", metavar="FILE",
+                        help=("Output file to use if any JS modules are found "
+                              "in --script."))
+    parser.add_argument("--output-dir", metavar="DIR", default="outdir",
+                        help="Output directory.")
+    parser.add_argument("--verbose", type=int, choices=[0, 1], default=0,
+                        help="Level of verbosity.")
+
+    args = parser.parse_args()
+
+    if args.board != 'linux':
+        if not args.prjconf or not args.cmakefile:
+            parser.error("Arguments --prjconf and --cmakefile are required "
+                         "unless --board is 'linux'")
+    else:
+        if not args.restrict:
+            parser.error("Argument --restrict is required when --board is "
+                         "'linux'")
+    # Change arguments which take comma separated value strings and convert
+    # them into lists of the values.
+    for arg_name in ('force', 'restrict'):
+        if getattr(args, arg_name):
+            setattr(args, arg_name,
+                    [x.strip() for x in getattr(args, arg_name).split(',')])
+    return args
 
 
 if '__main__' == __name__:
