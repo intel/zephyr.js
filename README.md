@@ -272,9 +272,12 @@ PgUp/PgDn. Then Esc again to get back to the latest output (out of "Copy Mode").
 #### Debugging
 
 ##### Debugging native C code
-You can use the commands `make debug` and `make gdb` in two separate terminals
-to connect to the device with a debugger. Then you can set breakpoints such as
-`b main` and `run` to start debugging as usual with gdb.
+See Zephyr's
+[supported boards documentation](http://docs.zephyrproject.org/boards/boards.html)
+for information on debugging with a specific board. For the Arduino 101, ZJS has
+special make targets: use the commands `make adebug` and `make agdb` in two
+separate terminals to connect to the device with a debugger. Then you can set
+breakpoints such as `b main` and `run` to start debugging as usual with gdb.
 
 ##### Debugging JavaScript code
 JerryScript has a built-in remote debugger which allows debugging JavaScript
