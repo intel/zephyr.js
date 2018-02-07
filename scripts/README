@@ -23,7 +23,7 @@ checkheaders
     Tries to detect whether our header files include all the header files they
     depend on.
 
-convert.sh
+convert.py
 ----------
     Runs minifier on a JavaScript file and writes it out in a C string format.
 
