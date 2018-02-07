@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
 # Static analysis tool to detect modules being used in a script so the compiler
-# can include or exclude certain modules if they are/are not used.  This will
-# output gcc pre-processor defines (-D____) so it can be used in-line -during
-# the compile step.
+# can include or exclude certain modules based on whether they are used. This
+# will output gcc pre-processor defines (-D____) so it can be used in-line
+# during the compile step.
 
 import argparse
 import json
