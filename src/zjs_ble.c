@@ -1348,7 +1348,7 @@ static jerry_value_t zjs_ble_init()
 
 #ifdef ZJS_ASHELL
     if (bt_enable(ble_bt_ready)) {
-        ERR_PRINT("Failed to enable Bluetooth and may not be enabled again, ",
+        ERR_PRINT("Failed to enable Bluetooth and may not be enabled again, " \
                   "please reboot\n");
     }
 #endif
