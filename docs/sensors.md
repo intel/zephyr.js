@@ -28,26 +28,19 @@ specific API functions.
 ####Sensor Interface
 ```javascript
 interface Sensor {
-    readonly attribute SensorState state;   // current state of Sensor object
+    readonly attribute boolean activated;   // whether the sensor is activated or not
+    readonly attribute boolean hasReading;  // whether the sensor has readings available
     readonly attribute double timestamp;    // timestamp of the latest reading in milliseconds
     attribute double frequency;             // sampling frequency in hertz
     void start();                           // starts the sensor
     void stop();                            // stops the sensor
-    attribute ChangeCallback onchange;      // callback handler for change events
+    attribute ChangeCallback onreading;     // callback handler for change events
     attribute ActivateCallback onactivate;  // callback handler for activate events
     attribute ErrorCallback onerror;        // callback handler for error events
 };
 
 dictionary SensorOptions {
     double frequency;  // desire frequency, default is 20 if unset
-};
-
-enum SensorState {
-    "unconnected",
-    "activating",
-    "activated",
-    "idle",
-    "errored"
 };
 
 interface SensorErrorEvent {
@@ -112,15 +105,15 @@ dictionary TemperatureSensorOptions : SensorOptions  {
 API Documentation
 -----------------
 
-### onchange
-`Sensor.onchange`
+### onreading
+`Sensor.onreading`
 
-The onchange attribute is an EventHandler which is called whenever a new reading is available.
+The onreading attribute is an EventHandler which is called whenever a new reading is available.
 
 ### onactivate
 `Sensor.onactivate`
 
-The onactivate attribute is an EventHandler which is called when this.[[state]] transitions from "activating" to "activated".
+The onactivate attribute is an EventHandler which is called when the sensor is activated after calling start().
 
 ### onerror
 `Sensor.onerror`
@@ -130,7 +123,7 @@ The onactivate attribute is an EventHandler which is called whenever an exceptio
 ### start
 `void Sensor.start()`
 
-Starts the sensor instance, the sensor will get callback on onchange whenever there's a new reading available.
+Starts the sensor instance, the sensor will get callback on onreading whenever there's a new reading available.
 
 ### stop
 `void Sensor.stop()`
