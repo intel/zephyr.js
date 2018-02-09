@@ -300,17 +300,16 @@ if [ "$RUN" == "all" -o "$RUN" == "1" ]; then
     SENSORS=(Accelerometer AmbientLightSensor Gyroscope Magnetometer TemperatureSensor)
     write_modules_test $TMPFILE $MODULES $SENSORS
 
-    # also, try printing a float w/o PRINT_FLOAT
+    # also, try printing a float
     echo "console.log(3.14159);" >> $TMPFILE
     try_command "modules" make $VERBOSE JS=$TMPFILE ROM=255
 
     MODULES=(net pme ws)
     write_modules_test $TMPFILE $MODULES
 
-    # also, try printing a float w/ PRINT_FLOAT
+    # also, try printing a float
     echo "console.log(3.14159);" >> $TMPFILE
-
-    try_command "net" make $VERBOSE JS=$TMPFILE PRINT_FLOAT=on ROM=259
+    try_command "net" make $VERBOSE JS=$TMPFILE ROM=255
 
     # OCF test
     echo "var ocf = require('ocf');" > $TMPFILE
@@ -334,17 +333,17 @@ if [ "$RUN" == "all" -o "$RUN" == "2" ]; then
     SENSORS=(Accelerometer)
     write_modules_test $TMPFILE $MODULES $SENSORS
 
-    # also, try printing a float w/o PRINT_FLOAT
+    # also, try printing a float
     echo "console.log(3.14159);" >> $TMPFILE
     try_command "k64f module" make $VERBOSE JS=$TMPFILE ROM=256 BOARD=frdm_k64f
 
     MODULES=(net ws)
     write_modules_test $TMPFILE $MODULES $SENSORS
 
-    # also, try printing a float w/ PRINT_FLOAT
+    # also, try printing a float
     echo "console.log(3.14159);" >> $TMPFILE
 
-    try_command "k64f net" make $VERBOSE JS=$TMPFILE PRINT_FLOAT=on ROM=256 BOARD=frdm_k64f
+    try_command "k64f net" make $VERBOSE JS=$TMPFILE ROM=256 BOARD=frdm_k64f
 
     # OCF test
     echo "var ocf = require('ocf');" > $TMPFILE

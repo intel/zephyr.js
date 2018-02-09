@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, Intel Corporation.
+// Copyright (c) 2016-2018, Intel Corporation.
 
 #ifdef BUILD_MODULE_CONSOLE
 
@@ -54,6 +54,9 @@ static bool value2str(const jerry_value_t value, char *buf, int maxlen,
     //             is true
     //  returns: true if the representation was complete or false if it
     //             was abbreviated
+    ZVAL_MUTABLE str_val;
+    bool is_string = false;
+
     if (jerry_value_is_array(value)) {
         unsigned int len = jerry_get_array_length(value);
         sprintf(buf, "[Array - length %u]", len);
@@ -66,13 +69,8 @@ static bool value2str(const jerry_value_t value, char *buf, int maxlen,
     } else if (jerry_value_is_number(value)) {
         int type = is_int(value);
         if (type == IS_NUMBER) {
-#ifdef ZJS_PRINT_FLOATS
-            double num = jerry_get_number_value(value);
-            sprintf(buf, "%f", num);
-#else
-            int num = (int)jerry_get_number_value(value);
-            sprintf(buf, "[Float ~%d]", num);
-#endif
+            str_val = jerry_value_to_string(value);
+            is_string = true;
         } else if (type == IS_UINT) {
             unsigned int num = jerry_get_number_value(value);
             sprintf(buf, "%u", num);
@@ -87,23 +85,28 @@ static bool value2str(const jerry_value_t value, char *buf, int maxlen,
     else if (jerry_value_is_object(value)) {
         sprintf(buf, "[Object]");
     } else if (jerry_value_is_string(value)) {
-        jerry_size_t size = jerry_get_string_size(value);
+        str_val = jerry_value_to_string(value);
+        is_string = true;
+    } else if (jerry_value_is_undefined(value)) {
+        sprintf(buf, "undefined");
+    } else {
+        // should never get this
+        sprintf(buf, "UNKNOWN");
+    }
+
+    if (is_string) {
+        jerry_size_t size = jerry_get_string_size(str_val);
         if (size >= maxlen) {
             sprintf(buf, "[String - length %u]", (unsigned int)size);
         } else {
             char buffer[++size];
-            zjs_copy_jstring(value, buffer, &size);
+            zjs_copy_jstring(str_val, buffer, &size);
             if (quotes) {
                 sprintf(buf, "\"%s\"", buffer);
             } else {
                 sprintf(buf, "%s", buffer);
             }
         }
-    } else if (jerry_value_is_undefined(value)) {
-        sprintf(buf, "undefined");
-    } else {
-        // should never get this
-        sprintf(buf, "UNKNOWN");
     }
     return true;
 }

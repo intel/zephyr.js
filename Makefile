@@ -163,9 +163,6 @@ endif  # BOARD = arduino_101
 
 # Print callback statistics during runtime
 CB_STATS ?= off
-# Print floats (uses -u _printf_float flag). This is a workaround on the A101
-# otherwise floats will not print correctly. It does use ~11k extra ROM though
-PRINT_FLOAT ?= off
 
 ifeq ($(BOARD), linux)
 	SNAPSHOT = off
@@ -277,10 +274,6 @@ analyze: $(JS)
 	@if [ "$(SNAPSHOT)" = "on" ]; then \
 		echo "add_definitions(-DZJS_SNAPSHOT_BUILD)" >> $(OUT)/$(BOARD)/generated.cmake; \
 	fi
-	@# Build NEWLIB with float print support, this will increase ROM size
-	@if [ "$(PRINT_FLOAT)" = "on" ]; then \
-		echo "CONFIG_NEWLIB_LIBC_FLOAT_PRINTF=y" >> prj.conf; \
-	fi
 	@# Add bluetooth debug configs if BLE is enabled
 	@if grep -q BUILD_MODULE_BLE $(OUT)/$(BOARD)/generated.cmake; then \
 		if [ "$(VARIANT)" = "debug" ]; then \
@@ -310,7 +303,6 @@ analyze: $(JS)
 		-DJERRY_BASE=$(JERRY_BASE) \
 		-DJERRY_OUTPUT=$(JERRY_OUTPUT) \
 		-DJERRY_PROFILE=$(OUT)/$(BOARD)/jerry_feature.profile \
-		-DPRINT_FLOAT=$(PRINT_FLOAT) \
 		-DSNAPSHOT=$(SNAPSHOT) \
 		-DVARIANT=$(VARIANT) \
 		-DVERBOSITY=$(VERBOSITY) \
