@@ -87,7 +87,7 @@ def main():
 
 def do_print(s):
     """Debug print controlled with V option"""
-    if args.verbose == '1':
+    if args.verbose == 1:
         p = pprint.PrettyPrinter(indent=1)
         p.pprint(s)
 
