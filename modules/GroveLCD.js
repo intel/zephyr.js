@@ -59,12 +59,14 @@ function GroveLCD() {
         if (col === undefined && row === undefined && numChar === undefined) {
             // Clear the display completely if no args passed.
             groveLCDAPI.i2cDevice.write(this.glcdAddrs.DISPLAY_ADDR,
-                                        new Buffer([0, this.glcdAddrs.CMD_SCREEN_CLEAR]));
+                                        new Buffer([0,
+                                        this.glcdAddrs.CMD_SCREEN_CLEAR]));
             return;
         }
-        else if (col === undefined || row === undefined || numChar === undefined) {
+        else if (col === undefined || row === undefined ||
+                 numChar === undefined) {
             // If any of the args undefined - print warning and return
-            console.log ("Missing args for GroveLCD.clear. Please pass col, row, numChar");
+            console.log ("Missing clear args. Please pass col, row, numChar");
             return;
         }
 
@@ -99,7 +101,8 @@ function GroveLCD() {
         }
 
         this.i2cDevice.write(this.glcdAddrs.DISPLAY_ADDR,
-                             new Buffer([this.glcdAddrs.CMD_SET_DDRAM_ADDR, col]));
+                             new Buffer([this.glcdAddrs.CMD_SET_DDRAM_ADDR,
+                             col]));
     }
 
     groveLCDAPI.setColor = function(colorObj) {
@@ -115,7 +118,8 @@ function GroveLCD() {
         }
         if (colorObj.green && colorObj.green > -1 && colorObj.green < 256) {
             this.i2cDevice.write(this.glcdAddrs.BACKLIGHT_ADDR,
-                                 new Buffer([this.glcdAddrs.REGISTER_G, green]));
+                                 new Buffer([this.glcdAddrs.REGISTER_G,
+                                 green]));
         }
     }
 

@@ -41,7 +41,7 @@ function BMP280() {
         // These need to be read as a burst read in order to get accurate numbers,
         // so dig_TAll contains dig_T1 through dig_T3
         var dig_TAll = this.i2cDevice.burstRead(this.bmp280Addrs.ADDRESS, 24,
-                                                this.bmp280Addrs.REGISTER_DIG_T1);
+                                            this.bmp280Addrs.REGISTER_DIG_T1);
         dig_T1 = dig_TAll.readUInt16LE();
         dig_T2 = dig_TAll.readUInt16LE(2);
         dig_T3 = dig_TAll.readUInt16LE(4);
@@ -55,7 +55,7 @@ function BMP280() {
     bmp280API.readTemperature = function() {
         // Read the raw temperature value.
         var tempBuffer = this.i2cDevice.burstRead(this.bmp280Addrs.ADDRESS, 4,
-                                                  this.bmp280Addrs.REGISTER_TEMPDATA);
+                                            this.bmp280Addrs.REGISTER_TEMPDATA);
         // Get the number from the buffer object
         var tempDec = tempBuffer.readUInt32BE();
 
@@ -65,8 +65,8 @@ function BMP280() {
         // Convert raw temperature to Celsius using the algorithm found here
         // https://www.bosch-sensortec.com/bst/products/all_products/bmp280
         var var1 = (((tempDec >> 3) - (dig_T1 << 1)) * (dig_T2)) >> 11;
-        var var2 = (((((tempDec >> 4) - (dig_T1)) * ((tempDec >> 4) - (dig_T1))) >> 12) *
-                    (dig_T3)) >> 14;
+        var var2 = (((((tempDec >> 4) - (dig_T1)) * ((tempDec >> 4) -
+                    (dig_T1))) >> 12) * (dig_T3)) >> 14;
 
         var t_fine = var1 + var2;
         var T = ((t_fine * 5 + 128) >> 8) / 100 ;
