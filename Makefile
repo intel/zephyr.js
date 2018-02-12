@@ -391,9 +391,9 @@ ifeq ($(SNAPSHOT), on)
 else
 	@echo Creating C string from JS application...
 ifeq ($(BOARD), linux)
-	@./scripts/convert.sh $(JS) $(OUT)/include/zjs_script_gen.h
+	@./scripts/convert.py $(JS) $(OUT)/include/zjs_script_gen.h
 else
-	@./scripts/convert.sh $(OUT)/$(JS_TMP) $(OUT)/include/zjs_script_gen.h
+	@./scripts/convert.py $(OUT)/$(JS_TMP) $(OUT)/include/zjs_script_gen.h
 endif
 endif
 

@@ -337,7 +337,7 @@ output when you do build for Arduino 101.
 
 ## JS Minifier
 
-To save space it is recommended to use a minifier. In `convert.sh`, the script
+To save space it is recommended to use a minifier. In `convert.py`, the script
 used to encode your JS into a source file, we use `uglifyjs`. If you didn't
 install this earlier, you can do so with the command:
 ```bash
