@@ -20,9 +20,8 @@ Uglify = collections.namedtuple("Uglify", ['content', 'used_uglifyjs'])
 
 def main():
     args = parse_args()
-    minified_result = uglifyjs(args.input)
+    minified_result = uglifyjs(args.input, args.full)
     write_minified(args.output, minified_result)
-
 
 def write_minified(output_path, minified_result):
     """Write the minified output, escaping things as necessary
@@ -55,12 +54,18 @@ def write_minified(output_path, minified_result):
         print('"', end='', file=out_file)
 
 
-def uglifyjs(input_path):
+def uglifyjs(input_path, is_full):
     """Run 'uglifyjs' on the input file
 
     :param input_path: A pathlib.Path() object of the input file.
+    :param is_full: if full JS is preserved.
     :returns: An Uglify() object
     """
+
+    # Full js with no minimize, return the contents of the file
+    if is_full:
+        return Uglify(input_path.read_text(), False)
+
     filename = str(input_path)
     # NOTE(jlvillal): The docs say that '-nc' is the same as '--no-copyright'
     # but in testing it is not.
@@ -96,6 +101,8 @@ def parse_args():
                      "a C string format."))
     parser.add_argument("input", metavar='INPUT_FILE')
     parser.add_argument("output", metavar='OUTPUT_FILE')
+    parser.add_argument("-f", "--full", help="Unminimize JS for debugging",
+                        action="store_true")
     args = parser.parse_args()
     # Make all paths absolute and expand any "~/" usage.
     for arg_name in ('input', 'output'):

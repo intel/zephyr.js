@@ -194,6 +194,8 @@ int main(int argc, char *argv[])
     char *script = NULL;
 #else
     const char *script = NULL;
+    file_name = "js.tmp";
+    file_name_len = strlen("js.tmp");
 #endif
     jerry_value_t code_eval;
     u32_t script_len = 0;

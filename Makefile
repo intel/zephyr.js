@@ -402,7 +402,11 @@ else
 ifeq ($(BOARD), linux)
 	@./scripts/convert.py $(JS) $(OUT)/include/zjs_script_gen.h
 else
+ifeq ($(DEBUGGER), on)
+	@./scripts/convert.py --full $(OUT)/$(JS_TMP) $(OUT)/include/zjs_script_gen.h
+else
 	@./scripts/convert.py $(OUT)/$(JS_TMP) $(OUT)/include/zjs_script_gen.h
+endif
 endif
 endif
 
