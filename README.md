@@ -282,11 +282,41 @@ breakpoints such as `b main` and `run` to start debugging as usual with gdb.
 ##### Debugging JavaScript code
 JerryScript has a built-in remote debugger which allows debugging JavaScript
 programs. At the moment only a Websocket-based implementation is provided by
-JerryScript which transmits messages over TCP/IP networks. This implementation
-requires a socket API which currently only work when running on Linux.  The
-socket API is not yet supported with NewLib when building with Zephyr natively.
+JerryScript which transmits messages over TCP/IP networks, but it currently
+only supports ethernet, so you'll need to run it on a board that has ethernet
+support, for example, the FRDM-K64F or Linux.
 
 To enable the remote debugger for a particular JS application:
+```bash
+make BOARD=frdm_k64f DEBUGGER=on JS=xxx.js
+```
+
+When you flash and run the JS application, it will start in debugging mode,
+running on 192.168.1.101:5001, and you will see the following on serial output:
+
+```bash
+Debugger mode: connect using jerry-client-ws.py
+
+Waiting for client connection
+```
+you might need to add a route on your PC to connect to the network if you
+are connecting the board directly to your PC:
+
+```bash
+ip route add 192.168.1/24 dev eno1
+```
+
+Then you can use the jerryscript command line or html client to connect to the
+debugger to debug your JS application:
+
+python jerryscript/jerry-debugger/jerry-client-ws.py --display 10 192.168.1.1
+
+In the client, type 'help' to get a list of debugger commands, such as
+adding breakpoints, stepping through JS sources, etc.
+
+##### Debugging JavaScript code on Linux:
+
+To enable the remote debugger on Linux:
 ```bash
 make BOARD=linux DEBUGGER=on
 outdir/linux/release/jslinux app.js --debugger
@@ -296,11 +326,8 @@ It will then be run on debugger mode waiting for client connection, you can then
 in another terminal, you can connect to it by running the python client in
 JerryScript:
 ```bash
-jerry-debugger/jerry-client-ws.py
+python jerryscript/jerry-debugger/jerry-client-ws.py --display 10 localhost
 ```
-
-In the client, type 'help' to get a list of debugger commands, such as
-adding breakpoints, stepping through JS sources, etc.
 
 #### Additional details
 
