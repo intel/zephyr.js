@@ -108,7 +108,7 @@ API Documentation
 ### onreading
 `Sensor.onreading`
 
-The onreading attribute is an EventHandler which is called whenever a new reading is available.
+The onreading attribute is an EventHandler, which is called whenever a new reading is available.
 
 ### onactivate
 `Sensor.onactivate`
