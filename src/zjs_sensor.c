@@ -159,7 +159,7 @@ void zjs_sensor_trigger_change(jerry_value_t obj)
     u64_t timestamp = k_uptime_get();
     zjs_obj_add_readonly_number(obj, "timestamp", ((double)timestamp));
 
-    // Whem the first reading is triggered, this will set to true
+    // When the first reading is triggered, set hasReading to true
     bool has_reading = false;
     zjs_obj_get_boolean(obj, "hasReading", &has_reading);
     if (!has_reading) {
