@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, Intel Corporation.
+// Copyright (c) 2016-2018, Intel Corporation.
 
 // C includes
 #include <string.h>
@@ -12,6 +12,7 @@
 #define DEFAULT_MAX_LISTENERS   10
 
 static jerry_value_t zjs_event_emitter_prototype = 0;
+zjs_callback_id emit_id = -1;
 
 typedef struct listener {
     jerry_value_t func;
@@ -43,6 +44,8 @@ static void free_listener(void *ptr)
 static void zjs_event_proto_free_cb(void *native)
 {
     zjs_event_emitter_prototype = 0;
+    zjs_remove_callback(emit_id);
+    emit_id = -1;
 }
 
 static const jerry_object_native_info_t event_proto_type_info = {
@@ -108,7 +111,7 @@ jerry_value_t zjs_add_event_listener(jerry_value_t obj, const char *event_name,
 
     if (ZJS_LIST_LENGTH(listener_t, event->listeners) > handle->max_listeners) {
         // warn of possible leak as per Node docs
-        ZJS_PRINT("possible memory leak on event %s", event_name);
+        ZJS_PRINT("possible memory leak on event %s\n", event_name);
     }
 
 #ifdef ZJS_FIND_FUNC_NAME
@@ -308,8 +311,6 @@ static ZJS_DECL_FUNC(get_listeners)
     return rval;
 }
 
-zjs_callback_id emit_id = -1;
-
 typedef struct emit_event {
     jerry_value_t obj;
     zjs_pre_emit pre;
@@ -318,7 +319,8 @@ typedef struct emit_event {
     char data[0];  // data is user data followed by null-terminated event name
 } emit_event_t;
 
-static void emit_event_callback(void *handle, const void *args) {
+static void emit_event_callback(void *handle, const void *args)
+{
     const emit_event_t *emit = (const emit_event_t *)args;
 
     void *user_handle = zjs_event_get_user_handle(emit->obj);
@@ -451,7 +453,8 @@ void *zjs_event_get_user_handle(jerry_value_t obj)
     return NULL;
 }
 
-static void zjs_event_init_prototype() {
+static void zjs_event_init_prototype()
+{
     if (!zjs_event_emitter_prototype) {
         zjs_native_func_t array[] = {
             { add_listener, "on" },
@@ -468,8 +471,10 @@ static void zjs_event_init_prototype() {
         };
         zjs_event_emitter_prototype = zjs_create_object();
         zjs_obj_add_functions(zjs_event_emitter_prototype, array);
-        jerry_set_object_native_pointer(zjs_event_emitter_prototype, NULL, &event_proto_type_info);
+        jerry_set_object_native_pointer(zjs_event_emitter_prototype, NULL,
+                                        &event_proto_type_info);
         jerry_release_value(zjs_event_emitter_prototype);
+        emit_id = zjs_add_c_callback(NULL, emit_event_callback);
     }
 }
 
@@ -477,7 +482,6 @@ void zjs_make_emitter(jerry_value_t obj, jerry_value_t prototype,
                       void *user_data, zjs_event_free free_cb)
 {
     zjs_event_init_prototype();
-    emit_id = zjs_add_c_callback(NULL, emit_event_callback);
     jerry_value_t proto = zjs_event_emitter_prototype;
     if (jerry_value_is_object(prototype)) {
         jerry_set_prototype(prototype, proto);

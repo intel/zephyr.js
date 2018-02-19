@@ -13,6 +13,7 @@
         ]
     },
     "zjs_config": [
-        "-I${ZEPHYR_BASE}/samples/subsys/usb/webusb-ide/src/"
+        "-I${ZEPHYR_BASE}/samples/subsys/usb/webusb/src/"
     ]
+
 }

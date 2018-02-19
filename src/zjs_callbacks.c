@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, Intel Corporation.
+// Copyright (c) 2016-2018, Intel Corporation.
 
 // enable for verbose callback detail
 #if 0
@@ -90,14 +90,12 @@ typedef struct zjs_callback {
 static u8_t args_buffer[ZJS_CALLBACK_BUF_SIZE];
 static struct zjs_port_ring_buf ring_buffer;
 #else
-SYS_RING_BUF_DECLARE_POW2(ring_buffer, 5);
+SYS_RING_BUF_DECLARE_POW2(ring_buffer, 6);
 #endif
 static u8_t ring_buf_initialized = 1;
 
 #ifdef ZJS_LINUX_BUILD
 #define k_is_preempt_thread() 0
-#define irq_lock() 0
-#define irq_unlock(key) do {} while (0);
 #define RB_LOCK() do {} while (0)
 #define RB_UNLOCK() do {} while (0)
 #define CB_LOCK() do {} while (0)
@@ -207,7 +205,8 @@ typedef struct deferred_work {
     char data[0];  // user data
 } deferred_work_t;
 
-static void deferred_work_callback(void *handle, const void *args) {
+static void deferred_work_callback(void *handle, const void *args)
+{
     const deferred_work_t *deferred = (const deferred_work_t *)args;
 
 #ifdef DEBUG_CALLBACKS
@@ -302,7 +301,7 @@ zjs_callback_id add_callback_priv(jerry_value_t js_func,
     cb_map[new_cb->id] = new_cb;
 
     DBG_PRINT("adding new callback id %d, js_func=%p, once=%u\n", new_cb->id,
-            (void *)(uintptr_t)new_cb->js_func, once);
+              (void *)(uintptr_t)new_cb->js_func, once);
 
 #ifdef INSTRUMENT_CALLBACKS
     set_info_string(cb_map[new_cb->id]->creator, file, func);
@@ -353,8 +352,7 @@ static void zjs_remove_callback_priv(zjs_callback_id id, bool skip_flush)
             }
         }
         DBG_PRINT("removing callback id %d\n", id);
-    }
-    else {
+    } else {
         CB_UNLOCK();
     }
 }
@@ -397,10 +395,12 @@ void signal_callback_priv(zjs_callback_id id,
               args, size);
 #endif
     int in_thread = k_is_preempt_thread();  // versus ISR or co-op thread
+#ifndef ZJS_LINUX_BUILD
     int key = 0;
+#endif
     if (in_thread) CB_LOCK();
     if (id < 0 || id >= cb_size || !cb_map[id]) {
-        DBG_PRINT("callback ID %u does not exist\n", id);
+        DBG_PRINT("callback ID %d does not exist\n", id);
         if (in_thread) CB_UNLOCK();
         return;
     }
@@ -420,10 +420,12 @@ void signal_callback_priv(zjs_callback_id id,
 #ifdef INSTRUMENT_CALLBACKS
     set_info_string(cb_map[id]->caller, file, func);
 #endif
+#ifndef ZJS_LINUX_BUILD
     if (in_thread) {
         RB_LOCK();
         key = irq_lock();
     }
+#endif
     int ret = zjs_port_ring_buf_put(&ring_buffer,
                                     (u16_t)id,
                                     0,  // we use value for CB_FLUSH_ONE/ALL
@@ -434,11 +436,11 @@ void signal_callback_priv(zjs_callback_id id,
     // rather than locking everything, as we are only trying to prevent a
     // callback
     // from being edited and called at the same time.
+#ifndef ZJS_LINUX_BUILD
     if (in_thread) {
         irq_unlock(key);
         RB_UNLOCK();
     }
-#ifndef ZJS_LINUX_BUILD
     zjs_loop_unblock();
 #endif
     if (ret != 0) {
@@ -492,7 +494,7 @@ void print_callbacks(void)
                 if (jerry_value_is_function(cb_map[i]->js_func)) {
                     ZJS_PRINT("Single Function\n");
                     ZJS_PRINT("\tjs_func: %p\n",
-                            (void *)(uintptr_t)cb_map[i]->js_func);
+                              (void *)(uintptr_t)cb_map[i]->js_func);
                     ZJS_PRINT("\tonce: %u\n", GET_ONCE(cb_map[i]->flags));
                 } else {
                     ZJS_PRINT("js_func is not a function\n");
@@ -625,13 +627,13 @@ u8_t zjs_service_callbacks(void)
                 }
 #ifdef ZJS_PRINT_CALLBACK_STATS
                 if (!header_printed) {
-                    PRINT("\n--------- Callback Stats ------------\n");
+                    ZJS_PRINT("\n--------- Callback Stats ------------\n");
                     header_printed = 1;
                 }
                 if (cb_map[id]) {
-                    PRINT("[cb stats] Callback[%u]: type=%s, arg_sz=%u\n", id,
-                          (cb_map[id]->type == CALLBACK_TYPE_JS) ? "JS" : "C",
-                          size);
+                    ZJS_PRINT("[cb stats] Callback[%u]: type=%s, arg_sz=%u\n", id,
+                              (GET_TYPE(cb_map[id]->flags) == CALLBACK_TYPE_JS) ? "JS" : "C",
+                              size);
                 }
                 num_callbacks++;
 #endif
@@ -642,11 +644,11 @@ u8_t zjs_service_callbacks(void)
         }
 #ifdef ZJS_PRINT_CALLBACK_STATS
         if (num_callbacks) {
-            PRINT("[cb stats] Number of Callbacks (this service): %lu\n",
-                  num_callbacks);
-            PRINT("[cb stats] Max Callbacks Per Service: %u\n",
-                  ZJS_MAX_CB_LOOP_ITERATION);
-            PRINT("------------- End ----------------\n");
+            ZJS_PRINT("[cb stats] Number of Callbacks (this service): %u\n",
+                      num_callbacks);
+            ZJS_PRINT("[cb stats] Max Callbacks Per Service: %u\n",
+                      ZJS_MAX_CB_LOOP_ITERATION);
+            ZJS_PRINT("------------- End ----------------\n");
         }
 #endif
     }
@@ -665,10 +667,10 @@ void zjs_defer_work(zjs_deferred_work callback, const void *buffer, u32_t bytes)
         memcpy(defer->data, buffer, bytes);
     }
 #ifdef DEBUG_CALLBACKS
-    DBG_PRINT("deferring work: %d bytes\ncontents: ", len);
+    DBG_PRINT("full packet: %d bytes\ncontents: ", len);
     int count32 = (len + 3) / 4;
     for (int i = 0; i < count32; ++i) {
-        ZJS_PRINT("0x%x ", ((u32_t *)buf)[i]);
+        ZJS_PRINT("0x%08x ", ((u32_t *)buf)[i]);
     }
     ZJS_PRINT("\nbuffer: ");
     count32 = (bytes + 3) / 4;

@@ -116,7 +116,9 @@ static char magic[] = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 // get the socket handle or return a JS error
 #define GET_WS_HANDLE_JS(obj, var)                                            \
     ws_connection_t *var = (ws_connection_t *)zjs_event_get_user_handle(obj); \
-    if (!var) { return zjs_error("no websocket handle"); }
+    if (!var) {                                                               \
+        return zjs_error("no websocket handle");                              \
+    }
 
 static inline ws_connection_t *find_connection(server_handle_t *server_h,
                                                struct net_context *context)
@@ -526,9 +528,9 @@ static void process_packet(ws_connection_t *con, u8_t *data, u32_t len)
     }
 
     if (con->server_h->max_payload &&
-            (packet->payload_len > con->server_h->max_payload)) {
+        (packet->payload_len > con->server_h->max_payload)) {
         emit_error(con->server, "payload too large: %d > %d",
-                packet->payload_len, con->server_h->max_payload);
+                   packet->payload_len, con->server_h->max_payload);
         zjs_free(packet->payload);
         zjs_free(packet);
         return;
@@ -884,8 +886,9 @@ static void post_accept_handler(void *handle, jerry_value_t ret_val)
         emit_error(con->server, "out of memory");
         return;
     }
-    snprintf(send_data, sdata_size, "%s%s\r\nSec-WebSocket-Protocol: %s\r\n\r\n",
-             accept_header, con->accept_key, proto);
+    snprintf(send_data, sdata_size,
+             "%s%s\r\nSec-WebSocket-Protocol: %s\r\n\r\n", accept_header,
+             con->accept_key, proto);
 
     DBG_PRINT("Sending accept packet\n");
     tcp_send(con->tcp_sock, send_data, strlen(send_data));
@@ -1025,7 +1028,7 @@ static ZJS_DECL_FUNC(ws_server)
 
     if (zjs_is_ip(host) == 4) {
         CHECK(net_context_get(AF_INET, SOCK_STREAM, IPPROTO_TCP,
-                &handle->server_ctx));
+                              &handle->server_ctx));
 
         struct sockaddr_in *my_addr = (struct sockaddr_in *)&addr;
 
@@ -1035,7 +1038,7 @@ static ZJS_DECL_FUNC(ws_server)
         my_addr->sin_port = htons((int)port);
     } else {
         CHECK(net_context_get(AF_INET6, SOCK_STREAM, IPPROTO_TCP,
-                &handle->server_ctx));
+                              &handle->server_ctx));
 
         struct sockaddr_in6 *my_addr6 = (struct sockaddr_in6 *)&addr;
 
@@ -1071,7 +1074,7 @@ static void zjs_ws_cleanup(void *native)
 }
 
 static const jerry_object_native_info_t ws_module_type_info = {
-   .free_cb = zjs_ws_cleanup
+    .free_cb = zjs_ws_cleanup
 };
 
 static jerry_value_t zjs_ws_init()

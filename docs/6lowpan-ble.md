@@ -153,9 +153,10 @@ Now that your Arduino 101 is connected, it is as if it's a regular OCF IP
 device. You can now connect an OCF client. There are OCF client samples in the
 [iot-rest-api-server](https://github.com/intel/iot-rest-api-server) repo.
 ```bash
-$ git clone git@github.com:intel/iot-rest-api-server.git
-$ npm install iot-rest-api-server
-$ iot-rest-api-server
+$ git clone https://github.com/intel/iot-rest-api-server.git
+$ cd iot-rest-api-server
+$ npm install
+$ ./bin/iot-rest-api-server.js
 ```
 
 You can then do discovery from the browser or using one of the test scripts:

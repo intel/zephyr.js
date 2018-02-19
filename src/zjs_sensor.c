@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, Intel Corporation.
+// Copyright (c) 2016-2018, Intel Corporation.
 
 // C includes
 #include <string.h>
@@ -33,7 +33,7 @@ static void zjs_sensor_free_cb(void *native)
 }
 
 static const jerry_object_native_info_t sensor_type_info = {
-   .free_cb = zjs_sensor_free_cb
+    .free_cb = zjs_sensor_free_cb
 };
 
 static sensor_handle_t *zjs_sensor_alloc_handle()

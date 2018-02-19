@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, Intel Corporation.
+// Copyright (c) 2016-2018, Intel Corporation.
 
 #ifdef BUILD_MODULE_OCF
 
@@ -120,9 +120,9 @@ static char *create_url(const char *uuid, const char *path)
 }
 
 #ifdef DEBUG_BUILD
-#define do_print \
+#define do_print  \
     do_prefix(p); \
-    ZJS_PRINT \
+    ZJS_PRINT
 
 static void do_prefix(int p)
 {
@@ -148,7 +148,7 @@ static void print_props_data(int prefix, oc_rep_t *data)
         case BYTE_STRING:
         case STRING:
             do_print("%s: %s\n", oc_string(rep->name),
-                    oc_string(rep->value.string));
+                     oc_string(rep->value.string));
             break;
         case OBJECT:
             do_print("%s: {\n", oc_string(rep->name));
@@ -157,10 +157,10 @@ static void print_props_data(int prefix, oc_rep_t *data)
             break;
         case STRING_ARRAY:
             do_print("%s: [", oc_string(rep->name));
-            int sz =  oc_string_array_get_allocated_size(rep->value.array);
+            int sz = oc_string_array_get_allocated_size(rep->value.array);
             for (i = 0; i < sz; i++) {
                 ZJS_PRINT("\"%s\",",
-                        oc_string_array_get_item(rep->value.array, i));
+                          oc_string_array_get_item(rep->value.array, i));
             }
             ZJS_PRINT("]\n");
             break;
@@ -188,23 +188,21 @@ static void print_props_data(int prefix, oc_rep_t *data)
             }
             ZJS_PRINT("]\n");
             break;
-        case OBJECT_ARRAY:
-            {
-                oc_rep_t *iter = rep->value.object_array;
-                do_print("%s: [", oc_string(rep->name));
-                p++;
-                while (iter) {
-                    ZJS_PRINT("{\n");
-                    print_props_data(p + 1, iter->value.object);
-                    iter = iter->next;
-                    do_print("}");
-                    ZJS_PRINT(",");
-                }
-                ZJS_PRINT("\n");
-                p--;
-                do_print("]\n");
+        case OBJECT_ARRAY: {
+            oc_rep_t *iter = rep->value.object_array;
+            do_print("%s: [", oc_string(rep->name));
+            p++;
+            while (iter) {
+                ZJS_PRINT("{\n");
+                print_props_data(p + 1, iter->value.object);
+                iter = iter->next;
+                do_print("}");
+                ZJS_PRINT(",");
             }
-            break;
+            ZJS_PRINT("\n");
+            p--;
+            do_print("]\n");
+        } break;
         default:
             break;
         }
@@ -759,12 +757,10 @@ static void ocf_get_platform_info_handler(oc_client_response_t *data)
                                                 "manufacturerName",
                                                 oc_string(rep->value.string));
                 } else if (strequal(oc_string(rep->name), "pi")) {
-                    zjs_obj_add_readonly_string(platform_info,
-                                                "id",
+                    zjs_obj_add_readonly_string(platform_info, "id",
                                                 oc_string(rep->value.string));
                 } else if (strequal(oc_string(rep->name), "mnmo")) {
-                    zjs_obj_add_readonly_string(platform_info,
-                                                "model",
+                    zjs_obj_add_readonly_string(platform_info, "model",
                                                 oc_string(rep->value.string));
                 } else if (strequal(oc_string(rep->name), "mndt")) {
                     zjs_obj_add_readonly_string(platform_info,
@@ -775,8 +771,7 @@ static void ocf_get_platform_info_handler(oc_client_response_t *data)
                                                 "platformVersion",
                                                 oc_string(rep->value.string));
                 } else if (strequal(oc_string(rep->name), "mnos")) {
-                    zjs_obj_add_readonly_string(platform_info,
-                                                "osVersion",
+                    zjs_obj_add_readonly_string(platform_info, "osVersion",
                                                 oc_string(rep->value.string));
                 } else if (strequal(oc_string(rep->name), "mnfv")) {
                     zjs_obj_add_readonly_string(platform_info,
@@ -787,8 +782,7 @@ static void ocf_get_platform_info_handler(oc_client_response_t *data)
                                                 "manufacturerURL",
                                                 oc_string(rep->value.string));
                 } else if (strequal(oc_string(rep->name), "mnsl")) {
-                    zjs_obj_add_readonly_string(platform_info,
-                                                "supportURL",
+                    zjs_obj_add_readonly_string(platform_info, "supportURL",
                                                 oc_string(rep->value.string));
                 }
                 DBG_PRINT("%s\n", oc_string(rep->value.string));

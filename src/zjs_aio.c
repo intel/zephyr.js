@@ -1,4 +1,4 @@
-// Copyright (c) 2017, Intel Corporation.
+// Copyright (c) 2017-2018, Intel Corporation.
 
 // enable to use function tracing for debug purposes
 #if 0
@@ -108,11 +108,7 @@ static ZJS_DECL_FUNC_ARGS(aio_pin_read, bool async)
 static ZJS_DECL_FUNC(zjs_aio_pin_read)
 {
     FTRACE_JSAPI;
-    return aio_pin_read(function_obj,
-                        this,
-                        argv,
-                        argc,
-                        false);
+    return aio_pin_read(function_obj, this, argv, argc, false);
 }
 
 // Asynchronous Operations
@@ -122,11 +118,7 @@ static ZJS_DECL_FUNC(zjs_aio_pin_read_async)
     // args: callback
     ZJS_VALIDATE_ARGS(Z_FUNCTION);
 
-    return aio_pin_read(function_obj,
-                        this,
-                        argv,
-                        argc,
-                        true);
+    return aio_pin_read(function_obj, this, argv, argc, true);
 }
 
 static ZJS_DECL_FUNC(zjs_aio_pin_close)
@@ -157,11 +149,9 @@ static ZJS_DECL_FUNC(zjs_aio_open)
     int pin = zjs_board_find_aio(pin_val, devname, 20);
     if (pin == FIND_PIN_INVALID) {
         return TYPE_ERROR("bad pin argument");
-    }
-    else if (pin == FIND_DEVICE_FAILURE) {
+    } else if (pin == FIND_DEVICE_FAILURE) {
         return zjs_error("device not found");
-    }
-    else if (pin < 0) {
+    } else if (pin < 0) {
         return zjs_error("pin not found");
     }
     struct device *aiodev = device_get_binding(devname);
@@ -170,8 +160,8 @@ static ZJS_DECL_FUNC(zjs_aio_open)
     }
 
     // create the AIOPin object
-    jerry_value_t pinobj = zjs_create_object();
-    jerry_set_prototype(pinobj, zjs_aio_prototype);
+    ZVAL pin_obj = zjs_create_object();
+    jerry_set_prototype(pin_obj, zjs_aio_prototype);
 
     aio_handle_t *handle = zjs_malloc(sizeof(aio_handle_t));
     if (!handle) {
@@ -180,16 +170,14 @@ static ZJS_DECL_FUNC(zjs_aio_open)
     memset(handle, 0, sizeof(aio_handle_t));
     handle->dev = aiodev;
     handle->pin = pin;
-
-    // TODO: verify that not acquiring here is okay
-    handle->pin_obj = pinobj;
+    handle->pin_obj = pin_obj;  // weak reference
 
     // make it an emitter object
-    zjs_make_emitter(pinobj, zjs_aio_prototype, handle, aio_free_cb);
+    zjs_make_emitter(pin_obj, zjs_aio_prototype, handle, aio_free_cb);
 
     // add to the list of opened handles
     ZJS_LIST_APPEND(aio_handle_t, opened_handles, handle);
-    return pinobj;
+    return jerry_acquire_value(pin_obj);
 }
 
 static s32_t aio_poll_routine(void *h)
@@ -235,7 +223,7 @@ static void zjs_aio_cleanup(void *native)
 }
 
 static const jerry_object_native_info_t aio_module_type_info = {
-   .free_cb = zjs_aio_cleanup
+    .free_cb = zjs_aio_cleanup
 };
 
 jerry_value_t zjs_aio_init()

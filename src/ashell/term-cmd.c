@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, Intel Corporation.
+// Copyright (c) 2016-2018, Intel Corporation.
 
 /**
  * @file
@@ -7,10 +7,10 @@
 
 // C includes
 #include <ctype.h>
+#include <malloc.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
-#include <malloc.h>
 
 // Zephyr includes
 #include "file-utils.h"
@@ -28,6 +28,7 @@
 #include "term-uart.h"
 #include "term-cmd.h"
 #include "term-ihex.h"
+#include "term-uart.h"
 #include "../zjs_util.h"
 
 // JerryScript includes

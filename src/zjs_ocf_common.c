@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, Intel Corporation.
+// Copyright (c) 2016-2018, Intel Corporation.
 
 #ifdef BUILD_MODULE_OCF
 
@@ -137,7 +137,6 @@ static void zjs_ocf_encode_value_helper(jerry_value_t object, const char *name,
         zjs_rep_set_text_string(encoder, name, str);
         PROPS_PRINT(name, "\"%s\",", str);
     }
-
 }
 
 void zjs_ocf_encode_value(jerry_value_t object)
@@ -163,93 +162,81 @@ static jerry_value_t decode_value_helper(jerry_value_t object, oc_rep_t *data)
         switch (rep->type) {
         case BOOL:
             zjs_obj_add_boolean(object, oc_string(rep->name),
-                    rep->value.boolean);
+                                rep->value.boolean);
             break;
         case INT:
             zjs_obj_add_number(object, oc_string(rep->name),
-                    (double)rep->value.integer);
+                               (double)rep->value.integer);
             break;
         case BYTE_STRING:
         case STRING:
             zjs_obj_add_string(object, oc_string(rep->name),
-                    oc_string(rep->value.string));
+                               oc_string(rep->value.string));
             break;
         case DOUBLE:
             zjs_obj_add_number(object, oc_string(rep->name),
-                    rep->value.double_p);
+                               rep->value.double_p);
             break;
-        case STRING_ARRAY:
-            {
-                sz = oc_string_array_get_allocated_size(rep->value.array);
-                ZVAL array = jerry_create_array(sz);
-                for (i = 0; i < sz; i++) {
-                    ZVAL str = jerry_create_string(
-                            oc_string_array_get_item(rep->value.array, i));
-                    jerry_set_property_by_index(array, i, str);
-                }
-                zjs_set_property(object, oc_string(rep->name), array);
+        case STRING_ARRAY: {
+            sz = oc_string_array_get_allocated_size(rep->value.array);
+            ZVAL array = jerry_create_array(sz);
+            for (i = 0; i < sz; i++) {
+                ZVAL str = jerry_create_string(
+                    oc_string_array_get_item(rep->value.array, i));
+                jerry_set_property_by_index(array, i, str);
             }
-            break;
-        case DOUBLE_ARRAY:
-            {
-                sz = oc_double_array_size(rep->value.array);
-                double *d_array = oc_double_array(rep->value.array);
-                ZVAL array = jerry_create_array(sz);
-                for (i = 0; i < sz; i++) {
-                    ZVAL d = jerry_create_number(d_array[i]);
-                    jerry_set_property_by_index(array, i, d);
-                }
-                zjs_set_property(object, oc_string(rep->name), array);
+            zjs_set_property(object, oc_string(rep->name), array);
+        } break;
+        case DOUBLE_ARRAY: {
+            sz = oc_double_array_size(rep->value.array);
+            double *d_array = oc_double_array(rep->value.array);
+            ZVAL array = jerry_create_array(sz);
+            for (i = 0; i < sz; i++) {
+                ZVAL d = jerry_create_number(d_array[i]);
+                jerry_set_property_by_index(array, i, d);
             }
-            break;
-        case INT_ARRAY:
-            {
-                sz = oc_int_array_size(rep->value.array);
-                int *i_array = oc_int_array(rep->value.array);
-                ZVAL array = jerry_create_array(sz);
-                for (i = 0; i < sz; i++) {
-                    ZVAL integer = jerry_create_number(i_array[i]);
-                    jerry_set_property_by_index(array, i, integer);
-                }
-                zjs_set_property(object, oc_string(rep->name), array);
+            zjs_set_property(object, oc_string(rep->name), array);
+        } break;
+        case INT_ARRAY: {
+            sz = oc_int_array_size(rep->value.array);
+            int *i_array = oc_int_array(rep->value.array);
+            ZVAL array = jerry_create_array(sz);
+            for (i = 0; i < sz; i++) {
+                ZVAL integer = jerry_create_number(i_array[i]);
+                jerry_set_property_by_index(array, i, integer);
             }
-            break;
-        case BOOL_ARRAY:
-            {
-                sz = oc_bool_array_size(rep->value.array);
-                bool *b_array = oc_bool_array(rep->value.array);
-                ZVAL array = jerry_create_array(sz);
-                for (i = 0; i < sz; i++) {
-                    ZVAL b = jerry_create_number(b_array[i]);
-                    jerry_set_property_by_index(array, i, b);
-                }
-                zjs_set_property(object, oc_string(rep->name), array);
+            zjs_set_property(object, oc_string(rep->name), array);
+        } break;
+        case BOOL_ARRAY: {
+            sz = oc_bool_array_size(rep->value.array);
+            bool *b_array = oc_bool_array(rep->value.array);
+            ZVAL array = jerry_create_array(sz);
+            for (i = 0; i < sz; i++) {
+                ZVAL b = jerry_create_number(b_array[i]);
+                jerry_set_property_by_index(array, i, b);
             }
-            break;
-        case OBJECT:
-            {
-                jerry_value_t new_object = zjs_create_object();
-                decode_value_helper(new_object, rep->value.object);
-                if (!oc_string(rep->name)) {
-                    return new_object;
-                }
-                zjs_set_property(object, oc_string(rep->name), new_object);
-                jerry_release_value(new_object);
+            zjs_set_property(object, oc_string(rep->name), array);
+        } break;
+        case OBJECT: {
+            jerry_value_t new_object = zjs_create_object();
+            decode_value_helper(new_object, rep->value.object);
+            if (!oc_string(rep->name)) {
+                return new_object;
             }
-            break;
-        case OBJECT_ARRAY:
-            {
-                oc_rep_t *iter = rep->value.object_array;
-                jerry_value_t array = jerry_create_array(0);
-                while (iter) {
-                    ZVAL element = decode_value_helper(ZJS_UNDEFINED, iter);
-                    array = zjs_push_array(array, element);
-                    iter = iter->next;
-                }
-                zjs_set_property(object, oc_string(rep->name), array);
-                jerry_release_value(array);
+            zjs_set_property(object, oc_string(rep->name), new_object);
+            jerry_release_value(new_object);
+        } break;
+        case OBJECT_ARRAY: {
+            oc_rep_t *iter = rep->value.object_array;
+            jerry_value_t array = jerry_create_array(0);
+            while (iter) {
+                ZVAL element = decode_value_helper(ZJS_UNDEFINED, iter);
+                array = zjs_push_array(array, element);
+                iter = iter->next;
             }
-            break;
+            zjs_set_property(object, oc_string(rep->name), array);
+            jerry_release_value(array);
+        } break;
         default:
             break;
         }
@@ -535,7 +522,7 @@ static void zjs_ocf_cleanup(void *native)
 }
 
 static const jerry_object_native_info_t ocf_module_type_info = {
-   .free_cb = zjs_ocf_cleanup
+    .free_cb = zjs_ocf_cleanup
 };
 
 static jerry_value_t zjs_ocf_init()

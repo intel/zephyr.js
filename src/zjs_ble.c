@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, Intel Corporation.
+// Copyright (c) 2016-2018, Intel Corporation.
 
 #ifdef BUILD_MODULE_BLE
 #ifndef QEMU_BUILD
@@ -1304,7 +1304,6 @@ static void zjs_ble_cleanup(void *native)
     ble_handle = NULL;
 }
 
-
 // INTERRUPT SAFE FUNCTION: No JerryScript VM, allocs, or release prints!
 void ble_bt_ready(int err)
 {
@@ -1349,7 +1348,8 @@ static jerry_value_t zjs_ble_init()
 
 #ifdef ZJS_ASHELL
     if (bt_enable(ble_bt_ready)) {
-        ERR_PRINT("Failed to enable Bluetooth and may not be enabled again, please reboot\n");
+        ERR_PRINT("Failed to enable Bluetooth and may not be enabled again, " \
+                  "please reboot\n");
     }
 #endif
     return ble_obj;
