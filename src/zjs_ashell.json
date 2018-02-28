@@ -17,7 +17,7 @@
     ],
     "targets": ["arduino_101"],
     "src": [
-        "src/ashell/file-utils.c",
+        "src/file-utils.c",
         "src/ashell/jerry-code.c",
         "src/ashell/term-cmd.c",
         "src/ashell/term-ihex.c",

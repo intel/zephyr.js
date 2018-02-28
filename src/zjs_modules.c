@@ -25,7 +25,7 @@
 #include "zjs_util.h"
 #include "jerryscript-ext/module.h"
 #if defined(ZJS_ASHELL) || defined(ZJS_DYNAMIC_LOAD)
-#include "ashell/file-utils.h"
+#include "file-utils.h"
 #endif
 
 struct routine_map {

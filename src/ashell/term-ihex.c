@@ -22,7 +22,7 @@
 #include "term-uart.h"
 #include "ihex/kk_ihex_read.h"
 
-#include "file-utils.h"
+#include "../file-utils.h"
 
 #ifndef CONFIG_IHEX_UPLOADER_DEBUG
 #define DBG(...) { ; }

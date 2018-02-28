@@ -25,7 +25,7 @@
 
 // ZJS includes
 #include "file-utils.h"
-#include "../zjs_util.h"
+#include "zjs_util.h"
 
 #define FILE_ERR ERR_PRINT("Read file failed\n")
 

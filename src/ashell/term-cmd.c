@@ -13,7 +13,7 @@
 #include <malloc.h>
 
 // Zephyr includes
-#include "file-utils.h"
+#include "../file-utils.h"
 #include "jerryscript-port.h"
 #include <atomic.h>
 #include <misc/printk.h>

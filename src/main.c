@@ -23,7 +23,7 @@
 #if defined (ZJS_ASHELL) || defined (ZJS_DYNAMIC_LOAD)
 #include <gpio.h>
 #include "zjs_board.h"
-#include "ashell/file-utils.h"
+#include "file-utils.h"
 #ifdef ZJS_ASHELL
 #include "ashell/ashell.h"
 #endif // ZJS_ASHELL
