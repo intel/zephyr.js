@@ -2,13 +2,13 @@
     "module": "ble",
     "require": "ble",
     "depends": ["events", "buffer"],
+    "targets": ["arduino_101",  "frdm_k64f"],
     "zephyr_conf": {
         "all": [
             "CONFIG_BT=y",
             "CONFIG_NBLE=y",
             "CONFIG_BT_SMP=y",
             "CONFIG_BT_PERIPHERAL=y",
-            "CONFIG_BT_GATT_DYNAMIC_DB=y",
             "CONFIG_BT_MAX_CONN=4"
         ]
     },

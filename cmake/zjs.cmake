@@ -37,12 +37,8 @@ if(NOT "${BLE_ADDR}" STREQUAL "none")
   add_definitions(-DZJS_CONFIG_BLE_ADDRESS="${BLE_ADDR}")
 endif()
 
-if(CB_STATS)
-  add_definitions(-DCB_STATS=${CB_STATS})
-endif()
-
-if(NETWORK_BUILD)
-  add_definitions(-DNETWORK_BUILD=${NETWORK_BUILD})
+if("${CB_STATS}" STREQUAL "on")
+  add_definitions(-DZJS_PRINT_CALLBACK_STATS)
 endif()
 
 if("${PRINT_FLOAT}" STREQUAL "on")

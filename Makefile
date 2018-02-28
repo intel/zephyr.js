@@ -268,16 +268,16 @@ analyze: $(JS)
 	@mkdir -p $(OUT)/$(BOARD)/
 	@mkdir -p $(OUT)/include
 
-	./scripts/analyze	V=$(V) \
-		SCRIPT=$(JS) \
-		JS_OUT=$(OUT)/$(JS_TMP) \
-		BOARD=$(BOARD) \
-		JSON_DIR=src/ \
-		O=$(OUT) \
-		FORCE=$(FORCED) \
-		PRJCONF=prj.conf \
-		CMAKEFILE=$(OUT)/$(BOARD)/generated.cmake \
-		PROFILE=$(OUT)/$(BOARD)/jerry_feature.profile
+	./scripts/analyze	--verbose=$(V) \
+		--script=$(JS) \
+		--js-out=$(OUT)/$(JS_TMP) \
+		--board=$(BOARD) \
+		--json-dir=src/ \
+		--output-dir=$(OUT) \
+		--force=$(FORCED) \
+		--prjconf=prj.conf \
+		--cmakefile=$(OUT)/$(BOARD)/generated.cmake \
+		--profile=$(OUT)/$(BOARD)/jerry_feature.profile
 
 	@if [ "$(TRACE)" = "on" ] || [ "$(TRACE)" = "full" ]; then \
 		echo "add_definitions(-DZJS_TRACE_MALLOC)" >> $(OUT)/$(BOARD)/generated.cmake; \
@@ -309,7 +309,6 @@ analyze: $(JS)
 		fi \
 	fi
 
-	$(eval NET_BUILD=$(shell grep -q -E "BUILD_MODULE_OCF|BUILD_MODULE_DGRAM|BUILD_MODULE_NET|BUILD_MODULE_WS" $(OUT)/$(BOARD)/generated.cmake && echo y))
 	$(eval CMAKEFLAGS = \
 		-B$(OUT)/$(BOARD) \
 		-DASHELL=$(ASHELL) \
@@ -319,7 +318,6 @@ analyze: $(JS)
 		-DJERRY_BASE=$(JERRY_BASE) \
 		-DJERRY_OUTPUT=$(JERRY_OUTPUT) \
 		-DJERRY_PROFILE=$(OUT)/$(BOARD)/jerry_feature.profile \
-		-DNETWORK_BUILD=$(NET_BUILD) \
 		-DPRINT_FLOAT=$(PRINT_FLOAT) \
 		-DSNAPSHOT=$(SNAPSHOT) \
 		-DVARIANT=$(VARIANT) \
@@ -384,6 +382,8 @@ pristine: cleanlocal
 .PHONY: generate
 generate: $(JS) setup
 	@mkdir -p $(OUT)/include/
+	@# create an config.h file to needed for iotivity-constrained
+	@cp -p src/zjs_ocf_config.h $(OUT)/include/config.h
 ifeq ($(SNAPSHOT), on)
 	@echo Building snapshot generator...
 	@if ! [ -e $(OUT)/snapshot/snapshot ]; then \
@@ -399,9 +399,9 @@ ifeq ($(SNAPSHOT), on)
 else
 	@echo Creating C string from JS application...
 ifeq ($(BOARD), linux)
-	@./scripts/convert.sh $(JS) $(OUT)/include/zjs_script_gen.h
+	@./scripts/convert.py $(JS) $(OUT)/include/zjs_script_gen.h
 else
-	@./scripts/convert.sh $(OUT)/$(JS_TMP) $(OUT)/include/zjs_script_gen.h
+	@./scripts/convert.py $(OUT)/$(JS_TMP) $(OUT)/include/zjs_script_gen.h
 endif
 endif
 
@@ -427,19 +427,20 @@ ARC_RESTRICT="zjs_ipm_arc.json,\
 arc: analyze
 	@# Restrict ARC build to only certain "arc specific" modules
 	@mkdir -p $(OUT)/arduino_101_sss
-	./scripts/analyze	V=$(V) \
-		SCRIPT=$(OUT)/$(JS_TMP) \
-		BOARD=arc \
-		JSON_DIR=arc/src/ \
-		PRJCONF=arc/prj.conf \
-		CMAKEFILE=$(OUT)/arduino_101_sss/generated.cmake \
-		O=$(OUT)/arduino_101_sss \
-		FORCE=$(ASHELL_ARC)
+	./scripts/analyze	--verbose=$(V) \
+		--script=$(OUT)/$(JS_TMP) \
+		--board=arc \
+		--json-dir=arc/src/ \
+		--prjconf=arc/prj.conf \
+		--cmakefile=$(OUT)/arduino_101_sss/generated.cmake \
+		--output-dir=$(OUT)/arduino_101_sss \
+		--force=$(ASHELL_ARC)
 
 	@echo "&flash0 { reg = <0x400$(FLASH_BASE_ADDR) ($(ARC_ROM) * 1024)>; };" > arc/arduino_101_sss.overlay
 	@echo "&sram0 { reg = <0xa8000400 ($(ARC_RAM) * 1024)>; };" >> arc/arduino_101_sss.overlay
 	@cmake -B$(OUT)/arduino_101_sss \
 		-DBOARD=arduino_101_sss \
+		-DVARIANT=$(VARIANT) \
 		-H./arc && \
 	make -C $(OUT)/arduino_101_sss -j4
 ifeq ($(BOARD), arduino_101)
@@ -459,12 +460,12 @@ adebug:
 # Run gdb to connect to debug server for x86
 .PHONY: agdb
 agdb:
-	$$ZEPHYR_SDK_INSTALL_DIR/sysroots/x86_64-pokysdk-linux/usr/bin/i586-zephyr-elfiamcu/i586-zephyr-elfiamcu-gdb $(OUT)/arduino_101/zephyr.elf -ex "target remote :3333"
+	$$ZEPHYR_SDK_INSTALL_DIR/sysroots/x86_64-pokysdk-linux/usr/bin/i586-zephyr-elfiamcu/i586-zephyr-elfiamcu-gdb $(OUT)/arduino_101/zephyr/zephyr.elf -ex "target remote :3333"
 
 # Run gdb to connect to debug server for ARC
 .PHONY: arcgdb
 arcgdb:
-	$$ZEPHYR_SDK_INSTALL_DIR/sysroots/i686-pokysdk-linux/usr/bin/arc-poky-elf/arc-poky-elf-gdb $(OUT)/arduino_101_sss/zephyr.elf -ex "target remote :3334"
+	$$ZEPHYR_SDK_INSTALL_DIR/sysroots/i686-pokysdk-linux/usr/bin/arc-poky-elf/arc-poky-elf-gdb $(OUT)/arduino_101_sss/zephyr/zephyr.elf -ex "target remote :3334"
 
 # Linux target
 .PHONY: linux

@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 # Copyright (c) 2017, Intel Corporation.
 
@@ -6,42 +6,31 @@
 
 import sys
 
-alphabet = ['4avhh', 'uhuhu', 'fgggf', 'uhhhu', 'vgugv', 'vgugg', 'fgjhe',
-            'hhvhh', 'v444v', 'v22ic', 'hisih', 'ggggv', 'hrlhh',
-            'hpljh', 'ehhhe', 'uhugg', 'ehhjf', 'uhuih', 'fge1u', 'v4444',
-            'hhhhe', 'hhha4', 'hhlrh', 'ha4ah', 'ha444', 'v248v']
 
-digits = ['ejlpe', '4c44v', 'u116v', 'u1e1u', 'hhv11',
-          'vgu1u', 'fguhe', 'v248g', 'ehehe', 'ehf11']
-
-other = {
-    ' ': '00000',
-    '?': 'e1c04',
-    '.': '00004',
-    '-': '00e00',
+banner_font = {
+    '0': 'ejlpe', '1': '4c44v', '2': 'u116v', '3': 'u1e1u', '4': 'hhv11',
+    '5': 'vgu1u', '6': 'fguhe', '7': 'v248g', '8': 'ehehe', '9': 'ehf11',
+    'A': '4avhh', 'B': 'uhuhu', 'C': 'fgggf', 'D': 'uhhhu', 'E': 'vgugv',
+    'F': 'vgugg', 'G': 'fgjhe', 'H': 'hhvhh', 'I': 'v444v', 'J': 'v22ic',
+    'K': 'hisih', 'L': 'ggggv', 'M': 'hrlhh', 'N': 'hpljh', 'O': 'ehhhe',
+    'P': 'uhugg', 'Q': 'ehhjf', 'R': 'uhuih', 'S': 'fge1u', 'T': 'v4444',
+    'U': 'hhhhe', 'V': 'hhha4', 'W': 'hhlrh', 'X': 'ha4ah', 'Y': 'ha444',
+    'Z': 'v248v', '?': 'e1c04', ' ': '00000', '-': '00e00', '.': '00004',
     '_': '0000v',
 }
 
+
 def find_pattern(char, line):
-    # returns: five character string
-    if char.isalpha():
-        char = char.upper()
-        index = ord(char) - ord('A')
-        ptnchr = alphabet[index][line]
-    elif char.isdigit():
-        index = ord(char) - ord('0')
-        ptnchr = digits[index][line]
+    char = char.upper()
+    if char not in banner_font:
+        char = '?'
+    print_character = banner_font[char][line]
+    if print_character.isalpha():
+        mask = ord(print_character) - ord('a') + 10
     else:
-        if char not in other:
-            char = '?'
-        ptnchr = other.get(char)[line]
-
-    if ptnchr.isalpha():
-        mask = ord(ptnchr) - ord('a') + 10
-    else:
-        mask = ord(ptnchr) - ord('0')
-
+        mask = ord(print_character) - ord('0')
     return "{0:5b}".format(mask).replace('1', '#').replace('0', ' ')
+
 
 def banner(message):
     while len(message) > 0:
@@ -55,12 +44,14 @@ def banner(message):
                 out += (find_pattern(line[j], i) + '  ')
             print(out)
 
+
 def main():
     if len(sys.argv) <= 1:
         print("usage: zjsbanner <text>")
         sys.exit(1)
 
     banner(' '.join(sys.argv[1:]))
+
 
 if __name__ == "__main__":
    main()

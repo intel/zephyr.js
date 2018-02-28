@@ -384,6 +384,12 @@ int wrap_split_pin_name(const char *name, char *prefix, int *number)
 #define BOARD_NAME "arduino_due"
 #elif CONFIG_BOARD_NUCLEO_F411RE
 #define BOARD_NAME "nucleo_f411re"
+#elif CONFIG_BOARD_96B_CARBON
+#define BOARD_NAME "96b_carbon"
+#elif CONFIG_BOARD_OLIMEX_STM32_E407
+#define BOARD_NAME "olimex_stm32_e407"
+#elif CONFIG_BOARD_STM32F4_DISCO
+#define BOARD_NAME "stm32f4_disco"
 #else
 #define BOARD_NAME "unknown"
 #endif

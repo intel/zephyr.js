@@ -2,7 +2,7 @@
     "module": "fs",
     "require": "fs",
     "depends": ["buffer"],
-    "targets": ["arduino_101", "frdm_k64f"],
+    "targets": ["arduino_101", "frdm_k64f", "96b_carbon", "stm32f4_disco", "olimex_stm32_e407"],
     "zephyr_conf": {
         "all": [
             "CONFIG_FILE_SYSTEM=y",
@@ -18,7 +18,10 @@
         "frdm_k64f": [
             "CONFIG_DISK_ACCESS_RAM=y",
             "CONFIG_HAS_SYSMPU=n"
-        ]
+        ],
+        "olimex_stm32_e407": ["CONFIG_DISK_ACCESS_RAM=y"],
+        "stm32f4_disco": ["CONFIG_DISK_ACCESS_RAM=y"],
+        "96b_carbon": ["CONFIG_DISK_ACCESS_RAM=y"]
     },
     "src":["src/zjs_fs.c"],
     "zjs_config": [

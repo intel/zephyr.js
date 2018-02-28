@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, Intel Corporation.
+// Copyright (c) 2016-2018, Intel Corporation.
 
 // C includes
 #include <string.h>
@@ -310,7 +310,6 @@ jerry_value_t zjs_push_array(jerry_value_t array, jerry_value_t val)
     }
 }
 
-
 void zjs_copy_jstring(jerry_value_t jstr, char *buffer, jerry_size_t *maxlen)
 {
     jerry_size_t size = jerry_get_string_size(jstr);
@@ -337,7 +336,7 @@ char *zjs_alloc_from_jstring(jerry_value_t jstr, jerry_size_t *maxlen)
 
     if (maxlen) {
         if (*maxlen && *maxlen < len) {
-            DBG_PRINT("string limited to %u bytes\n", *maxlen);
+            DBG_PRINT("string limited to %u bytes\n", (unsigned int)*maxlen);
             buffer[*maxlen] = '\0';
         } else {
             *maxlen = len;
@@ -351,7 +350,7 @@ char *zjs_alloc_from_string(const char *str, size_t *maxlen)
 {
     // if no max or string small enough, copy the whole string
     if (!maxlen || !*maxlen || strnlen(str, *maxlen) < *maxlen) {
-        return (char*)strdup(str);
+        return (char *)strdup(str);
     }
 
     // otherwise, limit the size of the string
@@ -727,7 +726,8 @@ int zjs_validate_args(const char *expectations[], const jerry_length_t argc,
     }
 
     if (arg_index < argc) {
-        DBG_PRINT("API received %u unexpected arg(s)\n", argc - arg_index);
+        DBG_PRINT("API received %u unexpected arg(s)\n",
+                  (unsigned int)(argc - arg_index));
     }
     return opt_args;
 }
@@ -783,7 +783,7 @@ void free_handle_nop(void *h)
 bool zjs_str_matches(char *str, char *array[])
 {
     // requires: the final element of array must be NULL
-    for (int i=0; array[i]; ++i) {
+    for (int i = 0; array[i]; ++i) {
         if (strequal(str, array[i])) {
             return true;
         }

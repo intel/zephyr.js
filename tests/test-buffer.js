@@ -1,11 +1,35 @@
-// Copyright (c) 2016-2017, Intel Corporation.
+// Copyright (c) 2016-2018, Intel Corporation.
 
 // Buffer Testing
+console.log("Test buffer APIs");
 
 var assert = require("Assert.js");
 
-// Attribute: readonly unsigned long length
 var buff;
+
+// Create buffer: array (not test out of memory)
+var lens = [1, 10, 100, 1024];
+buff = new Buffer(lens);
+assert(buff !== null && typeof buff === "object",
+       "Creating buffer with array [1, 10, 100, 1024]");
+assert(buff.length === 4,
+       "Creating buffer of length " + buff.length + " with array");
+
+var lens = [[1, 10], "ZJS", "w"];
+buff = new Buffer(lens);
+assert(buff !== null && typeof buff === "object" && buff.length === 3,
+       "Creating buffer with non-numeric array and " +
+       "the array will be treated as 0");
+
+// Create buffer: string (not test out of memory)
+var lens = ["w", "ZJS", "1234567890", "!@#$%^&*()"];
+for (var i = 0; i < lens.length; i++) {
+    buff = new Buffer(lens[i]);
+    assert(buff !== null && typeof buff === "object",
+           "Creating buffer with string " + lens[i]);
+}
+
+// Attribute: readonly unsigned long length
 var lens = [[-1, 0],
             [0, 0],
             [8, 8],

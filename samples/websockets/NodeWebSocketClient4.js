@@ -1,4 +1,4 @@
-// Copyright (c) 2017, Intel Corporation.
+// Copyright (c) 2017-2018, Intel Corporation.
 
 var WebSocket = require('ws');
 
@@ -18,7 +18,6 @@ ws.on('message', function(data, flags) {
 
 ws.on('ping', function(data, flags) {
     console.log("PING: " + data);
-	ws.pong(data);
 });
 
 ws.on('error', function(error) {

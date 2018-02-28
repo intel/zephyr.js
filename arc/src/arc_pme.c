@@ -1,4 +1,4 @@
-// Copyright (c) 2017, Intel Corporation.
+// Copyright (c) 2017-2018, Intel Corporation.
 
 // C includes
 #include <string.h>
@@ -174,7 +174,7 @@ void arc_handle_pme(struct zjs_ipm_message *msg)
         break;
     case TYPE_PME_ITERATE_TO_SAVE:
         if (!save_mode) {
-            ERR_PRINT("not in save mode");
+            ERR_PRINT("not in save mode\n");
             ipm_send_error(msg, ERROR_IPM_OPERATION_FAILED);
         }
 
@@ -200,7 +200,7 @@ void arc_handle_pme(struct zjs_ipm_message *msg)
         break;
     case TYPE_PME_ITERATE_TO_RESTORE:
         if (!restore_mode) {
-            ERR_PRINT("not in restore mode");
+            ERR_PRINT("not in restore mode\n");
             ipm_send_error(msg, ERROR_IPM_OPERATION_FAILED);
         }
 

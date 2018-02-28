@@ -5,6 +5,7 @@
         "ble",
         "common",
         "console",
+        "fs",
         "gpio",
         "i2c",
         "performance",
@@ -15,7 +16,7 @@
         "sensor_temp",
         "spi"
     ],
-    "targets": ["arduino_101"],
+    "targets": ["arduino_101", "stm32f4_disco", "olimex_stm32_e407"],
     "src": [
         "src/file-utils.c",
         "src/ashell/jerry-code.c",
@@ -26,34 +27,30 @@
         "./deps/ihex/kk_ihex_read.c"
     ],
     "zephyr_conf": {
-        "arduino_101": [
+        "all": [
             "CONFIG_EARLY_CONSOLE=y",
             "CONFIG_CONSOLE_HANDLER=y",
             "CONFIG_CONSOLE_HANDLER_SHELL=y",
             "CONFIG_IHEX_UPLOADER_DEBUG=n",
             "CONFIG_REBOOT=y",
             "CONFIG_USB=y",
-            "CONFIG_USB_DW=y",
             "CONFIG_USB_DEVICE_STACK=y",
-            "CONFIG_USB_DW_DEBUG=n",
             "CONFIG_USB_DEBUG=n",
             "CONFIG_SERIAL=y",
             "CONFIG_UART_INTERRUPT_DRIVEN=y",
             "CONFIG_UART_LINE_CTRL=y",
             "CONFIG_USB_CDC_ACM_DEBUG=n",
             "CONFIG_DEVICE_POWER_MANAGEMENT=y",
-            "CONFIG_FILE_SYSTEM=y",
-            "CONFIG_FAT_FILESYSTEM_ELM=y",
-            "CONFIG_DISK_ACCESS_FLASH=y",
-            "CONFIG_FS_FAT_FLASH_DISK_W25QXXDV=y",
-            "CONFIG_FLASH=y",
             "CONFIG_SPI=y",
-            "CONFIG_GPIO=y",
+            "CONFIG_GPIO=y"
+        ],
+        "arduino_101": [
+            "CONFIG_USB_DW=y",
+            "CONFIG_USB_DW_DEBUG=n",
             "CONFIG_BT=y",
             "CONFIG_BT_LE=y",
             "CONFIG_BT_SMP=y",
             "CONFIG_BT_PERIPHERAL=y",
-            "CONFIG_BT_GATT_DYNAMIC_DB=y",
             "CONFIG_USB_DEVICE_VID=0x8086",
             "CONFIG_USB_DEVICE_PID=0xF8A1"
         ]

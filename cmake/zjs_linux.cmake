@@ -127,11 +127,18 @@ if(NOT APPLE)
     ${IOTC_BASE}/api
     ${IOTC_BASE}/include
     ${IOTC_BASE}/messaging/coap
-    ${IOTC_BASE}/port/linux
     ${IOTC_BASE}/util
     )
 
-  add_definitions(-DOC_SERVER -DOC_CLIENT -DBUILD_MODULE_OCF -DZJS_GPIO_MOCK)
+  add_definitions(
+      -DOC_SERVER
+      -DOC_CLIENT
+      -DOC_DYNAMIC_ALLOCATION
+      -DOC_CLOCK_CONF_TICKS_PER_SECOND=1000
+      -DMAX_APP_DATA_SIZE=1024
+      -DBUILD_MODULE_OCF
+      -DZJS_GPIO_MOCK
+      )
 
   # these flags are needed to get rid of warnings in iotivity-constrained
   list(APPEND APP_COMPILE_OPTIONS -Wno-pointer-sign)
@@ -143,11 +150,11 @@ add_custom_command(
     ${JERRY_LIBDIR}/lib/libjerry-core.a
     ${JERRY_LIBDIR}/lib/libjerry-ext.a
   COMMAND ${CMAKE_SOURCE_DIR}/scripts/analyze
-    BOARD=linux
-    O=${CMAKE_BINARY_DIR}/..
-    RESTRICT=${LINUX_MODULES}
-    V=${V}
-    JSON_DIR=${CMAKE_SOURCE_DIR}/src/
+    --board=linux
+    --output-dir=${CMAKE_BINARY_DIR}/..
+    --restrict=${LINUX_MODULES}
+    --verbose=${V}
+    --json-dir=${CMAKE_SOURCE_DIR}/src/
   COMMAND ${PYTHON_EXECUTABLE}
     ${CMAKE_SOURCE_DIR}/deps/jerryscript/tools/build.py
     --builddir=${JERRY_LIBDIR}

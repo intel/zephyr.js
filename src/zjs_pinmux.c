@@ -1,4 +1,4 @@
-// Copyright (c) 2017, Intel Corporation.
+// Copyright (c) 2017-2018, Intel Corporation.
 
 // This file is currently meant only for FRDM_K64F board
 
@@ -27,10 +27,10 @@ int frdm_k64f_pinmux_setup(struct device *unused)
     // TODO: eventually we maybe need to analyze script to decide how to do
     //   pinmux, or have user provide a static configuration
     struct device *porta = device_get_binding(CONFIG_PINMUX_MCUX_PORTA_NAME);
-    pinmux_pin_set(porta, 0, PORT_PCR_MUX(kPORT_MuxAsGpio));
-    pinmux_pin_set(porta, 1, PORT_PCR_MUX(kPORT_MuxAsGpio));  // D3
-    pinmux_pin_set(porta, 2, PORT_PCR_MUX(kPORT_MuxAsGpio));  // D5
-    pinmux_pin_set(porta, 4, PORT_PCR_MUX(kPORT_MuxAsGpio));  // SW3
+    pinmux_pin_set(porta,  0, PORT_PCR_MUX(kPORT_MuxAsGpio));
+    pinmux_pin_set(porta,  1, PORT_PCR_MUX(kPORT_MuxAsGpio));  // D3
+    pinmux_pin_set(porta,  2, PORT_PCR_MUX(kPORT_MuxAsGpio));  // D5
+    pinmux_pin_set(porta,  4, PORT_PCR_MUX(kPORT_MuxAsGpio));  // SW3
 
     struct device *portb = device_get_binding(CONFIG_PINMUX_MCUX_PORTB_NAME);
     pinmux_pin_set(portb,  9, PORT_PCR_MUX(kPORT_MuxAsGpio));  // D2

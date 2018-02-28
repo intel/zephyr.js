@@ -1,4 +1,4 @@
-// Copyright (c) 2017, Intel Corporation.
+// Copyright (c) 2017-2018, Intel Corporation.
 
 #ifndef _ARC_CURIE_PME_H_
 #define _ARC_CURIE_PME_H_
@@ -112,7 +112,7 @@ typedef enum {
     CAT_CATEGORY = 0x7FFF,        // the category associated with a neuron
     GCR_DIST = 0x0080,            // distance type, 1 = Lsup, 0 = L1
     GCR_GLOBAL = 0x007F,          // the context of the neuron
-    NSR_CLASS_MODE =  0x0020,     // Classifier mode 1 = KNN, 0 = RBF
+    NSR_CLASS_MODE = 0x0020,      // Classifier mode 1 = KNN, 0 = RBF
     NSR_NET_MODE = 0x0010,        // 1 = save/restore 0 = learn/recognize
     NSR_ID_FLAG = 0x0008,         // Indicates positive identification
     NSR_UNCERTAIN_FLAG = 0x0004,  // Indicates uncertain identification

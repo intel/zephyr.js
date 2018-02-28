@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, Intel Corporation.
+// Copyright (c) 2016-2018, Intel Corporation.
 
 #ifndef __zjs_common_h__
 #define __zjs_common_h__
@@ -56,13 +56,13 @@ int zjs_get_ms(void);
 #elif defined(ZJS_VERBOSE) && ZJS_VERBOSE >= 2
 // Verbosity level 2 just shows function/line
 #define DBG_PRINT                                                       \
-    ZJS_PRINT("\n%s:%d %s():\n(INFO) ", zjs_shorten_filepath(__FILE__),  \
-              __LINE__, __func__);                                       \
+    ZJS_PRINT("\n%s:%d %s():\n(INFO) ", zjs_shorten_filepath(__FILE__), \
+              __LINE__, __func__);                                      \
     ZJS_PRINT
 
-#define ERR_PRINT                                                         \
-    ZJS_PRINT("\n%s:%d %s():\n(ERROR) ", zjs_shorten_filepath(__FILE__),  \
-              __LINE__, __func__);                                        \
+#define ERR_PRINT                                                        \
+    ZJS_PRINT("\n%s:%d %s():\n(ERROR) ", zjs_shorten_filepath(__FILE__), \
+              __LINE__, __func__);                                       \
     ZJS_PRINT
 #else
 // Verbosity level 1 just shows text
@@ -72,8 +72,8 @@ int zjs_get_ms(void);
 
 #else  // !DEBUG_BUILD
 #define DBG_PRINT(fmt...) do {} while (0)
-#define ERR_PRINT                                                        \
-    ZJS_PRINT("\n%d:(ERROR) ", __LINE__);                                \
+#define ERR_PRINT                         \
+    ZJS_PRINT("\n%d:(ERROR) ", __LINE__); \
     ZJS_PRINT
 #endif  // DEBUG_BUILD
 
