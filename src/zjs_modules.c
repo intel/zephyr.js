@@ -230,15 +230,15 @@ static ZJS_DECL_FUNC(native_print_handler)
     zjs_free(str);
     return ZJS_UNDEFINED;
 }
-static void zjs_stop_js()
+void zjs_stop_js()
 {
     zjs_modules_cleanup();
     zjs_remove_all_callbacks();
-    #ifdef CONFIG_BOARD_ARDUINO_101
-    #ifdef CONFIG_IPM
+#ifdef CONFIG_BOARD_ARDUINO_101
+#ifdef CONFIG_IPM
         zjs_ipm_free_callbacks();
-    #endif
-    #endif
+#endif // CONFIG_IPM
+#endif // CONFIG_BOARD_ARDUINO_101
     jerry_cleanup();
     jerry_init(JERRY_INIT_EMPTY);
     zjs_modules_init();
@@ -280,13 +280,13 @@ void zjs_modules_check_load_file(char *file)
     parsed_code = jerry_parse((const jerry_char_t *)buf, size, false);
 
     if (jerry_value_has_error_flag(parsed_code)) {
-     ERR_PRINT("Error parsing JS\n");
+        ERR_PRINT("Error parsing JS\n");
     }
 
     zjs_free(buf);
     ZVAL ret_value = jerry_run(parsed_code);
     if (jerry_value_has_error_flag(ret_value)) {
-     ERR_PRINT("Error running JS\n");
+        ERR_PRINT("Error running JS\n");
     }
 
     // Remove the load file so it doesn't load it again
@@ -298,7 +298,7 @@ void zjs_modules_check_load_file(char *file)
 static ZJS_DECL_FUNC(zjs_run_js)
 {
     ZJS_VALIDATE_ARGS(Z_STRING);
-    size_t len = 15;
+    size_t len = MAX_FILE_NAME;
     size_t file_len;
     load_file = zjs_malloc(len);
 

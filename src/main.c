@@ -360,7 +360,7 @@ if (start_debug_server) {
     while (1) {
 #ifdef ZJS_DYNAMIC_LOAD
 	// Check if we should load a new JS file
-        zjs_modules_check_load_file();
+    zjs_modules_check_load_file();
 #endif
 #ifdef ZJS_ASHELL
         if (ashell_mode) {
