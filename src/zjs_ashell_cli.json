@@ -2,6 +2,6 @@
     "module": "ashell_cli",
     "depends": ["ashell"],
     "zephyr_conf": {
-        "arduino_101": ["CONFIG_USB_CDC_ACM=y"]
+        "all": ["CONFIG_USB_CDC_ACM=y"]
     }
 }
