@@ -8,6 +8,7 @@
 */
 
 // C includes
+#if defined(ZJS_ASHELL) || defined(ZJS_DYNAMIC_LOAD)
 #include <ctype.h>
 #include <errno.h>
 #include <stdint.h>
@@ -210,3 +211,4 @@ char *read_file_alloc(const char *file_name, ssize_t *size)
     fs_close_alloc(fp);
     return file_buf;
 }
+#endif // defined(ZJS_ASHELL) || defined(ZJS_DYNAMIC_LOAD)
