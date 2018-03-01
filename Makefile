@@ -319,13 +319,14 @@ analyze: $(JS)
 
 # Update dependency repos
 .PHONY: update
-update:
-	@git submodule update --init
-	@cd $(OCF_ROOT); git submodule update --init;
+update: .gitmodules
+	@git submodule update --init --recursive
+
+${JERRY_BASE}/CMakeLists.txt: update
 
 # set up prj.conf file
 -.PHONY: setup
-setup:
+setup: ${JERRY_BASE}/CMakeLists.txt
 ifeq ($(ASHELL), ashell)
 ifeq ($(filter ide,$(MAKECMDGOALS)),ide)
 	@echo CONFIG_USB_CDC_ACM=n >> prj.conf
