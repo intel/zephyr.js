@@ -25,7 +25,7 @@
 #include "zjs_util.h"
 #include "jerryscript-ext/module.h"
 #if defined(ZJS_ASHELL) || defined(ZJS_DYNAMIC_LOAD)
-#include "file-utils.h"
+#include "zjs_file_utils.h"
 #endif
 
 struct routine_map {
@@ -238,7 +238,7 @@ void zjs_stop_js()
     zjs_remove_all_callbacks();
 #ifdef CONFIG_BOARD_ARDUINO_101
 #ifdef CONFIG_IPM
-        zjs_ipm_free_callbacks();
+    zjs_ipm_free_callbacks();
 #endif // CONFIG_IPM
 #endif // CONFIG_BOARD_ARDUINO_101
     jerry_cleanup();
@@ -267,7 +267,7 @@ static ZJS_DECL_FUNC(process_exit)
 }
 #endif
 #ifdef ZJS_DYNAMIC_LOAD
-void zjs_modules_check_load_file(char *file)
+void zjs_modules_check_load_file()
 {
     // No file waiting to load, just return
     if (load_file == NULL) {
@@ -280,15 +280,16 @@ void zjs_modules_check_load_file(char *file)
     jerry_value_t parsed_code = 0;
     buf = read_file_alloc(load_file, &size);
     parsed_code = jerry_parse((const jerry_char_t *)buf, size, false);
-
-    if (jerry_value_has_error_flag(parsed_code)) {
-        ERR_PRINT("Error parsing JS\n");
-    }
-
     zjs_free(buf);
-    ZVAL ret_value = jerry_run(parsed_code);
-    if (jerry_value_has_error_flag(ret_value)) {
-        ERR_PRINT("Error running JS\n");
+
+    if (!jerry_value_has_error_flag(parsed_code)) {
+        ZVAL ret_value = jerry_run(parsed_code);
+        if (jerry_value_has_error_flag(ret_value)) {
+            ERR_PRINT("Error running JS\n");
+        }
+    }
+    else {
+        ERR_PRINT("Error parsing JS\n");
     }
 
     // Remove the load file so it doesn't load it again

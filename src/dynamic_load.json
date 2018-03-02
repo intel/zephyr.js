@@ -1,0 +1,12 @@
+{
+    "module": "dynamicload",
+    "depends": ["buffer", "fs"],
+    "zjs_config": [
+        "-I${ZEPHYR_BASE}/ext/fs/fat/include",
+        "-I./deps",
+        "-DZJS_DYNAMIC_LOAD"
+    ],
+    "src": [
+        "src/zjs_file_utils.c"
+    ]
+}

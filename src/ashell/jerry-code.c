@@ -15,7 +15,7 @@
 #include <zephyr.h>
 
 // JerryScript includes
-#include "../file-utils.h"
+#include "../zjs_file_utils.h"
 #include "jerry-code.h"
 #include "jerryscript-port.h"
 

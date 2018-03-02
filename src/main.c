@@ -23,7 +23,7 @@
 #if defined (ZJS_ASHELL) || defined (ZJS_DYNAMIC_LOAD)
 #include <gpio.h>
 #include "zjs_board.h"
-#include "file-utils.h"
+#include "zjs_file_utils.h"
 #ifdef ZJS_ASHELL
 #include "ashell/ashell.h"
 #endif // ZJS_ASHELL
@@ -359,8 +359,8 @@ int main(int argc, char *argv[])
 #endif
     while (1) {
 #ifdef ZJS_DYNAMIC_LOAD
-	// Check if we should load a new JS file
-    zjs_modules_check_load_file();
+        // Check if we should load a new JS file
+        zjs_modules_check_load_file();
 #endif
 #ifdef ZJS_ASHELL
         if (ashell_mode) {
