@@ -18,7 +18,7 @@
     ],
     "targets": ["arduino_101", "stm32f4_disco", "olimex_stm32_e407"],
     "src": [
-        "src/ashell/file-utils.c",
+        "src/zjs_file_utils.c",
         "src/ashell/jerry-code.c",
         "src/ashell/term-cmd.c",
         "src/ashell/term-ihex.c",

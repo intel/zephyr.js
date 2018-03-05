@@ -1,4 +1,4 @@
-# Copyright (c) 2016-2017, Intel Corporation.
+# Copyright (c) 2016-2018, Intel Corporation.
 
 # a place to add temporary defines to ZJS builds such as -DZJS_GPIO_MOCK
 #ZJS_FLAGS :=
@@ -109,7 +109,7 @@ JERRY_BASE ?= $(ZJS_BASE)/deps/jerryscript
 JERRY_OUTPUT = $(OUT)/$(BOARD)/jerry/build
 
 # Generate and run snapshot as byte code instead of running JS directly
-ifneq (,$(filter $(MAKECMDGOALS),ide ashell linux))
+ifneq (,$(filter $(MAKECMDGOALS),ide ashell linux dynamic))
 SNAPSHOT=off
 # if the user passes in SNAPSHOT=on for ide, ashell, or linux give an error
 ifeq ($(SNAPSHOT), on)
@@ -139,6 +139,11 @@ ZJS_FLAGS += -DZJS_FIND_FUNC_NAME
 ifneq ($(IDE_GPIO_PIN),)
 ZJS_FLAGS += -DIDE_GPIO_PIN=$(IDE_GPIO_PIN)
 endif
+endif
+
+# Settings for dynamic load builds
+ifneq (,$(filter $(MAKECMDGOALS),dynamic))
+FORCED := dynamic_load.json,$(FORCED)
 endif
 
 ifeq ($(BOARD), arduino_101)
@@ -221,6 +226,9 @@ ide: zephyr
 
 .PHONY: ashell
 ashell: zephyr
+
+.PHONY: dynamic
+dynamic: zephyr
 
 # Flash images
 .PHONY: dfu
@@ -491,6 +499,7 @@ help:
 	@echo "    pristine:   Completely remove all generated files"
 	@echo "    check:      Run all the automated build tests"
 	@echo "    quickcheck: Run the quick Linux subset of automated build tests"
+	@echo "    dynamic     Build Zephyr in dynamic loading mode. Includes the parser"
 	@echo
 	@echo "Build options:"
 	@echo "    BOARD=      Specify a Zephyr board to build for"

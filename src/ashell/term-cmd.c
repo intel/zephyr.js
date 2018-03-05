@@ -13,7 +13,7 @@
 #include <string.h>
 
 // Zephyr includes
-#include "file-utils.h"
+#include "../zjs_file_utils.h"
 #include "jerryscript-port.h"
 #include <atomic.h>
 #include <misc/printk.h>
