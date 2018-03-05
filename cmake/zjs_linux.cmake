@@ -43,6 +43,7 @@ set(APP_SRC
   ${CMAKE_SOURCE_DIR}/src/zjs_unit_tests.c
   ${CMAKE_SOURCE_DIR}/src/zjs_util.c
   ${CMAKE_SOURCE_DIR}/src/jerry-port/zjs_jerry_port.c
+  ${JERRY_BASE}/jerry-port/default/default-socket.c
   )
 
 set(APP_INCLUDES
@@ -82,6 +83,7 @@ if("${CB_STATS}" STREQUAL "on")
 endif()
 
 if("${DEBUGGER}" STREQUAL "on")
+  add_definitions(-DJERRY_DEBUGGER)
   add_definitions(-DZJS_DEBUGGER)
 endif()
 

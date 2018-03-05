@@ -42,6 +42,7 @@ if("${CB_STATS}" STREQUAL "on")
 endif()
 
 if("${DEBUGGER}" STREQUAL "on")
+  add_definitions(-DJERRY_DEBUGGER)
   add_definitions(-DZJS_DEBUGGER)
 endif()
 
@@ -75,7 +76,7 @@ target_sources(app PRIVATE src/zjs_modules.c)
 target_sources(app PRIVATE src/zjs_script.c)
 target_sources(app PRIVATE src/zjs_timers.c)
 target_sources(app PRIVATE src/zjs_util.c)
-target_sources(app PRIVATE src/jerry-port/zjs_jerry_port.c)
+target_sources(app PRIVATE ${JERRY_BASE}/targets/zephyr/src/jerry-port.c)
 
 target_link_libraries(app jerry-core jerry-ext)
 
