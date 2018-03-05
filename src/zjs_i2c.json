@@ -2,6 +2,7 @@
     "module": "i2c",
     "require": "i2c",
     "depends": ["buffer", "i2c_a101", "i2c_k64f"],
+    "targets": ["arduino_101", "frdm_k64f"],
     "zjs_config": ["-DBUILD_MODULE_I2C"],
     "src": ["src/zjs_i2c.c"]
 }

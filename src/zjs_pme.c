@@ -1,4 +1,4 @@
-// Copyright (c) 2017, Intel Corporation.
+// Copyright (c) 2017-2018, Intel Corporation.
 
 // C includes
 #include <string.h>
@@ -452,7 +452,7 @@ static void zjs_pme_cleanup(void *native)
 }
 
 static const jerry_object_native_info_t pme_module_type_info = {
-   .free_cb = zjs_pme_cleanup
+    .free_cb = zjs_pme_cleanup
 };
 
 static jerry_value_t zjs_pme_init()

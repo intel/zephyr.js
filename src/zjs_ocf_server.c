@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, Intel Corporation.
+// Copyright (c) 2016-2018, Intel Corporation.
 
 #ifdef BUILD_MODULE_OCF
 
@@ -187,7 +187,7 @@ static jerry_value_t create_resource(const char *path,
     ZVAL properties = zjs_get_property(resource_init, "properties");
     zjs_set_property(res, "properties", properties);
 
-    DBG_PRINT("path=%s, obj number=%x\n", path, res);
+    DBG_PRINT("path=%s, obj number=%x\n", path, (unsigned int)res);
 
     return res;
 }
@@ -250,7 +250,7 @@ static ZJS_DECL_FUNC(ocf_respond)
         oc_send_response(h->req, OC_STATUS_OK);
     }
     DBG_PRINT("responding to method type=%u, properties=%x\n", h->resp->method,
-              data);
+              (unsigned int)data);
 
     jerry_value_t promise = jerry_create_promise();
 
@@ -306,7 +306,7 @@ static void ocf_get_handler(oc_request_t *request,
     ZVAL request_val = create_request(h->res, OC_GET, h);
     ZVAL flag = jerry_create_boolean(0);
 
-    jerry_value_t argv[2] = {request_val, flag};
+    jerry_value_t argv[2] = { request_val, flag };
     zjs_emit_event(h->res->object, "retrieve", argv, 2);
 
     zjs_free(h->resp);

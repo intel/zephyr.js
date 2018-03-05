@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, Intel Corporation.
+// Copyright (c) 2016-2018, Intel Corporation.
 
 #ifdef BUILD_MODULE_AIO
 #ifndef QEMU_BUILD
@@ -172,7 +172,8 @@ static jerry_value_t aio_pin_read(const jerry_value_t function_obj,
 
     if (async) {
 #ifdef ZJS_FIND_FUNC_NAME
-        zjs_obj_add_string(argv[0], ZJS_HIDDEN_PROP("function_name"), "readAsync");
+        zjs_obj_add_string(argv[0], ZJS_HIDDEN_PROP("function_name"),
+                           "readAsync");
 #endif
         zjs_callback_id id = zjs_add_callback_once(argv[0], this, NULL, NULL);
         zjs_signal_callback(id, &result, sizeof(result));
@@ -184,11 +185,7 @@ static jerry_value_t aio_pin_read(const jerry_value_t function_obj,
 
 static ZJS_DECL_FUNC(zjs_aio_pin_read)
 {
-    return aio_pin_read(function_obj,
-                        this,
-                        argv,
-                        argc,
-                        false);
+    return aio_pin_read(function_obj, this, argv, argc, false);
 }
 
 // Asynchronous Operations
@@ -197,11 +194,7 @@ static ZJS_DECL_FUNC(zjs_aio_pin_read_async)
     // args: callback
     ZJS_VALIDATE_ARGS(Z_FUNCTION);
 
-    return aio_pin_read(function_obj,
-                        this,
-                        argv,
-                        argc,
-                        true);
+    return aio_pin_read(function_obj, this, argv, argc, true);
 }
 
 static ZJS_DECL_FUNC(zjs_aio_pin_close)
@@ -234,11 +227,9 @@ static ZJS_DECL_FUNC(zjs_aio_open)
     int pin = zjs_board_find_aio(pin_val, devname, 20);
     if (pin == FIND_PIN_INVALID) {
         return TYPE_ERROR("bad pin argument");
-    }
-    else if (pin == FIND_DEVICE_FAILURE) {
+    } else if (pin == FIND_DEVICE_FAILURE) {
         return zjs_error("device not found");
-    }
-    else if (pin < 0) {
+    } else if (pin < 0) {
         return zjs_error("pin not found");
     }
 
@@ -278,7 +269,7 @@ static void zjs_aio_cleanup(void *native)
 }
 
 static const jerry_object_native_info_t aio_module_type_info = {
-   .free_cb = zjs_aio_cleanup
+    .free_cb = zjs_aio_cleanup
 };
 
 jerry_value_t zjs_aio_init()

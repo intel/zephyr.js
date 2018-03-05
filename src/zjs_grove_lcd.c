@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, Intel Corporation.
+// Copyright (c) 2016-2018, Intel Corporation.
 
 #ifdef BUILD_MODULE_GROVE_LCD
 #ifndef QEMU_BUILD
@@ -178,7 +178,7 @@ static void zjs_grove_lcd_cleanup(void *native)
 }
 
 static const jerry_object_native_info_t grove_lcd_module_type_info = {
-   .free_cb = zjs_grove_lcd_cleanup
+    .free_cb = zjs_grove_lcd_cleanup
 };
 
 // Note. setInputState is not supported in Zephyr driver yet
@@ -273,7 +273,8 @@ static jerry_value_t zjs_grove_lcd_init()
     jerry_release_value(val);
 
     // Set up cleanup function for when the object gets freed
-    jerry_set_object_native_pointer(glcd_obj, NULL, &grove_lcd_module_type_info);
+    jerry_set_object_native_pointer(glcd_obj, NULL,
+                                    &grove_lcd_module_type_info);
     return glcd_obj;
 }
 

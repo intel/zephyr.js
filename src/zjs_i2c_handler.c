@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, Intel Corporation.
+// Copyright (c) 2016-2018, Intel Corporation.
 
 // ZJS includes
 #include "zjs_i2c_handler.h"
@@ -27,14 +27,9 @@ int zjs_i2c_handle_open(u8_t msg_bus)
         if (!i2c_device[msg_bus]) {
             ERR_PRINT("I2C bus %s not found.\n", bus);
         } else {
-            /* TODO remove these hard coded numbers
-             * once the config API is made */
-            union dev_config cfg;
-            cfg.raw = 0;
-            cfg.bits.use_10_bit_addr = 0;
-            cfg.bits.speed = I2C_SPEED_STANDARD;
-            cfg.bits.is_master_device = 1;
-            error_code = i2c_configure(i2c_device[msg_bus], cfg.raw);
+            u32_t cfg;
+            cfg = I2C_SPEED_SET(I2C_SPEED_STANDARD) | I2C_MODE_MASTER;
+            error_code = i2c_configure(i2c_device[msg_bus], cfg);
 
             if (error_code != 0) {
                 ERR_PRINT("I2C bus %s configure failed with %i.\n", bus,

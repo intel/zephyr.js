@@ -43,12 +43,17 @@ below instructions to connect to the device from the browser IDE directly.
 * Start Google Chrome 59 or later on the host PC.
 
 * **On Ubuntu and Fedora:**
-1. Create udev rules to allow Chrome to open the WebUSB enabled device and
-   also prevent ModemManager interfering with that device by adding the following
-   lines in /etc/udev/rules.d/99-arduino-101.rules
+1. Create udev rules to allow Chrome to open the WebUSB enabled devices and
+   also prevent ModemManager interfering with those devices by adding the following
+   lines in /etc/udev/rules.d/99-webusb.rules
 
+* **Arduino 101**
 >     SUBSYSTEM=="tty", ENV{ID_VENDOR_ID}=="8086", ENV{ID_MODEL_ID}=="f8a1", MODE="0666", ENV{ID_MM_DEVICE_IGNORE}="1", ENV{ID_MM_CANDIDATE}="0"
 >     SUBSYSTEM=="usb", ATTR{idVendor}=="8086", ATTR{idProduct}=="f8a1", MODE="0666" ENV{ID_MM_DEVICE_IGNORE}="1"
+
+* **Default VID/PID**
+>     SUBSYSTEM=="tty", ENV{ID_VENDOR_ID}=="dead", ENV{ID_MODEL_ID}=="beef", MODE="0666", ENV{ID_MM_DEVICE_IGNORE}="1", ENV{ID_MM_CANDIDATE}="0"
+>     SUBSYSTEM=="usb", ATTR{idVendor}=="dead", ATTR{idProduct}=="beef", MODE="0666" ENV{ID_MM_DEVICE_IGNORE}="1"
 
 2. Then run this command:
     ```bash

@@ -43,7 +43,8 @@ struct routine_map svc_routine_map[NUM_SERVICE_ROUTINES];
 #ifdef ZJS_ASHELL
 
 // Eval the JavaScript, and return the module.
-static bool javascript_eval_code(const char *source_buffer, ssize_t size, jerry_value_t *ret_val)
+static bool javascript_eval_code(const char *source_buffer, ssize_t size,
+                                 jerry_value_t *ret_val)
 {
     (*ret_val) = jerry_eval((jerry_char_t *)source_buffer, size, false);
     if (jerry_value_has_error_flag(*ret_val)) {
@@ -55,7 +56,8 @@ static bool javascript_eval_code(const char *source_buffer, ssize_t size, jerry_
 #endif
 
 // Find the module on the filestystem
-static bool load_js_module_fs(const jerry_value_t module_name, jerry_value_t *result)
+static bool load_js_module_fs(const jerry_value_t module_name,
+                              jerry_value_t *result)
 {
     // Currently searching the filesystem is only supported on ashell
 #ifdef ZJS_ASHELL
@@ -77,14 +79,14 @@ static bool load_js_module_fs(const jerry_value_t module_name, jerry_value_t *re
 #else
     return false;
 #endif
-
 }
-#else   // ZJS_LINUX_BUILD
+#else  // ZJS_LINUX_BUILD
 /****************************************
 *   Linux JavaScript module resolver
 *****************************************/
 // Find the module on the filestystem
-static bool load_js_module_fs(const jerry_value_t module_name, jerry_value_t *result)
+static bool load_js_module_fs(const jerry_value_t module_name,
+                              jerry_value_t *result)
 {
     // Linux can pass in the script at runtime, so we have to read in/parse any
     // JS modules now rather than at compile time
@@ -111,8 +113,7 @@ static bool load_js_module_fs(const jerry_value_t module_name, jerry_value_t *re
     if (jerry_value_has_error_flag(*result)) {
         ERR_PRINT("failed to evaluate JS\n");
         ret = false;
-    }
-    else {
+    } else {
         ret = true;
     }
     zjs_free(str);
@@ -121,7 +122,8 @@ static bool load_js_module_fs(const jerry_value_t module_name, jerry_value_t *re
 #endif  // !ZJS_LINUX_BUILD
 
 // Try to find the module in the main JS file
-static bool load_js_module_obj(const jerry_value_t module_name, jerry_value_t *result)
+static bool load_js_module_obj(const jerry_value_t module_name,
+                               jerry_value_t *result)
 {
     jerry_size_t module_size = jerry_get_utf8_string_size(module_name) + 1;
     char module[module_size];
@@ -175,9 +177,9 @@ static jerryx_module_resolver_t load_js_resolver =
 // These execute in order until a matching module is found
 static const jerryx_module_resolver_t *resolvers[] =
 {
-    &jerryx_module_native_resolver,     // Check for a native module
-    &load_js_resolver,                  // Check for a JS module in the code
-    &load_fs_resolver                   // Check for a JS module on the FS
+    &jerryx_module_native_resolver,  // Check for a native module
+    &load_js_resolver,               // Check for a JS module in the code
+    &load_fs_resolver                // Check for a JS module on the FS
 };
 
 // native require handler
@@ -199,8 +201,7 @@ static ZJS_DECL_FUNC(native_require_handler)
     if (jerry_value_has_error_flag(result)) {
         DBG_PRINT("Couldn't load module %s\n", module);
         return NOTSUPPORTED_ERROR("Module not found");
-    }
-    else {
+    } else {
         DBG_PRINT("Module %s loaded\n", module);
     }
     return result;
@@ -325,7 +326,8 @@ void zjs_register_service_routine(void *handle, zjs_service_routine func)
     return;
 }
 
-void zjs_unregister_service_routine(zjs_service_routine func) {
+void zjs_unregister_service_routine(zjs_service_routine func)
+{
     for (int i = 0; i < num_routines; i++) {
         if (svc_routine_map[i].func == func) {
             svc_routine_map[i].handle = NULL;

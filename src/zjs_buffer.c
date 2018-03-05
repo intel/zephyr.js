@@ -424,8 +424,7 @@ static ZJS_DECL_FUNC(zjs_buffer_fill)
         source[2] = (0x0000ff00 & srcnum) >> 8;
         source[3] = 0x000000ff & srcnum;
         srclen = sizeof(u32_t);
-    }
-    else if (zjs_value_is_buffer(argv[0])) {
+    } else if (zjs_value_is_buffer(argv[0])) {
         zjs_buffer_t *srcbuf = zjs_buffer_find(argv[0]);
         source = (char *)srcbuf->buffer;
         srclen = srcbuf->bufsize;
