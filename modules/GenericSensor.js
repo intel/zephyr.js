@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, Intel Corporation.
+// Copyright (c) 2016-2018, Intel Corporation.
 
 // JavaScript library for the tests sensor case
 
@@ -54,40 +54,31 @@ function GenericSensor() {
                     + total + " passed");
     }
 
-    var currentState = null;
+    var isActivated = false;
     var changeFlag = false;
     var errorFlag = true;
-    var defaultState, startState, stopState, middleState, middleNum;
-    var middleNumX, middleNumY, middleNumZ, tmpTimestamp;
+    var middleNum, middleNumX, middleNumY, middleNumZ, tmpTimestamp;
 
     genericSensor.test = function(sensor, sensorType) {
         assert(typeof sensor === "object" && sensor !== null,
                "sensor: be defined");
 
-        currentState = sensor.state;
-        defaultState = sensor.state;
+        isActivated = sensor.activated;
+        assert(typeof isActivated === "boolean",
+               "sensor: activated as " + isActivated);
+        console.log("activated: " + isActivated);
 
-        assert(typeof currentState === "string" && currentState !== null,
-               "sensor: current state as '" + currentState + "'");
-
-        console.log("currentstate: " + currentState);
-
-        middleState = sensor.state;
-        sensor.state = middleState + "love";
-        assert(sensor.state === middleState,
-               "sensor: state is readonly property");
+        sensor.activated = !sensor.activated;
+        assert(sensor.activated === isActivated,
+               "sensor: activated is readonly property ");
 
         sensor.onactivate = function() {
-            currentState = sensor.state
-            console.log("currentstate: " + currentState);
-
-            assert(currentState === "activated",
-                   "sensor: state is activated");
-
+            console.log("activated: " + sensor.activated);
+            assert(sensor.activated === true, "sensor: sensor is activated");
             changeFlag = true;
         };
 
-        sensor.onchange = function() {
+        sensor.onreading = function() {
             tmpTimestamp = sensor.timestamp;
 
             if (changeFlag === true) {
@@ -174,21 +165,12 @@ function GenericSensor() {
         sensor.start();
 
         setTimeout(function() {
-            startState = sensor.state;
-            assert(defaultState !== startState &&
-                   defaultState === "unconnected" &&
-                   startState === "activated",
-                   "sensor: be started");
+            assert(sensor.activated === true, "sensor: is activated");
         }, 1000);
 
         setTimeout(function() {
             sensor.stop();
-
-            stopState = sensor.state;
-            assert(startState !== stopState &&
-                   stopState === "idle" &&
-                   startState === "activated",
-                   "sensor: be stopped");
+            assert(sensor.activated === false, "sensor: is stopped");
         }, 20000);
 
         setTimeout(function() {

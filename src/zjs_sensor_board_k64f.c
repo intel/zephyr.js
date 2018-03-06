@@ -111,8 +111,7 @@ int zjs_sensor_board_create(sensor_handle_t *handle)
         return -1;
     }
 
-    ZJS_PRINT("handle->controller->name %s\n", handle->controller->name);
-
+    DBG_PRINT("handle->controller->name %s\n", handle->controller->name);
     return 0;
 }
 
