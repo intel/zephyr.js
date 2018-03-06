@@ -44,8 +44,7 @@ ifeq ($(shell uname -s), Linux)
 SNAPSHOT_LIBS +=	-pthread
 endif
 
-SNAPSHOT_DEFINES +=	-DZJS_LINUX_BUILD \
-			-DZJS_PRINT_FLOATS
+SNAPSHOT_DEFINES +=	-DZJS_LINUX_BUILD
 
 SNAPSHOT_FLAGS += 	-fno-asynchronous-unwind-tables \
 			-fno-omit-frame-pointer \
