@@ -8,6 +8,7 @@
         "fs",
         "gpio",
         "i2c",
+        "math",
         "performance",
         "pwm",
         "sensor_accel",
