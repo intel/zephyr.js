@@ -223,7 +223,7 @@ the samples you will want to hook up the serial console (see below), but for
 this one it's not really needed.
 
 Then connect the Arduino 101 to your host with a USB A/B cable. Press the
-Master Reset button on the Arduino 101 and after a few seconds type:
+Master Reset button on the Arduino 101 and within a few seconds type:
 
 ```bash
 make dfu
