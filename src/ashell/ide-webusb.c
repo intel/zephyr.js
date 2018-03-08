@@ -178,4 +178,3 @@ void webusb_receive_process()
     k_yield();
   }
 }
-
