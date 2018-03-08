@@ -3,6 +3,8 @@
     "depends": ["ashell"],
     "src": ["${ZEPHYR_BASE}/samples/subsys/usb/webusb/src/webusb_serial.c"],
     "zephyr_conf": {
-        "all": ["CONFIG_USB_CDC_ACM=n"]
+        "arduino_101": ["CONFIG_USB_CDC_ACM=n"],
+        "olimex_stm32_e407": ["CONFIG_USB_CDC_ACM=n"],
+        "stm32f4_disco": ["CONFIG_USB_CDC_ACM=n"]
     }
 }
