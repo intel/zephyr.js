@@ -99,11 +99,11 @@ var gyro = new Gyroscope({
 accel.start();
 gyro.start();
 
-accel.onchange = function() {
+accel.onreading = function() {
     SensorCharacteristic.valueChange(1, accel.x, accel.y, accel.z);
 };
 
-gyro.onchange = function() {
+gyro.onreading = function() {
     SensorCharacteristic.valueChange(0, gyro.x, gyro.y, gyro.z);
 };
 

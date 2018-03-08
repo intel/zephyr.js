@@ -41,10 +41,6 @@ if("${CB_STATS}" STREQUAL "on")
   add_definitions(-DZJS_PRINT_CALLBACK_STATS)
 endif()
 
-if("${PRINT_FLOAT}" STREQUAL "on")
-  add_definitions(-DZJS_PRINT_FLOATS)
-endif()
-
 if("${VARIANT}" STREQUAL "debug")
   add_definitions(-DDEBUG_BUILD -DOC_DEBUG)
 endif()

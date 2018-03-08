@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, Intel Corporation.
+// Copyright (c) 2016-2018, Intel Corporation.
 
 // Test code to use the AmbientLightSensor (subclass of Generic Sensor) API
 // to communicate with the Grove Light sensor on the Arduino 101
@@ -32,7 +32,7 @@ var sensor = new AmbientLightSensor({
     pin: 'A2'
 });
 
-sensor.onchange = function() {
+sensor.onreading = function() {
     var val = sensor.illuminance;
     if (val <= 1) {
         console.log("(very dark): " + sensor.illuminance);

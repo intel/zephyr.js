@@ -22,7 +22,7 @@
 #include "term-cmd.h"
 #include "term-uart.h"
 
-#include "file-utils.h"
+#include "../zjs_file_utils.h"
 
 #ifndef CONFIG_IHEX_UPLOADER_DEBUG
 #define DBG(...) { ; }
