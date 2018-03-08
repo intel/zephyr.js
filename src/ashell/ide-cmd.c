@@ -237,7 +237,7 @@ int ide_spool_flush()
 
 int ide_reply(int status, char *message)
 {
-    ide_spool("{\"reply\": %s, \"status\":%d, \"data\": %s }\r\n",
+    ide_spool("{\"reply\": \"%s\", \"status\":%d, \"data\": %s }\r\n",
               cmd_arg_map[parser.cmd_id].cmd, status, message);
     ide_spool_flush();
     if (!(status == NO_ERROR && parser.state == PARSE_ARG_STREAM))
