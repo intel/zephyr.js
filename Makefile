@@ -320,7 +320,9 @@ analyze: $(JS)
 # Update dependency repos
 .PHONY: update
 update: .gitmodules
-	@git submodule update --init --recursive
+	@if ! [ -f ${JERRY_BASE}/CMakeLists.txt ]; then \
+		git submodule update --init --recursive; \
+	fi
 
 ${JERRY_BASE}/CMakeLists.txt: update
 
