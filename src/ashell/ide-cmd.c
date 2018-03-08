@@ -25,7 +25,7 @@
 
 // Local includes
 #include "ashell.h"
-#include "file-utils.h"
+#include "../zjs_file_utils.h"
 #include "jerryscript-port.h"
 #include "ide-comms.h"
 
@@ -444,7 +444,7 @@ int save_stream(char *filename, char *buffer, size_t len)
         if (!match_stream_start(buffer)) {
             return ide_reply(ERROR_INVALID_STREAM, "\"Invalid stream start.\"");
         }
-        parser.stream_fp = fs_open_alloc(filename, fs_exist(filename) ? "u" : "w+");
+        parser.stream_fp = fs_open_alloc(filename, "w+");
         skip_stream_start(&buffer, &len);
     }
 
