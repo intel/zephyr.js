@@ -43,7 +43,6 @@ set(APP_SRC
   ${CMAKE_SOURCE_DIR}/src/zjs_unit_tests.c
   ${CMAKE_SOURCE_DIR}/src/zjs_util.c
   ${CMAKE_SOURCE_DIR}/src/jerry-port/zjs_jerry_port.c
-  ${JERRY_BASE}/jerry-port/default/default-socket.c
   )
 
 set(APP_INCLUDES
@@ -80,11 +79,6 @@ set(APP_COMPILE_OPTIONS
 
 if("${CB_STATS}" STREQUAL "on")
   add_definitions(-DZJS_PRINT_CALLBACK_STATS)
-endif()
-
-if("${DEBUGGER}" STREQUAL "on")
-  add_definitions(-DJERRY_DEBUGGER)
-  add_definitions(-DZJS_DEBUGGER)
 endif()
 
 if("${VARIANT}" STREQUAL "debug")
@@ -143,6 +137,15 @@ if(NOT APPLE)
 
   # these flags are needed to get rid of warnings in iotivity-constrained
   list(APPEND APP_COMPILE_OPTIONS -Wno-pointer-sign)
+
+  if("${DEBUGGER}" STREQUAL "on")
+    list(APPEND APP_SRC
+      ${JERRY_BASE}/jerry-port/default/default-socket.c
+      )
+
+    add_definitions(-DJERRY_DEBUGGER)
+    add_definitions(-DZJS_DEBUGGER)
+  endif()
 endif()
 
 # build libjerry as a static library
