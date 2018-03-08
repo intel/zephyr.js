@@ -81,7 +81,7 @@ snapshot_copy:
 .PHONY: snapshot
 snapshot: setup snapshot_copy $(BUILD_OBJ)
 	@echo "Building for snapshot $(BUILD_OBJ)"
-	cd deps/jerryscript; python ./tools/build.py --builddir=build $(JERRY_FLAGS) $(VERBOSE);
+	cd deps/jerryscript; python ./tools/build.py --builddir=build --jerry-libc=off $(JERRY_FLAGS) $(VERBOSE);
 	gcc $(SNAPSHOT_INCLUDES) $(JERRY_LIB_PATH) -o $(BUILD_DIR)/snapshot $(BUILD_OBJ) $(SNAPSHOT_FLAGS) $(CFLAGS) $(SNAPSHOT_DEFINES) $(SNAPSHOT_LIBS)
 
 .PHONY: clean
