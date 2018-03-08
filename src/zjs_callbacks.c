@@ -15,7 +15,7 @@
 
 #ifndef ZJS_LINUX_BUILD
 // Zephyr includes
-#include <misc/ring_buffer.h>
+#include <ring_buffer.h>
 #include <zephyr.h>
 
 // ZJS includes
