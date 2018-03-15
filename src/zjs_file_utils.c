@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, Intel Corporation.
+// Copyright (c) 2016-2018, Intel Corporation.
 
 /**
 * @file
@@ -8,6 +8,7 @@
 */
 
 // C includes
+#if defined(ZJS_ASHELL) || defined(ZJS_DYNAMIC_LOAD)
 #include <ctype.h>
 #include <errno.h>
 #include <stdint.h>
@@ -24,8 +25,8 @@
 #include <misc/printk.h>
 
 // ZJS includes
-#include "file-utils.h"
-#include "../zjs_util.h"
+#include "zjs_file_utils.h"
+#include "zjs_util.h"
 
 #define FILE_ERR ERR_PRINT("Read file failed\n")
 
@@ -210,3 +211,4 @@ char *read_file_alloc(const char *file_name, ssize_t *size)
     fs_close_alloc(fp);
     return file_buf;
 }
+#endif // defined(ZJS_ASHELL) || defined(ZJS_DYNAMIC_LOAD)

@@ -8,11 +8,11 @@
         "src/ashell/ide-cmd.c"
 ],
     "zephyr_conf": {
-        "arduino_101": [
+        "all": [
             "CONFIG_USB_CDC_ACM=n"
         ]
     },
     "zjs_config": [
-        "-I${ZEPHYR_BASE}/samples/subsys/usb/webusb-ide/src/"
+        "-I${ZEPHYR_BASE}/samples/subsys/usb/webusb/src/"
     ]
 }

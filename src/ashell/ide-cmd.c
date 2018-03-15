@@ -25,7 +25,7 @@
 
 // Local includes
 #include "ashell.h"
-#include "file-utils.h"
+#include "../zjs_file_utils.h"
 #include "jerryscript-port.h"
 #include "ide-comms.h"
 
@@ -237,7 +237,7 @@ int ide_spool_flush()
 
 int ide_reply(int status, char *message)
 {
-    ide_spool("{\"reply\": %s, \"status\":%d, \"data\": %s }\r\n",
+    ide_spool("{\"reply\": \"%s\", \"status\":%d, \"data\": %s }\r\n",
               cmd_arg_map[parser.cmd_id].cmd, status, message);
     ide_spool_flush();
     if (!(status == NO_ERROR && parser.state == PARSE_ARG_STREAM))
@@ -444,7 +444,7 @@ int save_stream(char *filename, char *buffer, size_t len)
         if (!match_stream_start(buffer)) {
             return ide_reply(ERROR_INVALID_STREAM, "\"Invalid stream start.\"");
         }
-        parser.stream_fp = fs_open_alloc(filename, fs_exist(filename) ? "u" : "w+");
+        parser.stream_fp = fs_open_alloc(filename, "w+");
         skip_stream_start(&buffer, &len);
     }
 

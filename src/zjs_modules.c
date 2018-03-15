@@ -24,14 +24,18 @@
 #include "zjs_timers.h"
 #include "zjs_util.h"
 #include "jerryscript-ext/module.h"
-#ifdef ZJS_ASHELL
-#include "ashell/file-utils.h"
+#if defined(ZJS_ASHELL) || defined(ZJS_DYNAMIC_LOAD)
+#include "zjs_file_utils.h"
 #endif
 
 struct routine_map {
     zjs_service_routine func;
     void *handle;
 };
+
+#ifdef ZJS_DYNAMIC_LOAD
+static char *load_file;
+#endif // ZJS_DYNAMIC_LOAD
 
 static u8_t num_routines = 0;
 struct routine_map svc_routine_map[NUM_SERVICE_ROUTINES];
@@ -40,8 +44,7 @@ struct routine_map svc_routine_map[NUM_SERVICE_ROUTINES];
 *   Real board JavaScript module resolver (ASHELL only currently)
 ******************************************************************/
 #ifndef ZJS_LINUX_BUILD
-#ifdef ZJS_ASHELL
-
+#if defined(ZJS_ASHELL) || defined(ZJS_DYNAMIC_LOAD)
 // Eval the JavaScript, and return the module.
 static bool javascript_eval_code(const char *source_buffer, ssize_t size,
                                  jerry_value_t *ret_val)
@@ -53,14 +56,14 @@ static bool javascript_eval_code(const char *source_buffer, ssize_t size,
     }
     return true;
 }
-#endif
+#endif  // defined(ZJS_ASHELL) || defined(ZJS_DYNAMIC_LOAD)
 
 // Find the module on the filestystem
 static bool load_js_module_fs(const jerry_value_t module_name,
                               jerry_value_t *result)
 {
-    // Currently searching the filesystem is only supported on ashell
-#ifdef ZJS_ASHELL
+    // Currently searching the filesystem is only supported on arduino 101
+#if defined(ZJS_ASHELL) || defined(ZJS_DYNAMIC_LOAD)
     jerry_size_t module_size = jerry_get_utf8_string_size(module_name) + 1;
     char module[module_size];
     zjs_copy_jstring(module_name, module, &module_size);
@@ -78,7 +81,8 @@ static bool load_js_module_fs(const jerry_value_t module_name,
     return ret;
 #else
     return false;
-#endif
+#endif  // defined(ZJS_ASHELL) || defined(ZJS_DYNAMIC_LOAD)
+
 }
 #else  // ZJS_LINUX_BUILD
 /****************************************
@@ -228,16 +232,23 @@ static ZJS_DECL_FUNC(native_print_handler)
     zjs_free(str);
     return ZJS_UNDEFINED;
 }
-
-static ZJS_DECL_FUNC(stop_js_handler)
+void zjs_stop_js()
 {
+    zjs_modules_cleanup();
+    zjs_remove_all_callbacks();
 #ifdef CONFIG_BOARD_ARDUINO_101
 #ifdef CONFIG_IPM
     zjs_ipm_free_callbacks();
-#endif
-#endif
-    zjs_modules_cleanup();
+#endif // CONFIG_IPM
+#endif // CONFIG_BOARD_ARDUINO_101
     jerry_cleanup();
+    jerry_init(JERRY_INIT_EMPTY);
+    zjs_modules_init();
+}
+
+static ZJS_DECL_FUNC(stop_js_handler)
+{
+    zjs_stop_js();
     return ZJS_UNDEFINED;
 }
 
@@ -255,6 +266,54 @@ static ZJS_DECL_FUNC(process_exit)
     exit(status);
 }
 #endif
+#ifdef ZJS_DYNAMIC_LOAD
+void zjs_modules_check_load_file()
+{
+    // No file waiting to load, just return
+    if (load_file == NULL) {
+        return;
+    }
+
+    zjs_stop_js();
+    char *buf = NULL;
+    size_t size;
+    jerry_value_t parsed_code = 0;
+    buf = read_file_alloc(load_file, &size);
+    parsed_code = jerry_parse((const jerry_char_t *)buf, size, false);
+    zjs_free(buf);
+
+    if (!jerry_value_has_error_flag(parsed_code)) {
+        ZVAL ret_value = jerry_run(parsed_code);
+        if (jerry_value_has_error_flag(ret_value)) {
+            ERR_PRINT("Error running JS\n");
+        }
+    }
+    else {
+        ERR_PRINT("Error parsing JS\n");
+    }
+
+    // Remove the load file so it doesn't load it again
+    zjs_free(load_file);
+    load_file = NULL;
+    jerry_release_value(parsed_code);
+}
+
+static ZJS_DECL_FUNC(zjs_run_js)
+{
+    ZJS_VALIDATE_ARGS(Z_STRING);
+    size_t len = MAX_FILE_NAME;
+    size_t file_len;
+    load_file = zjs_malloc(len);
+
+    zjs_copy_jstring(argv[0], load_file, &file_len);
+
+    if (!fs_exist(load_file)) {
+        return ZJS_ERROR("File doesn't exist");
+    }
+
+    return ZJS_UNDEFINED;
+}
+#endif  // ZJS_DYNAMIC_LOAD
 
 void zjs_modules_init()
 {
@@ -271,6 +330,9 @@ void zjs_modules_init()
     zjs_obj_add_function(global_obj, "eval", native_eval_handler);
     zjs_obj_add_function(global_obj, "print", native_print_handler);
     zjs_obj_add_function(global_obj, "stopJS", stop_js_handler);
+#ifdef ZJS_DYNAMIC_LOAD
+    zjs_obj_add_function(global_obj, "runJS", zjs_run_js);
+#endif // ZJS_DYNAMIC_LOAD
 
     // create the C handler for require JS call
     zjs_obj_add_function(global_obj, "require", native_require_handler);

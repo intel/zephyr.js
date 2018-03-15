@@ -15,7 +15,7 @@
 #include <zephyr.h>
 
 // JerryScript includes
-#include "file-utils.h"
+#include "../zjs_file_utils.h"
 #include "jerry-code.h"
 #include "jerryscript-port.h"
 
@@ -41,12 +41,6 @@ void javascript_eval_code(const char *source_buffer, ssize_t size)
     }
 }
 
-void restore_zjs_api()
-{
-    jerry_init(JERRY_INIT_EMPTY);
-    zjs_modules_init();
-}
-
 void javascript_stop()
 {
     if (parsed_code == 0)
@@ -55,16 +49,7 @@ void javascript_stop()
     /* Parsed source code must be freed */
     jerry_release_value(parsed_code);
     parsed_code = 0;
-
-    /* Cleanup engine */
-    zjs_modules_cleanup();
-    zjs_remove_all_callbacks();
-#ifdef CONFIG_BOARD_ARDUINO_101
-    zjs_ipm_free_callbacks();
-#endif
-    jerry_cleanup();
-
-    restore_zjs_api();
+    zjs_stop_js();
 }
 
 int javascript_parse_code(const char *file_name)

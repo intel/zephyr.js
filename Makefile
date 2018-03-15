@@ -1,4 +1,4 @@
-# Copyright (c) 2016-2017, Intel Corporation.
+# Copyright (c) 2016-2018, Intel Corporation.
 
 # a place to add temporary defines to ZJS builds such as -DZJS_GPIO_MOCK
 #ZJS_FLAGS :=
@@ -115,7 +115,8 @@ JERRY_BASE ?= $(ZJS_BASE)/deps/jerryscript
 JERRY_OUTPUT = $(OUT)/$(BOARD)/jerry/build
 
 # Generate and run snapshot as byte code instead of running JS directly
-ifneq (,$(filter $(MAKECMDGOALS),ide ide_term ide_serial ashell linux))
+
+ifneq (,$(filter $(MAKECMDGOALS),ide ide_term ide_serial ashell linux dynamic))
 SNAPSHOT=off
 # if the user passes in SNAPSHOT=on for ide, ide_term, ide_serial, ashell, or linux give an error
 ifeq ($(SNAPSHOT), on)
@@ -147,6 +148,11 @@ ZJS_FLAGS += -DIDE_GPIO_PIN=$(IDE_GPIO_PIN)
 endif
 endif
 
+# Settings for dynamic load builds
+ifneq (,$(filter $(MAKECMDGOALS),dynamic))
+FORCED := dynamic_load.json,$(FORCED)
+endif
+
 ifeq ($(BOARD), arduino_101)
 ARC = arc
 ARC_RAM = $$((79 - $(RAM)))
@@ -169,9 +175,6 @@ endif  # BOARD = arduino_101
 
 # Print callback statistics during runtime
 CB_STATS ?= off
-# Print floats (uses -u _printf_float flag). This is a workaround on the A101
-# otherwise floats will not print correctly. It does use ~11k extra ROM though
-PRINT_FLOAT ?= off
 
 ifeq ($(BOARD), linux)
 	SNAPSHOT = off
@@ -234,6 +237,9 @@ ide_serial: zephyr
 .PHONY: ashell
 ashell: zephyr
 
+.PHONY: dynamic
+dynamic: zephyr
+
 # Flash images
 .PHONY: dfu
 dfu:
@@ -289,10 +295,6 @@ analyze: $(JS)
 	@if [ "$(SNAPSHOT)" = "on" ]; then \
 		echo "add_definitions(-DZJS_SNAPSHOT_BUILD)" >> $(OUT)/$(BOARD)/generated.cmake; \
 	fi
-	@# Build NEWLIB with float print support, this will increase ROM size
-	@if [ "$(PRINT_FLOAT)" = "on" ]; then \
-		echo "CONFIG_NEWLIB_LIBC_FLOAT_PRINTF=y" >> prj.conf; \
-	fi
 	@# Add bluetooth debug configs if BLE is enabled
 	@if grep -q BUILD_MODULE_BLE $(OUT)/$(BOARD)/generated.cmake; then \
 		if [ "$(VARIANT)" = "debug" ]; then \
@@ -322,7 +324,6 @@ analyze: $(JS)
 		-DJERRY_BASE=$(JERRY_BASE) \
 		-DJERRY_OUTPUT=$(JERRY_OUTPUT) \
 		-DJERRY_PROFILE=$(OUT)/$(BOARD)/jerry_feature.profile \
-		-DPRINT_FLOAT=$(PRINT_FLOAT) \
 		-DSNAPSHOT=$(SNAPSHOT) \
 		-DVARIANT=$(VARIANT) \
 		-DVERBOSITY=$(VERBOSITY) \
@@ -331,13 +332,14 @@ analyze: $(JS)
 
 # Update dependency repos
 .PHONY: update
-update:
-	@git submodule update --init
-	@cd $(OCF_ROOT); git submodule update --init;
+update: .gitmodules
+	@git submodule update --init --recursive
+
+${JERRY_BASE}/CMakeLists.txt: update
 
 # set up prj.conf file
 -.PHONY: setup
-setup:
+setup: ${JERRY_BASE}/CMakeLists.txt
 ifeq ($(ASHELL), ashell)
 ifeq ($(filter ide,$(MAKECMDGOALS)),cli)
 	@echo CONFIG_USB_CDC_ACM=y >> prj.conf
@@ -505,6 +507,7 @@ help:
 	@echo "    pristine:   Completely remove all generated files"
 	@echo "    check:      Run all the automated build tests"
 	@echo "    quickcheck: Run the quick Linux subset of automated build tests"
+	@echo "    dynamic     Build Zephyr in dynamic loading mode. Includes the parser"
 	@echo
 	@echo "Build options:"
 	@echo "    BOARD=      Specify a Zephyr board to build for"

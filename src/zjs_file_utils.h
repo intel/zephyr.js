@@ -2,7 +2,7 @@
 
 #ifndef __file_wrapper_h__
 #define __file_wrapper_h__
-
+#if defined(ZJS_ASHELL) || defined(ZJS_DYNAMIC_LOAD)
 #include <ff.h>
 #include <fs.h>
 #include <fs/fat_fs.h>
@@ -18,4 +18,5 @@ ssize_t fs_size(fs_file_t *file);
 bool fs_valid_filename(char *filename);
 char *read_file_alloc(const char *file_name, ssize_t *size);
 int fs_get_boot_cfg_filename(const char *timestamp, char *filename);
+#endif // defined(ZJS_ASHELL) || defined(ZJS_DYNAMIC_LOAD)
 #endif  // __file_wrapper_h__
