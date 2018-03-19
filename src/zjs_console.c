@@ -54,11 +54,11 @@ static bool value2str(const jerry_value_t value, char *buf, int maxlen,
     //             is true
     //  returns: true if the representation was complete or false if it
     //             was abbreviated
-    ZVAL_MUTABLE str_val;
+    ZVAL_MUTABLE str_val = ZJS_UNDEFINED;
     bool is_string = false;
 
     if (jerry_value_is_array(value)) {
-        unsigned int len = jerry_get_array_length(value);
+        u32_t len = jerry_get_array_length(value);
         sprintf(buf, "[Array - length %u]", len);
         return false;
     } else if (jerry_value_is_boolean(value)) {
