@@ -22,12 +22,7 @@
         "src/ashell/ashell.c",
         "src/ashell/jerry-code.c",
         "src/zjs_file_utils.c",
-        "src/ashell/jerry-code.c",
-        "src/ashell/term-cmd.c",
-        "src/ashell/term-ihex.c",
-        "src/ashell/term-uart.c",
-        "src/ashell/term-webusb.c",
-        "./deps/ihex/kk_ihex_read.c"
+        "src/ashell/jerry-code.c"
     ],
     "zephyr_conf": {
         "all": [

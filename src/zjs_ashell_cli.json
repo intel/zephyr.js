@@ -11,5 +11,8 @@
         "arduino_101": ["CONFIG_USB_CDC_ACM=y"],
         "olimex_stm32_e407": ["CONFIG_USB_CDC_ACM=y"],
         "stm32f4_disco": ["CONFIG_USB_CDC_ACM=y"]
-    }
+    },
+    "zjs_config": [
+        "-DASHELL_IDE_UART"
+    ]
 }
