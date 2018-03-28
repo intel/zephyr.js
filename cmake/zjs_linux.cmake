@@ -140,7 +140,7 @@ if(NOT APPLE)
 
   if("${DEBUGGER}" STREQUAL "on")
     list(APPEND APP_SRC
-      ${JERRY_BASE}/jerry-port/default/default-socket.c
+      ${JERRY_BASE}/jerry-port/default/default-debugger-transport.c
       )
 
     add_definitions(-DJERRY_DEBUGGER)

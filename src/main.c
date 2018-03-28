@@ -31,6 +31,7 @@
 
 // JerryScript includes
 #include "jerryscript.h"
+#include "jerryscript-port.h"
 
 // Platform agnostic modules/headers
 #include "zjs_callbacks.h"
@@ -287,7 +288,7 @@ int main(int argc, char *argv[])
 #ifdef ZJS_DEBUGGER
     if (start_debug_server) {
         ZJS_PRINT("Debugger mode: connect using jerry-client-ws.py\n\n");
-        jerry_debugger_init(debug_port);
+        jerry_debugger_init(jerry_port_init_socket_transport(debug_port));
     }
 #endif
 

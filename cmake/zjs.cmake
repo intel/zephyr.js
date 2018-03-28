@@ -74,13 +74,10 @@ set(APP_SRC
   src/zjs_script.c
   src/zjs_timers.c
   src/zjs_util.c
-  ${JERRY_BASE}/targets/zephyr/src/jerry-port.c
+  src/jerry-port/zjs_jerry_port.c
   )
 
 if("${DEBUGGER}" STREQUAL "on")
-  list(APPEND APP_SRC
-    )
-
   add_definitions(-DJERRY_DEBUGGER)
   add_definitions(-DZJS_DEBUGGER)
 endif()
