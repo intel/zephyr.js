@@ -5,8 +5,17 @@
 #include <stdarg.h>
 
 #ifdef JERRY_DEBUGGER
+#ifdef ZJS_LINUX_BUILD
+#include <arpa/inet.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#else
 #include <sys/fcntl.h>
 #include <net/socket.h>
+#endif
 #endif
 
 // Stubbed out functions for jerry-port features
@@ -113,6 +122,10 @@ typedef struct
 
 static uint16_t debugger_port;  // debugger socket communication port
 static int fd;  //holds the file descriptor of the socket communication
+
+void jerry_debugger_compute_sha1 (const uint8_t *input1, size_t input1_len,
+                                  const uint8_t *input2, size_t input2_len,
+                                  uint8_t output[20]);
 
 /**
  * Close the socket connection to the client.
@@ -343,11 +356,28 @@ jerry_debugger_accept_connection_ws (struct jerry_debugger_transport_t *transpor
   addr.sin_port = htons (debugger_port);
   addr.sin_addr.s_addr = INADDR_ANY;
 
+#ifdef ZJS_LINUX_BUILD
+  if ((server_socket = socket (AF_INET, SOCK_STREAM, 0)) == -1)
+  {
+    jerry_port_log (JERRY_LOG_LEVEL_ERROR, "Error: %s\n", strerror (errno));
+    return false;
+  }
+
+  int opt_value = 1;
+
+  if (setsockopt (server_socket, SOL_SOCKET, SO_REUSEADDR, &opt_value, sizeof (int)) == -1)
+  {
+    close (server_socket);
+    jerry_port_log (JERRY_LOG_LEVEL_ERROR, "Error: %s\n", strerror (errno));
+    return NULL;
+  }
+#else
   if ((server_socket = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP)) == -1)
   {
     jerry_port_log (JERRY_LOG_LEVEL_ERROR, "Error: %s\n", strerror (errno));
     return false;
   }
+#endif
 
   if (bind (server_socket, (struct sockaddr *)&addr, sizeof (struct sockaddr)) == -1)
   {
@@ -409,9 +439,13 @@ jerry_debugger_accept_connection_ws (struct jerry_debugger_transport_t *transpor
     return false;
   }
 
+#ifdef ZJS_LINUX_BUILD
+  jerry_port_log (JERRY_LOG_LEVEL_DEBUG, "Connected from: %s\n", inet_ntoa (addr.sin_addr));
+#else
   char str[NET_IPV4_ADDR_LEN];
   net_addr_ntop(AF_INET, &addr.sin_addr, str, sizeof(str));
   jerry_port_log (JERRY_LOG_LEVEL_DEBUG, "Connected from: %s\n", str);
+#endif
 
   return true;
 }
@@ -564,8 +598,12 @@ static struct jerry_debugger_transport_t socket_transport =
 
 void jerry_port_sleep (uint32_t sleep_time)
 {
-  k_sleep ((useconds_t) sleep_time * 1000);
-  (void) sleep_time;
+#ifdef ZJS_LINUX_BUILD
+    usleep ((useconds_t) sleep_time * 1000);
+#else
+    k_sleep ((useconds_t) sleep_time * 1000);
+#endif
+    (void) sleep_time;
 }
 
 #endif /* JERRY_DEBUGGER */

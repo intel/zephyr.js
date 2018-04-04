@@ -140,9 +140,13 @@ if(NOT APPLE)
 
   if("${DEBUGGER}" STREQUAL "on")
     list(APPEND APP_SRC
-      ${JERRY_BASE}/jerry-port/default/default-debugger-transport.c
+      ${JERRY_BASE}/jerry-core/debugger/debugger-sha1.c
       )
-
+    list(APPEND APP_INCLUDES
+      ${JERRY_BASE}/jerry-core/ecma/base
+      ${JERRY_BASE}/jerry-core/jmem
+      ${JERRY_BASE}/jerry-core/lit
+      )
     add_definitions(-DJERRY_DEBUGGER)
     add_definitions(-DZJS_DEBUGGER)
   endif()
