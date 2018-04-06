@@ -1,6 +1,6 @@
 /*******************************************************************************
  *
- * Copyright(c) 2015,2016 Intel Corporation.
+ * Copyright(c) 2015 - 2018 Intel Corporation.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -286,31 +286,31 @@ static void read_webusb(u8_t ep, size_t len)
 		return;
 	}
 
-  // Quark SE USB controller FIFO entries are 32-bit words.
-  for (bytes = 0; bytes < len; bytes+= read) {
-    usb_read(ep, buf + bytes, 4, &read);
-  }
+	// Quark SE USB controller FIFO entries are 32-bit words.
+	for (bytes = 0; bytes < len; bytes+= read) {
+		usb_read(ep, buf + bytes, 4, &read);
+	}
 
 	req_handlers->rx_handler(buf, len);
 }
 
 static void webusb_serial_bulk_out(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 {
-  ARG_UNUSED(ep_status);
-  int len = 0;
+	ARG_UNUSED(ep_status);
+	int len = 0;
 
-  if (!req_handlers || !req_handlers->rx_handler) {
-  	return;
-  }
+	if (!req_handlers || !req_handlers->rx_handler) {
+		return;
+	}
 
-  if (usb_read(ep, NULL, 0, &len) < 0) {  // read available data length
+	if (usb_read(ep, NULL, 0, &len) < 0) {  // read available data length
 		SYS_LOG_ERR("USB read failed");
 		return;
-  }
+	}
 
-  for (; len > 0; len -= WEBUSB_RX_BUFFER_SIZE) {
-  	read_webusb(ep, len);
-  }
+	for (; len > 0; len -= WEBUSB_RX_BUFFER_SIZE) {
+		read_webusb(ep, len);
+	}
 }
 
 /**
@@ -403,8 +403,6 @@ static int webusb_device_init(struct device *dev)
 
 	webusb_serial_config.interface.payload_data = dev_data->interface_data;
 	webusb_serial_dev = dev;
-
-  //k_fifo_init(&free_queue);
 
 	/* Initialize the WebUSB driver with the right configuration */
 	ret = usb_set_config(&webusb_serial_config);
