@@ -42,6 +42,11 @@ static const u8_t webusb_origin_url[] = {
   'l', 'o', 'c', 'a', 'l', 'h', 'o', 's', 't', ':', '8', '0', '0', '0'
 };
 
+// Store the receive callback provided by the application here.
+static webusb_process_cb webusb_cb = NULL;
+// Method to reply when finished parsing, and ready for more data.
+static webusb_process_ack webusb_ack = NULL;
+
 /**
  * @brief Custom handler for standard requests in
  *        order to catch the request and return the
@@ -115,6 +120,16 @@ static void webusb_release_buffer(webusb_rx_buf_t *buf)
     atomic_set(&(buf->lock), 0);
     buf->length = 0;
     memset(buf->data, 0, WEBUSB_RX_BUFFER_SIZE);
+    if (webusb_ack) {
+        for (int i = 0; i < WEBUSB_RX_POOL_SIZE; i++) {
+            buf = &(webusb_rx_buffers[i]);
+            if (atomic_get(&(buf->lock)) == 1) {
+                return; // There is at least one message to go, don't ACK
+            }
+        }
+        // No pending messages, send the ACK
+        webusb_ack();
+    }
 }
 
 // Provide a buffer to the WebUSB driver. Return a pointer to the data part.
@@ -157,20 +172,18 @@ static struct webusb_req_handlers req_handlers = {
   .get_buffer = get_rx_buf
 };
 
-// Store the receive callback provided by the application here.
-static webusb_process_cb webusb_cb = NULL;
-
-void webusb_init(webusb_process_cb cb)
+void webusb_init(webusb_process_cb cb, webusb_process_ack ack)
 {
   k_fifo_init(&rx_queue);
   webusb_cb = cb;
+  webusb_ack = ack;
   webusb_register_request_handlers(&req_handlers);
 }
 
 void webusb_receive_process()
 {
   webusb_rx_buf_t *buf;
-  while ((buf = (webusb_rx_buf_t *) k_fifo_get(&rx_queue, K_FOREVER))) {
+  while ((buf = (webusb_rx_buf_t *) k_fifo_get(&rx_queue, K_NO_WAIT))) {
     if (webusb_cb) {
         webusb_cb(buf->data, buf->length);
         webusb_release_buffer(buf);
