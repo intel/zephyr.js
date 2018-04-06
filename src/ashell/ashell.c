@@ -1,4 +1,4 @@
-// Copyright (c) 2017, Intel Corporation.
+// Copyright (c) 2017-2018, Intel Corporation.
 
 /**
  * @file
@@ -9,22 +9,22 @@
 
 void zjs_ashell_init()
 {
-#ifdef ASHELL_IDE_UART
+#ifdef ASHELL_UART
     extern void uart_init();
     uart_init();
 #else
     extern void ide_init();
     ide_init();
-#endif
+#endif  // ASHELL_UART
 }
 
 void zjs_ashell_process()
 {
-#ifdef ASHELL_IDE_UART
+#ifdef ASHELL_UART
     extern void uart_process();
     uart_process();
 #else
     extern void ide_process();
     ide_process();
-#endif
+#endif  // ASHELL_UART
 }

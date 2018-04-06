@@ -25,25 +25,21 @@
 // Zephyr includes
 #include <device.h>
 #include <init.h>
-
 #include <atomic.h>
 #include <board.h>
 #include <toolchain.h>
 #include <uart.h>
-
 #include <fs.h>
 #include <misc/printk.h>
 
 // ZJS includes
 #include "ashell.h"
-#include "term-cmd.h"
 #include "term-uart.h"
-
+#include "term-cmd.h"
+#include "zjs_util.h"
 #ifndef CONFIG_USB_CDC_ACM
 #include "webusb_serial.h"
 #endif
-
-#include "../zjs_util.h"
 
 #define CTRL_START 0x00
 #define CTRL_END   0x1F
@@ -52,7 +48,7 @@
 #define DBG(...) { ; }
 #else
 #define DBG printk
-#endif /* CONFIG_IHEX_DEBUG */
+#endif // CONFIG_IHEX_DEBUG
 
 extern void __stdout_hook_install(int (*fn)(int));
 extern void webusb_register_handlers();
@@ -61,10 +57,8 @@ static const char banner[] = "Zephyr.js DEV MODE " __DATE__ " " __TIME__ "\r\n";
 
 #define FIFO_CACHE 2
 
-#ifndef ASHELL_IDE_PROTOCOL
-/* Configuration of the callbacks to be called */
+// Configuration of the callbacks to be called
 struct terminal_config *terminal = NULL;
-#endif
 
 struct uart_input {
     int _unused;
@@ -235,7 +229,7 @@ static void uart_interrupt_handler(struct device *dev)
 
             atomic_set(&uart_state, UART_FIFO_READ_END);
 
-            /* Happy to flush the data into the queue for processing */
+            // Happy to flush the data into the queue for processing
             if (flush) {
                 isr_data->line[tail] = 0;
                 tail = 0;
@@ -256,7 +250,7 @@ static void uart_interrupt_handler(struct device *dev)
 
 /*************************** ACM OUTPUT *******************************/
 
-/*
+/**
 * @brief Writes data into the uart and flushes it.
 *
 * @param buf Buffer to write
@@ -293,7 +287,7 @@ void uart_write_buf(const char *buf, int len)
 }
 
 /**
-* Provide console message implementation for the engine.
+* @brief Provide console message implementation for the engine.
 */
 void comms_printf(const char *format, ...)
 {
@@ -317,7 +311,6 @@ static int uart_out(int c)
     char ch = (char)c;
     buf[size++] = ch;
     if (ch == '\n' || size == 80) {
-        //terminal->send(buf, size);
         uart_write_buf(buf, size);
         size = 0;
     }
@@ -346,23 +339,18 @@ static void uart_ready()
     uart_irq_tx_disable(dev_upload);
 
     uart_irq_callback_set(dev_upload, uart_interrupt_handler);
-    // terminal->send(banner, sizeof(banner));
     uart_write_buf(banner, sizeof(banner));
 
-    /* Enable rx interrupts */
+    // Enable rx interrupts
     uart_irq_rx_enable(dev_upload);
-
+    DBG("[Listening]\n");
     __stdout_hook_install(uart_out);
 
     // Disable buffering on stdout since some parts write directly to uart fifo
     setbuf(stdout, NULL);
     process_state = 0;
-
     atomic_set(&uart_state, UART_INIT);
-
-#ifndef ASHELL_IDE_PROTOCOL
     terminal->init();
-#endif
 }
 
 static bool check_uart_connection()
@@ -376,8 +364,8 @@ static bool check_uart_connection()
     return false;
 }
 
-/*
- * Process user input
+/**
+ * @brief Process user input
  */
 void uart_process()
 {
@@ -392,23 +380,15 @@ void uart_process()
     char *buf = NULL;
     u32_t len = 0;
     atomic_set(&uart_state, UART_INIT);
-#ifdef ASHELL_IDE_PROTOCOL
-    while(1) {
-#else
+
     while (!terminal->done()) {
-#endif
         atomic_set(&uart_state, UART_WAITING);
         data = k_fifo_get(&data_queue, K_NO_WAIT);
         if (data) {
             atomic_dec(&data_queue_count);
             buf = data->line;
             len = strnlen(buf, MAX_LINE);
-#ifdef ASHELL_IDE_PROTOCOL
-            extern void ide_receive(u8_t *buf, size_t len);
-            ide_receive(buf, len);
-#else
             terminal->process(buf, len);
-#endif
             uart_process_done = true;
             DBG("[Recycle]\n");
             fifo_recycle_buffer(data);
@@ -417,12 +397,11 @@ void uart_process()
             DBG("[Data]\n");
             DBG("%s\n", buf);
         } else {
-            /* We clear the cache memory if there are no data transactions */
+            // We clear the cache memory if there are no data transactions
             if (tail == 0) {
                 fifo_cache_clear();
             } else {
-                /* Wait for a timeout and flush data if there was not a carriage
-                 * return */
+                // Wait for a timeout and flush data if there was not a return
                 if (atomic_get(&uart_state) == UART_ISR_END &&
                     isr_data != NULL) {
                     DBG("Capturing buffer\n");
@@ -440,25 +419,19 @@ void uart_process()
         }
     }
     atomic_set(&uart_state, UART_CLOSE);
-#ifdef ASHELL_IDE_PROTOCOL
-    terminal->close();
-#endif
 }
 
 /**
- * Ashell initialization
- * Init UART/ACM to start getting input from user
+ * @brief Ashell initialization, init UART/ACM to start getting input from user
  */
 
 void uart_init()
 {
-#ifndef ASHELL_IDE_PROTOCOL
     terminal_start();
 
     printk(banner);
     printk("Warning: The JavaScript terminal is in a different interface.\
             \nExamples:\n\tMac   /dev/cu.usbmodem\n\tLinux /dev/ttyACM0\n");
-#endif
 
 #ifdef CONFIG_USB_CDC_ACM
     dev_upload = device_get_binding(CONFIG_CDC_ACM_PORT_NAME);

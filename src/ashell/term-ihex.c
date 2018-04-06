@@ -15,14 +15,14 @@
 #include <misc/printk.h>
 #include <zephyr.h>
 
-#include "jerry-code.h"
-
 // ZJS includes
 #include "ihex/kk_ihex_read.h"
 #include "term-cmd.h"
 #include "term-uart.h"
+#include "zjs_file_utils.h"
 
-#include "../zjs_file_utils.h"
+// JerryScript includes
+#include "jerry-code.h"
 
 #ifndef CONFIG_IHEX_UPLOADER_DEBUG
 #define DBG(...) { ; }
