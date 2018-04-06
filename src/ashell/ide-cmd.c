@@ -120,6 +120,14 @@ void parser_init()
     parser_reset();
 }
 
+void ide_ack()
+{
+    // Currently only save messages use the ack since they are multi line
+    // TODO send the number of messages you'd like to receive in this ACK
+    if (parser.cmd_id == CMD_SAVE) {
+        ide_reply(NO_ERROR, "\"ACK\"");
+    }
+}
 
 /* ************************* IDE protocol syntax *************************** */
 
