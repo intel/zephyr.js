@@ -1,5 +1,7 @@
 // Copyright (c) 2017-2018, Intel Corporation.
 
+#include "jerryscript.h"
+#include "jerryscript-debugger.h"
 #include "jerryscript-port.h"
 
 #include <stdarg.h>
@@ -93,6 +95,11 @@ void jerry_port_log(jerry_log_level_t level, const char *fmat, ...)
 #define JERRY_DEBUGGER_WEBSOCKET_MASK_SIZE 4
 
 /**
+ * Maximum message size with 1 byte size field.
+ */
+#define JERRY_DEBUGGER_WEBSOCKET_ONE_BYTE_LEN_MAX 125
+
+/**
  * Waiting for data from the client.
  */
 #define JERRY_DEBUGGER_RECEIVE_DATA_MODE \
@@ -137,10 +144,13 @@ static void jerry_debugger_close_connection_tcp (bool log_error)
     jerry_port_log (JERRY_LOG_LEVEL_ERROR, "Error: %s\n", strerror (errno));
   }
 
-  jerry_port_log (JERRY_LOG_LEVEL_DEBUG, "Debugger client connection closed.\n");
+  if (fd != -1)
+  {
+    close (fd);
+    fd = -1;
+  }
 
-  close (fd);
-  fd = -1;
+  jerry_port_log (JERRY_LOG_LEVEL_DEBUG, "Debugger client connection closed.\n");
 } /* jerry_debugger_close_connection_tcp */
 
 /**
@@ -162,7 +172,6 @@ static bool jerry_debugger_send_tcp (const uint8_t *data_p, size_t data_size)
         continue;
       }
 
-      jerry_debugger_close_connection_tcp (true);
       return false;
     }
 
@@ -487,21 +496,17 @@ jerry_debugger_send_ws (struct jerry_debugger_transport_t *transport_p,
  * Provide the implementation of debugger receive api.
  * Receive message from the client side.
  *
- * Note:
- *   If the function returns with true, the value of
- *   JERRY_DEBUGGER_VM_STOP flag should be ignored.
- *
  *   This function is only available if the port implementation library is
  *   compiled with the JERRY_DEBUGGER macro.
  *
- * @return true - if execution should be resumed,
+ * @return true - if the data was received successfully from the client side,
  *         false - otherwise
  */
 static bool
 jerry_debugger_receive_ws (struct jerry_debugger_transport_t *transport_p,
                            uint8_t *message_data_p,
                            size_t *data_size,
-                           uint16_t *data_offset)
+                           uint32_t *data_offset)
 {
   uint8_t *recv_buffer_p = message_data_p;
   uint32_t offset = *data_offset;
@@ -522,16 +527,15 @@ jerry_debugger_receive_ws (struct jerry_debugger_transport_t *transport_p,
   }
 
   offset += (uint32_t) byte_recv;
-  *data_offset = (uint16_t) offset;
+  *data_offset = offset;
 
   if (offset < sizeof (jerry_debugger_receive_header_t))
   {
     return true;
   }
 
-  uint8_t max_receive_size = JERRY_DEBUGGER_MAX_BUFFER_SIZE -
-                              JERRY_DEBUGGER_WEBSOCKET_HEADER_SIZE -
-                              JERRY_DEBUGGER_WEBSOCKET_MASK_SIZE;
+  uint8_t receive_header_size = JERRY_DEBUGGER_WEBSOCKET_HEADER_SIZE + JERRY_DEBUGGER_WEBSOCKET_MASK_SIZE;
+  uint8_t max_receive_size = (uint8_t) (JERRY_DEBUGGER_MAX_BUFFER_SIZE - receive_header_size);
   if ((recv_buffer_p[0] & ~JERRY_DEBUGGER_WEBSOCKET_OPCODE_MASK) != JERRY_DEBUGGER_WEBSOCKET_FIN_BIT
       || (recv_buffer_p[1] & JERRY_DEBUGGER_WEBSOCKET_LENGTH_MASK) > max_receive_size
       || !(recv_buffer_p[1] & JERRY_DEBUGGER_WEBSOCKET_MASK_BIT))
@@ -551,7 +555,7 @@ jerry_debugger_receive_ws (struct jerry_debugger_transport_t *transport_p,
 
   if (offset < message_total_size)
   {
-      return true;
+    return true;
   }
 
   /* Unmask data bytes. */
@@ -574,13 +578,6 @@ jerry_debugger_receive_ws (struct jerry_debugger_transport_t *transport_p,
     }
   }
 
-  if (message_total_size < offset)
-  {
-    memmove (recv_buffer_p,
-              recv_buffer_p + message_total_size,
-              offset - message_total_size);
-  }
-
   *data_size = (size_t) message_size;
 
   return true;
@@ -588,8 +585,6 @@ jerry_debugger_receive_ws (struct jerry_debugger_transport_t *transport_p,
 
 static struct jerry_debugger_transport_t socket_transport =
 {
-  .send_header_size = JERRY_DEBUGGER_WEBSOCKET_HEADER_SIZE,
-  .receive_header_size = JERRY_DEBUGGER_WEBSOCKET_HEADER_SIZE + JERRY_DEBUGGER_WEBSOCKET_MASK_SIZE,
   .accept_connection = jerry_debugger_accept_connection_ws,
   .close_connection = jerry_debugger_close_connection_ws,
   .send = jerry_debugger_send_ws,
@@ -601,7 +596,7 @@ void jerry_port_sleep (uint32_t sleep_time)
 #ifdef ZJS_LINUX_BUILD
     usleep ((useconds_t) sleep_time * 1000);
 #else
-    k_sleep ((useconds_t) sleep_time * 1000);
+    k_sleep ((useconds_t) sleep_time);
 #endif
     (void) sleep_time;
 }
@@ -613,6 +608,10 @@ jerry_port_init_socket_transport (uint16_t tcp_port)
 {
 #ifdef JERRY_DEBUGGER
   debugger_port = tcp_port;
+  jerry_debugger_set_transmit_sizes (JERRY_DEBUGGER_WEBSOCKET_HEADER_SIZE,
+                                     JERRY_DEBUGGER_WEBSOCKET_ONE_BYTE_LEN_MAX,
+                                     JERRY_DEBUGGER_WEBSOCKET_HEADER_SIZE + JERRY_DEBUGGER_WEBSOCKET_MASK_SIZE,
+                                     JERRY_DEBUGGER_WEBSOCKET_ONE_BYTE_LEN_MAX);
   return &socket_transport;
 #else /* !JERRY_DEBUGGER */
   return NULL;

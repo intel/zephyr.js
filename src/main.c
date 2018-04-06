@@ -173,6 +173,8 @@ static bool config_mode_detected()
 }
 #endif
 
+struct jerry_debugger_transport_t *jerry_port_init_socket_transport (uint16_t tcp_port);
+
 #ifndef ZJS_LINUX_BUILD
 void main(void)
 #else
