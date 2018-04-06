@@ -53,6 +53,7 @@
         ]
     },
     "zjs_config": [
+        "-I./src",
         "-I${ZEPHYR_BASE}/ext/fs/fat/include",
         "-I./deps",
         "-DZJS_ASHELL"

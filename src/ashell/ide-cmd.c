@@ -1,12 +1,10 @@
-// Copyright (c) 2017, Intel Corporation.
+// Copyright (c) 2017-2018, Intel Corporation.
 
 // C includes
 #include <ctype.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
-#include <malloc.h>
-
 // Zephyr includes
 #include <atomic.h>
 #include <misc/printk.h>
@@ -14,18 +12,18 @@
 #include <zephyr/types.h>
 
 #ifdef CONFIG_BOARD_ARDUINO_101
-  #include <flash.h>
+#include <flash.h>
 #endif
 
 // JerryScript includes
 #include "jerry-code.h"
 
 // ZJS includes
-#include "../zjs_util.h"
+#include "zjs_util.h"
 
 // Local includes
 #include "ashell.h"
-#include "../zjs_file_utils.h"
+#include "zjs_file_utils.h"
 #include "jerryscript-port.h"
 #include "ide-comms.h"
 
@@ -86,6 +84,7 @@ static const struct {
 
 #define CMD_MAX_LEN 6
 #define FILENAME_MAX_LEN 13
+#define ERR_FILE_NOT_FOUND "\"File not found\""
 
 // Parsing requires at least 10, preferably 34 bytes or larger rx buffer.
 // Introducing parser states to handle re-entering parsing with successive
@@ -105,7 +104,7 @@ static struct {
     fs_file_t     *stream_fp;  // kept here to be reset on error
 } parser;
 
-static void parser_reset()
+void parser_reset()
 {
     parser.state = PARSER_IDLE;
     parser.cmd_id = CMD_MAX;
@@ -115,11 +114,14 @@ static void parser_reset()
     parser.stream_fp = NULL;
 }
 
-void parser_init()
+void ide_ack()
 {
-    parser_reset();
+    // Currently only save messages use the ack since they are multi line
+    // TODO send the number of messages you'd like to receive in this ACK
+    if (parser.cmd_id == CMD_SAVE) {
+        ide_reply(NO_ERROR, "\"ACK\"");
+    }
 }
-
 
 /* ************************* IDE protocol syntax *************************** */
 
@@ -184,7 +186,7 @@ inline void skip_stream_start(char **pbuf, size_t *plen)
 static char spool[P_SPOOL_SIZE + 1];
 static u32_t spool_cursor = 0;
 
-char *ide_spool_ptr()
+static inline char *ide_spool_ptr()
 {
     return spool + spool_cursor;
 }
@@ -197,10 +199,12 @@ size_t ide_spool_space()
 
 void ide_spool_adjust(size_t size)
 {
-    if (spool_cursor + size < P_SPOOL_SIZE)
+    if (spool_cursor + size < P_SPOOL_SIZE) {
         spool_cursor += size;
-    else
+    }
+    else {
         spool_cursor = P_SPOOL_SIZE;
+    }
 }
 
 // Save multiple calls to ide_send, spool the output.
@@ -231,18 +235,7 @@ int ide_spool_flush()
     }
     int size = ide_send_buffer(spool, MIN(spool_cursor, P_SPOOL_SIZE));
     spool_cursor = 0;
-    // memset(spool, 0, P_SPOOL_SIZE + 1);
     return size;
-}
-
-int ide_reply(int status, char *message)
-{
-    ide_spool("{\"reply\": \"%s\", \"status\":%d, \"data\": %s }\r\n",
-              cmd_arg_map[parser.cmd_id].cmd, status, message);
-    ide_spool_flush();
-    if (!(status == NO_ERROR && parser.state == PARSE_ARG_STREAM))
-        parser_reset();
-    return -status;
 }
 
 // Functions for building a complete message in the spool before sending.
@@ -255,6 +248,16 @@ int ide_end_message(int status)
 {
     ide_spool(", \"status\": %d }\r\n", status);
     return ide_spool_flush();
+}
+
+int ide_reply(int status, char *message)
+{
+    ide_start_message(cmd_arg_map[parser.cmd_id].cmd);
+    ide_spool("%s", message);
+    ide_end_message(status);
+    if (!(status == NO_ERROR && parser.state == PARSE_ARG_STREAM))
+        parser_reset();
+    return -status;
 }
 
 #ifdef ASHELL_IDE_DBG
@@ -283,11 +286,11 @@ static int parse_command(char *buf, size_t len)
 
     IDE_DBG("\r\nParsing command.");
     for (size = 0; len > 0 && size <= CMD_MAX_LEN; len--) {
-        if(match_separator(buf) || match_postamble(buf)) {
+        if (match_separator(buf) || match_postamble(buf)) {
             cmd_buf[size] = '\0';
             id = match_cmd(cmd_buf, size);
             IDE_DBG("\r\nCommand %d: %s", id, cmd_buf);
-            if (id == CMD_MAX) {
+            if (id >= CMD_MAX) {
                 return ide_reply(ERROR_INVALID_CMD, "\"Invalid command.\"");
             }
             parser.cmd_id = id;
@@ -305,10 +308,8 @@ static int check_argc(size_t argc, char *buf, size_t len)
     if (argc == 0 && !match_postamble(buf)) {
         return ide_reply(ERROR_UNEXPECTED_CHAR, "\"Postamble expected.\"");
     } else if (argc > 0) {
-        if (match_postamble(buf)) {
-          return ide_reply(ERROR_MISSING_ARG, "\"Missing argument.\"");
-        } else if (!match_separator(buf)) {
-            return ide_reply(ERROR_UNEXPECTED_CHAR, "\"Separator expected.\"");
+        if (!match_separator(buf)) {
+            return ide_reply(ERROR_UNEXPECTED_CHAR, "\"Malformed message\"");
         }
     }
     return NO_ERROR;
@@ -316,15 +317,16 @@ static int check_argc(size_t argc, char *buf, size_t len)
 
 // Process a buffer received from WebUSB.
 // Reentrant: may be called multiple times until a full message is received.
-void ide_parse(char *buf, size_t len) {
+void ide_parse(u8_t *buffer, size_t len) {
     IDE_DBG("\r\nEntering ide_parse...");
+    char *buf = (char *)buffer;
 
     if (len == 0 || buf == NULL) {
         IDE_DBG("\r\nParser received empty buffer.");
         return;
     } else if (buf[len] != '\0') {
         IDE_DBG("\r\nParser received invalid buffer.");
-        // return;
+        return;
     }
 
     int ret = 0;
@@ -334,9 +336,8 @@ void ide_parse(char *buf, size_t len) {
     switch (parser.state) {
         case PARSER_IDLE:  // entry point
             IDE_DBG("\r\nParser state: idle.");
-            for(; len > 0 && !match_preamble(buf); len--, buf++);
 
-            if (len == 0) {
+            if (len == 0 || !match_preamble(buf)) {
                 ide_reply(ERROR_INVALID_MSG, "\"No preamble found.\"");
                 return;
             }
@@ -406,8 +407,7 @@ static int parse_filename(char *buf, size_t len, size_t pos)
                 if (index > 12)
                     ret = -ERROR_INVALID_FILENAME;
             }
-            if (ret < 0 || !isprint((int)(*cur)))
-            {
+            if (ret < 0 || !isprint((int)(*cur))) {
                 *cur = '\0';
                 break;
             }
@@ -421,8 +421,7 @@ static int parse_filename(char *buf, size_t len, size_t pos)
 // Signal to the Web IDE the device is ready and supports which protocol version.
 static void ide_cmd_init(char *buf, size_t len)
 {
-    IDE_DBG("\r\nInvoking init...\r\n");
-    ide_reply(NO_ERROR, "{ \"mode\": \"ide\", \"version\": \"0.0.1\"}");
+    ide_reply(NO_ERROR, "{ \"mode\": \"webusb\"}");
 }
 
 static inline bool test_stream_end(char *buf, size_t len, size_t offset)
@@ -453,7 +452,7 @@ int save_stream(char *filename, char *buffer, size_t len)
     }
 
     // The IDE client will always terminate with '#}\n' sequence.
-    if(test_stream_end(buffer, len, 0)) {
+    if (test_stream_end(buffer, len, 0)) {
         len -= 2;  // TODO: use stream_end_size() + postamble_size()
         end = true;
     }
@@ -516,7 +515,7 @@ static void ide_cmd_run(char *buf, size_t len)
     IDE_DBG("Filename: %s", filename);
 
     if (!fs_exist(filename)) {
-        ide_reply(ERROR_FILE, "\"File not found.\"");
+        ide_reply(ERROR_FILE, ERR_FILE_NOT_FOUND);
         return;
     }
     javascript_run_code(filename);
@@ -560,11 +559,11 @@ static void ide_cmd_list(char *buf, size_t len)
             }
             if (first) {
                 ide_spool("\r\n\t{ \"name\": \"%s\", \"size\": %d }",
-                    entry.name, entry.size);
+                          entry.name, entry.size);
                 first = false;
             } else {
                 ide_spool(",\r\n\t{ \"name\": \"%s\", \"size\": %d }",
-                    entry.name, entry.size);
+                          entry.name, entry.size);
             }
         }
     };
@@ -584,8 +583,9 @@ static void ide_cmd_cat(char *buf, size_t len)
     if ((ret = parse_filename(buf, len, 1)) > 0) {
         skip_size(&buf, &len, ret);
         IDE_DBG("\r\nFilename: %s\r\n", filename);
+        file = fs_open_alloc(filename, "r");
 
-        if (!fs_exist(filename) || !(file = fs_open_alloc(filename, "r"))) {
+        if (!file) {
             ide_reply(ERROR_FILE_OPEN, "\"Cannot open file.\"");
             return;
         }
@@ -637,7 +637,7 @@ static void ide_cmd_move(char *buf, size_t len)
     IDE_DBG("\r\nDest: %s", dest);
 
     if (!fs_exist(source)) {
-        ide_reply(ERROR_FILE, "\"Source file not found.\"");
+        ide_reply(ERROR_FILE, ERR_FILE_NOT_FOUND);
         return;
     }
 
@@ -663,11 +663,6 @@ static void ide_cmd_remove(char *buf, size_t len)
     skip_size(&buf, &len, size);
     IDE_DBG("File: %s", name);
 
-    if (!fs_exist(name)) {
-        ide_reply(ERROR_FILE, "\"File not found.\"");
-        return;
-    }
-
     if (fs_unlink(name) < 0) {
         ide_reply(ERROR_FILE, "\"Cannot remove file.\"");
         return;
@@ -688,7 +683,7 @@ static void ide_cmd_boot(char *buf, size_t len)
         return;  // error has already been handled and parser is reset
 
     if (!fs_exist(buf)) {
-        ide_reply(ERROR_FILE, "\"File not found\"");
+        ide_reply(ERROR_FILE, ERR_FILE_NOT_FOUND);
         return;
     }
 
@@ -711,14 +706,14 @@ static void ide_cmd_boot(char *buf, size_t len)
 }
 
 #ifdef CONFIG_BOARD_ARDUINO_101
-  #include <flash.h>
+#include <flash.h>
 #endif
 
 #ifdef CONFIG_REBOOT
 // TODO Waiting for patch https://gerrit.zephyrproject.org/r/#/c/3161/
-  #ifdef CONFIG_BOARD_ARDUINO_101
-      #include <qm_init.h>
-  #endif
+#ifdef CONFIG_BOARD_ARDUINO_101
+#include <qm_init.h>
+#endif
 #endif
 
 // reset automatic run, then reboot
@@ -726,11 +721,11 @@ static void ide_cmd_reboot(char *buf, size_t len)
 {
     IDE_DBG("\r\nInvoking reboot...");
     ide_reply(NO_ERROR, "ok");
-    #ifdef CONFIG_REBOOT
-        // TODO Waiting for patch https://gerrit.zephyrproject.org/r/#/c/3161/
-        #ifdef CONFIG_BOARD_ARDUINO_101
-            QM_SCSS_PMU->rstc |= QM_COLD_RESET;
-        #endif
-    #endif
+#ifdef CONFIG_REBOOT
+    // TODO Waiting for patch https://gerrit.zephyrproject.org/r/#/c/3161/
+#ifdef CONFIG_BOARD_ARDUINO_101
+    QM_SCSS_PMU->rstc |= QM_COLD_RESET;
+#endif
+#endif
     sys_reboot(SYS_REBOOT_COLD);
 }
