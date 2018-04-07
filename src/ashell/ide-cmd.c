@@ -429,8 +429,7 @@ static int parse_filename(char *buf, size_t len, size_t pos)
 // Signal to the Web IDE the device is ready and supports which protocol version.
 static void ide_cmd_init(char *buf, size_t len)
 {
-    IDE_DBG("\r\nInvoking init...\r\n");
-    ide_reply(NO_ERROR, "{ \"mode\": \"ide\", \"version\": \"0.0.1\"}");
+    ide_reply(NO_ERROR, "{ \"mode\": \"webusb\"}");
 }
 
 static inline bool test_stream_end(char *buf, size_t len, size_t offset)
