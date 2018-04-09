@@ -25,12 +25,7 @@
 #include "ide-comms.h"
 #include "../zjs_util.h"
 
-#ifdef ASHELL_IDE_UART
-  #include "term-uart.h"
-#else
-  #include "ide-webusb.h"
-#endif
-
+#include "ide-webusb.h"
 
 static void process_rx_buffer(u8_t *buffer, size_t len)
 {
@@ -59,12 +54,7 @@ static void process_rx_buffer(u8_t *buffer, size_t len)
 
 int ide_send_buffer(char *buf, size_t len)
 {
-#ifdef ASHELL_IDE_UART
-    uart_write_buf(buf, len);
-    return len;
-#else
     return webusb_write(buf, len);
-#endif
 }
 
 // Process a buffer (part of a message) in the webusb_receive_process.
@@ -75,12 +65,8 @@ void ide_receive(u8_t *buffer, size_t len)
 
 void ide_init()
 {
-    #ifdef ASHELL_IDE_UART
-    webusb_init(ide_receive);
-    #else
     extern void ide_ack();
     webusb_init(ide_receive, ide_ack);
-    #endif
 
     extern void parser_init();
     parser_init();

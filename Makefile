@@ -29,7 +29,7 @@ OUT := $(abspath $(O))
 $(info Using outdir: $(OUT))
 
 ifneq (,$(DEV))
-$(error DEV= is no longer supported, please use make ide or make ashell or make ide_term or make ide_serial)
+$(error DEV= is no longer supported, please use make ide or make ashell)
 endif
 
 ifndef ZJS_BASE
@@ -85,18 +85,12 @@ ifeq ($(filter $(MAKECMDGOALS),linux), linux)
 $(error 'linux' make target is deprecated, use "make BOARD=linux")
 endif
 
-ifneq (,$(filter $(MAKECMDGOALS),ide ashell ide_term ide_serial))
+ifneq (,$(filter $(MAKECMDGOALS),ide ashell))
 ifneq (,$(JS))
-$(error ide ide_term ide_serial and ashell do not allow for setting JS)
+$(error ide and ashell do not allow for setting JS)
 endif
 endif
 
-ifeq ($(filter $(MAKECMDGOALS),ide_term), ide_term)
-ASHELL_TYPE=ide_term
-endif
-ifeq ($(filter $(MAKECMDGOALS),ide_serial), ide_serial)
-ASHELL_TYPE=ide_serial
-endif
 ifeq ($(filter $(MAKECMDGOALS),ide), ide)
 ASHELL_TYPE=ide
 endif
@@ -115,12 +109,11 @@ JERRY_BASE ?= $(ZJS_BASE)/deps/jerryscript
 JERRY_OUTPUT = $(OUT)/$(BOARD)/jerry/build
 
 # Generate and run snapshot as byte code instead of running JS directly
-
-ifneq (,$(filter $(MAKECMDGOALS),ide ide_term ide_serial ashell linux dynamic))
+ifneq (,$(filter $(MAKECMDGOALS),ide ashell linux dynamic))
 SNAPSHOT=off
-# if the user passes in SNAPSHOT=on for ide, ide_term, ide_serial, ashell, or linux give an error
+# if the user passes in SNAPSHOT=on for ide, ashell, or linux give an error
 ifeq ($(SNAPSHOT), on)
-$(error ide, ide_term, ide_serial, ashell, and linux do not support SNAPSHOT=$(SNAPSHOT))
+$(error ide, ashell, and linux do not support SNAPSHOT=$(SNAPSHOT))
 endif
 else
 # snapshot is enabled by default
@@ -138,7 +131,7 @@ FORCED := $(FORCE),zjs_common.json
 endif
 
 # Settings for ashell builds
-ifneq (,$(filter $(MAKECMDGOALS),ide ide_term ide_serial ashell))
+ifneq (,$(filter $(MAKECMDGOALS),ide ashell))
 ASHELL=zjs_ashell_$(ASHELL_TYPE).json
 FORCED := $(ASHELL),$(FORCED)
 ASHELL_ARC=zjs_ashell_arc.json
@@ -227,12 +220,6 @@ endif
 
 .PHONY: ide
 ide: zephyr
-
-.PHONY: ide_term
-ide_term: zephyr
-
-.PHONY: ide_serial
-ide_serial: zephyr
 
 .PHONY: ashell
 ashell: zephyr
@@ -495,9 +482,7 @@ help:
 	@echo "Build targets:"
 	@echo "    all:        Build for either Zephyr or Linux depending on BOARD"
 	@echo "    zephyr:     Build Zephyr for the given BOARD (A101 is default)"
-	@echo "    ide         Build Zephyr in development mode for the IDE using the IDE protocol"
-	@echo "    ide_serial  Build Zephyr in development mode for the IDE using UART transport"
-	@echo "    ide_term    Build Zephyr in development mode for the IDE using command line terminal"
+	@echo "    ide         Build Zephyr in development mode for the IDE"
 	@echo "    ashell      Build Zephyr in development mode for command line"
 	@echo "    debug:      Run Zephyr debug target"
 	@echo "    flash:      Run Zephyr flash target"
