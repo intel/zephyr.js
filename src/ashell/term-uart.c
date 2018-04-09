@@ -38,9 +38,7 @@
 #include "ashell.h"
 #include "term-uart.h"
 
-#ifndef ASHELL_IDE_PROTOCOL
 #include "term-cmd.h"
-#endif
 
 #ifndef CONFIG_USB_CDC_ACM
 #include "webusb_serial.h"
@@ -64,10 +62,8 @@ static const char banner[] = "Zephyr.js DEV MODE " __DATE__ " " __TIME__ "\r\n";
 
 #define FIFO_CACHE 2
 
-#ifndef ASHELL_IDE_PROTOCOL
 /* Configuration of the callbacks to be called */
 struct terminal_config *terminal = NULL;
-#endif
 
 struct uart_input {
     int _unused;
@@ -354,18 +350,13 @@ static void uart_ready()
 
     /* Enable rx interrupts */
     uart_irq_rx_enable(dev_upload);
-
     __stdout_hook_install(uart_out);
 
     // Disable buffering on stdout since some parts write directly to uart fifo
     setbuf(stdout, NULL);
     process_state = 0;
-
     atomic_set(&uart_state, UART_INIT);
-
-#ifndef ASHELL_IDE_PROTOCOL
     terminal->init();
-#endif
 }
 
 static bool check_uart_connection()
@@ -395,23 +386,15 @@ void uart_process()
     char *buf = NULL;
     u32_t len = 0;
     atomic_set(&uart_state, UART_INIT);
-#ifdef ASHELL_IDE_PROTOCOL
-    while(1) {
-#else
+
     while (!terminal->done()) {
-#endif
         atomic_set(&uart_state, UART_WAITING);
         data = k_fifo_get(&data_queue, K_NO_WAIT);
         if (data) {
             atomic_dec(&data_queue_count);
             buf = data->line;
             len = strnlen(buf, MAX_LINE);
-#ifdef ASHELL_IDE_PROTOCOL
-            extern void ide_receive(u8_t *buf, size_t len);
-            ide_receive(buf, len);
-#else
             terminal->process(buf, len);
-#endif
             uart_process_done = true;
             DBG("[Recycle]\n");
             fifo_recycle_buffer(data);
@@ -443,9 +426,6 @@ void uart_process()
         }
     }
     atomic_set(&uart_state, UART_CLOSE);
-#ifdef ASHELL_IDE_PROTOCOL
-    terminal->close();
-#endif
 }
 
 /**
@@ -455,13 +435,11 @@ void uart_process()
 
 void uart_init()
 {
-#ifndef ASHELL_IDE_PROTOCOL
     terminal_start();
 
     printk(banner);
     printk("Warning: The JavaScript terminal is in a different interface.\
             \nExamples:\n\tMac   /dev/cu.usbmodem\n\tLinux /dev/ttyACM0\n");
-#endif
 
 #ifdef CONFIG_USB_CDC_ACM
     dev_upload = device_get_binding(CONFIG_CDC_ACM_PORT_NAME);
