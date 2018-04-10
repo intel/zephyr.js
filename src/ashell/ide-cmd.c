@@ -5,8 +5,6 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
-#include <malloc.h>
-
 // Zephyr includes
 #include <atomic.h>
 #include <misc/printk.h>
@@ -14,18 +12,18 @@
 #include <zephyr/types.h>
 
 #ifdef CONFIG_BOARD_ARDUINO_101
-  #include <flash.h>
+#include <flash.h>
 #endif
 
 // JerryScript includes
 #include "jerry-code.h"
 
 // ZJS includes
-#include "../zjs_util.h"
+#include "zjs_util.h"
 
 // Local includes
 #include "ashell.h"
-#include "../zjs_file_utils.h"
+#include "zjs_file_utils.h"
 #include "jerryscript-port.h"
 #include "ide-comms.h"
 

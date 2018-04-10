@@ -329,13 +329,6 @@ ${JERRY_BASE}/CMakeLists.txt: update
 # set up prj.conf file
 -.PHONY: setup
 setup: ${JERRY_BASE}/CMakeLists.txt
-ifeq ($(ASHELL), ashell)
-ifeq ($(filter ide,$(MAKECMDGOALS)),cli)
-	@echo CONFIG_USB_CDC_ACM=y >> prj.conf
-else
-	@echo CONFIG_USB_CDC_ACM=n >> prj.conf
-endif
-endif
 ifeq ($(BOARD), arduino_101)
 ifeq ($(OS), Darwin)
 	@# work around for OSX where the xtool toolchain do not

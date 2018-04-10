@@ -45,19 +45,19 @@
 #include <usb/usb_device.h>
 
 /* Set USB version to 2.1 so that the host will request the BOS descriptor. */
-#define USB_2_1     0x0210
+#define USB_2_1                0x0210
 
 /* Intel vendor ID */
-#define WEBUSB_VENDOR_ID   0x8086
+#define WEBUSB_VENDOR_ID       0x8086
 
 /* Product Id, random value */
-#define WEBUSB_PRODUCT_ID  0xF8A1
+#define WEBUSB_PRODUCT_ID      0xF8A1
 
 /* BOS descriptor type */
-#define DESCRIPTOR_TYPE_BOS     0x0f
+#define DESCRIPTOR_TYPE_BOS    0x0f
 
 /* Number of configurations for the USB Device */
-#define WEBUSB_NUM_CONF    0x01
+#define WEBUSB_NUM_CONF        0x01
 
 /* Number of interfaces */
 #define WEBUSB_NUM_ITF         0x03
@@ -82,7 +82,7 @@
  * (5 x EP) + HF + CMF + ACMF + UF -> 67 bytes
  */
 #define WEBUSB_SERIAL_CONF_SIZE   (USB_CONFIGURATION_DESC_SIZE + \
-	(1 * USB_INTERFACE_DESC_SIZE) + (2 * USB_ENDPOINT_DESC_SIZE))
+    (1 * USB_INTERFACE_DESC_SIZE) + (2 * USB_ENDPOINT_DESC_SIZE))
 
 /* WebUSB enabled Custom Class driver port name */
 #define WEBUSB_SERIAL_PORT_NAME "WSERIAL"
@@ -102,23 +102,23 @@ typedef u8_t* (*webusb_buffer_provider) ();
  * WebUSB request handlers, run in interrupt context, so keep them simple.
  */
 struct webusb_req_handlers {
-	/* Handler for WebUSB Vendor specific commands */
-	usb_request_handler vendor_handler;
-	/**
-	 * The custom request handler gets a first chance at handling
-	 * the request before it is handed over to the 'chapter 9' request
-	 * handler
-	 */
-	usb_request_handler custom_handler;
-	/**
-	 * Handle received data. It should just save the data in a queue, and the
-	 * application should cpmsume the data from that queue.
-	 */
-	webusb_receive_handler rx_handler;
-	/**
-	 * Handler for providing data buffer of size WEBUSB_RX_BUFFER_SIZE.
-	 */
-	webusb_buffer_provider get_buffer;
+    /* Handler for WebUSB Vendor specific commands */
+    usb_request_handler vendor_handler;
+    /**
+     * The custom request handler gets a first chance at handling
+     * the request before it is handed over to the 'chapter 9' request
+     * handler
+     */
+    usb_request_handler custom_handler;
+    /**
+     * Handle received data. It should just save the data in a queue, and the
+     * application should cpmsume the data from that queue.
+     */
+    webusb_receive_handler rx_handler;
+    /**
+     * Handler for providing data buffer of size WEBUSB_RX_BUFFER_SIZE.
+     */
+    webusb_buffer_provider get_buffer;
 };
 
 /**

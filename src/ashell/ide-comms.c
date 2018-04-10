@@ -23,7 +23,7 @@
 // ZJS includes
 #include "ashell.h"
 #include "ide-comms.h"
-#include "../zjs_util.h"
+#include "zjs_util.h"
 
 #include "ide-webusb.h"
 

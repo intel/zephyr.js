@@ -44,7 +44,7 @@
 #include "webusb_serial.h"
 #endif
 
-#include "../zjs_util.h"
+#include "zjs_util.h"
 
 #define CTRL_START 0x00
 #define CTRL_END   0x1F
@@ -316,7 +316,6 @@ static int uart_out(int c)
     char ch = (char)c;
     buf[size++] = ch;
     if (ch == '\n' || size == 80) {
-        //terminal->send(buf, size);
         uart_write_buf(buf, size);
         size = 0;
     }
@@ -345,7 +344,6 @@ static void uart_ready()
     uart_irq_tx_disable(dev_upload);
 
     uart_irq_callback_set(dev_upload, uart_interrupt_handler);
-    // terminal->send(banner, sizeof(banner));
     uart_write_buf(banner, sizeof(banner));
 
     /* Enable rx interrupts */
