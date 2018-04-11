@@ -31,7 +31,7 @@ To use the shell via the command line use:
 $ make ashell
 ```
 
-Dev mode will append all the functionality from ZJS, so it might not fit in ROM.
+Dev mode will append all the functionality from ZJS, so it might not fit in ROM. If this is the case, on Arduino 101 you can increase the ROM allocation with ROM=256
 
 Connect
 -------
@@ -73,7 +73,24 @@ below instructions to connect to the device from the browser IDE directly.
     but the WebUSB will continue to work. Visit the [IDE](https://intel.github.io/zephyrjs-ide/)
     site and click on connect.
 
-Commands
+Connect using serial console
+----------------------------
+If you want to interact with the ashell using serial console instead of
+browser IDE, use:
+```bash
+$ make ashell
+```
+
+* Then use the following command to connect to the ashell from a terminal:
+  ```bash
+  $ screen /dev/ttyACM0 115200
+  ```
+
+Note: It will take about 30 seconds for it to be up and running after you boot.
+Until then you will see screen terminate immediately.  If you see this, just
+try again in a few seconds.
+
+Command line commands
 --------
 
 To get a full list of commands, run the help command.
@@ -215,35 +232,15 @@ boots.
 
 Reboots the device.
 
-Connect using serial console
-----------------------------
-If you want to interact with the ashell using serial console instead of
-browser IDE, use:
-```bash
-$ make ashell
-```
-
-* Then use the following command to connect to the ashell from a terminal:
-  ```bash
-  $ screen /dev/ttyACM0 115200
-  ```
-
-Note: It will take about 30 seconds for it to be up and running after you boot.
-Until then you will see screen terminate immediately.  If you see this, just
-try again in a few seconds.
 
 Problems and known issues
 ========================
-
-ZJS will only execute timeouts or events on the first run. Sometimes there is
-a duplicated character written to the ACM.
 
 LED2 on Arduino 101 is not available in ashell mode because the GPIO it is tied
 to is being used for SPI to talk to the flash filesystem instead.
 
 If you are using BLE module, by default BLE will be enabled but it cannot be
 turned off once turned on, currently Zephyr doesn't support disabling BLE.  So
-If you subsribe for BLE "stateChange" events, and/or want to register BLE GATT
-services,  it will only work for the first time you run the app, and you will
-need to reboot the board in order for it to work the second time.
-first time you run in the IDE, after that, you'll have to
+If you subscribe for BLE "stateChange" events, and/or want to register BLE GATT
+services,  it will only work for the first time you run the app in the ide. After
+that, you will need to reboot the board in order for it to work the second time. 
