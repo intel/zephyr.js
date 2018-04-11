@@ -103,7 +103,7 @@ static struct {
     fs_file_t     *stream_fp;  // kept here to be reset on error
 } parser;
 
-static void parser_reset()
+void parser_reset()
 {
     parser.state = PARSER_IDLE;
     parser.cmd_id = CMD_MAX;
@@ -111,11 +111,6 @@ static void parser_reset()
         fs_close_alloc(parser.stream_fp);
     }
     parser.stream_fp = NULL;
-}
-
-void parser_init()
-{
-    parser_reset();
 }
 
 void ide_ack()
@@ -190,7 +185,7 @@ inline void skip_stream_start(char **pbuf, size_t *plen)
 static char spool[P_SPOOL_SIZE + 1];
 static u32_t spool_cursor = 0;
 
-char *ide_spool_ptr()
+static inline char *ide_spool_ptr()
 {
     return spool + spool_cursor;
 }
@@ -237,18 +232,7 @@ int ide_spool_flush()
     }
     int size = ide_send_buffer(spool, MIN(spool_cursor, P_SPOOL_SIZE));
     spool_cursor = 0;
-    // memset(spool, 0, P_SPOOL_SIZE + 1);
     return size;
-}
-
-int ide_reply(int status, char *message)
-{
-    ide_spool("{\"reply\": \"%s\", \"status\":%d, \"data\": %s }\r\n",
-              cmd_arg_map[parser.cmd_id].cmd, status, message);
-    ide_spool_flush();
-    if (!(status == NO_ERROR && parser.state == PARSE_ARG_STREAM))
-        parser_reset();
-    return -status;
 }
 
 // Functions for building a complete message in the spool before sending.
@@ -261,6 +245,16 @@ int ide_end_message(int status)
 {
     ide_spool(", \"status\": %d }\r\n", status);
     return ide_spool_flush();
+}
+
+int ide_reply(int status, char *message)
+{
+    ide_start_message(cmd_arg_map[parser.cmd_id].cmd);
+    ide_spool("%s", message);
+    ide_end_message(status);
+    if (!(status == NO_ERROR && parser.state == PARSE_ARG_STREAM))
+        parser_reset();
+    return -status;
 }
 
 #ifdef ASHELL_IDE_DBG
@@ -289,11 +283,11 @@ static int parse_command(char *buf, size_t len)
 
     IDE_DBG("\r\nParsing command.");
     for (size = 0; len > 0 && size <= CMD_MAX_LEN; len--) {
-        if(match_separator(buf) || match_postamble(buf)) {
+        if (match_separator(buf) || match_postamble(buf)) {
             cmd_buf[size] = '\0';
             id = match_cmd(cmd_buf, size);
             IDE_DBG("\r\nCommand %d: %s", id, cmd_buf);
-            if (id == CMD_MAX) {
+            if (id >= CMD_MAX) {
                 return ide_reply(ERROR_INVALID_CMD, "\"Invalid command.\"");
             }
             parser.cmd_id = id;
@@ -311,10 +305,8 @@ static int check_argc(size_t argc, char *buf, size_t len)
     if (argc == 0 && !match_postamble(buf)) {
         return ide_reply(ERROR_UNEXPECTED_CHAR, "\"Postamble expected.\"");
     } else if (argc > 0) {
-        if (match_postamble(buf)) {
-          return ide_reply(ERROR_MISSING_ARG, "\"Missing argument.\"");
-        } else if (!match_separator(buf)) {
-            return ide_reply(ERROR_UNEXPECTED_CHAR, "\"Separator expected.\"");
+        if (!match_separator(buf)) {
+            return ide_reply(ERROR_UNEXPECTED_CHAR, "\"Malformed message\"");
         }
     }
     return NO_ERROR;
@@ -325,7 +317,7 @@ static int check_argc(size_t argc, char *buf, size_t len)
 void ide_parse(u8_t *buffer, size_t len) {
     IDE_DBG("\r\nEntering ide_parse...");
     char *buf = (char *)buffer;
-    
+
     if (len == 0 || buf == NULL) {
         IDE_DBG("\r\nParser received empty buffer.");
         return;
@@ -341,9 +333,8 @@ void ide_parse(u8_t *buffer, size_t len) {
     switch (parser.state) {
         case PARSER_IDLE:  // entry point
             IDE_DBG("\r\nParser state: idle.");
-            for(; len > 0 && !match_preamble(buf); len--, buf++);
 
-            if (len == 0) {
+            if (len == 0 || !match_preamble(buf)) {
                 ide_reply(ERROR_INVALID_MSG, "\"No preamble found.\"");
                 return;
             }
@@ -459,7 +450,7 @@ int save_stream(char *filename, char *buffer, size_t len)
     }
 
     // The IDE client will always terminate with '#}\n' sequence.
-    if(test_stream_end(buffer, len, 0)) {
+    if (test_stream_end(buffer, len, 0)) {
         len -= 2;  // TODO: use stream_end_size() + postamble_size()
         end = true;
     }

@@ -52,8 +52,8 @@ void ide_init()
     extern void ide_ack();
     webusb_init(ide_parse, ide_ack);
 
-    extern void parser_init();
-    parser_init();
+    extern void parser_reset();
+    parser_reset();
 
     __stdout_hook_install(webusb_out);
 }
