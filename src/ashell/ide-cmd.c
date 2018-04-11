@@ -322,15 +322,16 @@ static int check_argc(size_t argc, char *buf, size_t len)
 
 // Process a buffer received from WebUSB.
 // Reentrant: may be called multiple times until a full message is received.
-void ide_parse(char *buf, size_t len) {
+void ide_parse(u8_t *buffer, size_t len) {
     IDE_DBG("\r\nEntering ide_parse...");
-
+    char *buf = (char *)buffer;
+    
     if (len == 0 || buf == NULL) {
         IDE_DBG("\r\nParser received empty buffer.");
         return;
     } else if (buf[len] != '\0') {
         IDE_DBG("\r\nParser received invalid buffer.");
-        // return;
+        return;
     }
 
     int ret = 0;

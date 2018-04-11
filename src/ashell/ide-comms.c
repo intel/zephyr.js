@@ -26,30 +26,20 @@
 #include "zjs_util.h"
 
 #include "ide-webusb.h"
+extern void __stdout_hook_install(int (*fn)(int));
+extern void ide_parse(u8_t *buf, size_t len);
 
-static void process_rx_buffer(u8_t *buffer, size_t len)
+static int webusb_out(int c)
 {
-    // TODO: remove this when zephyrjs-ide is switched to IDE protocol.
-    static char rx_buffer[P_SPOOL_SIZE + 1];
-    static size_t rx_cursor = 0;
-    extern void ide_parse(char *buf, size_t len);
-    char *buf = (char *) buffer;
-
-    if (len == 1) {  // character mode; buffer a command
-        if (rx_cursor >= P_SPOOL_SIZE || *buf == '\n' || *buf == '\r') {
-            ide_send_buffer("\r\n", 2);
-            ide_parse(rx_buffer, rx_cursor);
-            rx_cursor = 0;
-            memset(rx_buffer, P_SPOOL_SIZE + 1, 0);
-        } else {
-            ide_send_buffer(buf, 1);  // echo
-            rx_buffer[rx_cursor++] = *buf;
-            rx_buffer[rx_cursor] = '\0';
-        }
-    } else {
-        // TODO: keep only this part after cleanup.
-        ide_parse(buf, len);
+    static char buf[20];
+    static int size = 0;
+    char ch = (char)c;
+    buf[size++] = ch;
+    if (ch == '\n' || size == 20) {
+        webusb_write(buf, size);
+        size = 0;
     }
+    return 1;
 }
 
 int ide_send_buffer(char *buf, size_t len)
@@ -57,19 +47,15 @@ int ide_send_buffer(char *buf, size_t len)
     return webusb_write(buf, len);
 }
 
-// Process a buffer (part of a message) in the webusb_receive_process.
-void ide_receive(u8_t *buffer, size_t len)
-{
-    process_rx_buffer(buffer, len);
-}
-
 void ide_init()
 {
     extern void ide_ack();
-    webusb_init(ide_receive, ide_ack);
+    webusb_init(ide_parse, ide_ack);
 
     extern void parser_init();
     parser_init();
+
+    __stdout_hook_install(webusb_out);
 }
 
 void ide_process()
