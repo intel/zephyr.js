@@ -3,9 +3,6 @@
 #ifndef __ashell_comms_h__
 #define __ashell_comms_h__
 
-#include <arch/cpu.h>
-#include <string.h>
-
 #define ASCII_SUB    0x1A  // substitute, Ctrl+Z
 #define ASCII_FS     0x1C  // file separator
 #define ASCII_GS     0x1D  // group separator
@@ -44,24 +41,5 @@ void ide_process();
 
 // Send arbitrary data over WebUSB.
 int ide_send_buffer(char *buffer, size_t size);
-
-#if 0
-// TODO: remove this section
-
-// Spool formatted data, but don't send it yet.
-int ide_spool(char *format, ...);
-
-// Send all spooled data.
-int ide_spool_flush();
-
-// Return remaning bytes in spool.
-size_t ide_spool_space();
-
-// Return a pointer to the first free byte in the spool.
-char *ide_spool_ptr();
-
-// Add the given number of bytes to the spool current length.
-void ide_spool_adjust(size_t size);
-#endif
 
 #endif  // __ashell_comms_h__

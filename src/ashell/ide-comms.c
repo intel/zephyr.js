@@ -19,6 +19,7 @@
 #include <atomic.h>
 #include <device.h>
 #include <init.h>
+#include <arch/cpu.h>
 
 // ZJS includes
 #include "ashell.h"
