@@ -84,6 +84,7 @@ static const struct {
 
 #define CMD_MAX_LEN 6
 #define FILENAME_MAX_LEN 13
+#define ERR_FILE_NOT_FOUND "\"File not found\""
 
 // Parsing requires at least 10, preferably 34 bytes or larger rx buffer.
 // Introducing parser states to handle re-entering parsing with successive
@@ -198,10 +199,12 @@ size_t ide_spool_space()
 
 void ide_spool_adjust(size_t size)
 {
-    if (spool_cursor + size < P_SPOOL_SIZE)
+    if (spool_cursor + size < P_SPOOL_SIZE) {
         spool_cursor += size;
-    else
+    }
+    else {
         spool_cursor = P_SPOOL_SIZE;
+    }
 }
 
 // Save multiple calls to ide_send, spool the output.
@@ -404,8 +407,7 @@ static int parse_filename(char *buf, size_t len, size_t pos)
                 if (index > 12)
                     ret = -ERROR_INVALID_FILENAME;
             }
-            if (ret < 0 || !isprint((int)(*cur)))
-            {
+            if (ret < 0 || !isprint((int)(*cur))) {
                 *cur = '\0';
                 break;
             }
@@ -513,7 +515,7 @@ static void ide_cmd_run(char *buf, size_t len)
     IDE_DBG("Filename: %s", filename);
 
     if (!fs_exist(filename)) {
-        ide_reply(ERROR_FILE, "\"File not found.\"");
+        ide_reply(ERROR_FILE, ERR_FILE_NOT_FOUND);
         return;
     }
     javascript_run_code(filename);
@@ -557,11 +559,11 @@ static void ide_cmd_list(char *buf, size_t len)
             }
             if (first) {
                 ide_spool("\r\n\t{ \"name\": \"%s\", \"size\": %d }",
-                    entry.name, entry.size);
+                          entry.name, entry.size);
                 first = false;
             } else {
                 ide_spool(",\r\n\t{ \"name\": \"%s\", \"size\": %d }",
-                    entry.name, entry.size);
+                          entry.name, entry.size);
             }
         }
     };
@@ -581,8 +583,9 @@ static void ide_cmd_cat(char *buf, size_t len)
     if ((ret = parse_filename(buf, len, 1)) > 0) {
         skip_size(&buf, &len, ret);
         IDE_DBG("\r\nFilename: %s\r\n", filename);
+        file = fs_open_alloc(filename, "r");
 
-        if (!fs_exist(filename) || !(file = fs_open_alloc(filename, "r"))) {
+        if (!file) {
             ide_reply(ERROR_FILE_OPEN, "\"Cannot open file.\"");
             return;
         }
@@ -634,7 +637,7 @@ static void ide_cmd_move(char *buf, size_t len)
     IDE_DBG("\r\nDest: %s", dest);
 
     if (!fs_exist(source)) {
-        ide_reply(ERROR_FILE, "\"Source file not found.\"");
+        ide_reply(ERROR_FILE, ERR_FILE_NOT_FOUND);
         return;
     }
 
@@ -660,11 +663,6 @@ static void ide_cmd_remove(char *buf, size_t len)
     skip_size(&buf, &len, size);
     IDE_DBG("File: %s", name);
 
-    if (!fs_exist(name)) {
-        ide_reply(ERROR_FILE, "\"File not found.\"");
-        return;
-    }
-
     if (fs_unlink(name) < 0) {
         ide_reply(ERROR_FILE, "\"Cannot remove file.\"");
         return;
@@ -685,7 +683,7 @@ static void ide_cmd_boot(char *buf, size_t len)
         return;  // error has already been handled and parser is reset
 
     if (!fs_exist(buf)) {
-        ide_reply(ERROR_FILE, "\"File not found\"");
+        ide_reply(ERROR_FILE, ERR_FILE_NOT_FOUND);
         return;
     }
 
@@ -713,9 +711,9 @@ static void ide_cmd_boot(char *buf, size_t len)
 
 #ifdef CONFIG_REBOOT
 // TODO Waiting for patch https://gerrit.zephyrproject.org/r/#/c/3161/
-  #ifdef CONFIG_BOARD_ARDUINO_101
+#ifdef CONFIG_BOARD_ARDUINO_101
       #include <qm_init.h>
-  #endif
+#endif
 #endif
 
 // reset automatic run, then reboot
@@ -723,11 +721,11 @@ static void ide_cmd_reboot(char *buf, size_t len)
 {
     IDE_DBG("\r\nInvoking reboot...");
     ide_reply(NO_ERROR, "ok");
-    #ifdef CONFIG_REBOOT
-        // TODO Waiting for patch https://gerrit.zephyrproject.org/r/#/c/3161/
-        #ifdef CONFIG_BOARD_ARDUINO_101
-            QM_SCSS_PMU->rstc |= QM_COLD_RESET;
-        #endif
-    #endif
+#ifdef CONFIG_REBOOT
+    // TODO Waiting for patch https://gerrit.zephyrproject.org/r/#/c/3161/
+#ifdef CONFIG_BOARD_ARDUINO_101
+    QM_SCSS_PMU->rstc |= QM_COLD_RESET;
+#endif
+#endif
     sys_reboot(SYS_REBOOT_COLD);
 }
