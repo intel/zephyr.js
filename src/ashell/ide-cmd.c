@@ -706,13 +706,13 @@ static void ide_cmd_boot(char *buf, size_t len)
 }
 
 #ifdef CONFIG_BOARD_ARDUINO_101
-  #include <flash.h>
+#include <flash.h>
 #endif
 
 #ifdef CONFIG_REBOOT
 // TODO Waiting for patch https://gerrit.zephyrproject.org/r/#/c/3161/
 #ifdef CONFIG_BOARD_ARDUINO_101
-      #include <qm_init.h>
+#include <qm_init.h>
 #endif
 #endif
 
