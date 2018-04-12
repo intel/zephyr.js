@@ -15,7 +15,6 @@
 #include <zephyr.h>
 
 // JerryScript includes
-#include "jerry-code.h"
 #include "jerryscript-port.h"
 
 // ZJS includes
@@ -27,6 +26,7 @@
 #include "zjs_sensor.h"
 #include "zjs_timers.h"
 #include "zjs_util.h"
+#include "jerry-code.h"
 
 #include "term-uart.h"
 
