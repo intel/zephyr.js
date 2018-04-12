@@ -13,8 +13,6 @@
 #include <string.h>
 
 // Zephyr includes
-#include "zjs_file_utils.h"
-#include "jerryscript-port.h"
 #include <atomic.h>
 #include <misc/printk.h>
 #include <misc/reboot.h>
@@ -25,6 +23,7 @@
 
 // ZJS includes
 #include "ashell.h"
+#include "zjs_file_utils.h"
 #include "term-uart.h"
 #include "term-cmd.h"
 #include "term-ihex.h"
@@ -33,6 +32,7 @@
 
 // JerryScript includes
 #include "jerry-code.h"
+#include "jerryscript-port.h"
 
 #ifndef CONFIG_USB_CDC_ACM
 #define CONFIG_IDE

@@ -89,9 +89,9 @@ int vendor_handle_req(struct usb_setup_packet *pSetup, s32_t *len, u8_t **data)
     if (pSetup->bRequest == 0x01 && pSetup->wIndex == 0x02) {
         u8_t index = GET_DESC_INDEX(pSetup->wValue);
 
-        if (index != 1)
+        if (index != 1) {
             return -ENOTSUP;
-
+        }
         *data = (u8_t *)(&webusb_origin_url);
         *len = sizeof(webusb_origin_url);
         return 0;

@@ -13,21 +13,21 @@
 
 // Errors are used as negative numbers in the code, and sent as positive numbers.
 typedef enum {
-  NO_ERROR                    = 0,
-  ERROR_GENERIC,            //  1
-  ERROR_INVALID_MSG,        //  2
-  ERROR_INVALID_CMD,        //  3
-  ERROR_INVALID_ARG,        //  4
-  ERROR_MISSING_ARG,        //  5
-  ERROR_TOO_MANY_ARGS,      //  6
-  ERROR_UNEXPECTED_CHAR,    //  7
-  ERROR_INVALID_FILENAME,   //  8
-  ERROR_INVALID_STREAM,     //  9
-  ERROR_FILE,               // 10
-  ERROR_FILE_OPEN,          // 11
-  ERROR_FILE_WRITE,         // 12
-  ERROR_DIR_OPEN,           // 13
-  ERROR_DATA_TRUNCATED      // 14
+    NO_ERROR                    = 0,
+    ERROR_GENERIC,            //  1
+    ERROR_INVALID_MSG,        //  2
+    ERROR_INVALID_CMD,        //  3
+    ERROR_INVALID_ARG,        //  4
+    ERROR_MISSING_ARG,        //  5
+    ERROR_TOO_MANY_ARGS,      //  6
+    ERROR_UNEXPECTED_CHAR,    //  7
+    ERROR_INVALID_FILENAME,   //  8
+    ERROR_INVALID_STREAM,     //  9
+    ERROR_FILE,               // 10
+    ERROR_FILE_OPEN,          // 11
+    ERROR_FILE_WRITE,         // 12
+    ERROR_DIR_OPEN,           // 13
+    ERROR_DATA_TRUNCATED      // 14
 } ashell_error_t;
 
 // Process a buffer (part of a message) in WebUSB driver context.

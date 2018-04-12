@@ -25,26 +25,21 @@
 // Zephyr includes
 #include <device.h>
 #include <init.h>
-
 #include <atomic.h>
 #include <board.h>
 #include <toolchain.h>
 #include <uart.h>
-
 #include <fs.h>
 #include <misc/printk.h>
 
 // ZJS includes
 #include "ashell.h"
 #include "term-uart.h"
-
 #include "term-cmd.h"
-
+#include "zjs_util.h"
 #ifndef CONFIG_USB_CDC_ACM
 #include "webusb_serial.h"
 #endif
-
-#include "zjs_util.h"
 
 #define CTRL_START 0x00
 #define CTRL_END   0x1F
@@ -348,6 +343,7 @@ static void uart_ready()
 
     /* Enable rx interrupts */
     uart_irq_rx_enable(dev_upload);
+    DBG("[Listening]\n");
     __stdout_hook_install(uart_out);
 
     // Disable buffering on stdout since some parts write directly to uart fifo

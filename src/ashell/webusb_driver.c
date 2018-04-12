@@ -165,7 +165,7 @@ static const u8_t webusb_serial_usb_description[] = {
  * @return  0 on success, negative errno code on fail.
  */
 int webusb_serial_class_handle_req(struct usb_setup_packet *pSetup,
-        s32_t *len, u8_t **data)
+                                   s32_t *len, u8_t **data)
 {
     return 0;
 }
@@ -182,12 +182,13 @@ int webusb_serial_class_handle_req(struct usb_setup_packet *pSetup,
  * @return  0 on success, negative errno code on fail.
  */
 int webusb_serial_custom_handle_req(struct usb_setup_packet *pSetup,
-        s32_t *len, u8_t **data)
+                                    s32_t *len, u8_t **data)
 {
     /* Call the callback */
     if ((req_handlers && req_handlers->custom_handler) &&
-        (!req_handlers->custom_handler(pSetup, len, data)))
+        (!req_handlers->custom_handler(pSetup, len, data))) {
         return 0;
+    }
 
     return -ENOTSUP;
 }
@@ -202,13 +203,13 @@ int webusb_serial_custom_handle_req(struct usb_setup_packet *pSetup,
  * @return  0 on success, negative errno code on fail.
  */
 int webusb_serial_vendor_handle_req(struct usb_setup_packet *pSetup,
-        s32_t *len, u8_t **data)
+                                    s32_t *len, u8_t **data)
 {
     /* Call the callback */
     if ((req_handlers && req_handlers->vendor_handler) &&
-        (!req_handlers->vendor_handler(pSetup, len, data)))
+        (!req_handlers->vendor_handler(pSetup, len, data))) {
         return 0;
-
+    }
     return -ENOTSUP;
 }
 
@@ -321,7 +322,7 @@ static void webusb_serial_bulk_out(u8_t ep, enum usb_dc_ep_cb_status_code ep_sta
  * @return  N/A.
  */
 static void webusb_serial_dev_status_cb(enum usb_dc_status_code status,
-      u8_t *param)
+                                        u8_t *param)
 {
     struct webusb_serial_dev_data_t * const dev_data =
         DEV_DATA(webusb_serial_dev);
