@@ -320,11 +320,12 @@ analyze: $(JS)
 # Update dependency repos
 .PHONY: update
 update: .gitmodules
+	@git submodule update --init --recursive;
+
+${JERRY_BASE}/CMakeLists.txt:
 	@if ! [ -f ${JERRY_BASE}/CMakeLists.txt ]; then \
 		git submodule update --init --recursive; \
 	fi
-
-${JERRY_BASE}/CMakeLists.txt: update
 
 # set up prj.conf file
 -.PHONY: setup
