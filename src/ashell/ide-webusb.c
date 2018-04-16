@@ -42,8 +42,10 @@ static const u8_t webusb_bos_descriptor[] = {
 /* URL Descriptor: https://wicg.github.io/webusb/#url-descriptor */
 static const u8_t webusb_origin_url[] = {
     /* Length, DescriptorType, Scheme */
-    0x11, 0x03, 0x00,
-    'l', 'o', 'c', 'a', 'l', 'h', 'o', 's', 't', ':', '8', '0', '0', '0'
+    0x1F, 0x03, 0x01,
+    'i', 'n', 't', 'e', 'l', '.', 'g', 'i', 't', 'h', 'u', 'b', '.',
+    'i', 'o', '/', 'z', 'e', 'p', 'h', 'y', 'r', 'j', 's', '-', 'i',
+    'd', 'e'
 };
 
 // Store the receive callback provided by the application here.
