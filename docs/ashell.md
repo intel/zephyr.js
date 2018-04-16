@@ -20,7 +20,6 @@ can't be used as GPIO pins.
 
 Compilation
 ------------
-
 This command will enable the shell compilation for use with the IDE:
 ```bash
 $ make ide
@@ -31,11 +30,12 @@ To use the shell via the command line use:
 $ make ashell
 ```
 
-Dev mode will append all the functionality from ZJS, so it might not fit in ROM. If this is the case, on Arduino 101 you can increase the ROM allocation with ROM=256
+Dev mode will append all the functionality from ZJS, so it might not fit in ROM.
+If this is the case, on Arduino 101 you can increase the ROM allocation with
+ROM=256.
 
 Connect
 -------
-
 WebUSB support was added to the ashell to allow the user to upload JS code
 directly from the browser IDE to Zephyr.js device for execution. Follow the
 below instructions to connect to the device from the browser IDE directly.
@@ -87,12 +87,11 @@ $ make ashell
   ```
 
 Note: It will take about 30 seconds for it to be up and running after you boot.
-Until then you will see screen terminate immediately.  If you see this, just
+Until then you will see screen terminate immediately. If you see this, just
 try again in a few seconds.
 
 Command line commands
---------
-
+---------------------
 To get a full list of commands, run the help command.
 
 ```
@@ -234,13 +233,13 @@ Reboots the device.
 
 
 Problems and known issues
-========================
+=========================
 
 LED2 on Arduino 101 is not available in ashell mode because the GPIO it is tied
 to is being used for SPI to talk to the flash filesystem instead.
 
 If you are using BLE module, by default BLE will be enabled but it cannot be
-turned off once turned on, currently Zephyr doesn't support disabling BLE.  So
+turned off once turned on, currently Zephyr doesn't support disabling BLE. So
 If you subscribe for BLE "stateChange" events, and/or want to register BLE GATT
-services,  it will only work for the first time you run the app in the ide. After
+services, it will only work for the first time you run the app in the ide. After
 that, you will need to reboot the board in order for it to work the second time. 
