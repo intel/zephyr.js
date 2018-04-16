@@ -240,6 +240,6 @@ to is being used for SPI to talk to the flash filesystem instead.
 
 If you are using BLE module, by default BLE will be enabled but it cannot be
 turned off once turned on, currently Zephyr doesn't support disabling BLE. So
-If you subscribe for BLE "stateChange" events, and/or want to register BLE GATT
-services, it will only work for the first time you run the app in the ide. After
+if you subscribe for BLE "stateChange" events, and/or want to register BLE GATT
+services, it will only work for the first time you run the app in the IDE. After
 that, you will need to reboot the board in order for it to work the second time. 
