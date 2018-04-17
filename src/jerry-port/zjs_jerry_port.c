@@ -39,21 +39,33 @@ void jerry_port_fatal(jerry_fatal_code_t code)
     while (1) {};
 }
 
-void jerry_port_console(const char *fmat, ...)
+void jerry_port_console(const char *format, ...)
 {
-    va_list va;
-    va_start(va, fmat);
-    vprintf(fmat, va);
-    va_end(va);
+    va_list args;
+    va_start(args, format);
+    vprintf(format, args);
+    va_end(args);
 }
 
-void jerry_port_log(jerry_log_level_t level, const char *fmat, ...)
+void jerry_port_log(jerry_log_level_t level, const char *format, ...)
 {
     (void)(level);
-    va_list va;
-    va_start(va, fmat);
-    vprintf(fmat, va);
-    va_end(va);
+    va_list args;
+    va_start(args, format);
+#ifdef JERRY_DEBUGGER
+    char buffer[256];
+    int length = 0;
+    length = vsnprintf(buffer, 255, format, args);
+    buffer[length] = '\0';
+    fprintf (stderr, "%s", buffer);
+    jerry_char_t *jbuffer = (jerry_char_t *)buffer;
+    jerry_debugger_send_output(jbuffer,
+                               (jerry_size_t)length,
+                               (uint8_t)(level + 2));
+#else /* If jerry-debugger isn't defined, libc is turned on */
+    vfprintf(stderr, format, args);
+#endif /* JERRY_DEBUGGER */
+    va_end(args);
 }
 
 #ifdef JERRY_DEBUGGER

@@ -38,5 +38,11 @@
             "CONFIG_NET_APP_MY_IPV4_ADDR=\"192.168.1.1\"",
             "CONFIG_NET_MAX_CONTEXTS=10"
         ]
-    }
+    },
+    "zjs_config": [
+        "-I${JERRY_BASE}/jerry-core/ecma/base",
+        "-I${JERRY_BASE}/jerry-core/jmem",
+        "-I${JERRY_BASE}/jerry-core/lit",
+        "-I${JERRY_BASE}/jerry-core/debugger"
+    ]
 }
