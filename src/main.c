@@ -83,10 +83,12 @@ static u8_t no_exit = 0;
 // if > 0, jslinux will exit after this many milliseconds
 static u32_t exit_after = 0;
 static struct timespec exit_timer;
+static char *js_args = NULL;
 
 static void usage(void)
 {
     printf("jslinux usage:\n");
+    printf("\t--jsargs, -j \"<args>\"    Pass args to js script via process\n");
     printf("\t--exit-time, -t <milli>    Exit after a certain number of"
                                         "milliseconds\n");
     printf("\t--noexit, -n               Do not exit jslinux when no events"
@@ -98,6 +100,7 @@ static void usage(void)
 }
 
 static const struct option main_options[] = {
+    { "jsargs", required_argument, NULL, 'j' },
     { "exit-time",	required_argument, NULL, 't' },
     { "noexit",     no_argument, NULL, 'n' },
     { "unittest",   no_argument, NULL, 'u' },
@@ -111,7 +114,7 @@ u8_t process_cmd_line(int argc, char *argv[])
     for (;;) {
         int opt;
 
-        opt = getopt_long(argc, argv, "t:nudh", main_options, NULL);
+        opt = getopt_long(argc, argv, "j:t:nudh", main_options, NULL);
         if (opt < 0)
             break;
 
@@ -139,6 +142,9 @@ u8_t process_cmd_line(int argc, char *argv[])
         case 'h':
             usage();
             exit(0);
+        case 'j':
+            js_args = optarg;
+            break;
         default:
             usage();
             exit(1);
@@ -147,6 +153,37 @@ u8_t process_cmd_line(int argc, char *argv[])
 
     return 1;
 }
+
+void init_process(char *args)
+{
+    if (!args)
+        return;
+
+    char *ptr = args;
+    char *last = args;
+    jerry_value_t array = ZJS_UNDEFINED;
+    ZVAL global_obj = jerry_get_global_object();
+    ZVAL process = zjs_create_object();
+
+    while ((ptr = strchr(last, ' '))) {
+        ZVAL elem = jerry_create_string_sz(last, ptr - last);
+
+        array = zjs_push_array(array, elem);
+        last = ptr + 1;
+    }
+
+    if (args) {
+        ZVAL elem = jerry_create_string(last);
+
+        array = zjs_push_array(array, elem);
+    }
+
+    zjs_set_property(process, "argv", array);
+    zjs_set_property(global_obj, "process", process);
+
+    jerry_release_value(array);
+}
+
 #else
 #ifndef CONFIG_NET_APP_AUTO_INIT
 #ifdef BUILD_MODULE_BLE
@@ -331,6 +368,7 @@ int main(int argc, char *argv[])
 
 #ifdef ZJS_LINUX_BUILD
     zjs_free(script);
+    init_process(js_args);
 #endif
 
 #ifdef ZJS_SNAPSHOT_BUILD
