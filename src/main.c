@@ -295,11 +295,11 @@ int main(int argc, char *argv[])
 #endif
 
 #ifndef ZJS_SNAPSHOT_BUILD
-    code_eval = jerry_parse_named_resource((jerry_char_t *)file_name,
-                                           file_name_len,
-                                           (jerry_char_t *)script,
-                                           script_len,
-                                           false);
+    code_eval = jerry_parse((jerry_char_t *)file_name,
+                            file_name_len,
+                            (jerry_char_t *)script,
+                            script_len,
+                            JERRY_PARSE_NO_OPTS);
 
     if (jerry_value_has_error_flag(code_eval)) {
         DBG_PRINT("Error parsing JS\n");
@@ -313,7 +313,11 @@ int main(int argc, char *argv[])
 #endif
 
 #ifdef ZJS_SNAPSHOT_BUILD
-    result = jerry_exec_snapshot(snapshot_bytecode, snapshot_len, false);
+    result = jerry_exec_snapshot(snapshot_bytecode,
+                                 snapshot_len,
+                                 0,
+                                 JERRY_SNAPSHOT_EXEC_COPY_DATA);
+
 #else
     result = jerry_run(code_eval);
 #endif
