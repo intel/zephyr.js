@@ -8,10 +8,10 @@
 
 Introduction
 ------------
-This shell focus is on creating an interface to be able to run commands and
+The focus of ashell is to create an interface to be able to run commands and
 arbitrary JavaScript directly from the USB port of a Zephyr enabled device.
 
-Although the shell would look like a common Unix Bash, it is heavily limited
+Although this shell looks like a common Unix Bash, it is heavily limited
 due the constraints of the micro-controller.
 
 NOTE: Because the filesystem module is used by ashell, the SPI module is also
