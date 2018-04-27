@@ -1,4 +1,4 @@
-Dynamic mode - Adds the ability to run JS from the filesystem
+Dynamic mode - Run JavaScript from the filesystem at will
 ============================================================
 
 * [Introduction](#introduction)
@@ -31,4 +31,4 @@ a different JavaScript file from the filesystem. Remember your current JavaScrip
 will halt once this command is called. You can add this command anywhere you want
 a different JavaScript to load.
 
-Build ZJS with your primary JavaScript file and reboot.  
+Build ZJS with your primary JavaScript file and reboot.
