@@ -84,6 +84,11 @@ typedef struct zjs_ble_handle {
     ble_connection_t *connections;
 } ble_handle_t;
 
+static struct bt_uuid *gatt_primary_service_uuid = BT_UUID_GATT_PRIMARY;
+static struct bt_uuid *gatt_characteristic_uuid = BT_UUID_GATT_CHRC;
+static struct bt_uuid *gatt_cud_uuid = BT_UUID_GATT_CUD;
+static struct bt_uuid *gatt_ccc_uuid = BT_UUID_GATT_CCC;
+
 static struct k_sem ble_sem;
 
 static ble_handle_t *ble_handle = NULL;
@@ -1032,7 +1037,7 @@ static bool zjs_ble_register_service(ble_service_t *service)
     memset(bt_attrs, 0, sizeof(struct bt_gatt_attr) * num_of_entries);
 
     // GATT Primary Service
-    bt_attrs[entry_index].uuid = BT_UUID_GATT_PRIMARY;
+    bt_attrs[entry_index].uuid = gatt_primary_service_uuid;
     bt_attrs[entry_index].perm = BT_GATT_PERM_READ;
     bt_attrs[entry_index].read = bt_gatt_attr_read_service;
     bt_attrs[entry_index].user_data = service->uuid;
@@ -1052,7 +1057,7 @@ static bool zjs_ble_register_service(ble_service_t *service)
 
         chrc_user_data->uuid = ch->uuid;
         chrc_user_data->properties = ch->flags;
-        bt_attrs[entry_index].uuid = BT_UUID_GATT_CHRC;
+        bt_attrs[entry_index].uuid = gatt_characteristic_uuid;
         bt_attrs[entry_index].perm = BT_GATT_PERM_READ;
         bt_attrs[entry_index].read = bt_gatt_attr_read_chrc;
         bt_attrs[entry_index].user_data = chrc_user_data;
@@ -1089,7 +1094,7 @@ static bool zjs_ble_register_service(ble_service_t *service)
             // FIXME: cud_buffer should be freed later if no longer needed, but
             //   doesn't seem to be
 
-            bt_attrs[entry_index].uuid = BT_UUID_GATT_CUD;
+            bt_attrs[entry_index].uuid = gatt_cud_uuid;
             bt_attrs[entry_index].perm = BT_GATT_PERM_READ;
             bt_attrs[entry_index].read = bt_gatt_attr_read_cud;
             bt_attrs[entry_index].user_data = cud_buffer;
@@ -1111,7 +1116,7 @@ static bool zjs_ble_register_service(ble_service_t *service)
             ccc_user_data->cfg = ble_handle->blvl_ccc_cfg;
             ccc_user_data->cfg_len = ARRAY_SIZE(ble_handle->blvl_ccc_cfg);
             ccc_user_data->cfg_changed = zjs_ble_blvl_ccc_cfg_changed;
-            bt_attrs[entry_index].uuid = BT_UUID_GATT_CCC;
+            bt_attrs[entry_index].uuid = gatt_ccc_uuid;
             bt_attrs[entry_index].perm = BT_GATT_PERM_READ | BT_GATT_PERM_WRITE;
             bt_attrs[entry_index].read = bt_gatt_attr_read_ccc;
             bt_attrs[entry_index].write = bt_gatt_attr_write_ccc;
