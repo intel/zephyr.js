@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, Intel Corporation.
+// Copyright (c) 2016-2018, Intel Corporation.
 
 #ifndef __zjs_event_h__
 #define __zjs_event_h__
@@ -133,11 +133,10 @@ jerry_value_t zjs_add_event_listener(jerry_value_t obj, const char *event_name,
  * @return        True if there were listeners
  */
 #if DEBUG_TRACE_EMIT
-#define zjs_defer_emit_event(obj, name, buffer, bytes, pre, post)        \
-    {                                                                    \
-        ZJS_PRINT("[EVENT] %s:%d Deferring '%s'\n", __FILE__,            \
-                  __LINE__, name);                                       \
-        zjs_defer_emit_event_priv(obj, name, buffer, bytes, pre, post);  \
+#define zjs_defer_emit_event(obj, name, buffer, bytes, pre, post)              \
+    {                                                                          \
+        ZJS_PRINT("[EVENT] %s:%d Deferring '%s'\n", __FILE__, __LINE__, name); \
+        zjs_defer_emit_event_priv(obj, name, buffer, bytes, pre, post);        \
     }
 #else
 #define zjs_defer_emit_event zjs_defer_emit_event_priv
@@ -159,11 +158,10 @@ void zjs_defer_emit_event_priv(jerry_value_t obj, const char *name,
  * @return      True if there were listeners called
  */
 #if DEBUG_TRACE_EMIT
-#define zjs_emit_event(obj, name, argv, argc)                 \
-    ({                                                        \
-        ZJS_PRINT("[EVENT] %s:%d Emitting '%s'\n", __FILE__,  \
-                  __LINE__, name);                            \
-        zjs_emit_event_priv(obj, name, argv, argc);           \
+#define zjs_emit_event(obj, name, argv, argc)                                 \
+    ({                                                                        \
+        ZJS_PRINT("[EVENT] %s:%d Emitting '%s'\n", __FILE__, __LINE__, name); \
+        zjs_emit_event_priv(obj, name, argv, argc);                           \
     })
 #else
 #define zjs_emit_event zjs_emit_event_priv

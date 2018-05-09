@@ -1,4 +1,4 @@
-// Copyright (c) 2017, Intel Corporation.
+// Copyright (c) 2017-2018, Intel Corporation.
 
 // C includes
 #include <stdlib.h>
@@ -50,7 +50,7 @@ static void zjs_spi_callback_free(void *native)
 }
 
 static const jerry_object_native_info_t spi_type_info = {
-   .free_cb = zjs_spi_callback_free
+    .free_cb = zjs_spi_callback_free
 };
 
 static ZJS_DECL_FUNC(zjs_spi_transceive)
@@ -329,7 +329,7 @@ static void zjs_spi_cleanup(void *native)
 }
 
 static const jerry_object_native_info_t spi_module_type_info = {
-   .free_cb = zjs_spi_cleanup
+    .free_cb = zjs_spi_cleanup
 };
 
 static jerry_value_t zjs_spi_init()

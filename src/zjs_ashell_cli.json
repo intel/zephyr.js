@@ -1,7 +1,18 @@
 {
     "module": "ashell_cli",
     "depends": ["ashell"],
+    "src": [
+        "src/ashell/term-uart.c",
+        "src/ashell/term-cmd.c",
+        "src/ashell/term-ihex.c",
+        "./deps/ihex/kk_ihex_read.c"
+    ],
     "zephyr_conf": {
-        "arduino_101": ["CONFIG_USB_CDC_ACM=y"]
-    }
+        "arduino_101": ["CONFIG_USB_CDC_ACM=y"],
+        "olimex_stm32_e407": ["CONFIG_USB_CDC_ACM=y"],
+        "stm32f4_disco": ["CONFIG_USB_CDC_ACM=y"]
+    },
+    "zjs_config": [
+        "-DASHELL_UART"
+    ]
 }

@@ -1,4 +1,4 @@
-// Copyright (c) 2017, Intel Corporation.
+// Copyright (c) 2017-2018, Intel Corporation.
 
 // C includes
 #include <string.h>
@@ -209,12 +209,10 @@ static ZJS_DECL_FUNC(zjs_webusb_set_url)
         DBG_PRINT("Found http URL for WebUSB: Chrome only works with https!\n");
         scheme = 0;
         prefix_len = 7;
-    }
-    else if (!strncmp(url, "https://", 8)) {
+    } else if (!strncmp(url, "https://", 8)) {
         scheme = 1;
         prefix_len = 8;
-    }
-    else {
+    } else {
         DBG_PRINT("Found URL for WebUSB with unknown scheme\n");
     }
 
@@ -307,8 +305,7 @@ static bool prepare_read(void *unused, jerry_value_t argv[], u32_t *argc,
 
     if (read < write) {
         len = write - read;
-    }
-    else {
+    } else {
         len = write + RINGMAX - read;
     }
 
@@ -352,14 +349,12 @@ static void fill_uart_from_tx(struct device *dev)
     if (read == write) {
         // empty
         uart_irq_tx_disable(dev);
-    }
-    else {
+    } else {
         int max = 0;
         bool cont = false;
         if (read < write) {
             max = write - read;
-        }
-        else {
+        } else {
             max = RINGMAX - read;
             cont = true;
         }
@@ -387,22 +382,19 @@ static void uart_interrupt_handler(struct device *dev)
         int read = rx_ring->read;
         int write = rx_ring->write;
         bool wrote = false;
-        if (write + 1 == read || (write == RINGMAX -1 && read == 0)) {
+        if (write + 1 == read || (write == RINGMAX - 1 && read == 0)) {
             // full
             ERR_PRINT("receive overflow\n");
-        }
-        else {
+        } else {
             int max = 0;
             bool cont = false;
             if (write < read) {
                 max = read - 1 - write;
-            }
-            else {
+            } else {
                 max = RINGMAX - write;
                 if (read == 0) {
                     --max;
-                }
-                else {
+                } else {
                     cont = true;
                 }
             }
@@ -518,8 +510,7 @@ static void check_uart(struct k_timer *timer)
                 ERR_PRINT("failed to get baudrate\n");
                 k_timer_stop(timer);
             }
-        }
-        else {
+        } else {
             DBG_PRINT("baudrate: %d\n", result);
             // apparently we don't actually need to use the baudrate, just need
             //   to make sure one has been set?

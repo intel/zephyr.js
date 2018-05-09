@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, Intel Corporation.
+// Copyright (c) 2016-2018, Intel Corporation.
 
 #ifdef BUILD_MODULE_UART
 
@@ -310,7 +310,7 @@ static void zjs_uart_cleanup(void *native)
 }
 
 static const jerry_object_native_info_t uart_module_type_info = {
-   .free_cb = zjs_uart_cleanup
+    .free_cb = zjs_uart_cleanup
 };
 
 static jerry_value_t zjs_uart_init()

@@ -69,7 +69,6 @@ add_definitions(
   -DZJS_LINUX_BUILD
   -DZJS_GPIO_MOCK
   -DZJS_FIND_FUNC_NAME
-  -DZJS_PRINT_FLOATS
   )
 
 set(APP_COMPILE_OPTIONS
@@ -127,7 +126,6 @@ if(NOT APPLE)
     ${IOTC_BASE}/api
     ${IOTC_BASE}/include
     ${IOTC_BASE}/messaging/coap
-    ${IOTC_BASE}/port/linux
     ${IOTC_BASE}/util
     )
 
@@ -151,11 +149,11 @@ add_custom_command(
     ${JERRY_LIBDIR}/lib/libjerry-core.a
     ${JERRY_LIBDIR}/lib/libjerry-ext.a
   COMMAND ${CMAKE_SOURCE_DIR}/scripts/analyze
-    BOARD=linux
-    O=${CMAKE_BINARY_DIR}/..
-    RESTRICT=${LINUX_MODULES}
-    V=${V}
-    JSON_DIR=${CMAKE_SOURCE_DIR}/src/
+    --board=linux
+    --output-dir=${CMAKE_BINARY_DIR}/..
+    --restrict=${LINUX_MODULES}
+    --verbose=${V}
+    --json-dir=${CMAKE_SOURCE_DIR}/src/
   COMMAND ${PYTHON_EXECUTABLE}
     ${CMAKE_SOURCE_DIR}/deps/jerryscript/tools/build.py
     --builddir=${JERRY_LIBDIR}

@@ -1,4 +1,4 @@
-# Copyright (c) 2016-2017, Intel Corporation.
+# Copyright (c) 2016-2018, Intel Corporation.
 
 # a place to add temporary defines to ZJS builds such as -DZJS_GPIO_MOCK
 #ZJS_FLAGS :=
@@ -109,7 +109,7 @@ JERRY_BASE ?= $(ZJS_BASE)/deps/jerryscript
 JERRY_OUTPUT = $(OUT)/$(BOARD)/jerry/build
 
 # Generate and run snapshot as byte code instead of running JS directly
-ifneq (,$(filter $(MAKECMDGOALS),ide ashell linux))
+ifneq (,$(filter $(MAKECMDGOALS),ide ashell linux dynamic))
 SNAPSHOT=off
 # if the user passes in SNAPSHOT=on for ide, ashell, or linux give an error
 ifeq ($(SNAPSHOT), on)
@@ -141,6 +141,11 @@ ZJS_FLAGS += -DIDE_GPIO_PIN=$(IDE_GPIO_PIN)
 endif
 endif
 
+# Settings for dynamic load builds
+ifneq (,$(filter $(MAKECMDGOALS),dynamic))
+FORCED := dynamic_load.json,$(FORCED)
+endif
+
 ifeq ($(BOARD), arduino_101)
 ARC = arc
 ARC_RAM = $$((79 - $(RAM)))
@@ -163,9 +168,6 @@ endif  # BOARD = arduino_101
 
 # Print callback statistics during runtime
 CB_STATS ?= off
-# Print floats (uses -u _printf_float flag). This is a workaround on the A101
-# otherwise floats will not print correctly. It does use ~11k extra ROM though
-PRINT_FLOAT ?= off
 
 ifeq ($(BOARD), linux)
 	SNAPSHOT = off
@@ -222,6 +224,9 @@ ide: zephyr
 .PHONY: ashell
 ashell: zephyr
 
+.PHONY: dynamic
+dynamic: zephyr
+
 # Flash images
 .PHONY: dfu
 dfu:
@@ -259,29 +264,23 @@ analyze: $(JS)
 	fi
 	@mkdir -p $(OUT)/$(BOARD)/
 	@mkdir -p $(OUT)/include
-	@# create an config.h file to needed for iotivity-constrained
-	@cp -p src/zjs_ocf_config.h $(OUT)/include/config.h
 
-	./scripts/analyze	V=$(V) \
-		SCRIPT=$(JS) \
-		JS_OUT=$(OUT)/$(JS_TMP) \
-		BOARD=$(BOARD) \
-		JSON_DIR=src/ \
-		O=$(OUT) \
-		FORCE=$(FORCED) \
-		PRJCONF=prj.conf \
-		CMAKEFILE=$(OUT)/$(BOARD)/generated.cmake \
-		PROFILE=$(OUT)/$(BOARD)/jerry_feature.profile
+	./scripts/analyze	--verbose=$(V) \
+		--script=$(JS) \
+		--js-out=$(OUT)/$(JS_TMP) \
+		--board=$(BOARD) \
+		--json-dir=src/ \
+		--output-dir=$(OUT) \
+		--force=$(FORCED) \
+		--prjconf=prj.conf \
+		--cmakefile=$(OUT)/$(BOARD)/generated.cmake \
+		--profile=$(OUT)/$(BOARD)/jerry_feature.profile
 
 	@if [ "$(TRACE)" = "on" ] || [ "$(TRACE)" = "full" ]; then \
 		echo "add_definitions(-DZJS_TRACE_MALLOC)" >> $(OUT)/$(BOARD)/generated.cmake; \
 	fi
 	@if [ "$(SNAPSHOT)" = "on" ]; then \
 		echo "add_definitions(-DZJS_SNAPSHOT_BUILD)" >> $(OUT)/$(BOARD)/generated.cmake; \
-	fi
-	@# Build NEWLIB with float print support, this will increase ROM size
-	@if [ "$(PRINT_FLOAT)" = "on" ]; then \
-		echo "CONFIG_NEWLIB_LIBC_FLOAT_PRINTF=y" >> prj.conf; \
 	fi
 	@# Add bluetooth debug configs if BLE is enabled
 	@if grep -q BUILD_MODULE_BLE $(OUT)/$(BOARD)/generated.cmake; then \
@@ -303,7 +302,6 @@ analyze: $(JS)
 		fi \
 	fi
 
-	$(eval NET_BUILD=$(shell grep -q -E "BUILD_MODULE_OCF|BUILD_MODULE_DGRAM|BUILD_MODULE_NET|BUILD_MODULE_WS" $(OUT)/$(BOARD)/generated.cmake && echo y))
 	$(eval CMAKEFLAGS = \
 		-B$(OUT)/$(BOARD) \
 		-DASHELL=$(ASHELL) \
@@ -313,8 +311,6 @@ analyze: $(JS)
 		-DJERRY_BASE=$(JERRY_BASE) \
 		-DJERRY_OUTPUT=$(JERRY_OUTPUT) \
 		-DJERRY_PROFILE=$(OUT)/$(BOARD)/jerry_feature.profile \
-		-DNETWORK_BUILD=$(NET_BUILD) \
-		-DPRINT_FLOAT=$(PRINT_FLOAT) \
 		-DSNAPSHOT=$(SNAPSHOT) \
 		-DVARIANT=$(VARIANT) \
 		-DVERBOSITY=$(VERBOSITY) \
@@ -323,20 +319,17 @@ analyze: $(JS)
 
 # Update dependency repos
 .PHONY: update
-update:
-	@git submodule update --init
-	@cd $(OCF_ROOT); git submodule update --init;
+update: .gitmodules
+	@git submodule update --init --recursive;
+
+${JERRY_BASE}/CMakeLists.txt:
+	@if ! [ -f ${JERRY_BASE}/CMakeLists.txt ]; then \
+		git submodule update --init --recursive; \
+	fi
 
 # set up prj.conf file
 -.PHONY: setup
-setup:
-ifeq ($(ASHELL), ashell)
-ifeq ($(filter ide,$(MAKECMDGOALS)),ide)
-	@echo CONFIG_USB_CDC_ACM=n >> prj.conf
-else
-	@echo CONFIG_USB_CDC_ACM=y >> prj.conf
-endif
-endif
+setup: ${JERRY_BASE}/CMakeLists.txt
 ifeq ($(BOARD), arduino_101)
 ifeq ($(OS), Darwin)
 	@# work around for OSX where the xtool toolchain do not
@@ -378,6 +371,8 @@ pristine: cleanlocal
 .PHONY: generate
 generate: $(JS) setup
 	@mkdir -p $(OUT)/include/
+	@# create an config.h file to needed for iotivity-constrained
+	@cp -p src/zjs_ocf_config.h $(OUT)/include/config.h
 ifeq ($(SNAPSHOT), on)
 	@echo Building snapshot generator...
 	@if ! [ -e $(OUT)/snapshot/snapshot ]; then \
@@ -393,9 +388,9 @@ ifeq ($(SNAPSHOT), on)
 else
 	@echo Creating C string from JS application...
 ifeq ($(BOARD), linux)
-	@./scripts/convert.sh $(JS) $(OUT)/include/zjs_script_gen.h
+	@./scripts/convert.py $(JS) $(OUT)/include/zjs_script_gen.h
 else
-	@./scripts/convert.sh $(OUT)/$(JS_TMP) $(OUT)/include/zjs_script_gen.h
+	@./scripts/convert.py $(OUT)/$(JS_TMP) $(OUT)/include/zjs_script_gen.h
 endif
 endif
 
@@ -421,14 +416,14 @@ ARC_RESTRICT="zjs_ipm_arc.json,\
 arc: analyze
 	@# Restrict ARC build to only certain "arc specific" modules
 	@mkdir -p $(OUT)/arduino_101_sss
-	./scripts/analyze	V=$(V) \
-		SCRIPT=$(OUT)/$(JS_TMP) \
-		BOARD=arc \
-		JSON_DIR=arc/src/ \
-		PRJCONF=arc/prj.conf \
-		CMAKEFILE=$(OUT)/arduino_101_sss/generated.cmake \
-		O=$(OUT)/arduino_101_sss \
-		FORCE=$(ASHELL_ARC)
+	./scripts/analyze	--verbose=$(V) \
+		--script=$(OUT)/$(JS_TMP) \
+		--board=arc \
+		--json-dir=arc/src/ \
+		--prjconf=arc/prj.conf \
+		--cmakefile=$(OUT)/arduino_101_sss/generated.cmake \
+		--output-dir=$(OUT)/arduino_101_sss \
+		--force=$(ASHELL_ARC)
 
 	@echo "&flash0 { reg = <0x400$(FLASH_BASE_ADDR) ($(ARC_ROM) * 1024)>; };" > arc/arduino_101_sss.overlay
 	@echo "&sram0 { reg = <0xa8000400 ($(ARC_RAM) * 1024)>; };" >> arc/arduino_101_sss.overlay
@@ -454,12 +449,12 @@ adebug:
 # Run gdb to connect to debug server for x86
 .PHONY: agdb
 agdb:
-	$$ZEPHYR_SDK_INSTALL_DIR/sysroots/x86_64-pokysdk-linux/usr/bin/i586-zephyr-elfiamcu/i586-zephyr-elfiamcu-gdb $(OUT)/arduino_101/zephyr.elf -ex "target remote :3333"
+	$$ZEPHYR_SDK_INSTALL_DIR/sysroots/x86_64-pokysdk-linux/usr/bin/i586-zephyr-elfiamcu/i586-zephyr-elfiamcu-gdb $(OUT)/arduino_101/zephyr/zephyr.elf -ex "target remote :3333"
 
 # Run gdb to connect to debug server for ARC
 .PHONY: arcgdb
 arcgdb:
-	$$ZEPHYR_SDK_INSTALL_DIR/sysroots/i686-pokysdk-linux/usr/bin/arc-poky-elf/arc-poky-elf-gdb $(OUT)/arduino_101_sss/zephyr.elf -ex "target remote :3334"
+	$$ZEPHYR_SDK_INSTALL_DIR/sysroots/i686-pokysdk-linux/usr/bin/arc-poky-elf/arc-poky-elf-gdb $(OUT)/arduino_101_sss/zephyr/zephyr.elf -ex "target remote :3334"
 
 # Linux target
 .PHONY: linux
@@ -493,6 +488,7 @@ help:
 	@echo "    pristine:   Completely remove all generated files"
 	@echo "    check:      Run all the automated build tests"
 	@echo "    quickcheck: Run the quick Linux subset of automated build tests"
+	@echo "    dynamic     Build Zephyr in dynamic loading mode. Includes the parser"
 	@echo
 	@echo "Build options:"
 	@echo "    BOARD=      Specify a Zephyr board to build for"

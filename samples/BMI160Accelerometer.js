@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, Intel Corporation.
+// Copyright (c) 2016-2018, Intel Corporation.
 
 // Test code to use the Accelerometer (subclass of Generic Sensor) API
 // to communicate with the BMI160 inertia sensor on the Arduino 101
@@ -11,7 +11,7 @@ var sensor = new Accelerometer({
     frequency: updateFrequency
 });
 
-sensor.onchange = function() {
+sensor.onreading = function() {
     console.log("acceleration (m/s^2): " +
                 " x=" + sensor.x +
                 " y=" + sensor.y +

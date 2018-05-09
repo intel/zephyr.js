@@ -1,76 +1,103 @@
 #!/usr/bin/env python3
 
-import os
-import sys
+# Static analysis tool to detect modules being used in a script so the compiler
+# can include or exclude certain modules based on whether they are used. This
+# will output gcc pre-processor defines (-D____) so it can be used in-line
+# during the compile step.
+
+import argparse
 import json
+import os
+import pprint
 import re
 import shutil
-import pprint
+import sys
 
-def usage():
-    print("Usage: ./analyze <options>")
-    print("   Required:")
-    print("      BOARD=      Target being built")
-    print("      JSON_DIR=   Directory to look for JSON files")
-    print("      PRJCONF=    File to write the prj.conf info to")
-    print("      CMAKEFILE=  CMake file to write source/options to")
-    print("   Optional:")
-    print("      SCRIPT=     JS script used to build")
-    print("      FORCE=      Force inclusion of certain JSON files")
-    print("      PROFILE=    Where to write the JerryScript profile")
-    print("      JS_OUT=     Output file if any JS modules are found in SCRIPT")
-    print("      O=          Output directory")
-    quit()
+# Globals
+args = None
+board = None
 
-args = {}
 
-for i in sys.argv[1:]:
-    option, value = i.split('=')[:2]
-    args[option] = value
+def main():
+    global args, board
+    args = parse_args()
+    board = args.board
 
-json_tree = {}
+    json_tree = {}
+    deps_list = []
+    zconf = []
+    zjs_conf = []
+    jrs_conf = []
+    lsrc = []
+    js_modules = []
 
-deps_list = []
-zconf = []
-zjs_conf = []
-jrs_conf = []
-lsrc = []
-js_modules = []
+    if not args.script:
+        print("Generating modules header")
+    else:
+        print("Analyzing %s for %s" % (args.script, board))
 
-board = args['BOARD']
+    # Linux is special cased because it does not use a JS script to build
+    if board == 'linux':
+        build_tree(json_tree, args.restrict)
+        do_print(json_tree)
+        all_list = []
+        create_dep_list(all_list, board, json_tree)
+        for i in sorted(all_list):
+            print("Using module: " + i)
+        write_modules(all_list, json_tree, args.output_dir)
+    # normal case
+    else:
+        if args.js_out:
+            with open(args.script, 'r') as s:
+                js = s.read()
+            with open(args.js_out, 'w') as f:
+                for i in os.listdir("modules/"):
+                    if match_require(js, i):
+                        js_modules += [i]
+                for i in js_modules:
+                    with open('modules/' + i) as mod:
+                        f.write(mod.read())
+                        f.write("\n")
+                f.write(js)
+            js_file = args.js_out
+        else:
+            js_file = args.script
 
-if board == 'linux':
-    req_options = ['BOARD', 'JSON_DIR']
-else:
-    req_options = ['BOARD', 'JSON_DIR', 'PRJCONF', 'CMAKEFILE']
+        if args.restrict:
+            do_print("Only using modules: " + str(args.restrict))
 
-for i in req_options:
-    if i not in args:
-        print("%s must be specified" % i)
-        usage()
+        if args.force:
+            do_print("Forcing inclusion of: " + str(args.force))
 
-if 'SCRIPT' not in args:
-    print("Generating modules header")
-else:
-    script = args['SCRIPT']
-    print("Analyzing %s for %s" % (script, board))
+        build_tree(json_tree, args.restrict)
+        do_print(json_tree)
+        parse_json_tree(js_file, deps_list, zconf, zjs_conf, jrs_conf, lsrc,
+                        json_tree, force=args.force)
+        for i in sorted(deps_list):
+            print("Using module: " + i)
 
-if 'O' not in args:
-    outdir = 'outdir'
-else:
-    outdir = args['O']
+        write_zconf(zconf, args.prjconf)
+        write_cmakefile(lsrc, zjs_conf, args.cmakefile)
+        write_jrsconfig(jrs_conf)
+
+        # building for arc does not need zjs_modules_gen.h to be created
+        if board != 'arc':
+            write_modules(deps_list, json_tree, args.output_dir)
+
 
 def do_print(s):
     """Debug print controlled with V option"""
-    if 'V' in args and args['V'] == '1':
+    if args.verbose == 1:
         p = pprint.PrettyPrinter(indent=1)
         p.pprint(s)
+
 
 def merge_lists(l1, l2):
     """Merge l2 into l1, excluding duplicates"""
     for i in l2:
         if i not in l1:
             l1.append(i)
+
 
 def parse_list(tree, list):
     """Parse a list of JSON files to create a JSON tree
@@ -81,7 +108,7 @@ def parse_list(tree, list):
     for file in list:
         if file.endswith(".json"):
             do_print("opening " + file)
-            with open(args['JSON_DIR'] + file) as f:
+            with open(os.path.join(args.json_dir, file)) as f:
                 try:
                     data = json.load(f)
                 except:
@@ -100,12 +127,14 @@ def parse_list(tree, list):
                     else:
                         tree[data['module']] = data;
 
+
 def build_tree(tree, restrict):
     """Wrapper for parse_list() if a restricted list of JSON files is used"""
-    if restrict != []:
+    if restrict is not None:
         parse_list(tree, restrict)
     else:
-        parse_list(tree, os.listdir(args['JSON_DIR']))
+        parse_list(tree, os.listdir(args.json_dir))
+
 
 def create_dep_list_helper(dlist, dep, board, tree):
     """Recursive helper for create_dep_list()"""
@@ -121,6 +150,7 @@ def create_dep_list_helper(dlist, dep, board, tree):
             for i in entry['depends']:
                 create_dep_list_helper(dlist, i, board, tree)
 
+
 def create_dep_list(dlist, board, tree):
     """Find all dependencies of a list. This is only used by the Linux target
     where a JSON list is manually used rather than parsing a script
@@ -134,6 +164,7 @@ def create_dep_list(dlist, board, tree):
             merge_lists(dlist, [dep])
         create_dep_list_helper(dlist, dep, board, tree)
 
+
 def match_require(js, module, child=None):
     # requires: js is a string chunk of JS code, module is a string module name
     #             we're searching for a require() for, child is an optional
@@ -143,6 +174,7 @@ def match_require(js, module, child=None):
         child_regex = "\.%s " % child
     regex = r"\brequire *\([\'\"]%s[\"\']\)%s" % (module, child_regex)
     return re.search(regex, js)
+
 
 def parse_json_tree_helper(js, dep, dlist, zlist, zjslist, jrslist, srclist,
                            tree):
@@ -219,8 +251,9 @@ def parse_json_tree_helper(js, dep, dlist, zlist, zjslist, jrslist, srclist,
     if 'zjs_config' in entry:
         merge_lists(zjslist, entry['zjs_config'])
 
+
 def parse_json_tree(file, dlist, zlist, zjslist, jrslist, srclist, tree,
-                    force=[]):
+                    force=None):
     """Using a JS file as input, gather dependencies and generate separate lists
     for each aspect of the build (zephyr options, zjs options, jrs options, src)
 
@@ -236,9 +269,9 @@ def parse_json_tree(file, dlist, zlist, zjslist, jrslist, srclist, tree,
     with open(file) as js:
         text = js.read()
 
-    if force != []:
+    if force is not None:
         for f in force:
-            with open(args['JSON_DIR'] + f) as file:
+            with open(os.path.join(args.json_dir, f)) as file:
                 data = json.load(file)
                 parse_json_tree_helper(text, data['module'], dlist, zlist,
                                        zjslist, jrslist, srclist, tree)
@@ -292,17 +325,19 @@ def parse_json_tree(file, dlist, zlist, zjslist, jrslist, srclist, tree,
                 parse_json_tree_helper(text, default, dlist, zlist, zjslist,
                                        jrslist, srclist, tree)
 
+
 def write_jrsconfig(list):
     """Write a JerryScript profile file"""
-    if 'PROFILE' in args:
-        if os.path.exists(args['PROFILE']):
-            shutil.copyfile(args['PROFILE'], args['PROFILE'] + '.bak')
+    if args.profile:
+        if os.path.exists(args.profile):
+            shutil.copyfile(args.profile, args.profile + '.bak')
         with open("fragments/jerry_feature.base", "r") as jrs:
             feature = jrs.read()
-        with open(args['PROFILE'], "w") as p:
+        with open(args.profile, "w") as p:
             for i in list:
                 feature = feature.replace(i, "#" + i)
             p.write(feature)
+
 
 def write_cmakefile(src, zconf, file):
     """Write out a src CMake file"""
@@ -320,6 +355,7 @@ def write_cmakefile(src, zconf, file):
                     f.write("add_definitions(" + i + ")\n")
             f.write("\n")
 
+
 def expand_match(match):
     """Expand regexp match as a shell variable, if possible"""
     # requires: match should be VARNAME from $(VARNAME) string
@@ -332,6 +368,7 @@ def expand_match(match):
         return '$(' + varname + ')'
     return expanded
 
+
 def write_zconf(list, file):
     """Write Zephyr config options to a file"""
     with open(file, "w") as f:
@@ -340,7 +377,8 @@ def write_zconf(list, file):
             expanded = re.sub(r"\$\((\w+)\)", expand_match, i)
             f.write(expanded + '\n')
 
-def write_modules(list, tree):
+
+def write_modules(list, tree, outdir):
     """Write zjs_modules_gen.h file"""
     headers = []
     gbl_inits = {}
@@ -377,61 +415,63 @@ typedef struct gbl_module {
             file.write("},\n")
         file.write("};\n")
 
-# Linux is special cased because it does not use a JS script to build
-if board == 'linux':
-    restrict = args['RESTRICT'].split(',')
-    restrict = [i.strip() for i in restrict]
-    build_tree(json_tree, restrict)
-    do_print(json_tree)
-    all_list = []
-    create_dep_list(all_list, board, json_tree)
-    for i in sorted(all_list):
-        print("Using module: " + i)
-    write_modules(all_list, json_tree)
-# normal case
-else:
-    if 'JS_OUT' in args:
-        with open(script, 'r') as s:
-            js = s.read()
-        with open(args['JS_OUT'], 'w') as f:
-            for i in os.listdir("modules/"):
-                if match_require(js, i):
-                    js_modules += [i]
-            for i in js_modules:
-                with open('modules/' + i) as mod:
-                    f.write(mod.read())
-                    f.write("\n")
-            f.write(js)
-        js_file = args['JS_OUT']
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description=(
+            "Static analysis tool to detect modules being used in a script so "
+            "the compiler can include or exclude certain modules if they "
+            "are/are not used.  This will output gcc pre-processor defines "
+            "(-D____) so it can be used in-line -during the compile step."),
+    )
+    parser.add_argument("--board", required=True, metavar="BOARD_NAME",
+                        help="Board target being built.")
+    parser.add_argument("--json-dir", required=True, metavar="DIR",
+                        help="Directory to look for JSON files.")
+    parser.add_argument("--prjconf", metavar="FILE",
+                        help="File to write the prj.conf information to.")
+    parser.add_argument("--cmakefile", metavar="FILE",
+                        help="CMake file to write source/options to.")
+
+    parser.add_argument("--script", metavar="FILE",
+                        help="JavaScript script used to build.")
+    parser.add_argument("--force", metavar="FILE,FILE,...",
+                        help=("Comma separated list of JSON files to force "
+                              "inclusion of. Files are located in  the "
+                              "directory specified by --json-dir."))
+    parser.add_argument("--restrict", metavar="FILE,FILE,...",
+                        help=("Comma separated list of JSON files. If "
+                              "specified only these JSON files will be used. "
+                              "Files are located in the directory specified "
+                              "by --json-dir."))
+    parser.add_argument("--profile", metavar="FILE",
+                        help="File to write the JerryScript profile to.")
+    parser.add_argument("--js-out", metavar="FILE",
+                        help=("Output file to use if any JS modules are found "
+                              "in --script."))
+    parser.add_argument("--output-dir", metavar="DIR", default="outdir",
+                        help="Output directory.")
+    parser.add_argument("--verbose", type=int, choices=[0, 1], default=0,
+                        help="Level of verbosity.")
+
+    args = parser.parse_args()
+
+    if args.board != 'linux':
+        if not args.prjconf or not args.cmakefile:
+            parser.error("Arguments --prjconf and --cmakefile are required "
+                         "unless --board is 'linux'")
     else:
-        js_file = script
+        if not args.restrict:
+            parser.error("Argument --restrict is required when --board is "
+                         "'linux'")
+    # Change arguments which take comma separated value strings and convert
+    # them into lists of the values.
+    for arg_name in ('force', 'restrict'):
+        if getattr(args, arg_name):
+            setattr(args, arg_name,
+                    [x.strip() for x in getattr(args, arg_name).split(',')])
+    return args
 
-    restrict = args.get('RESTRICT', '')
-    if restrict != '':
-        restrict = restrict.split(',')
-        restrict = [i.strip() for i in restrict]
-        do_print("Only using modules: " + str(restrict))
-    else:
-        restrict = []
 
-    force = args.get('FORCE', '')
-    if force != '':
-        force = force.split(',')
-        do_print("Forcing inclusion of: " + str(force))
-    else:
-        force = []
-
-    build_tree(json_tree, restrict)
-    do_print(json_tree)
-    parse_json_tree(js_file, deps_list, zconf, zjs_conf, jrs_conf, lsrc,
-                    json_tree, force=force)
-    for i in sorted(deps_list):
-        print("Using module: " + i)
-
-    write_zconf(zconf, args['PRJCONF'])
-    write_cmakefile(lsrc, zjs_conf, args['CMAKEFILE'])
-    write_jrsconfig(jrs_conf)
-
-    # building for arc does not need zjs_modules_gen.h to be created
-    if board != 'arc':
-        write_modules(deps_list, json_tree)
+if '__main__' == __name__:
+    sys.exit(main())

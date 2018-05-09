@@ -18,6 +18,8 @@ everything else.
 * [Other HW Platforms](#other-hw-platforms)
    + [nRF52 Platform](#nrf52-platform)
    + [FRDM-K64F Platform](#frdm-k64f-platform)
+   + [ST STM32F4DISCOVERY Platform](#st-stm32f4discovery-platform)
+   + [OLIMEX-STM32-E407 Platform](#olimex-stm32-e407-platform)
 * [Running the JS app on Linux or Mac](#running-the-js-app-on-linux-or-mac)
    + [Building and running on Linux](#building-and-running-on-linux)
    + [Building and running on MacOS](#building-and-running-on-macos)
@@ -98,10 +100,10 @@ git clone http://github.com/intel/zephyr.js.git
 ```
 
 #### Check out the desired version
-If you want to use a stable release version, the latest is 0.4:
+If you want to use a stable release version, the latest is 0.5:
 
 ```bash
-git checkout v0.4
+git checkout v0.5
 ```
 
 If you do nothing and remain on master, you will be looking at the very latest
@@ -221,7 +223,7 @@ the samples you will want to hook up the serial console (see below), but for
 this one it's not really needed.
 
 Then connect the Arduino 101 to your host with a USB A/B cable. Press the
-Master Reset button on the Arduino 101 and after a few seconds type:
+Master Reset button on the Arduino 101 and within a few seconds type:
 
 ```bash
 make dfu
@@ -270,9 +272,12 @@ PgUp/PgDn. Then Esc again to get back to the latest output (out of "Copy Mode").
 #### Debugging
 
 ##### Debugging native C code
-You can use the commands `make debug` and `make gdb` in two separate terminals
-to connect to the device with a debugger. Then you can set breakpoints such as
-`b main` and `run` to start debugging as usual with gdb.
+See Zephyr's
+[supported boards documentation](http://docs.zephyrproject.org/boards/boards.html)
+for information on debugging with a specific board. For the Arduino 101, ZJS has
+special make targets: use the commands `make adebug` and `make agdb` in two
+separate terminals to connect to the device with a debugger. Then you can set
+breakpoints such as `b main` and `run` to start debugging as usual with gdb.
 
 ##### Debugging JavaScript code
 JerryScript has a built-in remote debugger which allows debugging JavaScript
@@ -332,7 +337,7 @@ output when you do build for Arduino 101.
 
 ## JS Minifier
 
-To save space it is recommended to use a minifier. In `convert.sh`, the script
+To save space it is recommended to use a minifier. In `convert.py`, the script
 used to encode your JS into a source file, we use `uglifyjs`. If you didn't
 install this earlier, you can do so with the command:
 ```bash
@@ -450,6 +455,63 @@ cp zephyr/zephyr.bin /media/<USERNAME>/MBED/
 
 Using the same procedure as above, once you hit Reset you should see
 "Hello World!" within a second on your serial console.
+
+### ST STM32F4DISCOVERY Platform
+
+See the
+[Zephyr Project Wiki](http://docs.zephyrproject.org/boards/arm/stm32f4_disco/doc/stm32f4_disco.html)
+for general information about running Zephyr OS on the STM32F4DISCOVERY.
+
+Building is the same as any other ZJS platform, just use `stm32f4_disco` as
+the BOARD name:
+
+```bash
+make BOARD=stm32f4_disco ide
+```
+
+You should now have a Zephyr binary in `outdir/stm32f4_disco/`. You can flash
+it to the STM32F4DISCOVERY board with the openocd:
+
+1. Connect the Mini USB cable from the device(CN1) to your PC.
+2. Connect a micro-USB cable from the device (CN5) to your PC.
+
+3. Flash the application using the following command:
+```bash
+make BOARD=stm32f4_disco flash
+```
+
+You should see the lights flashing on the STM32F4DISCOVERY board. When it stops you should
+see WebIDE url notification from Chrome.
+
+From here the device can be connected with WebIDE and upload JS code to the device.
+
+### OLIMEX-STM32-E407 Platform
+
+See the
+[Zephyr Project Wiki](http://docs.zephyrproject.org/boards/arm/olimex_stm32_e407/doc/olimex_stm32_e407.html)
+for general information about running Zephyr OS on the OLIMEX-STM32-E407.
+
+Building is the same as any other ZJS platform, just use `olimex_stm32_e407` as
+the BOARD name:
+
+```bash
+make BOARD=olimex_stm32_e407 ide
+```
+
+You should now have a Zephyr binary in `outdir/olimex_stm32_e407/`. You can flash
+it to the OLIMEX-STM32-E407 board with the openocd:
+
+1. Connect the ST-Link USB dongle to your host computer and to the JTAG port of the OLIMEX-STM32-E407 board.
+2. Connect the Mini USB cable to the device(OTG1 near LAN connector) to your PC.
+3. Flash the application using the following command:
+```bash
+make BOARD=olimex_stm32_e407 flash
+```
+
+You should see the lights flashing on the ST-Link USB dongle. When it stops you should see WebIDE
+url notification from Chrome.
+
+From here the device can be connected with WebIDE and upload JS code to the device.
 
 ## Running the JS app on Linux or Mac
 
@@ -817,29 +879,31 @@ reason we have the following possibilities for support:
 | Module    | Linux | [A101](https://store.arduino.cc/usa/arduino-101 "Arduino 101")/[tT](https://software.intel.com/en-us/node/675623 "tinyTILE") | [K64F](https://os.mbed.com/platforms/FRDM-K64F/ "FRDM-K64F")  | [nRF52](http://infocenter.nordicsemi.com/pdf/nRF52_DK_PB_v1.2.pdf "nRF52 DK") | [Due](https://store.arduino.cc/usa/arduino-due "Arduino Due") | [F411RE](http://www.st.com/en/evaluation-tools/nucleo-f411re.html "STM32 Nucleo-F411RE") | [STM32F4](http://www.st.com/en/evaluation-tools/stm32f4discovery.html "STM32F4DISCOVERY") | [OLIMEX E407](https://www.olimex.com/Products/ARM/ST/STM32-E407/open-source-hardware "OLIMEX STM32 E407") | [Carbon](https://www.96boards.org/product/carbon/ "96Boards Carbon") |
 |   :---:   | :---: |  :---:  | :---:| :---: |:---:|  :---: |  :---:  |   :---:   |  :---: |
 |HelloWorld |   X   |    X    |   X  |   X   |  X  |    X   |    X    |     X     |    X   |
-|  ADC      |       |    X    |   X  |       |     |        |         |           |        |
-|  PWM      |       |    X    |      |       |     |        |         |           |        |
-|  GPIO     |       |    X    |   X  |       |     |        |         |           |        |
-|  I2C      |       |    X    |   X  |       |     |        |         |           |        |
-|  BLE      |       |    X    |      |       |     |        |         |           |    X   |
-|  UART     |       |    X    |      |   NT  |     |        |         |           |        |
-| Sensor    |       |    X    |   X  |       |     |        |         |           |        |
-| Buffer    |   X   |    X    |   X  |   X   |  X  |    X   |    X    |     X     |    X   |
+|    ADC    |       |    X    |   X  |       |     |        |         |           |        |
+|    BLE    |       |    X    |      |       |     |        |         |           |    X   |
+|  Buffer   |   X   |    X    |   X  |   X   |  X  |    X   |    X    |     X     |    X   |
 | Console   |   X   |    X    |   X  |   X   |  X  |    X   |    X    |     X     |    X   |
-| Event     |   X   |    X    |   X  |   X   |  X  |    X   |    X    |     X     |    X   |
+|   Dgram   |       |    X    |   X  |       |     |        |         |           |        |
+|   Event   |   X   |    X    |   X  |   X   |  X  |    X   |    X    |     X     |    X   |
 |File System|       |    X    |   X  |       |     |        |         |           |        |
-| OCF       |   X   |    X    |   X  |       |     |        |         |     NT    |        |
+|   GPIO    |       |    X    |   X  |       |     |        |         |           |        |
+|    I2C    |       |    X    |   X  |       |     |        |         |           |        |
+|    Net    |       |    X    |   X  |       |     |        |         |           |        |
+|    OCF    |   X   |    X    |   X  |       |     |        |         |     NT    |        |
 |Performance|   X   |    X    |   X  |   X   |  X  |    X   |    X    |     X     |    X   |
-| Timers    |   X   |    X    |   X  |   X   |  X  |    X   |    X    |     X     |    X   |
-| Dgram     |       |    X    |   X  |       |     |        |         |           |        |
-| Net       |       |    X    |   X  |       |     |        |         |           |        |
+|    PME    |       |    X    |      |       |     |        |         |           |        |
+|    PWM    |       |    X    |      |       |     |        |         |           |        |
+|  Sensor   |       |    X    |   X  |       |     |        |         |           |        |
+|  Timers   |   X   |    X    |   X  |   X   |  X  |    X   |    X    |     X     |    X   |
+|   UART    |       |    X    |      |   NT  |     |        |         |           |        |
 | WebSocket |       |    X    |   X  |       |     |        |         |           |        |
+|  WebUSB   |       |    X    |      |       |     |        |         |           |        |
 
 ## Networking with QEMU
 QEMU has support for networking features that can be tested on your Linux
 desktop. To do this you will need to build a separate "net-tools" project:
 ```bash
-git clone https://gerrit.zephyrproject.org/r/net-tools
+git clone https://github.com/zephyrproject-rtos/net-tools
 cd net-tools
 make
 ```

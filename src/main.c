@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, Intel Corporation.
+// Copyright (c) 2016-2018, Intel Corporation.
 
 // C includes
 #include <string.h>
@@ -20,12 +20,14 @@
 #endif  // ZJS_LINUX_BUILD
 #include "zjs_script.h"
 #include "zjs_util.h"
-#ifdef ZJS_ASHELL
+#if defined (ZJS_ASHELL) || defined (ZJS_DYNAMIC_LOAD)
 #include <gpio.h>
 #include "zjs_board.h"
+#include "zjs_file_utils.h"
+#ifdef ZJS_ASHELL
 #include "ashell/ashell.h"
-#include "ashell/file-utils.h"
-#endif
+#endif // ZJS_ASHELL
+#endif // defined (ZJS_ASHELL) || defined (ZJS_DYNAMIC_LOAD)
 
 // JerryScript includes
 #include "jerryscript.h"
@@ -183,7 +185,7 @@ int main(int argc, char *argv[])
 
     file_name = argv[1];
     file_name_len = strlen(argv[1]);
-#elif defined ZJS_ASHELL
+#elif defined ZJS_ASHELL || defined ZJS_DYNAMIC_LOAD
     char *script = NULL;
 #else
     const char *script = NULL;
@@ -210,37 +212,37 @@ int main(int argc, char *argv[])
 #endif
 
 #ifdef ZJS_ASHELL
-if (config_mode_detected()) {
-    // go into IDE mode if connected GPIO button is pressed
-    ashell_mode = true;
-} else {
-    // boot to cfg file if found
-    char filename[MAX_FILENAME_SIZE];
-    if (fs_get_boot_cfg_filename(NULL, filename) == 0) {
-        // read JS stored in filesystem
-        fs_file_t *js_file = fs_open_alloc(filename, "r");
-        if (!js_file) {
-            ZJS_PRINT("\nFile %s not found on filesystem, \
-                      please boot into IDE mode, exiting!\n",
-                      filename);
-            goto error;
-        }
-        script_len = fs_size(js_file);
-        script = zjs_malloc(script_len + 1);
-        ssize_t count = fs_read(js_file, script, script_len);
-        if (script_len != count) {
-            ZJS_PRINT("\nfailed to read JS file\n");
-            zjs_free(script);
-            goto error;
-        }
-        script[script_len] = '\0';
-        ZJS_PRINT("JS boot config found, booting JS %s...\n\n\n", filename);
+    if (config_mode_detected()) {
+        // go into IDE mode if connected GPIO button is pressed
+        ashell_mode = true;
     } else {
-        // boot cfg file not found
-        ZJS_PRINT("\nNo JS found, please boot into IDE mode, exiting!\n");
-        goto error;
+        // boot to cfg file if found
+        char filename[MAX_FILENAME_SIZE];
+        if (fs_get_boot_cfg_filename(NULL, filename) == 0) {
+            // read JS stored in filesystem
+            fs_file_t *js_file = fs_open_alloc(filename, "r");
+            if (!js_file) {
+                ZJS_PRINT("\nFile %s not found on filesystem, \
+                          please boot into IDE mode, exiting!\n",
+                          filename);
+                goto error;
+            }
+            script_len = fs_size(js_file);
+            script = zjs_malloc(script_len + 1);
+            ssize_t count = fs_read(js_file, script, script_len);
+            if (script_len != count) {
+                ZJS_PRINT("\nfailed to read JS file\n");
+                zjs_free(script);
+                goto error;
+            }
+            script[script_len] = '\0';
+            ZJS_PRINT("JS boot config found, booting JS %s...\n\n\n", filename);
+        } else {
+            // boot cfg file not found
+            ZJS_PRINT("\nNo JS found, please boot into IDE mode, exiting!\n");
+            goto error;
+        }
     }
-}
 #endif
 
 #ifndef ZJS_SNAPSHOT_BUILD
@@ -276,9 +278,9 @@ if (config_mode_detected()) {
 #endif
 
 #ifdef ZJS_DEBUGGER
-if (start_debug_server) {
-    jerry_debugger_init(debug_port);
-}
+    if (start_debug_server) {
+        jerry_debugger_init(debug_port);
+    }
 #endif
 
 #ifndef ZJS_SNAPSHOT_BUILD
@@ -325,8 +327,8 @@ if (start_debug_server) {
     err = bt_enable(NULL);
 #endif
     if (err) {
-       ERR_PRINT("Failed to enable Bluetooth, error %d\n", err);
-       goto error;
+        ERR_PRINT("Failed to enable Bluetooth, error %d\n", err);
+        goto error;
     }
 #endif
 
@@ -356,6 +358,10 @@ if (start_debug_server) {
     }
 #endif
     while (1) {
+#ifdef ZJS_DYNAMIC_LOAD
+        // Check if we should load a new JS file
+        zjs_modules_check_load_file();
+#endif
 #ifdef ZJS_ASHELL
         if (ashell_mode) {
             zjs_ashell_process();
@@ -372,7 +378,7 @@ if (start_debug_server) {
             serviced = 1;
         }
 #ifdef ZJS_LINUX_BUILD
-	// FIXME - reverted patch #1542 to old timer implementation
+        // FIXME - reverted patch #1542 to old timer implementation
         u64_t wait = zjs_timers_process_events();
         if (wait != ZJS_TICKS_FOREVER) {
             serviced = 1;
@@ -394,8 +400,7 @@ if (start_debug_server) {
 #ifdef BUILD_MODULE_PROMISE
         // run queued jobs for promises
         result = jerry_run_all_enqueued_jobs();
-        if (jerry_value_has_error_flag(result))
-        {
+        if (jerry_value_has_error_flag(result)) {
             DBG_PRINT("Error running JS in promise jobqueue\n");
             zjs_print_error_message(result, ZJS_UNDEFINED);
             goto error;

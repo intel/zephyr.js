@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, Intel Corporation.
+// Copyright (c) 2016-2018, Intel Corporation.
 
 #ifdef BUILD_MODULE_BLE
 #ifndef QEMU_BUILD
@@ -84,12 +84,10 @@ typedef struct zjs_ble_handle {
     ble_connection_t *connections;
 } ble_handle_t;
 
-static struct bt_uuid *gatt_primary_service_uuid =
-    BT_UUID_DECLARE_16(BT_UUID_GATT_PRIMARY_VAL);
-static struct bt_uuid *gatt_characteristic_uuid =
-    BT_UUID_DECLARE_16(BT_UUID_GATT_CHRC_VAL);
-static struct bt_uuid *gatt_cud_uuid = BT_UUID_DECLARE_16(BT_UUID_GATT_CUD_VAL);
-static struct bt_uuid *gatt_ccc_uuid = BT_UUID_DECLARE_16(BT_UUID_GATT_CCC_VAL);
+static struct bt_uuid *gatt_primary_service_uuid = BT_UUID_GATT_PRIMARY;
+static struct bt_uuid *gatt_characteristic_uuid = BT_UUID_GATT_CHRC;
+static struct bt_uuid *gatt_cud_uuid = BT_UUID_GATT_CUD;
+static struct bt_uuid *gatt_ccc_uuid = BT_UUID_GATT_CCC;
 
 static struct k_sem ble_sem;
 
@@ -869,7 +867,8 @@ static bool zjs_ble_parse_characteristic(ble_characteristic_t *chrc)
             return false;
         }
 
-        if (strtoul(desc_uuid, NULL, 16) == BT_UUID_GATT_CUD_VAL) {
+        unsigned long cud_uuid = (unsigned long)BT_UUID_16(BT_UUID_GATT_CUD)->val;
+        if (strtoul(desc_uuid, NULL, 16) == cud_uuid) {
             // Support CUD only, ignore all other type of descriptors
             ZVAL v_value = zjs_get_property(v_desc, "value");
             if (jerry_value_is_string(v_value)) {
@@ -1304,7 +1303,6 @@ static void zjs_ble_cleanup(void *native)
     ble_handle = NULL;
 }
 
-
 // INTERRUPT SAFE FUNCTION: No JerryScript VM, allocs, or release prints!
 void ble_bt_ready(int err)
 {
@@ -1349,7 +1347,8 @@ static jerry_value_t zjs_ble_init()
 
 #ifdef ZJS_ASHELL
     if (bt_enable(ble_bt_ready)) {
-        ERR_PRINT("Failed to enable Bluetooth and may not be enabled again, please reboot\n");
+        ERR_PRINT("Failed to enable Bluetooth and may not be enabled again, " \
+                  "please reboot\n");
     }
 #endif
     return ble_obj;

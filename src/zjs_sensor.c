@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, Intel Corporation.
+// Copyright (c) 2016-2018, Intel Corporation.
 
 // C includes
 #include <string.h>
@@ -33,7 +33,7 @@ static void zjs_sensor_free_cb(void *native)
 }
 
 static const jerry_object_native_info_t sensor_type_info = {
-   .free_cb = zjs_sensor_free_cb
+    .free_cb = zjs_sensor_free_cb
 };
 
 static sensor_handle_t *zjs_sensor_alloc_handle()
@@ -96,53 +96,38 @@ void zjs_sensor_free_instance(sensor_instance_t *instance)
 
 sensor_state_t zjs_sensor_get_state(jerry_value_t obj)
 {
-    const int BUFLEN = 20;
-    char buffer[BUFLEN];
-    if (zjs_obj_get_string(obj, "state", buffer, BUFLEN)) {
-        if (strequal(buffer, "unconnected"))
-            return SENSOR_STATE_UNCONNECTED;
-        if (strequal(buffer, "idle"))
-            return SENSOR_STATE_IDLE;
-        if (strequal(buffer, "activating"))
-            return SENSOR_STATE_ACTIVATING;
-        if (strequal(buffer, "activated"))
-            return SENSOR_STATE_ACTIVATED;
-        if (strequal(buffer, "errored"))
-            return SENSOR_STATE_ERRORED;
-        else
-            ERR_PRINT("invalid state set %s\n", buffer);
-    } else {
-        ERR_PRINT("state is undefined\n");
+    ZJS_GET_HANDLE_OR_NULL(obj, sensor_handle_t, handle, sensor_type_info);
+    if (!handle) {
+        ZJS_ASSERT(false, "no handle found");
+        return SENSOR_STATE_ERRORED;
     }
-
-    zjs_obj_add_readonly_string(obj, "state", "errored");
-    return SENSOR_STATE_ERRORED;
+    return handle->state;
 }
 
 void zjs_sensor_set_state(jerry_value_t obj, sensor_state_t state)
 {
-    sensor_state_t old_state = zjs_sensor_get_state(obj);
+    ZJS_GET_HANDLE_OR_NULL(obj, sensor_handle_t, handle, sensor_type_info);
+    if (!handle) {
+        ZJS_ASSERT(false, "no handle found");
+        return;
+    }
+
+    sensor_state_t old_state = handle->state;
     if (old_state == state) {
         return;
     }
 
     // update state property and trigger onactivate event if necessary
-    const char *state_str = NULL;
     switch (state) {
     case SENSOR_STATE_UNCONNECTED:
-        state_str = "unconnected";
-        break;
     case SENSOR_STATE_IDLE:
-        state_str = "idle";
-        break;
     case SENSOR_STATE_ACTIVATING:
-        state_str = "activating";
+    case SENSOR_STATE_ERRORED:
+        zjs_obj_add_readonly_boolean(obj, "activated", false);
+        zjs_obj_add_readonly_boolean(obj, "hasReading", false);
         break;
     case SENSOR_STATE_ACTIVATED:
-        state_str = "activated";
-        break;
-    case SENSOR_STATE_ERRORED:
-        state_str = "errored";
+        zjs_obj_add_readonly_boolean(obj, "activated", true);
         break;
 
     default:
@@ -150,7 +135,6 @@ void zjs_sensor_set_state(jerry_value_t obj, sensor_state_t state)
         ERR_PRINT("invalid state\n");
         return;
     }
-    zjs_obj_add_readonly_string(obj, "state", state_str);
 
     if (old_state == SENSOR_STATE_ACTIVATING &&
         state == SENSOR_STATE_ACTIVATED) {
@@ -167,16 +151,6 @@ void zjs_sensor_set_state(jerry_value_t obj, sensor_state_t state)
         }
     }
 
-    sensor_handle_t *handle = NULL;
-    const jerry_object_native_info_t *tmp;
-    if (!jerry_get_object_native_pointer(obj, (void **)&handle, &tmp)) {
-        ERR_PRINT("no handle found\n");
-        return;
-    }
-    if (tmp != &sensor_type_info) {
-        ERR_PRINT("handle type did not match\n");
-        return;
-    }
     handle->state = state;
 }
 
@@ -185,13 +159,20 @@ void zjs_sensor_trigger_change(jerry_value_t obj)
     u64_t timestamp = k_uptime_get();
     zjs_obj_add_readonly_number(obj, "timestamp", ((double)timestamp));
 
-    ZVAL func = zjs_get_property(obj, "onchange");
+    // When the first reading is triggered, set hasReading to true
+    bool has_reading = false;
+    zjs_obj_get_boolean(obj, "hasReading", &has_reading);
+    if (!has_reading) {
+        zjs_obj_add_readonly_boolean(obj, "hasReading", true);
+    }
+
+    ZVAL func = zjs_get_property(obj, "onreading");
     if (jerry_value_is_function(func)) {
         ZVAL event = zjs_create_object();
-        // if onchange exists, call it
+        // if onreading exists, call it
         ZVAL rval = jerry_call_function(func, obj, NULL, 0);
         if (jerry_value_has_error_flag(rval)) {
-            ERR_PRINT("calling onchange\n");
+            ERR_PRINT("Error calling onreading\n");
         }
     }
 }
@@ -352,9 +333,10 @@ ZJS_DECL_FUNC_ARGS(zjs_sensor_create,
     jerry_value_t sensor_obj = zjs_create_object();
     ZVAL null_val = jerry_create_null();
 
+    zjs_obj_add_readonly_boolean(sensor_obj, "activated", false);
+    zjs_obj_add_readonly_boolean(sensor_obj, "hasReading", false);
     zjs_set_readonly_property(sensor_obj, "timestamp", null_val);
     zjs_obj_add_number(sensor_obj, "frequency", frequency);
-    zjs_obj_add_readonly_string(sensor_obj, "state", "unconnected");
     jerry_set_prototype(sensor_obj, zjs_sensor_prototype);
 
     handle->sensor_obj = jerry_acquire_value(sensor_obj);

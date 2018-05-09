@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, Intel Corporation.
+// Copyright (c) 2016-2018, Intel Corporation.
 
 /**
  * @file
@@ -25,32 +25,21 @@
 // Zephyr includes
 #include <device.h>
 #include <init.h>
-
 #include <atomic.h>
 #include <board.h>
 #include <toolchain.h>
 #include <uart.h>
-
 #include <fs.h>
 #include <misc/printk.h>
 
-// JerryScript includes
-#include "jerry-code.h"
-
 // ZJS includes
+#include "ashell.h"
 #include "term-uart.h"
 #include "term-cmd.h"
-
+#include "zjs_util.h"
 #ifndef CONFIG_USB_CDC_ACM
 #include "webusb_serial.h"
 #endif
-
-#include "ihex/kk_ihex_read.h"
-
-#include "../zjs_util.h"
-
-#define FIVE_SECONDS    (5 * sys_clock_ticks_per_sec)
-#define TEN_SECONDS     (10 * sys_clock_ticks_per_sec)
 
 #define CTRL_START 0x00
 #define CTRL_END   0x1F
@@ -59,7 +48,7 @@
 #define DBG(...) { ; }
 #else
 #define DBG printk
-#endif /* CONFIG_IHEX_DEBUG */
+#endif // CONFIG_IHEX_DEBUG
 
 extern void __stdout_hook_install(int (*fn)(int));
 extern void webusb_register_handlers();
@@ -68,7 +57,7 @@ static const char banner[] = "Zephyr.js DEV MODE " __DATE__ " " __TIME__ "\r\n";
 
 #define FIFO_CACHE 2
 
-/* Configuration of the callbacks to be called */
+// Configuration of the callbacks to be called
 struct terminal_config *terminal = NULL;
 
 struct uart_input {
@@ -240,7 +229,7 @@ static void uart_interrupt_handler(struct device *dev)
 
             atomic_set(&uart_state, UART_FIFO_READ_END);
 
-            /* Happy to flush the data into the queue for processing */
+            // Happy to flush the data into the queue for processing
             if (flush) {
                 isr_data->line[tail] = 0;
                 tail = 0;
@@ -261,7 +250,7 @@ static void uart_interrupt_handler(struct device *dev)
 
 /*************************** ACM OUTPUT *******************************/
 
-/*
+/**
 * @brief Writes data into the uart and flushes it.
 *
 * @param buf Buffer to write
@@ -298,6 +287,17 @@ void uart_write_buf(const char *buf, int len)
 }
 
 /**
+* @brief Provide console message implementation for the engine.
+*/
+void comms_printf(const char *format, ...)
+{
+    va_list args;
+    va_start(args, format);
+    vfprintf(stdout, format, args);
+    va_end(args);
+}
+
+/**
 * @brief Output one character to UART ACM
 *
 * @param c Character to output
@@ -311,7 +311,7 @@ static int uart_out(int c)
     char ch = (char)c;
     buf[size++] = ch;
     if (ch == '\n' || size == 80) {
-        terminal->send(buf, size);
+        uart_write_buf(buf, size);
         size = 0;
     }
     return 1;
@@ -339,24 +339,17 @@ static void uart_ready()
     uart_irq_tx_disable(dev_upload);
 
     uart_irq_callback_set(dev_upload, uart_interrupt_handler);
-    terminal->send(banner, sizeof(banner));
+    uart_write_buf(banner, sizeof(banner));
 
-    /* Enable rx interrupts */
+    // Enable rx interrupts
     uart_irq_rx_enable(dev_upload);
     DBG("[Listening]\n");
-
     __stdout_hook_install(uart_out);
 
     // Disable buffering on stdout since some parts write directly to uart fifo
     setbuf(stdout, NULL);
-
-    ashell_help("");
-    comms_print(comms_get_prompt());
     process_state = 0;
-
     atomic_set(&uart_state, UART_INIT);
-
-    DBG("[Init]\n");
     terminal->init();
 }
 
@@ -371,8 +364,8 @@ static bool check_uart_connection()
     return false;
 }
 
-/*
- * Process user input
+/**
+ * @brief Process user input
  */
 void uart_process()
 {
@@ -395,7 +388,6 @@ void uart_process()
             atomic_dec(&data_queue_count);
             buf = data->line;
             len = strnlen(buf, MAX_LINE);
-
             terminal->process(buf, len);
             uart_process_done = true;
             DBG("[Recycle]\n");
@@ -405,12 +397,11 @@ void uart_process()
             DBG("[Data]\n");
             DBG("%s\n", buf);
         } else {
-            /* We clear the cache memory if there are no data transactions */
+            // We clear the cache memory if there are no data transactions
             if (tail == 0) {
                 fifo_cache_clear();
             } else {
-                /* Wait for a timeout and flush data if there was not a carriage
-                 * return */
+                // Wait for a timeout and flush data if there was not a return
                 if (atomic_get(&uart_state) == UART_ISR_END &&
                     isr_data != NULL) {
                     DBG("Capturing buffer\n");
@@ -428,12 +419,10 @@ void uart_process()
         }
     }
     atomic_set(&uart_state, UART_CLOSE);
-    terminal->close();
 }
 
 /**
- * Ashell initialization
- * Init UART/ACM to start getting input from user
+ * @brief Ashell initialization, init UART/ACM to start getting input from user
  */
 
 void uart_init()
@@ -456,19 +445,9 @@ void uart_init()
     }
 
 #ifndef CONFIG_USB_CDC_ACM
-    webusb_register_handlers();
+    webusb_init();
 #endif
 
     k_fifo_init(&data_queue);
     k_fifo_init(&avail_queue);
-}
-
-void zjs_ashell_init()
-{
-    uart_init();
-}
-
-void zjs_ashell_process()
-{
-    uart_process();
 }

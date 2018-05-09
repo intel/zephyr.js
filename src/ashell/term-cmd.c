@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, Intel Corporation.
+// Copyright (c) 2016-2018, Intel Corporation.
 
 /**
  * @file
@@ -7,14 +7,12 @@
 
 // C includes
 #include <ctype.h>
+#include <malloc.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
-#include <malloc.h>
 
 // Zephyr includes
-#include "file-utils.h"
-#include "jerryscript-port.h"
 #include <atomic.h>
 #include <misc/printk.h>
 #include <misc/reboot.h>
@@ -24,13 +22,16 @@
 #endif
 
 // ZJS includes
-#include "term-uart.h"
+#include "ashell.h"
+#include "zjs_file_utils.h"
 #include "term-cmd.h"
 #include "term-ihex.h"
-#include "../zjs_util.h"
+#include "term-uart.h"
+#include "zjs_util.h"
 
 // JerryScript includes
 #include "jerry-code.h"
+#include "jerryscript-port.h"
 
 #ifndef CONFIG_USB_CDC_ACM
 #define CONFIG_IDE
@@ -169,17 +170,6 @@ bool comms_get_echo_mode()
 void comms_print(const char *buf)
 {
     terminal->send(buf, strnlen(buf, MAX_LINE));
-}
-
-/**
-* Provide console message implementation for the engine.
-*/
-void comms_printf(const char *format, ...)
-{
-    va_list args;
-    va_start(args, format);
-    vfprintf(stdout, format, args);
-    va_end(args);
 }
 
 /**
@@ -1155,9 +1145,9 @@ ansi_cmd:
 
 u32_t terminal_init()
 {
-    DBG("[SHELL] Init\n");
+    ashell_help("");
+    comms_print(comms_get_prompt());
     ashell_run_boot_cfg();
-
     return 0;
 }
 
@@ -1256,9 +1246,7 @@ u32_t terminal_process(const char *buf, u32_t len)
             }
 
             u32_t length = strnlen(shell_line, MAX_LINE);
-
             ashell_main_state(shell_line, length);
-
             comms_print("\r\n");
             comms_print(comms_get_prompt());
 

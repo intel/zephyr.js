@@ -8,8 +8,8 @@ static char FTRACE_PREFIX[] = "net";
 
 #include <net/net_if.h>
 #ifdef BUILD_MODULE_NET_CONFIG
-#include <net/net_mgmt.h>
 #include <net/net_context.h>
+#include <net/net_mgmt.h>
 #endif
 
 #ifdef CONFIG_NET_L2_BT
@@ -18,10 +18,10 @@ static char FTRACE_PREFIX[] = "net";
 #include <gatt/ipss.h>
 #endif
 
-#include "zjs_util.h"
-#include "zjs_net_config.h"
 #include "zjs_callbacks.h"
 #include "zjs_event.h"
+#include "zjs_net_config.h"
+#include "zjs_util.h"
 
 #ifndef BUILD_MODULE_NET_CONFIG
 static u8_t net_enabled = 0;
@@ -272,7 +272,7 @@ static ZJS_DECL_FUNC(dhcp)
     struct net_if *iface;
 
     net_mgmt_init_event_callback(&dhcp_cb, dhcp_callback,
-            NET_EVENT_IPV4_ADDR_ADD);
+                                 NET_EVENT_IPV4_ADDR_ADD);
     net_mgmt_add_event_callback(&dhcp_cb);
 
     iface = net_if_get_default();
@@ -319,16 +319,14 @@ static ZJS_DECL_FUNC(set_ip)
     if (net_addr_pton(AF_INET6, str, &tmp.sin6_addr) < 0) {
         // check if v4
         struct sockaddr_in tmp1 = { 0 };
-        if(net_addr_pton(AF_INET,
-                str,
-                &tmp1.sin_addr) < 0) {
+        if (net_addr_pton(AF_INET, str, &tmp1.sin_addr) < 0) {
             return TYPE_ERROR("String was not an IP address");
         } else {
 #ifndef CONFIG_NET_IPV4
             return NOTSUPPORTED_ERROR("IPv4 not supported");
 #else
             if (!net_if_ipv4_addr_add(net_if_get_default(), &tmp1.sin_addr,
-                    NET_ADDR_MANUAL, 0)) {
+                                      NET_ADDR_MANUAL, 0)) {
                 return jerry_create_boolean(false);
             }
 #endif
@@ -338,7 +336,7 @@ static ZJS_DECL_FUNC(set_ip)
         return NOTSUPPORTED_ERROR("IPv6 not supported");
 #else
         if (!net_if_ipv6_addr_add(net_if_get_default(), &tmp.sin6_addr,
-                NET_ADDR_MANUAL, 0)) {
+                                  NET_ADDR_MANUAL, 0)) {
             return jerry_create_boolean(false);
         }
 #endif
@@ -351,7 +349,7 @@ static jerry_value_t config;
 static struct net_mgmt_event_callback cb;
 
 static void iface_event(struct net_mgmt_event_callback *cb,
-        u32_t mgmt_event, struct net_if *iface)
+                        u32_t mgmt_event, struct net_if *iface)
 {
     FTRACE("cb = %p, mgmt_event = %x, iface = %p\n", cb, mgmt_event, iface);
     if (mgmt_event == NET_EVENT_IF_UP) {
@@ -382,7 +380,7 @@ static jerry_value_t zjs_net_config_init(void)
     }
     // notify when networking goes up/down
     net_mgmt_init_event_callback(&cb, iface_event,
-            NET_EVENT_IF_UP | NET_EVENT_IF_DOWN);
+                                 NET_EVENT_IF_UP | NET_EVENT_IF_DOWN);
     net_mgmt_add_event_callback(&cb);
 
 #ifdef CONFIG_NET_L2_BT

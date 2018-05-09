@@ -1,4 +1,4 @@
-// Copyright (c) 2017, Intel Corporation.
+// Copyright (c) 2017-2018, Intel Corporation.
 
 // Test code to use the Magnetometer (subclass of Generic Sensor) API
 // to communicate with the FXOS8700 6-Axis Xtrinsic Sensor on the FRDM-K64F
@@ -11,7 +11,7 @@ var sensor = new Magnetometer({
     frequency: updateFrequency
 });
 
-sensor.onchange = function() {
+sensor.onreading = function() {
     console.log("magnetic field (μT): " +
                 " x=" + sensor.x +
                 " y=" + sensor.y +

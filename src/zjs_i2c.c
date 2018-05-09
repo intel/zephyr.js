@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, Intel Corporation.
+// Copyright (c) 2016-2018, Intel Corporation.
 
 #ifndef QEMU_BUILD
 // C includes
@@ -191,7 +191,7 @@ static void zjs_i2c_cleanup(void *native)
 }
 
 static const jerry_object_native_info_t i2c_module_type_info = {
-   .free_cb = zjs_i2c_cleanup
+    .free_cb = zjs_i2c_cleanup
 };
 
 static jerry_value_t zjs_i2c_init()

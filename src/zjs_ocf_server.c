@@ -306,7 +306,7 @@ static void ocf_get_handler(oc_request_t *request,
     ZVAL request_val = create_request(h->res, OC_GET, h);
     ZVAL flag = jerry_create_boolean(0);
 
-    jerry_value_t argv[2] = {request_val, flag};
+    jerry_value_t argv[2] = { request_val, flag };
     zjs_emit_event(h->res->object, "retrieve", argv, 2);
 
     zjs_free(h->resp);
