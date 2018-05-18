@@ -39,12 +39,13 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    size_t size = jerry_parse_and_save_snapshot((jerry_char_t *)script,
-                                                len,
-                                                true,
-                                                false,
-                                                snapshot_buf,
-                                                sizeof(snapshot_buf));
+    size_t size = jerry_generate_snapshot(NULL,
+                                          0,
+                                          (const jerry_char_t *)script,
+                                          len,
+                                          0,
+                                          snapshot_buf,
+                                          sizeof(snapshot_buf));
 
     if (script != NULL)
         free(script);

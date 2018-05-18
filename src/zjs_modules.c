@@ -50,7 +50,7 @@ static bool javascript_eval_code(const char *source_buffer, ssize_t size,
                                  jerry_value_t *ret_val)
 {
     (*ret_val) = jerry_eval((jerry_char_t *)source_buffer, size, false);
-    if (jerry_value_has_error_flag(*ret_val)) {
+    if (jerry_value_is_error(*ret_val)) {
         ERR_PRINT("failed to evaluate JS\n");
         return false;
     }
@@ -114,7 +114,7 @@ static bool load_js_module_fs(const jerry_value_t module_name,
     }
 
     (*result) = jerry_eval((jerry_char_t *)str, len, false);
-    if (jerry_value_has_error_flag(*result)) {
+    if (jerry_value_is_error(*result)) {
         ERR_PRINT("failed to evaluate JS\n");
         ret = false;
     } else {
@@ -202,7 +202,7 @@ static ZJS_DECL_FUNC(native_require_handler)
 
     // Try each of the resolvers to see if we can find the requested module
     jerry_value_t result = jerryx_module_resolve(argv[0], resolvers, 3);
-    if (jerry_value_has_error_flag(result)) {
+    if (jerry_value_is_error(result)) {
         DBG_PRINT("Couldn't load module %s\n", module);
         return NOTSUPPORTED_ERROR("Module not found");
     } else {
@@ -279,12 +279,13 @@ void zjs_modules_check_load_file()
     size_t size;
     jerry_value_t parsed_code = 0;
     buf = read_file_alloc(load_file, &size);
-    parsed_code = jerry_parse((const jerry_char_t *)buf, size, false);
+    parsed_code = jerry_parse(NULL, 0, const jerry_char_t *)buf, size,
+                              JERRY_PARSE_NO_OPTS);
     zjs_free(buf);
 
-    if (!jerry_value_has_error_flag(parsed_code)) {
+    if (!jerry_value_is_error(parsed_code)) {
         ZVAL ret_value = jerry_run(parsed_code);
-        if (jerry_value_has_error_flag(ret_value)) {
+        if (jerry_value_is_error(ret_value)) {
             ERR_PRINT("Error running JS\n");
         }
     }

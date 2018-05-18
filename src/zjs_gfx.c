@@ -188,7 +188,7 @@ static jerry_value_t zjs_gfx_call_cb(u32_t x, u32_t y, u32_t w, u32_t h,
     jerry_value_t ret = jerry_call_function(gfxHandle->drawDataCB,
                                             gfxHandle->jsThis, args, 5);
 
-    if (jerry_value_has_error_flag(ret)) {
+    if (jerry_value_is_error(ret)) {
         ERR_PRINT("JS callback failed with %u..\n", (u32_t)ret);
         return ret;
     }
@@ -273,7 +273,7 @@ static jerry_value_t zjs_gfx_flush(gfx_handle_t *gfxHandle)
 
                     ret = zjs_gfx_call_cb(xStart, yStart, currW, currH,
                                           recBufObj, gfxHandle);
-                    if (jerry_value_has_error_flag(ret)) {
+                    if (jerry_value_is_error(ret)) {
                         zjs_gfx_reset_touched_pixels(gfxHandle);
                         return ret;
                     }
@@ -625,7 +625,7 @@ static ZJS_DECL_FUNC(zjs_gfx_draw_string)
 
         ret = zjs_gfx_draw_char_priv(x, argData.coords[1], argData.text[i],
                                      argData.color, argData.size, handle);
-        if (jerry_value_has_error_flag(ret)) {
+        if (jerry_value_is_error(ret)) {
             return ret;
         }
 

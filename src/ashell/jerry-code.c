@@ -35,7 +35,7 @@ static jerry_value_t parsed_code = 0;
 void javascript_eval_code(const char *source_buffer, ssize_t size)
 {
     ZVAL ret_val = jerry_eval((jerry_char_t *)source_buffer, size, false);
-    if (jerry_value_has_error_flag(ret_val)) {
+    if (jerry_value_is_error(ret_val)) {
         printf("[ERR] failed to evaluate JS\n");
         zjs_print_error_message(ret_val, ZJS_UNDEFINED);
     }
@@ -63,8 +63,9 @@ int javascript_parse_code(const char *file_name)
 
     if (buf && size > 0) {
         /* Setup Global scope code */
-        parsed_code = jerry_parse((const jerry_char_t *)buf, size, false);
-        if (jerry_value_has_error_flag(parsed_code)) {
+        parsed_code = jerry_parse(NULL, 0, (const jerry_char_t *)buf, size,
+                                  JERRY_PARSE_NO_OPTS);
+        if (jerry_value_is_error(parsed_code)) {
             DBG_PRINT("Error parsing JS\n");
             zjs_print_error_message(parsed_code, ZJS_UNDEFINED);
             jerry_release_value(parsed_code);
@@ -85,7 +86,7 @@ void javascript_run_code(const char *file_name)
     /* Execute the parsed source code in the Global scope */
     ZVAL ret_value = jerry_run(parsed_code);
 
-    if (jerry_value_has_error_flag(ret_value)) {
+    if (jerry_value_is_error(ret_value)) {
         DBG_PRINT("Error running JS\n");
         zjs_print_error_message(ret_value, ZJS_UNDEFINED);
     }

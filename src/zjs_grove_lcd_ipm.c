@@ -75,7 +75,7 @@ static jerry_value_t zjs_glcd_call_remote_function(zjs_ipm_message_t *send)
 static jerry_value_t zjs_glcd_call_remote_ignore(zjs_ipm_message_t *send)
 {
     ZVAL rval = zjs_glcd_call_remote_function(send);
-    if (jerry_value_has_error_flag(rval))
+    if (jerry_value_is_error(rval))
         return rval;
 
     return ZJS_UNDEFINED;
@@ -231,7 +231,7 @@ static ZJS_DECL_FUNC(zjs_glcd_init)
     send.type = TYPE_GLCD_INIT;
 
     ZVAL result = zjs_glcd_call_remote_function(&send);
-    if (jerry_value_has_error_flag(result)) {
+    if (jerry_value_is_error(result)) {
         return result;
     }
 
