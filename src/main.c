@@ -31,6 +31,7 @@
 
 // JerryScript includes
 #include "jerryscript.h"
+#include "jerryscript-port.h"
 
 // Platform agnostic modules/headers
 #include "zjs_callbacks.h"
@@ -71,7 +72,12 @@ static bool ashell_mode = false;
 #endif
 
 #ifdef ZJS_DEBUGGER
+#ifdef ZJS_LINUX_BUILD
+// JS debugging on linux is toggled over cmdline
 static bool start_debug_server = false;
+#else
+static bool start_debug_server = true;
+#endif
 static uint16_t debug_port = 5001;
 #endif
 
@@ -167,6 +173,8 @@ static bool config_mode_detected()
 }
 #endif
 
+struct jerry_debugger_transport_t *jerry_port_init_socket_transport (uint16_t tcp_port);
+
 #ifndef ZJS_LINUX_BUILD
 void main(void)
 #else
@@ -189,6 +197,8 @@ int main(int argc, char *argv[])
     char *script = NULL;
 #else
     const char *script = NULL;
+    file_name = "js.tmp";
+    file_name_len = strlen("js.tmp");
 #endif
     jerry_value_t code_eval;
     u32_t script_len = 0;
@@ -279,16 +289,17 @@ int main(int argc, char *argv[])
 
 #ifdef ZJS_DEBUGGER
     if (start_debug_server) {
-        jerry_debugger_init(debug_port);
+        ZJS_PRINT("Debugger mode: connect using jerry-client-ws.py\n\n");
+        jerry_debugger_init(jerry_port_init_socket_transport(debug_port));
     }
 #endif
 
 #ifndef ZJS_SNAPSHOT_BUILD
-    code_eval = jerry_parse_named_resource((jerry_char_t *)file_name,
-                                           file_name_len,
-                                           (jerry_char_t *)script,
-                                           script_len,
-                                           false);
+    code_eval = jerry_parse((jerry_char_t *)file_name,
+                            file_name_len,
+                            (jerry_char_t *)script,
+                            script_len,
+                            JERRY_PARSE_NO_OPTS);
 
     if (jerry_value_has_error_flag(code_eval)) {
         DBG_PRINT("Error parsing JS\n");
@@ -302,11 +313,12 @@ int main(int argc, char *argv[])
 #endif
 
 #ifdef ZJS_SNAPSHOT_BUILD
-    result = jerry_exec_snapshot(snapshot_bytecode, snapshot_len, false);
+    result = jerry_exec_snapshot(snapshot_bytecode,
+                                 snapshot_len,
+                                 0,
+                                 JERRY_SNAPSHOT_EXEC_COPY_DATA);
+
 #else
-#ifdef ZJS_DEBUGGER
-    ZJS_PRINT("Debugger mode: connect using jerry-client-ws.py\n");
-#endif
     result = jerry_run(code_eval);
 #endif
 
