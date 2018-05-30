@@ -39,6 +39,9 @@
         ],
         "96b_carbon": [
             "CONFIG_NET_APP_AUTO_INIT=n"
+        ],
+        "frdm_k64f": [
+            "CONFIG_ETH_MCUX_PROMISCUOUS_MODE=y"
         ]
     },
     "header": [
