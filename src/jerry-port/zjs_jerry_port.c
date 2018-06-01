@@ -65,5 +65,4 @@ void jerry_port_sleep (uint32_t sleep_time)
 #else
     k_sleep ((useconds_t) sleep_time);
 #endif
-    (void) sleep_time;
 }
