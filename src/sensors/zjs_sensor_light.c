@@ -41,7 +41,7 @@ static ZJS_DECL_FUNC(zjs_sensor_constructor)
         ZJS_CHAIN_FUNC_ARGS(zjs_sensor_create, g_instance, SENSOR_CHAN_LIGHT,
                             ADC_DEVICE_NAME, -1, 100, onchange, NULL, onstop);
 
-    if (!jerry_value_has_error_flag(sensor_obj)) {
+    if (!jerry_value_is_error(sensor_obj)) {
         ZVAL null_val = jerry_create_null();
         zjs_set_readonly_property(sensor_obj, "illuminance", null_val);
     }
