@@ -3,47 +3,58 @@ ZJS API for Web Sockets
 
 * [Introduction](#introduction)
 * [Web IDL](#web-idl)
-* [API Documentation](#api-documentation)
+* [WebSocket API](#websocket-api)
+  * [ws.Server(options)](#wsserveroptions)
+* [WebSocketServer API](#websocketserver-api)
+  * [Event: 'connection'](#event-connection)
+* [WebSocket API](#websocket-api)
+  * [Event: 'close'](#event-close)
+  * [Event: 'error'](#event-error)
+  * [Event: 'message'](#event-message)
+  * [Event: 'ping'](#event-ping)
+  * [Event: 'pong'](#event-pong)
+* [WebSocketConnection API](#websocketconnection-api)
+  * [webSocketConnection.send(data, mask)](#websocketconnectionsenddata-mask)
+  * [webSocketConnection.ping(data, mask)](#websocketconnectionpingdata-mask)
+  * [webSocketConnection.pong(data, mask)](#websocketconnectionpongdata-mask)
 * [Sample Apps](#sample-apps)
 
 Introduction
 ------------
 The Web Socket API is modeled after Node.js' 'ws' module. This module only
-supports the Web Socket server portion of the API.
+supports the Web Socket server portion of that API.
 
 Web IDL
 -------
-This IDL provides an overview of the interface; see below for documentation of
-specific API functions.
+This IDL provides an overview of the interface; see below for
+documentation of specific API functions.  We have a short document
+explaining [ZJS WebIDL conventions](Notes_on_WebIDL.md).
 
-```javascript
-// require returns a WebSocket object
-// var ws = require('ws');
-
+<details>
+<summary>Click to show WebIDL</summary>
+<pre>// require returns a WebSocket object
+// var ws = require('ws');<p><p>[ReturnFromRequire]
 interface WebSocket {
     WebSocketServer Server(Object options);
-};
-
-interface WebSocketServer: EventEmitter;
-
+};<p>interface WebSocketServer: EventEmitter;<p>[ExternalInterface=(buffer,Buffer)]
 interface WebSocketConnection: EventEmitter {
-    // WebSocketConnection methods
-    void send(Buffer data, Boolean mask);
-    void ping(Buffer data, Boolean mask);
-    void pong(Buffer data, Boolean mask);
-};
-```
+    void send(Buffer data, boolean mask);
+    void ping(Buffer data, boolean mask);
+    void pong(Buffer data, boolean mask);
+};</pre>
+</details>
 
-WebSocket API Documentation
----------------------------
+WebSocket API
+-------------
 
-### WebSocket.Server
-`WebSocketServer Server(Object options)`
+### ws.Server(options)
+* `options` *Object*
+* Returns: a WebSocketServer object.
 
 Create a Web Socket server object. Options object may contain:
 
-WebSocketServer API Documentation
----------------------------------
+WebSocketServer API
+-------------------
 
 WebSocketServer is [EventEmitter](./events.md) with the following events:
 
@@ -70,10 +81,10 @@ strings from the handler.
 
 Returns a `WebSocketServer` object.
 
-WebSocketConnection API Documentation
--------------------------------------
+WebSocket API
+-------------
 
-WebSocketServer is [EventEmitter](./events.md) with the following events:
+WebSocketServer is an [EventEmitter](./events.md) with the following events:
 
 ### Event: 'close'
 
@@ -107,29 +118,27 @@ the `data` argument.
 Emitted when the socket has received a pong. The pong's payload is contained in
 the `data` argument.
 
-### WebSocketConnection.send
 
-`void send(Buffer data, Boolean mask)`
+WebSocketConnection API
+-----------------------
 
-Send data to the other end of the web socket connection. The `data` parameter
-should contain the data payload to send. The `mask` parameter says whether the
-data payload should be masked.
+### webSocketConnection.send(data, mask)
+* `data` *Buffer* The data payload to send.
+* `mask` *boolean* Describes whether the data payload should be masked.
 
-### WebSocketConnection.ping
+Send data to the other end of the web socket connection.
 
-`void ping(Buffer data, Boolean mask)`
+### webSocketConnection.ping(data, mask)
+* `data` *Buffer* Contains the data payload to send.
+* `mask` *boolean* Describes whether the data payload should be masked.
 
-Send a ping to the other end of the web socket connection. The `data` parameter
-should contain the data payload to send. The `mask` parameter says whether the
-data payload should be masked.
+Send a ping to the other end of the web socket connection.
 
-### WebSocketConnection.pong
+### webSocketConnection.pong(data, mask)
+* `data` *Buffer* The data payload to send.
+* `mask` *boolean* Describes whether the data payload should be masked.
 
-`void pong(Buffer data, Boolean mask)`
-
-Send a pong to the other end of the web socket connection. The `data` parameter
-should contain the data payload to send. The `mask` parameter says whether the
-data payload should be masked.
+Send a pong to the other end of the web socket connection.
 
 Sample Apps
 -----------

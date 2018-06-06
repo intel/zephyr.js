@@ -3,8 +3,12 @@ ZJS API for Network Configuration
 
 * [Introduction](#introduction)
 * [Web IDL](#web-idl)
-* [API Documentation](#api-documentation)
-* [Sample Apps](#sample-apps)
+* [NetConfig API](#netconfig-api)
+  * [Event: 'netup'](#event-netup)
+  * [Event: 'netdown'](#event-netdown)
+  * [net_cfg.setStaticIP(ip)](#net_cfgsetstaticipip)
+  * [net_cfg.dhcp(callback)](#net_cfgdhcpcallback)
+  * [net_cfg.setBleAddress(address)](#net_cfgsetbleaddressaddress)
 
 Introduction
 ------------
@@ -19,26 +23,23 @@ static IP addresses of 192.0.2.1 and 2001:db8::1.
 Web IDL
 -------
 This IDL provides an overview of the interface; see below for documentation of
-specific API functions.
+specific API functions.  We have a short document explaining [ZJS WebIDL conventions](Notes_on_WebIDL.md).
 
-```javascript
+<details>
+<summary> Click to show/hide WebIDL</summary>
+<pre>
 // require returns a Net object
-// var net_cfg = require('netconfig');
-
+// var net_cfg = require('netconfig');<p><p>[ExternalInterface=(eventemitter, EventEmitter)]
 interface NetConfig: EventEmitter {
-    // set a static IP
-    Boolean setStaticIP(String ip);
-    // start DHCP
+    boolean setStaticIP(string ip);
     void dhcp(DHCPCallback callback);
-    // set the BLE MAC address
-    void setBleAddress(String address);
-};
+    void setBleAddress(string address);
+};<p>callback DHCPCallback = void (string address, string subnet, string gateway);
+</pre>
+</details>
 
-callback DHCPCallback = void (String address, String subnet, String gateway);
-```
-
-API Documentation
------------------
+NetConfig API
+-------------
 NetConfig is an [EventEmitter](./events.md) with the following events:
 
 ### Event: 'netup'
@@ -51,34 +52,29 @@ wait for a BLE connection before issuing any socket connections.
 
 Emitted when the networking interface goes offline.
 
-### NetConfig.setStaticIP
-`Boolean setStaticIP(String ip)`
+### net_cfg.setStaticIP(ip)
+* `ip` *string* This should be either an IPv4 or IPv6 string.
+* Returns: true if the IP was successfully set and false if there was a problem setting the IP.
 
 Set the device to use a static IP address.
 
-`ip` should be either an IPv4 or IPv6 string.
-
-This returns a true if the IP was successfully set. It will return false if
-there was a problem setting that IP. An error will be returned if there was
+An error will be returned if there was
 a misconfiguration, e.g. setting an IPv6 address when IPv6 was not built.
 
-### NetConfig.dhcp
-`void dhcp(DHCPCallback callback)`
+### net_cfg.dhcp(callback)
+* `callback` *DHCPCallback*
 
 Start DHCP to obtain an IP address.
 
-`callback` should be a `DHCPCallback` type. This event listener will be called
-when DHCP has finished. The callback will contain 3 arguments: `address`,
+This `callback` event listener will be called when DHCP has
+finished. The callback will contain 3 arguments: `address`,
 `subnet`, and `gateway`.
 
-### NetConfig.setBleAddress
-`void setBleAddress(string address);`
+### net_cfg.setBleAddress(address)
+* `address` *string* The MAC address string in the format `XX:XX:XX:XX:XX:XX`, where each character is in HEX format (0-9, A-F).
 
 Sets the device's BLE MAC address. This function is only defined on
 Zephyr boards with BLE capabilities (e.g. Arduino 101).
-
-The `address` parameter should be a MAC address string in the format
-`XX:XX:XX:XX:XX:XX` where each character is in HEX format (0-9, A-F).
 
 Note: This function has be called when the JS is initially run when
 loaded. This means no calling from within any callback functions like

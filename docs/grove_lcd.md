@@ -3,106 +3,108 @@ ZJS API for Grove LCD
 
 * [Introduction](#introduction)
 * [Web IDL](#web-idl)
-* [API Documentation](#api-documentation)
+* [GroveLCD API](#grovelcd-api)
+  * [grove_lcd.init()](#grove_lcdinit)
+* [GroveLCDDevice API](#grovelcddevice-api)
+  * [groveLCDDevice.print(string text)](#grovelcddeviceprinttext)
+  * [groveLCDDevice.clear()](#grovelcddeviceclear)
+  * [groveLCDDevice.setCursorPos(col, row)](#grovelcddevicesetcursorposcol-row)
+  * [groveLCDDevice.selectColor(index)](#grovelcddeviceselectcolorindex)
+  * [groveLCDDevice.setColor(r, g, b)](#grovelcddevicesetcolorr-g-b)
+  * [groveLCDDevice.setFunction(config)](#grovelcddevicesetfunctionconfig)
+  * [groveLCDDevice.getFunction()](#grovelcddevicegetfunction)
+  * [groveLCDDevice.setDisplayState(config)](#grovelcddevicesetdisplaystateconfig)
+  * [GroveLCDDevice.getDisplayState()](#grovelcddevicegetdisplaystate)
+
 * [Sample Apps](#sample-apps)
 
 Introduction
 ------------
 The Grove LCD API is the JavaScript version of the Zephyr API that supports the
 Grove LCD.  It works over I2C to allow user to send text to the LCD screen
-and also configure LCD to different RGB backlight colors.
+and also configure the LCD to different RGB backlight colors.
 
 Web IDL
 -------
-This IDL provides an overview of the interface; see below for documentation of
-specific API functions.
+This IDL provides an overview of the interface; see below for
+documentation of specific API functions.  We have a short document
+explaining [ZJS WebIDL conventions](Notes_on_WebIDL.md).
 
-```javascript
-// require returns a GroveLCD object
-// var grove_lcd = require('grove_lcd');
-
-[NoInterfaceObject]
+<details>
+<summary>Click to show WebIDL</summary>
+<pre>// require returns a GroveLCD object
+// var grove_lcd = require('grove_lcd');<p><p>[ReturnFromRequire]
 interface GroveLCD {
     GroveLCDDevice init();
-    unsigned long GLCD_FS_8BIT_MODE;
-    unsigned long GLCD_FS_ROWS_2;
-    unsigned long GLCD_FS_ROWS_1;
-    unsigned long GLCD_FS_DOT_SIZE_BIG;
-    unsigned long GLCD_FS_DOT_SIZE_LITTLE;
-
-    unsigned long GLCD_DS_DISPLAY_ON;
-    unsigned long GLCD_DS_DISPLAY_OFF;
-    unsigned long GLCD_DS_CURSOR_ON;
-    unsigned long GLCD_DS_CURSOR_OFF;
-    unsigned long GLCD_DS_BLINK_ON;
-    unsigned long GLCD_DS_BLINK_OFF;
-
-    unsigned long GLCD_IS_SHIFT_INCREMENT;
-    unsigned long GLCD_IS_SHIFT_DECREMENT;
-    unsigned long GLCD_IS_ENTRY_LEFT;
-    unsigned long GLCD_IS_ENTRY_RIGHT;
-
-    unsigned long GROVE_RGB_WHITE;
-    unsigned long GROVE_RGB_RED;
-    unsigned long GROVE_RGB_GREEN;
-    unsigned long GROVE_RGB_BLUE;
-};
-
-[NoInterfaceObject]
-interface GroveLCDDevice {
+    attribute unsigned long GLCD_FS_8BIT_MODE;
+    attribute unsigned long GLCD_FS_ROWS_2;
+    attribute unsigned long GLCD_FS_ROWS_1;
+    attribute unsigned long GLCD_FS_DOT_SIZE_BIG;
+    attribute unsigned long GLCD_FS_DOT_SIZE_LITTLE;
+<p>
+    attribute unsigned long GLCD_DS_DISPLAY_ON;
+    attribute unsigned long GLCD_DS_DISPLAY_OFF;
+    attribute unsigned long GLCD_DS_CURSOR_ON;
+    attribute unsigned long GLCD_DS_CURSOR_OFF;
+    attribute unsigned long GLCD_DS_BLINK_ON;
+    attribute unsigned long GLCD_DS_BLINK_OFF;
+<p>
+    attribute unsigned long GLCD_IS_SHIFT_INCREMENT;
+    attribute unsigned long GLCD_IS_SHIFT_DECREMENT;
+    attribute unsigned long GLCD_IS_ENTRY_LEFT;
+    attribute unsigned long GLCD_IS_ENTRY_RIGHT;
+<p>
+    attribute unsigned long GROVE_RGB_WHITE;
+    attribute unsigned long GROVE_RGB_RED;
+    attribute unsigned long GROVE_RGB_GREEN;
+    attribute unsigned long GROVE_RGB_BLUE;
+};<p>interface GroveLCDDevice {
     void print(string text);
     void clear();
     void setCursorPos(unsigned long col, unsigned long row);
     void selectColor(unsigned long index);
     void setColor(unsigned long r, unsigned long g, unsigned long b);
     void setFunction(unsigned long config);
-    unsigned long getFunction();
+    attribute unsigned long getFunction();
     void setDisplayState(unsigned long config);
-    unsigned long getDisplayState();
-};
-```
+    attribute unsigned long getDisplayState();
+};</pre>
+</details>
 
-API Documentation
------------------
-### GroveLCD.init
-
-`GroveLCDDevice init();`
-
-Initialize the Grove LCD panel
-
-*NOTE: Zephyr's Grove LCD API is on top of the I2C which is only accessible
-from the ARC side on the Arduino 101, so all the API in here will use the
-IPM to send commands over to the API, and all the API will be synchronous*
-
-The function returns a GroveLCDDevice object instance that can be used to
+GroveLCD API
+------------
+### grove_lcd.init()
+* Returns: a GroveLCDDevice object that can be used to
 talk to the Grove LCD panel.
 
-### GroveLCDDevice.print
+Initializes the Grove LCD panel.
 
-`void print(string text);`
+*NOTE: Zephyr's Grove LCD API is on top of the I2C, which is only accessible
+from the ARC side on the Arduino 101, so all the APIs in here will use the
+IPM to send commands over to the API, and all this API will be synchronous.*
+
+GroveLCDDevice API
+------------------
+### groveLCDDevice.print(text)
+* `text` *string* The text to be printed.
 
 Send text to the screen on the current line cursor is set to,
 if the text is longer than number of characters it can fit on that line,
 any additional characters will not wrap around and be dropped,
 so a 16x2 LCD will have a maximum of 16 characters.
 
-### GroveLCDDevice.clear
-
-`void clear();`
+### groveLCDDevice.clear()
 
 Clear the current display.
 
-### GroveLCDDevice.setCursorPos
+### groveLCDDevice.setCursorPos(col, row)
+* `col` *unsigned long* The column for the cursor to be moved to (0-15).
+* `row` *unsigned long* The row the column should be moved to (0 or 1).
 
-`void setCursorPos(unsigned long col, unsigned long row);`
+Set text cursor position for the next print.
 
-Set text cursor position for next additions.
-The `col` is the column for the cursor to be moved to (0-15).
-The `row` is the row it should be moved to (0 or 1).
-
-### GroveLCDDevice.selectColor
-
-`void selectColor(unsigned long index);`
+### groveLCDDevice.selectColor(index)
+* `index` *unsigned long* The color selection, as defined, below.
 
 Set LCD background to a predfined color.
 
@@ -116,25 +118,21 @@ GroveLCD.GROVE_RGB_GREEN
 
 GroveLCD.GROVE_RGB_BLUE
 
-### GroveLCDDevice.setColor
+### groveLCDDevice.setColor(r, g, b)
+* `r` *unsigned long* The numeric value for the red color (max is 255).
+* `g` *unsigned long* The numeric value for the green color (max is 255).
+* `b` *unsigned long* The numeric value for the blue color (max is 255).
 
-`void setColor(unsigned long r, unsigned long g, unsigned long b);`
+Set LCD background to custom RGB color value.
 
-Set LCD background to custom RGB color value
-
-The `r` is a numeric value for the red color (max is 255).
-The `g` is a numeric value for the green color (max is 255).
-The `b` is a numeric value for the blue color (max is 255).
-
-### GroveLCDDevice.setFunction
-
-`void setFunction(unsigned long config);`
+### groveLCDDevice.setFunction(config)
+* `config` *unsigned long* The bit mask to change the display state, as described, below.
 
 This function provides the user the ability to change the state
 of the display, controlling things like the number of rows,
 dot size, and text display quality.
 
-The `config` is bit mask of the following configurations:
+The `config` bit mask can take the following configurations:
 
 GroveLCD.GLCD_FS_8BIT_MODE
 
@@ -146,15 +144,11 @@ GroveLCD.GLCD_FS_DOT_SIZE_BIG
 
 GroveLCD.GLCD_FS_DOT_SIZE_LITTLE
 
-### GroveLCDDevice.getFunction
+### groveLCDDevice.getFunction()
+*Returns: the function-features set associated with the device.
 
-`unsigned long getFunction();`
-
-Return the function features set associated with the device.
-
-### GroveLCDDevice.setDisplayState
-
-`void setDisplayState(unsigned long config);`
+### groveLCDDevice.setDisplayState(config)
+* `config` *unsigned long* The bit mask to change the display state, as described, below.
 
 This function provides the user the ability to change the state
 of the display, controlling things like powering on or off
@@ -175,11 +169,8 @@ GroveLCD.GLCD_DS_BLINK_ON
 
 GroveLCD.GLCD_DS_BLINK_OFF
 
-### GroveLCDDevice.getDisplayState
-
-`unsigned long getDisplayState();`
-
-Return the display feature set associated with the device.
+### GroveLCDDevice.getDisplayState()
+* Returns: the display-feature set associated with the device.
 
 Sample Apps
 -----------

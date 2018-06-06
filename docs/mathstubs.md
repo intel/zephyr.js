@@ -3,12 +3,13 @@ ZJS API for MathStubs
 
 * [Introduction](#introduction)
 * [Web IDL](#web-idl)
-* [API Documentation](#api-documentation)
+* [Mathstubs API](#mathstubs-api)
+  * [random()](#mathstubsrandom)
 * [Sample Apps](#sample-apps)
 
 Introduction
 ------------
-"MathStubs" module implements a subset of the Math libary's functions such
+The "MathStubs" module implements a subset of the Math library's functions such
 as random().  This module is served as a replacement for the JerryScript's Math
 libary when you only need certain math functions without the need to import
 Math so your application can be smaller, since enabling the whole Math
@@ -19,18 +20,22 @@ round(), floor(), etc.
 Web IDL
 -------
 This IDL provides an overview of the interface; see below for documentation of
-specific API functions.
+specific API functions.  We have a short document explaining [ZJS WebIDL conventions](Notes_on_WebIDL.md).
 
-```javascript
-double MathStubs.random();
-```
+<details>
+<summary> Click to show/hide WebIDL</summary>
+<pre>// require returns a MathStubs object
+// var mathStubs = require('mathstubs');<p><p>[ReturnFromRequire]
+interface MathStubs {
+    double MathStubs.random();
+};
+</pre>
+</details>
 
-API Documentation
+Mathstubs API
 -----------------
-### random
-`double random();`
-
-Returns a floating-point, pseudo-random number between 0 (inclusive)and 1 (exclusive).
+### mathStubs.random()
+* Returns: a floating-point, pseudo-random number between 0 (inclusive) and 1 (exclusive).
 
 Sample Apps
 -----------
