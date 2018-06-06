@@ -523,7 +523,7 @@ void zjs_call_callback(zjs_callback_id id, const void *data, u32_t sz)
             if (!jerry_value_is_undefined(cb_map[id]->js_func)) {
                 rval = jerry_call_function(cb_map[id]->js_func,
                                            cb_map[id]->this, values, sz);
-                if (jerry_value_has_error_flag(rval)) {
+                if (jerry_value_is_error(rval)) {
 #ifdef INSTRUMENT_CALLBACKS
                     DBG_PRINT("callback %d had error; creator: %s, "
                               "caller: %s\n",

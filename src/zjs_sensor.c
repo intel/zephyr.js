@@ -171,7 +171,7 @@ void zjs_sensor_trigger_change(jerry_value_t obj)
         ZVAL event = zjs_create_object();
         // if onreading exists, call it
         ZVAL rval = jerry_call_function(func, obj, NULL, 0);
-        if (jerry_value_has_error_flag(rval)) {
+        if (jerry_value_is_error(rval)) {
             ERR_PRINT("Error calling onreading\n");
         }
     }

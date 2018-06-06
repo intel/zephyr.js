@@ -57,3 +57,12 @@ void jerry_port_log(jerry_log_level_t level, const char *format, ...)
 #endif /* JERRY_DEBUGGER */
     va_end(args);
 }
+
+void jerry_port_sleep (uint32_t sleep_time)
+{
+#ifdef ZJS_LINUX_BUILD
+    usleep ((useconds_t) sleep_time * 1000);
+#else
+    k_sleep ((useconds_t) sleep_time);
+#endif
+}
