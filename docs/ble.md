@@ -37,41 +37,46 @@ treat them like decimals.*
 
 Web IDL
 -------
+
 This IDL provides an overview of the interface; see below for documentation of
 specific API functions.  We also have a short document explaining [ZJS WebIDL conventions](Notes_on_WebIDL.md).
-
-
-```javascript
+<details>
+<summary> Click to show/hide WebIDL</summary>
+<pre>
 // require returns a BLE object
 // var ble = require('ble');
-
-[ReturnFromRequire]
+<p><p>
+[ReturnFromRequire,ExternalInterface=(eventemitter, EventEmitter)]
 interface BLE: EventEmitter {
     void disconnect(string address);
-    void startAdvertising(string name, string[] uuids, string url);
+    void startAdvertising(string name, sequence < string > uuids, string url);
     void stopAdvertising();
-    void setServices(PrimaryService[] services);
+    void setServices(sequence < PrimaryService > services);
     PrimaryService newPrimaryService(PrimaryServiceInit init);
     Characteristic newCharacteristic(CharacteristicInit init);
-    Descriptor newDescriptor(DescriptorInit init);
+    DescriptorInit newDescriptor(DescriptorInit init);
 };
-
+<p><p>
 dictionary PrimaryServiceInit {
     string uuid;
-    Characteristic[] characteristics;
+    sequence < Characteristic > characteristics;
+};<p>
+dictionary PrimaryService {
+    string uuid;
+    sequence < Characteristic > characteristics;
 };
-
+<p><p>
 dictionary CharacteristicInit {
     string uuid;
-    string[] properties;                // 'read', 'write', 'notify'
-    Descriptor[] descriptors;
+    sequence < string > properties;                // 'read', 'write', 'notify'
+    sequence < DescriptorInit > descriptors;
     ReadCallback onReadRequest;         // optional
     WriteCallback onWriteRequest;       // optional
     SubscribeCallback onSubscribe;      // optional
     UnsubscribeCallback onUnsubscribe;  // optional
     NotifyCallback onNotify;            // optional
 };
-
+<p><p>
 interface Characteristic {
     attribute ReadCallback onReadRequest;
     attribute WriteCallback onWriteRequest;
@@ -80,9 +85,10 @@ interface Characteristic {
     attribute NotifyCallback onNotify;
     attribute CharacteristicResult response;
 };
-
+<p><p>
 callback ReadCallback = void (unsigned long offset,
                               FulfillReadCallback fulfillReadCallback);
+[ExternalInterface=(buffer,Buffer)]
 callback WriteCallback = void (Buffer data, unsigned long offset,
                                boolean withoutResponse,
                                FulfillWriteCallback fulfillWriteCallback);
@@ -91,14 +97,17 @@ callback SubscribeCallback = void (unsigned long maxValueSize,
 callback FulfillReadCallback = void (CharacteristicResult result, Buffer data);
 callback FulfillWriteCallback = void (CharacteristicResult result);
 callback FulfillSubscribeCallback = void (Buffer data);
-
-enum CharacteristicResult { "RESULT_SUCCESS", "RESULT_INVALID_OFFSET", "RESULT_INVALID_ATTRIBUTE_LENGTH", "RESULT_UNLIKELY_ERROR" } ;
-
+callback NotifyCallback = void (any... params);
+callback UnsubscribeCallback = void (any... params);
+<p><p>
+enum CharacteristicResult { "RESULT_SUCCESS", "RESULT_INVALID_OFFSET",
+                            "RESULT_INVALID_ATTRIBUTE_LENGTH", "RESULT_UNLIKELY_ERROR" } ;
+<p><p>
 dictionary DescriptorInit {
     string uuid;
     string value;
-};
-```
+};</pre>
+</details>
 
 BLE-supported Events
 --------------------

@@ -31,30 +31,26 @@ Web IDL
 -------
 
 This IDL provides an overview of the interface; see below for
-documentation of specific API functions.  We have a short document explaining [ZJS WebIDL conventions](Notes_on_WebIDL.md).
+documentation of specific API functions.  We have a short document
+explaining [ZJS WebIDL conventions](Notes_on_WebIDL.md).
 
-```javascript
+<details>
+<summary>Click to show WebIDL</summary>
+<pre>
 // require returns an AIO object
-// var aio = require('aio');
-
-[ReturnFromRequire]
+// var aio = require('aio');<p><p>[ReturnFromRequire]
 interface AIO {
     AIOPin open(AIOInit init);
-};
-
-dictionary AIOInit {
+};<p>dictionary AIOInit {
     (unsigned long or string) pin;
-};
-
-interface AIOPin {
+};<p>interface AIOPin {
     unsigned long read();
     void readAsync(ReadCallback callback);  // TODO: change to return a promise
     void on(string eventType, ReadCallback callback);
     void close();
-};
-
-callback ReadCallback = void (unsigned long value);
-```
+};<p>callback ReadCallback = void (unsigned long value);
+</pre>
+</details>
 
 AIO API
 -------

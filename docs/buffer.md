@@ -4,9 +4,9 @@ ZJS API for Buffer
 * [Introduction](#introduction)
 * [Web IDL](#web-idl)
 * [Class: Buffer](#buffer-api)
-  * [new Buffer(array)](#new-bufferarray)
+  * [new Buffer(initialValues)](#new-bufferinitialvalues)
   * [new Buffer(size)](#new-buffersize)
-  * [new Buffer(string)](#new-bufferstring)
+  * [new Buffer(initialString)](#new-bufferinitialstring)
   * [buf.copy(target[, targetStart, [sourceStart[, sourceEnd]]])](#bufcopytarget-targetstart-sourcestart-sourceend)
   * [buf.fill(value[, offset[, end[, encoding]]])](#buffillvalue-offset-end-encoding)
   * [buf.readUInt*(offset)](#bufreaduint-family)
@@ -26,12 +26,15 @@ Web IDL
 This IDL provides an overview of the interface; see below for documentation of
 specific API functions.  We have a short document explaining [ZJS WebIDL conventions](Notes_on_WebIDL.md).
 
-```javascript
-[ Constructor(Uint8Array initialValues),
+<details>
+<summary> Click to show/hide WebIDL</summary>
+<pre>
+[ Constructor(sequence < Uint8 > initialValues),
   Constructor(unsigned long size),
-  Constructor(ByteString initialString) ]
+  Constructor(ByteString initialString), ]
 interface Buffer {
     readonly attribute unsigned long length;
+    attribute ArrayBuffer buffer;
     unsigned long copy(Buffer target, optional unsigned long targetStart = 0,
                                       optional unsigned long sourceStart = 0,
                                       optional unsigned long sourceEnd);
@@ -45,20 +48,20 @@ interface Buffer {
     long readUInt32LE(optional unsigned long offset = 0);
     string toString(string encoding);
     long write(string value, optional long offset = 0,
-                             optional long length = this.length-offset,
+                             optional long length = 0,
                              optional string encoding = "utf8");
     long writeUInt8(octet value, unsigned long offset);
     long writeUInt16BE(unsigned short value, unsigned long offset);
     long writeUInt16LE(unsigned short value, unsigned long offset);
     long writeUInt32BE(unsigned long value, unsigned long offset);
     long writeUInt32LE(unsigned long value, unsigned long offset);
-};
-```
+};</pre>
+</details>
 
 Buffer API
 ----------
 ### new Buffer(initialValues)
-* `initialValues` *integer[]* Array of octets to use as initial data.
+* `initialValues` *integer-array* of octets to use as initial data.
 
 A new Buffer object will be returned with the same size as the array
 and initialized with the array's contents. If there is not enough
