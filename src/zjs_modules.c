@@ -279,7 +279,7 @@ void zjs_modules_check_load_file()
     size_t size;
     jerry_value_t parsed_code = 0;
     buf = read_file_alloc(load_file, &size);
-    parsed_code = jerry_parse(NULL, 0, const jerry_char_t *)buf, size,
+    parsed_code = jerry_parse(NULL, 0, (const jerry_char_t *)buf, size,
                               JERRY_PARSE_NO_OPTS);
     zjs_free(buf);
 
