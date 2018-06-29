@@ -3,11 +3,6 @@ ZJS API for Net
 
 * [Introduction](#introduction)
 * [Web IDL](#web-idl)
-
-
-
-
-
 * [Class: Net](#net-api)
   * [net.createServer(callback onconnection)](#netcreateservercallback-onconnection)
   * [net.Socket()](#netsocket)
@@ -34,11 +29,6 @@ ZJS API for Net
   * [Server.close()](#serverclose)
   * [Server.getConnections(ListenerCallback onconnection)](#servergetconnectionslistenercallback-onconnection)
   * [Server.listen(options, onlistening)](#serverlistenoptions-onlistening)
-
-
-
-
-
 * [Sample Apps](#sample-apps)
 
 Introduction
