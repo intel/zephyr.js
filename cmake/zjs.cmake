@@ -56,22 +56,35 @@ target_compile_options(app PRIVATE
   -Wno-implicit-function-declaration
   )
 
-target_include_directories(app PRIVATE ./src)
-target_include_directories(app PRIVATE ${ZEPHYR_BASE}/drivers)
-target_include_directories(app PRIVATE ${JERRY_BASE}/jerry-core/include)
-target_include_directories(app PRIVATE ${JERRY_BASE}/jerry-core/jrt)
-target_include_directories(app PRIVATE ${JERRY_BASE}/jerry-ext/include)
-target_include_directories(app PRIVATE ${CMAKE_BINARY_DIR}/../include)
+set(APP_INCLUDES
+  ./src
+  ${ZEPHYR_BASE}/drivers
+  ${JERRY_BASE}/jerry-core/include
+  ${JERRY_BASE}/jerry-core/jrt
+  ${JERRY_BASE}/jerry-ext/include
+  ${CMAKE_BINARY_DIR}/../include
+  )
 
-target_sources(app PRIVATE src/main.c)
-target_sources(app PRIVATE src/zjs_callbacks.c)
-target_sources(app PRIVATE src/zjs_common.c)
-target_sources(app PRIVATE src/zjs_error.c)
-target_sources(app PRIVATE src/zjs_modules.c)
-target_sources(app PRIVATE src/zjs_script.c)
-target_sources(app PRIVATE src/zjs_timers.c)
-target_sources(app PRIVATE src/zjs_util.c)
-target_sources(app PRIVATE src/jerry-port/zjs_jerry_port.c)
+set(APP_SRC
+  src/main.c
+  src/zjs_callbacks.c
+  src/zjs_common.c
+  src/zjs_error.c
+  src/zjs_modules.c
+  src/zjs_script.c
+  src/zjs_timers.c
+  src/zjs_util.c
+  src/jerry-port/zjs_jerry_port.c
+  )
+
+if("${DEBUGGER}" STREQUAL "on")
+  add_definitions(-DJERRY_DEBUGGER)
+  add_definitions(-DZJS_DEBUGGER)
+endif()
+
+target_include_directories(app PRIVATE ${APP_INCLUDES})
+
+target_sources(app PRIVATE ${APP_SRC})
 
 target_link_libraries(app jerry-core jerry-ext)
 

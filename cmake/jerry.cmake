@@ -4,12 +4,16 @@ include(ExternalProject)
 
 # Additional build flags to work around JerryScript warnings
 set(jerry_cflags " \
- -Wall \
- -Werror \
  -Wno-conversion \
  -Wno-implicit-function-declaration \
  -Wno-old-style-declaration \
- -Wno-undef"
+ -Wno-pedantic \
+ -Wno-shadow \
+ -Wno-sign-compare \
+ -Wno-sign-conversion \
+ -Wno-undef \
+ -Wno-unused-parameter \
+ -Wno-unused-variable"
 )
 
 zephyr_get_include_directories_for_lang_as_string(C includes)
@@ -17,8 +21,15 @@ zephyr_get_system_include_directories_for_lang_as_string(C system_includes)
 zephyr_get_compile_definitions_for_lang_as_string(C definitions)
 zephyr_get_compile_options_for_lang_as_string(C options)
 
+# include the shim layer that ports the network API to build on Zephyr
+if("${DEBUGGER}" STREQUAL "on")
+  set(net_includes
+    "-I${CMAKE_SOURCE_DIR}/src/jerry-port"
+    )
+endif()
+
 set(external_project_cflags
-  "${includes} ${definitions} ${options} ${system_includes}${jerry_cflags}"
+  "${includes} ${definitions} ${options} ${system_includes} ${jerry_cflags} ${net_includes}"
   )
 
 if("${SNAPSHOT}" STREQUAL "on")
@@ -33,10 +44,11 @@ set(CMAKE_ARGS
   -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
   -DCMAKE_C_COMPILER_WORKS=TRUE
   -DCMAKE_SYSTEM_NAME=Zephyr
-  -DENABLE_ALL_IN_ONE=${ALL_IN_ONE}
-  -DENABLE_LTO=OFF
+  -DENABLE_ALL_IN_ONE=OFF
+  -DENABLE_LTO=ON
   -DEXTERNAL_COMPILE_FLAGS=${external_project_cflags}
   -DFEATURE_ERROR_MESSAGES=ON
+  -DFEATURE_DEBUGGER=${DEBUGGER}
   -DFEATURE_INIT_FINI=ON
   -DFEATURE_PROFILE=${JERRY_PROFILE}
   -DFEATURE_SNAPSHOT_EXEC=OFF

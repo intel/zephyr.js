@@ -217,7 +217,7 @@ bool zjs_obj_get_boolean(jerry_value_t obj, const char *name, bool *flag)
     ZVAL value = zjs_get_property(obj, name);
     bool rval = false;
 
-    if (!jerry_value_has_error_flag(value) && jerry_value_is_boolean(value)) {
+    if (!jerry_value_is_error(value) && jerry_value_is_boolean(value)) {
         *flag = jerry_get_boolean_value(value);
         rval = true;
     }
@@ -237,7 +237,7 @@ bool zjs_obj_get_string(jerry_value_t obj, const char *name, char *buffer,
     ZVAL value = zjs_get_property(obj, name);
     bool rval = false;
 
-    if (!jerry_value_has_error_flag(value) && jerry_value_is_string(value)) {
+    if (!jerry_value_is_error(value) && jerry_value_is_string(value)) {
         jerry_size_t size = len;
         zjs_copy_jstring(value, buffer, &size);
         if (size)
@@ -254,7 +254,7 @@ bool zjs_obj_get_double(jerry_value_t obj, const char *name, double *num)
     ZVAL value = zjs_get_property(obj, name);
     bool rval = false;
 
-    if (!jerry_value_has_error_flag(value) && jerry_value_is_number(value)) {
+    if (!jerry_value_is_error(value) && jerry_value_is_number(value)) {
         *num = jerry_get_number_value(value);
         rval = true;
     }
@@ -269,7 +269,7 @@ bool zjs_obj_get_uint32(jerry_value_t obj, const char *name, u32_t *num)
     ZVAL value = zjs_get_property(obj, name);
     bool rval = false;
 
-    if (!jerry_value_has_error_flag(value) && jerry_value_is_number(value)) {
+    if (!jerry_value_is_error(value) && jerry_value_is_number(value)) {
         *num = (u32_t)jerry_get_number_value(value);
         rval = true;
     }
@@ -284,7 +284,7 @@ bool zjs_obj_get_int32(jerry_value_t obj, const char *name, s32_t *num)
     ZVAL value = zjs_get_property(obj, name);
     bool rval = false;
 
-    if (!jerry_value_has_error_flag(value) && jerry_value_is_number(value)) {
+    if (!jerry_value_is_error(value) && jerry_value_is_number(value)) {
         *num = (s32_t)jerry_get_number_value(value);
         rval = true;
     }
@@ -738,7 +738,7 @@ int zjs_validate_args(const char *expectations[], const jerry_length_t argc,
 int zjs_require_bool_if_prop(jerry_value_t obj, const char *prop, bool *result)
 {
     ZVAL value = zjs_get_property(obj, prop);
-    if (jerry_value_is_undefined(value) || jerry_value_has_error_flag(value)) {
+    if (jerry_value_is_undefined(value) || jerry_value_is_error(value)) {
         // not found; leave default
         return 0;
     }
@@ -755,7 +755,7 @@ int zjs_require_string_if_prop_map(jerry_value_t obj, const char *prop,
                                    str2int_t map[], int maxlen, int *result)
 {
     ZVAL value = zjs_get_property(obj, prop);
-    if (jerry_value_is_undefined(value) || jerry_value_has_error_flag(value)) {
+    if (jerry_value_is_undefined(value) || jerry_value_is_error(value)) {
         // not found; leave default
         return 0;
     }

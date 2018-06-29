@@ -1,0 +1,34 @@
+{
+    "module": "debugger",
+    "depends": ["net_config_default"],
+    "virtualdeps": ["net-l2"],
+    "zephyr_conf": {
+        "all": [
+            "CONFIG_INIT_STACKS=y",
+            "CONFIG_NETWORKING=y",
+            "CONFIG_NET_APP_SETTINGS=y",
+            "CONFIG_NET_IPV4=y",
+            "CONFIG_NET_IPV6=y",
+            "CONFIG_NET_TCP=y",
+            "CONFIG_NET_UDP=y",
+            "CONFIG_NET_SOCKETS=y",
+            "CONFIG_NET_SOCKETS_POSIX_NAMES=y",
+            "CONFIG_NET_STATISTICS=y",
+            "CONFIG_PRINTK=y",
+            "CONFIG_TEST_RANDOM_GENERATOR=y"
+        ],
+        "frdm_k64f": [
+            "CONFIG_NET_APP_NEED_IPV4=y",
+            "CONFIG_NET_APP_NEED_IPV6=y",
+            "CONFIG_NET_APP_MY_IPV4_ADDR=\"192.168.1.1\"",
+            "CONFIG_NET_APP_MY_IPV6_ADDR=\"2001:db8::1\"",
+            "CONFIG_NET_MAX_CONTEXTS=10"
+        ]
+    },
+    "zjs_config": [
+        "-I${JERRY_BASE}/jerry-core/ecma/base",
+        "-I${JERRY_BASE}/jerry-core/jmem",
+        "-I${JERRY_BASE}/jerry-core/lit",
+        "-I${JERRY_BASE}/jerry-core/debugger"
+    ]
+}

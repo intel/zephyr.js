@@ -260,7 +260,7 @@ static void zjs_ble_read_c_callback(void *handle, const void *argv)
 
     jerry_value_t args[2] = { offset, callback };
     ZVAL rval = jerry_call_function(cb->js_callback, chrc->chrc_obj, args, 2);
-    if (jerry_value_has_error_flag(rval)) {
+    if (jerry_value_is_error(rval)) {
         DBG_PRINT("failed to call onReadRequest function\n");
     }
 }
@@ -366,7 +366,7 @@ static void zjs_ble_write_c_callback(void *handle, const void *argv)
 
     jerry_value_t args[4] = { buf_obj, offset, without_response, callback };
     ZVAL rval = jerry_call_function(cb->js_callback, chrc->chrc_obj, args, 4);
-    if (jerry_value_has_error_flag(rval)) {
+    if (jerry_value_is_error(rval)) {
         DBG_PRINT("failed to call onWriteRequest function\n");
     }
 }
@@ -444,7 +444,7 @@ static void zjs_ble_subscribe_c_callback(void *handle, const void *argv)
 
     jerry_value_t args[2] = { max_size, callback };
     ZVAL rval = jerry_call_function(cb->js_callback, chrc->chrc_obj, args, 2);
-    if (jerry_value_has_error_flag(rval)) {
+    if (jerry_value_is_error(rval)) {
         DBG_PRINT("failed to call onSubscribe function\n");
     }
 }
@@ -455,7 +455,7 @@ static void zjs_ble_unsubscribe_c_callback(void *handle, const void *argv)
     ble_notify_handle_t *cb = &chrc->unsubscribe_cb;
 
     ZVAL rval = jerry_call_function(cb->js_callback, chrc->chrc_obj, NULL, 0);
-    if (jerry_value_has_error_flag(rval)) {
+    if (jerry_value_is_error(rval)) {
         DBG_PRINT("failed to call onUnsubscribe function\n");
     }
 }
@@ -466,7 +466,7 @@ static void zjs_ble_notify_c_callback(void *handle, const void *argv)
     ble_notify_handle_t *cb = &chrc->notify_cb;
 
     ZVAL rval = jerry_call_function(cb->js_callback, chrc->chrc_obj, NULL, 0);
-    if (jerry_value_has_error_flag(rval)) {
+    if (jerry_value_is_error(rval)) {
         DBG_PRINT("failed to call onNotify function\n");
     }
 }
@@ -1212,7 +1212,7 @@ static ZJS_DECL_FUNC(zjs_ble_set_services)
         ZVAL arg = success ? ZJS_UNDEFINED
                            : jerry_create_string("failed to register services");
         ZVAL rval = jerry_call_function(argv[1], ZJS_UNDEFINED, &arg, 1);
-        if (jerry_value_has_error_flag(rval)) {
+        if (jerry_value_is_error(rval)) {
             DBG_PRINT("failed to call callback function\n");
         }
     }

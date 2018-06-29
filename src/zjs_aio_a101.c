@@ -239,7 +239,7 @@ static ZJS_DECL_FUNC(zjs_aio_open)
     send.data.aio.pin = pin;
 
     ZVAL result = zjs_aio_call_remote_function(&send);
-    if (jerry_value_has_error_flag(result))
+    if (jerry_value_is_error(result))
         return result;
 
     // create the AIOPin object
