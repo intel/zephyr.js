@@ -29,7 +29,7 @@ specific API functions.  We have a short document explaining [ZJS WebIDL convent
 <summary> Click to show/hide WebIDL</summary>
 <pre>
 // require returns a Net object
-// var net_cfg = require('netconfig');<p><p>[ExternalInterface=(eventemitter, EventEmitter)]
+// var net_cfg = require('netconfig');<p><p>[ReturnFromRequire,ExternalInterface=(eventemitter, EventEmitter)]
 interface NetConfig: EventEmitter {
     boolean setStaticIP(string ip);
     void dhcp(DHCPCallback callback);

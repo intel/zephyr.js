@@ -24,11 +24,11 @@ documentation of specific API functions.  We have a short document explaining [Z
 <summary> Click to show/hide WebIDL</summary>
 <pre>// require returns the Board API object
 // var board = require('board');
-<p><p>
-[NoInterfaceObject]
+<p>
+[ReturnFromRequire]
 interface Board {
-    string name;
-    string version;
+    attribute string name5;
+    attribute string version;
 };</pre>
 </details>
 

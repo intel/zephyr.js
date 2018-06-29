@@ -3,7 +3,11 @@ ZJS API for Timers
 
 * [Introduction](#introduction)
 * [Web IDL](#web-idl)
-* [API Documentation](#api-documentation)
+* [Class: Timers](#timers-api)
+  * [timers.setInterval(func, delay, args_for_func)](#timerssetintervalfunc-delay-args_for_func)
+  * [timers.setTimeout(func, delay, args_for_func)](#timerssettimeoutfunc-delay-args_for_func)
+  * [timers.clearInterval(intervalID)](#timersclearintervalintervalid)
+  * [timers.clearTimeout(timeoutID)](#timerscleartimeouttimeoutid)
 * [Sample Apps](#sample-apps)
 
 Introduction
@@ -13,70 +17,56 @@ available.
 
 Web IDL
 -------
-This IDL provides an overview of the interface; see below for documentation of
-specific API functions.
+This IDL provides an overview of the interface; see below for
+documentation of specific API functions.  We have a short document
+explaining [ZJS WebIDL conventions](Notes_on_WebIDL.md).
 
-```javascript
-intervalID setInterval(TimerCallback func, unsigned long delay, optional arg1, ...);
-timeoutID setTimeout(TimerCallback func, unsigned long delay, optional arg1, ...);
-void clearInterval(intervalID);
-void clearTimeout(timeoutID);
+<details>
+<summary>Click to show WebIDL</summary>
+<pre>
+// require returns a Timers object
+// var timers = require('timers');
+<p>
+[ReturnFromRequire]
+interface Timers {
+    intervalID setInterval(TimerCallback func, unsigned long delay, any... args_for_func);
+    timeoutID setTimeout(TimerCallback func, unsigned long delay, any... args_for_func);
+    void clearInterval(long intervalID);
+    void clearTimeout(long timeoutID);
+};<p>
+callback TimerCallback = void (any... callback_args);</pre>
+<p>
+typedef timeoutID long;
+</details>
 
-callback TimerCallback = void (optional arg1, ...);
-```
+Timers API
+----------
+### timers.setInterval(func, delay, args_for_func)
+* `func` *TimerCallback* A callback function that will take the arguments passed in the variadic `args_for_func` parameter.
+* `delay` *unsigned long* The `delay` argument is in milliseconds. Currently, the delay resolution is about 10 milliseconds, and if you choose a value less than that it will probably fail.
+* `args_for_func` *any* The user can pass an arbitrary number of additional arguments that will then be passed to `func`.
+* Returns: an `intervalID` object that can be passed to `clearInterval` to stop the timer.
 
-API Documentation
------------------
-### setInterval
+Every `delay` milliseconds, your callback function will be called.
 
-`intervalID setInterval(TimerCallback func, unsigned long delay, optional arg1, ...);
-`
+### timers.setTimeout(func, delay, args_for_func)
+* `func` *TimerCallback* A callback function that will take the arguments passed in the variadic `args_for_func` parameter.
+* `delay` *unsigned long* The `delay` argument is in milliseconds. Currently, the delay resolution is about 10 milliseconds.
+* `args_for_func` *any* The user can pass an arbitrary number of additional arguments that will then be passed to `func`.
+* Returns: a `timeoutID` that can be passed to `clearTimeout` to stop the timer.
 
-The `func` argument is a callback function that should expect whatever arguments
-you pass as arg1, arg2, and so on.
+After `delay` milliseconds, your callback function will be called *one time*.
 
-The `delay` argument is in milliseconds. Currently, the delay resolution is
-about 10 milliseconds and if you choose a value less than that it will probably
-fail.
+### timers.clearInterval(intervalID)
+* `intervalID` *long* This value was returned from a call to `setInterval`.
 
-Any additional arguments such as `arg1` will be passed to the callback you
-provide. They can be whatever type you wish.
-
-Every `delay` milliseconds, your callback function will be called. An
-`intervalID` will be returned that you can save and pass to clearInterval later
-to stop the timer.
-
-### setTimeout
-
-`timeoutID setTimeout(TimerCallback func, unsigned long delay, optional arg1, ...);`
-
-The `func` argument is a callback function that should expect whatever arguments
-you pass as arg1, arg2, and so on.
-
-The `delay` argument is in milliseconds. Currently, the delay resolution is
-about 10 milliseconds.
-
-Any additional arguments such as `arg1` will be passed to the callback you
-provide. They can be whatever type you wish.
-
-After `delay` milliseconds, your callback function will be called *one time*. A
-`timeoutID` will be returned that you can save and pass to clearTimeout later
-to stop the timer.
-
-### clearInterval
-
-`void clearInterval(intervalID);`
-
-The `intervalID` should be what was returned from a previous call to
-`setInterval`. That interval timer will be cleared and its callback function
+That interval timer will be cleared and its callback function
 no longer called.
 
-### clearTimeout
+### timers.clearTimeout(timeoutID)
+* `timeoutID` *long* This value was returned from a call to `setTimeout`.
 
-`void clearTimeout(timeoutID);`
-
-The `timeoutID` should be what was returned from a previous call to
-`setTimeout`. That timer will be cleared and its callback function will not be
+The `timeoutID` timer will be cleared and its callback function will not be
 called.
 
 Sample Apps

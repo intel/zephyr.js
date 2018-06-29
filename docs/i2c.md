@@ -38,7 +38,9 @@ interface I2CBus {
     void write(octet device, Buffer data);
     void read(octet device, unsigned long size, octet registerAddress);
     void burstRead(octet device, unsigned long size, octet registerAddress);
-};</pre>
+};
+<p>
+typedef I2CBusSpeed long;</pre>
 </details>
 
 I2C API

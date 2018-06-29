@@ -38,12 +38,12 @@ explaining [ZJS WebIDL conventions](Notes_on_WebIDL.md).
     // long stopBits = 1;
     // UARTParity parity = "none";
     // boolean flowControl = false;
-};<p>[ExternalInterface=(buffer,Buffer)]
+};<p>[ExternalInterface=(buffer,Buffer),ExternalInterface=(eventemitter, EventEmitter)]
 interface UARTConnection: EventEmitter {
     // void close();
     void write(Buffer data);
     void setReadRange(long min, long max);
-};<p>enum UARTParity { "none", "event", "odd" }
+};<p>enum UARTParity { "none", "event", "odd" };
 </pre>
 </details>
 

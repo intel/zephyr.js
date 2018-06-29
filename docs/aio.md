@@ -38,25 +38,18 @@ explaining [ZJS WebIDL conventions](Notes_on_WebIDL.md).
 <summary>Click to show WebIDL</summary>
 <pre>
 // require returns an AIO object
-// var aio = require('aio');
-
-[ReturnFromRequire]
+// var aio = require('aio');<p><p>[ReturnFromRequire]
 interface AIO {
     AIOPin open(AIOInit init);
-};
-
-dictionary AIOInit {
+};<p>dictionary AIOInit {
     (unsigned long or string) pin;
-};
-
-interface AIOPin {
+};<p>interface AIOPin {
     unsigned long read();
     void readAsync(ReadCallback callback);  // TODO: change to return a promise
     void on(string eventType, ReadCallback callback);
     void close();
-};
-
-callback ReadCallback = void (unsigned long value);</pre>
+};<p>callback ReadCallback = void (unsigned long value);
+</pre>
 </details>
 
 AIO API

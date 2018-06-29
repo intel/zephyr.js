@@ -65,9 +65,9 @@ interface GroveLCD {
     void selectColor(unsigned long index);
     void setColor(unsigned long r, unsigned long g, unsigned long b);
     void setFunction(unsigned long config);
-    attribute unsigned long getFunction();
+    unsigned long getFunction();
     void setDisplayState(unsigned long config);
-    attribute unsigned long getDisplayState();
+    unsigned long getDisplayState();
 };</pre>
 </details>
 

@@ -31,7 +31,7 @@ specific API functions.  We have a short document explaining [ZJS WebIDL convent
 <pre>
 [ Constructor(sequence < Uint8 > initialValues),
   Constructor(unsigned long size),
-  Constructor(ByteString initialString) ]
+  Constructor(ByteString initialString), ]
 interface Buffer {
     readonly attribute unsigned long length;
     attribute ArrayBuffer buffer;
@@ -48,7 +48,7 @@ interface Buffer {
     long readUInt32LE(optional unsigned long offset = 0);
     string toString(string encoding);
     long write(string value, optional long offset = 0,
-                             optional long length = this.length-offset,
+                             optional long length = 0,
                              optional string encoding = "utf8");
     long writeUInt8(octet value, unsigned long offset);
     long writeUInt16BE(unsigned short value, unsigned long offset);

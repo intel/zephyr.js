@@ -84,7 +84,8 @@ interface FS {
     void writeFileSync(string file, (string or Buffer) data);
 };<p>// file descriptors are inherently platform specific, so we leave this
 // as a placeholder
-definition FileDescriptor {
+dictionary FileDescriptor {
+    //string name;
 };<p>interface Stat {
     boolean isFile();
     boolean isDirectory();
