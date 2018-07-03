@@ -8,7 +8,7 @@ ZJS API for UDP datagram sockets
 * [DgramSocket API](#dgramsocket-api)
   * [DgramSocket.on(event, callback)](#dgramsocketonevent-callback)
   * [DgramSocket.bind(port, ip_addr)](#dgramsocketbindport-ip_addr)
-  * [DgramSocket.send(buf, offset, len, port, ip_addr, cb)](#dgramsocketsendbuf-offset-len-port-ip_addr-cb)
+  * [DgramSocket.send(buf, offset, len, port, ip_addr, [cb])](#dgramsocketsendbuf-offset-len-port-ip_addr-cb)
   * [DgramSocket.close](#dgramsocketclose)
 * [Sample Apps](#sample-apps)
 
@@ -92,7 +92,7 @@ IP addresses are allowed. At the time of writing, local interface
 addresses are hardcoded to be: `'192.0.2.1'` (IPv4) and `'2001:db8::1'`
 (IPv6), but these will become configurable in the future.
 
-### DgramSocket.send(buf, offset, len, port, ip_addr, cb)
+### DgramSocket.send(buf, offset, len, port, ip_addr, [cb])
 * `buf` *Buffer*
 * `offset` *unsigned long*
 * `len` *unsigned long*
