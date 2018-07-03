@@ -3,120 +3,136 @@ ZJS API for Net
 
 * [Introduction](#introduction)
 * [Web IDL](#web-idl)
-* [API Documentation](#api-documentation)
+* [Class: Net](#net-api)
+  * [net.createServer([onconnection])](#netcreateserveronconnection)
+  * [net.Socket()](#netsocket)
+  * [net.isIP(input)](#netisipinput)
+  * [Net.isIPv4(input)](#netisipv4input)
+  * [Net.isIPv6(input)](#netisipv6input)
+* [Class: Socket](#socket-api)
+  * [Event: 'close'](#event-close)
+  * [Event: 'connect'](#event-connect)
+  * [Event: 'data'](#event-data)
+  * [Event: 'error'](#event-error)
+  * [Event: 'timeout'](#event-timeout)
+  * [Socket.connect(options, [onconnect])](#socketconnectoptions-onconnect)
+  * [Socket.pause()](#socketpause)
+  * [Socket.resume()](#socketresume)
+  * [Socket.setTimeout(time, ontimeout)](#socketsettimeouttime-ontimeout)
+  * [Socket.write(buf, [writeDone])](#socketwritebuf-writedone)
+* [Class: Server](#server-api)
+  * [Event: 'close'](#event-close)
+  * [Event: 'connection'](#event-connection)
+  * [Event: 'error'](#event-error)
+  * [Event: 'listening'](#event-listening)
+  * [Server.address](#serveraddress)
+  * [Server.close()](#serverclose)
+  * [Server.getConnections(onconnection)](#servergetconnectionsonconnection)
+  * [Server.listen(options, [onlistening])](#serverlistenoptions-onlistening)
 * [Sample Apps](#sample-apps)
 
 Introduction
 ------------
-ZJS provides net (TCP) APIs which closely mimic the Node.js 'net' module. This
-module allows you to create a TCP/IP server or client.
+ZJS provides net (TCP) APIs that closely mimic the Node.js 'net'
+module, which allows you to create a TCP/IP server or client.
 
 Web IDL
 -------
 This IDL provides an overview of the interface; see below for documentation of
-specific API functions.
-
-```javascript
+specific API functions.  We also have a short document explaining [ZJS WebIDL conventions](Notes_on_WebIDL.md).
+<details>
+<summary> Click to show/hide WebIDL</summary>
+<pre>
 // require returns a Net object
-// var net = require('net');
-
+// var net = require('net');<p><p>[ReturnFromRequire,ExternalCallback=(eventemitter,ListenerCallback)]
 interface Net {
-    // create a server object
-    Server createServer(callback onconnection);
-    // Socket constructor, create a new Socket
+    Server createServer(optional ListenerCallback onconnection);
     Socket Socket();
-    Number isIP(input);
-    Boolean isIPv4(input);
-    Boolean isIPv6(input);
+    long isIP(string input);
+    Boolean isIPv4(string input);
+    Boolean isIPv6(string input);
 };
-
+<p>[ExternalInterface=(eventemitter,EventEmitter),ExternalInterface=(buffer,Buffer),ExternalCallback=(eventemitter,ListenerCallback)]
 interface Socket: EventEmitter {
     // Socket methods
-    void connect(Object options, callback onconnect);
+    void connect(object options, optional ListenerCallback onconnect);
     void pause();
     void resume();
-    void setTimeout(Number timeout, callback ontimeout);
-    void write(Buffer buf, callback writeDone);
+    void setTimeout(long timeout, ListenerCallback ontimeout);
+    void write(Buffer buf, optional ListenerCallback writeDone);
     // Socket properties
-    Number bufferSize;    // Size of read buffer
-    Number bytesRead;     // Total bytes read for the socket
-    Number bytesWritten;  // Total bytes written for the socket
-    String localAddress;  // Sockets local IP
-    Number localPort;     // Sockets local port
-    String remoteAddress; // Remote IP address
-    String remoteFamily;  // Remote IP family
-    Number remotePort;    // Remote port
-};
-
+    attribute long bufferSize;    // Size of read buffer
+    attribute long bytesRead;     // Total bytes read for the socket
+    attribute long bytesWritten;  // Total bytes written for the socket
+    attribute string localAddress;  // Sockets local IP
+    attribute long localPort;     // Sockets local port
+    attribute string remoteAddress; // Remote IP address
+    attribute string remoteFamily;  // Remote IP family
+    attribute long remotePort;    // Remote port
+};<p>
+[ExternalInterface=(eventemitter, EventEmitter),ExternalCallback=(eventemitter,ListenerCallback)]
 interface Server: EventEmitter {
     // Server methods
     AddressInfo address();
     void close();
-    void getConnections(callback);
-    void listen(Object options, callback onlistening);
+    void getConnections(ListenerCallback onconnection);
+    void listen(object options, optional ListenerCallback onlistening);
     // Server properties
-    Boolean listening;      // true if the server is listening
-    Number maxConnections;  // maximum number of connections
+    attribute boolean listening;      // true if the server is listening
+    attribute long maxConnections;  // maximum number of connections
 };
-
+<p>
 dictionary AddressOptions {
-    Number port;          // Port the client should connect to (required)
-    String host;          // Host the client should connect to
-    String localAddress;  // Local address to bind to
-    Number localPort;     // local port to bind to
-    Number family;        // Version of IP stack, deafults to 4
-}
-
+    long port;          // Port the client should connect to (required)
+    string host;          // Host the client should connect to
+    string localAddress;  // Local address to bind to
+    long localPort;     // local port to bind to
+    long family;        // Version of IP stack, deafults to 4
+};
+<p>
 dictionary AddressInfo {
-    Number port;    // Server port
-    String family;  // IPv4 or IPv6
-    String address; // IP address for the server
-}
-```
+    long port;    // Server port
+    string family;  // IPv4 or IPv6
+    string address; // IP address for the server
+};
+</pre>
+</details>
 
-Net API Documentation
----------------------
+Net API
+-------
 
-### Net.createServer
-`Server createServer(callback onconnection)`
+### net.createServer([onconnection])
+* `onconnection` *callback* The (optional) callback function registered as the the event listener for the `connection` event.
+* Returns: a `Server` object.
 
 Create a TCP server that can accept client connections.
 
-`onconnection` is an optional callback function that, if supplied, will be
-registered as the the event listener for the `connection` event.
+### net.Socket()
+* Returns: a new Socket object that can be used to connect to a remote TCP server.
 
-Returns a `Server` object.
+Socket constructor.
 
-### Net.Socket
-`Socket Socket(void)`
-
-Socket constructor. Calling `new Socket()` will return a new Socket object
-that can be used to connect to a remote TCP server.
-
-### Net.isIP
-`Number isIP(input)`
+### net.isIP(input)
+* `input` *string*
+* Returns: 4 if the input is an IPv4 address, 6 if the input is an IPv6 address,
+or 0 if the input is not an IP address.
 
 Checks if the input is a valid IP address.
 
-Returns 4 if the input is an IPv4 address, 6 if the input is an IPv6 address,
-or 0 if the input is not an IP address.
-
-### Net.isIPv4
-`Boolean isIPv4(input)`
+### Net.isIPv4(input)
+* `input` *string*
+* Returns: true if input is IPv4, false otherwise.
 
 Checks if input is an IPv4 address.
 
-Returns true if input is IPv4.
-
-### Net.isIPv6
-`Boolean isIPv6(input)`
+### Net.isIPv6(input)
+* `input` *string*
+* Returns: true if input is IPv6, false otherwise.
 
 Checks if input is an IPv6 address.
 
-Returns true if input is IPv6.
-
-Socket API Documentation
-------------------------
+Socket API
+----------
 
 Socket is an [EventEmitter](./events.md) with the following events:
 
@@ -143,46 +159,37 @@ Emitted when there was an error on the socket during read, write, or connect.
 
 Emitted only when a timeout set with `setTimeout` expires.
 
-### Socket.connect
-`void connect(AddressOptions options, callback onconnect)`
+### Socket.connect(options, [onconnect])
+* `options` *AddressOptions* Describes the remote server being connected to.
+* `onconnect` *ListenerCallback* Optional callback added as the listener for the
+`connect` event.
 
 Connect to a remote TCP server.
 
-`options` should describe the remote server your connecting to.
-
-`onconnect` is optional and, if specified, will be added as the listener for the
-`connect` event.
-
-### Socket.pause
-`void pause(void)`
+### Socket.pause()
 
 Pause a socket from receiving data. `data` event will not be emitted until
-`resume` is called.
+`Socket.resume` is called.
 
-### Socket.resume
-`void resume(void)`
+### Socket.resume()
 
-Allow a socket to resume receiving data after a call to `pause`.
+Allow a socket to resume receiving data after a call to `Socket.pause`.
 
-### Socket.setTimeout
-`void setTimeout(Number time, callback ontimeout)`
+### Socket.setTimeout(time, ontimeout)
+* `time` *long*
+* `ontimeout` *ListenerCallback* Optional callback registered as a listener for the `timeout` event.
 
-Set a socket timeout. This will start a timer on the socket which will expire
-in `time` milliseconds if there has been no activity on the socket. The
-`ontimeout` parameter, if specified, will register a listener for the
-`timeout` event.
+Set a socket timeout. This will start a timer on the socket that will expire
+in `time` milliseconds if there has been no activity on the socket.
 
-### Socket.write
-`void write(Buffer buf, callback writeDone)`
+### Socket.write(buf, [writeDone])
+* `buf` *Buffer* `buf` Contains the data to be written.
+* `writeDone` *ListenerCallback* Optional function called once the data is written.
 
 Send data on the socket.
 
-`buf` should contain the data you wish to send.
-
-`writeDone` is optional and will be called once the data is written.
-
-Server API Documentation
-------------------------
+Server API
+----------
 
 Server is an [EventEmitter](./events.md) with the following events:
 
@@ -212,21 +219,20 @@ Emitted when the server has been bound, after calling `server.listen()`.
 
 Returns an AddressInfo object for the server:
 
-### Server.close
-`void close(void)`
+### Server.close()
 
 Signals the server to close. This will stop the server from accepting any new
 connections but will keep any existing connections alive. Once all existing
 connections have been closed the server will emit the `close` event.
 
-### Server.getConnections(callback)
-`void getConnections(callback)`
+### Server.getConnections(onconnection)
+* `onconnection` *ListenerCallback* Should be a function with `err` and `count` parameters.
 
-Get the number of connections to the server. The `callback` parameter should be
-a function with `err` and `count` parameters.
+Get the number of connections to the server.
 
-### Server.listen
-`void listen(Object options, callback onlistening)`
+### Server.listen(options, [onlistening])
+* `options` *object*
+* `onlistening` *ListenerCallback* Optional function added to the `listening` event.
 
 Start listening for connections. The `options` object supports the following
 properties:
@@ -237,9 +243,6 @@ properties:
     backlog : Max number of concurrent connections
 }
 ```
-
-`onlistening` is optional and, if specified, will add a listener to the
-`listening` event.
 
 Sample Apps
 -----------

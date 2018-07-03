@@ -3,7 +3,13 @@ ZJS API for Analog I/O (AIO)
 
 * [Introduction](#introduction)
 * [Web IDL](#web-idl)
-* [API Documentation](#api-documentation)
+* [Class: AIO](#aio-api)
+  * [aio.open(AIOInit)](#aioopenaioinit)
+* [Class: AIOPin](#aiopin-api)
+  * [pin.read()](#pinread)
+  * [pin.readAsync(ReadCallback)](#pinreadasyncreadcallback)
+  * [pin.on(eventType, ReadCallback)](#pinoneventtype-readcallback)
+  * [pin.close()](#pinclose)
 * [Sample Apps](#sample-apps)
 
 Introduction
@@ -23,84 +29,78 @@ not have support for this.
 
 Web IDL
 -------
-This IDL provides an overview of the interface; see below for documentation of
-specific API functions.
 
-```javascript
+This IDL provides an overview of the interface; see below for
+documentation of specific API functions.  We have a short document
+explaining [ZJS WebIDL conventions](Notes_on_WebIDL.md).
+
+<details>
+<summary>Click to show WebIDL</summary>
+<pre>
 // require returns an AIO object
-// var aio = require('aio');
-
-[NoInterfaceObject]
+// var aio = require('aio');<p><p>[ReturnFromRequire]
 interface AIO {
     AIOPin open(AIOInit init);
-};
-
-dictionary AIOInit {
-    unsigned long pin;
-};
-
-[NoInterfaceObject]
-interface AIOPin {
+};<p>dictionary AIOInit {
+    (unsigned long or string) pin;
+};<p>interface AIOPin {
     unsigned long read();
     void readAsync(ReadCallback callback);  // TODO: change to return a promise
     void on(string eventType, ReadCallback callback);
     void close();
-};
+};<p>callback ReadCallback = void (unsigned long value);
+</pre>
+</details>
 
-callback ReadCallback = void (unsigned long value);
-```
+AIO API
+-------
+### aio.open(init)
+* 'init' *AIOInit object*  The AIOInit object has a single field called "pin"
+  that represents the name of the pin (either an integer or a string,
+  depending on the board).
+* Returns: an AIOPin object that may be used to read values from the pin.
 
-API Documentation
------------------
-### AIO.open
-
-`AIOPin open(AIOInit init);`
-
-The `init` object lets you set the pin number. You can either use a raw
+When setting the pin number, you can either use a raw
 number for your device or use the board support module such as
 [Arduino 101](./boards/arduino_101.md) or [K64F](./boards/frdm_k64f.md) to
 specify a named pin.
 
-Use the AIOPin object returned to read values from the pin.
+AIOPin API
+----------
+### pin.read()
+* Returns: the latest reading from the pin (an unsigned integer). Blocks until it gets the result.
 
-### AIOPin.read
+### pin.readAsync(callback)
+* 'callback' *ReadCallback* User-provided callback function that takes
+  a single unsigned integer and has no return value.
 
-`unsigned long read();`
-
-Returns the latest reading from the pin. Blocks until it gets the result.
-
-### AIOPin.readAsync
-
-`void readAsync(ReadCallback callback);`
-
-Pass a function for `callback` that will be called later when the result is
+Pass a function for `ReadCallback` that will be called later when the result is
 obtained.
 
 *WARNING: Making an async call like this allocates some memory while the call
-is pending, so if you issue them faster than they are fulfilled, you will
+is pending; if async calls are issued faster than they are fulfilled,
+the system will
 eventually run out of memory - pretty soon on these small devices. So the best
-practice would be to make sure you only have a small, fixed number pending at
+practice would be to have only a small, fixed number pending at
 any given time.*
 
 *NOTE: This function will probably be replaced with a version that instead
 returns a promise.*
 
-### AIOPin.on
+### pin.on(eventType, callback)
+* 'eventType' *string* Type of event; currently, the only supported
+  type is "change".
+* 'callback' *ReadCallback* User-provided callback function that takes
+  a single, unsigned integer and has no return value; can be null.
 
-`void on(string eventType, ReadCallback callback);`
-
-Currently, the only supported `eventType` is 'change', and `callback` should
-be either a function or null. When a function is passed for the change event,
-the function will be called any time the analog voltage changes. (At the moment,
+The callback function is called any time the analog voltage changes. (At the moment,
 it actually gets called periodically even when it hasn't changed.) When null is
 passed for the change event, the previously registered callback will be
 discarded and no longer called.
 
-### AIOPin.close
+### pin.close()
 
-`void close();`
-
-Closes the AIOPin. Once it is closed, all event handlers registered will no
+Closes the AIOPin. Once it is closed, all registered event handlers will no
 longer be called.
 
 Sample Apps

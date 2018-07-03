@@ -3,7 +3,9 @@ ZJS Board API
 
 * [Introduction](#introduction)
 * [Web IDL](#web-idl)
-* [API Documentation](#api-documentation)
+* [Class: Board](#board-api)
+  * [board.name](#boardname)
+  * [board.version](#boardversion)
 * [Sample Apps](#sample-apps)
 
 Introduction
@@ -15,23 +17,24 @@ but both that and ZJS are under a lot of change at the moment.
 
 Web IDL
 -------
-This IDL provides an overview of the interface; see below for documentation of
-specific API functions.
 
-```javascript
-// require returns the Board API object
+This IDL provides an overview of the interface; see below for
+documentation of specific API functions.  We have a short document explaining [ZJS WebIDL conventions](Notes_on_WebIDL.md).
+<details>
+<summary> Click to show/hide WebIDL</summary>
+<pre>// require returns the Board API object
 // var board = require('board');
-
-[NoInterfaceObject]
+<p>
+[ReturnFromRequire]
 interface Board {
-    string name;
-    string version;
-};
-```
+    attribute string name5;
+    attribute string version;
+};</pre>
+</details>
 
-API Documentation
+Board API
 -----------------
-### Board.name
+### board.name
 
 `string name;`
 
@@ -42,14 +45,14 @@ When code is run under Linux with the jslinux utility, it currently reports a
 board name of "linux (partially simulating arduino_101)".
 
 Any other board will show up with "unknown". Even if the board is unknown, you
-can still use the [GPIO API](gpio.md) at least by consulting Zephyr
+can still use the [GPIO API](gpio.md) by consulting Zephyr
 documentation for the board's GPIO port names and pin numbers.
 
-### Board.version
+### board.version
 
 `string version;`
 
-For now, just returns "0.1". Stay tuned!
+Currently, this value is always set to "0.1". Stay tuned!
 
 Sample Apps
 -----------

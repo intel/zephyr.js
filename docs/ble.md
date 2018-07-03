@@ -3,7 +3,20 @@ ZJS API for Bluetooth Low Energy (BLE)
 
 * [Introduction](#introduction)
 * [Web IDL](#web-idl)
-* [API Documentation](#api-documentation)
+* [BLE-supported Events](#ble\-supported-events)
+* [Class: BLE](#ble-api)
+  * [ble.disconnect(address)](#bledisconnectaddress)
+  * [ble.startAdvertising(name, uuids, [url])](#blestartadvertisingname-uuids-url)
+  * [ble.stopAdvertising()](#blestopadvertising)
+  * [ble.setServices(primaryServices)](#blesetservicesprimaryservices)
+  * [ble.newPrimaryService(init)](#blenewprimaryserviceinit)
+  * [ble.newCharacteristic(init)](#blenewcharacteristicinit)
+  * [ble.newDescriptor(init)](#blenewdescriptorinit)
+* [Class: Characteristic](#characteristic-api)
+* [Supporting Objects](#supporting-objects)
+  * [PrimaryServiceInit](#primaryserviceinit)
+  * [CharacteristicInit](#characteristicinit)
+  * [DescriptorInit](#descriptorinit)
 * [Client Requirements](#client-requirements)
 * [Sample Apps](#sample-apps)
 
@@ -24,171 +37,161 @@ treat them like decimals.*
 
 Web IDL
 -------
-This IDL provides an overview of the interface; see below for documentation of
-specific API functions.
 
-```javascript
+This IDL provides an overview of the interface; see below for documentation of
+specific API functions.  We also have a short document explaining [ZJS WebIDL conventions](Notes_on_WebIDL.md).
+<details>
+<summary> Click to show/hide WebIDL</summary>
+<pre>
 // require returns a BLE object
 // var ble = require('ble');
-
-[NoInterfaceObject]
+<p><p>
+[ReturnFromRequire,ExternalInterface=(eventemitter, EventEmitter)]
 interface BLE: EventEmitter {
     void disconnect(string address);
-    void startAdvertising(string name, string[] uuids, string url);
+    void startAdvertising(string name, sequence < string > uuids, optional string url);
     void stopAdvertising();
-    void setServices(PrimaryService services[]);
-    PrimaryService PrimaryService(PrimaryServiceInit init);
-    Characteristic Characteristic(CharacteristicInit init);
-    Descriptor Descriptor(DescriptorInit init);
+    void setServices(sequence < PrimaryService > services);
+    PrimaryService newPrimaryService(PrimaryServiceInit init);
+    Characteristic newCharacteristic(CharacteristicInit init);
+    DescriptorInit newDescriptor(DescriptorInit init);
 };
-
+<p><p>
 dictionary PrimaryServiceInit {
     string uuid;
-    Characteristic[] characteristics;
+    sequence < Characteristic > characteristics;
+};<p>
+dictionary PrimaryService {
+    string uuid;
+    sequence < Characteristic > characteristics;
 };
-
+<p><p>
 dictionary CharacteristicInit {
     string uuid;
-    string[] properties;                // 'read', 'write', 'notify'
-    Descriptor[] descriptors;
+    sequence < string > properties;                // 'read', 'write', 'notify'
+    sequence < DescriptorInit > descriptors;
     ReadCallback onReadRequest;         // optional
     WriteCallback onWriteRequest;       // optional
     SubscribeCallback onSubscribe;      // optional
     UnsubscribeCallback onUnsubscribe;  // optional
     NotifyCallback onNotify;            // optional
 };
-
-callback ReadCallback = void (unsigned long offset, FulfillReadCallback);
-callback WriteCallback = void (Buffer data, unsigned long offset,
-                               boolean withoutResponse, FulfillWriteCallback);
-callback SubscribeCallback = void (unsigned long maxValueSize,
-                                   FulfillSubscribeCallback);
-callback FulfillReadCallback = void (CharacteristicResult result, Buffer data);
-callback FulfillWriteCallback = void (CharacteristicResult result);
-callback FulfillSubscribeCallback = void (Buffer data);
-
-dictionary DescriptorInit {
-    string uuid;
-    string value;
-};
-
-[NoInterfaceObject]
+<p><p>
 interface Characteristic {
     attribute ReadCallback onReadRequest;
     attribute WriteCallback onWriteRequest;
     attribute SubscribeCallback onSubscribe;
     attribute UnsubscribeCallback onUnsubscribe;
     attribute NotifyCallback onNotify;
-    unsigned long RESULT_SUCCESS;
-    unsigned long RESULT_INVALID_OFFSET;
-    unsigned long RESULT_INVALID_ATTRIBUTE_LENGTH;
-    unsigned long RESULT_UNLIKELY_ERROR;
+    attribute CharacteristicResult response;
 };
-```
+<p><p>
+callback ReadCallback = void (unsigned long offset,
+                              FulfillReadCallback fulfillReadCallback);
+[ExternalInterface=(buffer,Buffer)]
+callback WriteCallback = void (Buffer data, unsigned long offset,
+                               boolean withoutResponse,
+                               FulfillWriteCallback fulfillWriteCallback);
+callback SubscribeCallback = void (unsigned long maxValueSize,
+                                   FulfillSubscribeCallback fullfillSubscribeCallback);
+callback FulfillReadCallback = void (CharacteristicResult result, Buffer data);
+callback FulfillWriteCallback = void (CharacteristicResult result);
+callback FulfillSubscribeCallback = void (Buffer data);
+callback NotifyCallback = void (any... params);
+callback UnsubscribeCallback = void (any... params);
+<p><p>
+enum CharacteristicResult { "RESULT_SUCCESS", "RESULT_INVALID_OFFSET",
+                            "RESULT_INVALID_ATTRIBUTE_LENGTH", "RESULT_UNLIKELY_ERROR" } ;
+<p><p>
+dictionary DescriptorInit {
+    string uuid;
+    string value;
+};</pre>
+</details>
 
-API Documentation
------------------
+BLE-supported Events
+--------------------
 BLE is an [EventEmitter](./events.md) with the following events:
 
-### Event: 'accept'
+### Event: `accept`
 
 * `string` `clientAddress`
 
 Emitted when a BLE client has connected. `clientAddress` is a unique BLE address
 for the client in colon-separated format (e.g. 01:23:45:67:89:AB).
 
-### Event: 'advertisingStart'
+### Event: `advertisingStart`
 
 * `int` `status`
 
 Emitted when BLE services have begun to be advertised. The `status` will be 0
 for success, otherwise for an error.
 
-### Event: 'disconnect'
+### Event: `disconnect`
 
 * `string` `clientAddress`
 
 Emitted when a BLE client has disconnected. `clientAddress` will be the same as
-one previously sent with the 'accept' event.
+one previously sent with the `accept` event.
 
-### Event: 'stateChange'
+### Event: `stateChange`
 
 * `string` `newState`
 
-Emitted with 'poweredOn' when the BLE stack is ready to be used. No other states
+Emitted with `poweredOn` when the BLE stack is ready to be used. No other states
 are supported at this time.
 
-### BLE.disconnect
-
-`void disconnect(string address);`
+BLE API
+-------
+### ble.disconnect(address)
+* `address` *string* The address of the connected client.
 
 Disconnect the remote client.
 
-The `address` is the address of the connected client.
+### ble.startAdvertising(name, uuids, [url])
+* `name` *string* The `name` is limited to 26 characters and will be
+  advertised as the device name to nearby BLE devices.
+* `uuids` *string[]*  The `uuids` array may contain at most 7 16-bit
+  UUIDs (four hex digits each).  These UUIDs identify available
+  services to nearby BLE devices.
+* `url` *string* The `url` is optional and limited to around 24
+  characters (slightly more if part of the URL is able to be
+  [encoded](https://github.com/google/eddystone/tree/master/eddystone-url). If
+  provided, this will be used to create a physical web advertisement
+  that will direct users to the given URL. At that URL they might be
+  able to interact with the advertising device somehow.
 
-### BLE.startAdvertising
+Advertises the name and url of the device.
 
-`void startAdvertising(string name, string[] uuids, string url);`
-
-The `name` is limited to 26 characters and will be advertised as the device
-name to nearby BLE devices.
-
-The `uuids` array may contain at most 7 16-bit UUIDs (four hex digits each).
-These UUIDs identify available services to nearby BLE devices.
-
-The `url` is optional and limited to around 24 characters (slightly more
-if part of the URL is able to be [encoded](https://github.com/google/eddystone/tree/master/eddystone-url). If provided,
-this will be used to create a physical web advertisement that will direct users
-to the given URL. At that URL they might be able to interact with the
-advertising device somehow.
-
-### BLE.stopAdvertising
-
-`void stopAdvertising();`
+### ble.stopAdvertising()
 
 Currently does nothing.
 
-### BLE.setServices
+### ble.setServices(primaryServices)
+* `primaryServices` *array of [PrimaryService](#primaryservice) objects* The PrimaryService
+  objects are used to set up the services that are implemented by your
+  app.
 
-`void setServices(PrimaryService[]);`
+The PrimaryService object contains the following fields:
 
-Pass an array of PrimaryService objects to set up the services that are
-implemented by your app.
 
-### BLE.PrimaryService constructor
+### ble.newPrimaryService(init)
+* `init` [*PrimaryServiceInit*](#primaryserviceinit)
+* Returns: a new PrimaryService object.
 
-`PrimaryService(PrimaryServiceInit init);`
+### ble.newCharacteristic(init)
+* `init` [*CharacteristicInit*](#characteristicinit)
+* Returns: a new Characteristic object.
 
-The `init` object should contain a `uuid` field with a 16-bit service UUID (4
-hex chars) and a `characteristics` field with an array of Characteristic
-objects.
 
-### BLE.Characteristic constructor
+### ble.newDescriptor(init)
+* `init` [*DescriptorInit*](#descriptorinit)
+* Returns: a new DescriptorInit object.
 
-`Characteristic(CharacteristicInit init);`
 
-The `init` object should contain:
-* `uuid` field with a 16-bit characteristic UUID (4 hex chars)
-* `properties` field with an array of strings that may include 'read', 'write',
-  and 'notify', depending on what is supported
-* `descriptors` field with an array of Descriptor objects
-
-It may also contain these optional callback fields:
-* `onReadRequest` function(offset, callback(result, data))
-  * Called when the client is requesting to read data from the characteristic.
-  * See below for common argument definitions
-* `onWriteRequest` function(data, offset, withoutResponse, callback(result))
-  * Called when the client is requesting to write data to the characteristic.
-  * `withoutResponse` is true if the client doesn't want a response
-    * *TODO: verify this*
-* `onSubscribe` function(maxValueSize, callback(data))
-  * Called when a client signs up to receive notify events when the
-      characteristic changes.
-  * `maxValueSize` is the maximum data size the client wants to receive.
-* `onUnsubscribe` function()
-  * *NOTE: Never actually called currently.*
-* `onNotify` function()
-  * *NOTE: Never actually called currently.*
+Characteristic API
+------------------
+The "Characteristic" object contains the set of callbacks that...[[TODO!!!]]
 
 Explanation of common arguments to the above functions:
 * `offset` is a 0-based integer index into the data the characteristic
@@ -200,15 +203,49 @@ Explanation of common arguments to the above functions:
   * RESULT_UNLIKELY_ERROR
 * `data` is a [Buffer](./buffer.md) object.
 
-### BLE.Descriptor constructor
+Supporting Objects
+------------------
 
-`Descriptor(DescriptorInit init);`
+### PrimaryServiceInit
 
-The `init` object should contain:
-* `uuid` field with a 16-bit descriptor UUID (4 hex chars)
-  * Defined descriptors are listed here in [Bluetooth Specifications](https://www.bluetooth.com/specifications/gatt/descriptors)
-* `value` field with a string supplying the defined information
-  * *NOTE: Values can also be Buffer objects, but that's not currently supported.*
+This object has two fields:
+1. `uuid` *string* This field is a  16-bit service UUID (4 hex chars).
+2. `characteristics` *array of [Characteristics](#characteristic-api)*
+
+
+### CharacteristicInit
+
+This object has 3 required fields:
+1. `uuid` *string* This field is a 16-bit characteristic UUID (4 hex chars).
+2. `properties` *array of strings* Possible values: 'read', 'write', and 'notify', depending on what is supported.
+3. `descriptors` *array of [Descriptors](#descriptor)*
+
+It may also contain these optional callback fields:
+1. `onReadRequest` *ReadCallback*
+  * Called when the client is requesting to read data from the characteristic.
+  * See below for common argument definitions
+2. `onWriteRequest` *WriteCallback*
+  * Called when the client is requesting to write data to the characteristic.
+  * `withoutResponse` is true if the client doesn't want a response
+    * *TODO: verify this*
+3. `onSubscribe` *SubscribeCallback*
+  * Called when a client signs up to receive notify events when the
+      characteristic changes.
+  * `maxValueSize` is the maximum data size the client wants to receive.
+4. `onUnsubscribe` *UnsubscribeCallback*
+  * *NOTE: Never actually called currently.*
+5. `onNotify` *NotifyCallback*
+  * *NOTE: Never actually called currently.*
+
+
+### DescriptorInit
+
+This object has two fields:
+1. `uuid` *string* This is a 16-bit descriptor UUID (4 hex chars)
+    * Defined descriptors are listed here in [Bluetooth Specifications](https://www.bluetooth.com/specifications/gatt/descriptors)
+2. `value` *string* This string supplies the defined information.
+    * *NOTE: Values can also be Buffer objects, but that's not currently
+    supported.*
 
 Client Requirements
 -------------------
