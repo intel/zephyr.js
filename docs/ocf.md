@@ -12,7 +12,7 @@ ZJS API for OCF
   * [request.respond(data)](#requestresponddata)
 * [OCFClient-supported Events](#ocfclient-supported-events)
 * [Class: OCFClient](#ocfclient-api)
-  * [client.findResources(options, listener)](#clientfindresourcesoptions-listener)
+  * [client.findResources(options, [listener])](#clientfindresourcesoptions-listener)
   * [client.retrieve(deviceId, options)](#clientretrievedeviceid-options)
   * [client.update(resource)](#clientupdateresource)
   * [client.getPlatformInfo(deviceId)](#clientgetplatforminfodeviceid)
@@ -188,7 +188,7 @@ Emitted when a resource is updated.
 
 OCFClient API
 -------------
-### client.findResources(options, listener)
+### client.findResources(options, [listener])
 * `options` *ClientOptions* Should contain a filter of resource options. Only
 resources matching these options will be found.
 * `listener` *FoundListener* An optional event-listener callback. This

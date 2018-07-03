@@ -6,7 +6,7 @@ ZJS API for Events
 * [Class: EventEmitter](#eventemitter-api)
   * [EventEmitter.on(event, listener)](#eventemitteronevent-listener)
   * [EventEmitter.addListener(event, listener)](#eventemitteraddlistenerevent-listener)
-  * [EventEmitter.emit(event, args...)](#eventemitteremitevent-args)
+  * [EventEmitter.emit(event, [args...])](#eventemitteremitevent-args)
   * [EventEmitter.removeListener(event, listener)](#eventemitterremovelistenerevent-listener)
   * [EventEmitter.removeAllListeners(event)](#eventemitterremovealllistenersevent)
   * [EventEmitter.eventNames()](#eventemittereventnames)
@@ -57,7 +57,7 @@ Add an event listener function.
 
 Same as `EventEmitter.on()`.
 
-### EventEmitter.emit(event, args...)
+### EventEmitter.emit(event, [args...])
 * `event` *string* The name of the event that you want to emit.
 * `args` *optional* All other arguments will be given to any registered listener functions.
 * Returns: true if there were any listener functions called.

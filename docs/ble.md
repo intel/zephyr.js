@@ -6,7 +6,7 @@ ZJS API for Bluetooth Low Energy (BLE)
 * [BLE-supported Events](#ble\-supported-events)
 * [Class: BLE](#ble-api)
   * [ble.disconnect(address)](#bledisconnectaddress)
-  * [ble.startAdvertising(name, uuids, url)](#blestartadvertisingname-uuids-url)
+  * [ble.startAdvertising(name, uuids, [url])](#blestartadvertisingname-uuids-url)
   * [ble.stopAdvertising()](#blestopadvertising)
   * [ble.setServices(primaryServices)](#blesetservicesprimaryservices)
   * [ble.newPrimaryService(init)](#blenewprimaryserviceinit)
@@ -49,7 +49,7 @@ specific API functions.  We also have a short document explaining [ZJS WebIDL co
 [ReturnFromRequire,ExternalInterface=(eventemitter, EventEmitter)]
 interface BLE: EventEmitter {
     void disconnect(string address);
-    void startAdvertising(string name, sequence < string > uuids, string url);
+    void startAdvertising(string name, sequence < string > uuids, optional string url);
     void stopAdvertising();
     void setServices(sequence < PrimaryService > services);
     PrimaryService newPrimaryService(PrimaryServiceInit init);
@@ -148,7 +148,7 @@ BLE API
 
 Disconnect the remote client.
 
-### ble.startAdvertising(name, uuids, url)
+### ble.startAdvertising(name, uuids, [url])
 * `name` *string* The `name` is limited to 26 characters and will be
   advertised as the device name to nearby BLE devices.
 * `uuids` *string[]*  The `uuids` array may contain at most 7 16-bit
