@@ -8,8 +8,8 @@ ZJS API for File System
   * [fs.closeSync(fd)](#fsclosesyncfd)
   * [fs.unlinkSync(path)](#fsunlinksyncpath)
   * [fs.rmdirSync(path)](#fsrmdirsyncpath)
-  * [fs.writeSync(fd, data, offset, length, position)](#fswritesyncfd-data-offset-length-position)
-  * [fs.readSync(fd, data, offset, length, position)](#fsreadsyncfd-data-offset-length-position)
+  * [fs.writeSync(fd, data, offset, length, [position])](#fswritesyncfd-data-offset-length-position)
+  * [fs.readSync(fd, data, offset, length, [position])](#fsreadsyncfd-data-offset-length-position)
   * [fs.truncateSync(path, length)](#fstruncatesyncpath-length)
   * [fs.mkdirSync(path)](#fsmkdirsyncpath)
   * [fs.readdirSync(path)](#fsreaddirsyncpath)
@@ -76,7 +76,7 @@ interface FS {
     long writeSync(FileDescriptor fd, (string or Buffer) data, long offset,
                    long length, optional long position);
     long readSync(FileDescriptor fd, Buffer data, long offset,
-                  long length, long position);
+                  long length, optional long position);
     void truncateSync(string path, long length);
     void mkdirSync(string path);
     sequence < string > readdirSync(string path);
@@ -117,7 +117,7 @@ Unlink (remove) a file from the file system.
 
 Remove a directory from the file system.
 
-### fs.writeSync(fd, data, offset, length, position)
+### fs.writeSync(fd, data, offset, length, [position])
 * `fd` *FileDescriptor* The file descriptor returned from `openSync()`.
 * `data` *string or Buffer* The data to write to 'fd'.
 * `offset` *long* The position in 'data' from which to start writing.
@@ -128,7 +128,7 @@ Remove a directory from the file system.
 
 Write bytes to an opened file.
 
-### fs.readSync(fd, data, offset, length, position)
+### fs.readSync(fd, data, offset, length, [position])
 * `fd` *FileDescriptor* The file descriptor returned from 'openSync()'.
 * `data` *Buffer* The buffer into which the data will be read.
 * `offset` *long* The offset in 'data' at which to start writing.

@@ -4,16 +4,16 @@ ZJS API for GFX
 * [Introduction](#introduction)
 * [Web IDL](#web-idl)
 * [Class: GFX](#gfx-api)
-  * [gfx.init(screen_width, screen_height, init_screen, draw, this)](#gfxinitscreen_width-screen_height-init_screen-draw-this)
+  * [gfx.init(screen_width, screen_height, init_screen, draw, [this])](#gfxinitscreen_width-screen_height-init_screen-draw-this)
 * [Class: GFXContext](#gfxcontext-api)
   * [gfxcontext.fillRect(x_coord, y_coord, width, height, color)](#gfxcontextfillrectx_coord-y_coord-width-height-color)
   * [gfxcontext.drawPixel(x_coord, y_coord, color)](#gfxcontextdrawpixelx_coord-y_coord-color)
-  * [gfxcontext.drawLine(x0_coord, y0_coord, x1_coord, y1_coord, color, size)](#gfxcontextdrawlinex0_coord-y0_coord-x1_coord-y1_coord-color-size)
-  * [gfxcontext.drawVLine(x_coord, y_coord, height, color, size)](#gfxcontextdrawvlinex_coord-y_coord-height-color-size)
-  * [gfxcontext.drawHLine(x_coord, y_coord, width, color, size)](#gfxcontextdrawhlinex_coord-y_coord-width-color-size)
-  * [gfxcontext.drawRect(x_coord, y_coord, width, height, color, size)](#gfxcontextdrawrectx_coord-y_coord-width-height-color-size)
-  * [gfxcontext.drawChar(x_coord, y_coord, char, color, size)](#gfxcontextdrawcharx_coord-y_coord-char-color-size)
-  * [gfxcontext.drawString(x_coord, y_coord, str, color, size)](#gfxcontextdrawstringx_coord-y_coord-str-color-size)
+  * [gfxcontext.drawLine(x0_coord, y0_coord, x1_coord, y1_coord, color, [size])](#gfxcontextdrawlinex0_coord-y0_coord-x1_coord-y1_coord-color-size)
+  * [gfxcontext.drawVLine(x_coord, y_coord, height, color, [size])](#gfxcontextdrawvlinex_coord-y_coord-height-color-size)
+  * [gfxcontext.drawHLine(x_coord, y_coord, width, color, [size])](#gfxcontextdrawhlinex_coord-y_coord-width-color-size)
+  * [gfxcontext.drawRect(x_coord, y_coord, width, height, color, [size])](#gfxcontextdrawrectx_coord-y_coord-width-height-color-size)
+  * [gfxcontext.drawChar(x_coord, y_coord, char, color, [size])](#gfxcontextdrawcharx_coord-y_coord-char-color-size)
+  * [gfxcontext.drawString(x_coord, y_coord, str, color, [size])](#gfxcontextdrawstringx_coord-y_coord-str-color-size)
 * [Sample Apps](#sample-apps)
 
 Introduction
@@ -87,7 +87,7 @@ Draws a solid rectangle of the given color at the coordinates provided.
 
 Draws a pixel of the given color at the coordinates provided.
 
-### gfxcontext.drawLine(x0_coord, y0_coord, x1_coord, y1_coord, color, size)
+### gfxcontext.drawLine(x0_coord, y0_coord, x1_coord, y1_coord, color, [size])
 * `x0_coord` *long*
 * `y0_coord` *long*
 * `x1_coord` *long*
@@ -99,7 +99,7 @@ Draws a pixel of the given color at the coordinates provided.
 Draws a line of the given color at the coordinates provided.  The optional
 size number controls how thick the line is.
 
-### gfxcontext.drawVLine(x_coord, y_coord, height, color, size)
+### gfxcontext.drawVLine(x_coord, y_coord, height, color, [size])
 * `x_coord` *long*
 * `y_coord` *long*
 * `height` *long*
@@ -110,7 +110,7 @@ size number controls how thick the line is.
 Draws a vertical line of the given color at the coordinates provided.  The
 optional size number controls how thick the line is.
 
-### gfxcontext.drawHLine(x_coord, y_coord, width, color, size)
+### gfxcontext.drawHLine(x_coord, y_coord, width, color, [size])
 * `x_coord` *long*
 * `y_coord` *long*
 * `width` *long*
@@ -121,7 +121,7 @@ optional size number controls how thick the line is.
 Draws a horizontal line of the given color at the coordinates provided.  The
 optional size number controls how thick the line is.
 
-### gfxcontext.drawRect(x_coord, y_coord, width, height, color, size)
+### gfxcontext.drawRect(x_coord, y_coord, width, height, color, [size])
 * `x_coord` *long*
 * `y_coord` *long*
 * `width` *long*
@@ -133,7 +133,7 @@ optional size number controls how thick the line is.
 Draws a hollow rectangle of the given color at the coordinates provided.  The
 optional size number controls how thick the line is.
 
-### gfxcontext.drawChar(x_coord, y_coord, char, color, size)
+### gfxcontext.drawChar(x_coord, y_coord, char, color, [size])
 * `x_coord` *long*
 * `y_coord` *long*
 * `char` *byte*
@@ -144,7 +144,7 @@ optional size number controls how thick the line is.
 Draw a character at the coordinates given. The optional size number sets how
 large the character is.
 
-### gfxcontext.drawString(x_coord, y_coord, str, color, size)
+### gfxcontext.drawString(x_coord, y_coord, str, color, [size])
 * `x_coord` *long*
 * `y_coord` *long*
 * `str` *string*

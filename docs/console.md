@@ -4,11 +4,11 @@ ZJS API for Console
 * [Introduction](#introduction)
 * [Web IDL](#web-idl)
 * [Class: Console](#console-api)
-  * [console.assert(value, message)](#consoleassertvalue-message)
-  * [console.error(data)](#consoleerrordata)
-  * [console.warn(data)](#consolewarndata)
-  * [console.log(data)](#consolelogdata)
-  * [console.info(data)](#consoleinfodata)
+  * [console.assert(value, [message])](#consoleassertvalue-message)
+  * [console.error([data])](#consoleerrordata)
+  * [console.warn([data])](#consolewarndata)
+  * [console.log([data])](#consolelogdata)
+  * [console.info([data])](#consoleinfodata)
   * [console.time(label)](#consoletimelabel)
   * [console.timeEnd(label)](#consoletimeendlabel)
 * [Sample Apps](#sample-apps)
@@ -34,6 +34,7 @@ explaining [ZJS WebIDL conventions](Notes_on_WebIDL.md).
 interface Console {
     void assert(boolean value, optional string message);
     void error(optional string data);
+    void warn(optional string data);
     void log(optional string data);
     void info(optional string data);
     void time(string label);
@@ -44,28 +45,28 @@ interface Console {
 Console API
 -----------
 
-### console.assert(value, message)
+### console.assert(value, [message])
 * `value` *boolean*
 *  `message` *string* Optional message to print.
 
 Assert/throw an error if `value` is false.
 
-### console.error(data)
+### console.error([data])
 * `data` *string* Optional message to print.
 
 Prints `data` to `stderr` with newline. (On Zephyr this will just print to stdout).
 
-### console.warn(data)
+### console.warn([data])
 * `data` *string* Optional message to print.
 
 Alias for `console.error()`
 
-### console.log(data)
+### console.log([data])
 * `data` *string* Optional message to print.
 
 Prints `data` to `stdout` with newline.
 
-### console.info(data)
+### console.info([data])
 * `data` *string* Optional message to print.
 
 Alias for `console.log()`.
