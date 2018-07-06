@@ -33,7 +33,7 @@ interface Dgram {
     DgramSocket createSocket(string udp4_or_udp6);
 };
 <p>
-[ExternalInterface=(buffer,Buffer)]
+[ExternalInterface=(Buffer)]
 interface DgramSocket {
     void on(string event, RecvCallback cb);
     void bind(long port, string ip_addr);

@@ -30,3 +30,11 @@ The node.js notion of "require" is subtly different from constructing
 an object with JavaScript's "new", but it has appealing semantics.  We
 annotate WebIDL definitions that should be implemented with node.js's
 "require" semantics with the external attribute "ReturnFromRequire".
+
+Similarly, many people's general model is one of separate compilation,
+which WebIDL does not support.  WebIDL's model is to assume that all
+of the required files will be concatenated together and then compiled
+-- thus, one file can reference types that are found in another file,
+and there is no annotation to alert the reader that the definition of
+some type is to be found elsewhere.  We use WebIDL attributes to
+specify and call attention to types that are defined in other files.

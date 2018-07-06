@@ -46,7 +46,7 @@ specific API functions.  We also have a short document explaining [ZJS WebIDL co
 // require returns a BLE object
 // var ble = require('ble');
 <p><p>
-[ReturnFromRequire,ExternalInterface=(eventemitter, EventEmitter)]
+[ReturnFromRequire,ExternalInterface=(EventEmitter)]
 interface BLE: EventEmitter {
     void disconnect(string address);
     void startAdvertising(string name, sequence < string > uuids, optional string url);
@@ -88,7 +88,7 @@ interface Characteristic {
 <p><p>
 callback ReadCallback = void (unsigned long offset,
                               FulfillReadCallback fulfillReadCallback);
-[ExternalInterface=(buffer,Buffer)]
+[ExternalInterface=(Buffer)]
 callback WriteCallback = void (Buffer data, unsigned long offset,
                                boolean withoutResponse,
                                FulfillWriteCallback fulfillWriteCallback);

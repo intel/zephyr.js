@@ -38,7 +38,7 @@ explaining [ZJS WebIDL conventions](Notes_on_WebIDL.md).
     // long stopBits = 1;
     // UARTParity parity = "none";
     // boolean flowControl = false;
-};<p>[ExternalInterface=(buffer,Buffer),ExternalInterface=(eventemitter, EventEmitter)]
+};<p>[ExternalInterface=(Buffer),ExternalInterface=(EventEmitter)]
 interface UARTConnection: EventEmitter {
     // void close();
     void write(Buffer data);

@@ -67,7 +67,7 @@ explaining [ZJS WebIDL conventions](Notes_on_WebIDL.md).
 // require returns a FS object
 // var fs = require('fs');
 <p>
-[ReturnFromRequire, ExternalInterface=(buffer,Buffer)]
+[ReturnFromRequire, ExternalInterface=(Buffer)]
 interface FS {
     FileDescriptor openSync(string path, FileMode mode);
     void closeSync(FileDescriptor fd);

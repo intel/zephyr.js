@@ -59,7 +59,7 @@ interface SPI {
     long phase;
     unsigned long frameGap;
     string topology;
-};<p>[ExternalInterface=(buffer,Buffer)]
+};<p>[ExternalInterface=(Buffer)]
 interface SPIBus {
     void transceive(octet target, Buffer data, string direction);
     close();

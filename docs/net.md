@@ -44,7 +44,7 @@ specific API functions.  We also have a short document explaining [ZJS WebIDL co
 <summary> Click to show/hide WebIDL</summary>
 <pre>
 // require returns a Net object
-// var net = require('net');<p><p>[ReturnFromRequire,ExternalCallback=(eventemitter,ListenerCallback)]
+// var net = require('net');<p><p>[ReturnFromRequire,ExternalCallback=(ListenerCallback)]
 interface Net {
     Server createServer(optional ListenerCallback onconnection);
     Socket Socket();
@@ -52,7 +52,7 @@ interface Net {
     Boolean isIPv4(string input);
     Boolean isIPv6(string input);
 };
-<p>[ExternalInterface=(eventemitter,EventEmitter),ExternalInterface=(buffer,Buffer),ExternalCallback=(eventemitter,ListenerCallback)]
+<p>[ExternalInterface=(EventEmitter),ExternalInterface=(Buffer),ExternalCallback=(ListenerCallback)]
 interface Socket: EventEmitter {
     // Socket methods
     void connect(object options, optional ListenerCallback onconnect);
@@ -70,7 +70,7 @@ interface Socket: EventEmitter {
     attribute string remoteFamily;  // Remote IP family
     attribute long remotePort;    // Remote port
 };<p>
-[ExternalInterface=(eventemitter, EventEmitter),ExternalCallback=(eventemitter,ListenerCallback)]
+[ExternalInterface=(EventEmitter),ExternalCallback=(ListenerCallback)]
 interface Server: EventEmitter {
     // Server methods
     AddressInfo address();
