@@ -104,7 +104,9 @@ dictionary ClientResource {
     string deviceId;
     string resourceType;
     string resourcePath;
-};
+};<p>
+typedef long OCFResource; /* THIS WAS ADD JUST TO GET THIS FILE
+                             TO COMPILE!!! 7/6/18 */
 </pre>
 </details>
 

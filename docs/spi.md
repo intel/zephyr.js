@@ -62,7 +62,7 @@ interface SPI {
 };<p>[ExternalInterface=(Buffer)]
 interface SPIBus {
     void transceive(octet target, Buffer data, string direction);
-    close();
+    void close();
 };
 </pre>
 </details>

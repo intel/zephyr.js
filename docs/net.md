@@ -49,8 +49,8 @@ interface Net {
     Server createServer(optional ListenerCallback onconnection);
     Socket Socket();
     long isIP(string input);
-    Boolean isIPv4(string input);
-    Boolean isIPv6(string input);
+    boolean isIPv4(string input);
+    boolean isIPv6(string input);
 };
 <p>[ExternalInterface=(EventEmitter),ExternalInterface=(Buffer),ExternalCallback=(ListenerCallback)]
 interface Socket: EventEmitter {
