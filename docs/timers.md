@@ -34,9 +34,10 @@ interface Timers {
     void clearInterval(long intervalID);
     void clearTimeout(long timeoutID);
 };<p>
-callback TimerCallback = void (any... callback_args);</pre>
+callback TimerCallback = void (any... callback_args);
 <p>
-typedef timeoutID long;
+typedef long timeoutID;<p>
+typedef long intervalID;</pre>
 </details>
 
 Timers API
@@ -45,7 +46,7 @@ Timers API
 * `func` *TimerCallback* A callback function that will take the arguments passed in the variadic `args_for_func` parameter.
 * `delay` *unsigned long* The `delay` argument is in milliseconds. Currently, the delay resolution is about 10 milliseconds, and if you choose a value less than that it will probably fail.
 * `args_for_func` *any* The user can pass an arbitrary number of additional arguments that will then be passed to `func`.
-* Returns: an `intervalID` object that can be passed to `clearInterval` to stop the timer.
+* Returns: an `intervalID` value that can be passed to `clearInterval` to stop the timer.
 
 Every `delay` milliseconds, your callback function will be called.
 

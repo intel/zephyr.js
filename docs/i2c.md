@@ -32,7 +32,7 @@ interface I2C {
 };<p>dictionary I2CInit {
     octet bus;
     I2CBusSpeed speed;
-};<p>[ExternalInterface=(buffer,Buffer)]
+};<p>[ExternalInterface=(Buffer)]
 interface I2CBus {
     // has all the properties of I2CInit as read-only attributes
     void write(octet device, Buffer data);
@@ -40,7 +40,7 @@ interface I2CBus {
     void burstRead(octet device, unsigned long size, octet registerAddress);
 };
 <p>
-typedef I2CBusSpeed long;</pre>
+typedef long I2CBusSpeed;</pre>
 </details>
 
 I2C API
