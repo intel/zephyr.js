@@ -26,10 +26,12 @@ explaining [ZJS WebIDL conventions](Notes_on_WebIDL.md).
 <details>
 <summary>Click to show WebIDL</summary>
 <pre>// require returns a I2C object
-// var i2c = require('i2c');<p><p>[ReturnFromRequire]
+// var i2c = require('i2c');
+[ReturnFromRequire]
 interface I2C {
     I2CBus open(I2CInit init);
-};<p>dictionary I2CInit {
+};<p>
+dictionary I2CInit {
     octet bus;
     I2CBusSpeed speed;
 };<p>[ExternalInterface=(Buffer)]
@@ -38,9 +40,7 @@ interface I2CBus {
     void write(octet device, Buffer data);
     void read(octet device, unsigned long size, octet registerAddress);
     void burstRead(octet device, unsigned long size, octet registerAddress);
-};
-<p>
-typedef long I2CBusSpeed;</pre>
+};<p>typedef long I2CBusSpeed;</pre>
 </details>
 
 I2C API

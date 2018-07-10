@@ -46,7 +46,8 @@ interface Sensor {
     attribute ChangeCallback onreading;     // callback handler for change events
     attribute ActivateCallback onactivate;  // callback handler for activate events
     attribute ErrorCallback onerror;        // callback handler for error events
-};<p>dictionary SensorOptions {
+};<p>
+dictionary SensorOptions {
     double frequency;  // desired frequency, default is 20 if unset
 };<p>interface SensorErrorEvent {
     attribute Error error;
@@ -64,11 +65,9 @@ interface GyroscopeSensor : Sensor {
     readonly attribute double x;
     readonly attribute double y;
     readonly attribute double z;
-};<p>
-dictionary GyroscopeOptions : SensorOptions  {
+};<p>dictionary GyroscopeOptions : SensorOptions  {
     string controller;  // controller name, default to "bmi160"
-};<p>
-[Constructor(optional SensorOptions sensorOptions)]
+};<p>[Constructor(optional SensorOptions sensorOptions)]
 interface AmbientLightSensor : Sensor {
     readonly attribute unsigned long pin;
     readonly attribute double illuminance;

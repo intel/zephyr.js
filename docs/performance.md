@@ -25,7 +25,6 @@ specific API functions.  We also have a short document explaining [ZJS WebIDL co
 <pre>
 // require returns a Performance object
 // var ble = require('performance');
-<p>
 [ReturnFromRequire]
 interface Performance {
     double now();

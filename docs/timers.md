@@ -26,7 +26,6 @@ explaining [ZJS WebIDL conventions](Notes_on_WebIDL.md).
 <pre>
 // require returns a Timers object
 // var timers = require('timers');
-<p>
 [ReturnFromRequire]
 interface Timers {
     intervalID setInterval(TimerCallback func, unsigned long delay, any... args_for_func);
@@ -35,8 +34,7 @@ interface Timers {
     void clearTimeout(long timeoutID);
 };<p>
 callback TimerCallback = void (any... callback_args);
-<p>
-typedef long timeoutID;<p>
+<p>typedef long timeoutID;
 typedef long intervalID;</pre>
 </details>
 

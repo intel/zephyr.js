@@ -29,11 +29,12 @@ specific API functions.  We have a short document explaining [ZJS WebIDL convent
 <summary> Click to show/hide WebIDL</summary>
 <pre>
 // require returns a GPIO object
-// var gpio = require('gpio');<p>
+// var gpio = require('gpio');
 [ReturnFromRequire]
 interface GPIO {
     GPIOPin open( (long or string or GPIOInit) init);
-};<p>dictionary GPIOInit {
+};<p>
+dictionary GPIOInit {
     (long or string) pin;
     boolean activeLow = false;
     GPIOMode  mode =  "out";

@@ -44,15 +44,16 @@ specific API functions.  We also have a short document explaining [ZJS WebIDL co
 <summary> Click to show/hide WebIDL</summary>
 <pre>
 // require returns a Net object
-// var net = require('net');<p><p>[ReturnFromRequire,ExternalCallback=(ListenerCallback)]
+// var net = require('net');
+[ReturnFromRequire,ExternalCallback=(ListenerCallback)]
 interface Net {
     Server createServer(optional ListenerCallback onconnection);
     Socket Socket();
     long isIP(string input);
     boolean isIPv4(string input);
     boolean isIPv6(string input);
-};
-<p>[ExternalInterface=(EventEmitter),ExternalInterface=(Buffer),ExternalCallback=(ListenerCallback)]
+};<p>
+[ExternalInterface=(EventEmitter),ExternalInterface=(Buffer),ExternalCallback=(ListenerCallback)]
 interface Socket: EventEmitter {
     // Socket methods
     void connect(object options, optional ListenerCallback onconnect);
@@ -69,8 +70,7 @@ interface Socket: EventEmitter {
     attribute string remoteAddress; // Remote IP address
     attribute string remoteFamily;  // Remote IP family
     attribute long remotePort;    // Remote port
-};<p>
-[ExternalInterface=(EventEmitter),ExternalCallback=(ListenerCallback)]
+};<p>[ExternalInterface=(EventEmitter),ExternalCallback=(ListenerCallback)]
 interface Server: EventEmitter {
     // Server methods
     AddressInfo address();
@@ -80,17 +80,13 @@ interface Server: EventEmitter {
     // Server properties
     attribute boolean listening;      // true if the server is listening
     attribute long maxConnections;  // maximum number of connections
-};
-<p>
-dictionary AddressOptions {
+};<p>dictionary AddressOptions {
     long port;          // Port the client should connect to (required)
     string host;          // Host the client should connect to
     string localAddress;  // Local address to bind to
     long localPort;     // local port to bind to
     long family;        // Version of IP stack, deafults to 4
-};
-<p>
-dictionary AddressInfo {
+};<p>dictionary AddressInfo {
     long port;    // Server port
     string family;  // IPv4 or IPv6
     string address; // IP address for the server

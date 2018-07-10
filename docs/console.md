@@ -30,7 +30,8 @@ explaining [ZJS WebIDL conventions](Notes_on_WebIDL.md).
 <summary>Click to show WebIDL</summary>
 <pre>
 // require returns a Console object
-// var console = require('console');<p><p>[ReturnFromRequire]
+// var console = require('console');
+[ReturnFromRequire]
 interface Console {
     void assert(boolean value, optional string message);
     void error(optional string data);

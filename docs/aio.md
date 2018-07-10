@@ -38,7 +38,7 @@ explaining [ZJS WebIDL conventions](Notes_on_WebIDL.md).
 <summary>Click to show WebIDL</summary>
 <pre>
 // require returns an AIO object
-// var aio = require('aio');<p><p>[ReturnFromRequire]
+// var aio = require('aio');<p>[ReturnFromRequire]
 interface AIO {
     AIOPin open(AIOInit init);
 };<p>dictionary AIOInit {
@@ -49,8 +49,7 @@ interface AIO {
     void on(string eventType, ReadCallback callback);
     void close();
 };<p>callback ReadCallback = void (unsigned long value);
-</pre>
-</details>
+</pre> </details>
 
 AIO API
 -------

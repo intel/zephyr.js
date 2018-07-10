@@ -27,12 +27,10 @@ specific API functions.  We also have a short document explaining [ZJS WebIDL co
 <pre>
 // require returns a socket factory object
 // var dgram = require('dgram');
-<p><p>
 [ReturnFromRequire]
 interface Dgram {
     DgramSocket createSocket(string udp4_or_udp6);
-};
-<p>
+};<p>
 [ExternalInterface=(Buffer)]
 interface DgramSocket {
     void on(string event, RecvCallback cb);
@@ -40,14 +38,9 @@ interface DgramSocket {
     void send(Buffer buf, unsigned long offset, unsigned long len, long port,
               string ip_addr, optional SendCallback cb);
     void close();
-};
-<p>
-callback RecvCallback = void (Buffer msg, RemoteInfo rinfo);
+};<p>callback RecvCallback = void (Buffer msg, RemoteInfo rinfo);
 callback SendCallback = void (Error err);  // or undefined if no error
-<p>
-callback EventCallback = void (any... args);  // callback args depend on event
-<p>
-dictionary RemoteInfo {
+callback EventCallback = void (any... args);  // callback args depend on event<p>dictionary RemoteInfo {
     string ip_addr;
     string family;
     long port;

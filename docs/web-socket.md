@@ -33,10 +33,12 @@ explaining [ZJS WebIDL conventions](Notes_on_WebIDL.md).
 <details>
 <summary>Click to show WebIDL</summary>
 <pre>// require returns a WebSocket object
-// var ws = require('ws');<p><p>[ReturnFromRequire]
+// var ws = require('ws');
+[ReturnFromRequire]
 interface WebSocket {
     WebSocketServer Server(object options);
-};<p>[ExternalInterface=(EventEmitter)]
+};<p>
+[ExternalInterface=(EventEmitter)]
 interface WebSocketServer: EventEmitter{};<p>[ExternalInterface=(Buffer),]
 interface WebSocketConnection: EventEmitter {
     void send(Buffer data, boolean mask);

@@ -29,9 +29,11 @@ explaining [ZJS WebIDL conventions](Notes_on_WebIDL.md).
 <details>
 <summary>Click to show WebIDL</summary>
 <pre>// require returns a UART object
-// var uart = require('uart');<p><p>interface UART {
+// var uart = require('uart');
+interface UART {
     UARTConnection init(UARTOptions options);
-};<p>dictionary UARTOptions {
+};<p>
+dictionary UARTOptions {
     string port;
     // long baud = 115200;
     // long dataBits = 8;

@@ -99,14 +99,11 @@ interface OCFClient: EventEmitter {
     string deviceId;
     string resourceType;
     string resourcePath;
-};<p>callback FoundListener = void (ClientResource resource);
-dictionary ClientResource {
+};<p>callback FoundListener = void (ClientResource resource);<p>dictionary ClientResource {
     string deviceId;
     string resourceType;
     string resourcePath;
-};<p>
-typedef long OCFResource; /* THIS WAS ADD JUST TO GET THIS FILE
-                             TO COMPILE!!! 7/6/18 */
+};<p>typedef long OCFResource; /* may be some other type/object */
 </pre>
 </details>
 

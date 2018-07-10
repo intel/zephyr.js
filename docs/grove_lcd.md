@@ -33,28 +33,24 @@ explaining [ZJS WebIDL conventions](Notes_on_WebIDL.md).
 <details>
 <summary>Click to show WebIDL</summary>
 <pre>// require returns a GroveLCD object
-// var grove_lcd = require('grove_lcd');<p><p>[ReturnFromRequire]
+// var grove_lcd = require('grove_lcd');
+[ReturnFromRequire]
 interface GroveLCD {
     GroveLCDDevice init();
     attribute unsigned long GLCD_FS_8BIT_MODE;
     attribute unsigned long GLCD_FS_ROWS_2;
     attribute unsigned long GLCD_FS_ROWS_1;
     attribute unsigned long GLCD_FS_DOT_SIZE_BIG;
-    attribute unsigned long GLCD_FS_DOT_SIZE_LITTLE;
-<p>
+    attribute unsigned long GLCD_FS_DOT_SIZE_LITTLE;<p>
     attribute unsigned long GLCD_DS_DISPLAY_ON;
     attribute unsigned long GLCD_DS_DISPLAY_OFF;
     attribute unsigned long GLCD_DS_CURSOR_ON;
     attribute unsigned long GLCD_DS_CURSOR_OFF;
     attribute unsigned long GLCD_DS_BLINK_ON;
-    attribute unsigned long GLCD_DS_BLINK_OFF;
-<p>
-    attribute unsigned long GLCD_IS_SHIFT_INCREMENT;
+    attribute unsigned long GLCD_DS_BLINK_OFF;<p>    attribute unsigned long GLCD_IS_SHIFT_INCREMENT;
     attribute unsigned long GLCD_IS_SHIFT_DECREMENT;
     attribute unsigned long GLCD_IS_ENTRY_LEFT;
-    attribute unsigned long GLCD_IS_ENTRY_RIGHT;
-<p>
-    attribute unsigned long GROVE_RGB_WHITE;
+    attribute unsigned long GLCD_IS_ENTRY_RIGHT; <p>    attribute unsigned long GROVE_RGB_WHITE;
     attribute unsigned long GROVE_RGB_RED;
     attribute unsigned long GROVE_RGB_GREEN;
     attribute unsigned long GROVE_RGB_BLUE;
