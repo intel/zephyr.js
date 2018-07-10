@@ -25,7 +25,8 @@ explaining [ZJS WebIDL conventions](Notes_on_WebIDL.md).
 
 <details>
 <summary>Click to show WebIDL</summary>
-<pre>// require returns a I2C object
+<pre>
+// require returns a I2C object
 // var i2c = require('i2c');
 [ReturnFromRequire]
 interface I2C {
@@ -40,7 +41,8 @@ interface I2CBus {
     void write(octet device, Buffer data);
     void read(octet device, unsigned long size, octet registerAddress);
     void burstRead(octet device, unsigned long size, octet registerAddress);
-};<p>typedef long I2CBusSpeed;</pre>
+};<p>typedef long I2CBusSpeed;
+</pre>
 </details>
 
 I2C API
