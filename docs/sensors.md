@@ -3,30 +3,39 @@ ZJS API for W3C Generic Sensors
 
 * [Introduction](#introduction)
 * [Web IDL](#web-idl)
-* [API Documentation](#api-documentation)
+* [Class: Sensor](#sensor-api)
+  * [onreading](#onreading)
+  * [onactivate](#onactivate)
+  * [onerror](#onerror)
+  * [sensor.start()](#sensorstart)
+  * [sensor.stop()](#sensorstop)
 * [Sample Apps](#sample-apps)
 
 Introduction
 ------------
 ZJS Generic Sensor API implements the W3C Sensor API, and it's intended to
 provide a consistent API that allows apps to communicate with sensors like
-accelerometer and gyroscope. Since the W3C Sensor API is still a draft spec,
-our implementation only provide a subset of the API and the API could be
-slightly different, but we try to follow the latest spec as closely as
+an accelerometer or gyroscope. Since the W3C Sensor API is still a draft spec,
+our implementation only provides a subset of the API -- and this API could be
+slightly different even though we try to follow the latest spec as closely as
 possible.
 
-Note: The currently supported hardware is Arduino 101 with its built-in
-BMI160 chip with accelerometer, gyroscope, and temperature.  The supported
-ambient light sensor is the Grove light sensor that comes with the
-Grove starter kit, that can be connected using an analog pin.
+Note: The currently supported hardware is Arduino 101 that has a
+built-in BMI160 chip with accelerometer, gyroscope, and temperature
+sensors.  The supported ambient light sensor is the Grove light sensor
+that comes with the Grove starter kit.  The light sensor can be
+connected using an analog pin.
 
 Web IDL
 -------
-This IDL provides an overview of the interface; see below for documentation of
-specific API functions.
 
-####Sensor Interface
-```javascript
+This IDL provides an overview of the interface; see below for
+documentation of specific API functions.  We have a short document
+explaining [ZJS WebIDL conventions](Notes_on_WebIDL.md).
+
+<details>
+<summary>Click to show WebIDL</summary>
+<pre>
 interface Sensor {
     readonly attribute boolean activated;   // whether the sensor is activated or not
     readonly attribute boolean hasReading;  // whether the sensor has readings available
@@ -37,73 +46,43 @@ interface Sensor {
     attribute ChangeCallback onreading;     // callback handler for change events
     attribute ActivateCallback onactivate;  // callback handler for activate events
     attribute ErrorCallback onerror;        // callback handler for error events
-};
-
+};<p>
 dictionary SensorOptions {
-    double frequency;  // desire frequency, default is 20 if unset
-};
-
-interface SensorErrorEvent {
+    double frequency;  // desired frequency, default is 20 if unset
+};<p>interface SensorErrorEvent {
     attribute Error error;
-};
-
-callback ChangeCallback = void();
+};<p>callback ChangeCallback = void();
 callback ActivateCallback = void();
-callback ErrorCallback = void(SensorErrorEvent error);
-```
-####Accelerometer Interface
-```javascript
-[Constructor(optional AccelerometerOptions accelerometerOptions)]
+callback ErrorCallback = void(SensorErrorEvent error);<p>[Constructor(optional AccelerometerOptions accelerometerOptions)]
 interface Accelerometer : Sensor {
     readonly attribute double x;
     readonly attribute double y;
     readonly attribute double z;
-};
-
-dictionary AccelerometerOptions : SensorOptions  {
+};<p>dictionary AccelerometerOptions : SensorOptions  {
     string controller;       // controller name, default to "bmi160"
-};
-```
-####GyroscopeSensor Interface
-```javascript
-[Constructor(optional SensorOptions sensorOptions)]
+};<p>[Constructor(optional SensorOptions sensorOptions)]
 interface GyroscopeSensor : Sensor {
     readonly attribute double x;
     readonly attribute double y;
     readonly attribute double z;
-};
-
-dictionary GyroscopeOptions : SensorOptions  {
+};<p>dictionary GyroscopeOptions : SensorOptions  {
     string controller;  // controller name, default to "bmi160"
-};
-```
-####AmbientLightSensor Interface
-```javascript
-[Constructor(optional SensorOptions sensorOptions)]
+};<p>[Constructor(optional SensorOptions sensorOptions)]
 interface AmbientLightSensor : Sensor {
     readonly attribute unsigned long pin;
     readonly attribute double illuminance;
-};
-
-dictionary AmbientLightSensorOptions : SensorOptions  {
+};<p>dictionary AmbientLightSensorOptions : SensorOptions  {
     string controller;  // controller name, default to "ADC_0"
     unsigned long pin;  // analog pin where the light is connected
-};
-```
-####TemperatureSensor Interface
-```javascript
-[Constructor(optional SensorOptions sensorOptions)]
+};<p>[Constructor(optional SensorOptions sensorOptions)]
 interface TemperatureSensor : Sensor {
     readonly attribute double celsius;
-};
-
-dictionary TemperatureSensorOptions : SensorOptions  {
+};<p>dictionary TemperatureSensorOptions : SensorOptions  {
     string controller;  // controller name, default to "bmi160"
-};
-```
+};</pre></details>
 
-API Documentation
------------------
+Sensor API
+----------
 
 ### onreading
 `Sensor.onreading`
@@ -120,13 +99,11 @@ The onactivate attribute is an EventHandler which is called when the sensor is a
 
 The onactivate attribute is an EventHandler which is called whenever an exception cannot be handled synchronously.
 
-### start
-`void Sensor.start()`
+### sensor.start()
 
 Starts the sensor instance, the sensor will get callback on onreading whenever there's a new reading available.
 
-### stop
-`void Sensor.stop()`
+### sensor.stop()
 
 Stop the sensor instance, the sensor will stop reporting new readings.
 

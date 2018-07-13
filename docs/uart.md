@@ -3,13 +3,17 @@ Zephyr.js API for UART
 
 * [Introduction](#introduction)
 * [Web IDL](#web-idl)
-* [API Documentation](#api-documentation)
-* [Sample Apps](#sample-apps)
+* [Class UART](#uart-api)
+  * [uart.init(options)](#uartinitoptions)
+* [UARTConnection API](#uartconnection-api)
+  * [Event: 'read'](#event-read)
+  * [uartConnection.write(data)](#uartconnectionwritedata)
+  * [uartConnection.setReadRange(min, max)](#uartconnectionsetreadrangemin-max)
 
 Introduction
 ------------
-The UART module supports both read and write capabilities. Write is achieved
-with a 'write' function, and read is done via a callback function property that
+The UART module supports both read and write capabilities. Writes are
+done through the 'write' function, and reads are done via a callback function property that
 can be set. Read and write data should be a JavaScript string.
 
 The module can be used on both QEMU and the Arduino 101. When using QEMU, you
@@ -18,69 +22,61 @@ read/written from the serial console just as print does.
 
 Web IDL
 -------
-This IDL provides an overview of the interface; see below for documentation of
-specific API functions. Commented out properties or functions are not
-implemented because the feature is not available on Zephyr.
+This IDL provides an overview of the interface; see below for
+documentation of specific API functions.  We have a short document
+explaining [ZJS WebIDL conventions](Notes_on_WebIDL.md).
 
-```javascript
-// require returns a UART object
+<details>
+<summary>Click to show WebIDL</summary>
+<pre>// require returns a UART object
 // var uart = require('uart');
-
-enum UARTParity { "none", "event", "odd" }
-
 interface UART {
     UARTConnection init(UARTOptions options);
-};
-
+};<p>
 dictionary UARTOptions {
     string port;
-    // number baud = 115200;
-    // number dataBits = 8;
-    // number stopBits = 1;
+    // long baud = 115200;
+    // long dataBits = 8;
+    // long stopBits = 1;
     // UARTParity parity = "none";
     // boolean flowControl = false;
-};
-
-[NoInterfaceObject]
+};<p>[ExternalInterface=(Buffer),ExternalInterface=(EventEmitter)]
 interface UARTConnection: EventEmitter {
     // void close();
     void write(Buffer data);
-    void setReadRange(number min, number max);
-};
-```
+    void setReadRange(long min, long max);
+};<p>enum UARTParity { "none", "event", "odd" };
+</pre>
+</details>
 
-API Documentation
------------------
-## UART interface
+UART API
+--------
+### uart.init(options)
+* `options` *UARTOptions* The `UARTOptions` object lets you choose the
+  UART device/port you would like to initialize. The Arduino 101, for
+  example, should be "tty0".
+* Returns: UARTConnection interface, described below.
 
-### UART.init
+UARTConnection API
+------------------
 
-`UARTConnection init(UARTOptions options);`
-
-The `options` object lets you choose the UART device/port you would like to
-initialize. The Arduino 101, for example, should be "tty0".
-
-## UARTConnection interface
-UARTConnection is an [EventEmitter](./events.md) with the following events:
+A UARTConnection is an [EventEmitter](./events.md) with the following events:
 
 ### Event: 'read'
-
 * `Buffer` `data`
 
 Emitted when data is received on the UART RX line. The `data` parameter is a
 `Buffer` with the received data.
 
-### UARTConnection.write
+### uartConnection.write(data)
+* `data` *Buffer* The data to be written.
 
-`void write(Buffer data);`
+Write data out to the UART TX line.
 
-Write data out to the UART TX line. `data` is a string that will be written.
+### uartConnection.setReadRange(min, max);`
+* `min` *long* The minimum number of bytes for triggering the `onread` event.
+* `max` *long* The maximum number of bytes for triggering the `onread` event.
 
-### UARTConnection.setReadRange
-
-`void setReadRange(number min, number max);`
-
-Set the minimum and maximum number of bytes for triggering the `onread` event.
 Whenever at least the `min` number of bytes is available, a `Buffer` object
 containing at most `max` number of bytes is sent with the `onread` event.
 
