@@ -36,7 +36,7 @@ explaining [ZJS WebIDL conventions](Notes_on_WebIDL.md).
 // var ws = require('ws');
 [ReturnFromRequire]
 interface WebSocket {
-    WebSocketServer Server(object options);
+    WebSocketServer Server(OptionsObject options);
 };<p>
 [ExternalInterface=(EventEmitter)]
 interface WebSocketServer: EventEmitter{};<p>[ExternalInterface=(Buffer),]
@@ -44,7 +44,14 @@ interface WebSocketConnection: EventEmitter {
     void send(Buffer data, boolean mask);
     void ping(Buffer data, boolean mask);
     void pong(Buffer data, boolean mask);
-};</pre>
+};<p>dictionary OptionsObject {
+    double port;               // Port to bind to
+    boolean backlog;            // Max number of concurrent connections
+    boolean clientTracking;  // enable client tracking
+    double maxPayload;         // set the max payload bytes per message
+    string acceptHandler;    // handler to call to accept/deny connections
+};
+</pre>
 </details>
 
 WebSocket API
