@@ -39,19 +39,28 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    size_t size = jerry_generate_snapshot(NULL,
-                                          0,
-                                          (const jerry_char_t *)script,
-                                          len,
-                                          0,
-                                          snapshot_buf,
-                                          sizeof(snapshot_buf));
+    jerry_value_t snapshot_result;
+    snapshot_result = jerry_generate_snapshot(NULL,
+                                              0,
+                                              (const jerry_char_t *)script,
+                                              len,
+                                              0,
+                                              snapshot_buf,
+                                              sizeof(snapshot_buf));
+
+    if (jerry_value_is_error(snapshot_result)) {
+        fprintf(stderr, "JerryScript: failed to parse JS and create snapshot\n");
+        return 1;
+    }
+
+    size_t size = (size_t)jerry_get_number_value(snapshot_result);
+    jerry_release_value(snapshot_result);
 
     if (script != NULL)
         free(script);
 
     if (size == 0) {
-        fprintf(stderr, "JerryScript: failed to parse JS and create snapshot\n");
+        fprintf(stderr, "JerryScript: snapshot size is zero\n");
         return 1;
     }
 

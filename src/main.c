@@ -275,7 +275,7 @@ int main(int argc, char *argv[])
 #else
 #ifndef ZJS_ASHELL
         script_len = strnlen(script_jscode, MAX_SCRIPT_SIZE);
-        script = script_jscode;
+        script = (char *)script_jscode;
 #endif
 #endif
         if (script_len == MAX_SCRIPT_SIZE) {
