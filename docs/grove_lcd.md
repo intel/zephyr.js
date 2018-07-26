@@ -15,7 +15,6 @@ ZJS API for Grove LCD
   * [groveLCDDevice.getFunction()](#grovelcddevicegetfunction)
   * [groveLCDDevice.setDisplayState(config)](#grovelcddevicesetdisplaystateconfig)
   * [GroveLCDDevice.getDisplayState()](#grovelcddevicegetdisplaystate)
-
 * [Sample Apps](#sample-apps)
 
 Introduction
