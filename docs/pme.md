@@ -70,8 +70,8 @@ interface PME {
     void setClassifierMode(unsigned short mode);
     unsigned short getDistanceMode();
     void setDistanceMode(unsigned short mode);
-    sequence < Json > saveNeurons();
-    void restoreNeurons(sequence < Json > objects);
+    sequence < JSON > saveNeurons();
+    void restoreNeurons(sequence < JSON > objects);
 <p>
     attribute unsigned short RBF_MODE;       // RBF classification mode
     attribute unsigned short KNN_MODE;       // KNN classification mode

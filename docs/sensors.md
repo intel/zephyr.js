@@ -37,21 +37,21 @@ explaining [ZJS WebIDL conventions](Notes_on_WebIDL.md).
 <summary>Click to show WebIDL</summary>
 <pre>
 interface Sensor {
-    readonly attribute boolean activated;   // whether the sensor is activated or not
-    readonly attribute boolean hasReading;  // whether the sensor has readings available
-    readonly attribute double timestamp;    // timestamp of the latest reading in milliseconds
-    attribute double frequency;             // sampling frequency in hertz
-    void start();                           // starts the sensor
-    void stop();                            // stops the sensor
-    attribute ChangeCallback onreading;     // callback handler for change events
-    attribute ActivateCallback onactivate;  // callback handler for activate events
-    attribute ErrorCallback onerror;        // callback handler for error events
+    readonly attribute boolean activated;      // whether the sensor is activated or not
+    readonly attribute boolean hasReading;     // whether the sensor has readings available
+    readonly attribute double timestamp;       // timestamp of the latest reading in milliseconds
+    attribute double frequency;                // sampling frequency in hertz
+    void start();                              // starts the sensor
+    void stop();                               // stops the sensor
+    attribute sensor_ChangeCallback onreading; // callback handler for change events
+    attribute ActivateCallback onactivate;     // callback handler for activate events
+    attribute ErrorCallback onerror;           // callback handler for error events
 };<p>
 dictionary SensorOptions {
     double frequency;  // desired frequency, default is 20 if unset
 };<p>interface SensorErrorEvent {
     attribute Error error;
-};<p>callback ChangeCallback = void();
+};<p>callback sensor_ChangeCallback = void();
 callback ActivateCallback = void();
 callback ErrorCallback = void(SensorErrorEvent error);<p>[Constructor(optional AccelerometerOptions accelerometerOptions)]
 interface Accelerometer : Sensor {

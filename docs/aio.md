@@ -45,10 +45,10 @@ interface AIO {
     (unsigned long or string) pin;
 };<p>interface AIOPin {
     unsigned long read();
-    void readAsync(ReadCallback callback);  // TODO: change to return a promise
-    void on(string eventType, ReadCallback callback);
+    void readAsync(aio_ReadCallback callback);  // TODO: change to return a promise
+    void on(string eventType, aio_ReadCallback callback);
     void close();
-};<p>callback ReadCallback = void (unsigned long value);
+};<p>callback aio_ReadCallback = void (unsigned long value);
 </pre> </details>
 
 AIO API
@@ -70,10 +70,10 @@ AIOPin API
 * Returns: the latest reading from the pin (an unsigned integer). Blocks until it gets the result.
 
 ### pin.readAsync(callback)
-* 'callback' *ReadCallback* User-provided callback function that takes
+* 'callback' *aio_ReadCallback* User-provided callback function that takes
   a single unsigned integer and has no return value.
 
-Pass a function for `ReadCallback` that will be called later when the result is
+Pass a function for `aio_ReadCallback` that will be called later when the result is
 obtained.
 
 *WARNING: Making an async call like this allocates some memory while the call
@@ -89,7 +89,7 @@ returns a promise.*
 ### pin.on(eventType, callback)
 * 'eventType' *string* Type of event; currently, the only supported
   type is "change".
-* 'callback' *ReadCallback* User-provided callback function that takes
+* 'callback' *aio_ReadCallback* User-provided callback function that takes
   a single, unsigned integer and has no return value; can be null.
 
 The callback function is called any time the analog voltage changes. (At the moment,

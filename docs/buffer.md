@@ -10,7 +10,7 @@ ZJS API for Buffer
   * [buf.copy(target[, targetStart, [sourceStart[, sourceEnd]]])](#bufcopytarget-targetstart-sourcestart-sourceend)
   * [buf.fill(value[, offset[, end[, encoding]]])](#buffillvalue-offset-end-encoding)
   * [buf.readUInt*(offset)](#bufreaduint-family)
-  * [buf.toString([encoding])](#buftostringencoding)
+  * [buf.to_string([encoding])](#bufto_stringencoding)
   * [buf.write(string[, offset[, length[, encoding]]])](#bufwritestring-offset-length-encoding)
   * [buf.writeUInt*(value, offset)](#bufwriteuint-family)
 * [Sample Apps](#sample-apps)
@@ -29,7 +29,7 @@ specific API functions.  We have a short document explaining [ZJS WebIDL convent
 <details>
 <summary> Click to show/hide WebIDL</summary>
 <pre>
-[ Constructor(sequence < Uint8 > initialValues),
+[ Constructor(sequence < octet > initialValues),
   Constructor(unsigned long size),
   Constructor(ByteString initialString), ]
 interface Buffer {
@@ -46,7 +46,7 @@ interface Buffer {
     short readUInt16LE(optional unsigned long offset = 0);
     long readUInt32BE(optional unsigned long offset = 0);
     long readUInt32LE(optional unsigned long offset = 0);
-    string toString(string encoding);
+    string to_string(optional string encoding = "utf8");
     long write(string value, optional long offset = 0,
                              optional long length = 0,
                              optional string encoding = "utf8");
@@ -121,7 +121,7 @@ little-endian (lowest byte first) integer depending on the function version.
 The `offset` should be provided but will be treated as 0 if not given. Returns
 an error if the buffer is not big enough.
 
-### buf.toString([encoding])
+### buf.to_string([encoding])
 * `encoding` *string* Encoding to use.
 * Returns: *string*
 
