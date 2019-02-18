@@ -65,19 +65,19 @@ dictionary PrimaryServiceInit {
     string uuid;
     sequence < string > properties;                // 'read', 'write', 'notify'
     sequence < DescriptorInit > descriptors;
-    ReadCallback onReadRequest;         // optional
+    ble_ReadCallback onReadRequest;         // optional
     WriteCallback onWriteRequest;       // optional
     SubscribeCallback onSubscribe;      // optional
     UnsubscribeCallback onUnsubscribe;  // optional
     NotifyCallback onNotify;            // optional
 };<p>interface Characteristic {
-    attribute ReadCallback onReadRequest;
+    attribute ble_ReadCallback onReadRequest;
     attribute WriteCallback onWriteRequest;
     attribute SubscribeCallback onSubscribe;
     attribute UnsubscribeCallback onUnsubscribe;
     attribute NotifyCallback onNotify;
     attribute CharacteristicResult response;
-};<p>callback ReadCallback = void (unsigned long offset,
+};<p>callback ble_ReadCallback = void (unsigned long offset,
                               FulfillReadCallback fulfillReadCallback);
 [ExternalInterface=(Buffer)]
 callback WriteCallback = void (Buffer data, unsigned long offset,
@@ -210,7 +210,7 @@ This object has 3 required fields:
 3. `descriptors` *array of [Descriptors](#descriptor)*
 
 It may also contain these optional callback fields:
-1. `onReadRequest` *ReadCallback*
+1. `onReadRequest` *ble_ReadCallback*
   * Called when the client is requesting to read data from the characteristic.
   * See below for common argument definitions
 2. `onWriteRequest` *WriteCallback*

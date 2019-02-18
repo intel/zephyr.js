@@ -44,8 +44,8 @@ dictionary GPIOInit {
     long read();
     void write(long value);
     void close();
-    attribute ChangeCallback onchange;
-};<p>callback ChangeCallback = void (GPIOEvent event);<p>dictionary GPIOEvent {
+    attribute gpio_ChangeCallback onchange;
+};<p>callback gpio_ChangeCallback = void (GPIOEvent event);<p>dictionary GPIOEvent {
     long value;
 };<p>enum GPIOMode  { "out", "in" };
 enum GPIOEdge  { "none", "rising", "falling", "any" };
@@ -112,7 +112,7 @@ writing anymore.
 
 ### pin.onchange
 
-* `onchange` *ChangeCallback*
+* `onchange` *gpio_ChangeCallback*
 
 Set this attribute to a function that will receive events whenever the pin
 changes according to the edge condition specified at pin initialization. The
