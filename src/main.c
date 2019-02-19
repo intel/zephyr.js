@@ -17,6 +17,8 @@
 #endif
 #else
 #include "zjs_linux_port.h"
+#include <unistd.h>
+#include <getopt.h>
 #endif  // ZJS_LINUX_BUILD
 #include "zjs_script.h"
 #include "zjs_util.h"
@@ -87,15 +89,55 @@ static u8_t no_exit = 0;
 // if > 0, jslinux will exit after this many milliseconds
 static u32_t exit_after = 0;
 static struct timespec exit_timer;
+static char *js_args = NULL;
+
+static void usage(void)
+{
+    printf("jslinux usage:\n");
+    printf("\t--jsargs, -j \"<args>\"    Pass args to js script via process\n");
+    printf("\t--exit-time, -t <milli>    Exit after a certain number of"
+                                        "milliseconds\n");
+    printf("\t--noexit, -n               Do not exit jslinux when no events"
+                                        " are present\n");
+    printf("\t--unittest, -u             Run jslinux unit tests\n");
+    printf("\t--debugger, -d             Start debugger, waits for debugging"
+                                        " connection at startup\n");
+    printf("\t--help, -h                 Display this help message\n");
+}
+
+static const struct option main_options[] = {
+    { "jsargs", required_argument, NULL, 'j' },
+    { "exit-time",	required_argument, NULL, 't' },
+    { "noexit",     no_argument, NULL, 'n' },
+    { "unittest",   no_argument, NULL, 'u' },
+    { "debugger",	no_argument, NULL, 'd' },
+    { "help",       no_argument, NULL, 'h' },
+    { }
+};
 
 u8_t process_cmd_line(int argc, char *argv[])
 {
-    int i;
-    for (i = 0; i < argc; ++i) {
-        if (!strncmp(argv[i], "--unittest", 10)) {
-            // run unit tests
+    for (;;) {
+        int opt;
+
+        opt = getopt_long(argc, argv, "j:t:nudh", main_options, NULL);
+        if (opt < 0)
+            break;
+
+        switch (opt) {
+        case 't':
+            exit_after = atoi(optarg);
+            ZJS_PRINT("jslinux will terminate after %u milliseconds\n",
+                          (unsigned int)exit_after);
+            clock_gettime(CLOCK_MONOTONIC, &exit_timer);
+            break;
+        case 'n':
+            no_exit = true;
+            break;
+        case 'u':
             zjs_run_unit_tests();
-        } else if (!strncmp(argv[i], "--debugger", 10)) {
+            break;
+        case 'd':
 #ifdef ZJS_DEBUGGER
             // run in debugger
             start_debug_server = true;
@@ -103,24 +145,51 @@ u8_t process_cmd_line(int argc, char *argv[])
             ERR_PRINT("Debugger disabled, rebuild with DEBUGGER=on");
             return 0;
 #endif
-        } else if (!strncmp(argv[i], "--noexit", 8)) {
-            no_exit = 1;
-        } else if (!strncmp(argv[i], "-t", 2)) {
-            if (i == argc - 1) {
-                // no time argument, return error
-                ERR_PRINT("no time argument given after '-t'\n");
-                return 0;
-            } else {
-                char *str_time = argv[i + 1];
-                exit_after = atoi(str_time);
-                ZJS_PRINT("jslinux will terminate after %u milliseconds\n",
-                          (unsigned int)exit_after);
-                clock_gettime(CLOCK_MONOTONIC, &exit_timer);
-            }
+        case 'h':
+            usage();
+            exit(0);
+        case 'j':
+            js_args = optarg;
+            break;
+        default:
+            usage();
+            exit(1);
         }
     }
+
     return 1;
 }
+
+void init_process(char *args)
+{
+    if (!args)
+        return;
+
+    char *ptr = args;
+    char *last = args;
+    jerry_value_t array = ZJS_UNDEFINED;
+    ZVAL global_obj = jerry_get_global_object();
+    ZVAL process = zjs_create_object();
+
+    while ((ptr = strchr(last, ' '))) {
+        ZVAL elem = jerry_create_string_sz(last, ptr - last);
+
+        array = zjs_push_array(array, elem);
+        last = ptr + 1;
+    }
+
+    if (args) {
+        ZVAL elem = jerry_create_string(last);
+
+        array = zjs_push_array(array, elem);
+    }
+
+    zjs_set_property(process, "argv", array);
+    zjs_set_property(global_obj, "process", process);
+
+    jerry_release_value(array);
+}
+
 #else
 #ifndef CONFIG_NET_APP_AUTO_INIT
 #ifdef BUILD_MODULE_BLE
@@ -256,11 +325,11 @@ int main(int argc, char *argv[])
 #ifndef ZJS_SNAPSHOT_BUILD
 #ifdef ZJS_LINUX_BUILD
     if (argc > 1) {
-        if (process_cmd_line(argc - 1, argv + 1) == 0) {
+        if (process_cmd_line(argc, argv) == 0) {
             ERR_PRINT("command line options error\n");
             goto error;
         }
-        if (zjs_read_script(argv[1], &script, &script_len)) {
+        if (zjs_read_script(argv[argc - 1], &script, &script_len)) {
             ERR_PRINT("could not read script file %s\n", argv[1]);
             goto error;
         }
@@ -308,6 +377,7 @@ int main(int argc, char *argv[])
 
 #ifdef ZJS_LINUX_BUILD
     zjs_free(script);
+    init_process(js_args);
 #endif
 
 #ifdef ZJS_SNAPSHOT_BUILD
