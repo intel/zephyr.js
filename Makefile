@@ -347,8 +347,8 @@ ifeq ($(OS), Darwin)
 	@# support iamcu instruction set on the Arduino 101
 	@echo "CONFIG_X86_IAMCU=n" >> prj.conf
 endif
-	@echo "CONFIG_RAM_SIZE=$(RAM)" >> prj.conf
-	@echo "CONFIG_ROM_SIZE=$(ROM)" >> prj.conf
+#	@echo "CONFIG_RAM_SIZE=$(RAM)" >> prj.conf
+#	@echo "CONFIG_ROM_SIZE=$(ROM)" >> prj.conf
 	@printf "CONFIG_SS_RESET_VECTOR=0x400%x\n" $$((($(ROM) + 64) * 1024)) >> prj.conf
 	@echo "&flash0 { reg = <0x40010000 ($(ROM) * 1024)>; };" > arduino_101.overlay
 	@echo "&flash1 { reg = <0x40030000 ($(ROM) * 1024)>; };" >> arduino_101.overlay
