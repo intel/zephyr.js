@@ -6,8 +6,7 @@
             "CONFIG_STDOUT_CONSOLE=y",
             "CONFIG_PRINTK=y",
             "CONFIG_CONSOLE=y",
-            "CONFIG_SERIAL=n",
-            "CONFIG_NS16550=n"
+            "CONFIG_SERIAL=n"
         ]
     },
     "src": ["../src/zjs_common.c"]
