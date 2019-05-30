@@ -1,7 +1,6 @@
 {
     "module": "ashell",
     "depends": [
-        "aio",
         "ble",
         "common",
         "console",
