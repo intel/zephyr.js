@@ -49,7 +49,7 @@ sensor_module_t sensor_modules[] = {
     { SENSOR_CHAN_LIGHT, zjs_sensor_light_init, zjs_sensor_light_cleanup },
 #endif
 #ifdef BUILD_MODULE_SENSOR_TEMP
-    { SENSOR_CHAN_TEMP, zjs_sensor_temp_init, zjs_sensor_temp_cleanup },
+    { SENSOR_CHAN_AMBIENT_TEMP, zjs_sensor_temp_init, zjs_sensor_temp_cleanup },
 #endif
 };
 

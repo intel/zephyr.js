@@ -4,9 +4,8 @@
     "zephyr_conf": {
         "frdm_k64f": [
             "CONFIG_I2C=y",
-            "CONFIG_GROVE=y",
-            "CONFIG_GROVE_LCD_RGB=y",
-            "CONFIG_GROVE_LCD_RGB_INIT_PRIORITY=90"
+            "CONFIG_DISPLAY=y",
+            "CONFIG_GROVE_LCD_RGB=y"
         ]
     },
     "zjs_config": ["-DBUILD_MODULE_GROVE_LCD"],

@@ -38,7 +38,7 @@ static ZJS_DECL_FUNC(zjs_sensor_constructor)
     ZJS_VALIDATE_ARGS(Z_OPTIONAL Z_OBJECT);
 
     jerry_value_t sensor_obj =
-        ZJS_CHAIN_FUNC_ARGS(zjs_sensor_create, g_instance, SENSOR_CHAN_TEMP,
+        ZJS_CHAIN_FUNC_ARGS(zjs_sensor_create, g_instance, SENSOR_CHAN_AMBIENT_TEMP,
                             TEMP_DEVICE_NAME, 0, 800, onchange, NULL, onstop);
 
     if (!jerry_value_is_error(sensor_obj)) {

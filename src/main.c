@@ -122,7 +122,7 @@ u8_t process_cmd_line(int argc, char *argv[])
     return 1;
 }
 #else
-#ifndef CONFIG_NET_APP_AUTO_INIT
+#ifndef CONFIG_NET_CONFIG_AUTO_INIT
 #ifdef BUILD_MODULE_BLE
 extern void ble_bt_ready(int err);
 #endif
@@ -329,7 +329,7 @@ int main(int argc, char *argv[])
 #ifndef ZJS_LINUX_BUILD
 #ifndef ZJS_ASHELL  // Ashell will call bt_enable when module is loaded
 
-#ifndef CONFIG_NET_APP_AUTO_INIT  // net_app will call bt_enable() itself
+#ifndef CONFIG_NET_CONFIG_AUTO_INIT  // net_app will call bt_enable() itself
     int err = 0;
 #ifdef BUILD_MODULE_BLE
     err = bt_enable(ble_bt_ready);

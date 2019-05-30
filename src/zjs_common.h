@@ -141,8 +141,8 @@ int zjs_get_ms(void);
 #define TEMP_DEVICE_NAME BMI160_NAME
 #elif CONFIG_BOARD_FRDM_K64F
 #define ADC_BUFFER_SIZE 5
-#define ACCEL_DEVICE_NAME CONFIG_FXOS8700_NAME
-#define MAGN_DEVICE_NAME CONFIG_FXOS8700_NAME
+#define ACCEL_DEVICE_NAME DT_NXP_FXOS8700_0_LABEL
+#define MAGN_DEVICE_NAME DT_NXP_FXOS8700_0_LABEL
 #endif
 
 // default to blank if not found in board configs

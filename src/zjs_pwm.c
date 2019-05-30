@@ -108,8 +108,8 @@ static ZJS_DECL_FUNC(zjs_pwm_pin_set_cycles)
     }
 
     // update the JS object
-    double period = periodHW / sys_clock_hw_cycles_per_sec * 1000;
-    double pulseWidth = pulseWidthHW / sys_clock_hw_cycles_per_sec * 1000;
+    double period = periodHW / (int)sys_clock_hw_cycles_per_sec * 1000;
+    double pulseWidth = pulseWidthHW / (int)sys_clock_hw_cycles_per_sec * 1000;
     zjs_obj_add_number(this, "period", period);
     zjs_obj_add_number(this, "pulseWidth", pulseWidth);
 

@@ -16,8 +16,7 @@
             "CONFIG_FS_FAT_FLASH_DISK_W25QXXDV=y"
         ],
         "frdm_k64f": [
-            "CONFIG_DISK_ACCESS_RAM=y",
-            "CONFIG_HAS_SYSMPU=n"
+            "CONFIG_DISK_ACCESS_RAM=y"
         ],
         "olimex_stm32_e407": ["CONFIG_DISK_ACCESS_RAM=y"],
         "stm32f4_disco": ["CONFIG_DISK_ACCESS_RAM=y"],

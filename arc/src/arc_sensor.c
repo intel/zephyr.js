@@ -17,7 +17,7 @@
 #ifdef CONFIG_BMI160_NAME
 #define BMI160_NAME CONFIG_BMI160_NAME
 #else
-#define BMI160_NAME BMI160_DEVICE_NAME
+#define BMI160_NAME "bmi160"
 #endif
 
 u32_t sensor_poll_freq = 20;        // default polling frequency
@@ -169,7 +169,7 @@ static void process_temp_data(struct device *dev)
     struct sensor_value val;
     double dval;
 
-    if (sensor_channel_get(dev, SENSOR_CHAN_TEMP, &val) < 0) {
+    if (sensor_channel_get(dev, SENSOR_CHAN_AMBIENT_TEMP, &val) < 0) {
         ERR_PRINT("failed to read temperature channel\n");
         return;
     }
@@ -178,7 +178,7 @@ static void process_temp_data(struct device *dev)
     if (dval != temp_last_value) {
         union sensor_reading reading;
         reading.dval = temp_last_value = dval;
-        send_sensor_data(SENSOR_CHAN_TEMP, reading);
+        send_sensor_data(SENSOR_CHAN_AMBIENT_TEMP, reading);
     }
 
 #ifdef DEBUG_BUILD
@@ -418,7 +418,7 @@ static void handle_sensor_bmi160(struct zjs_ipm_message *msg)
                 gyro_poll = true;
             }
 #endif
-        } else if (msg->data.sensor.channel == SENSOR_CHAN_TEMP) {
+        } else if (msg->data.sensor.channel == SENSOR_CHAN_AMBIENT_TEMP) {
             if (temp_poll) {
                 error_code = ERROR_IPM_OPERATION_FAILED;
             } else {
@@ -457,7 +457,7 @@ static void handle_sensor_bmi160(struct zjs_ipm_message *msg)
                 gyro_poll = false;
             }
 #endif
-        } else if (msg->data.sensor.channel == SENSOR_CHAN_TEMP) {
+        } else if (msg->data.sensor.channel == SENSOR_CHAN_AMBIENT_TEMP) {
             if (!temp_poll) {
                 error_code = ERROR_IPM_OPERATION_FAILED;
             } else {
@@ -539,7 +539,7 @@ void arc_handle_sensor(struct zjs_ipm_message *msg)
         }
         break;
 #endif
-    case SENSOR_CHAN_TEMP:
+    case SENSOR_CHAN_AMBIENT_TEMP:
         if (!strncmp(controller, BMI160_NAME, 6)) {
             handle_sensor_bmi160(msg);
             return;
