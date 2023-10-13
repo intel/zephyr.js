@@ -70,20 +70,25 @@ struct sockaddr *zjs_net_config_get_ip(struct net_context *context)
 
     if (net_context_get_family(context) == AF_INET) {
 #ifdef CONFIG_NET_IPV4
+	struct net_if_ipv4 *ipv4 = iface->config.ip.ipv4;
+	if (!ipv4) {
+            return NULL;
+	}
         for (int i = 0; i < NET_IF_MAX_IPV4_ADDR; i++) {
-            if (iface->ipv4.unicast[i].is_used) {
-                return (struct sockaddr *)&iface->ipv4.unicast[i].address;
+            if (ipv4->unicast[i].is_used) {
+                return (struct sockaddr *)&ipv4->unicast[i].address;
             }
         }
 #endif
     } else {
 #ifdef CONFIG_NET_IPV6
+	struct net_if_ipv6 *ipv6 = iface->config.ip.ipv6;
         for (int i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
-            if (iface->ipv6.unicast[i].is_used) {
-                struct net_addr *addr = &iface->ipv6.unicast[i].address;
+            if (ipv6->unicast[i].is_used) {
+                struct net_addr *addr = &ipv6->unicast[i].address;
                 struct sockaddr_in6 *in6 = (struct sockaddr_in6 *)addr;
-                if (in6->sin6_addr.in6_u.u6_addr8[0] != 0xfe ||
-                    (in6->sin6_addr.in6_u.u6_addr8[1] & 0xc0) != 0x80) {
+                if (in6->sin6_addr.s6_addr[0] != 0xfe ||
+                    (in6->sin6_addr.s6_addr[1] & 0xc0) != 0x80) {
                     // not link local, use this one
                     return (struct sockaddr *)addr;
                 }
@@ -231,15 +236,20 @@ static void dhcp_callback(struct net_mgmt_event_callback *cb,
         return;
     }
 
+    struct net_if_ipv4 *ipv4 = iface->config.ip.ipv4;
+    if (!ipv4) {
+        return;
+    }
+
     for (i = 0; i < NET_IF_MAX_IPV4_ADDR; i++) {
         char buf[NET_IPV4_ADDR_LEN];
 
-        if (iface->ipv4.unicast[i].addr_type != NET_ADDR_DHCP) {
+        if (ipv4->unicast[i].addr_type != NET_ADDR_DHCP) {
             continue;
         }
 
         net_addr_ntop(AF_INET,
-                      &iface->ipv4.unicast[i].address.in_addr,
+                      &ipv4->unicast[i].address.in_addr,
                       buf,
                       sizeof(buf));
         ZVAL addr = jerry_create_string(buf);

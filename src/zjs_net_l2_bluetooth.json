@@ -14,10 +14,10 @@
             "CONFIG_BT_L2CAP_DYNAMIC_CHANNEL=y",
             "CONFIG_NET_L2_BT_ZEP1656=y",
             "CONFIG_NET_L2_BT=y",
-            "CONFIG_NET_APP_SETTINGS=y",
-            "CONFIG_NET_APP_MY_IPV6_ADDR=\"2001:db8::1\"",
-            "CONFIG_NET_APP_PEER_IPV6_ADDR=\"2001:db8::2\"",
-            "CONFIG_NET_APP_AUTO_INIT=n"
+            "CONFIG_NET_CONFIG_SETTINGS=y",
+            "CONFIG_NET_CONFIG_MY_IPV6_ADDR=\"2001:db8::1\"",
+            "CONFIG_NET_CONFIG_PEER_IPV6_ADDR=\"2001:db8::2\"",
+            "CONFIG_NET_CONFIG_AUTO_INIT=n"
         ]
     },
     "src": ["${ZEPHYR_BASE}/samples/bluetooth/gatt/ipss.c"],

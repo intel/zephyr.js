@@ -6,9 +6,8 @@
     "zephyr_conf": {
         "arc": [
             "CONFIG_I2C=y",
-            "CONFIG_GROVE=y",
-            "CONFIG_GROVE_LCD_RGB=y",
-            "CONFIG_GROVE_LCD_RGB_INIT_PRIORITY=90"
+            "CONFIG_DISPLAY=y",
+            "CONFIG_GROVE_LCD_RGB=y"
         ]
     },
     "src": ["src/arc_grove_lcd.c"],

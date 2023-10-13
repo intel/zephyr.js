@@ -33,7 +33,7 @@ touch $SRCDIR/syscalls/sensor.h
 PASSCOUNT=0
 TOTAL=0
 
-CFLAGS="-m32 -DCONFIG_X86 -DCONFIG_PREEMPT_ENABLED -DCONFIG_LOAPIC_BASE_ADDRESS=0xFEE00000 -DCONFIG_NET_RAW_MODE -DCONFIG_NET_BUF_USER_DATA_SIZE=4 -I. -I$SRCDIR -I../deps/jerryscript/jerry-core -I../deps/jerryscript/jerry-core/include -I../deps/jerryscript/jerry-ext/include -I../deps/zephyr/include -I../deps/zephyr/arch/x86/include -I../deps/iotivity-constrained/include -I../deps/iotivity-constrained -include../deps/iotivity-constrained/port/zephyr/src/config.h -I../deps/zephyr/tests/ztest/include"
+CFLAGS="-m32 -DCONFIG_X86 -DCONFIG_PREEMPT_ENABLED -DCONFIG_LOAPIC_BASE_ADDRESS=0xFEE00000 -DCONFIG_NET_RAW_MODE -DCONFIG_NET_BUF_USER_DATA_SIZE=4 -I. -I$SRCDIR -I../deps/jerryscript/jerry-core -I../deps/jerryscript/jerry-core/include -I../deps/jerryscript/jerry-ext/include -I../deps/zephyr/include -I../deps/zephyr/arch/x86/include -I../deps/iotivity-constrained/include -I../deps/iotivity-constrained -include../deps/iotivity-constrained/port/zephyr/src/config.h -I../deps/zephyr/subsys/testsuite/ztest/include"
 
 FAILURES=
 

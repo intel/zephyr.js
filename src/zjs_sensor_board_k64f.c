@@ -49,7 +49,7 @@ sensor_module_t sensor_modules[] = {
     { SENSOR_CHAN_LIGHT, zjs_sensor_light_init, zjs_sensor_light_cleanup },
 #endif
 #ifdef BUILD_MODULE_SENSOR_TEMP
-    { SENSOR_CHAN_TEMP, zjs_sensor_temp_init, zjs_sensor_temp_cleanup },
+    { SENSOR_CHAN_AMBIENT_TEMP, zjs_sensor_temp_init, zjs_sensor_temp_cleanup },
 #endif
 #ifdef BUILD_MODULE_SENSOR_MAGN
     { SENSOR_CHAN_MAGN_XYZ, zjs_sensor_magn_init, zjs_sensor_magn_cleanup },
@@ -67,7 +67,7 @@ int zjs_sensor_board_start(sensor_handle_t *handle)
     case SENSOR_CHAN_GYRO_XYZ:
     case SENSOR_CHAN_LIGHT:
     case SENSOR_CHAN_MAGN_XYZ:
-    case SENSOR_CHAN_TEMP:
+    case SENSOR_CHAN_AMBIENT_TEMP:
         break;
 
     default:
@@ -89,7 +89,7 @@ int zjs_sensor_board_stop(sensor_handle_t *handle)
     case SENSOR_CHAN_GYRO_XYZ:
     case SENSOR_CHAN_LIGHT:
     case SENSOR_CHAN_MAGN_XYZ:
-    case SENSOR_CHAN_TEMP:
+    case SENSOR_CHAN_AMBIENT_TEMP:
         break;
 
     default:

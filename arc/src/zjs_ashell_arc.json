@@ -1,12 +1,10 @@
 {
     "module": "ashell_arc",
     "depends": [
-        "aio_arc",
         "grove_lcd_arc",
         "i2c_arc",
         "sensor_accel_arc",
         "sensor_gyro_arc",
-        "sensor_light_arc",
         "sensor_temp_arc"
     ],
     "targets": ["arc"]
